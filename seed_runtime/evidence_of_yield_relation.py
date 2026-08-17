@@ -27,7 +27,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
     {
         "assertion_locality_movement",
-        "failed_emission",
+        "failed_boundary",
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",

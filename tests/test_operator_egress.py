@@ -107,31 +107,24 @@ def test_egress_preserves_a_write_exception_without_inventing_a_count():
     assert raised.value.__cause__ is error
 
 
-def test_egress_preserves_the_full_reported_count_across_a_flush_exception():
-    error = OSError("flush failed")
-
-    class FlushFailure:
+def test_exact_write_acceptance_does_not_claim_or_invoke_a_later_flush():
+    class FlushBoundary:
         def __init__(self):
             self.material = None
+            self.flush_count = 0
 
         def write(self, material):
             self.material = material
             return len(material)
 
         def flush(self):
-            raise error
+            self.flush_count += 1
 
-    output = FlushFailure()
+    output = FlushBoundary()
 
-    with pytest.raises(
-        ExactMaterialEgressFailure, match="after reporting"
-    ) as raised:
-        emit_exact_material(output, b"hello")
-
+    assert emit_exact_material(output, b"hello") == 5
     assert output.material == b"hello"
-    assert raised.value.reported_count == 5
-    assert raised.value.error is error
-    assert raised.value.__cause__ is error
+    assert output.flush_count == 0
 
 
 def test_egress_does_not_recast_process_death_as_a_boundary_result():

@@ -53,7 +53,7 @@ def read_operator_emission_boundary(
 
 
 def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
-    """Write exact material without decoding or selecting a display species."""
+    """Obtain one exact write acceptance without inferring later delivery."""
     write = getattr(output_stream, "write", None)
     sendall = getattr(output_stream, "sendall", None)
     if write is None and sendall is None:
@@ -85,14 +85,4 @@ def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
             reported_count=written if type(written) is int else None,
             error=None,
         )
-    flush = getattr(output_stream, "flush", None)
-    if flush is not None:
-        try:
-            flush()
-        except Exception as error:
-            raise ExactMaterialEgressFailure(
-                "egress boundary raised after reporting the exact material count",
-                reported_count=written,
-                error=error,
-            ) from error
     return written

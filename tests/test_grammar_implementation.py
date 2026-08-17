@@ -410,7 +410,7 @@ def _emission_witness() -> dict:
     }
 
 
-def _failed_emission_yield_witness() -> dict:
+def _failed_boundary_yield_witness() -> dict:
     class PartialOutput(BytesIO):
         def write(self, value):
             super().write(value[:-1])
@@ -447,7 +447,7 @@ def _failed_emission_yield_witness() -> dict:
         )
     except ValueError:
         pass
-    event = ledger.get(representation["emission_failure_event_identity"])
+    event = ledger.get(representation["boundary_failure_event_identity"])
     return _yield_bundle(ledger, event)
 
 
@@ -1745,7 +1745,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
-        "failed_emission": _failed_emission_yield_witness,
+        "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "operator_invocation_locality_relation": (
@@ -4095,7 +4095,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
-        "failed_emission": _failed_emission_yield_witness,
+        "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "operator_invocation_locality_relation": (

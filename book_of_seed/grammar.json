@@ -266,7 +266,7 @@
         "representations",
         "emission_attempt",
         "emitted_result",
-        "emission_failure",
+        "boundary_failure",
         "accepted_count",
         "reported_count",
         "error"
@@ -1264,7 +1264,8 @@
         "emit_accepted_exact_Representation_result",
         "emitted_result",
         "reported_partial_result_and_error",
-        "emission_failure_at_declared_boundary",
+        "boundary_failure_after_exact_write_invocation",
+        "accepted_emission_precedes_later_flush",
         "effects_beyond_output_boundary_remain_Unknown"
       ],
       "occurrence_coordinates": ["timestamp"],

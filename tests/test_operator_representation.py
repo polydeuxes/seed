@@ -882,19 +882,38 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         )
 
     attempt = ledger.get(representation["emission_attempt_event_identity"])
-    failure = ledger.get(representation["emission_failure_event_identity"])
+    failure = ledger.get(representation["boundary_failure_event_identity"])
     act_evidence = ledger.get(
-        representation["emission_failure_act_evidence_identity"]
+        representation["boundary_failure_act_evidence_identity"]
     )
     evidence_of_yield_relation = ledger.get(
-        representation["emission_failure_evidence_of_yield_relation_identity"]
+        representation["boundary_failure_evidence_of_yield_relation_identity"]
     )
     assert attempt.exact_material == b"hello"
     assert failure.exact_material is None
     assert failure.material["reported_count"] == reported_count
     assert failure.material["error"] == error_material
-    assert failure.material["emitted_event_identity"] is None
-    assert representation["emitted_event_identity"] is None
+    emitted_event_identity = representation["emitted_event_identity"]
+    if boundary_type == "flush-error":
+        assert emitted_event_identity is not None
+        emitted = ledger.get(emitted_event_identity)
+        emitted_yield = ledger.get(
+            representation["emission_evidence_of_yield_relation_identity"]
+        )
+        emitted_act = ledger.get(representation["emission_act_evidence_identity"])
+        assert emitted.material["boundary_result"] == {"accepted_count": 5}
+        assert failure.material["emitted_event_identity"] == emitted.identity
+        assert all(
+            read_requirements_of_yield_relation(
+                ledger,
+                recorded_result_event_identity=emitted.identity,
+                evidence_of_yield_relation_event_identity=emitted_yield.identity,
+                responsible_act_evidence_event_identity=emitted_act.identity,
+            ).values()
+        )
+    else:
+        assert failure.material["emitted_event_identity"] is None
+        assert emitted_event_identity is None
     assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
     )[-len(representation["recorded_occurrence_references"]):]
@@ -958,7 +977,7 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
 
     assert representation["emission_attempt_event_identity"] is not None
     assert representation["emission_attempt_locality_evidence_identity"] is not None
-    assert representation["emission_failure_event_identity"] is None
+    assert representation["boundary_failure_event_identity"] is None
     assert representation["emitted_event_identity"] is None
     assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()

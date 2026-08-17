@@ -267,9 +267,80 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
     assert output.getvalue() == source.exact_material
 
 
+def test_accepted_emission_is_durable_before_a_later_flush_failure(tmp_path):
+    from io import BytesIO
+
+    from seed_runtime.material_ingest import ingest_material
+    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_representation import (
+        emit_operator_representation_material,
+        record_operator_representation,
+    )
+    from tests.representation_admission import admit_representation
+
+    path = tmp_path / "accepted-before-flush.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    source = ingest_material(
+        ledger,
+        locality_identity="s1",
+        exact_bytes=b"accepted",
+        source_role="fixture material",
+        source_boundary="fixture boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s1",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="s1"
+        ),
+        source_occurrence_reference=source.identity,
+    )
+    seen: list[int] = []
+
+    class _FailedFlush(BytesIO):
+        def flush(self) -> None:
+            reader = sqlite3.connect(str(path))
+            seen.append(
+                reader.execute(
+                    "SELECT COUNT(*) FROM events WHERE kind = ?",
+                    ("operator.representation.emitted",),
+                ).fetchone()[0]
+            )
+            reader.close()
+            raise OSError("flush failed")
+
+    output = _FailedFlush()
+    admission, applicability, standing, boundary = admit_representation(
+        ledger, representation, output_stream=output
+    )
+    with pytest.raises(OSError, match="flush failed"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
+        )
+
+    emitted_identity = representation["emitted_event_identity"]
+    boundary_failure_identity = representation["boundary_failure_event_identity"]
+    assert seen == [1]
+    assert output.getvalue() == b"accepted"
+    del ledger
+    reopened = SQLiteEventLedger(str(path))
+    assert reopened.get(emitted_identity).material["boundary_result"] == {
+        "accepted_count": 8
+    }
+    assert reopened.get(boundary_failure_identity).material[
+        "emitted_event_identity"
+    ] == emitted_identity
+
+
 FIDELITY_SUBJECTS = {
     "exact_emission_boundary": (
         test_the_exact_material_attempt_is_durable_before_raw_egress,
+        test_accepted_emission_is_durable_before_a_later_flush_failure,
     ),
     "durable_ledger_boundary": (
         test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact,
