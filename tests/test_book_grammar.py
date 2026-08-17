@@ -365,9 +365,18 @@ def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
 
 
 def _crossing_is_complete(required_coordinates, crossing):
-    return all(
-        crossing[coordinate] != "unestablished"
+    identities = tuple(
+        coordinate["identity"] if type(coordinate) is dict else coordinate
         for coordinate in required_coordinates
+    )
+    return all(
+        (
+            crossing[coordinate]["occurrence"]
+            if type(crossing[coordinate]) is dict
+            else crossing[coordinate]
+        )
+        != "unestablished"
+        for coordinate in identities
     )
 
 
@@ -382,15 +391,24 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
         "responsible_boundary",
         "responsibility_assignment",
         "Act_Evidence",
-        "Evidence_of_Yield_relation",
+        {
+            "identity": "Evidence_of_Yield_relation",
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": "Yield_relation",
+        },
         "result_occurrence",
         "Standing",
         "downstream_Act",
     ]
     complete_subjects = set()
     incomplete_subjects = set()
+    required_identities = tuple(
+        coordinate["identity"] if type(coordinate) is dict else coordinate
+        for coordinate in required
+    )
     for crossing in completeness["required_crossings"]:
-        assert tuple(crossing) == ("subject", *required)
+        assert tuple(crossing) == ("subject", *required_identities)
         assert crossing["grammar"] == "established"
         assert crossing["grammar_reference"] in grammar["clauses"]
         target = (
@@ -426,7 +444,12 @@ def test_generic_admission_grammar_precedes_each_concrete_lifecycle():
     assert admission["responsibility_assignment"] == "this_Book"
     assert admission["downstream_Act"] == "Representation_emission_Act"
     assert admission["Act_Evidence"] == "unestablished"
-    assert admission["Evidence_of_Yield_relation"] == "unestablished"
+    assert admission["Evidence_of_Yield_relation"] == {
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation",
+        "occurrence": "unestablished",
+    }
     assert admission["result_occurrence"] == "unestablished"
     assert admission["Standing"] == "unestablished"
 
@@ -438,9 +461,12 @@ def test_generic_admission_grammar_precedes_each_concrete_lifecycle():
     )
     assert concrete["responsible_boundary"] == "this_Seed"
     assert concrete["Act_Evidence"] == "Admission_Act_Evidence"
-    assert concrete["Evidence_of_Yield_relation"] == (
-        "Admission_Evidence_of_Yield_relation"
-    )
+    assert concrete["Evidence_of_Yield_relation"] == {
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation",
+        "occurrence": "Admission_Evidence_of_Yield_relation",
+    }
     assert concrete["result_occurrence"] == "Admission_result_occurrence"
     assert concrete["Standing"] == "Admission_Standing"
 

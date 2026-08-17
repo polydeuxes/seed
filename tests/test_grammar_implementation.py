@@ -200,6 +200,13 @@ def _clause(clause_identity: str) -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][clause_identity]
 
 
+def _coordinate_identities(coordinates: list[object]) -> tuple[str, ...]:
+    return tuple(
+        coordinate["identity"] if type(coordinate) is dict else coordinate
+        for coordinate in coordinates
+    )
+
+
 def _witness_grammar() -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["witness"]
 
@@ -228,32 +235,54 @@ def test_every_grammar_representation_composite_preserves_material_order():
     }
 
     ordered: dict[frozenset[tuple[str, int]], set[tuple[str, ...]]] = {}
-    relations_of: list[tuple[str, str]] = []
+    structured_relations: list[dict] = []
 
-    def visit(value):
+    def carries_relation(value, expected):
         if isinstance(value, dict):
+            if value.get("relation") == expected:
+                assert value.get("first_subject")
+                assert value.get("second_subject")
+                return True
+            return any(carries_relation(nested, expected) for nested in value.values())
+        if isinstance(value, list):
+            return any(carries_relation(nested, expected) for nested in value)
+        return False
+
+    def visit(value, parent=None):
+        if isinstance(value, dict):
+            if "relation" in value:
+                assert value.get("first_subject")
+                assert value.get("second_subject")
+                structured_relations.append(value)
             for key, carried in value.items():
-                visit(key)
-                visit(carried)
+                if "_of_" in key:
+                    assert carries_relation(
+                        carried,
+                        "through" if "_as_of_" in key else "of",
+                    )
+                visit(carried, value)
         elif isinstance(value, list):
             for carried in value:
-                visit(carried)
+                visit(carried, value)
         elif isinstance(value, str):
             words = tuple(re.findall(r"[A-Za-z]+", value.lower()))
             if len(words) > 1:
                 material = frozenset(Counter(words).items())
                 ordered.setdefault(material, set()).add(words)
-            if "_of_" in value and "_as_of_" not in value:
-                first_subject, second_subject = value.split("_of_", 1)
-                relations_of.append((first_subject, second_subject))
+            if "_of_" in value:
+                assert parent is not None
+                assert carries_relation(
+                    parent,
+                    "through" if "_as_of_" in value else "of",
+                )
 
     visit(grammar)
     reordered = {
         words: orders for words, orders in ordered.items() if len(orders) > 1
     }
     assert reordered == {}
-    assert relations_of
-    assert all(first and second for first, second in relations_of)
+    assert structured_relations
+    assert any(relation["relation"] == "of" for relation in structured_relations)
     serialized = GRAMMAR.read_text(encoding="utf-8")
     assert '"Evidence_occurrence"' not in serialized
     assert '"occurrence_Evidence"' not in serialized
@@ -2262,9 +2291,24 @@ def _relation_witness_specs() -> dict[str, dict]:
             "requires": requirements,
         },
         "carried_by": {
-            "from": "Evidence_of_Yield_relation",
-            "to": "recording_occurrence_of_result",
-            "coordinate": "evidence_of_yield_relation_identity",
+            "from": {
+                "identity": "Evidence_of_Yield_relation",
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation",
+            },
+            "to": {
+                "identity": "recording_occurrence_of_result",
+                "first_subject": "recording_occurrence",
+                "relation": "of",
+                "second_subject": "result",
+            },
+            "coordinate": {
+                "identity": "evidence_of_yield_relation_identity",
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation",
+            },
             "occurrence_coordinate": "recorded_result_event_identity",
             "requires": requirements,
         },
@@ -4440,7 +4484,9 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
     bundle = _byte_measurement_witness()
     witness = _act_occurrence_witness(bundle)
 
-    assert set(witness) == set(clause["responsibility"]["coordinates"])
+    assert set(witness) == set(
+        _coordinate_identities(clause["responsibility"]["coordinates"])
+    )
     assert set(witness.values()) == {EXACT}
     assert bundle["event"].material["downstream_act_identity"] != bundle["event"].material[
         "act_occurrence_identity"
@@ -4454,7 +4500,9 @@ def test_representation_source_clause_is_checked_against_one_live_result():
     witness = _representation_source_witness(bundle)
     distinctions = _representation_source_distinctions(bundle)
 
-    assert set(witness) == set(clause["responsibility"]["coordinates"])
+    assert set(witness) == set(
+        _coordinate_identities(clause["responsibility"]["coordinates"])
+    )
     assert set(witness.values()) == {EXACT}
     assert list(distinctions) == [
         tuple(distinction) for distinction in clause["distinct_from"]
@@ -4464,14 +4512,18 @@ def test_representation_source_clause_is_checked_against_one_live_result():
 
 def test_exact_source_material_rule_is_checked_against_one_live_representation():
     clause = _clause("01.Source.A")
-    bundle = _sourced_representation_witness()
-    event = bundle["event"]
+    witness = _sourced_representation_witness()
+    event = witness["event"]
     rule = clause["exact_material_representation_rule"]
 
     assert rule == {
-        "subject": "Representation_exact_material",
+        "first_subject": "Representation_exact_material",
         "relation": "preserves",
-        "second_subject": "exact_material_of_source_result",
+        "second_subject": {
+            "first_subject": "exact_material",
+            "relation": "of",
+            "second_subject": "source_result",
+        },
         "preserves": "source_result_occurrence",
         "does_not_establish": [
             "what_material_represents",
@@ -4481,7 +4533,7 @@ def test_exact_source_material_rule_is_checked_against_one_live_representation()
     assert event.material["representation_rule"] == (
         EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
     )
-    assert event.exact_material == bundle["source"].exact_material
+    assert event.exact_material == witness["source"].exact_material
 
 
 def test_exact_material_admission_establishes_one_rule_relation():
@@ -4489,7 +4541,16 @@ def test_exact_material_admission_establishes_one_rule_relation():
     material = _representation_admission_yield_witness()["event"].material
 
     assert clause["rule_relation"] == {
-        "first_subject": "Representation_rule_preserve_exact_material_of_source_result",
+        "first_subject": {
+            "identity": "Representation_rule_preserve_exact_material_of_source_result",
+            "first_subject": "Representation_rule",
+            "relation": "preserve",
+            "second_subject": {
+                "first_subject": "exact_material",
+                "relation": "of",
+                "second_subject": "source_result",
+            },
+        },
         "relation": "applicable_to",
         "second_subject": "destination_boundary_rule_write_exact_material",
         "preserves": [
@@ -4887,12 +4948,16 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
     declared = _clause("01.Source.D")["declared_measurements"][
         "measurement_of_recurrent_byte_pair_occurrence_position"
     ]
-    bundle = _pair_occurrence_yield_witness()
-    material = bundle["event"].material
+    result_witness = _pair_occurrence_yield_witness()
+    material = result_witness["event"].material
 
     assert declared == {
         "measurement": {
-            "subject": "occurrence_of_recurrent_byte_pair",
+            "subject": {
+                "first_subject": "occurrence",
+                "relation": "of",
+                "second_subject": "recurrent_byte_pair",
+            },
             "finding": "position",
         },
         "witness": {
@@ -4923,9 +4988,19 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
                 "to": "result",
             },
             "evidence_carried_by_result_occurrence_relation": {
-                "first_subject": "Evidence_of_Yield_relation",
+                "first_subject": {
+                    "identity": "Evidence_of_Yield_relation",
+                    "first_subject": "Evidence",
+                    "relation": "of",
+                    "second_subject": "Yield_relation",
+                },
                 "relation": "carried_by",
-                "second_subject": "recording_occurrence_of_result",
+                "second_subject": {
+                    "identity": "recording_occurrence_of_result",
+                    "first_subject": "recording_occurrence",
+                    "relation": "of",
+                    "second_subject": "result",
+                },
             },
             "input_references": [
                 "pair_assertion_reference",
@@ -4937,11 +5012,25 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
                 "known_loss",
             ],
             "determination": "measurement_rule",
-            "recurrent_subject": (
-                "recurrence_Assertion_carried_by_Evidence_of_Yield_relation"
-            ),
+            "recurrent_subject": {
+                "first_subject": "recurrence_Assertion",
+                "relation": "carried_by",
+                "second_subject": {
+                    "first_subject": "Evidence",
+                    "relation": "of",
+                    "second_subject": "Yield_relation",
+                },
+            },
         },
-        "input_subject": "recurrence_Assertion_carried_by_Evidence_of_Yield_relation",
+        "input_subject": {
+            "first_subject": "recurrence_Assertion",
+            "relation": "carried_by",
+            "second_subject": {
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation",
+            },
+        },
         "input_material": "later_exact_Ingest_result",
         "findings": ["first_position", "second_position"],
         "order_and_position_difference_read_from": [
@@ -4968,11 +5057,15 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         == {"first_position", "second_position", "completeness_boundary"}
         for assertion in material["assertions"]
     )
-    witness = declared["witness"]
-    assert set(witness["input_references"]) <= set(material)
-    assert set(witness["result_coordinates"]) <= set(material)
-    assert witness["determination"] in material
-    evidence_occurrence = witness["event_occurrences"][0]
+    grammar_witness = declared["witness"]
+    assert set(grammar_witness["input_references"]) <= set(material)
+    result_coordinate_identities = {
+        coordinate["identity"] if type(coordinate) is dict else coordinate
+        for coordinate in grammar_witness["result_coordinates"]
+    }
+    assert result_coordinate_identities <= set(material)
+    assert grammar_witness["determination"] in material
+    evidence_occurrence = grammar_witness["event_occurrences"][0]
     evidence_occurrence_name = "_".join(
         (
             evidence_occurrence["first_subject"],
@@ -4981,8 +5074,8 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             evidence_occurrence["recording"],
         )
     ).lower()
-    assert bundle["act_evidence"].kind.endswith(evidence_occurrence_name)
-    evidence_of_yield_relation = witness["event_occurrences"][1]
+    assert result_witness["act_evidence"].kind.endswith(evidence_occurrence_name)
+    evidence_of_yield_relation = grammar_witness["event_occurrences"][1]
     evidence_of_yield_relation_name = "_".join(
         (
             evidence_of_yield_relation["first_subject"],
@@ -4991,10 +5084,10 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             evidence_of_yield_relation["recording"],
         )
     ).lower()
-    assert bundle["evidence_of_yield_relation"].kind.endswith(
+    assert result_witness["evidence_of_yield_relation"].kind.endswith(
         evidence_of_yield_relation_name
     )
-    yield_relation = witness["yield_relation"]
+    yield_relation = grammar_witness["yield_relation"]
     assert yield_relation == {
         "first_subject": "result",
         "relation": "of",
@@ -5002,7 +5095,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         "from": "Act_occurrence",
         "to": "result",
     }
-    recording_occurrence_of_result = witness["event_occurrences"][2]
+    recording_occurrence_of_result = grammar_witness["event_occurrences"][2]
     recording_occurrence_of_result_name = "_".join(
         (
             recording_occurrence_of_result["first_subject"],
@@ -5010,13 +5103,23 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             recording_occurrence_of_result["second_subject"],
         )
     ).lower()
-    assert bundle["event"].kind.endswith(recording_occurrence_of_result_name)
-    assert witness["evidence_carried_by_result_occurrence_relation"] == {
-        "first_subject": "Evidence_of_Yield_relation",
+    assert result_witness["event"].kind.endswith(recording_occurrence_of_result_name)
+    assert grammar_witness["evidence_carried_by_result_occurrence_relation"] == {
+        "first_subject": {
+            "identity": "Evidence_of_Yield_relation",
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": "Yield_relation",
+        },
         "relation": "carried_by",
-        "second_subject": "recording_occurrence_of_result",
+        "second_subject": {
+            "identity": "recording_occurrence_of_result",
+            "first_subject": "recording_occurrence",
+            "relation": "of",
+            "second_subject": "result",
+        },
     }
-    assert material["evidence_of_yield_relation_identity"] == bundle[
+    assert material["evidence_of_yield_relation_identity"] == result_witness[
         "evidence_of_yield_relation"
     ].identity
     assert not {

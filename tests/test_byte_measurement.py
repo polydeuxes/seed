@@ -1201,6 +1201,7 @@ FIDELITY_SUBJECTS = {
         test_yield_refuses_a_different_occurrence_kind,
     ),
     "declared_measurement_result": (
+        test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_ingest_once_and_reads_independently,
@@ -1224,6 +1225,7 @@ FIDELITY_SUBJECTS = {
         test_pair_validation_does_not_perform_the_pair_measurement_again,
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
+        test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors,
         test_byte_result_reader_refuses_changed_yield_result_identity,
         test_pair_result_reader_refuses_changed_yield_result_identity,
     ),

@@ -673,6 +673,7 @@ FIDELITY_SUBJECTS = {
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,
         test_one_result_read_validates_each_pair_measurement_once,
+        test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
         test_later_result_read_revalidates_changed_pair_measurement_evidence,
         test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
         test_preexisting_material_is_a_premise_for_later_operator_turns,

@@ -47,7 +47,12 @@
       "responsible_boundary",
       "responsibility_assignment",
       "Act_Evidence",
-      "Evidence_of_Yield_relation",
+      {
+        "identity": "Evidence_of_Yield_relation",
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation"
+      },
       "result_occurrence",
       "Standing",
       "downstream_Act"
@@ -60,7 +65,12 @@
         "responsible_boundary": "this_Seed",
         "responsibility_assignment": "this_Book",
         "Act_Evidence": "candidate_Act_Evidence",
-        "Evidence_of_Yield_relation": "candidate_Evidence_of_Yield_relation",
+        "Evidence_of_Yield_relation": {
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": "Yield_relation",
+          "occurrence": "candidate_Evidence_of_Yield_relation"
+        },
         "result_occurrence": "candidate_result_occurrence",
         "Standing": "candidate_Standing",
         "downstream_Act": "Representation_emission_Act"
@@ -72,7 +82,12 @@
         "responsible_boundary": "Representation_emission_Responsibility",
         "responsibility_assignment": "this_Book",
         "Act_Evidence": "unestablished",
-        "Evidence_of_Yield_relation": "unestablished",
+        "Evidence_of_Yield_relation": {
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": "Yield_relation",
+          "occurrence": "unestablished"
+        },
         "result_occurrence": "unestablished",
         "Standing": "unestablished",
         "downstream_Act": "Representation_emission_Act"
@@ -84,7 +99,12 @@
         "responsible_boundary": "this_Seed",
         "responsibility_assignment": "this_Book",
         "Act_Evidence": "Admission_Act_Evidence",
-        "Evidence_of_Yield_relation": "Admission_Evidence_of_Yield_relation",
+        "Evidence_of_Yield_relation": {
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": "Yield_relation",
+          "occurrence": "Admission_Evidence_of_Yield_relation"
+        },
         "result_occurrence": "Admission_result_occurrence",
         "Standing": "Admission_Standing",
         "downstream_Act": "Representation_emission_Act"
@@ -96,7 +116,12 @@
         "responsible_boundary": "this_Seed",
         "responsibility_assignment": "Representation_emission_Responsibility",
         "Act_Evidence": "Applicability_Act_Evidence",
-        "Evidence_of_Yield_relation": "Applicability_Evidence_of_Yield_relation",
+        "Evidence_of_Yield_relation": {
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": "Yield_relation",
+          "occurrence": "Applicability_Evidence_of_Yield_relation"
+        },
         "result_occurrence": "Applicability_result_occurrence",
         "Standing": "applicable_input_Standing",
         "downstream_Act": "Representation_emission_Act"
@@ -154,9 +179,24 @@
     },
     "carried_by": {
       "book_clause": "02.Acts.A",
-      "from": "Evidence_of_Yield_relation",
-      "to": "recording_occurrence_of_result",
-      "coordinate": "evidence_of_yield_relation_identity",
+      "from": {
+        "identity": "Evidence_of_Yield_relation",
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation"
+      },
+      "to": {
+        "identity": "recording_occurrence_of_result",
+        "first_subject": "recording_occurrence",
+        "relation": "of",
+        "second_subject": "result"
+      },
+      "coordinate": {
+        "identity": "evidence_of_yield_relation_identity",
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation"
+      },
       "occurrence_coordinate": "recorded_result_event_identity",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     },
@@ -265,7 +305,12 @@
           "responsibility",
           "representation_rule",
           "source_occurrence_reference",
-          "locality_standing_as_of_event_identity",
+          {
+            "identity": "locality_standing_as_of_event_identity",
+            "first_subject": "Locality_Standing",
+            "relation": "through",
+            "second_subject": "event_occurrence_identity"
+          },
           "source_provenance",
           "scope_locality",
           "authority",
@@ -275,9 +320,13 @@
         ]
       },
       "exact_material_representation_rule": {
-        "subject": "Representation_exact_material",
+        "first_subject": "Representation_exact_material",
         "relation": "preserves",
-        "second_subject": "exact_material_of_source_result",
+        "second_subject": {
+          "first_subject": "exact_material",
+          "relation": "of",
+          "second_subject": "source_result"
+        },
         "preserves": "source_result_occurrence",
         "does_not_establish": [
           "what_material_represents",
@@ -376,7 +425,12 @@
         {"subject": "exact_act_occurrence_relation"},
         {"subject": "measurement_result_exact_act_clause_distinction"},
         {"subject": "measurement_result_act_evidence_clause_distinction"},
-        {"subject": "evidence_of_yield_relation_boundary"},
+        {
+          "subject": "evidence_of_yield_relation_boundary",
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": "Yield_relation"
+        },
         {"subject": "yield_relation_required_coordinates"},
         {"subject": "yield_endpoint_relation_distinction"},
         {"subject": "yield_relation_result_identity"},
@@ -447,7 +501,12 @@
         {"subject": "locality_relation_coordinates"},
         {"subject": "locality_relation_distinctions"},
         {"subject": "locality_endpoint_relation_distinction"},
-        {"subject": "Responsibility_assignment_of_operator_invocation_Locality_relation"},
+        {
+          "subject": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+          "first_subject": "Responsibility_assignment",
+          "relation": "of",
+          "second_subject": "operator_invocation_Locality_relation"
+        },
         {"subject": "emission_attempt_locality_relation"},
         {"subject": "successful_emission_locality_relation"},
         {"subject": "composite_material_order"},
@@ -657,7 +716,11 @@
       "declared_measurements": {
         "measurement_of_recurrent_byte_pair_occurrence_position": {
           "measurement": {
-            "subject": "occurrence_of_recurrent_byte_pair",
+            "subject": {
+              "first_subject": "occurrence",
+              "relation": "of",
+              "second_subject": "recurrent_byte_pair"
+            },
             "finding": "position"
           },
           "witness": {
@@ -688,9 +751,19 @@
               "to": "result"
             },
             "evidence_carried_by_result_occurrence_relation": {
-              "first_subject": "Evidence_of_Yield_relation",
+              "first_subject": {
+                "identity": "Evidence_of_Yield_relation",
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation"
+              },
               "relation": "carried_by",
-              "second_subject": "recording_occurrence_of_result"
+              "second_subject": {
+                "identity": "recording_occurrence_of_result",
+                "first_subject": "recording_occurrence",
+                "relation": "of",
+                "second_subject": "result"
+              }
             },
             "input_references": [
               "pair_assertion_reference",
@@ -702,9 +775,25 @@
               "known_loss"
             ],
             "determination": "measurement_rule",
-            "recurrent_subject": "recurrence_Assertion_carried_by_Evidence_of_Yield_relation"
+            "recurrent_subject": {
+              "first_subject": "recurrence_Assertion",
+              "relation": "carried_by",
+              "second_subject": {
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation"
+              }
+            }
           },
-          "input_subject": "recurrence_Assertion_carried_by_Evidence_of_Yield_relation",
+          "input_subject": {
+            "first_subject": "recurrence_Assertion",
+            "relation": "carried_by",
+            "second_subject": {
+              "first_subject": "Evidence",
+              "relation": "of",
+              "second_subject": "Yield_relation"
+            }
+          },
           "input_material": "later_exact_Ingest_result",
           "findings": ["first_position", "second_position"],
           "order_and_position_difference_read_from": [
@@ -725,7 +814,11 @@
         },
         "measurement_of_shared_position_of_recurrent_byte_pair_occurrences": {
           "measurement": {
-            "subject": "shared_position_of_exact_recorded_pair_occurrence_relations",
+            "subject": {
+              "first_subject": "shared_position",
+              "relation": "of",
+              "second_subject": "exact_recorded_pair_occurrence_relations"
+            },
             "finding": "ordered_relation_path"
           },
           "witness": {
@@ -757,7 +850,12 @@
               "each_exact_input_Assertion_reference",
               "shared_position",
               "Applicability_result_occurrence",
-              "Evidence_of_Yield_relation",
+              {
+                "identity": "Evidence_of_Yield_relation",
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation"
+              },
               "Scope",
               "Authority",
               "limits",
@@ -897,7 +995,12 @@
           "current_Locality_Standing_boundary",
           "Locality",
           "Scope",
-          "occurrence_of_Evidence_event",
+          {
+            "identity": "occurrence_of_Evidence_event",
+            "first_subject": "occurrence",
+            "relation": "of",
+            "second_subject": "Evidence_event"
+          },
           "Authority",
           "limits",
           "Unknown",
@@ -1099,7 +1202,20 @@
       "responsibility": {
         "responsible_boundary": "this_Seed",
         "assignment": "this_Book",
-        "exact_Act": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+        "exact_Act": {
+          "identity": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+          "Act": "determine",
+          "subject": {
+            "first_subject": "Admission",
+            "relation": "of",
+            "second_subject": "exact_Representation_candidate"
+          },
+          "destination": {
+            "first_subject": "exact_Representation_candidate",
+            "relation": "to",
+            "second_subject": "exact_material_operator_Locality"
+          }
+        },
         "result": "Admission_Standing"
       },
       "preserves": [
@@ -1145,7 +1261,20 @@
       "Admission_occurrence": {
         "responsible_boundary": "this_Seed",
         "assignment": "this_Book",
-        "exact_Act": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+        "exact_Act": {
+          "identity": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+          "Act": "determine",
+          "subject": {
+            "first_subject": "Admission",
+            "relation": "of",
+            "second_subject": "exact_Representation_candidate"
+          },
+          "destination": {
+            "first_subject": "exact_Representation_candidate",
+            "relation": "to",
+            "second_subject": "exact_material_operator_Locality"
+          }
+        },
         "requires": "candidate_Standing",
         "preserves": [
           "candidate_result_occurrence",
@@ -1159,7 +1288,16 @@
           "limits"
         ],
         "rule_relation": {
-          "first_subject": "Representation_rule_preserve_exact_material_of_source_result",
+          "first_subject": {
+            "identity": "Representation_rule_preserve_exact_material_of_source_result",
+            "first_subject": "Representation_rule",
+            "relation": "preserve",
+            "second_subject": {
+              "first_subject": "exact_material",
+              "relation": "of",
+              "second_subject": "source_result"
+            }
+          },
           "relation": "applicable_to",
           "second_subject": "destination_boundary_rule_write_exact_material",
           "preserves": [
@@ -1297,7 +1435,11 @@
       ],
       "families_are": [
         "broad_constitutional_distinctions",
-        "bounded_compressions_of_neighboring_coordinates"
+        {
+          "first_subject": "bounded_compressions",
+          "relation": "of",
+          "second_subject": "neighboring_coordinates"
+        }
       ],
       "families_are_not": [
         "mandatory_fields",
@@ -1341,7 +1483,24 @@
       "identity": ["exact_Act", "Act_occurrence"],
       "witness_relations": [
         "the_exact_Act_occurred_at_the_boundary",
-        "perform_exact_Act_and_carry_its_result_until_Evidence_of_Yield",
+        {
+          "first_subject": "exact_Act",
+          "relation": "perform",
+          "second_subject": "Act_occurrence",
+          "result_relation": {
+            "first_subject": {
+              "first_subject": "result",
+              "relation": "of",
+              "second_subject": "Act_occurrence"
+            },
+            "relation": "carried_until",
+            "second_subject": {
+              "first_subject": "Evidence",
+              "relation": "of",
+              "second_subject": "Yield_relation"
+            }
+          }
+        },
         "result_remains_distinct",
         "emission_attempt_recorded_before_output",
         "emit_accepted_exact_Representation_result",
@@ -1352,10 +1511,15 @@
         "effects_beyond_output_boundary_remain_Unknown"
       ],
       "occurrence_coordinates": ["timestamp"],
-      "evidence_of_yield_relation_coordinates": [
-        "result_kind",
-        "live_boundary"
-      ],
+      "Evidence_of_Yield_relation": {
+        "first_subject": "Evidence",
+        "relation": "of",
+        "second_subject": "Yield_relation",
+        "coordinates": [
+          "result_kind",
+          "live_boundary"
+        ]
+      },
       "responsibility": {
         "coordinates": [
           "Responsibility",
@@ -1363,7 +1527,12 @@
           "responsible_boundary",
           "exact_Act",
           "Act_occurrence",
-          "Evidence_of_Act_occurrence",
+          {
+            "identity": "Evidence_of_Act_occurrence",
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": "Act_occurrence"
+          },
           "Authority",
           "Scope",
           "limits"
@@ -1423,7 +1592,11 @@
       ]
     },
     "04.Compare.A": {
-      "subject": "bounded_comparison_of_recorded_pair_Measurement_findings",
+      "subject": {
+        "first_subject": "bounded_comparison",
+        "relation": "of",
+        "second_subject": "recorded_pair_Measurement_findings"
+      },
       "book_material_reference": "04.Compare.A",
       "grammar": "established",
       "recorded_occurrence_kind": ["event_occurrence"],
@@ -1439,9 +1612,21 @@
           "later_source_occurrence_references_carry_earlier_references_and_one_added_reference",
           "one_added_occurrence",
           "one_exact_input_relation",
-          "Applicability_of_each_input_to_Compare",
-          "Participation_relation_of_each_input_in_Compare",
-          "Evidence_of_Yield_relation"
+          {
+            "first_subject": "Applicability",
+            "relation": "of",
+            "second_subject": "each_input_to_Compare"
+          },
+          {
+            "first_subject": "Participation_relation",
+            "relation": "of",
+            "second_subject": "each_input_in_Compare"
+          },
+          {
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": "Yield_relation"
+          }
         ],
         "input_relation": [
           "supplied_occurrence_with_provenance_to_prior_source_occurrence",
@@ -1454,8 +1639,16 @@
         "results": [
           "equal_finding",
           "conflicting_finding",
-          "finding_of_earlier_result",
-          "finding_of_later_result",
+          {
+            "first_subject": "finding",
+            "relation": "of",
+            "second_subject": "earlier_result"
+          },
+          {
+            "first_subject": "finding",
+            "relation": "of",
+            "second_subject": "later_result"
+          },
           "Unknown_finding"
         ]
       },
@@ -1490,7 +1683,11 @@
       ]
     },
     "05.Recording.A": {
-      "subject": "retrievable_record_of_Assertion",
+      "subject": {
+        "first_subject": "retrievable_record",
+        "relation": "of",
+        "second_subject": "Assertion"
+      },
       "book_material_reference": "05.Recording.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
@@ -1516,10 +1713,18 @@
         "recorded_material_admitted_to_exact_diagnostic_Act",
         "separate_responsible_occurrence_for_additional_Standing"
       ],
-      "preserves": "scoped_subject_of_recording",
+      "preserves": {
+        "first_subject": "scoped_subject",
+        "relation": "of",
+        "second_subject": "recording"
+      },
       "result": "bounded_availability",
       "does_not_establish": [
-        "mutation_of_another_Assertion_Standing",
+        {
+          "first_subject": "mutation",
+          "relation": "of",
+          "second_subject": "another_Assertion_Standing"
+        },
         "Standing_beyond_diagnostic_Scope"
       ]
     },
@@ -1559,7 +1764,12 @@
           "addressed_Representation_occurrence",
           "exact_Standing_boundary",
           "Scope",
-          "occurrence_of_Evidence_event",
+          {
+            "identity": "occurrence_of_Evidence_event",
+            "first_subject": "occurrence",
+            "relation": "of",
+            "second_subject": "Evidence_event"
+          },
           "Authority",
           "limits",
           "Unknown",
@@ -1668,7 +1878,12 @@
           "source_Standing_boundary",
           "addressed_Representation_occurrence",
           "destination_Locality",
-          "occurrence_of_Evidence_event",
+          {
+            "identity": "occurrence_of_Evidence_event",
+            "first_subject": "occurrence",
+            "relation": "of",
+            "second_subject": "Evidence_event"
+          },
           "Authority",
           "Scope",
           "limits",
@@ -1681,7 +1896,12 @@
         "intact_addressed_Representation_occurrence",
         "exact_source_Standing_boundary",
         "new_destination_Locality",
-        "intact_occurrence_of_Evidence_event"
+        {
+          "identity": "intact_occurrence_of_Evidence_event",
+          "first_subject": "intact_occurrence",
+          "relation": "of",
+          "second_subject": "Evidence_event"
+        }
       ],
       "does_not_establish": [
         "continuation_Act",
@@ -1719,7 +1939,12 @@
           "Act_occurrence",
           "relation_occurrence",
           "destination_Locality",
-          "occurrence_of_Evidence_event",
+          {
+            "identity": "occurrence_of_Evidence_event",
+            "first_subject": "occurrence",
+            "relation": "of",
+            "second_subject": "Evidence_event"
+          },
           "Authority",
           "Scope",
           "limits",
@@ -1732,7 +1957,12 @@
         "exactly_one_carried_recorded_Standing_boundary_reference",
         "intact_recorded_result",
         "new_destination_Locality",
-        "intact_occurrence_of_Evidence_event"
+        {
+          "identity": "intact_occurrence_of_Evidence_event",
+          "first_subject": "intact_occurrence",
+          "relation": "of",
+          "second_subject": "Evidence_event"
+        }
       ],
       "preserves": [
         "recorded_result_reference",
@@ -1759,12 +1989,22 @@
       ]
     },
     "06.Locality.D": {
-      "subject": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+      "subject": {
+        "identity": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+        "first_subject": "Responsibility_assignment",
+        "relation": "of",
+        "second_subject": "operator_invocation_Locality_relation"
+      },
       "book_material_reference": "06.Locality.D",
       "grammar": "established",
       "recorded_occurrence_kind": ["event_occurrence"],
       "responsibility": {
-        "kind": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+        "kind": {
+          "identity": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+          "first_subject": "Responsibility_assignment",
+          "relation": "of",
+          "second_subject": "operator_invocation_Locality_relation"
+        },
         "coordinates": [
           "Responsibility_assignment_subject",
           "operator_material_occurrence",
@@ -1774,7 +2014,12 @@
           "exact_Act",
           "Act_occurrence",
           "relation_occurrence",
-          "occurrence_of_Evidence_event",
+          {
+            "identity": "occurrence_of_Evidence_event",
+            "first_subject": "occurrence",
+            "relation": "of",
+            "second_subject": "Evidence_event"
+          },
           "Authority",
           "Scope",
           "limits",
@@ -1787,7 +2032,12 @@
         "one_exact_operator_material_occurrence",
         "current_operator_Locality_Standing",
         "new_destination_Locality",
-        "intact_occurrence_of_Evidence_event"
+        {
+          "identity": "intact_occurrence_of_Evidence_event",
+          "first_subject": "intact_occurrence",
+          "relation": "of",
+          "second_subject": "Evidence_event"
+        }
       ],
       "Act_requires": "destination_Locality_Standing_carrying_exact_Responsibility_assignment",
       "preserves": [
@@ -1895,7 +2145,11 @@
       ],
       "requires": [
         "separately_preserved_competent_Authority",
-        "source_of_law_support",
+        {
+          "first_subject": "source",
+          "relation": "of",
+          "second_subject": "law_support"
+        },
         "procedural_posture",
         "Assertion",
         "lawful_stop"
