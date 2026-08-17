@@ -224,19 +224,49 @@ def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
         )
         for identity in recurrence_identities
     )
-    calls = 0
+    pair_result_reads = 0
+    source_reads = 0
+    order_reads = 0
+    boundary_reads = 0
     reader = pair_occurrence_measurement.assertions_of_recorded_byte_position_pair_measurement
+    source_reader = pair_occurrence_measurement._exact_ingest_event
+    order_reader = ledger.occurrences_in_append_order
+    boundary_reader = ledger.list_locality
 
-    def counted_reader(ledger, event_identity):
-        nonlocal calls
-        calls += 1
+    def observe_pair_result_read(ledger, event_identity):
+        nonlocal pair_result_reads
+        pair_result_reads += 1
         return reader(ledger, event_identity)
+
+    def observe_source_read(ledger, event_identity):
+        nonlocal source_reads
+        source_reads += 1
+        return source_reader(ledger, event_identity)
+
+    def observe_order_read(event_identities, *, locality_identity):
+        nonlocal order_reads
+        order_reads += 1
+        return order_reader(
+            event_identities, locality_identity=locality_identity
+        )
+
+    def observe_boundary_read(locality_identity, *, through=None):
+        nonlocal boundary_reads
+        boundary_reads += 1
+        return boundary_reader(locality_identity, through=through)
 
     monkeypatch.setattr(
         pair_occurrence_measurement,
         "assertions_of_recorded_byte_position_pair_measurement",
-        counted_reader,
+        observe_pair_result_read,
     )
+    monkeypatch.setattr(
+        pair_occurrence_measurement, "_exact_ingest_event", observe_source_read
+    )
+    monkeypatch.setattr(
+        ledger, "occurrences_in_append_order", observe_order_read
+    )
+    monkeypatch.setattr(ledger, "list_locality", observe_boundary_read)
     measured = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
@@ -247,7 +277,10 @@ def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
     )
 
     assert measured == expected
-    assert calls == 1
+    assert pair_result_reads == 1
+    assert source_reads == 1
+    assert order_reads == 1
+    assert boundary_reads == 1
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
         for finding in measured

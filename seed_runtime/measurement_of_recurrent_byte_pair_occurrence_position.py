@@ -357,19 +357,25 @@ def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
     return event
 
 
-def _measure_through(
+def _measurement_source_positions(
     ledger: EventLedger,
     *,
-    pair_reference: ReferenceToRecordedRecurrentBytePair,
+    pair_references: tuple[ReferenceToRecordedRecurrentBytePair, ...],
     source_ingest_occurrence_identity: str,
     boundary: EventLedgerBoundary,
-    occurrence_limit: int,
-) -> FindingOfRecurrentBytePairOccurrencePositions:
+) -> tuple[Event, tuple[tuple[int, ...], ...]]:
+    if not pair_references:
+        raise ValueError("pair occurrence Measurement requires one pair subject")
     source = _exact_ingest_event(ledger, source_ingest_occurrence_identity)
-    if source.locality_identity != pair_reference.locality_identity:
+    pair_measurement_identity = pair_references[0].recorded_occurrence_identity
+    if any(
+        reference.recorded_occurrence_identity != pair_measurement_identity
+        or reference.locality_identity != source.locality_identity
+        for reference in pair_references
+    ):
         raise ValueError("pair subject and measured source have distinct Localities")
     ledger.occurrences_in_append_order(
-        (pair_reference.recorded_occurrence_identity, source.identity),
+        (pair_measurement_identity, source.identity),
         locality_identity=source.locality_identity,
     )
     bounded_identities = {
@@ -380,18 +386,28 @@ def _measure_through(
         )
     }
     if (
-        pair_reference.recorded_occurrence_identity not in bounded_identities
+        pair_measurement_identity not in bounded_identities
         or source.identity not in bounded_identities
     ):
         raise ValueError("pair occurrence source falls outside its exact boundary")
     exact = ingested_material_bytes(source)
+    positions = [[] for _ in range(256)]
+    for position, value in enumerate(exact):
+        positions[value].append(position)
+    return source, tuple(tuple(found) for found in positions)
+
+
+def _finding_from_source_positions(
+    *,
+    pair_reference: ReferenceToRecordedRecurrentBytePair,
+    source: Event,
+    positions: tuple[tuple[int, ...], ...],
+    boundary: EventLedgerBoundary,
+    occurrence_limit: int,
+) -> FindingOfRecurrentBytePairOccurrencePositions:
     first_byte, second_byte = pair_reference.exact_material
-    first_positions = tuple(
-        position for position, value in enumerate(exact) if value == first_byte
-    )
-    second_positions = tuple(
-        position for position, value in enumerate(exact) if value == second_byte
-    )
+    first_positions = positions[first_byte]
+    second_positions = positions[second_byte]
     overlap = len(first_positions) if first_byte == second_byte else 0
     available = len(first_positions) * len(second_positions) - overlap
     found = []
@@ -415,6 +431,29 @@ def _measure_through(
     )
     _validate_finding(finding)
     return finding
+
+
+def _measure_through(
+    ledger: EventLedger,
+    *,
+    pair_reference: ReferenceToRecordedRecurrentBytePair,
+    source_ingest_occurrence_identity: str,
+    boundary: EventLedgerBoundary,
+    occurrence_limit: int,
+) -> FindingOfRecurrentBytePairOccurrencePositions:
+    source, positions = _measurement_source_positions(
+        ledger,
+        pair_references=(pair_reference,),
+        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        boundary=boundary,
+    )
+    return _finding_from_source_positions(
+        pair_reference=pair_reference,
+        source=source,
+        positions=positions,
+        boundary=boundary,
+        occurrence_limit=occurrence_limit,
+    )
 
 
 def measure_positions_of_recurrent_byte_pair_occurrences(
@@ -464,11 +503,17 @@ def measure_positions_for_recurrent_byte_pair_assertions(
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
         recurrence_assertion_identities=recurrence_assertion_identities,
     )
+    source, positions = _measurement_source_positions(
+        ledger,
+        pair_references=references,
+        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        boundary=through,
+    )
     return tuple(
-        _measure_through(
-            ledger,
+        _finding_from_source_positions(
             pair_reference=reference,
-            source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+            source=source,
+            positions=positions,
             boundary=through,
             occurrence_limit=occurrence_limit,
         )
