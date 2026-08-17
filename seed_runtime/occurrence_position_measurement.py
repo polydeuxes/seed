@@ -224,9 +224,7 @@ def _assignment_material(
         "limits": [
             "assignment is bounded to this exact Locality and completeness boundary"
         ],
-        "unknown": [
-            "what any measured occurrence participates in or represents remains Unknown"
-        ],
+        "unknown": ["Participation and represented relation remain Unknown"],
     }
 
 
