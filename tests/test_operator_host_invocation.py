@@ -24,7 +24,6 @@ from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
 from seed_runtime.operator_system_locality import (
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
     record_operator_system_locality_responsibility_assignment,
     record_operator_system_locality_act_evidence,
@@ -98,6 +97,9 @@ def _operator_system_relation(ledger, command):
     act = record_operator_system_locality_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=assignment.locality_identity
+        ),
     )
     return record_operator_system_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
@@ -283,10 +285,7 @@ _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     ),
     (OCCURRENCE_POSITION_RECORDED_KIND, MATERIAL_INGEST_OCCURRED_KIND),
-    (
-        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        None,
-    ),
+    ("operator.representation.recorded", None),
 )
 
 

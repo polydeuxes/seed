@@ -874,6 +874,9 @@ def _operator_system_locality_yield_witness() -> dict:
     act = record_operator_system_locality_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=assignment.locality_identity
+        ),
     )
     event = record_operator_system_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity

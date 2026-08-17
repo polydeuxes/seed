@@ -1667,6 +1667,7 @@
         "new_destination_Locality",
         "intact_occurrence_of_Evidence_event"
       ],
+      "Act_requires": "destination_Locality_Standing_carrying_exact_Responsibility_assignment",
       "preserves": [
         "operator_material_occurrence",
         "source_Locality",

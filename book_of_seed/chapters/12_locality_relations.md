@@ -34,6 +34,8 @@ The assignment, exact Act, Act occurrence, Locality relation, Yield, and result 
 
 When one current operator Locality Standing carries one exact operator material occurrence beginning an invocation, active Book assigns this Seed a Responsibility bounded to establish one new Locality and one direct Locality relation from the operator Locality to it. The assignment preserves its own subject, the operator material occurrence, source Locality, new Locality, responsible boundary, exact Act, Act occurrence, relation occurrence, Evidence occurrence, Authority, Scope, limits, Unknown, and Standing.
 
+The assignment occurs in the new Locality. The exact Act may occur only when current Standing at that new Locality carries the exact assignment occurrence. Source Locality Standing warrants the assignment; ledger addressability does not carry it across the Locality boundary.
+
 The operator material occurrence carries operator Authority for that exact invocation only. The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. Material supplied by the invocation may occur in the new Locality with exact provenance to the operator material occurrence and relation result. The relation does not copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
 
 ## Important distinctions

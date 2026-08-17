@@ -166,12 +166,11 @@ def record_operator_system_locality_responsibility_assignment(
         raise OperatorSystemLocalityError(
             "invocation Locality assignment requires exact operator material Standing"
         )
-    for assignment in ledger.iter_locality_kind(
-        command.locality_identity,
-        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    ):
+    for assignment in ledger.list_events():
         if (
-            assignment.material.get("operator_material_occurrence_reference")
+            assignment.kind
+            == OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            and assignment.material.get("operator_material_occurrence_reference")
             == command.identity
         ):
             raise OperatorSystemLocalityError(
@@ -206,7 +205,7 @@ def record_operator_system_locality_responsibility_assignment(
             standing_boundary_identity=boundary_identity,
             **identities,
         ),
-        locality_identity=command.locality_identity,
+        locality_identity=identities["destination_locality_identity"],
     )
 
 
@@ -249,7 +248,7 @@ def get_operator_system_locality_responsibility_assignment(
         raise OperatorSystemLocalityError(
             "invocation Locality assignment identities are not exact"
         )
-    expected = _assignment_material(
+    exact_assignment_material = _assignment_material(
         command=command,
         standing_boundary_identity=material.get(
             "operator_standing_boundary_identity"
@@ -265,17 +264,18 @@ def get_operator_system_locality_responsibility_assignment(
     )
     boundary = ledger.get(material.get("operator_standing_boundary_identity"))
     if (
-        material != expected
-        or event.locality_identity != command.locality_identity
+        material != exact_assignment_material
+        or event.locality_identity
+        != material.get("destination_locality_identity")
         or boundary is None
         or boundary.locality_identity != command.locality_identity
         or ledger.integrity_of(boundary.identity) == CORRUPTED
     ):
         raise OperatorSystemLocalityError("invocation Locality assignment is not exact")
     ordered = (
-        (command.identity, event.identity)
+        (command.identity,)
         if command.identity == boundary.identity
-        else (command.identity, boundary.identity, event.identity)
+        else (command.identity, boundary.identity)
     )
     try:
         ledger.occurrences_in_append_order(
@@ -318,11 +318,30 @@ def _act_material(assignment: Event) -> dict[str, Any]:
 
 
 def record_operator_system_locality_act_evidence(
-    ledger: EventLedger, *, responsibility_assignment_event_identity: str
+    ledger: EventLedger,
+    *,
+    responsibility_assignment_event_identity: str,
+    responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
     assignment = get_operator_system_locality_responsibility_assignment(
         ledger, responsibility_assignment_event_identity
     )
+    carried = (
+        responsibility_assignment_standing.get(
+            "responsibility_assignment_occurrences"
+        )
+        if type(responsibility_assignment_standing) is dict
+        else None
+    )
+    if (
+        type(carried) is not dict
+        or carried.get(assignment.identity, object()) is not None
+        or responsibility_assignment_standing.get("locality_identity")
+        != assignment.locality_identity
+    ):
+        raise OperatorSystemLocalityError(
+            "invocation Locality Act requires its carried assignment"
+        )
     return ledger.append(
         OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
         _act_material(assignment),
@@ -354,6 +373,15 @@ def get_operator_system_locality_act_evidence(
         != assignment.material.get("destination_locality_identity")
     ):
         raise OperatorSystemLocalityError("invocation Locality Act Evidence is not exact")
+    try:
+        ledger.occurrences_in_append_order(
+            (assignment.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except ValueError as error:
+        raise OperatorSystemLocalityError(
+            "invocation Locality Act requires its prior assignment"
+        ) from error
     return event
 
 
@@ -502,14 +530,17 @@ def get_recorded_operator_system_locality(
         ledger, event.material.get("responsible_act_evidence_identity")
     )
     result = _result_material(act)
-    expected = _recorded_result_material(
+    exact_result_material = _recorded_result_material(
         result,
         responsible_act_evidence_identity=act.identity,
         evidence_of_yield_relation_identity=event.material.get(
             "evidence_of_yield_relation_identity"
         ),
     )
-    if event.locality_identity != act.locality_identity or event.material != expected:
+    if (
+        event.locality_identity != act.locality_identity
+        or event.material != exact_result_material
+    ):
         raise OperatorSystemLocalityError("invocation Locality result is not exact")
     requirements = read_requirements_of_yield_relation(
         ledger,

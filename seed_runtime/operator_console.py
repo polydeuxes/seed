@@ -449,12 +449,6 @@ def run_persistent_operator_console(
                         operator_locality_standing=locality_standing,
                     )
                 )
-                locality_standing = _advance_over(
-                    ledger,
-                    locality_standing,
-                    (relation_assignment.identity,),
-                    locality_identity=operator_locality_identity,
-                )
                 representation = record_operator_representation(
                     ledger,
                     locality_identity=operator_locality_identity,
@@ -474,6 +468,7 @@ def run_persistent_operator_console(
                     responsibility_assignment_event_identity=(
                         relation_assignment.identity
                     ),
+                    responsibility_assignment_standing=system_standing,
                 )
                 system_standing = _advance_over(
                     ledger,
