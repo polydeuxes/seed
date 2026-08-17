@@ -1186,7 +1186,7 @@
           "same_emission_Act_occurrence",
           "same_emission_result_boundary"
         ],
-        "other_Standings_require": "separately_evidenced_determination",
+        "other_Standings": "separate_evidenced_determination",
         "does_not_establish": [
           "Participation",
           "emission_result",
@@ -1263,7 +1263,7 @@
         "emitted_result",
         "reported_partial_result_and_error",
         "boundary_failure_after_exact_write_invocation",
-        "accepted_emission_precedes_later_flush",
+        "accepted_emission_before_later_boundary_failure",
         "effects_beyond_output_boundary_remain_Unknown"
       ],
       "occurrence_coordinates": ["timestamp"],
