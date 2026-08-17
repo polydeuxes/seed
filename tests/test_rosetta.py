@@ -66,7 +66,7 @@ def _assert_live_reference(reference: str) -> None:
     assert hasattr(module, symbol), reference
 
 
-def test_rosetta_follows_machine_grammar_relation_order():
+def test_rosetta_follows_witness_grammar_relation_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
 
@@ -161,7 +161,7 @@ FIDELITY_SUBJECTS = {
         test_rosetta_participant_decompresses_to_the_participation_relation,
     ),
     "rosetta_relation_order": (
-        test_rosetta_follows_machine_grammar_relation_order,
+        test_rosetta_follows_witness_grammar_relation_order,
         test_rosetta_reversed_relation_is_detected,
     ),
     "rosetta_function_reference_resolution": (

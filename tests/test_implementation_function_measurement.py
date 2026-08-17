@@ -218,7 +218,7 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
         measured._pytest_subject(crossed, first, declared)
     with pytest.raises(ValueError, match="entered Fidelity subjects twice"):
         measured._pytest_subject(repeated, first, declared)
-    with pytest.raises(ValueError, match="absent from machine grammar"):
+    with pytest.raises(ValueError, match="absent from witness grammar"):
         measured._pytest_subject(uncurated, first, declared)
     with pytest.raises(TypeError, match="exact Fidelity subject families"):
         measured._pytest_subject(list_family, first, declared)
@@ -241,7 +241,7 @@ def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
     valid = item("this_book_material_acquisition_witness")
     invalid = item("uncurated_subject_word")
 
-    with pytest.raises(ValueError, match="absent from machine grammar"):
+    with pytest.raises(ValueError, match="absent from witness grammar"):
         measured.pytest_collection_modifyitems(None, None, [valid, invalid])
 
     assert valid.stash == invalid.stash == {}

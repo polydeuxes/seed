@@ -12,7 +12,7 @@ It is not a roadmap, witness reference, generated topology, or substitute for re
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
 
-The machine grammar and Markdown chapters are distinct Representations of the
+The witness grammar and Markdown chapters are distinct Representations of the
 same clause coordinates. Neither Representation is the Book by identity.
 
 ## Standing

@@ -2590,7 +2590,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
         "grammar": "established",
-        "live_occurrence": "unestablished",
+        "recorded_occurrence_kind": [],
         "comparison": {
             "first_subject": "this_Witness",
             "relation": "comparison",
@@ -3475,7 +3475,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
         "subject": "candidate",
         "book_material_reference": "01.Source.E",
         "grammar": "established",
-        "live_occurrence": "unestablished",
+        "recorded_occurrence_kind": [],
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3502,7 +3502,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
         "subject": "supplied_material_as_input_to_exact_Act",
         "book_material_reference": "01.Source.B",
         "grammar": "established",
-        "live_occurrence": "unestablished",
+        "recorded_occurrence_kind": [],
         "coordinates": [
             "supplied_material",
             "input_role",
@@ -4059,7 +4059,7 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
     ] == "06.Locality.A"
 
 
-def test_assertion_movement_result_names_and_witnesses_its_machine_clause():
+def test_assertion_movement_result_names_and_witnesses_its_witness_clause():
     clause = _clause("03.Movement.A")
     bundle = _recorded_applicability()
     witness = _movement_coordinate_witness(bundle)
@@ -4118,7 +4118,7 @@ def test_assertion_movement_coordinates_refuse_crossing_or_loss():
         assert _movement_coordinate_witness(bundle)[coordinate] == MISSING
 
 
-def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
+def test_standing_locality_continuation_stages_keep_distinct_witness_clauses():
     assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
         STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "06.Locality.B"
@@ -4130,7 +4130,7 @@ def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
     ] == "06.Locality.A"
 
 
-def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
+def test_operator_material_acquire_stages_keep_distinct_witness_clauses():
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "01.Source.G"
@@ -4142,7 +4142,7 @@ def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
     ] == "01.Source.G"
 
 
-def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
+def test_standing_boundary_reference_stages_keep_distinct_witness_clauses():
     assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
         STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "05.Recording.D"
@@ -4154,7 +4154,7 @@ def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
     ] == "05.Recording.D"
 
 
-def test_recorded_boundary_locality_stages_keep_distinct_machine_clauses():
+def test_recorded_boundary_locality_stages_keep_distinct_witness_clauses():
     assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
         RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "06.Locality.C"
@@ -4985,13 +4985,13 @@ FIDELITY_SUBJECTS = {
         test_unjoined_endpoints_do_not_witness_an_input_to_act_relation,
     ),
     "one_exact_movement_assertion": (
-        test_assertion_movement_result_names_and_witnesses_its_machine_clause,
+        test_assertion_movement_result_names_and_witnesses_its_witness_clause,
     ),
     "movement_coordinate_distinction": (
         test_assertion_movement_coordinates_refuse_crossing_or_loss,
     ),
     "standing_boundary_reference_responsibility_clauses": (
-        test_standing_boundary_reference_stages_keep_distinct_machine_clauses,
+        test_standing_boundary_reference_stages_keep_distinct_witness_clauses,
     ),
     "locality_relation_coordinates": (
         test_locality_relation_clause_is_checked_against_the_live_pair_witness,
@@ -5015,13 +5015,13 @@ FIDELITY_SUBJECTS = {
         test_every_locality_evidence_kind_is_declared_once_and_registered,
     ),
     "standing_locality_continuation_responsibility_clauses": (
-        test_standing_locality_continuation_stages_keep_distinct_machine_clauses,
+        test_standing_locality_continuation_stages_keep_distinct_witness_clauses,
     ),
     "recorded_boundary_locality_responsibility_clauses": (
-        test_recorded_boundary_locality_stages_keep_distinct_machine_clauses,
+        test_recorded_boundary_locality_stages_keep_distinct_witness_clauses,
     ),
     "operator_material_acquisition_responsibility_clauses": (
-        test_operator_material_acquire_stages_keep_distinct_machine_clauses,
+        test_operator_material_acquire_stages_keep_distinct_witness_clauses,
     ),
     "authority_evidence_scope_distinction": (
         test_runtime_authority_does_not_carry_evidence_scope_prose,

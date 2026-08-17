@@ -1,8 +1,8 @@
-"""Reverse Fidelity sirens from the live witness back to machine grammar.
+"""Reverse Fidelity sirens from the live witness back to witness grammar.
 
 These tests are deliberately bounded by what the runtime declares. They do
 not ask a hand-maintained list which witnesses should be inspected.
-Red means the witness contains constitutional material the machine
+Red means the witness contains constitutional material the witness
 grammar and its deterministic witnesses do not yet account for.
 """
 
@@ -24,7 +24,7 @@ from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
 from tests.test_book_admission import (
     book_admission,
-    machine_grammar_words,
+    witness_grammar_words,
     scan_active_line,
 )
 
@@ -601,20 +601,20 @@ def test_unresolved_event_material_expansion_remains_visible():
     ) == [1]
 
 
-def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
+def test_every_runtime_event_kind_declares_its_witness_grammar_responsibility():
     """A new event species cannot gain constitutional force from its name."""
 
     declared = _runtime_event_kinds()
     accounted = _runtime_event_kind_responsibilities()
 
     assert set(declared) == set(accounted), (
-        "\nLive event kinds and machine-grammar responsibilities disagree."
+        "\nLive event kinds and witness-grammar responsibilities disagree."
         f"\n  only live: {sorted(set(declared) - set(accounted))}"
         f"\n  only responsibility declaration: {sorted(set(accounted) - set(declared))}"
     )
 
 
-def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
+def test_each_event_kind_responsibility_names_one_witness_grammar_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     accounted = _runtime_event_kind_responsibilities()
     duplicate = {
@@ -656,8 +656,8 @@ def test_each_live_assertion_responsibility_has_one_clause_declaration():
     )
 
 
-def test_each_assertion_responsibility_names_one_machine_grammar_clause():
-    machine_clauses = {
+def test_each_assertion_responsibility_names_one_witness_grammar_clause():
+    witness_clauses = {
         identity.decode("ascii")
         for identity in re.findall(
             rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
@@ -669,7 +669,7 @@ def test_each_assertion_responsibility_names_one_machine_grammar_clause():
     unknown = {
         responsibility: values[0]
         for responsibility, values in accounted.items()
-        if len(values) == 1 and values[0][1] not in machine_clauses
+        if len(values) == 1 and values[0][1] not in witness_clauses
     }
 
     assert unknown == {}, f"nested Assertion names absent grammar clauses: {unknown}"
@@ -741,7 +741,7 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     assert "01.Standing.D.1" in assertion_clauses
 
 
-def test_recovered_grammar_and_live_occurrences_account_for_the_same_clauses():
+def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses():
     event_clauses = {
         values[0][1]
         for values in _runtime_event_kind_responsibilities().values()
@@ -752,18 +752,34 @@ def test_recovered_grammar_and_live_occurrences_account_for_the_same_clauses():
         for values in _runtime_assertion_responsibility_clauses().values()
         if len(values) == 1
     }
-    machine = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"]
-    machine_clauses = set(machine)
-    declared_without_live_occurrence = {
+    witness = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"]
+    witness_clauses = set(witness)
+    declared_event_occurrences = {
         identity
-        for identity, clause in machine.items()
-        if clause.get("live_occurrence") == "unestablished"
+        for identity, clause in witness.items()
+        if clause["recorded_occurrence_kind"] == ["event_occurrence"]
+    }
+    declared_assertion_occurrences = {
+        identity
+        for identity, clause in witness.items()
+        if clause["recorded_occurrence_kind"] == ["Assertion_occurrence"]
+    }
+    declared_without_recorded_occurrence_kind = {
+        identity
+        for identity, clause in witness.items()
+        if clause["recorded_occurrence_kind"] == []
     }
     implemented_clauses = event_clauses | assertion_clauses
 
-    assert all(clause["grammar"] == "established" for clause in machine.values())
-    assert implemented_clauses <= machine_clauses
-    assert machine_clauses - implemented_clauses == declared_without_live_occurrence
+    assert all(clause["grammar"] == "established" for clause in witness.values())
+    assert event_clauses == declared_event_occurrences
+    assert assertion_clauses == declared_assertion_occurrences
+    assert witness_clauses - implemented_clauses == declared_without_recorded_occurrence_kind
+    assert (
+        declared_event_occurrences
+        | declared_assertion_occurrences
+        | declared_without_recorded_occurrence_kind
+    ) == witness_clauses
 
 
 def test_runtime_record_vocabulary_has_constitutional_admission():
@@ -843,8 +859,8 @@ def _runtime_record_words() -> set[str]:
     return found
 
 
-def test_runtime_record_words_are_machine_grammar_words():
-    assert _runtime_record_words() <= machine_grammar_words()
+def test_runtime_record_words_are_witness_grammar_words():
+    assert _runtime_record_words() <= witness_grammar_words()
 
 
 def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it():
@@ -1034,7 +1050,7 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     )
 
 
-def test_machine_grammar_declares_the_four_exact_relations():
+def test_witness_grammar_declares_the_four_exact_relations():
     grammar_relations = set(
         json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     )
@@ -1221,16 +1237,16 @@ FIDELITY_SUBJECTS = {
         test_every_event_standing_claim_has_a_declared_grammar_responsibility,
     ),
     "event_kind_grammar_responsibility": (
-        test_every_runtime_event_kind_declares_its_machine_grammar_responsibility,
+        test_every_runtime_event_kind_declares_its_witness_grammar_responsibility,
     ),
     "event_kind_responsibility_clause": (
-        test_each_event_kind_responsibility_names_one_machine_grammar_clause,
+        test_each_event_kind_responsibility_names_one_witness_grammar_clause,
     ),
     "assertion_responsibility_clause_declarations": (
         test_each_live_assertion_responsibility_has_one_clause_declaration,
     ),
-    "assertion_responsibility_machine_clause": (
-        test_each_assertion_responsibility_names_one_machine_grammar_clause,
+    "assertion_responsibility_witness_clause": (
+        test_each_assertion_responsibility_names_one_witness_grammar_clause,
     ),
     "assertion_responsibility_subject_distinction": (
         test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name,
@@ -1253,8 +1269,8 @@ FIDELITY_SUBJECTS = {
     "event_record_relation_admission": (
         test_every_relation_shaped_runtime_record_is_an_admitted_relation,
     ),
-    "machine_relation_declarations": (
-        test_machine_grammar_declares_the_four_exact_relations,
+    "witness_relation_declarations": (
+        test_witness_grammar_declares_the_four_exact_relations,
     ),
     "standing_boundary_reference_representation_emission_distinction": (
         test_checkpoint_names_the_representation_it_addresses_not_an_emission,
@@ -1274,8 +1290,8 @@ FIDELITY_SUBJECTS = {
     "seed_event_material_vocabulary_admission": (
         test_seed_authored_event_material_values_have_lexical_admission,
     ),
-    "event_record_machine_grammar_vocabulary": (
-        test_runtime_record_words_are_machine_grammar_words,
+    "event_record_witness_grammar_vocabulary": (
+        test_runtime_record_words_are_witness_grammar_words,
     ),
     "event_material_vocabulary_admission": (
         test_authored_value_admission_catches_an_unadmitted_word_without_naming_it,
@@ -1295,7 +1311,7 @@ FIDELITY_SUBJECTS = {
     "operator_request_write_exclusion": (
         test_command_handler_receives_no_constitutional_write_capability,
     ),
-    "grammar_live_occurrence_event_kind_distinction": (
-        test_recovered_grammar_and_live_occurrences_account_for_the_same_clauses,
+    "grammar_recorded_occurrence_kind_distinction": (
+        test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses,
     ),
 }

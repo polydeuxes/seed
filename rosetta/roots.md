@@ -58,7 +58,7 @@ Applicability
 Emission Locality / Participation / Yield
     seed_runtime.operator_representation::emit_operator_representation_material
 
-Machine-grammar Fidelity
+Witness-grammar Fidelity
     tests/test_grammar_implementation.py
 ```
 

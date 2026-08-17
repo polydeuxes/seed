@@ -26,7 +26,7 @@ def _book_clause_identities() -> set[bytes]:
     }
 
 
-def _machine_clause_identities() -> set[bytes]:
+def _witness_clause_identities() -> set[bytes]:
     return set(
         re.findall(
             rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
@@ -43,18 +43,18 @@ def _assert_relation_clauses(grammar: dict, active_book: str) -> None:
         assert active_book.count(f"### {clause} ") == 1
 
 
-def _machine_strings(value, path=()):
+def _witness_strings(value, path=()):
     if isinstance(value, dict):
         for key, nested in value.items():
-            yield from _machine_strings(nested, (*path, key))
+            yield from _witness_strings(nested, (*path, key))
     elif isinstance(value, list):
         for position, nested in enumerate(value):
-            yield from _machine_strings(nested, (*path, position))
+            yield from _witness_strings(nested, (*path, position))
     elif isinstance(value, str):
         yield path, value
 
 
-def test_machine_readable_grammar_traverses_responsibility_from_standing():
+def test_witness_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["standing"] == {
@@ -80,7 +80,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     }
 
 
-def test_machine_witness_discriminates_content_locality_and_occurrence():
+def test_witness_discriminates_content_locality_and_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["witness"]["discriminators"] == [
@@ -90,7 +90,7 @@ def test_machine_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
-def test_machine_yield_relation_preserves_occurrence_and_result_identity():
+def test_witness_yield_relation_preserves_occurrence_and_result_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["relations"]["yield"]["preserves"] == [
@@ -105,7 +105,20 @@ def test_machine_yield_relation_preserves_occurrence_and_result_identity():
     )
 
 
-def test_machine_clauses_separate_recovered_grammar_from_live_occurrence():
+def _assert_recorded_occurrence_kind_families(grammar):
+    allowed = {
+        (),
+        ("event_occurrence",),
+        ("Assertion_occurrence",),
+    }
+    for clause in grammar["clauses"].values():
+        kinds = clause["recorded_occurrence_kind"]
+        assert type(kinds) is list
+        assert tuple(kinds) in allowed
+        assert ("responsibility" in clause) == bool(kinds)
+
+
+def test_witness_clauses_separate_recovered_grammar_from_recorded_occurrence_kind():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["clauses"]
@@ -113,26 +126,50 @@ def test_machine_clauses_separate_recovered_grammar_from_live_occurrence():
     for clause_identity, clause in grammar["clauses"].items():
         assert clause["subject"]
         assert clause["grammar"] == "established"
-        assert ("responsibility" in clause) or (
-            clause["live_occurrence"] == "unestablished"
-        )
         assert not (
             clause.get("witness") == "unestablished"
         )
         assert active_book.count(f"### {clause_identity} ") == 1
+    _assert_recorded_occurrence_kind_families(grammar)
 
 
-def test_machine_relations_name_one_book_clause():
+def test_recorded_occurrence_kind_families_refuse_wrong_shape_or_crossing():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    def assert_refused(identity, value, *, remove_responsibility=False):
+        changed = json.loads(json.dumps(grammar))
+        changed["clauses"][identity]["recorded_occurrence_kind"] = value
+        if remove_responsibility:
+            changed["clauses"][identity].pop("responsibility", None)
+        try:
+            _assert_recorded_occurrence_kind_families(changed)
+        except (AssertionError, TypeError):
+            return
+        raise AssertionError("wrong recorded-occurrence kind family escaped")
+
+    assert_refused("01.Source.B", None)
+    assert_refused("01.Source.B", "event_occurrence")
+    assert_refused("01.Source.B", ["event_occurrence", "Assertion_occurrence"])
+    assert_refused("01.Source.B", ["unknown_occurrence"])
+    assert_refused("01.Source.A", [])
+    assert_refused(
+        "01.Source.A",
+        ["event_occurrence"],
+        remove_responsibility=True,
+    )
+
+
+def test_witness_relations_name_one_book_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     _assert_relation_clauses(grammar, _active_book())
 
 
-def test_this_occurs_only_as_exact_machine_roots():
+def test_this_occurs_only_as_exact_witness_roots():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     uses = [
         (path, value)
-        for path, value in _machine_strings(grammar)
+        for path, value in _witness_strings(grammar)
         if "this" in value.lower().split("_")
     ]
 
@@ -149,7 +186,7 @@ def test_this_occurs_only_as_exact_machine_roots():
     root_uses = [
         (path, value)
         for path, value in uses
-        if path[0] in {"book_material_reference", "root_references", "machine_grammar"}
+        if path[0] in {"book_material_reference", "root_references", "witness_grammar"}
     ]
     assert root_uses == [
         (("book_material_reference",), "this_Book"),
@@ -163,14 +200,14 @@ def test_this_occurs_only_as_exact_machine_roots():
         (("root_references", 4, "reference"), "this_Seed"),
         (("root_references", 5, "reference"), "this_Rosetta"),
         (("root_references", 6, "reference"), "this_Fidelity"),
-        (("machine_grammar", "subject"), "this_Grammar"),
-        (("machine_grammar", "book_material_reference"), "this_Book"),
+        (("witness_grammar", "subject"), "this_Grammar"),
+        (("witness_grammar", "book_material_reference"), "this_Book"),
         (
-            ("machine_grammar", "represented_relation", "first_subject"),
+            ("witness_grammar", "represented_relation", "first_subject"),
             "this_Grammar",
         ),
         (
-            ("machine_grammar", "represented_relation", "second_subject"),
+            ("witness_grammar", "represented_relation", "second_subject"),
             "this_Book",
         ),
     ]
@@ -200,11 +237,11 @@ def test_missing_relation_clause_is_detected():
         raise AssertionError("missing Locality clause escaped the grammar audit")
 
 
-def test_book_and_machine_grammar_have_the_same_clauses():
-    assert _book_clause_identities() == _machine_clause_identities()
+def test_book_and_witness_grammar_have_the_same_clauses():
+    assert _book_clause_identities() == _witness_clause_identities()
 
 
-def test_machine_clauses_address_their_exact_book_material():
+def test_witness_clauses_address_their_exact_book_material():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["book_material_reference"] == "this_Book"
@@ -214,7 +251,7 @@ def test_machine_clauses_address_their_exact_book_material():
     ) == tuple((identity, identity) for identity in grammar["clauses"])
 
 
-def test_machine_root_references_remain_distinct_and_in_declared_order():
+def test_witness_root_references_remain_distinct_and_in_declared_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["root_references"] == [
@@ -226,7 +263,7 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
             "reference": "this_book_material_acquisition_witness",
             "coordinate": "book_material_acquisition_witness_subject",
         },
-        {"reference": "this_Grammar", "coordinate": "machine_grammar"},
+        {"reference": "this_Grammar", "coordinate": "witness_grammar"},
         {"reference": "this_Book", "coordinate": "book_material"},
         {"reference": "this_Seed", "coordinate": "seed_subject"},
         {"reference": "this_Rosetta", "coordinate": "rosetta_reference"},
@@ -237,10 +274,10 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
     ]
 
 
-def test_machine_grammar_represents_the_book_without_identity_equality():
+def test_witness_grammar_represents_the_book_without_identity_equality():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["machine_grammar"] == {
+    assert grammar["witness_grammar"] == {
         "subject": "this_Grammar",
         "book_material_reference": "this_Book",
         "represented_relation": {
@@ -252,38 +289,38 @@ def test_machine_grammar_represents_the_book_without_identity_equality():
     }
 
 
-def test_clauses_without_event_species_name_live_occurrence_in_book_order():
+def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declarations = tuple(
-        (identity, clause["live_occurrence"])
+        (identity, clause["recorded_occurrence_kind"])
         for identity, clause in grammar["clauses"].items()
-        if "live_occurrence" in clause
+        if clause["recorded_occurrence_kind"] == []
     )
 
     assert declarations == (
-        ("01.Source.B", "unestablished"),
-        ("01.Source.C", "unestablished"),
-        ("01.Source.D.1", "unestablished"),
-        ("01.Source.E", "unestablished"),
-        ("01.Source.F", "unestablished"),
-        ("01.Standing.A", "unestablished"),
-        ("01.Standing.B", "unestablished"),
-        ("01.Standing.C", "unestablished"),
-        ("01.Standing.D", "unestablished"),
-        ("01.Standing.D.2", "unestablished"),
-        ("01.Standing.E", "unestablished"),
-        ("01.Standing.F", "unestablished"),
-        ("05.Recording.A", "unestablished"),
-        ("05.Recording.B", "unestablished"),
-        ("05.Recording.C", "unestablished"),
-        ("05.Source.A", "unestablished"),
-        ("08.Authority.A", "unestablished"),
-        ("08.Authority.B", "unestablished"),
-        ("08.Authority.C", "unestablished"),
+        ("01.Source.B", []),
+        ("01.Source.C", []),
+        ("01.Source.D.1", []),
+        ("01.Source.E", []),
+        ("01.Source.F", []),
+        ("01.Standing.A", []),
+        ("01.Standing.B", []),
+        ("01.Standing.C", []),
+        ("01.Standing.D", []),
+        ("01.Standing.D.2", []),
+        ("01.Standing.E", []),
+        ("01.Standing.F", []),
+        ("05.Recording.A", []),
+        ("05.Recording.B", []),
+        ("05.Recording.C", []),
+        ("05.Source.A", []),
+        ("08.Authority.A", []),
+        ("08.Authority.B", []),
+        ("08.Authority.C", []),
     )
     assert all(
         "responsibility" not in grammar["clauses"][identity]
-        for identity, _live_occurrence in declarations
+        for identity, _recorded_occurrence_kind in declarations
     )
 
 
@@ -336,7 +373,7 @@ def _crossing_is_complete(required_coordinates, crossing):
     )
 
 
-def test_machine_completeness_separates_grammar_from_live_crossing():
+def test_witness_completeness_separates_grammar_from_live_crossing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     completeness = grammar["completeness"]
     required = completeness["required_coordinates"]
@@ -383,7 +420,7 @@ def test_emission_admission_grammar_is_established_before_its_lifecycle():
 
 FIDELITY_SUBJECTS = {
     "standing_responsibility_path": (
-        test_machine_readable_grammar_traverses_responsibility_from_standing,
+        test_witness_readable_grammar_traverses_responsibility_from_standing,
     ),
     "public_export_standing_distinction": (
         test_public_export_does_not_establish_standing,
@@ -391,14 +428,15 @@ FIDELITY_SUBJECTS = {
     "applicability_responsibility": (
         test_applicability_responsibility_is_exact_act_or_assigned_occurrence,
     ),
-    "machine_clause_grammar_live_occurrence": (
-        test_machine_clauses_separate_recovered_grammar_from_live_occurrence,
+    "witness_clause_grammar_recorded_occurrence_kind": (
+        test_witness_clauses_separate_recovered_grammar_from_recorded_occurrence_kind,
+        test_recorded_occurrence_kind_families_refuse_wrong_shape_or_crossing,
     ),
     "yield_relation_identity": (
-        test_machine_yield_relation_preserves_occurrence_and_result_identity,
+        test_witness_yield_relation_preserves_occurrence_and_result_identity,
     ),
     "relation_book_clause_reference": (
-        test_machine_relations_name_one_book_clause,
+        test_witness_relations_name_one_book_clause,
         test_missing_relation_clause_is_detected,
     ),
     "supporting_finding_participation_distinction": (
@@ -408,26 +446,26 @@ FIDELITY_SUBJECTS = {
         test_applicability_requires_more_than_usefulness_agreement_or_availability,
     ),
     "content_locality_occurrence_distinction": (
-        test_machine_witness_discriminates_content_locality_and_occurrence,
+        test_witness_discriminates_content_locality_and_occurrence,
     ),
-    "machine_root_reference": (test_this_occurs_only_as_exact_machine_roots,),
-    "machine_root_reference_order": (
-        test_machine_root_references_remain_distinct_and_in_declared_order,
+    "witness_root_reference": (test_this_occurs_only_as_exact_witness_roots,),
+    "witness_root_reference_order": (
+        test_witness_root_references_remain_distinct_and_in_declared_order,
     ),
-    "machine_grammar_represents_book": (
-        test_machine_grammar_represents_the_book_without_identity_equality,
+    "witness_grammar_represents_book": (
+        test_witness_grammar_represents_the_book_without_identity_equality,
     ),
-    "machine_grammar_completeness": (
-        test_machine_completeness_separates_grammar_from_live_crossing,
+    "witness_grammar_completeness": (
+        test_witness_completeness_separates_grammar_from_live_crossing,
         test_emission_admission_grammar_is_established_before_its_lifecycle,
     ),
-    "clause_grammar_live_occurrence_distinction": (
-        test_clauses_without_event_species_name_live_occurrence_in_book_order,
+    "clause_grammar_recorded_occurrence_kind_distinction": (
+        test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order,
     ),
-    "machine_clause_book_material_reference": (
-        test_machine_clauses_address_their_exact_book_material,
+    "witness_clause_book_material_reference": (
+        test_witness_clauses_address_their_exact_book_material,
     ),
-    "book_machine_clause_identity_equality": (
-        test_book_and_machine_grammar_have_the_same_clauses,
+    "book_witness_clause_identity_equality": (
+        test_book_and_witness_grammar_have_the_same_clauses,
     ),
 }

@@ -52,7 +52,7 @@ def book_proper_words() -> dict[str, list[tuple[str, int]]]:
     return found
 
 
-def machine_grammar_words() -> set[str]:
+def witness_grammar_words() -> set[str]:
     return {
         word
         for line in (BOOK / "grammar.json").read_text().split("\n")
@@ -200,8 +200,8 @@ def test_book_admission_carries_no_unused_words():
     )
 
 
-def test_book_admission_and_machine_grammar_match():
-    assert book_admission() == machine_grammar_words()
+def test_book_admission_and_witness_grammar_match():
+    assert book_admission() == witness_grammar_words()
 
 
 FIDELITY_SUBJECTS = {
@@ -230,7 +230,7 @@ FIDELITY_SUBJECTS = {
     "book_admission_active_law_use": (
         test_book_admission_carries_no_unused_words,
     ),
-    "book_admission_machine_grammar_vocabulary_equality": (
-        test_book_admission_and_machine_grammar_match,
+    "book_admission_witness_grammar_vocabulary_equality": (
+        test_book_admission_and_witness_grammar_match,
     ),
 }

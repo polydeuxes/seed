@@ -655,7 +655,7 @@ def _pytest_subject(
     try:
         return declared[subject]
     except KeyError as error:
-        raise ValueError("test subject is absent from machine grammar") from error
+        raise ValueError("test subject is absent from witness grammar") from error
 
 
 @pytest.hookimpl(trylast=True)

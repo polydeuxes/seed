@@ -24,7 +24,7 @@ Acceptance of supplied material by an exact Act is bounded by its carried Scope 
 
 ### 01.Source.C — Fidelity is bounded comparison
 
-Fidelity is bounded comparison of this Seed's witness with its machine grammar through deterministic tests. Each test has its declared distinction as its subject and has no other subject. It may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
+Fidelity is bounded comparison of this Seed's witness with its witness grammar through deterministic tests. Each test has its declared distinction as its subject and has no other subject. It may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
 
 This Book material acquisition witness is one declared distinction carried as the subject of one deterministic test occurrence. Its material reference is this Book, and it is a witness for this Fidelity. This Book material acquisition witness is not this Witness by identity.
 

@@ -139,7 +139,7 @@ def read_requirements_of_yield_relation(
     recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> dict[str, bool]:
-    """Read the three machine-grammar requirements of one exact Yield relation.
+    """Read the three witness-grammar requirements of one exact Yield relation.
 
     The caller supplies exact occurrence identities under pressure.  Seed
     resolves the stored occurrences itself; it does not accept read
