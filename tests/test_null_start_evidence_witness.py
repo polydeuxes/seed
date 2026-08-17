@@ -99,7 +99,17 @@ def test_each_ingest_binds_its_exact_act_and_evidence_of_yield_relation(ledger):
 def test_ingest_does_not_assert_a_represented_relation(ledger):
     for ingest in _ingests(ledger):
         assert "represented_material" not in ingest.material
-        assert ingest.material["provenance_occurrence_references"] == []
+        assert ingest.material["unknown"] == [
+            "represented_relation",
+            "source_relation",
+        ]
+        (provenance_reference,) = ingest.material[
+            "provenance_occurrence_references"
+        ]
+        supplied_occurrence = ledger.get(provenance_reference)
+        assert supplied_occurrence is not None
+        assert supplied_occurrence.locality_identity == ingest.locality_identity
+        assert supplied_occurrence.exact_material == ingest.exact_material
         assert "represented relation Unknown" in ingest.material["dimensions"][
             "evidence_scope"
         ]
