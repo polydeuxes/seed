@@ -403,6 +403,39 @@ def _pair_premise_for_existing_material(
     )
 
 
+def _representation_source_for_pair_premise(ledger, standing, pair_premise):
+    """Recover the Compare that names this exact pair premise, where carried."""
+
+    if pair_premise is None:
+        return None
+    for comparison_identity in reversed(
+        tuple(standing["comparison_result_occurrences"])
+    ):
+        comparison = ledger.get(comparison_identity)
+        assignment_reference = (
+            comparison.material.get("responsibility_assignment_reference")
+            if comparison is not None
+            else None
+        )
+        assignment = (
+            ledger.get(assignment_reference.get("recorded_occurrence_identity"))
+            if type(assignment_reference) is dict
+            else None
+        )
+        later_measurement_reference = (
+            assignment.material.get("later_measurement_reference")
+            if assignment is not None
+            else None
+        )
+        if (
+            type(later_measurement_reference) is dict
+            and later_measurement_reference.get("recorded_occurrence_identity")
+            == pair_premise.identity
+        ):
+            return comparison_identity
+    return pair_premise.identity
+
+
 def _record_pair_measurement_comparison(
     ledger,
     standing,
@@ -520,13 +553,14 @@ def run_persistent_operator_console(
         locality_standing,
         locality_identity=locality_identity,
     )
+    representation_source = _representation_source_for_pair_premise(
+        ledger, locality_standing, pair_premise
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity=locality_identity,
         locality_standing=locality_standing,
-        source_occurrence_reference=(
-            pair_premise.identity if pair_premise is not None else None
-        ),
+        source_occurrence_reference=representation_source,
     )
     locality_standing = _advance_over_representation(
         ledger, locality_standing, representation
@@ -907,15 +941,14 @@ def run_persistent_operator_console(
                         locality_identity=locality_identity,
                     )
                 )
+                representation_source = _representation_source_for_pair_premise(
+                    ledger, locality_standing, pair_premise
+                )
                 representation = record_operator_representation(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
-                    source_occurrence_reference=(
-                        pair_premise.identity
-                        if pair_premise is not None
-                        else None
-                    ),
+                    source_occurrence_reference=representation_source,
                 )
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation

@@ -575,6 +575,30 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
     }
     reopened.close()
 
+    resumed = SQLiteEventLedger(str(database))
+    pair_count_before_resume = sum(
+        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+        for event in resumed.list()
+    )
+    run_persistent_operator_console(
+        ledger=resumed,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b""),
+        output_stream=StringIO(),
+    )
+    resumed_standing = read_operator_locality_standing(
+        resumed, locality_identity=LOCALITY
+    )
+    assert sum(
+        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+        for event in resumed.list()
+    ) == pair_count_before_resume
+    last_representation = next(
+        reversed(tuple(resumed_standing["representations"].values()))
+    )
+    assert last_representation["source_occurrence_reference"] == comparison_identity
+    resumed.close()
+
 
 def test_carried_compare_result_is_one_structured_representation_source():
     ledger, *_rest, result = _comparison()
