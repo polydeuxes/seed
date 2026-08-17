@@ -741,7 +741,7 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     assert "01.Standing.D.1" in assertion_clauses
 
 
-def test_witness_and_machine_grammar_account_for_the_same_clauses():
+def test_recovered_grammar_and_live_occurrences_account_for_the_same_clauses():
     event_clauses = {
         values[0][1]
         for values in _runtime_event_kind_responsibilities().values()
@@ -754,15 +754,16 @@ def test_witness_and_machine_grammar_account_for_the_same_clauses():
     }
     machine = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"]
     machine_clauses = set(machine)
-    declared_without_event_species = {
+    declared_without_live_occurrence = {
         identity
         for identity, clause in machine.items()
-        if "witness" in clause
+        if clause.get("live_occurrence") == "unestablished"
     }
     implemented_clauses = event_clauses | assertion_clauses
 
+    assert all(clause["grammar"] == "established" for clause in machine.values())
     assert implemented_clauses <= machine_clauses
-    assert machine_clauses - implemented_clauses == declared_without_event_species
+    assert machine_clauses - implemented_clauses == declared_without_live_occurrence
 
 
 def test_runtime_record_vocabulary_has_constitutional_admission():
@@ -1294,7 +1295,7 @@ FIDELITY_SUBJECTS = {
     "operator_request_write_exclusion": (
         test_command_handler_receives_no_constitutional_write_capability,
     ),
-    "witness_machine_clause_distinction": (
-        test_witness_and_machine_grammar_account_for_the_same_clauses,
+    "grammar_live_occurrence_event_kind_distinction": (
+        test_recovered_grammar_and_live_occurrences_account_for_the_same_clauses,
     ),
 }

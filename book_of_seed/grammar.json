@@ -40,6 +40,69 @@
     },
     "equal_identity": false
   },
+  "completeness": {
+    "required_coordinates": [
+      "grammar",
+      "grammar_reference",
+      "responsible_boundary",
+      "responsibility_assignment",
+      "Act_Evidence",
+      "Evidence_of_Yield_relation",
+      "result_occurrence",
+      "Standing",
+      "downstream_Act"
+    ],
+    "required_crossings": [
+      {
+        "subject": "candidate",
+        "grammar": "established",
+        "grammar_reference": "01.Source.E",
+        "responsible_boundary": "unestablished",
+        "responsibility_assignment": "unestablished",
+        "Act_Evidence": "unestablished",
+        "Evidence_of_Yield_relation": "unestablished",
+        "result_occurrence": "unestablished",
+        "Standing": "unestablished",
+        "downstream_Act": "Representation_emission_Act"
+      },
+      {
+        "subject": "Admission",
+        "grammar": "established",
+        "grammar_reference": "01.Standing.E",
+        "responsible_boundary": "Representation_emission_Responsibility",
+        "responsibility_assignment": "this_Book",
+        "Act_Evidence": "unestablished",
+        "Evidence_of_Yield_relation": "unestablished",
+        "result_occurrence": "unestablished",
+        "Standing": "unestablished",
+        "downstream_Act": "Representation_emission_Act"
+      },
+      {
+        "subject": "material_witness_invocation_result",
+        "grammar": "established",
+        "grammar_reference": "01.Source.C",
+        "responsible_boundary": "unestablished",
+        "responsibility_assignment": "unestablished",
+        "Act_Evidence": "unestablished",
+        "Evidence_of_Yield_relation": "unestablished",
+        "result_occurrence": "unestablished",
+        "Standing": "unestablished",
+        "downstream_Act": "unestablished"
+      },
+      {
+        "subject": "emission_candidate_Admission_to_operator_Locality",
+        "grammar": "established",
+        "grammar_reference": "01.Standing.E",
+        "responsible_boundary": "Representation_emission_Responsibility",
+        "responsibility_assignment": "this_Book",
+        "Act_Evidence": "unestablished",
+        "Evidence_of_Yield_relation": "unestablished",
+        "result_occurrence": "unestablished",
+        "Standing": "unestablished",
+        "downstream_Act": "Representation_emission_Act"
+      }
+    ]
+  },
   "composite": {
     "material_order": "preserved",
     "equal_material_in_different_order_establishes_same_composite": false,
@@ -185,6 +248,7 @@
     "01.Source.A": {
       "subject": "Representation_source_coordinates",
       "book_material_reference": "01.Source.A",
+      "grammar": "established",
       "witness_coordinates": [
         "representations",
         "emission_attempt",
@@ -216,7 +280,8 @@
     "01.Source.B": {
       "subject": "supplied_material_as_input_to_exact_Act",
       "book_material_reference": "01.Source.B",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "coordinates": [
         "supplied_material",
         "input_role",
@@ -240,7 +305,8 @@
     "01.Source.C": {
       "subject": "this_Fidelity",
       "book_material_reference": "01.Source.C",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "comparison": {
         "first_subject": "this_Witness",
         "relation": "comparison",
@@ -287,7 +353,7 @@
         {"subject": "operator_material_acquisition_responsibility_clauses"},
         {"subject": "authority_evidence_scope_distinction"},
         {"subject": "applicability_responsibility"},
-        {"subject": "machine_clause_witness_responsibility"},
+        {"subject": "machine_clause_grammar_live_occurrence"},
         {"subject": "active_book_scope"},
         {"subject": "yield_result_occurrence_evidence"},
         {"subject": "representation_exact_evidence_references"},
@@ -485,7 +551,7 @@
         {"subject": "ledger_identity"},
         {"subject": "event_record_machine_grammar_vocabulary"},
         {"subject": "supplied_material_seed_vocabulary_distinction"},
-        {"subject": "witness_machine_clause_distinction"},
+        {"subject": "grammar_live_occurrence_event_kind_distinction"},
         {
           "subject": "this_book_material_acquisition_witness",
           "material_reference": "this_Book"
@@ -501,7 +567,8 @@
         {"subject": "machine_root_reference"},
         {"subject": "machine_root_reference_order"},
         {"subject": "machine_grammar_represents_book"},
-        {"subject": "unestablished_clause_witness_order"},
+        {"subject": "machine_grammar_completeness"},
+        {"subject": "clause_grammar_live_occurrence_distinction"},
         {"subject": "machine_clause_book_material_reference"},
         {"subject": "book_machine_clause_identity_equality"},
         {"subject": "bounded_fidelity_comparison"},
@@ -541,6 +608,7 @@
     "01.Source.D": {
       "subject": "declared_Measurement_result",
       "book_material_reference": "01.Source.D",
+      "grammar": "established",
       "witness_relations": [
         "Measurement_counts_exact_occurrences",
         "the_measured_result_carries_what_the_declared_rule_determines",
@@ -655,7 +723,8 @@
     "01.Source.D.1": {
       "subject": "counted_occurrence",
       "book_material_reference": "01.Source.D.1",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "coordinates": [
         "exact_occurrence_identity",
         "counted_occurrence"
@@ -669,7 +738,8 @@
     "01.Source.E": {
       "subject": "candidate",
       "book_material_reference": "01.Source.E",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "preserves": [
         "applicable_source_role",
         "Representation_Act_occurrence",
@@ -687,7 +757,8 @@
     "01.Source.F": {
       "subject": "represented_relation",
       "book_material_reference": "01.Source.F",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "assertion": {
         "first_subject": "X",
         "relation": "represents_or_identifies",
@@ -723,6 +794,7 @@
     "01.Source.G": {
       "subject": "one_exact_operator_material_boundary_occurrence",
       "book_material_reference": "01.Source.G",
+      "grammar": "established",
       "witness_relation": "acquire_what_the_operator_boundary_supplies",
       "responsibility": {
         "kind": "operator_material_boundary_result_preservation",
@@ -768,7 +840,8 @@
     "01.Standing.A": {
       "subject": "preserved_material",
       "book_material_reference": "01.Standing.A",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "may_have": ["exact_identity", "Locality", "representations"],
       "does_not_establish": [
         "acceptance",
@@ -783,7 +856,8 @@
     "01.Standing.B": {
       "subject": "bounded_named_distinction",
       "book_material_reference": "01.Standing.B",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "names": [
         "kind_label",
         "Representation",
@@ -810,7 +884,8 @@
     "01.Standing.C": {
       "subject": "boundary_witness",
       "book_material_reference": "01.Standing.C",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "witnesses": [
         "compiled_behavior",
         "direct_instantiation",
@@ -839,7 +914,8 @@
     "01.Standing.D": {
       "subject": "multiplicity",
       "book_material_reference": "01.Standing.D",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "does_not_establish": [
         "relation",
         "collective_Standing",
@@ -855,6 +931,7 @@
     "01.Standing.D.1": {
       "subject": "Assertion",
       "book_material_reference": "01.Standing.D.1",
+      "grammar": "established",
       "identity": ["result", "subject", "Scope", "content"],
       "responsibility": {
         "kind": "Standing_coordinate_preservation",
@@ -892,7 +969,8 @@
     "01.Standing.D.2": {
       "subject": "later_Assertion_with_current_Standing",
       "book_material_reference": "01.Standing.D.2",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "Applicability_considered_with_respect_to": "current_Standing_for_same_subject",
       "earlier_Assertions": {
         "preserve_exact_identity_and_reference": true,
@@ -926,7 +1004,8 @@
     "01.Standing.E": {
       "subject": "bounded_relation_Assertion",
       "book_material_reference": "01.Standing.E",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "preserves": [
         "participants_and_roles",
         "relation_Assertion",
@@ -971,6 +1050,7 @@
     "01.Standing.E.1": {
       "subject": "input_to_exact_Act_relation",
       "book_material_reference": "01.Standing.E.1",
+      "grammar": "established",
       "witness_relations": [
         "responsible_boundary_may_determine_whether_an_exact_proposed_input_may_participate_before_the_Act_occurrence",
         "the_resulting_Standing_determines_the_participating_input"
@@ -1031,7 +1111,8 @@
     "01.Standing.F": {
       "subject": "dimensional_characterization",
       "book_material_reference": "01.Standing.F",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "macro_dimensional_families": [
         ["subject", "identity"],
         ["assertion", "content"],
@@ -1084,6 +1165,7 @@
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
       "book_material_reference": "02.Acts.A",
+      "grammar": "established",
       "identity": ["exact_Act", "Act_occurrence"],
       "witness_relations": [
         "the_exact_Act_occurred_at_the_boundary",
@@ -1135,6 +1217,7 @@
     "03.Movement.A": {
       "subject": "one_exact_movement_Assertion",
       "book_material_reference": "03.Movement.A",
+      "grammar": "established",
       "witness_relation": "make_one_exact_preserved_Assertion_available_in_another_Locality_and_preserve_its_identity_Standing_and_carried_limits",
       "responsibility": {
         "kind": "exact_transition_preservation",
@@ -1168,7 +1251,8 @@
     "05.Recording.A": {
       "subject": "retrievable_record_of_Assertion",
       "book_material_reference": "05.Recording.A",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "recording_boundary_may_establish": [
         "retrievable_record_exists",
         "Assertion_with_source_coordinates_preserved_within_declared_Scope"
@@ -1185,7 +1269,8 @@
     "05.Recording.B": {
       "subject": "diagnostic_run_scoped_recording",
       "book_material_reference": "05.Recording.B",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "requires": [
         "recorded_material_admitted_to_exact_diagnostic_Act",
         "separate_responsible_occurrence_for_additional_Standing"
@@ -1200,7 +1285,8 @@
     "05.Recording.C": {
       "subject": "measurement_preservation_decision",
       "book_material_reference": "05.Recording.C",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "preservation_required_when_discarding_would_erase": [
         "material_Evidence",
         "established_Standing_not_otherwise_retained"
@@ -1218,6 +1304,7 @@
     "05.Recording.D": {
       "subject": "one_exact_recorded_Standing_boundary_reference",
       "book_material_reference": "05.Recording.D",
+      "grammar": "established",
       "record_kind": "durable_bounded_reference",
       "responsibility": {
         "kind": "exact_Standing_boundary_reference_recording",
@@ -1263,7 +1350,8 @@
     "05.Source.A": {
       "subject": "recorded_material_participation",
       "book_material_reference": "05.Source.A",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "subjects_that_may_participate": [
         "recorded_Assertion",
         "diagnostic_finding",
@@ -1282,6 +1370,7 @@
     "06.Locality.A": {
       "subject": "Locality_relation",
       "book_material_reference": "06.Locality.A",
+      "grammar": "established",
       "identity": [
         "first_subject",
         "second_subject",
@@ -1327,6 +1416,7 @@
     "06.Locality.B": {
       "subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
       "book_material_reference": "06.Locality.B",
+      "grammar": "established",
       "responsibility": {
         "kind": "Standing_Locality_continuation_assignment",
         "coordinates": [
@@ -1373,6 +1463,7 @@
     "06.Locality.C": {
       "subject": "one_direct_recorded_Standing_boundary_Locality_relation",
       "book_material_reference": "06.Locality.C",
+      "grammar": "established",
       "responsibility": {
         "kind": "recorded_Standing_boundary_Locality_assignment",
         "coordinates": [
@@ -1425,7 +1516,8 @@
     "08.Authority.A": {
       "subject": "bounded_input_support",
       "book_material_reference": "08.Authority.A",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "downstream_Act_may_stand_on_established_content_bounded_by": [
         "exact_role",
         "addressed_subject",
@@ -1449,7 +1541,8 @@
     "08.Authority.B": {
       "subject": "bounded_participation_not_ratification",
       "book_material_reference": "08.Authority.B",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "supporting_findings": [
         "established_support_relation",
         "Applicability",
@@ -1476,7 +1569,8 @@
     "08.Authority.C": {
       "subject": "analytical_competence",
       "book_material_reference": "08.Authority.C",
-      "witness": "unestablished",
+      "grammar": "established",
+      "live_occurrence": "unestablished",
       "may_analyze_under_bounded_repository_Authority": [
         "source_packets",
         "support_paths",

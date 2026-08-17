@@ -2589,7 +2589,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert {**fidelity, "test_subjects": "declared_test_subjects"} == {
         "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
-        "witness": "unestablished",
+        "grammar": "established",
+        "live_occurrence": "unestablished",
         "comparison": {
             "first_subject": "this_Witness",
             "relation": "comparison",
@@ -2633,8 +2634,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 220
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 220
+    assert len(test_subjects) == 221
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 221
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -3473,7 +3474,8 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
     assert clause == {
         "subject": "candidate",
         "book_material_reference": "01.Source.E",
-        "witness": "unestablished",
+        "grammar": "established",
+        "live_occurrence": "unestablished",
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3499,7 +3501,8 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
     assert clause == {
         "subject": "supplied_material_as_input_to_exact_Act",
         "book_material_reference": "01.Source.B",
-        "witness": "unestablished",
+        "grammar": "established",
+        "live_occurrence": "unestablished",
         "coordinates": [
             "supplied_material",
             "input_role",
