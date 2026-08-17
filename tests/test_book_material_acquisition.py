@@ -293,8 +293,9 @@ def complete_book_admission_acts(acquired_book_material):
             act_occurrence_count_limit=len(additions),
         )
     )
+    later_invocation_additions = additions[: len(earlier_comparisons[0]) + 1]
     result_invocation_rows = added_position_invocations(
-        additions,
+        later_invocation_additions,
         boundary_identity="complete-book-admission-addition-invocation",
         implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
     )
@@ -597,7 +598,7 @@ def test_complete_book_admission_drives_later_exact_material_acts(
         additions,
         result_invocation_rows,
         comparisons,
-        _,
+        earlier_comparisons,
         _,
         _,
     ) = complete_book_admission_acts
@@ -649,8 +650,17 @@ def test_complete_book_admission_drives_later_exact_material_acts(
             least_complete_pair_occurrence_count - 1
         ),
     ) == ()
-    assert all(len(row) == len(additions) for row in result_invocation_rows)
-    assert all(len(row) == len(additions) for row in comparisons)
+    later_invocation_additions = tuple(
+        occurrence.source_coordinate for occurrence in result_invocation_rows[0]
+    )
+    assert later_invocation_additions == additions[: len(later_invocation_additions)]
+    assert len(later_invocation_additions) == len(earlier_comparisons[0]) + 1
+    assert all(
+        tuple(occurrence.source_coordinate for occurrence in row)
+        == later_invocation_additions
+        for row in result_invocation_rows
+    )
+    assert all(len(row) == len(later_invocation_additions) for row in comparisons)
     assert any(
         comparison.distinction
         for row in comparisons
