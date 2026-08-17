@@ -78,6 +78,7 @@ from compiled_format_invocation import (  # noqa: E402
     exact_position_pair_material_references,
     recurring_position_material,
     recurring_position_materials,
+    recurring_added_compares_across,
     moved_exact_byte_material_references,
     preserves_original_order,
 )
@@ -1121,6 +1122,99 @@ def test_full_function_recurrence_preserves_heterogeneous_coordinates(
     assert coordinates is not None
     assert len(coordinates) == 2
     assert len(set(coordinates)) == 2
+
+
+def test_full_function_recurrence_preserves_conflict_and_continues_after_it():
+    def first(material):
+        if material in (b"d", b"ca"):
+            raise ValueError("refused")
+
+    def second(material):
+        if material == b"d":
+            raise ValueError("refused")
+
+    references = tuple(
+        ExactMaterialReference(
+            f"prospective-conflict-source-{position}",
+            f"prospective-conflict-assertion-{position}",
+            "prospective-conflict-locality",
+            material,
+        )
+        for position, material in enumerate((b"a", b"b", b"c", b"d"))
+    )
+    admission = admission_occurrence(
+        (references,),
+        boundary_identity="prospective-conflict-admission",
+        source_material=references,
+    )
+    act_occurrence_count_limit = sum(
+        (len(source.exact_material) + 1) * len(references)
+        for source in references
+    )
+    additions = tuple(
+        addition
+        for addition in admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="prospective-conflict-addition",
+            admitted_material_act_occurrence_count_limit=(
+                act_occurrence_count_limit
+            ),
+        )
+        if addition.source_reference == references[0]
+        and addition.position == 0
+    )
+    functions = (
+        CompiledImplementationFunction("prospective-conflict-first", first),
+        CompiledImplementationFunction("prospective-conflict-second", second),
+    )
+    source_rows = compiled_reference_invocations(
+        references,
+        boundary_identity="prospective-conflict-source",
+        implementation_functions=functions,
+    )
+
+    comparisons, recurring = recurring_added_compares_across(
+        additions,
+        source_rows,
+        boundary_identity="prospective-conflict-compare",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert tuple(addition.result_material for addition in additions) == (
+        b"aa",
+        b"ba",
+        b"ca",
+        b"da",
+    )
+    assert tuple(
+        tuple(invocation.returned for invocation in row)
+        for row in source_rows
+    ) == (
+        (True, True, True, False),
+        (True, True, True, False),
+    )
+    assert tuple(
+        tuple(comparison.result_returned for comparison in row)
+        for row in comparisons
+    ) == (
+        (True, True, False, True),
+        (True, True, True, True),
+    )
+    assert tuple(
+        (
+            coordinates,
+            tuple(comparison.result_returned for comparison in later),
+            later[0].occurrence_position,
+        )
+        for coordinates, later in recurring
+    ) == (
+        ((True, True), (False, True), 2),
+        ((None, True), (True, True), 3),
+    )
+    assert all(
+        len({comparison.occurrence_position for comparison in later}) == 1
+        for _, later in recurring
+    )
 
 
 def test_full_function_coordinates_precede_every_added_material_invocation():
@@ -3880,6 +3974,7 @@ FIDELITY_SUBJECTS = {
         test_exact_material_at_the_byte_count_limit_can_return,
     ),
     "measurement_result_distinctions": (
+        test_full_function_recurrence_preserves_conflict_and_continues_after_it,
         test_format_recurrence_preserves_unknown_function_coordinates,
         test_format_recurrence_accepts_a_matching_full_function_vector,
         test_recurrence_returns_coordinate_before_later_compare,

@@ -15,12 +15,14 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_material_acquisition import (  # noqa: E402
     implementation_functions,
     measure_added_material,
+    measure_material,
     measure_material_and_act_results,
     measure_material_time_counts,
 )
 from material_fixture_measurement import measured_one_byte_material  # noqa: E402
 from material_admission import admission_occurrence  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
+    MaterialImplementationFunction,
     first_recurring_added_return_compare,
 )
 
@@ -121,7 +123,6 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         if occurrence.stdout_byte_count_limit_reached
         or occurrence.stderr_byte_count_limit_reached
     )
-    assert limited
     assert all(not occurrence.returned for occurrence in limited)
     assert all(
         len(occurrence.stdout_bytes or b"") <= 4096
@@ -281,3 +282,33 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         break
     assert later is not None
     assert later[0] == later[1]
+
+
+def test_constructed_output_crosses_the_exact_material_byte_count_limit():
+    _, references = measured_one_byte_material()
+    function = MaterialImplementationFunction(
+        identity="constructed-output-limit",
+        invocation=(
+            sys.executable,
+            "-I",
+            "-c",
+            "import sys; sys.stdin.buffer.read(); "
+            "sys.stdout.buffer.write(b'x' * 4097)",
+        ),
+    )
+
+    occurrences, _exact, _returned = measure_material(
+        (function,),
+        references[:1],
+        boundary_identity="constructed-output-limit",
+        time_limit_second_count=1.0,
+    )
+
+    occurrence = occurrences[0][0]
+    assert occurrence.material_byte_count_limit == 4096
+    assert occurrence.stdout_bytes == b"x" * 4096
+    assert occurrence.stderr_bytes == b""
+    assert occurrence.stdout_byte_count_limit_reached is True
+    assert occurrence.stderr_byte_count_limit_reached is False
+    assert occurrence.returned is False
+    assert occurrence.returncode is None

@@ -661,11 +661,6 @@ def test_complete_book_admission_drives_later_exact_material_acts(
         for row in result_invocation_rows
     )
     assert all(len(row) == len(later_invocation_additions) for row in comparisons)
-    assert any(
-        comparison.distinction
-        for row in comparisons
-        for comparison in row
-    )
 
 
 def test_complete_book_later_acts_refuse_broken_admission_lineage(
@@ -746,10 +741,6 @@ def test_complete_book_admission_freezes_one_coordinate_before_later_invocation(
         if coordinate is not None
     )
     assert compared_coordinates
-    assert any(
-        coordinate != returned
-        for coordinate, returned in compared_coordinates
-    )
     later_act = later_comparisons[0].added_position_act_occurrence_identity
     assert all(
         comparison.added_position_act_occurrence_identity != later_act
@@ -767,7 +758,7 @@ def test_complete_book_admission_freezes_one_coordinate_before_later_invocation(
     )
 
 
-def test_complete_book_recurrence_continues_after_one_prospective_conflict(
+def test_complete_book_keeps_successive_recurrence_occurrences_in_order(
     complete_book_admission_acts,
 ):
     (
@@ -797,11 +788,7 @@ def test_complete_book_recurrence_continues_after_one_prospective_conflict(
         later[0].occurrence_position for _, later in recurring
     )
     assert occurrence_positions == tuple(sorted(occurrence_positions))
-    first_coordinates, first_later = recurring[0]
-    assert any(
-        coordinate is not None and coordinate != comparison.result_returned
-        for coordinate, comparison in zip(first_coordinates, first_later)
-    )
+    _, first_later = recurring[0]
     assert all(
         row[occurrence_positions[0]] == comparison
         for row, comparison in zip(comparisons, first_later)
