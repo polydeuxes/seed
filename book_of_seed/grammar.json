@@ -1028,10 +1028,22 @@
         "represented_relation",
         "Applicability",
         "Participation",
-        "Authority_for_another_Act",
+        {
+          "identity": "Authority_for_another_Act",
+          "first_subject": "Authority",
+          "relation": "supports",
+          "second_subject": "another_Act",
+          "standing": "not_established"
+        },
         "recurrence",
         "completion",
-        "Authority_for_another_occurrence"
+        {
+          "identity": "Authority_for_another_occurrence",
+          "first_subject": "Authority",
+          "relation": "supports",
+          "second_subject": "another_occurrence",
+          "standing": "not_established"
+        }
       ],
       "distinct_from": [
         ["Responsibility_assignment", "exact_Act"],
@@ -1087,7 +1099,13 @@
         "Standing",
         "equivalence_by_name",
         "mandatory_grammar",
-        "Authority_for_exact_Act"
+        {
+          "identity": "Authority_for_exact_Act",
+          "first_subject": "Authority",
+          "relation": "supports",
+          "second_subject": "exact_Act",
+          "standing": "not_established"
+        }
       ]
     },
     "01.Standing.C": {
@@ -1181,7 +1199,12 @@
       "book_material_reference": "01.Standing.D.2",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "Applicability_considered_with_respect_to": "current_Standing_for_same_subject",
+      "Applicability_considered_with_respect_to": {
+        "identity": "current_Standing_for_same_subject",
+        "first_subject": "same_subject",
+        "relation": "bears",
+        "second_subject": "current_Standing"
+      },
       "earlier_Assertions": {
         "preserve_exact_identity_and_reference": true,
         "each_is_separate_Applicability_boundary": false,
@@ -1745,7 +1768,12 @@
       "recorded_occurrence_kind": [],
       "requires": [
         "recorded_material_admitted_to_exact_diagnostic_Act",
-        "separate_responsible_occurrence_for_additional_Standing"
+        {
+          "identity": "separate_responsible_occurrence_for_additional_Standing",
+          "first_subject": "separate_responsible_occurrence",
+          "relation": "supplies",
+          "second_subject": "additional_Standing"
+        }
       ],
       "preserves": {
         "first_subject": "scoped_subject",
@@ -1824,7 +1852,13 @@
         "Applicability",
         "Participation",
         "Compare",
-        "Authority_for_another_Act"
+        {
+          "identity": "Authority_for_another_Act",
+          "first_subject": "Authority",
+          "relation": "supports",
+          "second_subject": "another_Act",
+          "standing": "not_established"
+        }
       ],
       "distinct_from": [
         ["Responsibility_assignment", "recording_Act"],
@@ -2061,7 +2095,12 @@
           "Standing"
         ]
       },
-      "authority": "operator_Authority_for_one_exact_invocation",
+      "authority": {
+        "identity": "operator_Authority_for_one_exact_invocation",
+        "first_subject": "operator_Authority",
+        "relation": "supports",
+        "second_subject": "one_exact_invocation"
+      },
       "requires": [
         "one_exact_operator_material_occurrence",
         "current_operator_Locality_Standing",

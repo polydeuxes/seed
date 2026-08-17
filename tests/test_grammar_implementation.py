@@ -264,7 +264,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
                 assert value.get("second_subject")
                 structured_relations.append(value)
             for key, carried in value.items():
-                if "_of_" in key or "_as_" in key:
+                if "_of_" in key or "_as_" in key or "_for_" in key:
                     assert carries_relation(carried, connective_relation(key))
                 visit(carried, value)
         elif isinstance(value, list):
@@ -275,7 +275,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
             if len(words) > 1:
                 material = frozenset(Counter(words).items())
                 ordered.setdefault(material, set()).add(words)
-            if "_of_" in value or "_as_" in value:
+            if "_of_" in value or "_as_" in value or "_for_" in value:
                 assert parent is not None
                 assert carries_relation(parent, connective_relation(value))
 
