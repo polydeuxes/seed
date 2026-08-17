@@ -2,6 +2,13 @@ import json
 from pathlib import Path
 import re
 
+import pytest
+
+from scripts.fill_witness_grammar import (
+    fill_fidelity_occurrence_kinds,
+    fill_witness_grammar,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
@@ -107,15 +114,17 @@ def test_witness_yield_relation_preserves_occurrence_and_result_identity():
 
 def _assert_recorded_occurrence_kind_families(grammar):
     allowed = {
-        (),
         ("event_occurrence",),
         ("Assertion_occurrence",),
+        ("Fidelity_occurrence",),
     }
     for clause in grammar["clauses"].values():
         kinds = clause["recorded_occurrence_kind"]
         assert type(kinds) is list
         assert tuple(kinds) in allowed
-        assert ("responsibility" in clause) == bool(kinds)
+        assert ("responsibility" in clause) == (
+            kinds != ["Fidelity_occurrence"]
+        )
 
 
 def test_witness_clauses_separate_recovered_grammar_from_recorded_occurrence_kind():
@@ -151,7 +160,8 @@ def test_recorded_occurrence_kind_families_refuse_wrong_shape_or_crossing():
     assert_refused("01.Source.B", "event_occurrence")
     assert_refused("01.Source.B", ["event_occurrence", "Assertion_occurrence"])
     assert_refused("01.Source.B", ["unknown_occurrence"])
-    assert_refused("01.Source.A", [])
+    assert_refused("01.Source.B", [])
+    assert_refused("01.Source.A", ["Fidelity_occurrence"])
     assert_refused(
         "01.Source.A",
         ["event_occurrence"],
@@ -289,39 +299,64 @@ def test_witness_grammar_represents_the_book_without_identity_equality():
     }
 
 
-def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    declarations = tuple(
-        (identity, clause["recorded_occurrence_kind"])
-        for identity, clause in grammar["clauses"].items()
-        if clause["recorded_occurrence_kind"] == []
-    )
+FIDELITY_ONLY_CLAUSE_IDENTITIES = (
+    "01.Source.B",
+    "01.Source.C",
+    "01.Source.D.1",
+    "01.Source.E",
+    "01.Source.F",
+    "01.Standing.A",
+    "01.Standing.B",
+    "01.Standing.C",
+    "01.Standing.D",
+    "01.Standing.D.2",
+    "01.Standing.E",
+    "01.Standing.F",
+    "05.Recording.A",
+    "05.Recording.B",
+    "05.Recording.C",
+    "05.Source.A",
+    "08.Authority.A",
+    "08.Authority.B",
+    "08.Authority.C",
+)
 
-    assert declarations == (
-        ("01.Source.B", []),
-        ("01.Source.C", []),
-        ("01.Source.D.1", []),
-        ("01.Source.E", []),
-        ("01.Source.F", []),
-        ("01.Standing.A", []),
-        ("01.Standing.B", []),
-        ("01.Standing.C", []),
-        ("01.Standing.D", []),
-        ("01.Standing.D.2", []),
-        ("01.Standing.E", []),
-        ("01.Standing.F", []),
-        ("05.Recording.A", []),
-        ("05.Recording.B", []),
-        ("05.Recording.C", []),
-        ("05.Source.A", []),
-        ("08.Authority.A", []),
-        ("08.Authority.B", []),
-        ("08.Authority.C", []),
+
+@pytest.mark.parametrize(
+    "clause_identity",
+    FIDELITY_ONLY_CLAUSE_IDENTITIES,
+    ids=FIDELITY_ONLY_CLAUSE_IDENTITIES,
+)
+def test_fidelity_only_clause_has_exact_book_grammar_and_fidelity_occurrence(
+    clause_identity,
+):
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    clause = grammar["clauses"][clause_identity]
+
+    assert clause["book_material_reference"] == clause_identity
+    assert clause["grammar"] == "established"
+    assert clause["recorded_occurrence_kind"] == ["Fidelity_occurrence"]
+    assert "responsibility" not in clause
+    assert _active_book().count(f"### {clause_identity} ") == 1
+
+
+def test_fidelity_occurrence_kind_filler_is_exact_and_idempotent():
+    current = GRAMMAR.read_bytes()
+    unchanged, missing = fill_witness_grammar(current)
+    assert unchanged == current
+    assert missing == ()
+
+    one_blank = current.replace(
+        b'      "recorded_occurrence_kind": ["Fidelity_occurrence"],',
+        b'      "recorded_occurrence_kind": [],',
+        1,
     )
-    assert all(
-        "responsibility" not in grammar["clauses"][identity]
-        for identity, _recorded_occurrence_kind in declarations
-    )
+    filled_occurrences, missing = fill_fidelity_occurrence_kinds(one_blank)
+    filled, remaining = fill_witness_grammar(one_blank)
+    assert filled_occurrences == current
+    assert filled == current
+    assert missing == (FIDELITY_ONLY_CLAUSE_IDENTITIES[0],)
+    assert remaining == missing
 
 
 def test_supporting_finding_does_not_establish_participation_by_identity():
@@ -460,7 +495,8 @@ FIDELITY_SUBJECTS = {
         test_emission_admission_grammar_is_established_before_its_lifecycle,
     ),
     "clause_grammar_recorded_occurrence_kind_distinction": (
-        test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order,
+        test_fidelity_only_clause_has_exact_book_grammar_and_fidelity_occurrence,
+        test_fidelity_occurrence_kind_filler_is_exact_and_idempotent,
     ),
     "witness_clause_book_material_reference": (
         test_witness_clauses_address_their_exact_book_material,

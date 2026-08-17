@@ -6,6 +6,8 @@ import json
 import re
 from pathlib import Path
 
+from scripts.fill_witness_grammar import BOOK_MATERIALS, expected_book_vocabulary
+
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / "book_of_seed"
 BOOK_ADMISSION = BOOK / "book_admission.txt"
@@ -18,12 +20,7 @@ def scan_active_line(line: str) -> str:
 
 
 def book_proper_files() -> list[Path]:
-    files = sorted((BOOK / "chapters").glob("*.md"))
-    for extra in ("README.md", "concordance.md", "grammar.json"):
-        candidate = BOOK / extra
-        if candidate.exists():
-            files.append(candidate)
-    return files
+    return [*BOOK_MATERIALS, BOOK / "grammar.json"]
 
 
 def _admission_entries(path: Path = BOOK_ADMISSION) -> dict[str, str]:
@@ -204,6 +201,21 @@ def test_book_admission_and_witness_grammar_match():
     assert book_admission() == witness_grammar_words()
 
 
+def test_witness_grammar_vocabulary_preserves_first_authored_occurrence_order():
+    grammar_bytes = (BOOK / "grammar.json").read_bytes()
+    grammar = json.loads(grammar_bytes)
+
+    assert grammar["book_vocabulary"] == expected_book_vocabulary(grammar_bytes)
+    positions = tuple(
+        first_occurrence_position
+        for _entry, first_occurrence_position in grammar["book_vocabulary"][
+            "ordered_entries"
+        ]
+    )
+    assert positions == tuple(dict.fromkeys(positions))
+    assert all(first < second for first, second in zip(positions, positions[1:]))
+
+
 FIDELITY_SUBJECTS = {
     "warrant_standing_boundary": (
         test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences,
@@ -232,5 +244,6 @@ FIDELITY_SUBJECTS = {
     ),
     "book_admission_witness_grammar_vocabulary_equality": (
         test_book_admission_and_witness_grammar_match,
+        test_witness_grammar_vocabulary_preserves_first_authored_occurrence_order,
     ),
 }

@@ -764,21 +764,21 @@ def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_cl
         for identity, clause in witness.items()
         if clause["recorded_occurrence_kind"] == ["Assertion_occurrence"]
     }
-    declared_without_recorded_occurrence_kind = {
+    declared_Fidelity_occurrences = {
         identity
         for identity, clause in witness.items()
-        if clause["recorded_occurrence_kind"] == []
+        if clause["recorded_occurrence_kind"] == ["Fidelity_occurrence"]
     }
     implemented_clauses = event_clauses | assertion_clauses
 
     assert all(clause["grammar"] == "established" for clause in witness.values())
     assert event_clauses == declared_event_occurrences
     assert assertion_clauses == declared_assertion_occurrences
-    assert witness_clauses - implemented_clauses == declared_without_recorded_occurrence_kind
+    assert witness_clauses - implemented_clauses == declared_Fidelity_occurrences
     assert (
         declared_event_occurrences
         | declared_assertion_occurrences
-        | declared_without_recorded_occurrence_kind
+        | declared_Fidelity_occurrences
     ) == witness_clauses
 
 
