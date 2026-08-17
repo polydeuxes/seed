@@ -924,7 +924,9 @@ def emit_operator_representation_material(
     flush = getattr(output_stream, "flush", None)
     if flush is not None:
         try:
-            flush()
+            flush_result = flush()
+            if flush_result is not None:
+                raise ValueError("output boundary flush did not report completion")
         except Exception as error:
             _record_exact_material_boundary_failure(
                 ledger,

@@ -904,6 +904,12 @@ def test_exact_egress_reads_the_recorded_representation_material():
         ("unreported", ValueError, None, None),
         ("write-error", OSError, None, "OSError('write failed')"),
         ("flush-error", OSError, 5, "OSError('flush failed')"),
+        (
+            "flush-result",
+            ValueError,
+            5,
+            "ValueError('output boundary flush did not report completion')",
+        ),
     ),
 )
 def test_exact_material_emission_preserves_each_bounded_failure_result(
@@ -922,6 +928,8 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         def flush(self):
             if boundary_type == "flush-error":
                 raise OSError("flush failed")
+            if boundary_type == "flush-result":
+                return False
 
     ledger = EventLedger()
     source = ingest_material(
@@ -965,7 +973,7 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
     assert failure.material["reported_count"] == reported_count
     assert failure.material["error"] == error_material
     emitted_event_identity = representation["emitted_event_identity"]
-    if boundary_type == "flush-error":
+    if boundary_type in {"flush-error", "flush-result"}:
         assert emitted_event_identity is not None
         emitted = ledger.get(emitted_event_identity)
         emitted_yield = ledger.get(
