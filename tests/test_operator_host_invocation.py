@@ -47,6 +47,20 @@ def _supplied(
     )
 
 
+@pytest.mark.parametrize(
+    "positions",
+    ([], (True,), (-1,), (0, 0)),
+)
+def test_supplied_occurrence_requires_exact_distinct_prior_positions(positions):
+    with pytest.raises(TypeError, match="exact prior supplied occurrence positions"):
+        SuppliedSystemMaterialOccurrence(
+            b"result",
+            "provider:result",
+            False,
+            provenance_occurrence_positions=positions,
+        )
+
+
 def _provider(*occurrences):
     def provide(_exact_command, supply):
         for occurrence in occurrences:
@@ -88,6 +102,110 @@ def _operator_system_relation(ledger, command):
     return record_operator_system_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
     )
+
+
+def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
+    ledger = EventLedger()
+    command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
+    source = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(
+            b"source", "provider:source", False
+        ),
+    )
+    result = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(
+            b"result",
+            "provider:result",
+            False,
+            provenance_occurrence_positions=(0,),
+        ),
+        prior_supplied_occurrence_references=(source.identity,),
+    )
+
+    assert result.material["provenance_occurrence_references"] == [
+        command.identity,
+        relation.identity,
+        source.identity,
+    ]
+
+
+def test_supplied_result_refuses_a_nonprior_occurrence_position():
+    ledger = EventLedger()
+    command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
+    before = len(ledger.list())
+
+    with pytest.raises(ValueError, match="exact prior supplied occurrence"):
+        ingest_supplied_invocation_occurrence(
+            ledger,
+            operator_invocation_locality_result_event_identity=relation.identity,
+            command_occurrence_reference=command.identity,
+            supplied=SuppliedSystemMaterialOccurrence(
+                b"result",
+                "provider:result",
+                False,
+                provenance_occurrence_positions=(0,),
+            ),
+        )
+
+    assert len(ledger.list()) == before
+
+
+def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references():
+    ledger = EventLedger()
+    command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
+    first = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(b"first", "provider:first", False),
+    )
+    second = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(b"second", "provider:second", False),
+        prior_supplied_occurrence_references=(first.identity,),
+    )
+    unrelated = ingest_material(
+        ledger,
+        locality_identity="unrelated",
+        exact_bytes=b"unrelated",
+        source_role="system",
+        source_boundary="unrelated boundary",
+    )
+    supplied = SuppliedSystemMaterialOccurrence(
+        b"result",
+        "provider:result",
+        False,
+        provenance_occurrence_positions=(0,),
+    )
+    before = len(ledger.list())
+
+    for references in (
+        (second.identity, first.identity),
+        (unrelated.identity,),
+        (command.identity,),
+        ("missing",),
+    ):
+        with pytest.raises(ValueError, match="exact prior supplied occurrence"):
+            ingest_supplied_invocation_occurrence(
+                ledger,
+                operator_invocation_locality_result_event_identity=relation.identity,
+                command_occurrence_reference=command.identity,
+                supplied=supplied,
+                prior_supplied_occurrence_references=references,
+            )
+
+    assert len(ledger.list()) == before
 
 
 def _represented_boundary_kinds(ledger):

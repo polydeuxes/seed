@@ -498,6 +498,7 @@ def run_persistent_operator_console(
                 )
             supplied_boundaries: set[str] = set()
             supplied_occurrence_count = 0
+            supplied_occurrence_references: list[str] = []
 
             def acquire_system_material(supplied) -> None:
                 nonlocal system_standing
@@ -516,7 +517,11 @@ def run_persistent_operator_console(
                         "evidence_event_identity"
                     ],
                     supplied=supplied,
+                    prior_supplied_occurrence_references=tuple(
+                        supplied_occurrence_references
+                    ),
                 )
+                supplied_occurrence_references.append(supplied_occurrence.identity)
                 supplied_occurrence_count += 1
                 system_standing = _advance_over(
                     ledger,

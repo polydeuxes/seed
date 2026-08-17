@@ -22,6 +22,7 @@ class SuppliedSystemMaterialOccurrence:
     source_boundary: str
     egress: bool
     known_loss: tuple[str, ...] = ()
+    provenance_occurrence_positions: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.exact_bytes) is not bytes:
@@ -34,6 +35,16 @@ class SuppliedSystemMaterialOccurrence:
             type(item) is not str for item in self.known_loss
         ):
             raise TypeError("exact known loss required")
+        if (
+            type(self.provenance_occurrence_positions) is not tuple
+            or len(set(self.provenance_occurrence_positions))
+            != len(self.provenance_occurrence_positions)
+            or any(
+                type(position) is not int or position < 0
+                for position in self.provenance_occurrence_positions
+            )
+        ):
+            raise TypeError("exact prior supplied occurrence positions required")
 
 
 SuppliedSystemMaterialConsumer = Callable[
@@ -50,11 +61,26 @@ def ingest_supplied_invocation_occurrence(
     operator_invocation_locality_result_event_identity: str,
     command_occurrence_reference: str,
     supplied: SuppliedSystemMaterialOccurrence,
+    prior_supplied_occurrence_references: tuple[str, ...] = (),
 ) -> Event:
     """Ingest one exact system occurrence in its invocation Locality."""
 
     if type(supplied) is not SuppliedSystemMaterialOccurrence:
         raise TypeError("exact supplied material required")
+    if (
+        type(prior_supplied_occurrence_references) is not tuple
+        or len(set(prior_supplied_occurrence_references))
+        != len(prior_supplied_occurrence_references)
+        or any(
+            type(reference) is not str or not reference
+            for reference in prior_supplied_occurrence_references
+        )
+        or any(
+            position >= len(prior_supplied_occurrence_references)
+            for position in supplied.provenance_occurrence_positions
+        )
+    ):
+        raise ValueError("exact prior supplied occurrence references required")
     relation = get_recorded_operator_system_locality(
         ledger, operator_invocation_locality_result_event_identity
     )
@@ -76,6 +102,37 @@ def ingest_supplied_invocation_occurrence(
         or ledger.integrity_of(command_occurrence.identity) == CORRUPTED
     ):
         raise ValueError("exact operator occurrence required")
+    prior_occurrences = tuple(
+        ledger.get(reference) for reference in prior_supplied_occurrence_references
+    )
+    if any(
+        occurrence is None
+        or occurrence.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or occurrence.locality_identity != relation["destination_locality_identity"]
+        or occurrence.material.get("source_role") != "system"
+        or occurrence.material.get("provenance_occurrence_references")[:2]
+        != [
+            command_occurrence.identity,
+            operator_invocation_locality_result_event_identity,
+        ]
+        or ledger.integrity_of(occurrence.identity) == CORRUPTED
+        for occurrence in prior_occurrences
+    ):
+        raise ValueError("exact prior supplied occurrence references required")
+    if prior_occurrences:
+        try:
+            ordered = ledger.occurrences_in_append_order(
+                prior_supplied_occurrence_references,
+                locality_identity=relation["destination_locality_identity"],
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "exact prior supplied occurrence references required"
+            ) from error
+        if tuple(occurrence.identity for occurrence in ordered) != (
+            prior_supplied_occurrence_references
+        ):
+            raise ValueError("exact prior supplied occurrence references required")
     return ingest_material(
         ledger,
         locality_identity=relation["destination_locality_identity"],
@@ -86,5 +143,9 @@ def ingest_supplied_invocation_occurrence(
         provenance_occurrence_references=(
             command_occurrence.identity,
             operator_invocation_locality_result_event_identity,
+            *(
+                prior_supplied_occurrence_references[position]
+                for position in supplied.provenance_occurrence_positions
+            ),
         ),
     )

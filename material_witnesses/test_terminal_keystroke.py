@@ -10,16 +10,24 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import tempfile
+from io import StringIO
 
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.occurrence_position_measurement import (
+    OCCURRENCE_POSITION_RECORDED_KIND,
+)
+from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     record_operator_representation,
 )
+from seed_runtime.operator_system_locality import OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+from seed_runtime.supplied_invocation_material import SuppliedSystemMaterialOccurrence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,8 +36,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     ingest_result_reference,
+    invocation_occurrence,
     reference_occurrences_across,
 )
+from tests.binary_input import binary_input  # noqa: E402
 from tests.representation_admission import admit_representation  # noqa: E402
 
 
@@ -183,3 +193,105 @@ def test_one_exact_witness_result_crosses_the_raw_operator_emission_road(
     assert ledger.get(emitted["emitted_event_identity"]).exact_material == (
         source.exact_material
     )
+
+
+def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence():
+    ledger = EventLedger()
+    command = b"!witness terminal\n"
+    observations = tuple(
+        invocation_occurrence(
+            exact_material,
+            IMPLEMENTATION_FUNCTION,
+            boundary_identity="terminal-console-material-witness",
+            invocation_position=position,
+            time_limit_second_count=2.0,
+            material_byte_count_limit=65536,
+        )
+        for position, exact_material in enumerate(EXACT_MATERIAL)
+    )
+
+    def provider(exact_command, supply):
+        assert exact_command == command
+        for position, (exact_source, observation) in enumerate(
+            zip(EXACT_MATERIAL, observations)
+        ):
+            supply(
+                SuppliedSystemMaterialOccurrence(
+                    exact_bytes=exact_source,
+                    source_boundary=f"terminal witness source occurrence {position}",
+                    egress=False,
+                )
+            )
+            supply(
+                SuppliedSystemMaterialOccurrence(
+                    exact_bytes=observation.stdout_bytes or b"",
+                    source_boundary=f"terminal witness stdout occurrence {position}",
+                    egress=True,
+                    provenance_occurrence_positions=(position * 2,),
+                )
+            )
+
+    with tempfile.TemporaryFile(mode="w+b") as raw_output:
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="terminal-witness-operator-locality",
+            input_stream=binary_input(command),
+            output_stream=StringIO(),
+            raw_output_stream=raw_output,
+            operator_invocation_provider=provider,
+        )
+        raw_output.seek(0)
+        emitted_material = raw_output.read()
+
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    )
+    system_locality = relation.material["destination_locality_identity"]
+    system_events = ledger.list_locality(system_locality)
+    ingests = tuple(
+        event for event in system_events if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    )
+    measurements = tuple(
+        event for event in system_events if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+    )
+    position_measurements = tuple(
+        event
+        for event in system_events
+        if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
+    )
+    emissions = tuple(
+        event
+        for event in system_events
+        if event.kind == "operator.representation.emitted"
+    )
+
+    expected_supplied = tuple(
+        material
+        for position in range(len(EXACT_MATERIAL))
+        for material in (
+            EXACT_MATERIAL[position],
+            observations[position].stdout_bytes or b"",
+        )
+    )
+    expected_emitted = tuple(
+        observation.stdout_bytes or b"" for observation in observations
+    )
+    assert tuple(event.exact_material for event in ingests) == expected_supplied
+    assert tuple(
+        event.material["provenance_occurrence_references"][-1]
+        for event in ingests[1::2]
+    ) == tuple(event.identity for event in ingests[0::2])
+    assert len(measurements) == 1
+    assert len(position_measurements) == 1
+    assert tuple(event.exact_material for event in emissions) == expected_emitted
+    assert emitted_material == b"".join(expected_emitted)
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=system_locality
+    )
+    assert set(standing["measurement_occurrences"]) == {
+        measurements[0].identity,
+        position_measurements[0].identity,
+    }
