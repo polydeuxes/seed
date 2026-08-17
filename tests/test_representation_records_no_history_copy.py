@@ -2,7 +2,7 @@
 
 `locality_standing_evidence_identities` copied locality Standing's whole append-order
 event-reference copy into every `operator.representation.recorded` material, beside
-`locality_standing_as_of_event_identity`, which already names that occurrence.
+`locality_standing_through_event_occurrence_identity`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
 across 67 representation_events, that its only non-test reader passed it straight through,
@@ -100,8 +100,8 @@ def test_the_first_representation_act_records_absence_of_a_prior_occurrence(loca
     """Recorded absence, not absence of participation."""
     ledger, _ = locality
     first = next(e for e in ledger.list() if e.kind == RECORDED)
-    assert "locality_standing_as_of_event_identity" in first.material
-    assert first.material["locality_standing_as_of_event_identity"] is None
+    assert "locality_standing_through_event_occurrence_identity" in first.material
+    assert first.material["locality_standing_through_event_occurrence_identity"] is None
 
 
 def test_each_boundary_reaches_strictly_further_than_the_last(locality):
@@ -109,7 +109,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(locality):
     events = ledger.list()
     positions = {event.identity: index for index, event in enumerate(events)}
     boundaries = [
-        e.material["locality_standing_as_of_event_identity"]
+        e.material["locality_standing_through_event_occurrence_identity"]
         for e in events
         if e.kind == RECORDED
     ]
@@ -139,7 +139,7 @@ def test_the_boundary_still_determines_the_participating_prefix(locality):
         return collected
 
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.material["locality_standing_as_of_event_identity"]
+        boundary = representation_event.material["locality_standing_through_event_occurrence_identity"]
         input = prefix_through(boundary)
         assert (input and input[-1] == boundary) or boundary is None
 
@@ -149,7 +149,7 @@ def test_every_boundary_precedes_the_representation_act_that_records_it(locality
     events = ledger.list()
     positions = {event.identity: index for index, event in enumerate(events)}
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.material["locality_standing_as_of_event_identity"]
+        boundary = representation_event.material["locality_standing_through_event_occurrence_identity"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.identity]
 
@@ -173,6 +173,6 @@ def test_standing_still_records_its_participation_boundary(locality):
     """Removed from the Representation, and the boundary remains on the read."""
     ledger, _ = locality
     standing = _standing(ledger)
-    assert standing["as_of_event_identity"] is not None
+    assert standing["through_event_occurrence_identity"] is not None
     assert standing["event_count"] > 0
     assert "input_event_identities" not in standing

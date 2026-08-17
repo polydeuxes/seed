@@ -151,7 +151,7 @@ def record_operator_system_locality_responsibility_assignment(
         else None
     )
     boundary_identity = (
-        operator_locality_standing.get("as_of_event_identity")
+        operator_locality_standing.get("through_event_occurrence_identity")
         if type(operator_locality_standing) is dict
         else None
     )

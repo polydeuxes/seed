@@ -159,7 +159,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert result.exact_material is None
     assert source_reference == {
         "source_locality_identity": "source",
-        "source_standing_as_of_event_identity": source.identity,
+        "source_standing_through_event_occurrence_identity": source.identity,
         "addressed_representation_event_identity": representation[
             "representation_event_identity"
         ],
@@ -261,7 +261,7 @@ def test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it(
     )
 
     assert representation_after_assignment[
-        "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity"
     ] == assignment.identity
     assert act_evidence.locality_identity == destination
     assert act_evidence.material["responsibility_assignment_reference"][
@@ -326,8 +326,8 @@ def test_later_source_occurrences_do_not_move_the_exact_source_cut():
         ledger, result.identity
     )["source_standing_reference"]
 
-    assert reference["source_standing_as_of_event_identity"] == source.identity
-    assert reference["source_standing_as_of_event_identity"] != later.identity
+    assert reference["source_standing_through_event_occurrence_identity"] == source.identity
+    assert reference["source_standing_through_event_occurrence_identity"] != later.identity
 
 
 def test_exact_empty_source_boundary_remains_empty():
@@ -335,7 +335,7 @@ def test_exact_empty_source_boundary_remains_empty():
     representation = record_operator_representation(
         ledger,
         locality_identity="empty-source",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing={"through_event_occurrence_identity": None},
     )
     act_evidence = _act(
         ledger,
@@ -351,7 +351,7 @@ def test_exact_empty_source_boundary_remains_empty():
         ledger, result.identity
     )["source_standing_reference"] == {
         "source_locality_identity": "empty-source",
-        "source_standing_as_of_event_identity": None,
+        "source_standing_through_event_occurrence_identity": None,
         "addressed_representation_event_identity": representation[
             "representation_event_identity"
         ],
@@ -395,7 +395,7 @@ def test_continuation_is_direct_and_does_not_carry_an_earlier_relation():
 
     assert second_recorded["source_standing_reference"] == {
         "source_locality_identity": first_destination,
-        "source_standing_as_of_event_identity": first_result.identity,
+        "source_standing_through_event_occurrence_identity": first_result.identity,
         "addressed_representation_event_identity": second_source_representation[
             "representation_event_identity"
         ],
@@ -448,7 +448,7 @@ def test_missing_different_or_changed_source_coordinates_are_refused():
     changed = ledger.get(act_evidence.identity)
     changed.material["source_standing_reference"] = {
         **changed.material["source_standing_reference"],
-        "source_standing_as_of_event_identity": "missing-cut",
+        "source_standing_through_event_occurrence_identity": "missing-cut",
     }
     with pytest.raises(
         StandingLocalityContinuationError,
@@ -531,7 +531,7 @@ def test_incomplete_act_evidence_is_not_projected_as_a_relation():
     assert standing["responsibility_assignment_occurrences"] == {
         assignment_identity: None
     }
-    assert standing["as_of_event_identity"] == act_evidence.identity
+    assert standing["through_event_occurrence_identity"] == act_evidence.identity
 
 
 def test_prior_relation_carrier_must_remain_one_identity_dictionary():

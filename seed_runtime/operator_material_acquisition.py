@@ -73,7 +73,7 @@ def _source_standing_reference(
         raise OperatorMaterialAcquireError(
             "operator material acquire has a different Standing Locality"
         )
-    standing_boundary = locality_standing.get("as_of_event_identity")
+    standing_boundary = locality_standing.get("through_event_occurrence_identity")
     _require_identity(
         standing_boundary,
         "operator material acquire requires one exact Standing boundary",
@@ -110,7 +110,7 @@ def _source_standing_reference(
         )
     return {
         "locality_identity": locality_identity,
-        "locality_standing_as_of_event_identity": standing_boundary,
+        "locality_standing_through_event_occurrence_identity": standing_boundary,
         "addressed_representation_event_identity": (
             addressed_representation_event_identity
         ),
@@ -377,8 +377,8 @@ def get_operator_material_acquire_responsibility_assignment(
         ),
         locality_standing={
             "locality_identity": assignment.locality_identity,
-            "as_of_event_identity": source_reference.get(
-                "locality_standing_as_of_event_identity"
+            "through_event_occurrence_identity": source_reference.get(
+                "locality_standing_through_event_occurrence_identity"
             ),
         },
     )

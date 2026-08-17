@@ -30,8 +30,8 @@ STANDING_BOUNDARY_REFERENCE_RECORDED_KIND = (
 STANDING_BOUNDARY_REFERENCE_RESULT_KIND = "recorded Standing boundary reference result"
 STANDING_BOUNDARY_REFERENCE_ACT = "Record one exact Standing boundary reference"
 STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY = (
-    "preserve one exact addressed Representation and its exact Standing boundary "
-    "as one durable bounded record"
+    "record one exact addressed Representation and its exact Standing boundary "
+    "in one durable bounded record"
 )
 STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE = "05.Recording.D"
 EVENT_KIND_RESPONSIBILITIES = {
@@ -93,7 +93,7 @@ def _source_reference(
     )
     if locality_standing.get("locality_identity") != locality_identity:
         raise OperatorCheckpointError("checkpoint has a different Standing Locality")
-    if locality_standing.get("as_of_event_identity") != representation_identity:
+    if locality_standing.get("through_event_occurrence_identity") != representation_identity:
         raise OperatorCheckpointError(
             "checkpoint requires the exact addressed Representation Standing"
         )
@@ -110,14 +110,14 @@ def _source_reference(
         representation["locality_identity"] != locality_identity
         or representation_event is None
         or ledger.integrity_of(representation_identity) == CORRUPTED
-        or "locality_standing_as_of_event_identity"
+        or "locality_standing_through_event_occurrence_identity"
         not in representation_event.material
     ):
         raise OperatorCheckpointError(
             "checkpoint has a different Representation Locality"
         )
     boundary = representation_event.material[
-        "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity"
     ]
     if boundary is not None:
         _require_identity(
@@ -355,7 +355,7 @@ def get_standing_boundary_reference_responsibility_assignment(
             "checkpoint assignment carries no intact Representation"
         ) from error
     boundary = representation.material.get(
-        "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity"
     )
     if boundary is not None:
         boundary_event = ledger.get(boundary)

@@ -136,34 +136,34 @@ def _validate_standing_boundary(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    as_of_event_identity: str | None,
+    through_event_occurrence_identity: str | None,
     source_occurrence_reference: str | None,
     representation_event_identity: str | None = None,
 ) -> None:
     """Require the represented source to belong to the exact Standing prefix."""
 
-    if as_of_event_identity is None:
+    if through_event_occurrence_identity is None:
         if source_occurrence_reference is not None:
             raise ValueError(
                 "Representation source occurrence is outside its Standing boundary"
             )
         return
-    if type(as_of_event_identity) is not str or not as_of_event_identity:
+    if type(through_event_occurrence_identity) is not str or not through_event_occurrence_identity:
         raise ValueError("Representation requires one exact Standing boundary")
-    boundary_event = ledger.get(as_of_event_identity)
+    boundary_event = ledger.get(through_event_occurrence_identity)
     if (
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
-        or ledger.integrity_of(as_of_event_identity) == CORRUPTED
+        or ledger.integrity_of(through_event_occurrence_identity) == CORRUPTED
     ):
         raise ValueError("Representation Standing boundary is not exact")
     if (
         source_occurrence_reference is not None
-        and source_occurrence_reference != as_of_event_identity
+        and source_occurrence_reference != through_event_occurrence_identity
     ):
         try:
             ledger.occurrences_in_append_order(
-                (source_occurrence_reference, as_of_event_identity),
+                (source_occurrence_reference, through_event_occurrence_identity),
                 locality_identity=locality_identity,
             )
         except ValueError as error:
@@ -173,7 +173,7 @@ def _validate_standing_boundary(
     if representation_event_identity is not None:
         try:
             ledger.occurrences_in_append_order(
-                (as_of_event_identity, representation_event_identity),
+                (through_event_occurrence_identity, representation_event_identity),
                 locality_identity=locality_identity,
             )
         except ValueError as error:
@@ -190,7 +190,7 @@ def record_operator_representation(
     source_occurrence_reference: str | None = None,
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its Act occurrence."""
-    as_of_event_identity = locality_standing["as_of_event_identity"]
+    through_event_occurrence_identity = locality_standing["through_event_occurrence_identity"]
     exact_material = _exact_source_material(
         ledger,
         locality_identity=locality_identity,
@@ -200,7 +200,7 @@ def record_operator_representation(
     _validate_standing_boundary(
         ledger,
         locality_identity=locality_identity,
-        as_of_event_identity=as_of_event_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         source_occurrence_reference=source_occurrence_reference,
     )
     representation_identity = new_identity("operator_representation")
@@ -219,7 +219,7 @@ def record_operator_representation(
         "act_occurrence_identity": act_occurrence_identity,
         "source_occurrence_reference": source_occurrence_reference,
         "representation_result": representation_result,
-        "locality_standing_as_of_event_identity": as_of_event_identity,
+        "locality_standing_through_event_occurrence_identity": through_event_occurrence_identity,
         "known_loss": known_loss,
         "unknown": [],
         "conflicts": [],
@@ -278,7 +278,7 @@ def record_operator_representation(
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
                 content=content,
-                source=as_of_event_identity,
+                source=through_event_occurrence_identity,
                 responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority="unestablished",
                 evidence_scope=(
@@ -321,7 +321,7 @@ def record_operator_representation(
         "boundary_failure_evidence_of_yield_relation_identity": None,
         "boundary_failure_event_identity": None,
         "emitted_event_identity": None,
-        "locality_standing_as_of_event_identity": as_of_event_identity,
+        "locality_standing_through_event_occurrence_identity": through_event_occurrence_identity,
         "exact_material": exact_material,
         "known_loss": known_loss,
         "unknown": [],
@@ -464,8 +464,8 @@ def read_operator_representation(
     _validate_standing_boundary(
         ledger,
         locality_identity=event.locality_identity,
-        as_of_event_identity=material.get(
-            "locality_standing_as_of_event_identity"
+        through_event_occurrence_identity=material.get(
+            "locality_standing_through_event_occurrence_identity"
         ),
         source_occurrence_reference=source_occurrence_reference,
         representation_event_identity=event.identity,
@@ -539,8 +539,8 @@ def read_operator_representation(
             event.identity,
         ),
         "source_occurrence_reference": source_occurrence_reference,
-        "locality_standing_as_of_event_identity": material[
-            "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity": material[
+            "locality_standing_through_event_occurrence_identity"
         ],
         "exact_material": event.exact_material,
     }

@@ -87,7 +87,7 @@ def _require_admission_standing(
         else None
     )
     boundary_identity = (
-        locality_standing.get("as_of_event_identity")
+        locality_standing.get("through_event_occurrence_identity")
         if type(locality_standing) is dict
         else None
     )

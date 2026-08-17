@@ -183,7 +183,7 @@ def test_representation_reader_reads_the_exact_recorded_representation():
             "recorded_occurrence_references"
         ],
         "source_occurrence_reference": None,
-        "locality_standing_as_of_event_identity": None,
+        "locality_standing_through_event_occurrence_identity": None,
         "exact_material": None,
     }
     assert ledger.occurrences_in_append_order(
@@ -635,7 +635,7 @@ def test_representation_does_not_accept_developer_supplied_exact_material():
         record_operator_representation(
             EventLedger(),
             locality_identity="s",
-            locality_standing={"as_of_event_identity": None},
+            locality_standing={"through_event_occurrence_identity": None},
             exact_material=b"hello",
         )
 
@@ -718,7 +718,7 @@ def test_representation_refuses_a_standing_boundary_from_another_locality():
         source_boundary="fixture boundary",
     )
     standing = _standing(ledger)
-    standing["as_of_event_identity"] = other.identity
+    standing["through_event_occurrence_identity"] = other.identity
 
     with pytest.raises(ValueError, match="Standing boundary is not exact"):
         record_operator_representation(
@@ -1219,7 +1219,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         for event in ledger.list()
         if event.kind == "operator.representation.recorded"
     )
-    assert c0_formed.material["locality_standing_as_of_event_identity"] is None
+    assert c0_formed.material["locality_standing_through_event_occurrence_identity"] is None
     assert c0_formed.material["unknown"] == []
     # The console attaches no Representation to the Ingest: recording order
     # does not determine a relation between the two occurrences.
@@ -1271,7 +1271,7 @@ def test_c0_presents_standing_with_no_developer_semantics():
     # Empty Standing is legitimately input: the representation Act occurred and
     # recorded what it input, rather than being skipped.
     material = ledger.get(c0["representation_event_identity"]).material
-    assert material["locality_standing_as_of_event_identity"] is None
+    assert material["locality_standing_through_event_occurrence_identity"] is None
     assert material["unknown"] == []
     assert material["conflicts"] == []
 
@@ -1335,7 +1335,7 @@ def test_console_presents_standing_only_across_an_ingest():
     )
     # C1 uses Standing that now contains the Ingest occurrence.
     assert (
-        c1.material["locality_standing_as_of_event_identity"] == positions.identity
+        c1.material["locality_standing_through_event_occurrence_identity"] == positions.identity
     )
     assert c1.material["source_occurrence_reference"] is None
     assert ingest.identity in dict(
@@ -1414,7 +1414,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     positions = {
         event.identity: index for index, event in enumerate(console_ledger.list())
     }
-    boundary = positions[c2["locality_standing_as_of_event_identity"]]
+    boundary = positions[c2["locality_standing_through_event_occurrence_identity"]]
     assert positions[c1["representation_event_identity"]] < boundary
     assert c1["emitted_event_identity"] is None
     assert c1["representation_identity"] != c2["representation_identity"]
@@ -1438,8 +1438,8 @@ def test_later_operator_material_does_not_replace_an_earlier_focus():
 
     assert read["source_occurrence_reference"] == ingests[1].identity
     assert read["exact_material"] == b"O2\n"
-    assert read["locality_standing_as_of_event_identity"] == standing[
-        "as_of_event_identity"
+    assert read["locality_standing_through_event_occurrence_identity"] == standing[
+        "through_event_occurrence_identity"
     ]
     assert all(
         event.identity in {

@@ -308,11 +308,11 @@ def read_operator_locality_standing(
     )
 
 
-def read_operator_locality_standing_as_of(
+def read_operator_locality_standing_through(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    as_of_event_identity: str | None,
+    through_event_occurrence_identity: str | None,
 ) -> dict[str, Any]:
     """Project one Locality through one exact recorded occurrence.
 
@@ -324,22 +324,22 @@ def read_operator_locality_standing_as_of(
 
     if type(locality_identity) is not str or not locality_identity:
         raise ValueError("Standing read requires one exact Locality identity")
-    if as_of_event_identity is None:
+    if through_event_occurrence_identity is None:
         event_identities: Iterable[str] = ()
     else:
-        if type(as_of_event_identity) is not str or not as_of_event_identity:
-            raise ValueError("Standing read requires one exact as-of occurrence")
-        event = ledger.get(as_of_event_identity)
+        if type(through_event_occurrence_identity) is not str or not through_event_occurrence_identity:
+            raise ValueError("Standing read requires one exact through occurrence")
+        event = ledger.get(through_event_occurrence_identity)
         if (
             event is None
             or event.locality_identity != locality_identity
-            or ledger.integrity_of(as_of_event_identity) == CORRUPTED
+            or ledger.integrity_of(through_event_occurrence_identity) == CORRUPTED
         ):
             raise ValueError(
-                "Standing as-of occurrence is absent, corrupted, or in another Locality"
+                "Standing through occurrence is absent, corrupted, or in another Locality"
             )
         boundary = ledger.append_boundary_through_occurrence(
-            as_of_event_identity
+            through_event_occurrence_identity
         )
         event_identities = (
             occurrence.identity
@@ -352,8 +352,8 @@ def read_operator_locality_standing_as_of(
         event_identities,
         locality_identity=locality_identity,
     )
-    if standing["as_of_event_identity"] != as_of_event_identity:
-        raise ValueError("Standing read did not reach its exact as-of occurrence")
+    if standing["through_event_occurrence_identity"] != through_event_occurrence_identity:
+        raise ValueError("Standing read did not reach its exact through occurrence")
     return standing
 
 
@@ -376,7 +376,7 @@ def _source_reference_from_checkpoint(
     source = recorded["source_reference"]
     return {
         "source_locality_identity": source["source_locality_identity"],
-        "source_standing_as_of_event_identity": source[
+        "source_standing_through_event_occurrence_identity": source[
             "standing_boundary_event_identity"
         ],
         "addressed_representation_event_identity": source[
@@ -484,18 +484,18 @@ def read_carried_recorded_standing(
         source_reference.get("addressed_representation_event_identity"),
         "recorded Standing reference carries no addressed Representation",
     )
-    as_of_event_identity = source_reference.get(
-        "source_standing_as_of_event_identity"
+    through_event_occurrence_identity = source_reference.get(
+        "source_standing_through_event_occurrence_identity"
     )
-    if as_of_event_identity is not None:
+    if through_event_occurrence_identity is not None:
         _require_recorded_standing_identity(
-            as_of_event_identity,
+            through_event_occurrence_identity,
             "recorded Standing reference carries no exact Standing boundary",
         )
-    standing = read_operator_locality_standing_as_of(
+    standing = read_operator_locality_standing_through(
         ledger,
         locality_identity=source_locality_identity,
-        as_of_event_identity=as_of_event_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return {
         "recorded_occurrence_identity": recorded_occurrence_identity,
@@ -573,7 +573,7 @@ def advance_operator_locality_standing(
     known_loss: list[str] = []
     unknown: list[str] = []
     conflicts: list[str] = []
-    as_of_event_identity: str | None = None
+    through_event_occurrence_identity: str | None = None
     event_count = 0
 
     if prior is not None:
@@ -653,7 +653,7 @@ def advance_operator_locality_standing(
         known_loss = prior["known_loss"]
         unknown = prior["unknown"]
         conflicts = prior["conflicts"]
-        as_of_event_identity = prior["as_of_event_identity"]
+        through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
     for event in events:
@@ -679,7 +679,7 @@ def advance_operator_locality_standing(
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingest event: {event.kind}")
         event_count += 1
-        as_of_event_identity = event.identity
+        through_event_occurrence_identity = event.identity
         for key, collected in (
             ("known_loss", known_loss),
             ("unknown", unknown),
@@ -956,8 +956,8 @@ def advance_operator_locality_standing(
                 "boundary_failure_event_identity": None,
                 "emitted_event_identity": None,
                 "representation_result": material["representation_result"],
-                "locality_standing_as_of_event_identity": material[
-                    "locality_standing_as_of_event_identity"
+                "locality_standing_through_event_occurrence_identity": material[
+                    "locality_standing_through_event_occurrence_identity"
                 ],
                 "scope": material["dimensions"]["scope_locality"],
                 "provenance": material["dimensions"]["source_provenance"],
@@ -1063,7 +1063,7 @@ def advance_operator_locality_standing(
 
     return {
         "locality_identity": locality_identity,
-        "as_of_event_identity": as_of_event_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "event_count": event_count,
         "ingest_occurrences": ingest_occurrences,
         "measurement_occurrences": measurement_occurrences,

@@ -226,9 +226,6 @@ def _assert_structured_relation_identities_name_their_exact_relation(value):
         if relation is not None and identity is not None:
             assert type(relation) is str and relation
             assert type(identity) is str and identity
-            if "_as_of_" in identity:
-                assert relation == "through"
-                relation = "as_of"
             assert (
                 f"_{relation.casefold()}_"
                 in f"_{identity.casefold()}_"
@@ -283,13 +280,6 @@ def test_every_grammar_representation_composite_preserves_material_order():
             return any(carries_relation(nested, expected) for nested in value)
         return False
 
-    def connective_relation(value):
-        if "_as_of_" in value:
-            return "through"
-        if "_of_" in value:
-            return "of"
-        return None
-
     def visit(value, parent=None):
         if isinstance(value, dict):
             if "relation" in value:
@@ -297,8 +287,8 @@ def test_every_grammar_representation_composite_preserves_material_order():
                 assert value.get("second_subject")
                 structured_relations.append(value)
             for key, carried in value.items():
-                if "_of_" in key or "_as_" in key or "_for_" in key:
-                    assert carries_relation(carried, connective_relation(key))
+                if "_of_" in key:
+                    assert carries_relation(carried, "of")
                 visit(carried, value)
         elif isinstance(value, list):
             for carried in value:
@@ -308,9 +298,9 @@ def test_every_grammar_representation_composite_preserves_material_order():
             if len(words) > 1:
                 material = frozenset(Counter(words).items())
                 ordered.setdefault(material, set()).add(words)
-            if "_of_" in value or "_as_" in value or "_for_" in value:
+            if "_of_" in value:
                 assert parent is not None
-                assert carries_relation(parent, connective_relation(value))
+                assert carries_relation(parent, "of")
 
     visit(grammar)
     _assert_structured_relation_identities_name_their_exact_relation(grammar)
@@ -831,7 +821,7 @@ def _representation_witness() -> dict:
     representation = record_operator_representation(
         ledger,
         locality_identity="representation",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing={"through_event_occurrence_identity": None},
     )
     event = ledger.get(representation["representation_event_identity"])
     return {
@@ -878,7 +868,7 @@ def _repeated_representation_witness() -> tuple[dict, dict]:
         representation = record_operator_representation(
             ledger,
             locality_identity="repeated-representation",
-            locality_standing={"as_of_event_identity": None},
+            locality_standing={"through_event_occurrence_identity": None},
         )
         event = ledger.get(representation["representation_event_identity"])
         return {
@@ -1101,7 +1091,7 @@ def _standing_locality_continuation_yield_witness() -> dict:
     representation = record_operator_representation(
         ledger,
         locality_identity="standing-continuation-source",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing={"through_event_occurrence_identity": None},
     )
     assignment = record_standing_locality_continuation_responsibility_assignment(
         ledger,
@@ -2745,7 +2735,7 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         if isinstance(source_reference, str)
         else None
     )
-    standing_boundary = material.get("locality_standing_as_of_event_identity")
+    standing_boundary = material.get("locality_standing_through_event_occurrence_identity")
     standing_boundary_event = (
         bundle["ledger"].get(standing_boundary)
         if isinstance(standing_boundary, str)
@@ -2784,7 +2774,7 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
             and source.exact_material == event.exact_material
             else MISSING
         ),
-        "locality_standing_as_of_event_identity": (
+        "locality_standing_through_event_occurrence_identity": (
             EXACT
             if standing_boundary_is_exact
             and standing_boundary_event is not None
@@ -2794,7 +2784,7 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         "source_provenance": (
             EXACT
             if dimensions.get("source_provenance")
-            == material.get("locality_standing_as_of_event_identity")
+            == material.get("locality_standing_through_event_occurrence_identity")
             else MISSING
         ),
         "scope_locality": (
@@ -4725,7 +4715,7 @@ def test_representation_source_and_standing_boundary_remain_distinct_coordinates
     }
 
     assert source.identity != later.identity
-    assert event.material["locality_standing_as_of_event_identity"] == later.identity
+    assert event.material["locality_standing_through_event_occurrence_identity"] == later.identity
     assert set(_representation_source_witness(bundle).values()) == {EXACT}
 
 
@@ -4941,7 +4931,7 @@ def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_oth
 
     source_witness = _representation_source_witness(source_missing)
     assert source_witness["source_occurrence_reference"] == MISSING
-    assert source_witness["locality_standing_as_of_event_identity"] == MISSING
+    assert source_witness["locality_standing_through_event_occurrence_identity"] == MISSING
     assert _representation_act_evidence_witness(source_missing)
     assert _representation_locality_witness(source_missing) == EXACT
 

@@ -38,7 +38,7 @@ EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND = (
 REPRESENTATION_CANDIDATE_BOOK_CLAUSE = "01.Source.E"
 REPRESENTATION_ADMISSION_BOOK_CLAUSE = "01.Standing.E"
 REPRESENTATION_CANDIDATE_ACT = (
-    "Preserve one exact Representation as candidate for one emission Act"
+    "Preserve one exact Representation candidate under one emission Act boundary"
 )
 REPRESENTATION_CANDIDATE_RESPONSIBILITY = (
     "preserve one exact Representation candidate for one operator Locality"
@@ -131,7 +131,7 @@ def _representation_reference(
         ],
         "source_locality_identity": representation["locality_identity"],
         "representation_source_standing_boundary_identity": representation[
-            "locality_standing_as_of_event_identity"
+            "locality_standing_through_event_occurrence_identity"
         ],
     }
     if "representation_rule" in representation:
@@ -150,7 +150,7 @@ def _require_representation_standing(
             "candidate requires exact Locality Standing"
         )
     locality_identity = representation_reference["source_locality_identity"]
-    boundary_identity = locality_standing.get("as_of_event_identity")
+    boundary_identity = locality_standing.get("through_event_occurrence_identity")
     representations = locality_standing.get("representations")
     if (
         locality_standing.get("locality_identity") != locality_identity

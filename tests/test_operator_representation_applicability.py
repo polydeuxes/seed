@@ -8,7 +8,7 @@ from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
-    read_operator_locality_standing_as_of,
+    read_operator_locality_standing_through,
 )
 from seed_runtime.operator_representation import (
     EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
@@ -130,10 +130,10 @@ def test_emitter_refuses_applicability_absent_from_current_standing():
     admission, applicability, _standing, boundary = admit_representation(
         ledger, representation
     )
-    standing_before_applicability = read_operator_locality_standing_as_of(
+    standing_before_applicability = read_operator_locality_standing_through(
         ledger,
         locality_identity="seed-locality",
-        as_of_event_identity=admission.identity,
+        through_event_occurrence_identity=admission.identity,
     )
 
     with pytest.raises(ValueError, match="Applicability"):

@@ -92,8 +92,8 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     )
     assert addressed.locality_identity == "source"
     assert recorded["source_standing_reference"][
-        "source_standing_as_of_event_identity"
-    ] == addressed.material["locality_standing_as_of_event_identity"]
+        "source_standing_through_event_occurrence_identity"
+    ] == addressed.material["locality_standing_through_event_occurrence_identity"]
     ingests = [
         event for event in ledger.list() if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
@@ -110,7 +110,7 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
         "recorded_occurrence_identity"
     ]
     assert [
-        event.material["locality_standing_as_of_event_identity"]
+        event.material["locality_standing_through_event_occurrence_identity"]
         for event in destination_representations[:3]
     ] == [assignment_identity, act.identity, result.identity]
 
@@ -146,7 +146,7 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
             "addressed_representation_event_identity"
         ],
         recorded["source_standing_reference"][
-            "source_standing_as_of_event_identity"
+            "source_standing_through_event_occurrence_identity"
         ],
     } <= source_identities
     assert not [

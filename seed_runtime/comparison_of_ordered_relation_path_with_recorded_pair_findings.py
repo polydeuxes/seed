@@ -327,7 +327,7 @@ def _require_input_standing(
             "comparison of ordered relation path with recorded pair findings requires both exact results in current Standing"
         )
     boundary = _identity(
-        standing.get("as_of_event_identity"),
+        standing.get("through_event_occurrence_identity"),
         "comparison of ordered relation path with recorded pair findings requires one exact Standing boundary",
     )
     for occurrence in (

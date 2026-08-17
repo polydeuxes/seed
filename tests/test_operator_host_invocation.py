@@ -258,7 +258,7 @@ def _represented_boundary_kinds(ledger):
         if event.kind != "operator.representation.recorded":
             continue
         standing_boundary = event.material[
-            "locality_standing_as_of_event_identity"
+            "locality_standing_through_event_occurrence_identity"
         ]
         source_reference = event.material["source_occurrence_reference"]
         represented.append(

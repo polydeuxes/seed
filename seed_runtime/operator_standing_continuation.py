@@ -36,7 +36,7 @@ STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
 )
 STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality continuation"
 STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY = (
-    "preserve one exact prior Locality Standing boundary as available at one other "
+    "preserve availability of one exact prior Locality Standing boundary at one other "
     "exact Locality without revising its carried subjects"
 )
 STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
@@ -94,14 +94,14 @@ def _source_standing_reference(
     representation_event = ledger.get(addressed_representation_event_identity)
     if (
         representation_event is None
-        or "locality_standing_as_of_event_identity"
+        or "locality_standing_through_event_occurrence_identity"
         not in representation_event.material
     ):
         raise StandingLocalityContinuationError(
             "the addressed Representation carries no exact source boundary"
         )
     source_boundary = representation_event.material[
-        "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity"
     ]
     if source_boundary is not None and (
         type(source_boundary) is not str or not source_boundary
@@ -131,7 +131,7 @@ def _source_standing_reference(
             )
     return {
         "source_locality_identity": source_locality_identity,
-        "source_standing_as_of_event_identity": source_boundary,
+        "source_standing_through_event_occurrence_identity": source_boundary,
         "addressed_representation_event_identity": (
             addressed_representation_event_identity
         ),
@@ -183,8 +183,8 @@ def _assignment_material(
             "source_locality_identity": source_standing_reference[
                 "source_locality_identity"
             ],
-            "source_standing_as_of_event_identity": source_standing_reference[
-                "source_standing_as_of_event_identity"
+            "source_standing_through_event_occurrence_identity": source_standing_reference[
+                "source_standing_through_event_occurrence_identity"
             ],
             "addressed_representation_event_identity": addressed_representation,
             "destination_locality_identity": destination_locality_identity,
@@ -412,7 +412,7 @@ def record_standing_locality_continuation_responsible_act_evidence(
             "Standing Locality continuation Act requires its exact prior carried assignment"
         )
     standing_boundary = responsibility_assignment_standing.get(
-        "as_of_event_identity"
+        "through_event_occurrence_identity"
     )
     standing_boundary_event = ledger.get(standing_boundary)
     if (

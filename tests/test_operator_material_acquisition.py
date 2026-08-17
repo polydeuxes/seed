@@ -114,8 +114,8 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     ]
     assert recorded["source_standing_reference"] == {
         "locality_identity": "source",
-        "locality_standing_as_of_event_identity": standing[
-            "as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity": standing[
+            "through_event_occurrence_identity"
         ],
         "addressed_representation_event_identity": representation[
             "representation_event_identity"
@@ -321,7 +321,7 @@ def test_assignment_refuses_different_locality_and_changed_cut():
         _assignment(ledger, different_locality, representation)
 
     changed = dict(standing)
-    changed["as_of_event_identity"] = "missing"
+    changed["through_event_occurrence_identity"] = "missing"
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
         _assignment(ledger, changed, representation)
 
@@ -331,7 +331,7 @@ def test_assignment_refuses_cross_locality_and_reversed_standing_boundaries():
     standing, representation = _context(ledger)
 
     changed_cut = dict(standing)
-    changed_cut["as_of_event_identity"] = ledger.append(
+    changed_cut["through_event_occurrence_identity"] = ledger.append(
         "other.locality.occurrence", locality_identity="elsewhere"
     ).identity
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
@@ -344,7 +344,7 @@ def test_assignment_refuses_cross_locality_and_reversed_standing_boundaries():
         if event.identity != representation_identity
     )
     reversed_boundary = dict(standing)
-    reversed_boundary["as_of_event_identity"] = earlier.identity
+    reversed_boundary["through_event_occurrence_identity"] = earlier.identity
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
         _assignment(ledger, reversed_boundary, representation)
 
@@ -356,7 +356,7 @@ def test_assignment_refuses_a_corrupted_standing_boundary(monkeypatch):
         "standing.boundary.fixture", locality_identity="source"
     ).identity
     changed = dict(standing)
-    changed["as_of_event_identity"] = boundary_identity
+    changed["through_event_occurrence_identity"] = boundary_identity
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -374,14 +374,14 @@ def test_addressed_representation_can_be_the_exact_standing_boundary():
     ledger = EventLedger()
     standing, representation = _context(ledger)
     same_boundary = dict(standing)
-    same_boundary["as_of_event_identity"] = representation[
+    same_boundary["through_event_occurrence_identity"] = representation[
         "representation_event_identity"
     ]
 
     assignment = _assignment(ledger, same_boundary, representation)
 
     assert assignment.material["source_standing_reference"][
-        "locality_standing_as_of_event_identity"
+        "locality_standing_through_event_occurrence_identity"
     ] == representation["representation_event_identity"]
 
 

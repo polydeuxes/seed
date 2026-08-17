@@ -73,7 +73,7 @@ def ledger() -> EventLedger:
 def test_later_representations_retain_references_to_earlier_preserved_material(
     ledger,
 ):
-    """Each representation Act's as-of boundary reaches further back than the last.
+    """Each representation Act's Standing boundary reaches further back than the last.
 
     Reference, not participation of each referenced event.  The representation Act
     has as input the read; what it carries forward is the exact occurrence
@@ -86,7 +86,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     representation_events = [e for e in events if e.kind == RECORDED]
     assert len(representation_events) >= 3
     boundaries = [
-        e.material["locality_standing_as_of_event_identity"] for e in representation_events
+        e.material["locality_standing_through_event_occurrence_identity"] for e in representation_events
     ]
     # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
@@ -131,7 +131,7 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
     positions = {event.identity: index for index, event in enumerate(events)}
     # Each representation Act appears after the occurrence its boundary names.
     for representation_event in representation_events:
-        boundary = representation_event.material["locality_standing_as_of_event_identity"]
+        boundary = representation_event.material["locality_standing_through_event_occurrence_identity"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.identity]
 
@@ -147,8 +147,8 @@ def represent_evidence_growth() -> str:
     lines = ["representation Act -> the occurrence its Standing was taken through", ""]
     for event in (e for e in led.list() if e.kind == RECORDED):
         lines.append(
-            f"  {event.identity}  as_of="
-            f"{event.material['locality_standing_as_of_event_identity']}"
+            f"  {event.identity}  through="
+            f"{event.material['locality_standing_through_event_occurrence_identity']}"
         )
     return "\n".join(lines)
 

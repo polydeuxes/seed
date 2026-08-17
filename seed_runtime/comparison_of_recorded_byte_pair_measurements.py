@@ -228,7 +228,7 @@ def _comparison_inputs(
                 "later Measurement requires one exact operator acquisition occurrence"
             )
         from seed_runtime.operator_locality_standing import (
-            read_operator_locality_standing_as_of,
+            read_operator_locality_standing_through,
         )
         from seed_runtime.operator_material_acquisition import (
             OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -258,11 +258,11 @@ def _comparison_inputs(
                 "later Measurement requires one exact operator acquisition occurrence"
             )
         try:
-            source_standing = read_operator_locality_standing_as_of(
+            source_standing = read_operator_locality_standing_through(
                 ledger,
                 locality_identity=earlier.locality_identity,
-                as_of_event_identity=source_standing_reference.get(
-                    "locality_standing_as_of_event_identity"
+                through_event_occurrence_identity=source_standing_reference.get(
+                    "locality_standing_through_event_occurrence_identity"
                 ),
             )
         except (TypeError, ValueError) as error:
@@ -359,7 +359,7 @@ def _require_measurement_standing(
             "comparison requires exact current Locality Standing"
         )
     carried = locality_standing.get("measurement_occurrences")
-    boundary_identity = locality_standing.get("as_of_event_identity")
+    boundary_identity = locality_standing.get("through_event_occurrence_identity")
     required = (
         inputs["earlier_event"].identity,
         inputs["later_event"].identity,

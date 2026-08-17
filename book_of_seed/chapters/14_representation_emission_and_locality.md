@@ -20,7 +20,7 @@ A representation Act occurrence yields and carries its exact bounded Representat
 
 An emission attempt may be recorded before the addressed boundary is invoked. The attempt does not establish boundary acceptance. This Book assigns this Seed the bounded Responsibility to preserve one exact boundary-failure occurrence reported by that invocation. A reported partial write or error before acceptance carries the reported result, preserved Unknown, and no accepted result. An attempt without Evidence establishing boundary acceptance leaves boundary acceptance Unknown. Where the declared boundary is the text-stream write, its acceptance establishes emission. Seed records and preserves that emission before invoking a later flush. A later flush failure is a distinct boundary-failure occurrence carrying the accepted emission occurrence; it does not erase that emission and establishes no downstream effect.
 
-Present Applicability of current-facing material requires its exact representation rule, as-of boundary, availability, conflict treatment, and Unknown.
+Present Applicability of current-facing material requires its exact representation rule, Standing boundary through its exact occurrence, availability, conflict treatment, and Unknown.
 
 An Assertion may acquire another exact locality relation through a responsible movement occurrence. No other boundary establishes that locality relation. Movement preserves the Assertion's identity and carried coordinates while recording its source occurrence, earlier locality relation, newly related subject, Evidence, Scope, Unknown, and limits. Movement does not copy or strengthen the Assertion, revise its Standing, or establish Applicability.
 

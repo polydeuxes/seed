@@ -73,9 +73,9 @@ def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
     )
     current = read_operator_locality_standing(ledger, locality_identity="source")
 
-    assert point["standing"]["as_of_event_identity"] == point[
+    assert point["standing"]["through_event_occurrence_identity"] == point[
         "source_standing_reference"
-    ]["source_standing_as_of_event_identity"]
+    ]["source_standing_through_event_occurrence_identity"]
     assert _ingested_materials(ledger, point["standing"]) == [b"book material\n"]
     assert _ingested_materials(ledger, current) == [
         b"book material\n",
@@ -206,9 +206,9 @@ def test_empty_recorded_boundary_reads_exactly_empty_standing():
     )
 
     assert point["source_standing_reference"][
-        "source_standing_as_of_event_identity"
+        "source_standing_through_event_occurrence_identity"
     ] is None
-    assert point["standing"]["as_of_event_identity"] is None
+    assert point["standing"]["through_event_occurrence_identity"] is None
     assert point["standing"]["event_count"] == 0
 
 
@@ -349,9 +349,9 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         output_boundary=boundary,
     )
 
-    assert representation["locality_standing_as_of_event_identity"] == point[
+    assert representation["locality_standing_through_event_occurrence_identity"] == point[
         "source_standing_reference"
-    ]["source_standing_as_of_event_identity"]
+    ]["source_standing_through_event_occurrence_identity"]
     assert (
         representation["source_occurrence_reference"]
         == source_occurrence_identity

@@ -177,7 +177,7 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
     )
     assert recorded["source_reference"][
         "standing_boundary_event_identity"
-    ] == representation.material["locality_standing_as_of_event_identity"]
+    ] == representation.material["locality_standing_through_event_occurrence_identity"]
     assert read_operator_locality_standing(
         ledger, locality_identity="source"
     )["recorded_standing_boundary_references"] == {result.identity: None}

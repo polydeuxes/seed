@@ -227,7 +227,7 @@ def _require_standing(
     if type(locality_standing) is not dict:
         raise SharedPairPositionError("shared-position Measurement requires Standing")
     carried = locality_standing.get(carried_coordinate)
-    boundary = locality_standing.get("as_of_event_identity")
+    boundary = locality_standing.get("through_event_occurrence_identity")
     if (
         locality_standing.get("locality_identity") != inputs.first.locality_identity
         or type(carried) is not dict

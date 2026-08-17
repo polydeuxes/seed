@@ -535,9 +535,9 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
     # through a strictly later occurrence than the first one's.
     positions = {event.identity: index for index, event in enumerate(ledger.list())}
     first_representation = standing["representations"][first_identity]
-    assert first_representation["locality_standing_as_of_event_identity"] is None
+    assert first_representation["locality_standing_through_event_occurrence_identity"] is None
     later_boundary = positions[
-        standing["representations"][last_identity]["locality_standing_as_of_event_identity"]
+        standing["representations"][last_identity]["locality_standing_through_event_occurrence_identity"]
     ]
     # The first Representation Act falls inside the prefix the later Act input.
     assert positions[first_representation["representation_event_identity"]] < later_boundary
