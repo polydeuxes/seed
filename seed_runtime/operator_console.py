@@ -302,15 +302,20 @@ def run_persistent_operator_console(
     """Repeat exact-byte Ingest and slash-command occurrences."""
     if operator_invocation_provider is not None and raw_output_stream is None:
         raise ValueError("exact output boundary required")
-    destination_operator_boundary = (
-        operator_emission_boundary(
-            raw_output_stream,
-            boundary_identity=new_identity("operator_egress_boundary"),
-            locality_identity=new_identity("operator_egress_locality"),
-        )
+    operator_egress_boundary_identity = (
+        new_identity("operator_egress_boundary")
         if raw_output_stream is not None
         else None
     )
+
+    def current_operator_emission_boundary():
+        if raw_output_stream is None:
+            return None
+        return operator_emission_boundary(
+            raw_output_stream,
+            boundary_identity=operator_egress_boundary_identity,
+            locality_identity=locality_identity,
+        )
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"checkout"] = request_operator_checkout
@@ -464,6 +469,9 @@ def run_persistent_operator_console(
                 )
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
+                )
+                destination_operator_boundary = (
+                    current_operator_emission_boundary()
                 )
                 locality_standing, admission, applicability = (
                     _record_exact_material_representation_admission_and_applicability(

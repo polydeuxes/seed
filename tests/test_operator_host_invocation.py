@@ -178,13 +178,23 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
     ) == 2
-    assert len(
-        [
-            event
-            for event in ledger.list_locality("locality")
-            if event.kind == "operator.representation.emitted"
-        ]
-    ) == 2
+    emitted = [
+        event
+        for event in ledger.list_locality("locality")
+        if event.kind == "operator.representation.emitted"
+    ]
+    assert len(emitted) == 2
+    admissions = [
+        event
+        for event in ledger.list_locality("locality")
+        if event.kind
+        == "operator.representation.exact_material_admission_recorded"
+    ]
+    assert len(admissions) == 2
+    assert {
+        event.material["destination_operator_locality_identity"]
+        for event in admissions
+    } == {"locality"}
     assert len(
         [
             event
@@ -199,6 +209,57 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         occurrence["evidence_event_identity"]
         for occurrence in standing["ingest_occurrences"]
     ] == [event.identity for event in ingests]
+    assert standing["admission_result_occurrences"] == {
+        event.identity: None for event in admissions
+    }
+    assert len(standing["applicability_result_occurrences"]) == 2
+    assert {
+        reference["emitted_event_identity"]
+        for reference in standing["representations"].values()
+        if reference["emitted_event_identity"] is not None
+    } == {event.identity for event in emitted}
+
+
+def test_operator_emission_uses_the_current_locality_after_locality_change():
+    ledger = EventLedger()
+
+    def provider(_exact_command, supply):
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"one result",
+                "provider:result",
+                True,
+            )
+        )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="initial",
+        input_stream=BytesIO(b"/locality\n!ls\n"),
+        output_stream=StringIO(),
+        raw_output_stream=BytesIO(),
+        operator_invocation_provider=provider,
+    )
+
+    admissions = [
+        event
+        for event in ledger.list()
+        if event.kind
+        == "operator.representation.exact_material_admission_recorded"
+    ]
+    assert len(admissions) == 1
+    admission = admissions[0]
+    assert admission.locality_identity != "initial"
+    assert admission.material["destination_operator_locality_identity"] == (
+        admission.locality_identity
+    )
+    emitted = [
+        event
+        for event in ledger.list()
+        if event.kind == "operator.representation.emitted"
+    ]
+    assert len(emitted) == 1
+    assert emitted[0].locality_identity == admission.locality_identity
 
 
 def test_system_material_is_durable_and_emitted_before_the_provider_resumes():
