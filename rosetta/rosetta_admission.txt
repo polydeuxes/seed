@@ -879,6 +879,7 @@ silent
 similarity
 similarly
 single
+siren
 singular
 solely
 some
@@ -921,10 +922,8 @@ supporting
 supports
 suppression
 surface
-surviving
 take
 taking
-taxonomy
 temporal
 termination
 test

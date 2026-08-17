@@ -265,7 +265,7 @@ def test_stable_catalog_is_separate_from_sparse_observation():
     )
 
 
-def test_reference_pair_measurement_contains_each_surviving_function():
+def test_reference_pair_measurement_contains_each_preserved_function():
     result = measured.measurement()
 
     names = {identity.rsplit(":", 1)[-1] for identity in result["reference_pair"]}
@@ -418,7 +418,7 @@ FIDELITY_SUBJECTS = {
         test_stable_catalog_is_separate_from_sparse_observation,
     ),
     "reference_pair_measurement": (
-        test_reference_pair_measurement_contains_each_surviving_function,
+        test_reference_pair_measurement_contains_each_preserved_function,
     ),
     "exact_supplied_material_occurrence": (
         test_sql_occurrence_preserves_exact_statement_material,

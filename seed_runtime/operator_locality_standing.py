@@ -85,6 +85,18 @@ from seed_runtime.operator_representation_applicability import (
     get_representation_emission_applicability_act_evidence,
     get_recorded_representation_emission_applicability,
 )
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+    get_recorded_pair_measurement_comparison_responsibility_assignment,
+    get_recorded_pair_measurement_comparison_applicability_act_evidence,
+    get_recorded_pair_measurement_comparison_applicability,
+    get_recorded_pair_measurement_comparison_act_evidence,
+    get_recorded_pair_measurement_comparison,
+)
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -153,6 +165,13 @@ _REPRESENTATION_EMISSION_APPLICABILITY_KINDS = {
     REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND,
 }
+_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -164,6 +183,7 @@ _SUPPORTED_KINDS = {
     *_OPERATOR_SYSTEM_LOCALITY_KINDS,
     *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
+    *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -502,6 +522,7 @@ def advance_operator_locality_standing(
     candidate_result_occurrences: dict[str, None] = {}
     admission_result_occurrences: dict[str, None] = {}
     applicability_result_occurrences: dict[str, None] = {}
+    comparison_result_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -583,6 +604,11 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact Applicability result occurrences"
             )
+        comparison_result_occurrences = prior["comparison_result_occurrences"]
+        if type(comparison_result_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Compare result occurrences"
+            )
         known_loss = prior["known_loss"]
         unknown = prior["unknown"]
         conflicts = prior["conflicts"]
@@ -604,6 +630,7 @@ def advance_operator_locality_standing(
             or event.kind in _OPERATOR_SYSTEM_LOCALITY_KINDS
             or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
+            or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -732,6 +759,41 @@ def advance_operator_locality_standing(
                 ledger, event.identity
             )
             applicability_result_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
+            == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND
+        ):
+            get_recorded_pair_measurement_comparison_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
+            == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND
+        ):
+            get_recorded_pair_measurement_comparison_applicability_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if (
+            event.kind
+            == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND
+        ):
+            get_recorded_pair_measurement_comparison_applicability(
+                ledger, event.identity
+            )
+            applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND:
+            get_recorded_pair_measurement_comparison_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
+            get_recorded_pair_measurement_comparison(ledger, event.identity)
+            comparison_result_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -935,6 +997,7 @@ def advance_operator_locality_standing(
         "candidate_result_occurrences": candidate_result_occurrences,
         "admission_result_occurrences": admission_result_occurrences,
         "applicability_result_occurrences": applicability_result_occurrences,
+        "comparison_result_occurrences": comparison_result_occurrences,
         "known_loss": known_loss,
         "unknown": unknown,
         "conflicts": conflicts,

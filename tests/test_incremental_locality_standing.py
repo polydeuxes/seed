@@ -263,10 +263,11 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     _console("alpha\nbeta\ngamma\ndelta\n")
     # One identity for Ingest or the separately observable byte Measurement
     # Act Evidence, two for its Yield/result, three for occurrence-position
-    # Measurement, four for a record-only Representation, and all ten exact
-    # identities for a successful raw Representation lifecycle. No call grows
-    # with the ledger.
-    assert set(sizes) <= {1, 2, 3, 4, 10}, sizes
+    # Measurement, four for a record-only Representation, six for the distinct
+    # pair-input Applicability and pair Measurement lifecycles, and all ten
+    # exact identities for a successful raw Representation lifecycle. No call
+    # grows with the ledger.
+    assert set(sizes) <= {1, 2, 3, 4, 6, 10}, sizes
 
 
 @pytest.mark.parametrize(

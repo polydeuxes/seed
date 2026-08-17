@@ -610,7 +610,7 @@ def _move_byte_assertion_to_locality(
             "second_subject": destination_locality,
             "relation_occurrence_identity": movement_occurrence_identity,
         },
-        "surviving_coordinates": [
+        "preserved_coordinates": [
             "Evidence",
             "Authority",
             "Scope",
@@ -749,7 +749,7 @@ def _validate_moved_byte_assertion(
                 "movement_act_occurrence_identity"
             ),
         },
-        "surviving_coordinates": [
+        "preserved_coordinates": [
             "Evidence",
             "Authority",
             "Scope",
@@ -2267,6 +2267,43 @@ def assertions_of_recorded_byte_position_pair_measurement(
             _support_assertion_refs_json=_canonical(support_references),
         ))
     return tuple(validated_results)
+
+
+def byte_position_pair_measurement_occurrence_references(
+    ledger: EventLedger, event_identity: str
+) -> tuple[str, ...]:
+    """Return the exact ordered Applicability and Measurement occurrences."""
+
+    assertions = assertions_of_recorded_byte_position_pair_measurement(
+        ledger, event_identity
+    )
+    if type(assertions) is not tuple:
+        raise ByteMeasurementError("pair Measurement result is absent")
+    result = ledger.get(event_identity)
+    assert result is not None
+    applicability_identity = result.material["input_applicability_event_identity"]
+    applicability = ledger.get(applicability_identity)
+    if applicability is None:
+        raise ByteMeasurementError(
+            "pair Measurement carries no exact Applicability result"
+        )
+    get_recorded_pair_input_applicability(ledger, applicability.identity)
+    references = (
+        applicability.material["responsible_act_evidence_identity"],
+        applicability.material["evidence_of_yield_relation_identity"],
+        applicability.identity,
+        result.material["responsible_act_evidence_identity"],
+        result.material["evidence_of_yield_relation_identity"],
+        result.identity,
+    )
+    ordered = ledger.occurrences_in_append_order(
+        references, locality_identity=result.locality_identity
+    )
+    if tuple(event.identity for event in ordered) != references:
+        raise ByteMeasurementError(
+            "pair Applicability and Measurement occurrences are not ordered"
+        )
+    return references
 
 
 def input_applicability_of_recorded_byte_position_pair_measurement(

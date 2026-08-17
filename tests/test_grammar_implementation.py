@@ -32,6 +32,13 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    record_recorded_pair_measurement_comparison_responsibility_assignment,
+    record_recorded_pair_measurement_comparison_applicability_act_evidence,
+    record_recorded_pair_measurement_comparison_applicability_result,
+    record_recorded_pair_measurement_comparison_act_evidence,
+    record_recorded_pair_measurement_comparison_result,
+)
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
@@ -589,6 +596,101 @@ def _representation_admission_yield_witness() -> dict:
 def _representation_emission_applicability_yield_witness() -> dict:
     return _representation_candidate_admission_yield_witnesses()[
         "representation_emission_applicability"
+    ]
+
+
+def _recorded_pair_measurement_comparison_yield_witnesses() -> dict[str, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    locality_identity = "recorded-pair-comparison-yield"
+    earlier_source = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"abab",
+        source_role="system",
+        source_boundary="earlier supplied occurrence",
+    )
+    earlier_measurement = _record_byte_measurement(
+        ledger,
+        source_localities=(locality_identity,),
+        recording_locality_identity=locality_identity,
+    )
+    earlier_pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=earlier_measurement.identity,
+        recording_locality_identity=locality_identity,
+    )
+    ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"abac",
+        source_role="system",
+        source_boundary="later supplied occurrence",
+        provenance_occurrence_references=(earlier_source.identity,),
+    )
+    later_measurement = _record_byte_measurement(
+        ledger,
+        source_localities=(locality_identity,),
+        recording_locality_identity=locality_identity,
+    )
+    later_pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=later_measurement.identity,
+        recording_locality_identity=locality_identity,
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    assignment = (
+        record_recorded_pair_measurement_comparison_responsibility_assignment(
+            ledger,
+            earlier_result_event_identity=earlier_pair.identity,
+            later_result_event_identity=later_pair.identity,
+            locality_standing=standing,
+        )
+    )
+    applicability_act = (
+        record_recorded_pair_measurement_comparison_applicability_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality_identity
+            ),
+        )
+    )
+    applicability = (
+        record_recorded_pair_measurement_comparison_applicability_result(
+            ledger,
+            responsible_act_evidence_event_identity=applicability_act.identity,
+        )
+    )
+    comparison_act = record_recorded_pair_measurement_comparison_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    comparison = record_recorded_pair_measurement_comparison_result(
+        ledger, responsible_act_evidence_event_identity=comparison_act.identity
+    )
+    return {
+        "recorded_pair_measurement_comparison_applicability": _yield_bundle(
+            ledger, applicability
+        ),
+        "recorded_pair_measurement_comparison": _yield_bundle(ledger, comparison),
+    }
+
+
+def _recorded_pair_measurement_comparison_applicability_yield_witness() -> dict:
+    return _recorded_pair_measurement_comparison_yield_witnesses()[
+        "recorded_pair_measurement_comparison_applicability"
+    ]
+
+
+def _recorded_pair_measurement_comparison_yield_witness() -> dict:
+    return _recorded_pair_measurement_comparison_yield_witnesses()[
+        "recorded_pair_measurement_comparison"
     ]
 
 
@@ -1751,6 +1853,12 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
+        "recorded_pair_measurement_comparison_applicability": (
+            _recorded_pair_measurement_comparison_applicability_yield_witness
+        ),
+        "recorded_pair_measurement_comparison": (
+            _recorded_pair_measurement_comparison_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -2502,8 +2610,8 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
     )
     source_material = source.material if source is not None else {}
     source_dimensions = source_material.get("dimensions", {})
-    surviving = movement.material.get("surviving_coordinates")
-    exact_surviving = surviving == [
+    preserved = movement.material.get("preserved_coordinates")
+    exact_preserved = preserved == [
         "Evidence",
         "Authority",
         "Scope",
@@ -2584,7 +2692,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         ),
         "Authority": (
             EXACT
-            if exact_surviving
+            if exact_preserved
             and movement.material.get("authority") == "unestablished"
             and act_evidence is not None
             and act_evidence.material.get("authority") == "unestablished"
@@ -2593,7 +2701,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         ),
         "Scope": (
             EXACT
-            if exact_surviving
+            if exact_preserved
             and isinstance(source_material.get("assertion_scope"), dict)
             and movement.material.get("movement_scope")
             == (
@@ -2604,17 +2712,17 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         ),
         "limits": (
             EXACT
-            if exact_surviving and isinstance(source_material.get("limits"), list)
+            if exact_preserved and isinstance(source_material.get("limits"), list)
             else MISSING
         ),
         "Unknown": (
             EXACT
-            if exact_surviving and isinstance(source_material.get("unknown"), list)
+            if exact_preserved and isinstance(source_material.get("unknown"), list)
             else MISSING
         ),
         "Standing": (
             EXACT
-            if exact_surviving
+            if exact_preserved
             and isinstance(source_dimensions.get("standing"), str)
             and source_dimensions["standing"]
             else MISSING
@@ -3676,9 +3784,9 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
             "Act_occurrence",
             "Participation_relation",
             "carried_Scope",
-            "surviving_limits",
+            "preserved_limits",
         ],
-        "preserves": ["carried_Scope", "surviving_limits"],
+        "preserves": ["carried_Scope", "preserved_limits"],
         "does_not_erase": [
             "summarizing",
             "indexing",
@@ -4108,6 +4216,12 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
+        "recorded_pair_measurement_comparison_applicability": (
+            _recorded_pair_measurement_comparison_applicability_yield_witness
+        ),
+        "recorded_pair_measurement_comparison": (
+            _recorded_pair_measurement_comparison_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -4403,13 +4517,13 @@ def test_assertion_movement_coordinates_refuse_crossing_or_loss():
             "movement_scope", "another Scope"
         ),
         "limits": lambda bundle: bundle["movement"].material[
-            "surviving_coordinates"
+            "preserved_coordinates"
         ].remove("limits"),
         "Unknown": lambda bundle: bundle["movement"].material[
-            "surviving_coordinates"
+            "preserved_coordinates"
         ].remove("Unknown"),
         "Standing": lambda bundle: bundle["movement"].material[
-            "surviving_coordinates"
+            "preserved_coordinates"
         ].remove("Standing"),
     }
 

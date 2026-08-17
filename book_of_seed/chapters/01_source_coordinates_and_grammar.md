@@ -20,7 +20,7 @@ The responsible representation Act occurrence preserves the supplied source iden
 
 ### 01.Source.B — Cross-boundary participation preserves limits
 
-Acceptance of supplied material by an exact Act is bounded by its carried Scope and surviving limits. Summarizing, indexing, citing, comparing, representing, or attaching does not erase those coordinates or relocate Authority.
+Acceptance of supplied material by an exact Act is bounded by its carried Scope and limits. Summarizing, indexing, citing, comparing, representing, or attaching does not erase those coordinates or relocate Authority.
 
 ### 01.Source.C — Fidelity is bounded comparison
 

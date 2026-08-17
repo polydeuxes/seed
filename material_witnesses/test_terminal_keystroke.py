@@ -17,11 +17,16 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
+)
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+    get_recorded_pair_measurement_comparison,
 )
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.occurrence_position_measurement import (
@@ -355,6 +360,11 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     measurements = tuple(
         event for event in system_events if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
+    pair_measurements = tuple(
+        event
+        for event in system_events
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+    )
     position_measurements = tuple(
         event
         for event in system_events
@@ -364,6 +374,11 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         event
         for event in system_events
         if event.kind == "operator.representation.emitted"
+    )
+    comparisons = tuple(
+        event
+        for event in system_events
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
 
     expected_supplied = tuple(
@@ -391,6 +406,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         for position in range(len(EXACT_MATERIAL))
     )
     assert len(measurements) == len(ingests) == 5
+    assert len(pair_measurements) == len(EXACT_MATERIAL) * 2 == 4
     assert len(position_measurements) == len(ingests) == 5
     for position, measurement in enumerate(measurements):
         assertions = assertions_of_recorded_byte_measurement(
@@ -408,10 +424,50 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     assert tuple(event.exact_material for event in emissions) == expected_emitted
     assert emitted_material == b"".join(expected_emitted)
 
+    assert len(comparisons) == len(EXACT_MATERIAL) == 2
+    for position, comparison in enumerate(comparisons):
+        recorded = get_recorded_pair_measurement_comparison(
+            ledger, comparison.identity
+        )
+        assignment = ledger.get(
+            recorded["responsibility_assignment_reference"][
+                "recorded_occurrence_identity"
+            ]
+        )
+        assert assignment is not None
+        assert assignment.material["earlier_measurement_reference"][
+            "recorded_occurrence_identity"
+        ] == pair_measurements[position * 2].identity
+        assert assignment.material["later_measurement_reference"][
+            "recorded_occurrence_identity"
+        ] == pair_measurements[1 + position * 2].identity
+        assert assignment.material["added_occurrence_reference"] == ingests[
+            2 + position * 2
+        ].identity
+        assert assignment.material[
+            "operator_invocation_locality_relation_event_identity"
+        ] == relation.identity
+        assert assignment.material["destination_operator_locality_identity"] == (
+            "terminal-witness-operator-locality"
+        )
+        assert assignment.material[
+            "added_occurrence_provenance_references"
+        ] == ingests[2 + position * 2].material[
+            "provenance_occurrence_references"
+        ]
+        assert recorded["findings"]["conflicting_findings"]
+        assert recorded["findings"]["unknown_findings"] == []
+        assert "cause" not in recorded
+        assert "meaning" not in recorded
+
     standing = read_operator_locality_standing(
         ledger, locality_identity=system_locality
     )
     assert set(standing["measurement_occurrences"]) == {
         *(measurement.identity for measurement in measurements),
+        *(measurement.identity for measurement in pair_measurements),
         *(measurement.identity for measurement in position_measurements),
+    }
+    assert set(standing["comparison_result_occurrences"]) == {
+        comparison.identity for comparison in comparisons
     }

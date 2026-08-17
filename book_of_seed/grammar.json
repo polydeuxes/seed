@@ -301,9 +301,9 @@
         "Act_occurrence",
         "Participation_relation",
         "carried_Scope",
-        "surviving_limits"
+        "preserved_limits"
       ],
-      "preserves": ["carried_Scope", "surviving_limits"],
+      "preserves": ["carried_Scope", "preserved_limits"],
       "does_not_erase": [
         "summarizing",
         "indexing",
@@ -1364,6 +1364,66 @@
       ],
       "distinct_from": [
         ["movement", "Act_occurrence"]
+      ]
+    },
+    "04.Compare.A": {
+      "subject": "bounded_comparison_of_recorded_pair_Measurement_findings",
+      "book_material_reference": "04.Compare.A",
+      "grammar": "established",
+      "recorded_occurrence_kind": ["event_occurrence"],
+      "responsibility": {
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "compare_earlier_and_later_exact_carried_byte_position_pair_Measurement_results",
+        "requires": [
+          "earlier_recorded_pair_Measurement_result",
+          "later_recorded_pair_Measurement_result",
+          "same_Locality",
+          "current_Standing_carrying_each_result",
+          "later_source_occurrence_references_carry_earlier_references_and_one_added_reference",
+          "added_supplied_occurrence",
+          "provenance_to_prior_source_occurrence",
+          "Applicability_of_each_input_to_Compare",
+          "Participation_relation_of_each_input_in_Compare",
+          "Evidence_of_Yield_relation"
+        ]
+      },
+      "comparison_rule": {
+        "finding_subject": ["result_kind", "represented_byte_pair"],
+        "content": "complete_measured_content",
+        "results": [
+          "equal_finding",
+          "conflicting_finding",
+          "finding_of_earlier_result",
+          "finding_of_later_result",
+          "Unknown_finding"
+        ]
+      },
+      "preserves": [
+        "earlier_Measurement_result_reference",
+        "later_Measurement_result_reference",
+        "earlier_Assertion_reference",
+        "later_Assertion_reference",
+        "ordered_source_occurrence_references",
+        "added_occurrence_reference",
+        "provenance",
+        "Scope",
+        "Locality",
+        "Evidence",
+        "Authority",
+        "conflicts",
+        "limits",
+        "Unknown"
+      ],
+      "does_not_establish": [
+        "source_relation",
+        "truth",
+        "corroboration",
+        "Admission",
+        "represented_relation",
+        "downstream_Applicability",
+        "correction",
+        "movement"
       ]
     },
     "05.Recording.A": {

@@ -121,7 +121,7 @@ def test_only_the_prefix_that_vanished_is_refused(tmp_path):
     """A ledger that refused every boundary would report loss that never happened.
 
     The refusal above has to be specific to the prefix the store no longer
-    holds, so a boundary the surviving store can account for must resolve.
+    holds, so a boundary the preserved store can account for must resolve.
     """
 
     path = tmp_path / "e.sqlite"
@@ -131,12 +131,12 @@ def test_only_the_prefix_that_vanished_is_refused(tmp_path):
     _lose(path, occurrences=10, identities=10)
 
     ledger = SQLiteEventLedger(str(path))
-    surviving = ledger.append_boundary()
-    assert len(ledger.list(through=surviving)) == 40
+    preserved = ledger.append_boundary()
+    assert len(ledger.list(through=preserved)) == 40
 
     ledger.append("k", {"i": "after"}, locality_identity="s1")
     assert len(ledger.list()) == 41
-    assert len(ledger.list(through=surviving)) == 40
+    assert len(ledger.list(through=preserved)) == 40
 
 
 def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
@@ -160,8 +160,8 @@ def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    surviving = ledger.list()
-    assert [event.identity for event in surviving] == [kept.identity]
+    preserved = ledger.list()
+    assert [event.identity for event in preserved] == [kept.identity]
     assert ledger.integrity_of(kept.identity) == VERIFIED
 
     ledger.append("k", {"i": "after"}, locality_identity="s1")

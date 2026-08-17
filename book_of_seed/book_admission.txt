@@ -386,8 +386,6 @@ supplies
 support
 supporting
 supports
-surviving
-taxonomy
 temporal
 test
 tests

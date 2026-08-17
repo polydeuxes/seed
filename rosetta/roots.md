@@ -101,6 +101,7 @@ Fact           Assertion described through its bounded Standing
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
 Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
+Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
 Capability     exact Act / Authority / Constraints / Evidence

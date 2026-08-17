@@ -86,9 +86,9 @@ These families are broad constitutional distinctions, not mandatory fields or on
 
 Macro-dimensional families unfold into local coordinates under the exact subject, distinction, Act, Responsibility, result boundary, Scope, and Evidence boundary. No fixed coordinate count, final set, completeness requirement across exact subjects, or mandatory Representation applies. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
-Acts and relations are distinct from dimensions. They may operate over or connect dimension-bearing subjects under their exact constitutional grammar. Dimension-bearing material != the responsible act over that material. Their presence in dimensional characterization does not make them additional dimensions, a mandatory layer, or one exhaustive taxonomy.
+Acts and relations are distinct from dimensions. They may operate over or connect dimension-bearing subjects under their exact constitutional grammar. Dimension-bearing material != the responsible act over that material. Their presence in dimensional characterization does not make them additional dimensions, a mandatory layer, or one exhaustive set of kinds.
 
-**Unknown** Standing is not a fixed taxonomy. A coordinate, relation, distinction, or Standing may remain **Unknown** when its required Evidence, Authority, provenance, occurrence, Applicability, or other local relation is not established or available. It remains bounded to its exact subject, distinction, Act, result boundary, Scope, Evidence, Authority, and responsible occurrence. Inapplicable != **Unknown**.
+**Unknown** Standing is not one fixed set of kinds. A coordinate, relation, distinction, or Standing may remain **Unknown** when its required Evidence, Authority, provenance, occurrence, Applicability, or other local relation is not established or available. It remains bounded to its exact subject, distinction, Act, result boundary, Scope, Evidence, Authority, and responsible occurrence. Inapplicable != **Unknown**.
 
 ## Important distinctions
 - occurrence Evidence may be local to an exact Act occurrence and absent from the result

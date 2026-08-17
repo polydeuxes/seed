@@ -367,7 +367,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
     } == expected_materials
 
     operator_reference = ingest_result_reference(ledger, operator.identity)
-    surviving = []
+    preserved = []
     comparisons = []
     for subject_position, (subject, premise) in enumerate(
         zip(pair_subjects, position_premises)
@@ -375,7 +375,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         occurrences = exact_occurrences_of_material_pair(subject, operator_reference)
         if not occurrences:
             continue
-        surviving.append((subject, occurrences))
+        preserved.append((subject, occurrences))
         comparisons.extend(
             compare_occurrences_of_material_pair(
                 premise,
@@ -386,12 +386,12 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
             )
         )
 
-    assert surviving
+    assert preserved
     assert comparisons
     assert any(
         {occurrence.direction for occurrence in occurrences}
         == {"before", "after"}
-        for _subject, occurrences in surviving
+        for _subject, occurrences in preserved
     )
     assert any(comparison.distinction for comparison in comparisons)
     assert any(not comparison.distinction for comparison in comparisons)
