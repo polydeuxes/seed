@@ -74,80 +74,6 @@ class ExactMaterialReference:
 
 
 @dataclass(frozen=True, slots=True)
-class ExactBoundedMaterialReference:
-    source_reference: ExactMaterialCoordinates
-    first_position: int
-    last_position: int
-    exact_material: bytes
-
-    def __post_init__(self) -> None:
-        if not _is_exact_material_coordinates(self.source_reference):
-            raise TypeError("bounded material requires one exact source reference")
-        if type(getattr(self.source_reference, "locality_identity", None)) is not str:
-            raise TypeError("bounded material requires its exact source Locality")
-        if (
-            type(self.first_position) is not int
-            or type(self.last_position) is not int
-            or self.first_position < 0
-            or self.last_position < self.first_position
-            or self.last_position >= len(self.source_reference.exact_material)
-        ):
-            raise ValueError("bounded material requires one exact source boundary")
-        if (
-            type(self.exact_material) is not bytes
-            or self.exact_material
-            != self.source_reference.exact_material[
-                self.first_position : self.last_position + 1
-            ]
-        ):
-            raise ValueError("bounded material differs from its exact source")
-
-    @property
-    def locality_identity(self) -> str:
-        return self.source_reference.locality_identity
-
-    @property
-    def occurrence_identity(self):
-        return (
-            self.source_reference,
-            self.first_position,
-            self.last_position,
-        )
-
-
-def exact_material_partition_references(
-    source_reference: ExactMaterialCoordinates,
-    material_byte_counts: tuple[int, ...],
-) -> tuple[ExactBoundedMaterialReference, ...]:
-    if not _is_exact_material_coordinates(source_reference):
-        raise TypeError("material partition requires one exact source reference")
-    if (
-        type(material_byte_counts) is not tuple
-        or not material_byte_counts
-        or any(type(count) is not int or count < 1 for count in material_byte_counts)
-    ):
-        raise TypeError("material partition requires exact positive byte counts")
-    if sum(material_byte_counts) != len(source_reference.exact_material):
-        raise ValueError("material partition differs from its exact source boundary")
-    found = []
-    first_position = 0
-    for material_byte_count in material_byte_counts:
-        last_position = first_position + material_byte_count - 1
-        found.append(
-            ExactBoundedMaterialReference(
-                source_reference=source_reference,
-                first_position=first_position,
-                last_position=last_position,
-                exact_material=source_reference.exact_material[
-                    first_position : last_position + 1
-                ],
-            )
-        )
-        first_position = last_position + 1
-    return tuple(found)
-
-
-@dataclass(frozen=True, slots=True)
 class ExactPositionMaterialReference:
     source_reference: ExactMaterialCoordinates
     position: int
@@ -612,7 +538,6 @@ def _is_exact_material_coordinates(material: object) -> bool:
 
     return type(material) in (
         ExactMaterialReference,
-        ExactBoundedMaterialReference,
         ExactMaterialResultReference,
         ExactPositionMaterialReference,
         ExactPositionPairMaterialReference,
