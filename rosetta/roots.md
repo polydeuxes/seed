@@ -104,6 +104,7 @@ Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelat
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
 Capability     exact Act / Authority / Constraints / Evidence
+Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
 Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
 Demand         shorthand that a bounded result is absent
