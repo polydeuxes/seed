@@ -35,8 +35,16 @@ from seed_runtime.occurrence_position_measurement import (
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation import (
+    REPRESENTATION_RECORDED_KIND,
     emit_operator_representation_material,
+    read_operator_representation,
     record_operator_representation,
+)
+from seed_runtime.operator_representation_admission import (
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+    get_recorded_exact_material_representation_admission,
+    get_recorded_representation_candidate,
 )
 from seed_runtime.operator_system_locality import OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
 from seed_runtime.supplied_invocation_material import SuppliedSystemMaterialOccurrence
@@ -380,6 +388,19 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         for event in system_events
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
+    representations = tuple(
+        event for event in system_events if event.kind == REPRESENTATION_RECORDED_KIND
+    )
+    candidates = tuple(
+        event
+        for event in system_events
+        if event.kind == REPRESENTATION_CANDIDATE_RECORDED_KIND
+    )
+    admissions = tuple(
+        event
+        for event in system_events
+        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND
+    )
 
     expected_supplied = tuple(
         (
@@ -460,6 +481,58 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         assert "cause" not in recorded
         assert "meaning" not in recorded
 
+    comparison_identities = {comparison.identity for comparison in comparisons}
+    comparison_representations = tuple(
+        read_operator_representation(ledger, representation.identity)
+        for representation in representations
+        if representation.material["source_occurrence_reference"]
+        in comparison_identities
+    )
+    assert len(comparison_representations) == len(comparisons)
+    assert {
+        representation["source_occurrence_reference"]
+        for representation in comparison_representations
+    } == comparison_identities
+    assert all(
+        representation["exact_material"] is None
+        and "representation_rule" not in representation
+        for representation in comparison_representations
+    )
+
+    comparison_representation_identities = {
+        representation["representation_event_identity"]
+        for representation in comparison_representations
+    }
+    comparison_candidates = tuple(
+        get_recorded_representation_candidate(ledger, candidate.identity)
+        for candidate in candidates
+        if candidate.material["representation_reference"][
+            "representation_event_identity"
+        ]
+        in comparison_representation_identities
+    )
+    assert len(comparison_candidates) == len(comparisons)
+    assert all(
+        candidate["destination_operator_locality_identity"]
+        == "terminal-witness-operator-locality"
+        and "representation_rule" not in candidate["representation_reference"]
+        for candidate in comparison_candidates
+    )
+    admitted_candidate_identities = {
+        get_recorded_exact_material_representation_admission(
+            ledger, admission.identity
+        )["candidate_reference"]["recorded_occurrence_identity"]
+        for admission in admissions
+    }
+    assert admitted_candidate_identities.isdisjoint(
+        candidate.identity
+        for candidate in candidates
+        if candidate.material["representation_reference"][
+            "representation_event_identity"
+        ]
+        in comparison_representation_identities
+    )
+
     standing = read_operator_locality_standing(
         ledger, locality_identity=system_locality
     )
@@ -471,3 +544,15 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     assert set(standing["comparison_result_occurrences"]) == {
         comparison.identity for comparison in comparisons
     }
+    assert comparison_representation_identities <= {
+        representation["representation_event_identity"]
+        for representation in standing["representations"].values()
+    }
+    assert {
+        candidate.identity
+        for candidate in candidates
+        if candidate.material["representation_reference"][
+            "representation_event_identity"
+        ]
+        in comparison_representation_identities
+    } <= set(standing["candidate_result_occurrences"])

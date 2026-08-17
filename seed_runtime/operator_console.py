@@ -131,14 +131,14 @@ def _advance_over_representation(ledger, standing, representation):
     )
 
 
-def _record_exact_material_representation_admission_and_applicability(
+def _record_representation_candidate(
     ledger,
     standing,
     representation,
     *,
     destination_operator_boundary,
 ):
-    """Carry one Representation through Candidate and Admission Standing."""
+    """Carry one addressed Representation into Candidate Standing."""
 
     locality_identity = representation["locality_identity"]
     candidate_assignment = (
@@ -180,6 +180,25 @@ def _record_exact_material_representation_admission_and_applicability(
             candidate.identity,
         ),
         locality_identity=locality_identity,
+    )
+    return standing, candidate
+
+
+def _record_exact_material_representation_admission_and_applicability(
+    ledger,
+    standing,
+    representation,
+    *,
+    destination_operator_boundary,
+):
+    """Carry one exact-material Candidate through Admission Standing."""
+
+    locality_identity = representation["locality_identity"]
+    standing, candidate = _record_representation_candidate(
+        ledger,
+        standing,
+        representation,
+        destination_operator_boundary=destination_operator_boundary,
     )
     admission_assignment = (
         record_exact_material_representation_admission_responsibility_assignment(
@@ -682,14 +701,41 @@ def run_persistent_operator_console(
                     pair_measurement_by_byte_measurement[
                         byte_measurement.identity
                     ] = later_pair.identity
-                    system_standing, _comparison = _record_pair_measurement_comparison(
+                    system_standing, comparison = (
+                        _record_pair_measurement_comparison(
+                            ledger,
+                            system_standing,
+                            earlier_pair_measurement_event_identity=(
+                                earlier_pair_measurement
+                            ),
+                            later_pair_measurement_event_identity=(
+                                later_pair.identity
+                            ),
+                            locality_identity=system_locality_identity,
+                        )
+                    )
+                    comparison_representation = record_operator_representation(
+                        ledger,
+                        locality_identity=system_locality_identity,
+                        locality_standing=system_standing,
+                        source_occurrence_reference=comparison.identity,
+                    )
+                    system_standing = _advance_over_representation(
+                        ledger, system_standing, comparison_representation
+                    )
+                    destination_operator_boundary = operator_emission_boundary(
+                        raw_output_stream,
+                        boundary_identity=operator_egress_boundary_identity,
+                        locality_identity=operator_locality_identity,
+                        boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+                    )
+                    system_standing, _candidate = _record_representation_candidate(
                         ledger,
                         system_standing,
-                        earlier_pair_measurement_event_identity=(
-                            earlier_pair_measurement
+                        comparison_representation,
+                        destination_operator_boundary=(
+                            destination_operator_boundary
                         ),
-                        later_pair_measurement_event_identity=later_pair.identity,
-                        locality_identity=system_locality_identity,
                     )
                 if not supplied.egress:
                     return

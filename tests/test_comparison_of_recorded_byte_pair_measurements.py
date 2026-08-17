@@ -24,6 +24,13 @@ from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_representation import (
+    read_operator_representation,
+    record_operator_representation,
+)
+from seed_runtime.operator_representation_admission import (
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+)
 from seed_runtime.supplied_invocation_material import SuppliedSystemMaterialOccurrence
 
 
@@ -241,6 +248,40 @@ def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
     assert kinds.count("operator.measurement.byte_counts_recorded") == 3
     assert "operator.measurement.byte_position_pair_counts_recorded" not in kinds
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
+    assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
+
+
+def test_carried_compare_result_is_one_structured_representation_source():
+    ledger, *_rest, result = _comparison()
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=LOCALITY,
+        locality_standing=standing,
+        source_occurrence_reference=result.identity,
+    )
+    recorded = read_operator_representation(
+        ledger, representation["representation_event_identity"]
+    )
+
+    assert recorded["source_occurrence_reference"] == result.identity
+    assert recorded["exact_material"] is None
+    assert "representation_rule" not in recorded
+
+
+def test_compare_result_absent_from_standing_is_refused_as_representation_source():
+    ledger, *_rest, result = _comparison()
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing["comparison_result_occurrences"].pop(result.identity)
+
+    with pytest.raises(ValueError, match="not carried by Standing"):
+        record_operator_representation(
+            ledger,
+            locality_identity=LOCALITY,
+            locality_standing=standing,
+            source_occurrence_reference=result.identity,
+        )
 
 
 FIDELITY_SUBJECTS = {
@@ -251,5 +292,7 @@ FIDELITY_SUBJECTS = {
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,
         test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
+        test_carried_compare_result_is_one_structured_representation_source,
+        test_compare_result_absent_from_standing_is_refused_as_representation_source,
     ),
 }

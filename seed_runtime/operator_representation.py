@@ -20,6 +20,10 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+    get_recorded_pair_measurement_comparison,
+)
 from seed_runtime.operator_egress import (
     ExactMaterialEgressFailure,
     emit_exact_material,
@@ -86,6 +90,12 @@ _MEASUREMENT_READERS = {
     OCCURRENCE_POSITION_RECORDED_KIND: get_recorded_occurrence_position_measurement,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: (
         get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position
+    ),
+}
+
+_STRUCTURED_RESULT_READERS = {
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND: (
+        get_recorded_pair_measurement_comparison
     ),
 }
 
@@ -359,8 +369,8 @@ def _exact_source_material(
             raise ValueError(
                 "Representation source is not a declared Measurement result"
             )
-        finding = reader(ledger, source.identity)
-        if finding is None:
+        structured_result = reader(ledger, source.identity)
+        if structured_result is None:
             raise ValueError("Representation source Measurement is missing")
         requirements = read_requirements_of_yield_relation(
             ledger,
@@ -377,6 +387,23 @@ def _exact_source_material(
         return None
     if source.kind in _MEASUREMENT_READERS:
         raise ValueError("Representation source Measurement is not carried by Standing")
+    comparison_result_occurrences = locality_standing.get(
+        "comparison_result_occurrences", {}
+    )
+    if type(comparison_result_occurrences) is not dict:
+        raise ValueError("Representation requires exact carried Compare results")
+    if source.identity in comparison_result_occurrences:
+        if comparison_result_occurrences.get(source.identity, object()) is not None:
+            raise ValueError("Representation source Compare result is not exact")
+        reader = _STRUCTURED_RESULT_READERS.get(source.kind)
+        structured_result = (
+            reader(ledger, source.identity) if reader is not None else None
+        )
+        if structured_result is None or source.exact_material is not None:
+            raise ValueError("Representation source Compare result is not exact")
+        return None
+    if source.kind in _STRUCTURED_RESULT_READERS:
+        raise ValueError("Representation source Compare result is not carried by Standing")
     if source.identity not in exact_result_occurrences:
         raise ValueError("Representation source occurrence is not carried by Standing")
     requirements = read_requirements_of_yield_relation(
@@ -438,10 +465,12 @@ def read_operator_representation(
         ):
             raise ValueError("the recorded Representation source is not exact")
         reader = _MEASUREMENT_READERS.get(source.kind)
-        source_finding = (
+        if reader is None:
+            reader = _STRUCTURED_RESULT_READERS.get(source.kind)
+        structured_source_result = (
             reader(ledger, source.identity) if reader is not None else None
         )
-        if source_finding is not None:
+        if structured_source_result is not None:
             if (
                 event.exact_material is not None
                 or source.exact_material is not None
