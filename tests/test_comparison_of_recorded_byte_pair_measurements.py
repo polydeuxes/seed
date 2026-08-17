@@ -5,6 +5,7 @@ import pytest
 
 from tests.binary_input import binary_input
 
+import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -215,6 +216,43 @@ def test_corrupted_compare_yield_is_refused():
         get_recorded_pair_measurement_comparison(ledger, result.identity)
 
 
+def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
+    ledger, _first_source, _added, earlier, later, *_middle, result = _comparison()
+    original = comparison_module._measurement_and_assertions
+    calls = []
+
+    def counted(ledger, event_identity):
+        calls.append(event_identity)
+        return original(ledger, event_identity)
+
+    monkeypatch.setattr(comparison_module, "_measurement_and_assertions", counted)
+
+    get_recorded_pair_measurement_comparison(ledger, result.identity)
+    assert calls == [earlier.identity, later.identity]
+
+    get_recorded_pair_measurement_comparison(ledger, result.identity)
+    assert calls == [
+        earlier.identity,
+        later.identity,
+        earlier.identity,
+        later.identity,
+    ]
+
+
+def test_later_result_read_revalidates_changed_pair_measurement_evidence():
+    ledger, _first_source, _added, earlier, _later, *_middle, result = _comparison()
+    get_recorded_pair_measurement_comparison(ledger, result.identity)
+    evidence = ledger.get(earlier.material["evidence_of_yield_relation_identity"])
+    assert evidence is not None
+    evidence.material["result_identity"] = "crossed-pair-result"
+
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="intact recorded byte-position-pair Measurement",
+    ):
+        get_recorded_pair_measurement_comparison(ledger, result.identity)
+
+
 def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
     ledger = EventLedger()
 
@@ -291,6 +329,8 @@ FIDELITY_SUBJECTS = {
         test_missing_provenance_cannot_supply_the_compare_rung,
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,
+        test_one_result_read_validates_each_pair_measurement_once,
+        test_later_result_read_revalidates_changed_pair_measurement_evidence,
         test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
         test_carried_compare_result_is_one_structured_representation_source,
         test_compare_result_absent_from_standing_is_refused_as_representation_source,
