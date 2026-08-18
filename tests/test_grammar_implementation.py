@@ -1936,15 +1936,15 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
                 missing_locality,
                 occurrence_identity=locality["event"].identity,
             ),
-            "wrong_occurrence": _assertion_locality_witness(
+            "different_occurrence": _assertion_locality_witness(
                 locality,
                 occurrence_identity=alternate_locality["event"].identity,
             ),
-            "corrupted_evidence": _assertion_locality_witness(
+            "evidence_not_intact": _assertion_locality_witness(
                 corrupted_locality,
                 occurrence_identity=corrupted_locality["event"].identity,
             ),
-            "unrelated_occurrence": _assertion_locality_witness(
+            "occurrence_of_different_relation": _assertion_locality_witness(
                 unrelated_locality,
                 occurrence_identity=locality["event"].identity,
             ),
@@ -1956,22 +1956,22 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
             "relation_missing": _participation_witness(
                 missing_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
-            "wrong_occurrence": _participation_witness(
+            "different_occurrence": _participation_witness(
                 wrong_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
-            "corrupted_evidence": _participation_witness(
+            "evidence_not_intact": _participation_witness(
                 corrupted_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
-            "unrelated_occurrence": _participation_witness(
+            "occurrence_of_different_relation": _participation_witness(
                 unrelated_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
         },
         "yield": {
             "exact": _occurrence_result_witness(exact_yield),
             "relation_missing": _occurrence_result_witness(missing_yield),
-            "wrong_occurrence": _occurrence_result_witness(wrong_yield),
-            "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
-            "unrelated_occurrence": _occurrence_result_witness(unrelated_yield),
+            "different_occurrence": _occurrence_result_witness(wrong_yield),
+            "evidence_not_intact": _occurrence_result_witness(corrupted_yield),
+            "occurrence_of_different_relation": _occurrence_result_witness(unrelated_yield),
         },
         "carried_by": {
             "exact": _evidence_carried_by_result_occurrence_witness(
@@ -1980,15 +1980,15 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
             "relation_missing": (
                 _evidence_carried_by_result_occurrence_witness(missing_yield)
             ),
-            "wrong_occurrence": (
+            "different_occurrence": (
                 _evidence_carried_by_result_occurrence_witness(wrong_yield)
             ),
-            "corrupted_evidence": (
+            "evidence_not_intact": (
                 _evidence_carried_by_result_occurrence_witness(
                     corrupted_yield
                 )
             ),
-            "unrelated_occurrence": (
+            "occurrence_of_different_relation": (
                 _evidence_carried_by_result_occurrence_witness(
                     unrelated_yield
                 )
@@ -2077,30 +2077,30 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
         "locality": {
             "exact": emission,
             "relation_missing": missing_locality,
-            "wrong_occurrence": wrong_locality,
-            "corrupted_evidence": corrupted_locality,
-            "unrelated_occurrence": unrelated_locality,
+            "different_occurrence": wrong_locality,
+            "evidence_not_intact": corrupted_locality,
+            "occurrence_of_different_relation": unrelated_locality,
         },
         "participation": {
             "exact": emission,
             "relation_missing": missing_participation,
-            "wrong_occurrence": wrong_participation,
-            "corrupted_evidence": corrupted_participation,
-            "unrelated_occurrence": unrelated_participation,
+            "different_occurrence": wrong_participation,
+            "evidence_not_intact": corrupted_participation,
+            "occurrence_of_different_relation": unrelated_participation,
         },
         "yield": {
             "exact": emission,
             "relation_missing": missing_yield,
-            "wrong_occurrence": wrong_yield,
-            "corrupted_evidence": corrupted_yield,
-            "unrelated_occurrence": unrelated_yield,
+            "different_occurrence": wrong_yield,
+            "evidence_not_intact": corrupted_yield,
+            "occurrence_of_different_relation": unrelated_yield,
         },
         "carried_by": {
             "exact": emission,
             "relation_missing": missing_yield,
-            "wrong_occurrence": wrong_yield,
-            "corrupted_evidence": corrupted_yield,
-            "unrelated_occurrence": unrelated_yield,
+            "different_occurrence": wrong_yield,
+            "evidence_not_intact": corrupted_yield,
+            "occurrence_of_different_relation": unrelated_yield,
         },
     }
 
@@ -2134,7 +2134,7 @@ def _yield_requirement_bundles(
     missing_event.material["evidence_of_yield_relation_identity"] = "missing-yield-evidence"
     missing["event"] = missing_event
 
-    wrong_occurrence = dict(exact)
+    different_occurrence = dict(exact)
     wrong_act_evidence = (
         deepcopy(exact["act_evidence"])
         if exact.get("act_evidence") is not None
@@ -2158,8 +2158,8 @@ def _yield_requirement_bundles(
         alternate_occurrence
     )
     if wrong_act_evidence is not None:
-        wrong_occurrence["act_evidence"] = wrong_act_evidence
-    wrong_occurrence["evidence_of_yield_relation"] = wrong_evidence_of_yield_relation
+        different_occurrence["act_evidence"] = wrong_act_evidence
+    different_occurrence["evidence_of_yield_relation"] = wrong_evidence_of_yield_relation
 
     unrelated = dict(exact)
     unrelated_event = deepcopy(exact["event"])
@@ -2170,9 +2170,9 @@ def _yield_requirement_bundles(
     return {
         "exact": exact,
         "relation_missing": missing,
-        "wrong_occurrence": wrong_occurrence,
-        "corrupted_evidence": corrupted,
-        "unrelated_occurrence": unrelated,
+        "different_occurrence": different_occurrence,
+        "evidence_not_intact": corrupted,
+        "occurrence_of_different_relation": unrelated,
     }
 
 
@@ -2383,13 +2383,13 @@ def _additional_relation_occurrence_fidelity_findings() -> dict[
             "relation_missing": _representation_locality_witness(
                 missing_representation_locality
             ),
-            "wrong_occurrence": _representation_locality_witness(
+            "different_occurrence": _representation_locality_witness(
                 wrong_representation_locality
             ),
-            "corrupted_evidence": _representation_locality_witness(
+            "evidence_not_intact": _representation_locality_witness(
                 corrupted_representation_locality
             ),
-            "unrelated_occurrence": _representation_locality_witness(
+            "occurrence_of_different_relation": _representation_locality_witness(
                 unrelated_representation_locality
             ),
         },
@@ -2398,24 +2398,24 @@ def _additional_relation_occurrence_fidelity_findings() -> dict[
             "relation_missing": _occurrence_result_witness(
                 missing_representation_yield
             ),
-            "wrong_occurrence": _occurrence_result_witness(
+            "different_occurrence": _occurrence_result_witness(
                 wrong_representation_yield
             ),
-            "corrupted_evidence": _occurrence_result_witness(
+            "evidence_not_intact": _occurrence_result_witness(
                 corrupted_representation_yield
             ),
-            "unrelated_occurrence": _occurrence_result_witness(
+            "occurrence_of_different_relation": _occurrence_result_witness(
                 unrelated_representation_yield
             ),
         },
         ("locality", "emission_attempt"): {
             "exact": _emission_attempt_locality_witness(attempt),
             "relation_missing": _emission_attempt_locality_witness(missing_attempt),
-            "wrong_occurrence": _emission_attempt_locality_witness(wrong_attempt),
-            "corrupted_evidence": _emission_attempt_locality_witness(
+            "different_occurrence": _emission_attempt_locality_witness(wrong_attempt),
+            "evidence_not_intact": _emission_attempt_locality_witness(
                 corrupted_attempt
             ),
-            "unrelated_occurrence": _emission_attempt_locality_witness(
+            "occurrence_of_different_relation": _emission_attempt_locality_witness(
                 unrelated_attempt
             ),
         },
@@ -2497,8 +2497,8 @@ def test_primary_relation_measurements_preserve_their_occurrence_boundaries():
 def _relation_witness_specs() -> dict[str, dict]:
     requirements = {
         "exact_relation": "relation_missing",
-        "occurrence_witness": "wrong_occurrence",
-        "intact_evidence": "corrupted_evidence",
+        "occurrence_witness": "different_occurrence",
+        "intact_evidence": "evidence_not_intact",
     }
     return {
         "locality": {
@@ -3405,30 +3405,30 @@ def _locality_fidelity_findings() -> dict[str, str]:
         "another bounded subject"
     )
 
-    wrong_occurrence = _recorded_applicability()
-    source_occurrence = wrong_occurrence["ledger"].get(
-        wrong_occurrence["movement"].material["source_assertion_reference"][
+    different_occurrence = _recorded_applicability()
+    source_occurrence = different_occurrence["ledger"].get(
+        different_occurrence["movement"].material["source_assertion_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    wrong_occurrence["movement_act_evidence"].material["locality_relation"][
+    different_occurrence["movement_act_evidence"].material["locality_relation"][
         "relation_occurrence_identity"
     ] = source_occurrence.identity
 
-    corrupted_evidence = _recorded_applicability()
-    corrupted_evidence["ledger"].mark_corrupted(
-        corrupted_evidence["movement_act_evidence"].identity
+    evidence_not_intact = _recorded_applicability()
+    evidence_not_intact["ledger"].mark_corrupted(
+        evidence_not_intact["movement_act_evidence"].identity
     )
 
-    unrelated_occurrence = _recorded_applicability()
-    unrelated_occurrence["movement"].material["movement_scope"] = "another description"
+    occurrence_of_different_relation = _recorded_applicability()
+    occurrence_of_different_relation["movement"].material["movement_scope"] = "another description"
 
     return {
         "exact": _locality_witness(exact),
         "relation_missing": _locality_witness(relation_missing),
-        "wrong_occurrence": _locality_witness(wrong_occurrence),
-        "corrupted_evidence": _locality_witness(corrupted_evidence),
-        "unrelated_occurrence": _locality_witness(unrelated_occurrence),
+        "different_occurrence": _locality_witness(different_occurrence),
+        "evidence_not_intact": _locality_witness(evidence_not_intact),
+        "occurrence_of_different_relation": _locality_witness(occurrence_of_different_relation),
     }
 
 
@@ -3724,9 +3724,9 @@ def test_byte_pair_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
         "relation_missing": (False, True, True),
-        "wrong_occurrence": (True, False, True),
-        "corrupted_evidence": (True, True, False),
-        "unrelated_occurrence": (True, True, True),
+        "different_occurrence": (True, False, True),
+        "evidence_not_intact": (True, True, False),
+        "occurrence_of_different_relation": (True, True, True),
     }
     boundaries = _byte_pair_yield_requirement_bundles()
 
@@ -3743,9 +3743,9 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
         "relation_missing": (False, True, True),
-        "wrong_occurrence": (True, False, True),
-        "corrupted_evidence": (True, True, False),
-        "unrelated_occurrence": (True, True, True),
+        "different_occurrence": (True, False, True),
+        "evidence_not_intact": (True, True, False),
+        "occurrence_of_different_relation": (True, True, True),
     }
     boundaries = _remaining_yield_requirement_bundles()
 
@@ -3760,8 +3760,8 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
 
 def test_emission_attempt_locality_adversaries_change_one_requirement_each():
     exact, alternate = _repeated_emission_attempt_witness()
-    wrong_occurrence = dict(exact)
-    wrong_occurrence["attempt_locality_evidence"] = alternate[
+    different_occurrence = dict(exact)
+    different_occurrence["attempt_locality_evidence"] = alternate[
         "attempt_locality_evidence"
     ]
 
@@ -3793,7 +3793,7 @@ def test_emission_attempt_locality_adversaries_change_one_requirement_each():
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    assert _emission_attempt_locality_requirements(wrong_occurrence) == {
+    assert _emission_attempt_locality_requirements(different_occurrence) == {
         "exact_relation": True,
         "occurrence_witness": False,
         "intact_evidence": True,
@@ -3829,17 +3829,17 @@ def test_successful_emission_adversaries_change_one_requirement_each():
             "occurrence_witness": True,
             "intact_evidence": True,
         },
-        "wrong_occurrence": {
+        "different_occurrence": {
             "exact_relation": True,
             "occurrence_witness": False,
             "intact_evidence": True,
         },
-        "corrupted_evidence": {
+        "evidence_not_intact": {
             "exact_relation": True,
             "occurrence_witness": True,
             "intact_evidence": False,
         },
-        "unrelated_occurrence": {
+        "occurrence_of_different_relation": {
             "exact_relation": True,
             "occurrence_witness": True,
             "intact_evidence": True,
@@ -3905,31 +3905,31 @@ def test_representation_result_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
         "relation_missing": (False, True, True),
-        "wrong_occurrence": (True, False, True),
-        "corrupted_evidence": (True, True, False),
-        "unrelated_occurrence": (True, True, True),
+        "different_occurrence": (True, False, True),
+        "evidence_not_intact": (True, True, False),
+        "occurrence_of_different_relation": (True, True, True),
     }
     bundles = {
         "locality": {
             "exact": exact,
             "relation_missing": missing_locality,
-            "wrong_occurrence": wrong_locality,
-            "corrupted_evidence": corrupted_locality,
-            "unrelated_occurrence": unrelated_locality,
+            "different_occurrence": wrong_locality,
+            "evidence_not_intact": corrupted_locality,
+            "occurrence_of_different_relation": unrelated_locality,
         },
         "yield": {
             "exact": exact,
             "relation_missing": missing_yield,
-            "wrong_occurrence": wrong_yield,
-            "corrupted_evidence": corrupted_yield,
-            "unrelated_occurrence": unrelated_yield,
+            "different_occurrence": wrong_yield,
+            "evidence_not_intact": corrupted_yield,
+            "occurrence_of_different_relation": unrelated_yield,
         },
         "carried_by": {
             "exact": exact,
             "relation_missing": missing_yield,
-            "wrong_occurrence": wrong_yield,
-            "corrupted_evidence": corrupted_yield,
-            "unrelated_occurrence": unrelated_yield,
+            "different_occurrence": wrong_yield,
+            "evidence_not_intact": corrupted_yield,
+            "occurrence_of_different_relation": unrelated_yield,
         },
     }
     witnesses = {
@@ -4016,9 +4016,9 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
         "relation_missing": (False, True, True),
-        "wrong_occurrence": (True, False, True),
-        "corrupted_evidence": (True, True, False),
-        "unrelated_occurrence": (True, True, True),
+        "different_occurrence": (True, False, True),
+        "evidence_not_intact": (True, True, False),
+        "occurrence_of_different_relation": (True, True, True),
     }
     actual = {
         "locality": {
@@ -4028,14 +4028,14 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             "relation_missing": _assertion_locality_requirements(
                 missing_locality, occurrence_identity=locality["event"].identity
             ),
-            "wrong_occurrence": _assertion_locality_requirements(
+            "different_occurrence": _assertion_locality_requirements(
                 locality, occurrence_identity=alternate_locality["event"].identity
             ),
-            "corrupted_evidence": _assertion_locality_requirements(
+            "evidence_not_intact": _assertion_locality_requirements(
                 corrupted_locality,
                 occurrence_identity=corrupted_locality["event"].identity,
             ),
-            "unrelated_occurrence": _assertion_locality_requirements(
+            "occurrence_of_different_relation": _assertion_locality_requirements(
                 unrelated_locality, occurrence_identity=locality["event"].identity
             ),
         },
@@ -4044,9 +4044,9 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             for case, bundle in {
                 "exact": participation,
                 "relation_missing": missing_participation,
-                "wrong_occurrence": wrong_participation,
-                "corrupted_evidence": corrupted_participation,
-                "unrelated_occurrence": unrelated_participation,
+                "different_occurrence": wrong_participation,
+                "evidence_not_intact": corrupted_participation,
+                "occurrence_of_different_relation": unrelated_participation,
             }.items()
         },
         "yield": {
@@ -4054,9 +4054,9 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             for case, bundle in {
                 "exact": exact_yield,
                 "relation_missing": missing_yield,
-                "wrong_occurrence": wrong_yield,
-                "corrupted_evidence": corrupted_yield,
-                "unrelated_occurrence": unrelated_yield,
+                "different_occurrence": wrong_yield,
+                "evidence_not_intact": corrupted_yield,
+                "occurrence_of_different_relation": unrelated_yield,
             }.items()
         },
     }
@@ -4115,8 +4115,8 @@ def test_representation_act_has_an_exact_yield_relation_without_asserting_partic
     alternate = _representation_witness()
     missing = dict(representation)
     missing["evidence_of_yield_relation"] = None
-    wrong_occurrence = dict(representation)
-    wrong_occurrence["evidence_of_yield_relation"] = alternate["evidence_of_yield_relation"]
+    different_occurrence = dict(representation)
+    different_occurrence["evidence_of_yield_relation"] = alternate["evidence_of_yield_relation"]
     missing_locality = dict(representation)
     missing_locality["locality_evidence"] = None
     wrong_locality = dict(representation)
@@ -4127,7 +4127,7 @@ def test_representation_act_has_an_exact_yield_relation_without_asserting_partic
     assert _representation_locality_witness(wrong_locality) == MISSING
     assert _occurrence_result_witness(representation) == EXACT
     assert _occurrence_result_witness(missing) == MISSING
-    assert _occurrence_result_witness(wrong_occurrence) == MISSING
+    assert _occurrence_result_witness(different_occurrence) == MISSING
     assert "input_role" not in representation["event"].material
 
 
@@ -4602,49 +4602,49 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
         "another bounded subject"
     )
 
-    wrong_occurrence = _recorded_applicability()
-    source_occurrence = wrong_occurrence["ledger"].get(
-        wrong_occurrence["movement"].material["source_assertion_reference"][
+    different_occurrence = _recorded_applicability()
+    source_occurrence = different_occurrence["ledger"].get(
+        different_occurrence["movement"].material["source_assertion_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    wrong_occurrence["movement_act_evidence"].material["locality_relation"][
+    different_occurrence["movement_act_evidence"].material["locality_relation"][
         "relation_occurrence_identity"
     ] = source_occurrence.identity
 
-    corrupted_evidence = _recorded_applicability()
-    corrupted_evidence["ledger"].mark_corrupted(
-        corrupted_evidence["movement_act_evidence"].identity
+    evidence_not_intact = _recorded_applicability()
+    evidence_not_intact["ledger"].mark_corrupted(
+        evidence_not_intact["movement_act_evidence"].identity
     )
 
-    unrelated_occurrence = _recorded_applicability()
-    unrelated_occurrence["movement"].material["movement_scope"] = "another description"
+    occurrence_of_different_relation = _recorded_applicability()
+    occurrence_of_different_relation["movement"].material["movement_scope"] = "another description"
 
     cases = {
         "exact": exact,
         "relation_missing": relation_missing,
-        "wrong_occurrence": wrong_occurrence,
-        "corrupted_evidence": corrupted_evidence,
-        "unrelated_occurrence": unrelated_occurrence,
+        "different_occurrence": different_occurrence,
+        "evidence_not_intact": evidence_not_intact,
+        "occurrence_of_different_relation": occurrence_of_different_relation,
     }
     assert {name: _locality_witness(case) for name, case in cases.items()} == {
         "exact": EXACT,
         "relation_missing": MISSING,
-        "wrong_occurrence": MISSING,
-        "corrupted_evidence": MISSING,
-        "unrelated_occurrence": EXACT,
+        "different_occurrence": MISSING,
+        "evidence_not_intact": MISSING,
+        "occurrence_of_different_relation": EXACT,
     }
     assert _locality_requirements(relation_missing) == {
         "exact_relation": False,
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    assert _locality_requirements(wrong_occurrence) == {
+    assert _locality_requirements(different_occurrence) == {
         "exact_relation": True,
         "occurrence_witness": False,
         "intact_evidence": True,
     }
-    assert _locality_requirements(corrupted_evidence) == {
+    assert _locality_requirements(evidence_not_intact) == {
         "exact_relation": True,
         "occurrence_witness": True,
         "intact_evidence": False,

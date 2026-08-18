@@ -295,9 +295,9 @@
     "fidelity_findings": {
       "exact": "exact",
       "relation_missing": "missing",
-      "wrong_occurrence": "missing",
-      "corrupted_evidence": "missing",
-      "unrelated_occurrence": "exact"
+      "different_occurrence": "missing",
+      "evidence_not_intact": "missing",
+      "occurrence_of_different_relation": "exact"
     },
     "non_equivalence": [
       ["content", "locality"],
