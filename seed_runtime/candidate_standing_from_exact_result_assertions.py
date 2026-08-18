@@ -37,8 +37,9 @@ CANDIDATE_STANDING_RESULT_KIND = "operator.candidate_standing.recorded"
 
 BOOK_CLAUSE = "01.Source.E.1"
 SOURCE_RULE = (
-    "exact Measurement or Compare result Assertions and each exact Assertion "
-    "carried by that result and Locality Standing through one exact ledger boundary"
+    "exact Measurement result Assertions or Compare result Assertions or Candidate "
+    "result Assertions and each exact Assertion carried by that result and Locality "
+    "Standing through one exact ledger boundary"
 )
 ONE_SOURCE_CANDIDATE_RESPONSIBILITY = (
     "determine Applicability and record one Candidate for each exact source "
@@ -87,6 +88,7 @@ ASSERTION_RESPONSIBILITIES = {
 _SOURCE_STANDING_COORDINATES = (
     "measurement_occurrences",
     "comparison_result_occurrences",
+    "candidate_result_occurrences",
 )
 
 
@@ -317,6 +319,31 @@ def _references_carried_by_result(
                 ),
             )
         )
+
+    if event.kind == CANDIDATE_STANDING_RESULT_KIND:
+        candidate_assertions = material.get("candidate_assertions")
+        if type(candidate_assertions) is not list:
+            raise ValueError(
+                "Candidate Standing requires exact Candidate Assertions carried by a result"
+            )
+        for position, assertion in enumerate(candidate_assertions):
+            references.append(
+                _source_assertion_reference(
+                    event,
+                    standing_coordinate=standing_coordinate,
+                    assertion_coordinate=f"candidate_assertions/{position}",
+                    assertion_identity=_assertion_identity(
+                        assertion,
+                        "Candidate Standing requires exact Candidate Assertions carried by a result",
+                    ),
+                    source_assertion_coordinates=_source_coordinates(
+                        event, assertion
+                    ),
+                    source_standing_through_event_occurrence_identity=(
+                        source_standing_through_event_occurrence_identity
+                    ),
+                )
+            )
     return references
 
 

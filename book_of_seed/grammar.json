@@ -1365,7 +1365,7 @@
       "grammar": "established",
       "recorded_occurrence_kind": ["event_occurrence"],
       "source_rule": {
-        "identity": "exact_Measurement_or_Compare_result_Assertions_and_each_exact_Assertion_carried_by_that_result_and_Locality_Standing_through_one_exact_ledger_boundary",
+        "identity": "exact_Measurement_result_Assertions_or_Compare_result_Assertions_or_Candidate_result_Assertions_and_each_exact_Assertion_carried_by_that_result_and_Locality_Standing_through_one_exact_ledger_boundary",
         "bounded_by": "exact_ledger_boundary",
         "order": "event_order",
         "source_coordinates": [

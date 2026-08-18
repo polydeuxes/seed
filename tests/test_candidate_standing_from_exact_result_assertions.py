@@ -92,6 +92,64 @@ def test_source_boundary_excludes_every_later_result_assertion():
     }
 
 
+def test_later_source_boundary_carries_prior_candidate_result_assertions(tmp_path):
+    database = str(tmp_path / "recursive-candidate-standing.sqlite")
+    ledger = SQLiteEventLedger(database)
+    _source(ledger, exact_bytes=b"a")
+    first_result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity="first-candidate-standing",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    first_standing = get_recorded_candidate_standing(
+        ledger, first_result.identity
+    )
+    later_source_boundary = ledger.append_boundary()
+
+    later_references = source_assertion_references_for_candidate_standing(
+        ledger, source_append_boundary=later_source_boundary
+    )
+    prior_candidate_identities = {
+        candidate["dimensions"]["identity"]
+        for candidate in first_standing["candidate_assertions"]
+    }
+    carried_prior_candidate_references = tuple(
+        reference
+        for reference in later_references
+        if reference["recorded_result_occurrence_identity"] == first_result.identity
+    )
+
+    assert carried_prior_candidate_references[0]["assertion_identity"] == (
+        first_standing["result_identity"]
+    )
+    assert {
+        reference["assertion_identity"]
+        for reference in carried_prior_candidate_references[1:]
+    } == prior_candidate_identities
+    assert all(
+        reference["source_standing_coordinate"] == "candidate_result_occurrences"
+        and reference["source_locality_identity"] == "first-candidate-standing"
+        for reference in carried_prior_candidate_references
+    )
+
+    later_result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity="later-candidate-standing",
+        source_append_boundary=later_source_boundary,
+    )
+    expected = get_recorded_candidate_standing(ledger, later_result.identity)
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    assert get_recorded_candidate_standing(reopened, later_result.identity) == expected
+    assert prior_candidate_identities <= {
+        candidate["assertion_subject"]["source_assertion_reference"][
+            "assertion_identity"
+        ]
+        for candidate in expected["candidate_assertions"]
+    }
+
+
 def test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion():
     ledger = EventLedger()
     _source(ledger)
@@ -451,6 +509,7 @@ FIDELITY_SUBJECTS = {
     "complete_candidate_standing_source_coordinates": (
         test_source_rule_exposes_every_result_assertion_in_event_order,
         test_source_boundary_excludes_every_later_result_assertion,
+        test_later_source_boundary_carries_prior_candidate_result_assertions,
         test_source_and_candidate_result_boundaries_and_localities_stay_distinct,
         test_replay_requires_each_source_result_occurrence_intact,
     ),
