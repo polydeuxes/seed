@@ -10,7 +10,10 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWN
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-from seed_runtime.operator_representation import read_operator_representation
+from seed_runtime.operator_representation import (
+    REPRESENTATION_RECORDED_KIND,
+    read_operator_representation,
+)
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     _record_evidence_of_yield_relation,
@@ -114,6 +117,73 @@ def _source_standing_reference(
         "addressed_representation_event_identity": (
             addressed_representation_event_identity
         ),
+    }
+
+
+def _source_standing_reference_from_carried_representation(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    representation: dict[str, Any],
+    locality_standing: dict[str, Any],
+) -> dict[str, str]:
+    """Use the Representation produced and carried by this console call."""
+
+    if type(representation) is not dict or type(locality_standing) is not dict:
+        raise OperatorMaterialAcquireError(
+            "operator material acquire requires one carried Representation"
+        )
+    event_identity = representation.get("representation_event_identity")
+    result_identity = representation.get("representation_identity")
+    standing_boundary_identity = locality_standing.get(
+        "through_event_occurrence_identity"
+    )
+    if (
+        type(event_identity) is not str
+        or not event_identity
+        or type(result_identity) is not str
+        or not result_identity
+        or representation.get("locality_identity") != locality_identity
+        or locality_standing.get("locality_identity") != locality_identity
+        or standing_boundary_identity != event_identity
+    ):
+        raise OperatorMaterialAcquireError(
+            "operator material acquire requires one carried Representation"
+        )
+    event = ledger.get(event_identity)
+    carried = locality_standing.get("representations")
+    carried_reference = (
+        carried.get(result_identity) if type(carried) is dict else None
+    )
+    if (
+        event is None
+        or event.kind != REPRESENTATION_RECORDED_KIND
+        or event.locality_identity != locality_identity
+        or ledger.integrity_of(event_identity) == CORRUPTED
+        or type(carried_reference) is not dict
+        or carried_reference.get("representation_event_identity") != event_identity
+        or carried_reference.get("source_occurrence_reference")
+        != representation.get("source_occurrence_reference")
+        or event.material.get("result_identity") != result_identity
+        or event.material.get("source_occurrence_reference")
+        != representation.get("source_occurrence_reference")
+        or event.material.get("responsible_act_evidence_identity")
+        != representation.get("responsible_act_evidence_identity")
+        or event.material.get("evidence_of_yield_relation_identity")
+        != representation.get("evidence_of_yield_relation_identity")
+        or event.material.get("locality_evidence_identity")
+        != representation.get("locality_evidence_identity")
+        or event.exact_material != representation.get("exact_material")
+    ):
+        raise OperatorMaterialAcquireError(
+            "operator material acquire requires one carried Representation"
+        )
+    return {
+        "locality_identity": locality_identity,
+        "locality_standing_through_event_occurrence_identity": (
+            standing_boundary_identity
+        ),
+        "addressed_representation_event_identity": event_identity,
     }
 
 
@@ -299,6 +369,39 @@ def record_operator_material_acquire_responsibility_assignment(
         ),
         locality_standing=locality_standing,
     )
+    return _record_operator_material_acquire_responsibility_assignment(
+        ledger,
+        locality_identity=locality_identity,
+        source_reference=source_reference,
+    )
+
+
+def _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    representation: dict[str, Any],
+    locality_standing: dict[str, Any],
+) -> Event:
+    source_reference = _source_standing_reference_from_carried_representation(
+        ledger,
+        locality_identity=locality_identity,
+        representation=representation,
+        locality_standing=locality_standing,
+    )
+    return _record_operator_material_acquire_responsibility_assignment(
+        ledger,
+        locality_identity=locality_identity,
+        source_reference=source_reference,
+    )
+
+
+def _record_operator_material_acquire_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    source_reference: dict[str, str],
+) -> Event:
     assignment_identity = new_identity("operator_material_acquire_assignment")
     assignment_subject_identity = new_identity(
         "operator_material_acquire_assignment_subject"
@@ -408,6 +511,46 @@ def record_operator_material_acquire_responsible_act_evidence(
     assignment = get_operator_material_acquire_responsibility_assignment(
         ledger, responsibility_assignment_event_identity
     )
+    return _record_operator_material_acquire_responsible_act_evidence(
+        ledger,
+        assignment=assignment,
+        responsibility_assignment_standing=responsibility_assignment_standing,
+    )
+
+
+def _record_operator_material_acquire_responsible_act_evidence_from_assignment(
+    ledger: EventLedger,
+    *,
+    responsibility_assignment: Event,
+    responsibility_assignment_standing: dict[str, Any],
+) -> Event:
+    if (
+        type(responsibility_assignment) is not Event
+        or responsibility_assignment.kind
+        != OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        or responsibility_assignment.exact_material is not None
+        or type(responsibility_assignment_standing) is not dict
+        or responsibility_assignment_standing.get(
+            "through_event_occurrence_identity"
+        )
+        != responsibility_assignment.identity
+    ):
+        raise OperatorMaterialAcquireError(
+            "operator material acquire Act requires its recorded assignment"
+        )
+    return _record_operator_material_acquire_responsible_act_evidence(
+        ledger,
+        assignment=responsibility_assignment,
+        responsibility_assignment_standing=responsibility_assignment_standing,
+    )
+
+
+def _record_operator_material_acquire_responsible_act_evidence(
+    ledger: EventLedger,
+    *,
+    assignment: Event,
+    responsibility_assignment_standing: dict[str, Any],
+) -> Event:
     if type(responsibility_assignment_standing) is not dict:
         raise OperatorMaterialAcquireError(
             "operator material acquire Act requires assignment Standing"
@@ -488,15 +631,28 @@ def record_operator_material_acquire_result(
 ) -> Event:
     """Record one exact nonempty boundary result and its Yield."""
 
+    act_evidence = get_operator_material_acquire_act_evidence(
+        ledger, responsible_act_evidence_event_identity
+    )
+    return _record_operator_material_acquire_result(
+        ledger,
+        act_evidence=act_evidence,
+        boundary_material=boundary_material,
+    )
+
+
+def _record_operator_material_acquire_result(
+    ledger: EventLedger,
+    *,
+    act_evidence: Event,
+    boundary_material: OperatorBoundaryMaterial,
+) -> Event:
     if not isinstance(boundary_material, OperatorBoundaryMaterial):
         raise TypeError("operator material acquire requires exact boundary material")
     if boundary_material.eof:
         raise OperatorMaterialAcquireError(
             "an empty operator boundary establishes no acquire result"
         )
-    act_evidence = get_operator_material_acquire_act_evidence(
-        ledger, responsible_act_evidence_event_identity
-    )
     act_occurrence_identity = act_evidence.material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
         act_evidence.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND

@@ -6,18 +6,14 @@ from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    byte_position_pair_measurement_occurrence_references,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
-    record_recorded_pair_measurement_comparison_responsibility_assignment,
-    record_recorded_pair_measurement_comparison_applicability_act_evidence,
-    record_recorded_pair_measurement_comparison_applicability_result,
-    record_recorded_pair_measurement_comparison_act_evidence,
-    record_recorded_pair_measurement_comparison_result,
+    _record_recorded_pair_measurement_comparison_from_carried_measurements,
 )
+from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_ingest import run_operator_ingest
@@ -27,8 +23,8 @@ from seed_runtime.operator_egress import (
 )
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_material_acquisition import (
-    record_operator_material_acquire_responsibility_assignment,
-    record_operator_material_acquire_responsible_act_evidence,
+    _record_operator_material_acquire_responsibility_assignment_from_carried_representation,
+    _record_operator_material_acquire_responsible_act_evidence_from_assignment,
     record_operator_material_acquire_result,
 )
 from seed_runtime.operator_command import (
@@ -56,6 +52,7 @@ from seed_runtime.operator_locality_command import (
     request_operator_locality,
 )
 from seed_runtime.operator_representation import (
+    _record_operator_representation_from_recorded_pair_measurement,
     emit_operator_representation_material,
     read_operator_representation,
     record_operator_representation,
@@ -90,6 +87,8 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
+    _carry_operator_material_acquisition_occurrence_into_standing,
+    _carry_recorded_pair_measurement_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
@@ -354,18 +353,37 @@ def _record_pair_measurement(
 ):
     """Record one pair Measurement only after an exact consumer relation exists."""
 
+    prior_through_event_occurrence_identity = standing[
+        "through_event_occurrence_identity"
+    ]
     pair_measurement = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_measurement_event_identity,
         recording_locality_identity=locality_identity,
     )
+    applicability = ledger.get(
+        pair_measurement.material["input_applicability_event_identity"]
+    )
+    if applicability is None:
+        raise ValueError("recorded pair Measurement carries no Applicability")
     standing = _advance_over(
         ledger,
         standing,
-        byte_position_pair_measurement_occurrence_references(
-            ledger, pair_measurement.identity
+        (
+            applicability.material["responsible_act_evidence_identity"],
+            applicability.material["evidence_of_yield_relation_identity"],
+            applicability.identity,
+            pair_measurement.material["responsible_act_evidence_identity"],
+            pair_measurement.material["evidence_of_yield_relation_identity"],
         ),
         locality_identity=locality_identity,
+    )
+    standing = _carry_recorded_pair_measurement_into_standing(
+        standing,
+        pair_measurement,
+        prior_through_event_occurrence_identity=(
+            prior_through_event_occurrence_identity
+        ),
     )
     return standing, pair_measurement
 
@@ -456,80 +474,26 @@ def _record_pair_measurement_comparison(
     ledger,
     standing,
     *,
-    earlier_pair_measurement_event_identity,
-    later_pair_measurement_event_identity,
+    earlier_pair_measurement,
+    later_pair_measurement,
     locality_identity,
 ):
-    """Carry one produced pair finding family into its responsible Compare."""
+    """Carry two produced pair results into their responsible Compare."""
 
-    assignment = (
-        record_recorded_pair_measurement_comparison_responsibility_assignment(
+    if (
+        type(earlier_pair_measurement) is not Event
+        or type(later_pair_measurement) is not Event
+        or earlier_pair_measurement.locality_identity != locality_identity
+        or later_pair_measurement.locality_identity != locality_identity
+    ):
+        raise ValueError("pair Compare requires two carried Measurements")
+    result, standing = (
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
             ledger,
-            earlier_result_event_identity=(
-                earlier_pair_measurement_event_identity
-            ),
-            later_result_event_identity=later_pair_measurement_event_identity,
+            earlier_measurement=earlier_pair_measurement,
+            later_measurement=later_pair_measurement,
             locality_standing=standing,
         )
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (assignment.identity,),
-        locality_identity=locality_identity,
-    )
-    applicability_act = (
-        record_recorded_pair_measurement_comparison_applicability_act_evidence(
-            ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            locality_standing=standing,
-        )
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (applicability_act.identity,),
-        locality_identity=locality_identity,
-    )
-    applicability = (
-        record_recorded_pair_measurement_comparison_applicability_result(
-            ledger,
-            responsible_act_evidence_event_identity=applicability_act.identity,
-        )
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (
-            applicability.material["evidence_of_yield_relation_identity"],
-            applicability.identity,
-        ),
-        locality_identity=locality_identity,
-    )
-    compare_act = record_recorded_pair_measurement_comparison_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        applicability_result_event_identity=applicability.identity,
-        locality_standing=standing,
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (compare_act.identity,),
-        locality_identity=locality_identity,
-    )
-    result = record_recorded_pair_measurement_comparison_result(
-        ledger,
-        responsible_act_evidence_event_identity=compare_act.identity,
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (
-            result.material["evidence_of_yield_relation_identity"],
-            result.identity,
-        ),
-        locality_identity=locality_identity,
     )
     return standing, result
 
@@ -572,46 +536,63 @@ def run_persistent_operator_console(
     representation_source = _representation_source_for_pair_premise(
         ledger, locality_standing, pair_premise
     )
-    representation = record_operator_representation(
-        ledger,
-        locality_identity=locality_identity,
-        locality_standing=locality_standing,
-        source_occurrence_reference=representation_source,
-    )
+    if (
+        pair_premise is not None
+        and representation_source == pair_premise.identity
+        and locality_standing["through_event_occurrence_identity"]
+        == pair_premise.identity
+    ):
+        representation = (
+            _record_operator_representation_from_recorded_pair_measurement(
+                ledger,
+                locality_identity=locality_identity,
+                locality_standing=locality_standing,
+                pair_measurement=pair_premise,
+            )
+        )
+    else:
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=locality_standing,
+            source_occurrence_reference=representation_source,
+        )
     locality_standing = _advance_over_representation(
         ledger, locality_standing, representation
     )
     while True:
         acquire_assignment = (
-            record_operator_material_acquire_responsibility_assignment(
+            _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
                 ledger,
                 locality_identity=locality_identity,
-                addressed_representation_event_identity=representation[
-                    "representation_event_identity"
-                ],
+                representation=representation,
                 locality_standing=locality_standing,
             )
         )
-        locality_standing = _advance_over(
-            ledger,
-            locality_standing,
-            (acquire_assignment.identity,),
-            locality_identity=locality_identity,
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                locality_standing,
+                acquire_assignment,
+                prior_through_event_occurrence_identity=representation[
+                    "representation_event_identity"
+                ],
+            )
         )
         acquire_act_evidence = (
-            record_operator_material_acquire_responsible_act_evidence(
+            _record_operator_material_acquire_responsible_act_evidence_from_assignment(
                 ledger,
-                responsibility_assignment_event_identity=(
-                    acquire_assignment.identity
-                ),
+                responsibility_assignment=acquire_assignment,
                 responsibility_assignment_standing=locality_standing,
             )
         )
-        locality_standing = _advance_over(
-            ledger,
-            locality_standing,
-            (acquire_act_evidence.identity,),
-            locality_identity=locality_identity,
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                locality_standing,
+                acquire_act_evidence,
+                prior_through_event_occurrence_identity=(
+                    acquire_assignment.identity
+                ),
+            )
         )
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
@@ -621,14 +602,14 @@ def run_persistent_operator_console(
             responsible_act_evidence_event_identity=acquire_act_evidence.identity,
             boundary_material=boundary_material,
         )
-        locality_standing = _advance_over(
-            ledger,
-            locality_standing,
-            (
-                acquired_material.material["evidence_of_yield_relation_identity"],
-                acquired_material.identity,
-            ),
-            locality_identity=locality_identity,
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                locality_standing,
+                acquired_material,
+                prior_through_event_occurrence_identity=(
+                    acquire_act_evidence.identity
+                ),
+            )
         )
         representation = record_operator_representation(
             ledger,
@@ -742,7 +723,7 @@ def run_persistent_operator_console(
             supplied_occurrence_count = 0
             supplied_occurrence_references: list[str] = []
             byte_measurement_by_supplied_occurrence: dict[str, str] = {}
-            pair_measurement_by_byte_measurement: dict[str, str] = {}
+            pair_measurement_by_byte_measurement: dict[str, Event] = {}
 
             def acquire_system_material(supplied) -> None:
                 nonlocal system_standing
@@ -799,7 +780,7 @@ def run_persistent_operator_console(
                             byte_measurement_event_identity=earlier_byte_measurement,
                             locality_identity=system_locality_identity,
                         )
-                        earlier_pair_measurement = earlier_pair.identity
+                        earlier_pair_measurement = earlier_pair
                         pair_measurement_by_byte_measurement[
                             earlier_byte_measurement
                         ] = earlier_pair_measurement
@@ -811,17 +792,13 @@ def run_persistent_operator_console(
                     )
                     pair_measurement_by_byte_measurement[
                         byte_measurement.identity
-                    ] = later_pair.identity
+                    ] = later_pair
                     system_standing, comparison = (
                         _record_pair_measurement_comparison(
                             ledger,
                             system_standing,
-                            earlier_pair_measurement_event_identity=(
-                                earlier_pair_measurement
-                            ),
-                            later_pair_measurement_event_identity=(
-                                later_pair.identity
-                            ),
+                            earlier_pair_measurement=earlier_pair_measurement,
+                            later_pair_measurement=later_pair,
                             locality_identity=system_locality_identity,
                         )
                     )
@@ -1213,10 +1190,8 @@ def run_persistent_operator_console(
                     _record_pair_measurement_comparison(
                         ledger,
                         locality_standing,
-                        earlier_pair_measurement_event_identity=(
-                            pair_premise.identity
-                        ),
-                        later_pair_measurement_event_identity=later_pair.identity,
+                        earlier_pair_measurement=pair_premise,
+                        later_pair_measurement=later_pair,
                         locality_identity=locality_identity,
                     )
                 )

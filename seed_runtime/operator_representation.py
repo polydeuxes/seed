@@ -10,7 +10,7 @@ from seed_runtime.byte_measurement import (
     _findings_of_recorded_byte_position_pair_measurement,
     assertions_of_recorded_byte_measurement,
 )
-from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.events import CORRUPTED, Event, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
@@ -139,6 +139,8 @@ def _validate_standing_boundary(
     through_event_occurrence_identity: str | None,
     source_occurrence_reference: str | None,
     representation_event_identity: str | None = None,
+    carried_pair_measurement: Event | None = None,
+    carried_standing_boundary: Event | None = None,
 ) -> None:
     """Require the represented source to belong to the exact Standing prefix."""
 
@@ -150,11 +152,21 @@ def _validate_standing_boundary(
         return
     if type(through_event_occurrence_identity) is not str or not through_event_occurrence_identity:
         raise ValueError("Representation requires one exact Standing boundary")
-    boundary_event = ledger.get(through_event_occurrence_identity)
+    boundary_event = (
+        carried_standing_boundary
+        if carried_standing_boundary is not None
+        and carried_standing_boundary.identity
+        == through_event_occurrence_identity
+        else ledger.get(through_event_occurrence_identity)
+    )
     if (
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
-        or ledger.integrity_of(through_event_occurrence_identity) == CORRUPTED
+        or (
+            boundary_event is not carried_standing_boundary
+            and ledger.integrity_of(through_event_occurrence_identity)
+            == CORRUPTED
+        )
     ):
         raise ValueError("Representation Standing boundary is not exact")
     if (
@@ -182,12 +194,14 @@ def _validate_standing_boundary(
             ) from error
 
 
-def record_operator_representation(
+def _record_operator_representation(
     ledger: EventLedger,
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
     source_occurrence_reference: str | None = None,
+    carried_pair_measurement: Event | None = None,
+    carried_standing_boundary: Event | None = None,
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its Act occurrence."""
     through_event_occurrence_identity = locality_standing["through_event_occurrence_identity"]
@@ -196,12 +210,15 @@ def record_operator_representation(
         locality_identity=locality_identity,
         locality_standing=locality_standing,
         source_occurrence_reference=source_occurrence_reference,
+        carried_pair_measurement=carried_pair_measurement,
     )
     _validate_standing_boundary(
         ledger,
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
         source_occurrence_reference=source_occurrence_reference,
+        carried_pair_measurement=carried_pair_measurement,
+        carried_standing_boundary=carried_standing_boundary,
     )
     representation_identity = new_identity("operator_representation")
     representation_act_identity = new_identity("operator_representation_act")
@@ -334,18 +351,79 @@ def record_operator_representation(
     return representation
 
 
+def record_operator_representation(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    locality_standing: dict[str, Any],
+    source_occurrence_reference: str | None = None,
+) -> dict[str, Any]:
+    return _record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=locality_standing,
+        source_occurrence_reference=source_occurrence_reference,
+    )
+
+
+def _record_operator_representation_from_recorded_pair_measurement(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    locality_standing: dict[str, Any],
+    pair_measurement: Event,
+    carried_standing_boundary: Event | None = None,
+) -> dict[str, Any]:
+    """Address the pair result produced and carried by this console call."""
+
+    if (
+        type(pair_measurement) is not Event
+        or type(locality_standing) is not dict
+        or pair_measurement.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        or pair_measurement.locality_identity != locality_identity
+        or pair_measurement.identity
+        not in locality_standing.get("measurement_occurrences", {})
+    ):
+        raise ValueError("Representation requires its just-carried pair Measurement")
+    through = locality_standing.get("through_event_occurrence_identity")
+    boundary = (
+        pair_measurement
+        if through == pair_measurement.identity
+        else carried_standing_boundary
+    )
+    if (
+        type(boundary) is not Event
+        or boundary.identity != through
+        or boundary.locality_identity != locality_identity
+    ):
+        raise ValueError("Representation requires its just-carried Standing boundary")
+    return _record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=locality_standing,
+        source_occurrence_reference=pair_measurement.identity,
+        carried_pair_measurement=pair_measurement,
+        carried_standing_boundary=boundary,
+    )
+
+
 def _exact_source_material(
     ledger: EventLedger,
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
     source_occurrence_reference: str | None,
+    carried_pair_measurement: Event | None = None,
 ) -> bytes | None:
     if source_occurrence_reference is None:
         return None
     if type(source_occurrence_reference) is not str or not source_occurrence_reference:
         raise ValueError("Representation requires one exact source occurrence")
-    source = ledger.get(source_occurrence_reference)
+    source = (
+        carried_pair_measurement
+        if carried_pair_measurement is not None
+        else ledger.get(source_occurrence_reference)
+    )
     if source is None:
         raise ValueError("Representation source occurrence is missing")
     if source.locality_identity != locality_identity:
@@ -353,7 +431,10 @@ def _exact_source_material(
     exact_result_occurrences = locality_standing.get("exact_result_occurrences", {})
     if type(exact_result_occurrences) is not dict:
         raise ValueError("Representation requires exact carried result occurrences")
-    if ledger.integrity_of(source.identity) == CORRUPTED:
+    if (
+        source is not carried_pair_measurement
+        and ledger.integrity_of(source.identity) == CORRUPTED
+    ):
         raise ValueError("Representation source occurrence is corrupted")
     measurement_occurrences = locality_standing.get("measurement_occurrences", {})
     if type(measurement_occurrences) is not dict:
@@ -378,6 +459,13 @@ def _exact_source_material(
             or measurement_reference != expected_reference
         ):
             raise ValueError("Representation source Measurement is not exact")
+        if source is carried_pair_measurement:
+            if (
+                source.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+                or source.exact_material is not None
+            ):
+                raise ValueError("Representation source Measurement is not exact")
+            return None
         reader = _MEASUREMENT_READERS.get(source.kind)
         if reader is None:
             raise ValueError(

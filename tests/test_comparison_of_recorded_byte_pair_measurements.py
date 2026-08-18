@@ -21,6 +21,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_applicability_result,
     record_recorded_pair_measurement_comparison_act_evidence,
     record_recorded_pair_measurement_comparison_result,
+    _record_recorded_pair_measurement_comparison_from_carried_measurements,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
@@ -116,6 +117,62 @@ def _comparison():
         ledger, responsible_act_evidence_event_identity=compare_act.identity
     )
     return ledger, earlier_source, added, earlier, later, assignment, applicability, result
+
+
+def test_one_console_call_revalidates_only_the_pair_crossing_a_callback(
+    monkeypatch,
+):
+    ledger, _earlier_source, _added, earlier, later = _inputs()
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    full_reads = []
+    original = comparison_module._findings_of_recorded_byte_position_pair_measurement
+
+    def record(*args, **kwargs):
+        full_reads.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        comparison_module,
+        "_findings_of_recorded_byte_position_pair_measurement",
+        record,
+    )
+    result, standing = (
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
+            ledger,
+            earlier_measurement=earlier,
+            later_measurement=later,
+            locality_standing=standing,
+        )
+    )
+
+    assert full_reads == [earlier.identity]
+    assert result.identity in standing["comparison_result_occurrences"]
+    replayed = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    assert standing == replayed
+    assert full_reads.count(earlier.identity) >= 2
+    assert later.identity in full_reads
+    assert get_recorded_pair_measurement_comparison(
+        ledger, result.identity
+    ) == result.material
+
+
+def test_changed_pair_crossing_a_callback_cannot_enter_compare_standing():
+    ledger, _earlier_source, _added, earlier, later = _inputs()
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing_before = deepcopy(standing)
+    earlier.material["assertions"][0]["dimensions"]["content"]["count"] += 1
+
+    with pytest.raises(
+        (RecordedPairMeasurementComparisonError, ValueError),
+    ):
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
+            ledger,
+            earlier_measurement=earlier,
+            later_measurement=later,
+            locality_standing=standing,
+        )
+
+    assert standing == standing_before
 
 
 def _operator_inputs(*, acquisition_before_earlier_measurement=False):
@@ -672,6 +729,8 @@ FIDELITY_SUBJECTS = {
         test_missing_provenance_cannot_supply_the_compare_rung,
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,
+        test_one_console_call_revalidates_only_the_pair_crossing_a_callback,
+        test_changed_pair_crossing_a_callback_cannot_enter_compare_standing,
         test_one_result_read_validates_each_pair_measurement_once,
         test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
         test_later_result_read_revalidates_changed_pair_measurement_evidence,

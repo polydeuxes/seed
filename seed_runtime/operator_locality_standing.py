@@ -1115,3 +1115,258 @@ def advance_operator_locality_standing(
         "unknown": unknown,
         "conflicts": conflicts,
     }
+
+
+def _carry_recorded_pair_measurement_into_standing(
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str | None,
+) -> dict[str, Any]:
+    """Carry the pair result just recorded by the same console call.
+
+    The console records the Applicability and Measurement occurrences, advances
+    through their exact Evidence of Yield, and invokes this helper before the
+    result Event can cross another caller boundary.  Reopen, replay, and every
+    independently supplied occurrence identity still use
+    :func:`advance_operator_locality_standing` and fully validate the durable
+    result.  This is only the call-local production-to-uptake handoff.
+    """
+
+    if (
+        type(locality_standing) is not dict
+        or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError(
+            "recorded pair Measurement must follow its carried Act and Yield"
+        )
+    measurements = locality_standing.get("measurement_occurrences")
+    source_reference = event.material.get("source_assertion_reference")
+    source_occurrence_identity = (
+        source_reference.get("recorded_occurrence_identity")
+        if type(source_reference) is dict
+        else None
+    )
+    if (
+        type(measurements) is not dict
+        or source_occurrence_identity not in measurements
+        or event.identity in measurements
+    ):
+        raise ValueError("recorded pair Measurement Standing is not exact")
+    event_count = locality_standing.get("event_count")
+    if type(event_count) is not int or event_count < 0:
+        raise ValueError("recorded pair Measurement Standing count is not exact")
+    standing_additions = {}
+    for key in ("known_loss", "unknown", "conflicts"):
+        collected = locality_standing.get(key)
+        added = event.material.get(key, [])
+        if type(collected) is not list or type(added) is not list:
+            raise ValueError("recorded pair Measurement Standing is not exact")
+        standing_additions[key] = added
+    coordinates = _measurement_occurrence_coordinates(event)
+    measurements[event.identity] = coordinates
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_operator_material_acquisition_occurrence_into_standing(
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry one acquisition occurrence produced by this console call."""
+
+    if (
+        type(locality_standing) is not dict
+        or event.kind not in _OPERATOR_MATERIAL_ACQUIRE_KINDS
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError("operator material acquisition Standing is not exact")
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    acts = locality_standing.get("operator_material_acquire_act_occurrences")
+    exact_results = locality_standing.get("exact_result_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or type(acts) is not dict
+        or type(exact_results) is not dict
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("operator material acquisition Standing is not exact")
+    if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
+        source = event.material.get("source_standing_reference")
+        representations = locality_standing.get("representations")
+        if (
+            type(source) is not dict
+            or type(representations) is not dict
+            or source.get("locality_standing_through_event_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or not any(
+                reference.get("representation_event_identity")
+                == source.get("addressed_representation_event_identity")
+                for reference in representations.values()
+                if type(reference) is dict
+            )
+            or event.identity in assignments
+        ):
+            raise ValueError("operator material acquisition assignment is not exact")
+    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in assignments
+            or event.identity in acts
+        ):
+            raise ValueError("operator material acquisition Act is not exact")
+    else:
+        if (
+            event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in acts
+            or type(event.material.get("evidence_of_yield_relation_identity"))
+            is not str
+            or type(event.exact_material) is not bytes
+            or event.identity in exact_results
+        ):
+            raise ValueError("operator material acquisition result is not exact")
+    standing_additions = {}
+    for key in ("known_loss", "unknown", "conflicts"):
+        collected = locality_standing.get(key)
+        added = event.material.get(key, [])
+        if type(collected) is not list or type(added) is not list:
+            raise ValueError("operator material acquisition Standing is not exact")
+        standing_additions[key] = added
+    if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
+        assignments[event.identity] = None
+    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
+        acts[event.identity] = None
+    else:
+        exact_results[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_recorded_pair_comparison_occurrence_into_standing(
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry one pair-Compare occurrence produced by this console call."""
+
+    carried_kinds = _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
+    if (
+        type(locality_standing) is not dict
+        or event.kind not in carried_kinds
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError("recorded pair comparison Standing is not exact")
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    applicability = locality_standing.get("applicability_result_occurrences")
+    comparisons = locality_standing.get("comparison_result_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or type(applicability) is not dict
+        or type(comparisons) is not dict
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("recorded pair comparison Standing is not exact")
+    if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND:
+        measurements = locality_standing.get("measurement_occurrences")
+        earlier = event.material.get("earlier_measurement_reference")
+        later = event.material.get("later_measurement_reference")
+        if (
+            type(measurements) is not dict
+            or type(earlier) is not dict
+            or type(later) is not dict
+            or earlier.get("recorded_occurrence_identity") not in measurements
+            or later.get("recorded_occurrence_identity") not in measurements
+            or event.material.get("standing_boundary_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in assignments
+        ):
+            raise ValueError("recorded pair comparison assignment is not exact")
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in assignments
+        ):
+            raise ValueError(
+                "recorded pair comparison Applicability Act is not exact"
+            )
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.material.get("standing") != "applicable"
+            or event.identity in applicability
+        ):
+            raise ValueError("recorded pair comparison Applicability is not exact")
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("applicability_result_event_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in applicability
+        ):
+            raise ValueError("recorded pair comparison Act is not exact")
+    else:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.material.get("applicability_result_event_identity")
+            not in applicability
+            or event.identity in comparisons
+        ):
+            raise ValueError("recorded pair comparison result is not exact")
+    standing_additions = {}
+    for key in ("known_loss", "unknown", "conflicts"):
+        collected = locality_standing.get(key)
+        added = event.material.get(key, [])
+        if type(collected) is not list or type(added) is not list:
+            raise ValueError("recorded pair comparison Standing is not exact")
+        standing_additions[key] = added
+    if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND:
+        assignments[event.identity] = None
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND:
+        applicability[event.identity] = None
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
+        comparisons[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing

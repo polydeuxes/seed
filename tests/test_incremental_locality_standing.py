@@ -18,6 +18,7 @@ cannot be softened by accident.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 
@@ -32,6 +33,11 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import ingest_material
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
 )
@@ -268,6 +274,289 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     # exact identities for a successful raw Representation lifecycle. No call
     # grows with the ledger.
     assert set(sizes) <= {1, 2, 3, 4, 6, 10}, sizes
+
+
+def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatch):
+    from seed_runtime import byte_measurement, operator_console
+
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"abab",
+        source_role="material witness",
+        source_boundary="exact pair material",
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=measurement_act.identity,
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    reads = []
+    original = byte_measurement._read_recorded_byte_position_pair_measurement
+
+    def record(*args, **kwargs):
+        reads.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        byte_measurement,
+        "_read_recorded_byte_position_pair_measurement",
+        record,
+    )
+    standing, pair_measurement = operator_console._record_pair_measurement(
+        ledger,
+        standing,
+        byte_measurement_event_identity=measurement.identity,
+        locality_identity="s",
+    )
+
+    assert reads == []
+    assert pair_measurement.identity in standing["measurement_occurrences"]
+    assert standing == read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
+    assert reads == [pair_measurement.identity]
+    with pytest.raises(ValueError, match="follow its carried Act and Yield"):
+        operator_console._carry_recorded_pair_measurement_into_standing(
+            dict(standing),
+            pair_measurement,
+            prior_through_event_occurrence_identity="crossed-boundary",
+        )
+    with pytest.raises(ValueError, match="Standing is not exact"):
+        operator_console._carry_recorded_pair_measurement_into_standing(
+            standing,
+            pair_measurement,
+            prior_through_event_occurrence_identity=pair_measurement.identity,
+        )
+
+
+def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
+    monkeypatch,
+):
+    from seed_runtime import byte_measurement, operator_console
+    from seed_runtime.operator_representation import (
+        _record_operator_representation_from_recorded_pair_measurement,
+        record_operator_representation,
+    )
+
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"abab",
+        source_role="material witness",
+        source_boundary="exact pair material",
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=measurement_act.identity,
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    standing, pair_measurement = operator_console._record_pair_measurement(
+        ledger,
+        standing,
+        byte_measurement_event_identity=measurement.identity,
+        locality_identity="s",
+    )
+    reads = []
+    original = byte_measurement._read_recorded_byte_position_pair_measurement
+
+    def record(*args, **kwargs):
+        reads.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        byte_measurement,
+        "_read_recorded_byte_position_pair_measurement",
+        record,
+    )
+    later_boundary = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"later material",
+        source_role="material witness",
+        source_boundary="later exact boundary",
+    )
+    standing = _advance([later_boundary], prior=standing, ledger=ledger)
+    representation = (
+        _record_operator_representation_from_recorded_pair_measurement(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            pair_measurement=pair_measurement,
+            carried_standing_boundary=later_boundary,
+        )
+    )
+
+    assert reads == []
+    assert representation["source_occurrence_reference"] == pair_measurement.identity
+    independently_validated = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=standing,
+        source_occurrence_reference=pair_measurement.identity,
+    )
+    assert reads == [pair_measurement.identity]
+    assert independently_validated["source_occurrence_reference"] == (
+        pair_measurement.identity
+    )
+    with pytest.raises(ValueError, match="just-carried Standing boundary"):
+        _record_operator_representation_from_recorded_pair_measurement(
+            ledger,
+            locality_identity="s",
+            locality_standing={
+                **standing,
+                "through_event_occurrence_identity": measurement.identity,
+            },
+            pair_measurement=pair_measurement,
+        )
+
+
+def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeypatch):
+    from seed_runtime import (
+        byte_measurement,
+        operator_console,
+        operator_material_acquisition,
+    )
+    from seed_runtime.operator_material_acquisition import (
+        _record_operator_material_acquire_responsibility_assignment_from_carried_representation,
+        _record_operator_material_acquire_responsible_act_evidence_from_assignment,
+        record_operator_material_acquire_result,
+    )
+    from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
+    from seed_runtime.operator_locality_standing import (
+        _carry_operator_material_acquisition_occurrence_into_standing,
+    )
+    from seed_runtime.operator_representation import (
+        _record_operator_representation_from_recorded_pair_measurement,
+    )
+
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"abab",
+        source_role="material witness",
+        source_boundary="exact pair material",
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=measurement_act.identity,
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    standing, pair_measurement = operator_console._record_pair_measurement(
+        ledger,
+        standing,
+        byte_measurement_event_identity=measurement.identity,
+        locality_identity="s",
+    )
+    representation = (
+        _record_operator_representation_from_recorded_pair_measurement(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            pair_measurement=pair_measurement,
+        )
+    )
+    standing = operator_console._advance_over_representation(
+        ledger, standing, representation
+    )
+    representation_reads = []
+    original = operator_material_acquisition.read_operator_representation
+
+    def record(*args, **kwargs):
+        representation_reads.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        operator_material_acquisition,
+        "read_operator_representation",
+        record,
+    )
+    assignment = _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
+        ledger,
+        locality_identity="s",
+        representation=representation,
+        locality_standing=standing,
+    )
+    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+        standing,
+        assignment,
+        prior_through_event_occurrence_identity=representation[
+            "representation_event_identity"
+        ],
+    )
+    act_evidence = (
+        _record_operator_material_acquire_responsible_act_evidence_from_assignment(
+            ledger,
+            responsibility_assignment=assignment,
+            responsibility_assignment_standing=standing,
+        )
+    )
+    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+        standing,
+        act_evidence,
+        prior_through_event_occurrence_identity=assignment.identity,
+    )
+    assert representation_reads == []
+    acquired = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+        boundary_material=OperatorBoundaryMaterial(
+            exact_bytes=b"next material",
+            eof=False,
+            material_boundary="next boundary",
+            known_loss=(),
+        ),
+    )
+    unchanged = deepcopy(standing)
+    malformed = deepcopy(acquired)
+    malformed.material["unknown"] = "not exact"
+    with pytest.raises(ValueError, match="Standing is not exact"):
+        _carry_operator_material_acquisition_occurrence_into_standing(
+            standing,
+            malformed,
+            prior_through_event_occurrence_identity=act_evidence.identity,
+        )
+    assert standing == unchanged
+    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+        standing,
+        acquired,
+        prior_through_event_occurrence_identity=act_evidence.identity,
+    )
+
+    assert representation_reads == [representation["representation_event_identity"]]
+    assert acquired.exact_material == b"next material"
+    assert acquired.identity in standing["exact_result_occurrences"]
+    with pytest.raises(
+        operator_material_acquisition.OperatorMaterialAcquireError,
+        match="carried Representation",
+    ):
+        _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
+            ledger,
+            locality_identity="s",
+            representation={
+                **representation,
+                "representation_event_identity": pair_measurement.identity,
+            },
+            locality_standing=standing,
+        )
 
 
 @pytest.mark.parametrize(
