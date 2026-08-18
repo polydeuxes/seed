@@ -880,6 +880,16 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=system_locality_identity,
                 )
+                system_standing, _supplied_pair_position_measurement = (
+                    _record_byte_pair_occurrence_position_measurement(
+                        ledger,
+                        system_standing,
+                        source_ingest_occurrence_identity=(
+                            supplied_occurrence.identity
+                        ),
+                        locality_identity=system_locality_identity,
+                    )
+                )
                 system_standing, byte_measurement = _record_acquisition_measurements(
                     ledger,
                     system_standing,

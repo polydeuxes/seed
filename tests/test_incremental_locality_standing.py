@@ -124,6 +124,73 @@ def test_operator_ingest_records_exact_byte_pair_occurrence_position_result():
     )
 
 
+def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_result():
+    ledger = EventLedger()
+
+    def provide(_command, supply):
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"4\n",
+                "invocation output occurrence 0",
+                True,
+            )
+        )
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"",
+                "invocation completion",
+                False,
+            )
+        )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input(b"!calculator 2+2\n"),
+        output_stream=StringIO(),
+        raw_output_stream=BytesIO(),
+        operator_invocation_provider=provide,
+    )
+    system_locality = next(
+        event.material["destination_locality_identity"]
+        for event in ledger.list()
+        if event.kind == "operator.invocation_locality_recorded"
+    )
+    supplied = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        and event.locality_identity == system_locality
+    )
+    results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        and event.locality_identity == system_locality
+    )
+
+    assert tuple(event.exact_material for event in supplied) == (b"4\n", b"")
+    assert tuple(
+        event.material["source_ingest_occurrence_identity"] for event in results
+    ) == tuple(event.identity for event in supplied)
+    assert tuple(
+        tuple(
+            (reference.exact_pair, reference.first_position, reference.second_position)
+            for reference in references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+                ledger, event.identity
+            )
+        )
+        for event in results
+    ) == (((b"4\n", 0, 1),), ())
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=system_locality
+    )
+    assert all(
+        event.identity in standing["measurement_occurrences"]
+        for event in results
+    )
+
+
 def _advance(events, prior=None, *, ledger=None):
     if ledger is None:
         ledger = EventLedger()
