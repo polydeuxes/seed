@@ -6,16 +6,22 @@ import pytest
 
 FIDELITY_SUBJECT = "current_Locality_Standing"
 
+import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
     ByteMeasurementError,
+    assertions_of_recorded_byte_position_pair_measurement,
+    get_byte_position_pair_measurement_responsibility_assignment,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
@@ -137,6 +143,162 @@ def _measurement_coordinates(event):
         ],
         "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
     }
+
+
+def _pair_lifecycle(ledger):
+    result = _record_measurement(ledger, BYTE_PAIR_MEASUREMENT_RECORDED_KIND)
+    measurement_act = ledger.get(
+        result.material["responsible_act_evidence_identity"]
+    )
+    applicability = ledger.get(
+        result.material["input_applicability_event_identity"]
+    )
+    applicability_act = ledger.get(
+        applicability.material["responsible_act_evidence_identity"]
+    )
+    assignment = ledger.get(
+        result.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    return assignment, applicability_act, applicability, measurement_act, result
+
+
+def test_pair_standing_replay_reads_one_assignment_per_complete_lifecycle(
+    monkeypatch,
+):
+    ledger = _measurement_ledger()
+    assignment, _applicability_act, _applicability, _measurement_act, result = (
+        _pair_lifecycle(ledger)
+    )
+    calls = []
+    original = operator_standing_module._read_pair_measurement_responsibility_assignment
+
+    def counted(*args, **kwargs):
+        calls.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_read_pair_measurement_responsibility_assignment",
+        counted,
+    )
+
+    standing = _standing(ledger)
+
+    assert calls == [assignment.identity]
+    assert result.identity in standing["measurement_occurrences"]
+
+
+@pytest.mark.parametrize(
+    ("phase_kind", "changed_coordinate"),
+    (
+        (BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND, "assignment_occurrence"),
+        (BYTE_PAIR_APPLICABILITY_RECORDED_KIND, "applicability_act_occurrence"),
+        (BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND, "applicability_result_occurrence"),
+        (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, "measurement_act_occurrence"),
+    ),
+)
+def test_pair_standing_replay_refuses_mutation_between_each_phase(
+    monkeypatch, phase_kind, changed_coordinate
+):
+    ledger = _measurement_ledger()
+    _pair_lifecycle(ledger)
+    original = operator_standing_module._advance_pair_measurement_replay_reading
+    changed = False
+
+    def change_before_next_phase(ledger, reading, event):
+        nonlocal changed
+        if not changed and event.kind == phase_kind:
+            occurrence = getattr(reading, changed_coordinate)
+            occurrence.event.material["changed_between_replay_phases"] = True
+            changed = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_pair_measurement_replay_reading",
+        change_before_next_phase,
+    )
+
+    with pytest.raises(ByteMeasurementError, match="changed"):
+        _standing(ledger)
+    assert changed is True
+
+
+def test_pair_standing_replay_refuses_a_substituted_same_shaped_assignment(
+    monkeypatch,
+):
+    ledger = _measurement_ledger()
+    _pair_lifecycle(ledger)
+    original = operator_standing_module._advance_pair_measurement_replay_reading
+    substituted = False
+
+    def substitute_before_applicability(ledger, reading, event):
+        nonlocal substituted
+        if not substituted:
+            reading.assignment = deepcopy(reading.assignment)
+            substituted = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_pair_measurement_replay_reading",
+        substitute_before_applicability,
+    )
+
+    with pytest.raises(ByteMeasurementError, match="substituted"):
+        _standing(ledger)
+
+
+def test_pair_standing_replay_state_clears_after_exception(monkeypatch):
+    ledger = _measurement_ledger()
+    _pair_lifecycle(ledger)
+    original = operator_standing_module._advance_pair_measurement_replay_reading
+    interrupted = False
+
+    def interrupt_once(ledger, reading, event):
+        nonlocal interrupted
+        if not interrupted:
+            interrupted = True
+            raise RuntimeError("interrupt pair replay")
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_pair_measurement_replay_reading",
+        interrupt_once,
+    )
+
+    with pytest.raises(RuntimeError, match="interrupt pair replay"):
+        _standing(ledger)
+    assert _standing(ledger)["measurement_occurrences"]
+
+
+def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path):
+    path = tmp_path / "pair-standing-replay.sqlite"
+    ledger = SQLiteEventLedger(path)
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"material",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    assignment, _applicability_act, _applicability, _measurement_act, result = (
+        _pair_lifecycle(ledger)
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    assert result.identity in _standing(reopened)["measurement_occurrences"]
+    assert get_byte_position_pair_measurement_responsibility_assignment(
+        reopened, assignment.identity
+    ).identity == assignment.identity
+    assert assertions_of_recorded_byte_position_pair_measurement(
+        reopened, result.identity
+    )
+    reopened.close()
 
 
 def test_events_from_different_localities_cannot_influence_one_another():

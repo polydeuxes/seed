@@ -44,6 +44,9 @@ from seed_runtime.byte_measurement import (
     _require_exact_pair_applicability_result_event,
     _require_exact_pair_measurement_act_event,
     _require_exact_pair_measurement_result_event,
+    _PairMeasurementReplayReading,
+    _pair_measurement_replay_reading,
+    _advance_pair_measurement_replay_reading,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
 )
@@ -887,6 +890,9 @@ def advance_operator_locality_standing(
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
     recorded_pair_comparison_replay_carries: dict[str, dict[str, Any]] = {}
+    pair_measurement_replay_readings: dict[
+        str, _PairMeasurementReplayReading
+    ] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -1073,44 +1079,92 @@ def advance_operator_locality_standing(
             ),
         }
         if pair_lifecycle_event:
-            if (
-                event.kind
+            assignment_reference = event.material.get(
+                "responsibility_assignment_reference"
+            )
+            assignment_identity = (
+                event.identity
+                if event.kind
                 == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-            ):
-                _read_pair_measurement_responsibility_assignment(
-                    ledger,
-                    event.identity,
-                    prior_standing=pair_prior_standing,
+                else (
+                    assignment_reference.get("recorded_occurrence_identity")
+                    if type(assignment_reference) is dict
+                    else None
                 )
-                responsibility_assignment_occurrences[event.identity] = None
-            elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND:
-                _read_pair_applicability_act_evidence(
-                    ledger,
-                    event.identity,
-                    prior_standing=pair_prior_standing,
-                )
-            elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
-                _read_recorded_pair_input_applicability(
-                    ledger,
-                    event.identity,
-                    prior_standing=pair_prior_standing,
-                )
-                applicability_result_occurrences[event.identity] = None
-            elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND:
-                _read_pair_measurement_act_evidence(
-                    ledger,
-                    event.identity,
-                    prior_standing=pair_prior_standing,
-                )
-            else:
-                _findings_of_recorded_byte_position_pair_measurement(
-                    ledger,
-                    event.identity,
-                    prior_standing=pair_prior_standing,
-                )
-                measurement_occurrences[event.identity] = (
-                    _measurement_occurrence_coordinates(event)
-                )
+            )
+            replay_reading = (
+                pair_measurement_replay_readings.get(assignment_identity)
+                if type(assignment_identity) is str
+                else None
+            )
+            try:
+                if (
+                    event.kind
+                    == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+                ):
+                    assignment, source, _scope, _content = (
+                        _read_pair_measurement_responsibility_assignment(
+                            ledger,
+                            event.identity,
+                            prior_standing=pair_prior_standing,
+                        )
+                    )
+                    replay_reading = _pair_measurement_replay_reading(
+                        ledger,
+                        assignment=assignment,
+                        source=source,
+                    )
+                    pair_measurement_replay_readings[event.identity] = (
+                        replay_reading
+                    )
+                    responsibility_assignment_occurrences[event.identity] = None
+                elif replay_reading is not None:
+                    _advance_pair_measurement_replay_reading(
+                        ledger, replay_reading, event
+                    )
+                    if event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
+                        applicability_result_occurrences[event.identity] = None
+                    elif event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
+                        measurement_occurrences[event.identity] = (
+                            _measurement_occurrence_coordinates(event)
+                        )
+                        pair_measurement_replay_readings.pop(
+                            assignment_identity, None
+                        )
+                elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND:
+                    _read_pair_applicability_act_evidence(
+                        ledger,
+                        event.identity,
+                        prior_standing=pair_prior_standing,
+                    )
+                elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
+                    _read_recorded_pair_input_applicability(
+                        ledger,
+                        event.identity,
+                        prior_standing=pair_prior_standing,
+                    )
+                    applicability_result_occurrences[event.identity] = None
+                elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND:
+                    _read_pair_measurement_act_evidence(
+                        ledger,
+                        event.identity,
+                        prior_standing=pair_prior_standing,
+                    )
+                else:
+                    _findings_of_recorded_byte_position_pair_measurement(
+                        ledger,
+                        event.identity,
+                        prior_standing=pair_prior_standing,
+                    )
+                    measurement_occurrences[event.identity] = (
+                        _measurement_occurrence_coordinates(event)
+                    )
+            except Exception:
+                if type(assignment_identity) is str:
+                    pair_measurement_replay_readings.pop(
+                        assignment_identity, None
+                    )
+                raise
             event_count += 1
             through_event_occurrence_identity = event.identity
             for key, collected in (

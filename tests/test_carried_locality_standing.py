@@ -45,6 +45,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -639,6 +640,10 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
     assert pair_measurement.identity in standing["measurement_occurrences"]
     assert standing == read_operator_locality_standing(
         ledger, locality_identity="s"
+    )
+    assert reads == []
+    assert assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair_measurement.identity
     )
     assert reads == [pair_measurement.identity]
     assert not hasattr(

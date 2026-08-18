@@ -15,6 +15,7 @@ from __future__ import annotations
 
 
 from collections import Counter
+from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
 import json
@@ -358,6 +359,26 @@ class _RecordedBytePairMeasurementReading:
     results: tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...]
     assignment: Event
     source: RecordedByteAssertion
+
+
+@dataclass(frozen=True)
+class _PairMeasurementReplayOccurrence:
+    event: Event
+    material: dict[str, Any]
+    exact_material: bytes | None
+    locality_identity: str | None
+
+
+@dataclass
+class _PairMeasurementReplayReading:
+    assignment: Event
+    source: RecordedByteAssertion
+    assignment_occurrence: _PairMeasurementReplayOccurrence
+    source_occurrence: _PairMeasurementReplayOccurrence
+    movement_occurrence: _PairMeasurementReplayOccurrence | None
+    applicability_act_occurrence: _PairMeasurementReplayOccurrence | None = None
+    applicability_result_occurrence: _PairMeasurementReplayOccurrence | None = None
+    measurement_act_occurrence: _PairMeasurementReplayOccurrence | None = None
 
 
 def _canonical(value: Any) -> str:
@@ -4054,7 +4075,240 @@ def _require_exact_pair_measurement_result_event(
         or not all(requirements.values())
         or not _yield_immediately_precedes_result(ledger, evidence, event)
     ):
-        raise ByteMeasurementError("pair Measurement result is not exact")
+        raise ByteMeasurementError(
+            "pair Measurement result or Yield is not exact"
+        )
+
+
+def _pair_measurement_replay_occurrence(
+    ledger: EventLedger,
+    event: Event,
+    *,
+    expected_material: dict[str, Any] | None = None,
+) -> _PairMeasurementReplayOccurrence:
+    material = (
+        deepcopy(event.material)
+        if expected_material is None
+        else expected_material
+    )
+    stored = ledger.get(event.identity) if type(event) is Event else None
+    if (
+        stored is None
+        or stored != event
+        or stored.material != material
+        or stored.exact_material != event.exact_material
+        or stored.locality_identity != event.locality_identity
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement replay occurrence is absent, changed, or corrupted"
+        )
+    return _PairMeasurementReplayOccurrence(
+        event=event,
+        material=material,
+        exact_material=event.exact_material,
+        locality_identity=event.locality_identity,
+    )
+
+
+def _require_exact_pair_measurement_replay_occurrence(
+    ledger: EventLedger,
+    occurrence: _PairMeasurementReplayOccurrence,
+) -> None:
+    stored = ledger.get(occurrence.event.identity)
+    if (
+        stored is None
+        or stored != occurrence.event
+        or stored.material != occurrence.material
+        or stored.exact_material != occurrence.exact_material
+        or stored.locality_identity != occurrence.locality_identity
+        or ledger.integrity_of(occurrence.event.identity) == CORRUPTED
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement replay occurrence changed after validation"
+        )
+
+
+def _pair_measurement_replay_reading(
+    ledger: EventLedger,
+    *,
+    assignment: Event,
+    source: RecordedByteAssertion,
+) -> _PairMeasurementReplayReading:
+    """Retain one exact family reading for this replay call only."""
+
+    assignment_material = deepcopy(assignment.material)
+    source_event = ledger.get(source.recorded_occurrence_identity)
+    movement_event = (
+        ledger.get(source.locality_movement_event_identity)
+        if source.locality_movement_event_identity is not None
+        else None
+    )
+    if source_event is None or (
+        source.locality_movement_event_identity is not None
+        and movement_event is None
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement replay source is absent"
+        )
+    reading = _PairMeasurementReplayReading(
+        assignment=assignment,
+        source=source,
+        assignment_occurrence=_pair_measurement_replay_occurrence(
+            ledger,
+            assignment,
+            expected_material=assignment_material,
+        ),
+        source_occurrence=_pair_measurement_replay_occurrence(
+            ledger, source_event
+        ),
+        movement_occurrence=(
+            _pair_measurement_replay_occurrence(ledger, movement_event)
+            if movement_event is not None
+            else None
+        ),
+    )
+    _require_exact_pair_measurement_assignment_event(
+        ledger, assignment, source
+    )
+    return reading
+
+
+def _require_exact_pair_measurement_replay_reading(
+    ledger: EventLedger,
+    reading: _PairMeasurementReplayReading,
+) -> None:
+    if reading.assignment is not reading.assignment_occurrence.event:
+        raise ByteMeasurementError(
+            "pair Measurement replay reading was substituted"
+        )
+    occurrences = (
+        reading.assignment_occurrence,
+        reading.source_occurrence,
+        reading.movement_occurrence,
+        reading.applicability_act_occurrence,
+        reading.applicability_result_occurrence,
+        reading.measurement_act_occurrence,
+    )
+    for occurrence in occurrences:
+        if occurrence is not None:
+            _require_exact_pair_measurement_replay_occurrence(
+                ledger, occurrence
+            )
+    _require_exact_pair_measurement_assignment_event(
+        ledger, reading.assignment, reading.source
+    )
+
+
+def _advance_pair_measurement_replay_reading(
+    ledger: EventLedger,
+    reading: _PairMeasurementReplayReading,
+    event: Event,
+) -> _PairMeasurementReplayReading:
+    """Validate one later phase from one exact same-call family reading."""
+
+    event_material = deepcopy(event.material)
+    _require_exact_pair_measurement_replay_reading(ledger, reading)
+    event_occurrence = _pair_measurement_replay_occurrence(
+        ledger,
+        event,
+        expected_material=event_material,
+    )
+    if event.locality_identity != reading.assignment.locality_identity:
+        raise ByteMeasurementError(
+            "pair Measurement replay phase entered another Locality"
+        )
+    if event.kind == BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND:
+        if reading.applicability_act_occurrence is not None:
+            raise ByteMeasurementError(
+                "pair Measurement replay duplicated Applicability Act"
+            )
+        _require_exact_pair_applicability_act_event(
+            ledger,
+            event,
+            assignment=reading.assignment,
+            source=reading.source,
+        )
+        reading.applicability_act_occurrence = event_occurrence
+    elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
+        act = reading.applicability_act_occurrence
+        if act is None or reading.applicability_result_occurrence is not None:
+            raise ByteMeasurementError(
+                "pair Measurement replay has no exact Applicability Act"
+            )
+        _require_exact_pair_applicability_result_event(
+            ledger,
+            event,
+            assignment=reading.assignment,
+            source=reading.source,
+            applicability_act_evidence=act.event,
+        )
+        reading.applicability_result_occurrence = event_occurrence
+    elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND:
+        act = reading.applicability_act_occurrence
+        applicability = reading.applicability_result_occurrence
+        if (
+            act is None
+            or applicability is None
+            or reading.measurement_act_occurrence is not None
+        ):
+            raise ByteMeasurementError(
+                "pair Measurement replay has no exact Applicability result"
+            )
+        _require_exact_pair_measurement_act_event(
+            ledger,
+            event,
+            assignment=reading.assignment,
+            source=reading.source,
+            applicability_event=applicability.event,
+            applicability_act_evidence=act.event,
+        )
+        reading.measurement_act_occurrence = event_occurrence
+    elif event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
+        act = reading.applicability_act_occurrence
+        applicability = reading.applicability_result_occurrence
+        measurement_act = reading.measurement_act_occurrence
+        if act is None or applicability is None or measurement_act is None:
+            raise ByteMeasurementError(
+                "pair Measurement replay has no exact Measurement Act"
+            )
+        _require_exact_pair_measurement_result_event(
+            ledger,
+            event,
+            responsible_act_evidence=measurement_act.event,
+            assignment=reading.assignment,
+            source=reading.source,
+            applicability_event=applicability.event,
+            applicability_act_evidence=act.event,
+        )
+    else:
+        raise ByteMeasurementError("pair Measurement replay phase is not exact")
+    ordered = tuple(
+        occurrence.event.identity
+        for occurrence in (
+            reading.assignment_occurrence,
+            reading.applicability_act_occurrence,
+            reading.applicability_result_occurrence,
+            reading.measurement_act_occurrence,
+        )
+        if occurrence is not None
+    )
+    if event.identity not in ordered:
+        ordered = (*ordered, event.identity)
+    try:
+        resolved = ledger.occurrences_in_append_order(
+            ordered,
+            locality_identity=reading.assignment.locality_identity,
+        )
+    except ValueError as error:
+        raise ByteMeasurementError(
+            "pair Measurement replay phase order is false"
+        ) from error
+    if tuple(occurrence.identity for occurrence in resolved) != ordered:
+        raise ByteMeasurementError(
+            "pair Measurement replay phase order is false"
+        )
+    return reading
 
 
 def _record_byte_position_pair_count_layer_from_carried_standing(
