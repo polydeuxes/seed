@@ -575,6 +575,213 @@ Therefore the table is now exact enough to ask for, but not exact enough to
 record lawfully. The remaining vacancy belongs to the occurrence that owes all
 rows, not to a relation between any two rows.
 
+## 9.2 The append boundary freezes the source used to test completeness
+
+The current ledger already carries the mechanical coordinate needed to decide
+what the production occurrence owed.
+
+`EventLedger.append_boundary()` returns the exact identity of one immutable
+append prefix. Given that boundary, the ledger can recover only occurrences
+through that prefix. A Locality or source enumeration can be performed through
+the same prefix without treating the global prefix as global Standing.
+
+The exact topology is:
+
+```text
+source append boundary B
+        |
+        v
+exact source enumeration rule R
+        |
+        v
+bounded source surface S(B) = R(ledger through B)
+        |
+        v
+exact formation rule G
+        |
+        v
+expected Candidate coordinates E = G(S(B))
+
+
+recorded Candidate occurrences
+        |
+        v
+Candidate Standing result through later result boundary C
+        |
+        v
+actual ordered Candidate coordinates A
+
+
+E and A
+        |
+        v
+exact completeness validation under G
+```
+
+`B` performs one job:
+
+```text
+later append
+!=
+member of S(B)
+```
+
+It does not establish:
+
+```text
+every occurrence through B belongs to S(B)
+the source occurrences have one Standing
+the source occurrences share one Locality
+the source occurrences relate to each other
+the source occurrences are Applicable
+the production Act or its Authority
+```
+
+Those distinctions remain with `R`, the exact source references, their own
+Localities and Standing boundaries, and the production physiology.
+
+### 9.2.1 The source boundary and result boundary are distinct
+
+Candidate rows and the Candidate Standing result are appended after the source
+prefix is frozen. Therefore:
+
+```text
+B = source enumeration prefix
+C = later production-result boundary
+```
+
+They may not be silently represented by one coordinate.
+
+The Candidate Standing result needs enough exact material to recover both:
+
+- which prior ledger prefix supplied the source surface;
+- which later candidate occurrences and result occurrence constitute the
+  recorded production.
+
+Unrelated appends after `B` do not change `S(B)`. They also do not become rows
+of this production by chronology. Actual candidate membership must be carried
+by the exact production occurrence and exact result references.
+
+### 9.2.2 `R`, not `B`, defines the source surface
+
+An append boundary is intentionally indifferent to constitutional subject
+species. The exact enumeration rule must specify such coordinates as:
+
+- eligible occurrence or Assertion kinds;
+- addressed Localities or independently referenced source Localities;
+- exact source roles;
+- integrity requirements;
+- source Standing boundaries where required;
+- exact append order or another exact order;
+- duplicate and repeated-reference treatment;
+- whether an empty exact source surface is lawful.
+
+Thus:
+
+```text
+S(B) = every source R requires through B
+
+not:
+
+S(B) = every event stored through B
+```
+
+If production rule `G` depends on source Applicability or Admission results,
+the boundary must make those exact results recoverable, or the production
+material must separately carry their later exact references. A result appended
+after `B` cannot be read backward into `S(B)` merely because the producer later
+used it.
+
+### 9.2.3 Completeness is exact replay, not loop termination
+
+A public/restart reader can test the completeness claim by:
+
+1. resolving `B` as an exact intact append prefix;
+2. applying `R` to enumerate the exact source references through `B`;
+3. revalidating every source occurrence and required source coordinate;
+4. deriving every Candidate coordinate required by `G` without appending;
+5. resolving the recorded Candidate occurrences and Candidate Standing result
+   through `C`;
+6. validating their assignment, Act, Evidence, Yield, source references,
+   order, integrity, and exact material;
+7. comparing the expected and recorded coordinate populations under the exact
+   order, duplicate, and role rules of `G`.
+
+The completeness result must refuse:
+
+- a required Candidate omitted;
+- an extra Candidate not required by `G`;
+- a repeated Candidate where `G` requires one occurrence;
+- a different order where order is exact;
+- a substituted lower Assertion reference;
+- changed source or Candidate material;
+- a corrupt source, Candidate, production, Yield, or result occurrence;
+- a later source occurrence entering `S(B)`;
+- a partial production represented as complete.
+
+This is stronger than:
+
+```text
+the implementation loop ended
+the expected count equals the actual count
+every recorded row has a plausible shape
+```
+
+The complete result is supported only when every exact coordinate required by
+`G(S(B))` is carried by the recorded production and no recorded coordinate is
+outside that exact result.
+
+### 9.2.4 Replay validation is not automatically a Compare Act
+
+The reader's structured validation of expected against recorded coordinates is
+implementation Fidelity for the exact Candidate Standing result. Existing
+Measurement readers already reconstruct bounded source material and refuse a
+recorded result that differs from the exact boundary.
+
+That validation does not by itself record:
+
+- a constitutional Compare Act;
+- Compare Applicability or Participation;
+- another Assertion relating expected and actual populations;
+- equality as represented meaning.
+
+A separately recorded Compare occurrence would require its own Responsibility,
+Authority, inputs, Evidence, Scope, Yield, and result. None is needed merely to
+refuse a Candidate Standing result whose exact replay does not match its own
+formation rule and source boundary.
+
+### 9.2.5 The table need not duplicate its source universe
+
+The Candidate Standing result can remain bounded and replayable by carrying:
+
+```text
+source append boundary B
+source enumeration rule R
+formation rule G
+exact ordered Candidate result references
+production assignment / Act / Evidence / Yield references
+later production-result boundary C
+Scope / Authority / limits / Unknown
+```
+
+Each Candidate carries its exact lower Assertion references and independent
+source coordinates. The result need not copy every source occurrence into its
+own Locality or duplicate every source event's full material.
+
+Therefore the append boundary is the missing mechanical completeness
+coordinate:
+
+```text
+B freezes what R may enumerate
+G determines what that exact source surface owes
+the recorded production carries what it produced
+replay proves whether the table omitted a required row
+```
+
+Disposition: **an append boundary can freeze the exact source reality for a
+replayable completeness finding; it supplies neither the source enumeration
+rule nor Candidate-production Responsibility and Authority**.
+
 ## 10. Revised vacancy
 
 The smallest unrecovered crossing is now:
