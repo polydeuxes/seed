@@ -164,6 +164,50 @@ def _operator_standing_validation_context(
     }
 
 
+def _exact_measurement_occurrence_standing_coordinates(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, str]:
+    event = ledger.get(event_identity)
+    if (
+        event is None
+        or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise ValueError(
+            "pair occurrence assignment carries no intact pair Measurement"
+        )
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": event.material[
+            "responsible_act_evidence_identity"
+        ],
+        "evidence_of_yield_relation_identity": event.material[
+            "evidence_of_yield_relation_identity"
+        ],
+    }
+
+
+def _exact_ingest_occurrence_standing_coordinates(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    event = read_exact_ingest_result(ledger, event_identity)
+    dimensions = event.material["dimensions"]
+    occurrence = {
+        "subject_reference": dimensions["identity"],
+        "standing": "preserved",
+        "authority": dimensions["authority"],
+        "evidence_event_identity": event.identity,
+        "source_role": event.material["source_role"],
+    }
+    if isinstance(event.material.get("represented_material"), str):
+        occurrence["represented_material"] = event.material[
+            "represented_material"
+        ]
+    return occurrence
+
+
 class ReferenceToRecordedRecurrentBytePair(NamedTuple):
     """Exact address of one recurrence Assertion and its count support."""
 
@@ -805,10 +849,12 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     ):
         raise ValueError("pair occurrence assignment coordinates are not exact")
     standing_boundary_identity = material["standing_boundary_identity"]
+    ambient_replay_carrier = False
     if prior_standing is None:
         prior_standing = _operator_standing_validation_context(
             ledger, locality_identity=assignment.locality_identity
         )
+        ambient_replay_carrier = prior_standing is not None
         if prior_standing is None:
             from seed_runtime.operator_locality_standing import (
                 read_operator_locality_standing_through,
@@ -827,6 +873,38 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     prior_boundary_identity = prior_standing.get(
         "through_event_occurrence_identity"
     )
+    if ambient_replay_carrier:
+        pair_occurrence_identity = (
+            finding.pair_reference.recorded_occurrence_identity
+        )
+        exact_measurement_occurrence = (
+            _exact_measurement_occurrence_standing_coordinates(
+                ledger, pair_occurrence_identity
+            )
+        )
+        exact_ingest_occurrence = _exact_ingest_occurrence_standing_coordinates(
+            ledger, finding.source_ingest_occurrence_identity
+        )
+        carried_ingest_occurrences = (
+            [
+                occurrence
+                for occurrence in ingests
+                if type(occurrence) is dict
+                and occurrence.get("evidence_event_identity")
+                == finding.source_ingest_occurrence_identity
+            ]
+            if type(ingests) is list
+            else []
+        )
+        if (
+            type(measurements) is not dict
+            or measurements.get(pair_occurrence_identity, object())
+            != exact_measurement_occurrence
+            or carried_ingest_occurrences != [exact_ingest_occurrence]
+        ):
+            raise ValueError(
+                "pair occurrence assignment has no exact prior Standing"
+            )
     boundary_is_exact = prior_boundary_identity == standing_boundary_identity
     assignment_is_carried_later = bool(
         type(prior_boundary_identity) is str

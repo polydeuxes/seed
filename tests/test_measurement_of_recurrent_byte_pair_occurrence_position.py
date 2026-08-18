@@ -402,6 +402,68 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
         read_from_false_earlier_context()
 
 
+@pytest.mark.parametrize("forged_coordinate", ["measurement", "ingest"])
+@pytest.mark.parametrize("mutation", ["extra", "missing", "changed"])
+def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
+    forged_coordinate, mutation,
+):
+    ledger, locality, pair, _recurrence, source, finding = _fixture()
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=standing,
+    )
+
+    @_operator_standing_replay_validation
+    def read_from_context(measurements, ingests):
+        _set_operator_standing_validation_context(
+            ledger,
+            locality_identity=locality,
+            through_event_occurrence_identity=assignment.material[
+                "standing_boundary_identity"
+            ],
+            measurement_occurrences=measurements,
+            ingest_occurrences=ingests,
+            responsibility_assignment_occurrences={},
+        )
+        return get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, assignment.identity
+        )
+
+    exact_measurements = deepcopy(standing["measurement_occurrences"])
+    exact_ingests = deepcopy(standing["ingest_occurrences"])
+    assert read_from_context(exact_measurements, exact_ingests) == assignment
+
+    measurements = deepcopy(exact_measurements)
+    ingests = deepcopy(exact_ingests)
+    coordinate = (
+        measurements[pair.identity]
+        if forged_coordinate == "measurement"
+        else next(
+            occurrence
+            for occurrence in ingests
+            if occurrence.get("evidence_event_identity") == source.identity
+        )
+    )
+    key = (
+        "result_identity"
+        if forged_coordinate == "measurement"
+        else "subject_reference"
+    )
+    if mutation == "extra":
+        coordinate["forged"] = True
+    elif mutation == "missing":
+        coordinate.pop(key)
+    else:
+        coordinate[key] += "-forged"
+
+    with pytest.raises(ValueError, match="no exact prior Standing"):
+        read_from_context(measurements, ingests)
+
+
 def test_assignment_act_and_result_survive_distinct_durable_restarts(tmp_path):
     database = tmp_path / "recurrent-pair-position.sqlite"
     ledger = SQLiteEventLedger(database)
@@ -951,6 +1013,7 @@ FIDELITY_SUBJECTS = {
         test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier,
         test_replay_validation_context_nests_and_clears_after_failure,
         test_replay_context_before_the_recorded_assignment_boundary_is_refused,
+        test_replay_context_refuses_forged_exact_boundary_input_coordinates,
         test_assignment_act_and_result_survive_distinct_durable_restarts,
         test_measurement_result_does_not_promote_across_the_three_later_crossings,
         test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
