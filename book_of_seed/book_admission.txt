@@ -337,11 +337,9 @@ roles
 root
 route
 rule
-run
 same
 scalar
 scope
-scoped
 seam
 second
 seed
