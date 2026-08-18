@@ -176,7 +176,7 @@
         "standing_not_established": [
           {
             "first_subject": "same_subjects_in_different_order",
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "one_relation",
             "standing": "not_established"
           }
@@ -310,7 +310,7 @@
         "Participation_by_candidate_identity",
         {
           "first_subject": "ordered_coordinate_pair",
-          "relation": "establish",
+          "relation": "establishes",
           "second_subject": "relation",
           "standing": "not_established"
         }
@@ -325,7 +325,7 @@
       "standing_not_established": [
         {
           "first_subject": "subject_presence",
-          "relation": "establish",
+          "relation": "establishes",
           "second_subject": "relation",
           "standing": "not_established"
         }
@@ -1192,19 +1192,19 @@
         "standing_not_established": [
           {
             "first_subject": "boundary_supplies_no_material",
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "material_result",
             "standing": "not_established"
           },
           {
             "first_subject": "boundary_supplies_no_material",
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "Yield",
             "standing": "not_established"
           },
           {
             "first_subject": "boundary_supplies_no_material",
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "completion",
             "standing": "not_established"
           }
@@ -1405,7 +1405,7 @@
               "relation": "of",
               "second_subject": "earlier_Assertions"
             },
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "separate_Applicability_boundary_for_each_Assertion",
             "standing": "not_established"
           },
@@ -1643,7 +1643,7 @@
               "relation": "of",
               "second_subject": "one_proposed_input"
             },
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "Act_nonoccurrence",
             "standing": "not_established"
           },
@@ -1653,7 +1653,7 @@
               "relation": "of",
               "second_subject": "one_proposed_input"
             },
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "Act_prohibition",
             "standing": "not_established"
           }
@@ -1873,7 +1873,7 @@
         "standing_not_established": [
           {
             "first_subject": "result_existence_by_identity",
-            "relation": "establish",
+            "relation": "establishes",
             "second_subject": "occurrence_to_result_relation",
             "standing": "not_established"
           }

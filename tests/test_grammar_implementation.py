@@ -300,7 +300,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
                 "standing_not_established": [
                     {
                         "first_subject": "same_subjects_in_different_order",
-                        "relation": "establish",
+                        "relation": "establishes",
                         "second_subject": "one_relation",
                         "standing": "not_established",
                     }
@@ -4427,7 +4427,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "Participation_by_candidate_identity",
             {
                 "first_subject": "ordered_coordinate_pair",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "relation",
                 "standing": "not_established",
             },
@@ -4652,7 +4652,7 @@ def test_unjoined_subjects_do_not_witness_an_input_to_act_relation():
         "standing_not_established": [
             {
                 "first_subject": "subject_presence",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "relation",
                 "standing": "not_established",
             }
@@ -4766,7 +4766,7 @@ def test_occurrence_and_result_subjects_do_not_establish_their_relation():
         "standing_not_established": [
             {
                 "first_subject": "result_existence_by_identity",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "occurrence_to_result_relation",
                 "standing": "not_established",
             }
@@ -5386,19 +5386,19 @@ def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
         "standing_not_established": [
             {
                 "first_subject": "boundary_supplies_no_material",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "material_result",
                 "standing": "not_established",
             },
             {
                 "first_subject": "boundary_supplies_no_material",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "Yield",
                 "standing": "not_established",
             },
             {
                 "first_subject": "boundary_supplies_no_material",
-                "relation": "establish",
+                "relation": "establishes",
                 "second_subject": "completion",
                 "standing": "not_established",
             },
