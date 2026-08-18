@@ -90,6 +90,7 @@ authorize
 authorized
 availability
 available
+auxiliary
 b
 basis
 be
@@ -135,6 +136,7 @@ canonical
 carried
 carries
 carry
+carrier
 carrying
 cases
 catalog
@@ -310,6 +312,7 @@ either
 eligibility
 eliminate
 elimination
+emphasis
 emission
 emissions
 enclosure
@@ -657,6 +660,7 @@ paths
 payloads
 perform
 performed
+performative
 performs
 permits
 persistence
@@ -703,6 +707,8 @@ proceed
 process
 prohibited
 prohibition
+projected
+projection
 projects
 promotion
 proof

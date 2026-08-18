@@ -35,7 +35,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
-from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     record_shared_position_applicability_act_evidence,
     record_shared_position_applicability_result,
     record_shared_position_measurement_act_evidence,

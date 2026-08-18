@@ -12,9 +12,9 @@ Participation of Evidence requires that the exact Act can distinguish its identi
 
 An ordered provenance path is one representation of source and occurrence continuity. Reference resolution and internal coherence do not establish that every referenced occurrence happened as described, that one occurrence caused another, or another support relation from the material to an Assertion.
 
-A missing or unmatched support result remains bounded to the exact corpus, query, temporal boundary, Authority, and limits that established it. It may establish that bounded negative finding or Unknown. It does not establish falsehood, global absence, invalidity, or absence of an occurrence.
+A missing or unmatched support result remains bounded to the exact corpus, query, temporal boundary, Authority, and limits that established it. It may establish that bounded negative finding or Unknown. It establishes no falsehood, global absence, invalidity, or absence of an occurrence.
 
-A Representation may carry Evidence, provenance, conflicts, and reasons already established. A responsible Act may establish an Assertion carried by that Representation under its own Responsibility; it does not create upstream truth or occurrences.
+A Representation may carry Evidence, provenance, conflicts, and reasons already established. A responsible Act may establish an Assertion carried by that Representation under its own Responsibility; it cannot create upstream truth or occurrences.
 
 ## Important distinctions
 

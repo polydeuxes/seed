@@ -71,7 +71,7 @@ def test_witness_readable_grammar_traverses_responsibility_from_standing():
             "responsible_boundary_bears_Responsibility"
         ),
         "assignment_requires": "current_Standing",
-        "does_not_establish": [
+        "standing_not_established": [
             "Responsibility_by_identity",
             "Responsibility_occurrence",
             "result_Standing_revision",
@@ -339,7 +339,7 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
     )
 
 
-def test_supporting_finding_does_not_establish_participation_by_identity():
+def test_supporting_finding_standing_not_established_participation_by_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     clause = grammar["clauses"]["08.Authority.B"]
 
@@ -348,15 +348,15 @@ def test_supporting_finding_does_not_establish_participation_by_identity():
         "Applicability",
         "Admission",
     ]
-    assert clause["does_not_establish"][0] == (
+    assert clause["standing_not_established"][0] == (
         "Participation_relation_by_supporting_finding_identity"
     )
 
 
-def test_public_export_does_not_establish_standing():
+def test_public_export_standing_not_established_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["clauses"]["01.Standing.C"]["does_not_establish"][-1] == (
+    assert grammar["clauses"]["01.Standing.C"]["standing_not_established"][-1] == (
         "Standing_by_public_export"
     )
 
@@ -365,7 +365,7 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     clause = grammar["clauses"]["01.Standing.E.1"]
 
-    assert clause["does_not_establish"] == [
+    assert clause["standing_not_established"] == [
         "Applicability_by_usefulness",
         "Applicability_by_agreement",
         "Applicability_by_availability",
@@ -493,7 +493,7 @@ FIDELITY_SUBJECTS = {
         test_witness_readable_grammar_traverses_responsibility_from_standing,
     ),
     "public_export_standing_distinction": (
-        test_public_export_does_not_establish_standing,
+        test_public_export_standing_not_established_standing,
     ),
     "applicability_responsibility": (
         test_applicability_responsibility_is_exact_act_or_assigned_occurrence,
@@ -510,7 +510,7 @@ FIDELITY_SUBJECTS = {
         test_missing_relation_clause_is_detected,
     ),
     "supporting_finding_participation_distinction": (
-        test_supporting_finding_does_not_establish_participation_by_identity,
+        test_supporting_finding_standing_not_established_participation_by_identity,
     ),
     "applicability_usefulness_agreement_availability_distinction": (
         test_applicability_requires_more_than_usefulness_agreement_or_availability,

@@ -20,7 +20,7 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     get_recorded_shared_position_measurement,
 )

@@ -31,6 +31,7 @@ LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",
+        "byte_pair_position_coordinate_difference_one_measurement",
         "material_ingest",
         "occurrence_position_measurement",
         "measurement_of_recurrent_byte_pair_occurrence_position",

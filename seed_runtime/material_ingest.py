@@ -5,7 +5,10 @@ from __future__ import annotations
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.evidence_of_yield_relation import _record_evidence_of_yield_relation
+from seed_runtime.evidence_of_yield_relation import (
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
+)
 
 
 MATERIAL_INGEST_OCCURRED_KIND = "material.ingest.occurred"
@@ -145,3 +148,42 @@ def ingested_material_bytes(event: Event) -> bytes:
     if type(exact) is not bytes:
         raise MaterialIngestError("Ingest occurrence carries no exact bytes")
     return exact
+
+
+def read_exact_ingest_result(ledger: EventLedger, event_identity: str) -> Event:
+    """Read one intact exact-material Ingest result through its Yield."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("exact Ingest read requires one EventLedger")
+    if type(event_identity) is not str or not event_identity:
+        raise MaterialIngestError("exact Ingest read requires one occurrence identity")
+    event = ledger.get(event_identity)
+    if (
+        event is None
+        or event.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or type(event.locality_identity) is not str
+        or not event.locality_identity
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise MaterialIngestError("exact Ingest result is absent or corrupted")
+    try:
+        requirements = read_requirements_of_yield_relation(
+            ledger,
+            recorded_result_event_identity=event.identity,
+            evidence_of_yield_relation_event_identity=event.material.get(
+                "evidence_of_yield_relation_identity"
+            ),
+            responsible_act_evidence_event_identity=event.material.get(
+                "responsible_act_evidence_identity"
+            ),
+        )
+        ingested_material_bytes(event)
+    except (TypeError, ValueError) as error:
+        raise MaterialIngestError(
+            "exact Ingest result carries no intact Act and Yield"
+        ) from error
+    if not all(requirements.values()):
+        raise MaterialIngestError(
+            "exact Ingest result carries no intact Act and Yield"
+        )
+    return event

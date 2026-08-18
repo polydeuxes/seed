@@ -84,15 +84,19 @@ def test_book_has_its_own_admission_and_points_to_rosetta():
     )
 
 
-def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
-    book_warrant = {word for word in book_admission() if word.startswith("warrant")}
+def test_rosetta_admits_composite_support_relation_terms():
     rosetta_warrant = {
         word
         for word in _admission_entries(ROSETTA_ADMISSION)
         if word.startswith("warrant")
     }
-    assert book_warrant == {"warrant"}
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
+    roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
+    assert (
+        "Warrant        exact support relation from Evidence + Authority + Scope "
+        "+ preserved limits to one Assertion or assignment; composite only, no "
+        "new relation by identity"
+    ) in roots
 
 
 def test_clause_coordinate_tokens_require_explicit_curation():
@@ -109,22 +113,20 @@ def test_clause_coordinate_tokens_require_explicit_curation():
     assert uncurated_coordinate_words == {"uncuratedcoordinate"}
 
 
-def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences():
+def test_standing_requires_the_exact_support_relation():
     chapter = (BOOK / "chapters" / "02_constitutional_standing.md").read_text(
         encoding="utf-8"
     )
     paragraph = next(
         paragraph
         for paragraph in chapter.split("\n\n")
-        if "warrant" in paragraph.lower()
+        if paragraph.startswith("Preserved material establishes no support relation")
     )
 
-    assert "Warrant" not in paragraph
     assert paragraph == (
-        "Preserved material does not warrant an Assertion it carries. "
-        "This use of warrant is a composite. "
-            "Standing carried by this Seed requires warrant through its Evidence, "
-            "Authority, Scope, and preserved limits."
+        "Preserved material establishes no support relation to an Assertion it "
+        "carries. Standing carried by this Seed requires the exact support relation "
+        "from its Evidence, Authority, Scope, and preserved limits to the Assertion."
     )
 
 
@@ -171,8 +173,8 @@ def test_witness_grammar_words_in_book_admission():
 
 
 FIDELITY_SUBJECTS = {
-    "warrant_standing_boundary": (
-        test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences,
+    "assertion_support_relation_standing_boundary": (
+        test_standing_requires_the_exact_support_relation,
     ),
     "active_book_scope": (test_book_proper_scope_excludes_rosetta,),
     "admitted_material_reference_relative_resolution": (
@@ -181,8 +183,8 @@ FIDELITY_SUBJECTS = {
     "book_rosetta_admission_distinction": (
         test_book_has_its_own_admission_and_points_to_rosetta,
     ),
-    "book_rosetta_warrant_admission_distinction": (
-        test_warrant_admission_is_broad_in_rosetta_and_singular_in_book,
+    "rosetta_composite_support_relation_distinction": (
+        test_rosetta_admits_composite_support_relation_terms,
     ),
     "clause_coordinate_word_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,

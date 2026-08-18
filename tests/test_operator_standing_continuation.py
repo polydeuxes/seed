@@ -517,7 +517,7 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
     ]
 
 
-def test_incomplete_act_evidence_is_not_projected_as_a_relation():
+def test_incomplete_act_evidence_is_not_carried_as_a_relation():
     ledger = EventLedger()
     _source, representation = _source_representation(ledger)
     act_evidence = _act(ledger, representation)

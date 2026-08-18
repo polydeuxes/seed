@@ -14,9 +14,9 @@ Unknown, and Standing.
 
 The movement occurrence carries the exact transition in its Assertion and no other transition. A
 write, recorded Event, route revision, represented Assertion revision,
-recorded-material revision, or displayed label does not supply movement by identity.
+recorded-material revision, or displayed label supplies no movement by identity.
 
-Movement is not an Act occurrence by identity. Different Standing does not open
+Movement is not an Act occurrence by identity. Different Standing cannot open
 later movement by identity.
 
 ## Important distinctions

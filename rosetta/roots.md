@@ -100,6 +100,7 @@ Claim          asserted content
 Fact           Assertion described through its bounded Standing
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
+Warrant        exact support relation from Evidence + Authority + Scope + preserved limits to one Assertion or assignment; composite only, no new relation by identity
 Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
 Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
@@ -124,6 +125,14 @@ Addressability of preserved coordinates
 
 A connective noun does not establish a Seed relation. Translation resolves the
 exact coordinates doing the work:
+
+### Does
+
+`Does` is an ordinary auxiliary relation-carrier when it carries negation,
+emphasis, or a question for one named relation; it neither names nor performs
+that relation. Its performative use instead asserts that an exact subject
+performs an exact Act. That use requires the exact Act occurrence and Evidence;
+the word alone establishes neither the occurrence nor the relation.
 
 ```text
 exact subject or material

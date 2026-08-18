@@ -160,6 +160,7 @@ def test_changed_pair_crossing_a_callback_cannot_enter_compare_standing():
     ledger, _earlier_source, _added, earlier, later = _inputs()
     standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
     standing_before = deepcopy(standing)
+    event_count_before = len(ledger.list())
     earlier.material["assertions"][0]["dimensions"]["content"]["count"] += 1
 
     with pytest.raises(
@@ -173,6 +174,7 @@ def test_changed_pair_crossing_a_callback_cannot_enter_compare_standing():
         )
 
     assert standing == standing_before
+    assert len(ledger.list()) == event_count_before
 
 
 def _operator_inputs(*, acquisition_before_earlier_measurement=False):

@@ -24,8 +24,8 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
+    read_exact_ingest_result,
 )
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
@@ -334,27 +334,12 @@ def _references_to_recorded_recurrent_byte_pairs(
 
 
 def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
-    event = ledger.get(event_identity)
-    if (
-        event is None
-        or event.kind != MATERIAL_INGEST_OCCURRED_KIND
-        or type(event.locality_identity) is not str
-        or not event.locality_identity
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        raise ValueError("pair occurrence Measurement requires one intact Ingest result")
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material.get("evidence_of_yield_relation_identity"),
-        responsible_act_evidence_event_identity=event.material.get(
-            "responsible_act_evidence_identity"
-        ),
-    )
-    if not all(requirements.values()):
-        raise ValueError("pair occurrence Measurement requires exact Ingest Yield")
-    ingested_material_bytes(event)
-    return event
+    try:
+        return read_exact_ingest_result(ledger, event_identity)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "pair occurrence Measurement requires one intact Ingest result"
+        ) from error
 
 
 def _measurement_source_position_coordinates(

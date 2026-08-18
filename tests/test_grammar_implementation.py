@@ -61,7 +61,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
-from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     MEASUREMENT_RULE as SHARED_POSITION_MEASUREMENT_RULE,
     RESPONSIBILITY as SHARED_POSITION_MEASUREMENT_RESPONSIBILITY,
     SHARED_POSITION_ASSERTION_RESPONSIBILITY,
@@ -164,6 +164,11 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
+    record_position_difference_one_measurement_responsibility_assignment,
+    record_position_difference_one_measurement_act_evidence,
+    record_position_difference_one_measurement_result,
 )
 from seed_runtime.evidence_of_yield_relation import (
     LIVE_BOUNDARIES_OF_YIELD_RELATION,
@@ -329,7 +334,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
 def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     mutations = (
-        grammar["clauses"]["01.Standing.B"]["does_not_establish"][3],
+        grammar["clauses"]["01.Standing.B"]["standing_not_established"][3],
         grammar["clauses"]["01.Source.C"]["test_subjects"][77],
     )
     assert mutations[0]["identity"] == "Authority_supports_exact_Act"
@@ -340,7 +345,7 @@ def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address
     for structured_relation in mutations:
         changed = json.loads(json.dumps(grammar))
         target = (
-            changed["clauses"]["01.Standing.B"]["does_not_establish"][3]
+            changed["clauses"]["01.Standing.B"]["standing_not_established"][3]
             if "identity" in structured_relation
             else changed["clauses"]["01.Source.C"]["test_subjects"][77]
         )
@@ -936,6 +941,37 @@ def _occurrence_position_yield_witness() -> dict:
     event = record_occurrence_position_measurement_result(
         ledger,
         responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    return _yield_bundle(ledger, event)
+
+
+def _byte_pair_position_difference_one_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    locality = "byte-pair-position-difference-one"
+    source = ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"abc",
+        source_role="exact material",
+        source_boundary="exact material boundary",
+    )
+    assignment = record_position_difference_one_measurement_responsibility_assignment(
+        ledger,
+        source_ingest_occurrence_identity=source.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    act = record_position_difference_one_measurement_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    event = record_position_difference_one_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
     )
     return _yield_bundle(ledger, event)
 
@@ -2132,6 +2168,9 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         ),
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
+        "byte_pair_position_coordinate_difference_one_measurement": (
+            _byte_pair_position_difference_one_yield_witness
+        ),
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
         "shared_pair_position_applicability": (
             _shared_position_applicability_yield_witness
@@ -3255,7 +3294,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "exact_relation",
             "supporting_measurements",
         ],
-        "does_not_establish": [
+        "standing_not_established": [
             "global_certification",
             "correction_Authority",
         ],
@@ -4029,7 +4068,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
                 "intact_evidence",
             ],
         },
-        "does_not_establish": [
+        "standing_not_established": [
             "candidate_by_subject_identity",
             "Participation_relation_by_subject_identity",
             "Participation_by_candidate_identity",
@@ -4110,7 +4149,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "provenance",
             "Unknown",
         ],
-        "does_not_establish": [
+        "standing_not_established": [
             "Act_occurrence_by_candidate_identity",
             "occurrence_result_relation_by_candidate_identity",
             "Participation_by_candidate_identity",
@@ -4163,7 +4202,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
             "preserved_limits",
         ],
         "preserves": ["carried_Scope", "preserved_limits"],
-        "does_not_erase": [
+        "coordinates_preserved_through": [
             "summarizing",
             "indexing",
             "citing",
@@ -4171,7 +4210,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
             "representing",
             "attaching",
         ],
-        "does_not_establish": ["Authority_relocation"],
+        "standing_not_established": ["Authority_relocation"],
     }
     assert clause["preserves"] == clause["coordinates"][-2:]
 
@@ -4591,6 +4630,9 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "successful_emission": _emission_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
+        "byte_pair_position_coordinate_difference_one_measurement": (
+            _byte_pair_position_difference_one_yield_witness
+        ),
             "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
             "shared_pair_position_applicability": (
                 _shared_position_applicability_yield_witness
@@ -4704,7 +4746,7 @@ def test_exact_source_material_rule_is_checked_against_one_live_representation()
             "second_subject": "source_result",
         },
         "preserves": "source_result_occurrence",
-        "does_not_establish": [
+        "standing_not_established": [
             "what_material_represents",
             "represented_relation",
         ],
@@ -4736,7 +4778,7 @@ def test_exact_material_admission_establishes_one_rule_relation():
             "Representation_rule",
             "destination_boundary_rule",
         ],
-        "does_not_establish": [
+        "standing_not_established": [
             "relation_by_write_function",
             "effects_beyond_boundary",
         ],
@@ -5231,13 +5273,15 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             "completeness_boundary",
             "occurrence_limit",
         ],
-        "does_not_establish": [
+        "standing_not_established": [
             "Candidate",
             "Admission",
             "Standing_movement",
             "represented_relation",
         ],
     }
+
+
     assert material["pair_assertion_reference"]
     assert material["source_ingest_occurrence_identity"]
     assert material["occurrence_limit"]
@@ -5317,6 +5361,44 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         "standing_movement",
         "represented_relation",
     } & set(material)
+
+
+def test_position_coordinate_difference_one_measurement_is_structured_in_grammar():
+    declared = _clause("01.Source.D")["declared_measurements"][
+        "measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one"
+    ]
+    bundle = _byte_pair_position_difference_one_yield_witness()
+    material = bundle["event"].material
+    act_material = bundle["act_evidence"].material
+
+    assert declared["measurement"] == {
+        "subject": {
+            "first_subject": "position",
+            "relation": "of",
+            "second_subject": {
+                "identity": "occurrences_of_byte_pair",
+                "first_subject": "occurrences",
+                "relation": "of",
+                "second_subject": "byte_pair",
+            },
+        },
+        "finding": "position",
+    }
+    assert declared["witness"]["input_reference"] in material
+    assert material[declared["witness"]["input_reference"]] == (
+        act_material["participation"]["subject_reference"]
+    )
+    assert declared["witness"]["input_applicability"] == {
+        "first_subject": "exact_Ingest_result",
+        "relation": "input_to",
+        "second_subject": "exact_Act",
+    }
+    assert material["assertions"]["dimensions"]["content"] == {
+        "exact_pair": "material at first_position through second_position",
+        "first_position": "position",
+        "second_position": "difference from first_position is one",
+    }
+    assert material["assertions"]["occurrences"] == 2
 
 
 def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
@@ -5405,10 +5487,10 @@ def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
 
 def test_shared_position_measurement_decomposes_material_non_establishment():
     declared = _clause("01.Source.D")["declared_measurements"][
-        "measurement_of_shared_position_of_recurrent_byte_pair_occurrences"
+        "measurement_of_shared_position_of_byte_pair_occurrences"
     ]
 
-    assert declared["does_not_establish"][0] == {
+    assert declared["standing_not_established"][0] == {
         "first_subject": "input_pair_occurrences",
         "relation": "establish",
         "second_subject": {
@@ -5439,7 +5521,7 @@ def test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND: "04.Compare.B",
     }
-    assert declared["does_not_establish"] == [
+    assert declared["standing_not_established"] == [
         "source_relation",
         "recurrence",
         "represented_relation",
@@ -5909,6 +5991,7 @@ FIDELITY_SUBJECTS = {
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
         test_shared_position_measurement_decomposes_material_non_establishment,
+        test_position_coordinate_difference_one_measurement_is_structured_in_grammar,
     ),
     "it_result_relation": (
         test_measurement_result_pronoun_reference_does_not_compress_the_relation,

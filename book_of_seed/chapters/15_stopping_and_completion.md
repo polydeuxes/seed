@@ -9,7 +9,7 @@ Which exact evidenced material or Standing can support a bounded responsible exa
 ## Bounded resolution
 Evidence may support distinct reasons for non-movement: an Assertion, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or Assertion supplies Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates support a stopping occurrence or the stronger completion Assertion remains unclear.
 
-Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason. Absence of a recorded stopping occurrence or reason Evidence does not establish a Stop. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. This discipline does not make every unresolved coordinate establish a Stop or assign Stopping the reason-establishing Responsibility.
+Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason. Absence of a recorded stopping occurrence or reason Evidence establishes no Stop. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. Not every unresolved coordinate establishes a Stop, and this discipline cannot assign Stopping the reason-establishing Responsibility.
 
 ## Important distinctions
 - stopping != completion
@@ -30,6 +30,6 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 
 ## Constrained movement stopping correction 001
 
-An exact Act may respond to an Assertion, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, a Representation carrying material and an unmet requirement Assertion, or a refusal to establish a support relation. None makes the asserted failure or completion by identity. Unknown does not support movement, and an Assertion result does not establish a later stopping occurrence.
+An exact Act may respond to an Assertion, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, a Representation carrying material and an unmet requirement Assertion, or a refusal to establish a support relation. None makes the asserted failure or completion by identity. Unknown supports no movement, and an Assertion result establishes no later stopping occurrence.
 
 Stopping is not failure.

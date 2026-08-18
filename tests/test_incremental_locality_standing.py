@@ -1,7 +1,7 @@
 """Advancing locality Standing equals replaying it, at every occurrence boundary.
 
-The console projected locality Standing from the first event of the locality
-before every interaction, so occurrence *j* was reprojected by every later one.
+The console rebuilt Locality Standing before every interaction, so each later
+interaction reread occurrence *j*.
 `#2376` established that advancing a prior Standing over only the occurrences
 after its boundary yields exactly the replayed result across 1,077 prefix
 pairs. The console now carries its Standing forward instead.
@@ -32,8 +32,15 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_material_acquisition import (
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+)
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
+    POSITION_DIFFERENCE_ONE_RESULT_KIND,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one,
+)
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -85,6 +92,32 @@ def _ingress_event(index, *, unknown):
             "unknown": list(unknown),
         },
         locality_identity="s",
+    )
+
+
+def test_operator_ingest_records_exact_position_coordinate_difference_one_result():
+    ledger, _output = _console("2+2=5\n")
+    results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND
+    )
+
+    assert len(results) == 1
+    references = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one(
+            ledger, results[0].identity
+        )
+    )
+    assert tuple(
+        (reference.exact_pair, reference.first_position, reference.second_position)
+        for reference in references
+    ) == (
+        (b"2+", 0, 1),
+        (b"+2", 1, 2),
+        (b"2=", 2, 3),
+        (b"=5", 3, 4),
+        (b"5\n", 4, 5),
     )
 
 
@@ -213,6 +246,34 @@ def test_an_advance_refuses_an_occurrence_from_another_locality():
             (event.identity,),
             locality_identity="s",
         )
+
+
+def test_input_boundary_cannot_append_an_occurrence_during_acquisition():
+    ledger = EventLedger()
+
+    class AppendingInput:
+        def readline(self):
+            ingest_material(
+                ledger,
+                locality_identity="s",
+                exact_bytes=b"outside acquisition",
+                source_role="operator",
+                source_boundary="inside input boundary invocation",
+            )
+            return b"addressed material\n"
+
+    with pytest.raises(ValueError, match="before its result"):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="s",
+            input_stream=AppendingInput(),
+            output_stream=StringIO(),
+        )
+
+    assert all(
+        event.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+        for event in ledger.list()
+    )
 
 
 def test_a_persisted_ledger_advances_identically(tmp_path):
@@ -526,15 +587,16 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         ),
     )
     unchanged = deepcopy(standing)
-    malformed = deepcopy(acquired)
-    malformed.material["unknown"] = "not exact"
-    with pytest.raises(ValueError, match="Standing is not exact"):
-        _carry_operator_material_acquisition_occurrence_into_standing(
-            standing,
-            malformed,
-            prior_through_event_occurrence_identity=act_evidence.identity,
-        )
-    assert standing == unchanged
+    for malformed_unknown in ("not exact", [{}]):
+        malformed = deepcopy(acquired)
+        malformed.material["unknown"] = malformed_unknown
+        with pytest.raises(ValueError, match="Standing is not exact"):
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                standing,
+                malformed,
+                prior_through_event_occurrence_identity=act_evidence.identity,
+            )
+        assert standing == unchanged
     standing = _carry_operator_material_acquisition_occurrence_into_standing(
         standing,
         acquired,

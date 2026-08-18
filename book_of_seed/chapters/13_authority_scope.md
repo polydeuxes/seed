@@ -9,20 +9,20 @@ What establishes Authority for a bounded result or Act, and what preserves its e
 ## Bounded resolution
 Operator material or approvals may contribute Authority after exact Authority and Scope binding. Without that binding they may not contribute Authority. Internal Representations, records, emissions, or transport material cannot create or enlarge that Authority.
 
-A Representation may carry Authority for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknown. The Representation does not create, enlarge, transfer, or renew that Authority.
+A Representation may carry Authority for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknown. The Representation cannot create, enlarge, transfer, or renew that Authority.
 
 ## Boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support
-A downstream Act may stand on established content within bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not establish Standing or Authority beyond those bounds, prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
+A downstream Act may stand on established content within bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support establishes no Standing or Authority beyond those bounds and cannot prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
-Support for a subject's Participation in an exact Act by an established support relation, Applicability, or Admission finding is bounded by its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. That support does not establish the Participation relation by identity and does not become truth, Authority beyond those bounds, mutation Authority, Book ratification, or reusable approval.
+Support for a subject's Participation in an exact Act by an established support relation, Applicability, or Admission finding is bounded by its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. That support by identity establishes no Participation relation. That support != truth, Authority beyond those bounds, mutation Authority, Book ratification, or reusable approval.
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
-Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop.
+Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown under bounded repository authority. Without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop, that competence != jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication.
 
 ## Important distinctions
 - operator request != unbounded authority

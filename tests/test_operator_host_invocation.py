@@ -68,6 +68,36 @@ def _provider(*occurrences):
     return provide
 
 
+def test_provider_cannot_append_outside_one_supplied_occurrence():
+    ledger = EventLedger()
+
+    def provider(_exact_command, supply):
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"one exact supplied result",
+                "provider:guarded",
+                False,
+            )
+        )
+        ingest_material(
+            ledger,
+            locality_identity="outside-provider-locality",
+            exact_bytes=b"outside supplied material",
+            source_role="operator",
+            source_boundary="provider side occurrence",
+        )
+
+    with pytest.raises(ValueError, match="outside supplied material"):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="operator-locality",
+            input_stream=BytesIO(b"!guard\n"),
+            output_stream=StringIO(),
+            raw_output_stream=BytesIO(),
+            operator_invocation_provider=provider,
+        )
+
+
 def _ingests(ledger):
     return [
         event

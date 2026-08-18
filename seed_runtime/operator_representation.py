@@ -20,7 +20,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
-from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     get_recorded_shared_position_measurement,
 )

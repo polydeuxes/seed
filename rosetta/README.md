@@ -98,8 +98,8 @@ to four current terms and to no single one of them.
 
 Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
 and points here without importing Rosetta admission into active law. In
-particular, Rosetta admits the `warrant` word family while Book proper admits
-only the singular ordinary verb in Seed's Standing declaration.
+particular, Rosetta admits the `warrant` word family while Book proper names
+the exact Evidence, Authority, Scope, preserved limits, and support relation.
 
 The Book's Responsibility spine supplies the ordering. Rosetta words hang
 from the exact coordinates they translate, or record a word that named nothing

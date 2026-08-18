@@ -7,7 +7,7 @@ It is not a roadmap, witness reference, generated topology, or substitute for re
 ## Resolution
 
 - A **Chapter** has one bounded subject: a concept, Responsibility, distinction, or relation.
-- `[UNRESOLVED]` identifies a distinction for which the current repository does not safely support a constitutional resolution.
+- `[UNRESOLVED]` identifies a distinction for which the current repository safely supports no constitutional resolution.
 - Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
@@ -17,7 +17,7 @@ same clause coordinates. Neither Representation is the Book by identity.
 
 ## Standing
 
-Standing is the Book's root. Current Standing whose subject is the Assertion that the exact responsible boundary bears an exact Responsibility is required for Seed to read that Responsibility assignment. Standing does not create, perform, or become the Responsibility by identity.
+Standing is the Book's root. Current Standing whose subject is the Assertion that the exact responsible boundary bears an exact Responsibility is required for Seed to read that Responsibility assignment. Standing cannot create or perform the Responsibility by identity. Standing != Responsibility.
 
 ```text
 Standing
@@ -28,7 +28,7 @@ Standing
 → Standing
 ```
 
-The later Standing has the exact result or relation of the occurrence under Yield Evidence as its subject. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that revision.
+The later Standing has the exact result or relation of the occurrence under Yield Evidence as its subject. It cannot revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that revision.
 
 ## Responsibility
 
@@ -47,11 +47,11 @@ Identifies the exact boundary bearing the responsibility. It is distinct from th
 
 #### Subject or material addressed
 
-Identifies the Responsibility's bounded subject. Responsible-boundary identity does not supply subject identity.
+Identifies the Responsibility's bounded subject. Responsible-boundary identity supplies no subject identity.
 
 #### Exact responsible act
 
-Identifies the exact constitutional act assigned to the responsibility. Responsibility identity does not by itself establish that the act occurred.
+Identifies the exact constitutional act assigned to the responsibility. Responsibility identity by itself establishes no act occurrence.
 
 #### Authority
 
@@ -66,11 +66,11 @@ Authority
 != Authority carried by an input
 ```
 
-The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing does not resolve the Authority coordinate.
+The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing cannot resolve the Authority coordinate.
 
 #### Evidence
 
-Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation asserted. Evidence does not establish Authority, a support relation, occurrence, or Standing by identity.
+Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation asserted. Evidence by identity establishes no Authority, support relation, occurrence, or Standing.
 
 #### Scope and locality
 
@@ -82,7 +82,7 @@ These branches are required where material participates in the exact Responsibil
 
 #### Input source
 
-Identifies where the exact input material came from. Source does not establish provenance by itself.
+Identifies where the exact input material came from. Source by itself establishes no provenance.
 
 #### Provenance
 
@@ -92,7 +92,7 @@ Identifies the source, preservation, and occurrence history required by the exac
 
 Where a Responsibility uses an Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknown, and Standing each has a distinct identity and exact coordinates. Nearby coordinates or reference presence do not supply that relation.
 
-Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
+Support-relation Standing establishes no supported Assertion Standing, Applicability, Admission, or later input-to-result support relation. Each requires its own responsible occurrence.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -100,7 +100,7 @@ These branches apply where the exact act occurs, including a failed act occurren
 
 #### Act occurrence
 
-Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. A later responsibility finding that the proposed act did not occur does not establish an act occurrence.
+Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. A later responsibility finding that the proposed act did not occur establishes no act occurrence.
 
 ```text
 act
@@ -170,7 +170,7 @@ Act occurrence
 
 #### Standing-occurrence evidence
 
-Identifies the Evidence supporting the Standing occurrence. Representation existence, a representation Act, recording, or visibility does not establish Standing by identity.
+Identifies the Evidence supporting the Standing occurrence. Representation existence, a representation Act, recording, or visibility establishes no Standing by identity.
 
 #### Standing
 
@@ -197,7 +197,7 @@ Each branch occurs where the exact responsibility instantiates it. Some may prec
 
 #### Preservation record
 
-Identifies any separately retained representation or record preserving an Act, Standing occurrence, support relation, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
+Identifies any separately retained representation or record preserving an Act, Standing occurrence, support relation, result, or other occurrence. A preservation record cannot prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 
@@ -209,7 +209,7 @@ Identifies any act-local applicability or admission standing required before mat
 
 #### Lawful Stopping
 
-Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. A reason-bearing Responsibility and the exact Act addressed by the Stop do not establish a relation by identity. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. A reason-bearing Responsibility and the exact Act addressed by the Stop establish no relation by identity. Absence of movement, unresolved material, negative Standing, or a preventing Assertion supplies no Stop by identity.
 
 ```text
 absence of movement
@@ -228,7 +228,7 @@ Stopping
 != relation by identity
 ```
 
-The Book begins at Standing; current Standing assigns Responsibility. This does not create a new constitutional kind, revise Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
+The Book begins at Standing; current Standing assigns Responsibility. This cannot create a new constitutional kind, revise Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
 
 ```text
 branch present != branch value established

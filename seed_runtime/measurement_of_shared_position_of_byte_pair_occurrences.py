@@ -17,8 +17,15 @@ from seed_runtime.evidence_of_yield_relation import (
 )
 from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
+    POSITION_DIFFERENCE_ONE_RESULT_KIND,
+    ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne,
+    _references_to_recorded_position_coordinates_for_assertion_identities,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one,
 )
 
 
@@ -50,7 +57,7 @@ APPLICABILITY_ACT = (
     "determine Applicability of exact pair occurrence position Assertions to one "
     "shared position Measurement"
 )
-MEASUREMENT_ACT = "determine one shared position of exact recurrent byte pair occurrences"
+MEASUREMENT_ACT = "determine one shared position of exact byte pair occurrences"
 SHARED_POSITION_ASSERTION_RESPONSIBILITY = (
     "preserve carried Standing coordinates of this measured Assertion"
 )
@@ -75,9 +82,15 @@ class SharedPairPositionError(ValueError):
     """One shared-position Measurement lifecycle is incoherent."""
 
 
+RecordedPairPositionReference = (
+    ReferenceToRecordedRecurrentBytePairOccurrencePosition
+    | ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne
+)
+
+
 class SharedPairPositionInputs(NamedTuple):
-    first: ReferenceToRecordedRecurrentBytePairOccurrencePosition
-    second: ReferenceToRecordedRecurrentBytePairOccurrencePosition
+    first: RecordedPairPositionReference
+    second: RecordedPairPositionReference
 
     @property
     def positions_equal(self) -> bool:
@@ -95,16 +108,11 @@ def _identity(value: Any, message: str) -> str:
 
 
 def _reference_material(
-    reference: ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+    reference: RecordedPairPositionReference,
 ) -> dict[str, Any]:
-    return {
+    material = {
         "recorded_occurrence_identity": reference.recorded_occurrence_identity,
         "assertion_identity": reference.assertion_identity,
-        "pair_measurement_occurrence_identity": (
-            reference.pair_measurement_occurrence_identity
-        ),
-        "recurrence_assertion_identity": reference.recurrence_assertion_identity,
-        "count_assertion_identity": reference.count_assertion_identity,
         "source_ingest_occurrence_identity": (
             reference.source_ingest_occurrence_identity
         ),
@@ -116,6 +124,63 @@ def _reference_material(
         "first_position": reference.first_position,
         "second_position": reference.second_position,
     }
+    if type(reference) is ReferenceToRecordedRecurrentBytePairOccurrencePosition:
+        material["support_assertion_references"] = [
+            {
+                "recorded_occurrence_identity": (
+                    reference.pair_measurement_occurrence_identity
+                ),
+                "assertion_identity": reference.recurrence_assertion_identity,
+            },
+            {
+                "recorded_occurrence_identity": (
+                    reference.pair_measurement_occurrence_identity
+                ),
+                "assertion_identity": reference.count_assertion_identity,
+            },
+        ]
+    elif (
+        type(reference)
+        is ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne
+    ):
+        material["support_assertion_references"] = []
+    else:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact position Assertion reference"
+        )
+    return material
+
+
+def _references(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+) -> tuple[RecordedPairPositionReference, ...]:
+    result_occurrence_identity = _identity(
+        result_occurrence_identity,
+        "shared-position Measurement requires one exact result occurrence",
+    )
+    result = ledger.get(result_occurrence_identity)
+    if result is None:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact result occurrence"
+        )
+    if (
+        result.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        return references_to_recorded_recurrent_byte_pair_occurrence_positions(
+            ledger,
+            result_occurrence_identity=result_occurrence_identity,
+        )
+    if result.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND:
+        return references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one(
+            ledger,
+            result_occurrence_identity,
+        )
+    raise SharedPairPositionError(
+        "shared-position Measurement requires one exact pair-position result"
+    )
 
 
 def _resolve_reference(
@@ -123,12 +188,12 @@ def _resolve_reference(
     *,
     result_occurrence_identity: str,
     assertion_identity: str,
-) -> ReferenceToRecordedRecurrentBytePairOccurrencePosition:
+) -> RecordedPairPositionReference:
     assertion_identity = _identity(
         assertion_identity,
         "shared-position Measurement requires one exact Assertion identity",
     )
-    references = references_to_recorded_recurrent_byte_pair_occurrence_positions(
+    references = _references(
         ledger,
         result_occurrence_identity=_identity(
             result_occurrence_identity,
@@ -147,6 +212,44 @@ def _resolve_reference(
     return matches[0]
 
 
+def _resolve_references(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+    assertion_identities: tuple[str, ...],
+) -> tuple[RecordedPairPositionReference, ...]:
+    result_occurrence_identity = _identity(
+        result_occurrence_identity,
+        "shared-position Measurement requires one exact result occurrence",
+    )
+    result = ledger.get(result_occurrence_identity)
+    if result is None:
+        raise SharedPairPositionError(
+            "shared-position Measurement requires one exact result occurrence"
+        )
+    if result.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND:
+        try:
+            return _references_to_recorded_position_coordinates_for_assertion_identities(
+                ledger,
+                result_occurrence_identity,
+                assertion_identities,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement requires carried position Assertions"
+            ) from error
+    references = _references(
+        ledger,
+        result_occurrence_identity=result_occurrence_identity,
+    )
+    by_identity = {reference.assertion_identity: reference for reference in references}
+    if any(identity not in by_identity for identity in assertion_identities):
+        raise SharedPairPositionError(
+            "shared-position Measurement requires carried position Assertions"
+        )
+    return tuple(by_identity[identity] for identity in assertion_identities)
+
+
 def _inputs(
     ledger: EventLedger,
     *,
@@ -155,27 +258,27 @@ def _inputs(
     second_result_occurrence_identity: str,
     second_assertion_identity: str,
 ) -> SharedPairPositionInputs:
-    first = _resolve_reference(
-        ledger,
-        result_occurrence_identity=first_result_occurrence_identity,
-        assertion_identity=first_assertion_identity,
-    )
     if first_result_occurrence_identity == second_result_occurrence_identity:
-        references = references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        first, second = _resolve_references(
             ledger,
             result_occurrence_identity=second_result_occurrence_identity,
+            assertion_identities=(
+                _identity(
+                    first_assertion_identity,
+                    "shared-position Measurement requires one exact Assertion identity",
+                ),
+                _identity(
+                    second_assertion_identity,
+                    "shared-position Measurement requires one exact Assertion identity",
+                ),
+            ),
         )
-        matches = tuple(
-            reference
-            for reference in references
-            if reference.assertion_identity == second_assertion_identity
-        )
-        if len(matches) != 1:
-            raise SharedPairPositionError(
-                "shared-position Measurement requires one carried position Assertion"
-            )
-        second = matches[0]
     else:
+        first = _resolve_reference(
+            ledger,
+            result_occurrence_identity=first_result_occurrence_identity,
+            assertion_identity=first_assertion_identity,
+        )
         second = _resolve_reference(
             ledger,
             result_occurrence_identity=second_result_occurrence_identity,
@@ -236,7 +339,7 @@ def _require_standing(
         or not boundary
     ):
         raise SharedPairPositionError(
-            "current Standing does not carry the exact shared-position inputs"
+            "current Standing lacks the exact shared-position inputs"
         )
     ordered = tuple(dict.fromkeys((*required_occurrences, boundary)))
     try:
@@ -246,11 +349,11 @@ def _require_standing(
         )
     except (TypeError, ValueError) as error:
         raise SharedPairPositionError(
-            "Standing boundary does not follow the exact shared-position inputs"
+            "Standing boundary is not after exact shared-position inputs"
         ) from error
     if tuple(event.identity for event in resolved) != ordered:
         raise SharedPairPositionError(
-            "Standing boundary does not follow the exact shared-position inputs"
+            "Standing boundary is not after exact shared-position inputs"
         )
     return boundary
 
@@ -324,7 +427,7 @@ def _assignment_material(
         "authority": _authority(),
         "limits": [
             "pair counts establish no shared position",
-            "exact source material does not establish relation path",
+            "relation path Standing from exact source material is not_established",
         ],
         "unknown": ["what this ordered relation path represents remains Unknown"],
     }

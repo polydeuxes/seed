@@ -10,9 +10,9 @@ Operator material or already-established Standing may identify an exact result A
 
 A responsible Compare may accept as input current Standing and that exact result Assertion. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknown. Difference, incompatibility, absence, and Unknown remain distinct results.
 
-The exact coordinates under which an Act may occur remain decomposed as its Responsibility, Act, applicable material, Authority, applicable Assertions, locality, Evidence, and occurrence. Available material or one supported coordinate does not establish the others or authorize the Act.
+The exact coordinates under which an Act may occur remain decomposed as its Responsibility, Act, applicable material, Authority, applicable Assertions, locality, Evidence, and occurrence. Available material or one supported coordinate establishes no other coordinate and cannot authorize the Act.
 
-Neither a result Assertion nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result Assertion having satisfied Standing within one Scope does not establish completion outside that Scope.
+Neither a result Assertion nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result Assertion having satisfied Standing within one Scope establishes no completion outside that Scope.
 
 ### 04.Compare.A — Bounded comparison of recorded findings
 
@@ -20,13 +20,13 @@ Where current Standing in one Locality carries an earlier and a later exact byte
 
 The exact comparison rule requires Compare of complete measured content under each finding subject of result kind and represented byte pair. The result preserves equal findings, conflicting findings whose subject and result kind are equal and whose measured content is not equal, findings of the earlier result, findings of the later result, and Unknown findings. It preserves each exact Measurement result reference, each exact Assertion reference, the ordered source occurrence references, the added occurrence, provenance, Scope, Locality, Evidence, Authority, conflicts, limits, and Unknown.
 
-The exact input relation is Evidence for each exact comparison input; it does not establish a source relation from the added occurrence to a measured difference. Equal content establishes no truth, corroboration, Admission, represented relation, or downstream Applicability. A difference establishes no source relation, correction, or movement by identity.
+The exact input relation is Evidence for each exact comparison input; it establishes no source relation from the added occurrence to a measured difference. Equal content establishes no truth, corroboration, Admission, represented relation, or downstream Applicability. A difference establishes no source relation, correction, or movement by identity.
 
 ### 04.Compare.B — Comparison of one ordered relation path with recorded pair findings
 
 Where current Standing in one Locality carries one exact ordered relation-path Assertion and one exact recorded pair-finding comparison result, this Book assigns this Seed bounded Responsibility to determine Applicability and Compare them. Applicability requires that the exact source occurrence of the path is the exact added occurrence of the recorded comparison and that each pair subject of the path has complete recorded comparison findings. The assignment, input relations, Applicability, Participation relations, Compare Act occurrence, Evidence of Yield relation, result, and result Standing remain distinct by identity.
 
-The result preserves the exact path Assertion reference, recorded comparison result reference, source occurrence, added occurrence, each ordered path role, each exact pair subject, and each exact reference to complete recorded finding content. The comparison does not revise equal, conflicting, earlier-result, later-result, or Unknown finding Standing. Pair-subject equality establishes no source relation, recurrence, represented relation, or composite material. An inapplicable input does not participate and yields no comparison result.
+The result preserves the exact path Assertion reference, recorded comparison result reference, source occurrence, added occurrence, each ordered path role, each exact pair subject, and each exact reference to complete recorded finding content. The comparison cannot revise equal, conflicting, earlier-result, later-result, or Unknown finding Standing. Pair-subject equality establishes no source relation, recurrence, represented relation, or composite material. An inapplicable input participates in no comparison and yields no comparison result.
 
 ## Important distinctions
 

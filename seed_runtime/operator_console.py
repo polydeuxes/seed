@@ -87,6 +87,7 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
+    _carry_position_difference_one_measurement_result_into_standing,
     _carry_operator_material_acquisition_occurrence_into_standing,
     _carry_recorded_pair_measurement_into_standing,
     advance_operator_locality_standing,
@@ -97,6 +98,11 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
+    record_position_difference_one_measurement_responsibility_assignment,
+    record_position_difference_one_measurement_act_evidence,
+    record_position_difference_one_measurement_result,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -344,6 +350,49 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
     return standing, measurement
 
 
+def _record_position_difference_one_measurement(
+    ledger,
+    standing,
+    *,
+    source_ingest_occurrence_identity,
+    locality_identity,
+):
+    """Record every two-position byte-pair occurrence of one Ingest result."""
+
+    assignment = record_position_difference_one_measurement_responsibility_assignment(
+        ledger,
+        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        locality_standing=standing,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (assignment.identity,),
+        locality_identity=locality_identity,
+    )
+    act = record_position_difference_one_measurement_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=standing,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (act.identity,),
+        locality_identity=locality_identity,
+    )
+    result = record_position_difference_one_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+    )
+    standing = _carry_position_difference_one_measurement_result_into_standing(
+        standing,
+        result,
+        prior_through_event_occurrence_identity=act.identity,
+    )
+    return standing, result
+
+
 def _record_pair_measurement(
     ledger,
     standing,
@@ -522,9 +571,8 @@ def run_persistent_operator_console(
     handlers[b"checkout"] = request_operator_checkout
     handlers[b"memory"] = request_operator_memory
     handlers[b"locality"] = request_operator_locality
-    # Standing is carried through the locality rather than re-projected before
-    # each interaction. Each responsible act returns the occurrences it
-    # recorded, so the console advances over exactly those occurrences.
+    # Each produced result enters the current Locality Standing.  This
+    # Standing is the input of the next interaction.
     locality_standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
@@ -594,7 +642,12 @@ def run_persistent_operator_console(
                 ),
             )
         )
+        input_boundary = ledger.append_boundary()
         boundary_material = operator_boundary_material(input_stream)
+        if ledger.append_boundary() != input_boundary:
+            raise ValueError(
+                "operator boundary invocation appended an occurrence before its result"
+            )
         if boundary_material.eof:
             return
         acquired_material = record_operator_material_acquire_result(
@@ -647,6 +700,16 @@ def run_persistent_operator_console(
                     locality_standing,
                     (command_occurrence["evidence_event_identity"],),
                     locality_identity=locality_identity,
+                )
+                locality_standing, _position_difference_one_measurement = (
+                    _record_position_difference_one_measurement(
+                        ledger,
+                        locality_standing,
+                        source_ingest_occurrence_identity=command_occurrence[
+                            "evidence_event_identity"
+                        ],
+                        locality_identity=locality_identity,
+                    )
                 )
                 locality_standing, _byte_measurement = _record_acquisition_measurements(
                     ledger,
@@ -724,10 +787,16 @@ def run_persistent_operator_console(
             supplied_occurrence_references: list[str] = []
             byte_measurement_by_supplied_occurrence: dict[str, str] = {}
             pair_measurement_by_byte_measurement: dict[str, Event] = {}
+            provider_boundary = ledger.append_boundary()
 
             def acquire_system_material(supplied) -> None:
                 nonlocal system_standing
                 nonlocal supplied_occurrence_count
+                nonlocal provider_boundary
+                if ledger.append_boundary() != provider_boundary:
+                    raise ValueError(
+                        "provider appended an occurrence outside supplied material"
+                    )
                 if type(supplied) is not SuppliedSystemMaterialOccurrence:
                     raise TypeError("exact supplied material required")
                 if supplied.source_boundary in supplied_boundaries:
@@ -826,6 +895,7 @@ def run_persistent_operator_console(
                         ),
                     )
                 if not supplied.egress:
+                    provider_boundary = ledger.append_boundary()
                     return
                 system_representation = record_operator_representation(
                     ledger,
@@ -891,11 +961,16 @@ def run_persistent_operator_console(
                                 ),
                             },
                         )
+                provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(
                 command_material,
                 acquire_system_material,
             )
+            if ledger.append_boundary() != provider_boundary:
+                raise ValueError(
+                    "provider appended an occurrence outside supplied material"
+                )
             if provider_result is not None or not supplied_occurrence_count:
                 raise TypeError("exact supplied material required")
             with ledger.batched():
@@ -1167,6 +1242,16 @@ def run_persistent_operator_console(
                 locality_standing,
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
+            )
+            locality_standing, _position_difference_one_measurement = (
+                _record_position_difference_one_measurement(
+                    ledger,
+                    locality_standing,
+                    source_ingest_occurrence_identity=ingest_occurrence[
+                        "evidence_event_identity"
+                    ],
+                    locality_identity=locality_identity,
+                )
             )
             locality_standing, byte_measurement = _record_acquisition_measurements(
                 ledger,

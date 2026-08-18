@@ -1,7 +1,7 @@
 # Book admission -- every word active law may carry.
 # Rosetta admission: ../rosetta/rosetta_admission.txt
 #
-# This file alone governs Book proper. The Rosetta reference does not import
+# This file alone governs Book proper. The Rosetta reference imports no
 # Rosetta admission into active law.
 #
 # A word absent from this file is refused.
@@ -138,7 +138,6 @@ displayed
 distinct
 distinction
 distinctions
-does
 downstream
 duplicate
 durable
@@ -415,7 +414,6 @@ validation
 validity
 value
 visibility
-warrant
 what
 when
 where

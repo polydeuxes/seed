@@ -20,8 +20,8 @@ from seed_runtime.event import Event, _decode_screened_event_material
 
 # What a ledger can say about a stored occurrence's integrity.
 #
-# `06.Standing:16` names append-only records permissively, among projected
-# material representations. Nothing in active law requires append-only, and
+# `06.Standing:16` names append-only records permissively, among material
+# representations. Nothing in active law requires append-only, and
 # nothing here asserts history cannot revision: a `DROP TRIGGER` followed by a
 # rewrite of both row and material identity defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
@@ -558,6 +558,11 @@ class SQLiteEventLedger(EventLedger):
         "occurrence_position_measurement_assignment_subject",
         "occurrence_position_measurement_occurrence",
         "occurrence_position_measurement_result",
+        "byte_pair_position_difference_one_assignment",
+        "byte_pair_position_difference_one_assignment_subject",
+        "byte_pair_position_difference_one_measurement_act",
+        "byte_pair_position_difference_one_measurement_act_occurrence",
+        "byte_pair_position_difference_one_measurement_result",
         "act_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "result_of_measurement_of_recurrent_byte_pair_occurrence_position",
