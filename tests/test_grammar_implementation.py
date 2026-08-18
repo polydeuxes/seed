@@ -3681,8 +3681,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 223
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 223
+    assert len(test_subjects) == 222
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 222
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }

@@ -644,7 +644,6 @@
         {"subject": "exact_supplied_material_occurrence"},
         {"subject": "compiled_function_invocation_witness"},
         {"subject": "ledger_identity"},
-        {"subject": "event_record_witness_grammar_words"},
         {"subject": "supplied_material_seed_words_distinction"},
         {"subject": "grammar_recorded_occurrence_kind_distinction"},
         {
