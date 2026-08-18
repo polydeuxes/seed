@@ -616,6 +616,7 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
             {
                 "source_assertion_reference": deepcopy(reference),
                 "relation": "input_to",
+                "role": "input",
                 "candidate_act_identity": assignment.material[
                     "candidate_act_identity"
                 ],
@@ -708,6 +709,8 @@ def _applicability_result_material(
                 "candidate_act_identity": assignment.material[
                     "candidate_act_identity"
                 ],
+                "relation": "input_to",
+                "role": "input",
                 "finding": "applicable",
             }
             for reference in assignment.material["source_assertion_references"]
@@ -827,7 +830,7 @@ def _candidate_act_material(
         "participation": [
             {
                 "source_assertion_reference": deepcopy(reference),
-                "role": "source Assertion",
+                "role": "input",
                 "act_occurrence_identity": assignment.material[
                     "candidate_act_occurrence_identity"
                 ],
@@ -936,9 +939,6 @@ def _candidates(assignment: Event) -> list[dict[str, Any]]:
                 "candidate_rule": CANDIDATE_RULE,
             },
             "assertion_scope": deepcopy(assignment.material["scope"]),
-            "input_support": {
-                "assertion_references": [deepcopy(reference)],
-            },
             "represented_relation": "Unknown",
             "conflicts": "Unknown",
             "unknown": ["what this Candidate represents: Unknown"],

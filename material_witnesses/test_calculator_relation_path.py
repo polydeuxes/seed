@@ -324,16 +324,17 @@ def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
         candidate["represented_relation"] == "Unknown"
         for candidate in candidate_standing["candidate_assertions"]
     )
-    assert all(
-        len(candidate["input_support"]["assertion_references"]) == 1
+    candidate_source_identities = tuple(
+        candidate["assertion_subject"]["source_assertion_reference"][
+            "assertion_identity"
+        ]
         for candidate in candidate_standing["candidate_assertions"]
     )
-    assert not any(
-        {
-            reference["assertion_identity"]
-            for reference in candidate["input_support"]["assertion_references"]
-        }
-        == {path_finding["identity"], calculator_position.assertion_identity}
+    assert path_finding["identity"] in candidate_source_identities
+    assert calculator_position.assertion_identity in candidate_source_identities
+    assert all(
+        set(candidate["assertion_subject"])
+        == {"source_assertion_reference", "candidate_rule"}
         for candidate in candidate_standing["candidate_assertions"]
     )
     path_reference = next(

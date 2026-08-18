@@ -7,6 +7,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     CANDIDATE_RULE,
     SOURCE_RULE,
     boundaries_of_recorded_candidate_standing,
+    get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
     source_assertion_references_for_candidate_standing,
@@ -100,6 +101,9 @@ def test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion()
         source_append_boundary=source_boundary,
     )
     standing = get_recorded_candidate_standing(ledger, result.identity)
+    applicability = get_recorded_candidate_standing_applicability(
+        ledger, standing["applicability_result_event_identity"]
+    )
 
     assert standing["source_rule"] == SOURCE_RULE
     assert standing["candidate_rule"] == CANDIDATE_RULE
@@ -111,6 +115,30 @@ def test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion()
     ) == source_references
     assert all(
         candidate["represented_relation"] == "Unknown"
+        for candidate in standing["candidate_assertions"]
+    )
+    assert all(
+        relation["role"] == "input"
+        for relation in standing["participation"]
+    )
+    assert all(
+        finding["relation"] == "input_to" and finding["role"] == "input"
+        for finding in applicability["applicability_findings"]
+    )
+    assert all(
+        set(candidate)
+        == {
+            "dimensions",
+            "subject_kind",
+            "responsible_boundary",
+            "result",
+            "assertion_subject",
+            "assertion_scope",
+            "represented_relation",
+            "conflicts",
+            "unknown",
+            "limits",
+        }
         for candidate in standing["candidate_assertions"]
     )
     assert standing["completeness"] == {
@@ -258,6 +286,22 @@ def test_machine_grammar_names_the_exact_first_source_and_candidate_rules():
 
     assert clause["source_rule"]["identity"] == SOURCE_RULE.replace(" ", "_")
     assert clause["candidate_rule"]["identity"] == CANDIDATE_RULE.replace(" ", "_")
+    assert clause["candidate_rule"]["source_input_relation"] == {
+        "first_subject": "exact_source_Assertion",
+        "relation": "input_to",
+        "second_subject": (
+            "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule"
+        ),
+        "role": "input",
+    }
+    assert clause["candidate_rule"]["source_Participation"] == {
+        "subject_reference": "exact_source_Assertion",
+        "role": "input",
+        "act": (
+            "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule"
+        ),
+        "act_occurrence": "exact_Candidate_Act_occurrence",
+    }
 
 
 FIDELITY_SUBJECTS = {

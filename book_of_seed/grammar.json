@@ -1373,6 +1373,18 @@
       },
       "candidate_rule": {
         "identity": "one_candidate_for_each_exact_source_Assertion_in_event_order",
+        "source_input_relation": {
+          "first_subject": "exact_source_Assertion",
+          "relation": "input_to",
+          "second_subject": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "role": "input"
+        },
+        "source_Participation": {
+          "subject_reference": "exact_source_Assertion",
+          "role": "input",
+          "act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "act_occurrence": "exact_Candidate_Act_occurrence"
+        },
         "result": "candidate_Assertion",
         "represented_relation": "Unknown"
       },
