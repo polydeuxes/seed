@@ -1546,7 +1546,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
         "locality": EXACT if applicability.get("measurement_locality") else MISSING,
         "Authority": EXACT if applicability["dimensions"].get("authority") else MISSING,
-        # The relation endpoints already identify the exact input role and the
+        # The relation subjects already identify the exact input role and the
         # exact addressed-Act role; no extra participant noun is supplied.
         "participants_and_roles": EXACT if input_relation and act_relation else MISSING,
         "provenance": (
@@ -4208,7 +4208,7 @@ def test_changed_relation_anatomy_is_detected():
         raise AssertionError("reversed Yield anatomy escaped witness Fidelity")
 
 
-def test_content_and_locality_endpoints_do_not_establish_locality_relation():
+def test_content_and_locality_subjects_do_not_establish_locality_relation():
     ledger = EventLedger()
     content = {"subject": "x", "standing": "Unknown"}
     locality = ledger.append("test.locality", dict(content), locality_identity="s")
@@ -4601,7 +4601,7 @@ def test_participation_requires_exact_subject_role_and_act_occurrence():
     assert _participation_witness(bundle, role=BYTE_PAIR_INPUT_ROLE) == MISSING
 
 
-def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
+def test_unjoined_subjects_do_not_witness_an_input_to_act_relation():
     grammar = _witness_grammar()
     bundle = _recorded_applicability()
     bundle["act_evidence"] = None
@@ -4611,7 +4611,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert bundle["applicability"]["downstream_act_identity"]
     assert bundle["applicability"]["applicability_act_occurrence_identity"]
     assert grammar["relation_witness_coordinates"] == {
-        "endpoint_presence_establishes_relation": False,
+        "subject_presence_establishes_relation": False,
         "families": {
             "candidate_participation": ["exact_relation", "occurrence_witness"],
             "participation": [
@@ -4714,7 +4714,7 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
     }
 
 
-def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
+def test_occurrence_and_result_subjects_do_not_establish_their_relation():
     bundle = _byte_measurement_witness()
     assert _occurrence_result_witness(bundle) == EXACT
 
@@ -5036,6 +5036,11 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
         "act_occurrence_identity"
     ]
     assert _occurrence_result_witness(bundle) == EXACT
+    assert {
+        "first_subject": "emission_Act_occurrence",
+        "relation": "Yield",
+        "second_subject": "accepted_exact_Representation_result",
+    } in clause["witness_relations"]
 
 
 def test_representation_source_clause_is_checked_against_one_live_result():
@@ -6325,8 +6330,8 @@ FIDELITY_SUBJECTS = {
         test_byte_pair_yield_adversaries_change_one_requirement_each,
         test_remaining_yield_adversaries_change_one_requirement_each,
     ),
-    "yield_endpoint_relation_distinction": (
-        test_occurrence_and_result_endpoints_do_not_establish_their_relation,
+    "yield_subject_presence_relation_distinction": (
+        test_occurrence_and_result_subjects_do_not_establish_their_relation,
     ),
     "yield_relation_result_identity": (
         test_yield_relation_read_has_no_result_reencoding_surface,
@@ -6414,7 +6419,7 @@ FIDELITY_SUBJECTS = {
         test_participation_requires_exact_subject_role_and_act_occurrence,
     ),
     "input_act_relation_occurrence": (
-        test_unjoined_endpoints_do_not_witness_an_input_to_act_relation,
+        test_unjoined_subjects_do_not_witness_an_input_to_act_relation,
     ),
     "one_exact_movement_assertion": (
         test_assertion_movement_result_names_and_witnesses_its_witness_clause,
@@ -6431,8 +6436,8 @@ FIDELITY_SUBJECTS = {
     "locality_relation_distinctions": (
         test_locality_fans_out_orthogonal_adversaries_for_each_live_witness,
     ),
-    "locality_endpoint_relation_distinction": (
-        test_content_and_locality_endpoints_do_not_establish_locality_relation,
+    "locality_subject_presence_relation_distinction": (
+        test_content_and_locality_subjects_do_not_establish_locality_relation,
     ),
     "emission_attempt_locality_relation": (
         test_emission_attempt_locality_adversaries_change_one_requirement_each,

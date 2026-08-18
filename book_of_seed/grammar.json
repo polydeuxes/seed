@@ -283,7 +283,7 @@
       "locality_relation": ["first_subject", "second_subject"]
     },
     "relation_witness_coordinates": {
-      "endpoint_presence_establishes_relation": false,
+      "subject_presence_establishes_relation": false,
       "families": {
         "candidate_participation": ["exact_relation", "occurrence_witness"],
         "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
@@ -464,7 +464,7 @@
           "second_subject": "Yield_relation"
         },
         {"subject": "yield_relation_required_coordinates"},
-        {"subject": "yield_endpoint_relation_distinction"},
+        {"subject": "yield_subject_presence_relation_distinction"},
         {"subject": "yield_relation_result_identity"},
         {"subject": "yield_relation_exact_evidence_result"},
         {"subject": "unrelated_yield_result_identity"},
@@ -537,7 +537,7 @@
         {"subject": "participation_relation_coordinates"},
         {"subject": "locality_relation_coordinates"},
         {"subject": "locality_relation_distinctions"},
-        {"subject": "locality_endpoint_relation_distinction"},
+        {"subject": "locality_subject_presence_relation_distinction"},
         {
           "subject": "Responsibility_assignment_of_operator_invocation_Locality_relation",
           "first_subject": "Responsibility_assignment",
@@ -1670,7 +1670,11 @@
         },
         "result_remains_distinct",
         "emission_attempt_recorded_before_output",
-        "emit_accepted_exact_Representation_result",
+        {
+          "first_subject": "emission_Act_occurrence",
+          "relation": "Yield",
+          "second_subject": "accepted_exact_Representation_result"
+        },
         "emitted_result",
         "reported_partial_result_and_error",
         "boundary_failure_after_exact_write_invocation",
