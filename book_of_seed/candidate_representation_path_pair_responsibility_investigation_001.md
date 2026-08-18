@@ -306,9 +306,10 @@ No current active clause supplies that physiology.
 
 ## 8. Answer
 
-The current path-pair helper is lawful as a deterministic read projection over
-exact already-recovered material. It is useful implementation testimony that
-no serialized path pairing is hidden by a developer-selected read.
+The current path-pair helper is retained as a deterministic, non-mutating read
+projection over exact already-recovered material. It is useful implementation
+testimony that no serialized path pairing is hidden by a developer-selected
+read.
 
 It is not currently a Candidate Act result, Candidate completeness debt,
 Measurement, Compare, Representation result, or established relation surface.
@@ -320,7 +321,8 @@ retain as non-mutating implementation testimony
 preserve one represented_relation coordinate per Candidate
 do not give path pairs grammar-coordinate Standing
 do not make a later Responsibility depend on path-pair completeness
-report the owning Responsibility as Unknown
+current active-Book owning Responsibility: not established
+future exact owning Responsibility: Unknown
 ```
 
 ## What this investigation does not establish
