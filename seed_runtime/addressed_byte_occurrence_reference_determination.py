@@ -464,11 +464,11 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
-        message="determination assignment source is not intact before recording",
+        message="determination assignment requires its exact source to remain intact",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment source is not intact before recording"
+            "determination assignment requires its exact source to remain intact"
         )
     _require_stage_at_append_tip(
         ledger,
@@ -701,18 +701,18 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_e
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
-        message="Applicability Act source is not intact before recording",
+        message="Applicability Act requires its exact source to remain intact",
     )
     _require_unchanged_stored_event(
         ledger,
         event=assignment,
         kind=RESPONSIBILITY_ASSIGNMENT_KIND,
         material=assignment_material,
-        message="Applicability Act assignment is not intact before recording",
+        message="Applicability Act requires its exact assignment to remain intact",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability Act source is not intact before recording"
+            "Applicability Act requires its exact source to remain intact"
         )
     _require_stage_at_append_tip(
         ledger,
@@ -1044,21 +1044,21 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             act_read,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             act_material,
-            "Applicability Act is not intact before Yield",
+            "Applicability Yield requires its exact Act to remain intact",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "Applicability assignment is not intact before Yield",
+            "Applicability Yield requires its exact assignment to remain intact",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "Applicability source is not intact before Yield",
+            "Applicability Yield requires its exact source to remain intact",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1087,26 +1087,26 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability stage is not intact before result recording"
+            "Applicability result requires its exact stage to remain intact"
         )
     for stored, kind, material_read, message in (
         (
             act,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             act_material,
-            "Applicability Act is not intact before result recording",
+            "Applicability result requires its exact Act to remain intact",
         ),
         (
             assignment,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "Applicability assignment is not intact before result recording",
+            "Applicability result requires its exact assignment to remain intact",
         ),
         (
             source_result,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "Applicability source is not intact before result recording",
+            "Applicability result requires its exact source to remain intact",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1310,28 +1310,28 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
             applicability_read,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability is not intact before Act",
+            "determination Measurement Act requires its exact Applicability to remain intact",
         ),
         (
             app_act,
             app_act_read,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             app_act_material,
-            "determination Measurement Applicability Act is not intact before Act",
+            "determination Measurement Act requires its exact Applicability Act to remain intact",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment is not intact before Act",
+            "determination Measurement Act requires its exact assignment to remain intact",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source is not intact before Act",
+            "determination Measurement Act requires its exact source to remain intact",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1544,28 +1544,28 @@ def record_addressed_byte_occurrence_reference_determination_result(
             act_read,
             DETERMINATION_ACT_EVIDENCE_KIND,
             act_material,
-            "determination Measurement Act is not intact before Yield",
+            "determination Measurement Yield requires its exact Act to remain intact",
         ),
         (
             applicability,
             applicability_read,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability is not intact before Yield",
+            "determination Measurement Yield requires its exact Applicability to remain intact",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment is not intact before Yield",
+            "determination Measurement Yield requires its exact assignment to remain intact",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source is not intact before Yield",
+            "determination Measurement Yield requires its exact source to remain intact",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1601,32 +1601,32 @@ def record_addressed_byte_occurrence_reference_determination_result(
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Measurement stage is not intact before result recording"
+            "determination Measurement result requires its exact stage to remain intact"
         )
     for stored, kind, material_read, message in (
         (
             act,
             DETERMINATION_ACT_EVIDENCE_KIND,
             act_material,
-            "determination Measurement Act is not intact before result recording",
+            "determination Measurement result requires its exact Act to remain intact",
         ),
         (
             applicability,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability is not intact before result recording",
+            "determination Measurement result requires its exact Applicability to remain intact",
         ),
         (
             assignment,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment is not intact before result recording",
+            "determination Measurement result requires its exact assignment to remain intact",
         ),
         (
             source_result,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source is not intact before result recording",
+            "determination Measurement result requires its exact source to remain intact",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1808,7 +1808,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
                 event=event,
                 kind=kind,
                 material=material,
-                message="determination carried stage is not intact",
+                message="determination requires each carried stage to remain intact",
             )
 
     def require_prior_at_tip(event: Event) -> None:
