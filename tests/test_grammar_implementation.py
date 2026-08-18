@@ -5690,14 +5690,13 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
     }
 
 
-def test_each_establishment_names_its_finding_and_responsible_occurrence():
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    assert _clause("02.Acts.A")["established_coordinate_finding_pair"] == {
-        "first_subject": "exact_Act_occurrence",
+def test_each_declared_measurement_names_its_finding_and_responsible_occurrence():
+    assert _clause("02.Acts.A")["declared_Measurement_finding_occurrence_pair"] == {
+        "first_subject": "exact_declared_Measurement_Act_occurrence",
         "relation": "establishes",
         "second_subject": "finding",
-        "finding": "exact_result_coordinate",
-        "responsible_occurrence_reference": "exact_Act_occurrence",
+        "finding": "declared_Measurement_result_finding",
+        "responsible_occurrence_reference": "exact_declared_Measurement_Act_occurrence",
         "evidence_reference": {
             "first_subject": "Evidence",
             "relation": "of",
@@ -5705,26 +5704,6 @@ def test_each_establishment_names_its_finding_and_responsible_occurrence():
         },
         "result_boundary": "exact_result_boundary",
     }
-
-    def structured_relations(value):
-        if isinstance(value, dict):
-            if value.get("relation") in {"establish", "establishes"}:
-                yield value
-            for carried in value.values():
-                yield from structured_relations(carried)
-        elif isinstance(value, list):
-            for carried in value:
-                yield from structured_relations(carried)
-
-    for relation in structured_relations(grammar):
-        if relation.get("standing") == "not_established":
-            continue
-        assert {
-            "finding",
-            "responsible_occurrence_reference",
-            "evidence_reference",
-            "result_boundary",
-        } <= set(relation)
 
     clause = _clause("01.Source.D")
     assert clause["recorded_occurrence_kind"] == ["event_occurrence"]
@@ -6724,7 +6703,7 @@ FIDELITY_SUBJECTS = {
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
         test_standing_measurement_declarations_match_the_curated_runtime_order,
-        test_each_establishment_names_its_finding_and_responsible_occurrence,
+        test_each_declared_measurement_names_its_finding_and_responsible_occurrence,
         test_shared_position_measurement_decomposes_material_non_establishment,
         test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,
     ),

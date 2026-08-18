@@ -2053,12 +2053,12 @@
         "effects_beyond_output_boundary_remain_Unknown"
       ],
       "occurrence_coordinates": ["timestamp"],
-      "established_coordinate_finding_pair": {
-        "first_subject": "exact_Act_occurrence",
+      "declared_Measurement_finding_occurrence_pair": {
+        "first_subject": "exact_declared_Measurement_Act_occurrence",
         "relation": "establishes",
         "second_subject": "finding",
-        "finding": "exact_result_coordinate",
-        "responsible_occurrence_reference": "exact_Act_occurrence",
+        "finding": "declared_Measurement_result_finding",
+        "responsible_occurrence_reference": "exact_declared_Measurement_Act_occurrence",
         "evidence_reference": {
           "first_subject": "Evidence",
           "relation": "of",
