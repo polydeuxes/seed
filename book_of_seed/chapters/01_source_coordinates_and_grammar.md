@@ -66,7 +66,7 @@ At one exact ledger boundary, this Book assigns this Seed two bounded Responsibi
 
 For each exact Act, each source Assertion bears the exact Act-local input role. Applicability for that exact input-to-Act relation is required before its Participation. Each source Assertion may participate only through its exact result reference, source Locality, source Standing boundary, Evidence, Authority, Scope, limits, and Unknown. Each candidate carries each exact source Assertion reference and its coordinates under that exact Act and bears the Responsibility to preserve its carried Standing coordinates. What the candidate represents: Unknown. Candidate Standing establishes no represented relation, Admission, Applicability to another Act, Participation in another Act, or movement of the source Assertion.
 
-The complete result carries the exact ledger boundary, source rule, Responsibility assignment, exact Act occurrence, Evidence of Yield relation, and each ordered candidate reference. A missing required candidate, candidate not required by the exact Act, repeated candidate, different order, different source reference, unsupported source, occurrence not intact, or partial result establishes no complete Candidate Standing.
+The complete result carries the exact ledger boundary, each ordered source Assertion reference, Responsibility assignment, exact Act occurrence, Evidence of Yield relation, and each ordered candidate reference. A missing required candidate, candidate not required by the exact Act, repeated candidate, different order, different source reference, unsupported source, occurrence not intact, or partial result establishes no complete Candidate Standing.
 
 ### 01.Source.F — Supplied material may assert a relation
 

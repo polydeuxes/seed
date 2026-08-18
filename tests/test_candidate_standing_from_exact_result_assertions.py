@@ -8,7 +8,6 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ONE_SOURCE_CANDIDATE_RESPONSIBILITY,
     ORDERED_PAIR_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
-    SOURCE_RULE,
     boundaries_of_recorded_candidate_standing,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
@@ -40,7 +39,7 @@ def _source(ledger, *, locality="source", exact_bytes=b"ab"):
     )
 
 
-def test_source_rule_exposes_every_result_assertion_in_event_order():
+def test_exact_source_assertion_coordinates_expose_every_result_assertion_in_event_order():
     ledger = EventLedger()
     first = _source(ledger, locality="first", exact_bytes=b"ab")
     second = _source(ledger, locality="second", exact_bytes=b"c")
@@ -168,7 +167,6 @@ def test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion()
         ledger, standing["applicability_result_event_identity"]
     )
 
-    assert standing["source_rule"] == SOURCE_RULE
     assert standing["responsibility"] == ONE_SOURCE_CANDIDATE_RESPONSIBILITY
     assert standing["exact_act"] == ONE_SOURCE_CANDIDATE_ACT
     assert tuple(standing["source_assertion_references"]) == source_references
@@ -450,13 +448,36 @@ def test_complete_candidate_standing_replays_after_sqlite_restart(
     )
 
 
-def test_machine_grammar_names_the_exact_one_source_candidate_responsibility():
+def test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility():
     import json
 
     with open("book_of_seed/grammar.json", encoding="utf-8") as source:
         clause = json.load(source)["clause_coordinates"][BOOK_CLAUSE]
 
-    assert clause["source_rule"]["identity"] == SOURCE_RULE.replace(" ", "_")
+    assert clause["source_Assertion_coordinates"] == {
+        "result_Assertions": [
+            "exact_Measurement_result_Assertion",
+            "exact_Compare_result_Assertion",
+            "exact_Candidate_result_Assertion",
+        ],
+        "carried_Assertion_relation": {
+            "first_subject": "each_exact_Assertion",
+            "relation": "carried_by",
+            "second_subject": "one_exact_result_Assertion",
+        },
+        "bounded_by": "exact_ledger_boundary",
+        "order": "event_order",
+        "coordinates": [
+            "source_Assertion_reference",
+            "source_Locality",
+            "source_Standing_boundary",
+            "Evidence",
+            "Authority",
+            "Scope",
+            "limits",
+            "Unknown",
+        ],
+    }
     coordinate = clause["one_source_candidate_responsibility"]
     assert coordinate["responsibility"] == (
         ONE_SOURCE_CANDIDATE_RESPONSIBILITY.replace(" ", "_")
@@ -507,7 +528,7 @@ def test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility()
 
 FIDELITY_SUBJECTS = {
     "complete_candidate_standing_source_coordinates": (
-        test_source_rule_exposes_every_result_assertion_in_event_order,
+        test_exact_source_assertion_coordinates_expose_every_result_assertion_in_event_order,
         test_source_boundary_excludes_every_later_result_assertion,
         test_later_source_boundary_carries_prior_candidate_result_assertions,
         test_source_and_candidate_result_boundaries_and_localities_stay_distinct,
@@ -523,7 +544,7 @@ FIDELITY_SUBJECTS = {
         test_complete_candidate_standing_replays_after_sqlite_restart,
     ),
     "one_source_candidate_standing_responsibility_coordinates": (
-        test_machine_grammar_names_the_exact_one_source_candidate_responsibility,
+        test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
     ),
     "ordered_pair_candidate_standing_responsibility_coordinates": (
         test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility,
