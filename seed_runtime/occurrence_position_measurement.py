@@ -224,7 +224,7 @@ def _assignment_material(
         "limits": [
             "assignment is bounded to this exact Locality and completeness boundary"
         ],
-        "unknown": ["Participation and represented relation remain Unknown"],
+        "unknown": ["Participation and represented relation: Unknown"],
     }
 
 
@@ -293,7 +293,7 @@ def _position_assertions(
                 },
                 "conflicts": "Unknown",
                 "unknown": [
-                    "what this occurrence participates in or represents remains Unknown"
+                    "what this occurrence participates in or represents: Unknown"
                 ],
                 "limits": [
                     "exact occurrence position bounded by source Locality and "

@@ -1588,13 +1588,29 @@
         "Standing_revision",
         "Stop"
       ],
-      "relation_preservation": "Standing_remains_without_revising_and_is_not_revised_by_identity",
+      "relation_preservation": [
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "previously_established_coordinates"
+        },
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "Unknown"
+        },
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "exact_subject_coordinate"
+        }
+      ],
       "different_identity": {
         "when": "asserted_content_is_different",
         "result": "different_Assertion"
       },
       "Unknown": {
-        "may_remain": "Unknown"
+        "may_carry": "Unknown"
       }
     },
     "01.Standing.D.2": {
@@ -2039,7 +2055,11 @@
             }
           }
         },
-        "result_remains_distinct",
+        {
+          "first_subject": "result",
+          "relation": "carries",
+          "second_subject": "exact_result_reference"
+        },
         "emission_attempt_recorded_before_output",
         {
           "first_subject": "emission_Act_occurrence",
@@ -2050,7 +2070,11 @@
         "reported_partial_result_and_error",
         "boundary_failure_after_exact_write_invocation",
         "accepted_emission_before_later_boundary_failure",
-        "effects_beyond_output_boundary_remain_Unknown"
+        {
+          "first_subject": "effects_beyond_output_boundary",
+          "relation": "carries",
+          "second_subject": "Unknown"
+        }
       ],
       "occurrence_coordinates": ["timestamp"],
       "declared_Measurement_finding_occurrence_pair": {

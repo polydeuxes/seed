@@ -501,7 +501,26 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
 
 def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    earlier_clause = grammar["clause_coordinates"]["01.Standing.D.1"]
     clause = grammar["clause_coordinates"]["01.Standing.D.2"]
+
+    assert earlier_clause["relation_preservation"] == [
+        {
+            "first_subject": "responsible_movement_occurrence",
+            "relation": "preserves",
+            "second_subject": "previously_established_coordinates",
+        },
+        {
+            "first_subject": "responsible_movement_occurrence",
+            "relation": "preserves",
+            "second_subject": "Unknown",
+        },
+        {
+            "first_subject": "responsible_movement_occurrence",
+            "relation": "preserves",
+            "second_subject": "exact_subject_coordinate",
+        },
+    ]
 
     assert clause["earlier_Assertions"] == {
         "preserves": ["exact_identity", "exact_reference"],
@@ -706,7 +725,7 @@ def test_addressed_byte_occurrence_reference_determination_is_constitutional():
     }
     assert "every exact pair-occurrence position Assertion reference" in material
     assert "carries no Assertion reference" in material
-    assert "remains Unknown" in material
+    assert "carries Unknown for the represented relation" in material
     assert not {"selection", "equality", "math"} & set(material.casefold().split())
 
 

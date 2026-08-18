@@ -7,7 +7,7 @@ The boundary between preserving Events or recorded output and later participatio
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and make the same preserved Assertion available at its Locality. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording remain separate Acts.
+A recording boundary may create an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and make the same preserved Assertion available at its Locality. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording carry separate exact Act or occurrence references.
 
 
 ## Boundaries for recorded-revision witnesses
@@ -21,7 +21,7 @@ Seed need not preserve every measurement. A measurement is preserved when discar
 ### 05.Recording.D — Exact Standing boundary reference
 Within one current Locality Standing and one intact addressed Representation, active Book assigns this Seed a Responsibility bounded to recording that Representation and its exact Standing boundary as one durable bounded reference in the same Locality. The assignment preserves its own subject, the exact recording Act and occurrence, result identity, source Locality, addressed Representation occurrence, exact Standing boundary, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
 
-The assignment, recording Act, Act occurrence, Yield, and recorded result remain distinct by identity. The recorded reference cannot copy the Standing it references. Record existence establishes no represented relation, Standing revision, movement, Locality relation, Applicability, Participation, Compare, or Authority for another Act. Another recorded reference requires another exact assignment and Act occurrence.
+The recorded result carries exact assignment, recording-Act, Act-occurrence, Yield, and result references. The recorded reference cannot copy the Standing it references. Record existence establishes no represented relation, Standing revision, movement, Locality relation, Applicability, Participation, Compare, or Authority for another Act. Another recorded reference requires another exact assignment and Act occurrence.
 
 
 

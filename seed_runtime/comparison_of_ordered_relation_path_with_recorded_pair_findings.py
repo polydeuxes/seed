@@ -465,11 +465,11 @@ def _assignment_material(
         "authority": _authority(),
         "limits": [
             "one exact pair subject under each input establishes no source relation",
-            "carried comparison findings remain recorded",
+            "exact result carries recorded comparison findings",
             "the result establishes no later relation or recurrence",
         ],
         "unknown": [
-            "what the relation of path and comparison findings represents remains Unknown"
+            "what the relation of path and comparison findings represents: Unknown"
         ],
     }
 
@@ -1074,11 +1074,11 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "scope": {"locality_identity": inputs["locality_identity"]},
         "authority": _authority(),
         "limits": [
-            "comparison findings remain at recorded Standing",
+            "recorded Standing carries comparison findings",
             "the relation establishes no source relation or recurrence",
         ],
         "unknown": [
-            "what the relation of the ordered path and recorded comparison findings represents remains Unknown"
+            "what the relation of the ordered path and recorded comparison findings represents: Unknown"
         ],
     }
 

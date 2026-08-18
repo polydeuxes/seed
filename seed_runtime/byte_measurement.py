@@ -147,14 +147,14 @@ BYTE_PAIR_MEASUREMENT_RULE = (
 )
 MEASUREMENT_EVIDENCE_SCOPE = (
     "exact byte-count Measurement Evidence; bounded byte Standing; source "
-    "Standing not revised"
+    "exact Standing coordinates preserved"
 )
 SOURCE_SET_EVIDENCE_SCOPE = (
     "exact bounded source-material Measurement Evidence"
 )
 PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "declared exact-source ordered byte-position-pair Measurement Evidence; exact "
-    "measured pair and order; bounded pair Standing; source Standing not revised"
+    "measured pair and order; bounded pair Standing; exact source Standing coordinates preserved"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact counts of byte-pair occurrences in source order within the exact "
@@ -182,7 +182,7 @@ BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "not this authority, determines participation"
 )
 BYTE_PAIR_UNKNOWN = (
-    "what this ordered byte position pair participates in or represents remains Unknown",
+    "what this ordered byte position pair participates in or represents: Unknown",
 )
 BYTE_PAIR_LIMITS = (
     "an exact byte-position-pair count or recurrence bounded by the exact measured "
@@ -632,7 +632,7 @@ def _pair_input_applicability_from_exact_source(
             "negative_authority": negative_authority,
         },
         "unknown": [
-            "what any byte or byte position pair represents remains Unknown",
+            "what any byte or byte position pair represents: Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
         "limits": [
@@ -920,7 +920,7 @@ def _movement_assignment_material(
             "assignment is bounded to the exact source Assertion and source and "
             "destination Standing boundaries"
         ],
-        "unknown": ["what the exact Assertion represents remains Unknown"],
+        "unknown": ["what the exact Assertion represents: Unknown"],
     }
 
 
@@ -1796,7 +1796,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": [],
             },
             "conflicts": "Unknown",
-            "unknown": ["what the exact source bytes represent remains Unknown"],
+            "unknown": ["what the exact source bytes represent: Unknown"],
             "limits": [
                 "exact source-material set bounded by source occurrences and "
                 "completeness boundary"
@@ -1836,7 +1836,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": local_support_references,
             },
             "conflicts": "Unknown",
-            "unknown": ["what this byte participates in or represents remains Unknown"],
+            "unknown": ["what this byte participates in or represents: Unknown"],
             "limits": [
                 "exact byte count or recurrence bounded by source occurrences and "
                 "Measurement rule"
@@ -1956,7 +1956,7 @@ def _byte_measurement_assignment_material(
             "assignment is bounded to the exact declared source Localities, "
             "Ingest occurrences, and completeness boundary"
         ],
-        "unknown": ["what the exact source material represents remains Unknown"],
+        "unknown": ["what the exact source material represents: Unknown"],
     }
 
 
@@ -2966,7 +2966,7 @@ def _pair_measurement_assignment_material(
             "completeness boundary, rule, Applicability, and Measurement result"
         ],
         "unknown": [
-            "what measured byte position pair represents remains Unknown"
+            "what measured byte position pair represents: Unknown"
         ],
     }
 

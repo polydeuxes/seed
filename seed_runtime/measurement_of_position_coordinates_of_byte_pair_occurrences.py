@@ -266,7 +266,7 @@ def _assignment_material(
             "assignment is bounded to this exact Ingest result and source boundary"
         ],
         "unknown": [
-            "Participation or representation of each measured byte pair remains Unknown"
+            "Participation or representation of each measured byte pair: Unknown"
         ],
     }
 
@@ -953,7 +953,7 @@ def _assertion(
         },
         "conflicts": "Unknown",
         "unknown": [
-            "Participation or representation of this byte pair remains Unknown"
+            "Participation or representation of this byte pair: Unknown"
         ],
         "limits": [
             "first and second position coordinates bounded by one exact Ingest result "
@@ -1014,7 +1014,7 @@ def _assertion_population(
             "authority": "unestablished",
         },
         "unknown": [
-            "Participation or representation of each measured byte pair remains Unknown"
+            "Participation or representation of each measured byte pair: Unknown"
         ],
     }
 
@@ -1042,7 +1042,7 @@ def _result_material(
         },
         "assertions": _assertion_population(finding),
         "unknown": [
-            "Participation or representation of each measured byte pair remains Unknown"
+            "Participation or representation of each measured byte pair: Unknown"
         ],
     }
 

@@ -1,7 +1,7 @@
 """Measure where one yielded recurrent byte-pair subject occurs.
 
 This is a declared Measurement result, not a Candidate, Admission, or Standing
-movement.  Its inputs remain two distinct occurrence references:
+movement.  Its inputs: two distinct occurrence references:
 
 * the recurrence Assertion yielded by an earlier byte-pair Measurement; and
 * one later exact Ingest result in the same Locality.
@@ -628,7 +628,7 @@ def _responsibility_assignment_material(
             "assignment is bounded to the exact pair Assertion, Ingest result, "
             "completeness boundary, and occurrence limit"
         ],
-        "unknown": ["what the measured pair relation represents remains Unknown"],
+        "unknown": ["what the measured pair relation represents: Unknown"],
     }
 
 
@@ -1146,7 +1146,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 },
                 "conflicts": "Unknown",
                 "unknown": [
-                    "what this ordered pair occurrence relation is remains Unknown"
+                    "what this ordered pair occurrence relation represents: Unknown"
                 ],
                 "limits": [
                     "position is bounded by the exact source result, completeness "

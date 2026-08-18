@@ -37,7 +37,7 @@ STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
 STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality continuation"
 STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY = (
     "preserve availability of one exact prior Locality Standing boundary at one other "
-    "exact Locality without revising its carried subjects"
+    "exact Locality and preserve its carried subject coordinates"
 )
 STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact prior Locality Standing boundary"
@@ -195,7 +195,7 @@ def _assignment_material(
             "availability at this Locality is not Applicability or Participation",
         ],
         "unknown": [
-            "Applicability of every carried subject to another Act remains Unknown"
+            "Applicability of every carried subject to another Act: Unknown"
         ],
     }
 
@@ -287,7 +287,7 @@ def _result_material(
         "standing": "preserved",
         "authority": "unestablished",
         "unknown": [
-            "Applicability of every carried subject to another Act remains Unknown"
+            "Applicability of every carried subject to another Act: Unknown"
         ],
         "limits": [
             "availability at this exact Locality is not Applicability or Participation",

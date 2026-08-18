@@ -28,7 +28,7 @@ Active Book Authority is bounded to this direct occurrence and result boundary. 
 
 When one current Locality Standing carries exactly one intact recorded Standing boundary reference or one direct relation preserving that exact reference, active Book assigns this Seed a Responsibility bounded to establish one direct Locality relation from that recorded result to one new Locality. The assignment preserves its own subject, the exact recorded result reference, responsible boundary, exact Act, Act occurrence, relation occurrence, destination Locality, Evidence occurrence, Authority, Scope, limits, Unknown, and Standing.
 
-The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. The relation preserves the exact recorded result reference and new destination identity; it preserves no other reference or destination. It cannot copy the addressed Standing, carry another relation by identity, carry branch Standing, revise the recorded boundary, establish Applicability or Participation, or perform Compare. Absence or several carried recorded references establish no one exact reference.
+The result carries exact assignment, Act, Act-occurrence, Locality-relation, Yield, and result references. The relation preserves the exact recorded result reference and new destination identity; it preserves no other reference or destination. It cannot copy the addressed Standing, carry another relation by identity, carry branch Standing, revise the recorded boundary, establish Applicability or Participation, or perform Compare. Absence or several carried recorded references establish no one exact reference.
 
 ### 06.Locality.D — Operator invocation Locality Responsibility
 
@@ -36,7 +36,7 @@ When one current operator Locality Standing carries one exact operator material 
 
 The assignment occurs in the new Locality. The exact Act may occur only when current Standing at that new Locality carries the exact assignment occurrence. Source Locality Standing supports the assignment through its Evidence, Authority, Scope, and preserved limits; ledger addressability cannot carry it across the Locality boundary.
 
-The operator material occurrence carries operator Authority for that exact invocation only. The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. Material supplied by the invocation may occur in the new Locality with exact provenance to the operator material occurrence and relation result. The relation cannot copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
+The operator material occurrence carries operator Authority for that exact invocation only. The result carries exact assignment, Act, Act-occurrence, Locality-relation, Yield, and result references. Material supplied by the invocation may occur in the new Locality with exact provenance to the operator material occurrence and relation result. The relation cannot copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
 
 ## Important distinctions
 

@@ -8,11 +8,11 @@ The locality of exact content and the boundary between supplied material and See
 
 A supplied representation may enter as material with exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. The same content under another source or occurrence establishes no shared identity or Standing.
 
-Use of supplied material by an exact Responsibility requires its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate remains unsupported; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
+Use of supplied material by an exact Responsibility requires its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate carries no support relation; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
 
-Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing cannot identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
+Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing cannot identify the same relation. Unsupported coordinates carry Unknown or no instantiation.
 
-A composite names several exact coordinates. The composite by identity establishes no named subject, Act, relation, occurrence, Evidence, Authority, Scope, or Standing; each coordinate remains required.
+A composite names several exact coordinates. The composite by identity establishes no named subject, Act, relation, occurrence, Evidence, Authority, Scope, or Standing; the composite requires each coordinate.
 
 ### 01.Source.A — Representation preserves source coordinates
 
@@ -52,7 +52,7 @@ Before the declared Measurement Act, current Standing must carry the exact Respo
 
 Where no first or second position-coordinate reference identifies the addressed byte occurrence, the exact result carries no Assertion reference. This establishes no failure and no other result.
 
-A missing, unsupported, or different result, source occurrence, Locality, completeness boundary, position, exact byte material, assignment, or Applicability establishes no Measurement Act occurrence, Yield, or result. A scalar byte or position establishes no addressed occurrence. The Measurement establishes no recurrence, shared position relation, Participation beyond this exact Act, represented relation, or other relation. The represented relation of the addressed byte occurrence or carried references remains Unknown.
+A missing, unsupported, or different result, source occurrence, Locality, completeness boundary, position, exact byte material, assignment, or Applicability establishes no Measurement Act occurrence, Yield, or result. A scalar byte or position establishes no addressed occurrence. The Measurement establishes no recurrence, shared position relation, Participation beyond this exact Act, represented relation, or other relation. The result carries Unknown for the represented relation of the addressed byte occurrence or carried references.
 
 ### 01.Source.E — Candidates preserve source coordinates
 
@@ -68,7 +68,7 @@ Supplied material may assert that X represents or identifies Y. The responsible 
 
 Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed a Responsibility bounded to preservation of one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
 
-The assignment, exact Act, Act occurrence, Yield, and material result remain distinct by identity. The same exact material under another occurrence identifies neither result nor occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
+The material result carries exact assignment, Act, Act-occurrence, Yield, and result references. The same exact material under another occurrence identifies neither result nor occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
 
 When the boundary supplies no material, this Seed establishes no material result, Yield, or completion. Another operator material boundary occurrence requires another exact assignment and Act occurrence.
 

@@ -1864,7 +1864,7 @@ def test_added_position_invocation_does_not_rescan_a_validated_exact_act(
         occurrence.source_coordinate for occurrence in invocations[0]
     ) == additions
 
-    with pytest.raises(ValueError, match="positions must remain exact"):
+    with pytest.raises(ValueError, match="requires exact positions"):
         added_position_invocations(
             tuple(reversed(additions)),
             boundary_identity="reordered-validated-addition-invocation",

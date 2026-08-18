@@ -10,7 +10,7 @@ Supplied or recorded material may carry asserted content together with a source 
 
 The relation “source S supplied or asserted Assertion A” is itself an Assertion. It requires its own Evidence, Authority, Scope, occurrence, conflicts, Unknown, limits, and Standing. A source label, nearby occurrence, copied provenance reference, or repeated material establishes no such relation.
 
-Standing whose subject is A remains separate from Standing whose subject is its source relation. Establishing either one establishes no other.
+Standing carries its subject reference separately from its source-relation reference. Establishing either one establishes no other.
 
 An exact Representation Act may represent asserted content and source coordinates in another exact Representation. It cannot create a higher subject, supply missing Evidence, or strengthen Standing.
 

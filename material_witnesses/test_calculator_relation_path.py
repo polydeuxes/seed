@@ -1,7 +1,7 @@
 """Carry one calculator result beside one exact path through distinctions.
 
 The path around byte ``0x3d`` meets exact findings from an earlier-to-claim
-pair comparison while its represented relation remains Unknown.  The external
+pair comparison while carrying Unknown for its represented relation.  The external
 result enters through its own invocation lifecycle; no current Responsibility
 compares it with the path finding or establishes arithmetic meaning.
 """
@@ -293,7 +293,7 @@ def test_claim_preserves_one_uninterpreted_path(calculator_relation_witness):
         "shared_position_coordinate_reference"
     ]["exact_material"] == [0x3D]
     assert reading["unknown"] == [
-        "what this ordered relation path represents remains Unknown"
+        "what this ordered relation path represents: Unknown"
     ]
     assert witness["path_result"].identity in witness["claim_standing"][
         "measurement_occurrences"
@@ -318,10 +318,10 @@ def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
         ["findings_of_later_result"],
     ]
     assert reading["finding"]["unknown"] == [
-        "what the relation of the ordered path and recorded comparison findings represents remains Unknown"
+        "what the relation of the ordered path and recorded comparison findings represents: Unknown"
     ]
     assert reading["unknown"] == [
-        "what the relation of path and comparison findings represents remains Unknown"
+        "what the relation of path and comparison findings represents: Unknown"
     ]
     assert witness["path_comparison"].identity in witness["claim_standing"][
         "comparison_result_occurrences"

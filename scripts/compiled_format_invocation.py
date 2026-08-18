@@ -2442,7 +2442,7 @@ def added_position_invocations(
         if type(occurrence) is not AddedPositionOccurrence:
             raise TypeError("added-position material requires its exact Act occurrence")
         if occurrence.occurrence_position != occurrence_position:
-            raise ValueError("added-position Act occurrence positions must remain exact")
+            raise ValueError("added-position Act occurrence requires exact positions")
         exact_material.append(occurrence.result_material)
     if type(implementation_functions) is not tuple or not implementation_functions:
         raise TypeError("compiled implementation functions must be one nonempty tuple")
@@ -2589,7 +2589,7 @@ def removed_position_invocations(
         occurrence.occurrence_position != position
         for position, occurrence in enumerate(occurrences)
     ):
-        raise ValueError("removed-position Act occurrence positions must remain exact")
+        raise ValueError("removed-position Act occurrence requires exact positions")
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if type(implementation_functions) is not tuple or not implementation_functions:

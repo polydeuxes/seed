@@ -186,7 +186,7 @@ def _assignment_material(
             "this record establishes no movement or Locality relation",
         ],
         "unknown": [
-            "Applicability of the recorded boundary to another Act remains Unknown"
+            "Applicability of the recorded boundary to another Act: Unknown"
         ],
     }
 
@@ -239,7 +239,7 @@ def _result_material(act_evidence: Event) -> dict[str, Any]:
             "this record establishes no movement or Locality relation",
         ],
         "unknown": [
-            "Applicability of the recorded boundary to another Act remains Unknown"
+            "Applicability of the recorded boundary to another Act: Unknown"
         ],
     }
 

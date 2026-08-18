@@ -161,7 +161,7 @@ def _assignment_material(
             "the relation carries no addressed Standing",
         ],
         "unknown": [
-            "Applicability of the recorded boundary to another Act remains Unknown"
+            "Applicability of the recorded boundary to another Act: Unknown"
         ],
     }
 
@@ -251,7 +251,7 @@ def _result_material(act: Event) -> dict[str, Any]:
             "the relation establishes no Compare",
         ],
         "unknown": [
-            "Applicability of the recorded boundary to another Act remains Unknown"
+            "Applicability of the recorded boundary to another Act: Unknown"
         ],
     }
 

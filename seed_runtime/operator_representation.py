@@ -800,8 +800,8 @@ def emit_operator_representation_material(
             ),
             "known_loss": [],
             "unknown": [
-                "output-boundary acceptance remains Unknown until Evidence establishes it",
-                "effects beyond the output boundary remain Unknown",
+                "output-boundary acceptance: Unknown until Evidence establishes it",
+                "effects beyond the output boundary: Unknown",
             ],
             "conflicts": [],
             "provenance_occurrence_references": [
@@ -1053,11 +1053,11 @@ def _record_exact_material_boundary_failure(
     reported_count: int | None,
     error: Exception | None,
 ):
-    """Preserve one boundary failure without revising accepted emission."""
+    """Preserve one boundary failure and the accepted emission coordinates."""
 
     unknown = [
-        "output-boundary result remains Unknown",
-        "effects beyond the output boundary remain Unknown",
+        "output-boundary result: Unknown",
+        "effects beyond the output boundary: Unknown",
     ]
     act_identity = new_identity("operator_representation_boundary_failure_act")
     act_occurrence_identity = new_identity(

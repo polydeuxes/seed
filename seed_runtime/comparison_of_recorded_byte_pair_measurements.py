@@ -803,7 +803,7 @@ def _assignment_material(
             "comparison establishes no Admission or downstream Applicability",
         ],
         "unknown": [
-            "what the measured difference represents remains Unknown"
+            "what the measured difference represents: Unknown"
         ],
     }
 
@@ -1161,7 +1161,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             "Applicability establishes no Participation or comparison result"
         ],
         "unknown": [
-            "what the compared difference represents remains Unknown"
+            "what the compared difference represents: Unknown"
         ],
     }
 
@@ -1567,7 +1567,7 @@ def _comparison_result_material(
             "comparison result establishes no downstream Applicability",
         ],
         "unknown": [
-            "what each measured match or difference represents remains Unknown"
+            "what each measured match or difference represents: Unknown"
         ],
     }
 

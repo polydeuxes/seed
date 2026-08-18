@@ -83,8 +83,8 @@ LIMITS = [
     "or other relation",
 ]
 UNKNOWN = [
-    "what the addressed byte occurrence represents remains Unknown",
-    "what each carried Assertion reference represents remains Unknown",
+    "what the addressed byte occurrence represents: Unknown",
+    "what each carried Assertion reference represents: Unknown",
 ]
 
 EVENT_KIND_RESPONSIBILITIES = {

@@ -7,14 +7,14 @@ The bounded Stop or absence of movement and the stronger Assertion that a bounde
 Which exact evidenced material or Standing can support a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion Assertion for an exact bounded result?
 
 ## Bounded resolution
-Evidence may support distinct reasons for non-movement: an Assertion, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or Assertion supplies Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates support a stopping occurrence or the stronger completion Assertion remains unclear.
+Evidence may support distinct reasons for non-movement: an Assertion, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or Assertion supplies Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates support a stopping occurrence or the stronger completion Assertion?
 
-Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason. Absence of a recorded stopping occurrence or reason Evidence establishes no Stop. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. Not every unresolved coordinate establishes a Stop, and this discipline cannot assign Stopping the reason-establishing Responsibility.
+Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason. Absence of a recorded stopping occurrence or reason Evidence establishes no Stop. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established from unresolved required binding each require exact supporting coordinates. Not every unresolved coordinate establishes a Stop, and this discipline cannot assign Stopping the reason-establishing Responsibility.
 
 ## Important distinctions
 - stopping != completion
 - stopping != failure
-- no movement != no remaining required result
+- no movement != no required result
 - bounded exhaustion != global impossibility
 - local stop != termination outside its Scope
 - source-labelled wording != Stopping by identity

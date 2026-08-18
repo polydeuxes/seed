@@ -623,7 +623,7 @@ def _assignment_material(
             "pair counts establish no shared position",
             "relation path Standing from exact source material is not_established",
         ],
-        "unknown": ["what this ordered relation path represents remains Unknown"],
+        "unknown": ["what this ordered relation path represents: Unknown"],
     }
     if determination_result_reference is not None:
         material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
@@ -1650,7 +1650,7 @@ def _path_assertion(
             "local_assertion_references": [],
         },
         "conflicts": "Unknown",
-        "unknown": ["what this ordered relation path represents remains Unknown"],
+        "unknown": ["what this ordered relation path represents: Unknown"],
         "limits": [
             "one path bounded by exact position Assertions and one exact shared "
             "position-coordinate reference"

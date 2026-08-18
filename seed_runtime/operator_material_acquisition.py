@@ -246,7 +246,7 @@ def _assignment_material(
             ),
         ],
         "unknown": [
-            "what exact material the operator boundary supplies remains Unknown"
+            "what exact material the operator boundary supplies: Unknown"
         ],
     }
 
