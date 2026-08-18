@@ -1217,6 +1217,33 @@ def _applicability_result_material(
     }
 
 
+def _record_shared_applicability_yield_evidence(
+    ledger: EventLedger, *, act: Event, result: dict[str, Any]
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=APPLICABILITY_ACT,
+        act_occurrence_identity=act.material[
+            "applicability_act_occurrence_identity"
+        ],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=APPLICABILITY_RESULT_KIND,
+        result_identity=result["result_identity"],
+        result_content={
+            coordinate: value
+            for coordinate, value in result.items()
+            if coordinate != "responsible_act_evidence_identity"
+        },
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="shared_pair_position_applicability",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate=(
+            "applicability_act_occurrence_identity"
+        ),
+    )
+
+
 def _refuse_existing_result(
     ledger: EventLedger,
     *,
@@ -1269,27 +1296,10 @@ def record_shared_position_applicability_result(
         assignment=assignment,
         inputs=inputs,
     )
-    evidence = _record_evidence_of_yield_relation(
+    evidence = _record_shared_applicability_yield_evidence(
         ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=APPLICABILITY_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in result.items()
-            if coordinate != "responsible_act_evidence_identity"
-        },
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="shared_pair_position_applicability",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
+        act=act,
+        result=result,
     )
     return ledger.append(
         SHARED_POSITION_APPLICABILITY_RESULT_KIND,
@@ -1728,6 +1738,28 @@ def _measurement_result_material(
     }
 
 
+def _record_shared_measurement_yield_evidence(
+    ledger: EventLedger, *, act: Event, result: dict[str, Any]
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=MEASUREMENT_ACT,
+        act_occurrence_identity=act.material["act_occurrence_identity"],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=MEASUREMENT_RESULT_KIND,
+        result_identity=result["result_identity"],
+        result_content={
+            coordinate: value
+            for coordinate, value in result.items()
+            if coordinate != "responsible_act_evidence_identity"
+        },
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="shared_pair_position_measurement",
+        responsible_boundary="this Seed",
+    )
+
+
 def record_shared_position_measurement_result(
     ledger: EventLedger,
     *,
@@ -1747,22 +1779,10 @@ def record_shared_position_measurement_result(
         applicability=applicability,
         inputs=inputs,
     )
-    evidence = _record_evidence_of_yield_relation(
+    evidence = _record_shared_measurement_yield_evidence(
         ledger,
-        locality_identity=act.locality_identity,
-        exact_act=MEASUREMENT_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=MEASUREMENT_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            coordinate: value
-            for coordinate, value in result.items()
-            if coordinate != "responsible_act_evidence_identity"
-        },
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="shared_pair_position_measurement",
-        responsible_boundary="this Seed",
+        act=act,
+        result=result,
     )
     return ledger.append(
         SHARED_POSITION_MEASUREMENT_RESULT_KIND,
@@ -1861,3 +1881,265 @@ def get_recorded_shared_position_measurement(
 ) -> dict[str, Any]:
     _event, carried = _read_measurement_result(ledger, event_identity)
     return json.loads(json.dumps(carried))
+
+
+def _record_shared_position_measurement_lifecycle_from_carried_d2_result(
+    ledger: EventLedger,
+    *,
+    determination_result_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> tuple[dict[str, Any], Event]:
+    """Record the existing shared-position road from one exact two-ref D.2 result."""
+
+    from seed_runtime.operator_locality_standing import (
+        _exact_standing_additions,
+        _record_distinct,
+    )
+
+    standing = deepcopy(locality_standing)
+    locality_identity = standing.get("locality_identity")
+    determination, inputs = _d2_result_inputs(
+        ledger,
+        result_event_identity=determination_result_event_identity,
+        prior_standing=standing,
+    )
+    if len((inputs.first, inputs.second)) != 2:
+        raise SharedPairPositionError(
+            "shared-position assignment requires exactly two ordered D.2 Assertion references"
+        )
+    boundary = _require_exact_d2_result_standing(
+        ledger,
+        result=determination,
+        inputs=inputs,
+        locality_standing=standing,
+    )
+    determination_material = deepcopy(determination.material)
+    identities = _new_assignment_identities()
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError("shared-position lifecycle identities collapsed")
+
+    snapshots: list[tuple[Event, str, dict[str, Any]]] = [
+        (determination, determination.kind, determination_material)
+    ]
+
+    def require_intact() -> None:
+        for event, kind, material in snapshots:
+            if (
+                ledger.get(event.identity) != event
+                or event.kind != kind
+                or event.exact_material is not None
+                or ledger.integrity_of(event.identity) == CORRUPTED
+                or event.material != material
+            ):
+                raise SharedPairPositionError(
+                    "shared-position carried source changed"
+                )
+
+    def result_reference(event: Event) -> dict[str, str]:
+        return {
+            "recorded_occurrence_identity": event.identity,
+            "result_identity": event.material["result_identity"],
+            "act_occurrence_identity": event.material["act_occurrence_identity"],
+            "responsible_act_evidence_identity": event.material[
+                "responsible_act_evidence_identity"
+            ],
+            "evidence_of_yield_relation_identity": event.material[
+                "evidence_of_yield_relation_identity"
+            ],
+        }
+
+    def carry(event: Event, *, prior: str) -> None:
+        assignments = standing.get("responsibility_assignment_occurrences")
+        applicability_results = standing.get("applicability_result_occurrences")
+        measurements = standing.get("measurement_occurrences")
+        count = standing.get("event_count")
+        if (
+            type(assignments) is not dict
+            or type(applicability_results) is not dict
+            or type(measurements) is not dict
+            or type(count) is not int
+            or standing.get("through_event_occurrence_identity") != prior
+            or event.locality_identity != locality_identity
+            or ledger.get(event.identity) != event
+            or ledger.integrity_of(event.identity) == CORRUPTED
+            or ledger.append_boundary_through_occurrence(event.identity)
+            != ledger.append_boundary()
+        ):
+            raise SharedPairPositionError(
+                "produced shared-position occurrence is not exact"
+            )
+        if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+            lawful = (
+                event.material.get("standing_boundary_identity") == prior
+                and event.identity not in assignments
+            )
+        elif event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND:
+            lawful = (
+                event.material["responsibility_assignment_reference"][
+                    "recorded_occurrence_identity"
+                ]
+                == prior
+                and prior in assignments
+            )
+        elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
+            lawful = (
+                event.material.get("responsible_act_evidence_identity") == prior
+                and event.identity not in applicability_results
+            )
+        elif event.kind == SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND:
+            lawful = (
+                event.material["applicability_result_reference"][
+                    "recorded_occurrence_identity"
+                ]
+                == prior
+                and prior in applicability_results
+            )
+        elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
+            lawful = (
+                event.material.get("responsible_act_evidence_identity") == prior
+                and event.identity not in measurements
+            )
+        else:
+            lawful = False
+        if not lawful:
+            raise SharedPairPositionError(
+                "produced shared-position occurrence has false Standing"
+            )
+        additions = _exact_standing_additions(
+            standing,
+            event,
+            error_message="produced shared-position Standing is not exact",
+        )
+        if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+            assignments[event.identity] = None
+        elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
+            applicability_results[event.identity] = None
+        elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
+            measurements[event.identity] = result_reference(event)
+        for key, values in additions.items():
+            for value in values:
+                _record_distinct(standing[key], value)
+        standing["through_event_occurrence_identity"] = event.identity
+        standing["event_count"] = count + 1
+
+    assignment_material = _assignment_material(
+        inputs=inputs,
+        standing_boundary_identity=boundary,
+        identities=identities,
+        determination_result_reference=_determination_result_reference(
+            determination
+        ),
+    )
+    assignment = ledger.append(
+        SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+        _assignment_material(
+            inputs=inputs,
+            standing_boundary_identity=boundary,
+            identities=identities,
+            determination_result_reference=_determination_result_reference(
+                determination
+            ),
+        ),
+        locality_identity=locality_identity,
+    )
+    snapshots.append((assignment, assignment.kind, deepcopy(assignment_material)))
+    require_intact()
+    carry(assignment, prior=boundary)
+
+    applicability_act_material = _applicability_act_material(
+        assignment=assignment,
+        inputs=inputs,
+        standing_boundary_identity=assignment.identity,
+    )
+    applicability_act = ledger.append(
+        SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+        _applicability_act_material(
+            assignment=assignment,
+            inputs=inputs,
+            standing_boundary_identity=assignment.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    snapshots.append((applicability_act, applicability_act.kind, deepcopy(applicability_act_material)))
+    require_intact()
+    carry(applicability_act, prior=assignment.identity)
+
+    applicability_material = _applicability_result_material(
+        act=applicability_act,
+        assignment=assignment,
+        inputs=inputs,
+    )
+    evidence = _record_shared_applicability_yield_evidence(
+        ledger,
+        act=applicability_act,
+        result=applicability_material,
+    )
+    require_intact()
+    if ledger.append_boundary_through_occurrence(evidence.identity) != ledger.append_boundary():
+        raise SharedPairPositionError("shared-position Yield left the append tip")
+    applicability_recorded = _recorded_applicability_result_material(
+        applicability_material,
+        evidence_of_yield_relation_identity=evidence.identity,
+    )
+    applicability = ledger.append(
+        SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+        _recorded_applicability_result_material(
+            applicability_material,
+            evidence_of_yield_relation_identity=evidence.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    snapshots.append((applicability, applicability.kind, deepcopy(applicability_recorded)))
+    require_intact()
+    carry(applicability, prior=applicability_act.identity)
+
+    act_material = _measurement_act_material(
+        assignment=assignment,
+        inputs=inputs,
+        applicability=applicability,
+        standing_boundary_identity=applicability.identity,
+    )
+    act = ledger.append(
+        SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+        _measurement_act_material(
+            assignment=assignment,
+            inputs=inputs,
+            applicability=applicability,
+            standing_boundary_identity=applicability.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    snapshots.append((act, act.kind, deepcopy(act_material)))
+    require_intact()
+    carry(act, prior=applicability.identity)
+
+    measured_material = _measurement_result_material(
+        act=act,
+        assignment=assignment,
+        applicability=applicability,
+        inputs=inputs,
+    )
+    measurement_evidence = _record_shared_measurement_yield_evidence(
+        ledger,
+        act=act,
+        result=measured_material,
+    )
+    require_intact()
+    if ledger.append_boundary_through_occurrence(measurement_evidence.identity) != ledger.append_boundary():
+        raise SharedPairPositionError("shared-position Yield left the append tip")
+    result_recorded = _recorded_measurement_result_material(
+        measured_material,
+        evidence_of_yield_relation_identity=measurement_evidence.identity,
+    )
+    result = ledger.append(
+        SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+        _recorded_measurement_result_material(
+            measured_material,
+            evidence_of_yield_relation_identity=measurement_evidence.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    snapshots.append((result, result.kind, deepcopy(result_recorded)))
+    require_intact()
+    carry(result, prior=act.identity)
+    return standing, result

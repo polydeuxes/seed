@@ -13,6 +13,7 @@ may be appended from one stale Standing boundary.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any, Callable, NamedTuple
 
 from seed_runtime.byte_measurement import (
@@ -36,15 +37,25 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.material_ingest import read_exact_ingest_result
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
+    RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND,
     DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+    STANDING_DECLARATION_TRIGGER_COORDINATE,
     _determination_result_reference as _addressed_byte_reference_result_reference,
+    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
 )
 from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
     RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_MATERIAL_COORDINATE_ASSIGNMENT_KIND,
     MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND,
+    measurement_result_reference as _addressed_material_result_reference,
     _population_references as _addressed_material_population_references,
     _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing,
     _subject_is_unmeasured as _addressed_material_subject_is_unmeasured,
+)
+from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
+    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    D2_RESULT_REFERENCE_COORDINATE,
+    _record_shared_position_measurement_lifecycle_from_carried_d2_result,
 )
 from seed_runtime.operator_locality_standing import (
     _carry_byte_measurement_assignment_into_standing,
@@ -72,6 +83,13 @@ class StandingMeasurementDeclaration(NamedTuple):
 class RecordedStandingMeasurements(NamedTuple):
     locality_standing: dict[str, Any]
     result_occurrences: tuple[Event, ...]
+
+
+class AddressedCoordinateDeclarationSubject(NamedTuple):
+    direct_result_event_identity: str
+    source_position_coordinate_reference: dict[str, Any]
+    trigger_result_event_identity: str
+    trigger_finding: dict[str, Any]
 
 
 def _advance(
@@ -389,6 +407,12 @@ def _discover_addressed_material_coordinate_measurement(
             != _addressed_byte_reference_result_reference(event)
         ):
             raise ValueError("current Standing carries an inexact addressed result")
+        if _d2_subject_was_emitted_by_addressed_material(
+            ledger,
+            standing=standing,
+            determination_result=event,
+        ):
+            continue
         if _addressed_material_subject_is_unmeasured(
                 ledger,
                 locality_identity=locality_identity,
@@ -430,6 +454,229 @@ def _record_addressed_material_coordinate_measurement_from_current(
     )
 
 
+def _d2_subject_key(material: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    direct = material.get("direct_pair_position_result_reference")
+    coordinate = material.get("addressed_source_byte_position_coordinate_reference")
+    identity = (
+        direct.get("recorded_occurrence_identity")
+        if type(direct) is dict
+        else None
+    )
+    if type(identity) is not str or not identity or type(coordinate) is not dict:
+        raise ValueError("recorded D.2 subject is malformed")
+    return identity, coordinate
+
+
+def _d2_subject_was_emitted_by_addressed_material(
+    ledger: EventLedger,
+    *,
+    standing: dict[str, Any],
+    determination_result: Event,
+) -> bool:
+    assignment_reference = determination_result.material.get(
+        "responsibility_assignment_reference"
+    )
+    assignment_identity = (
+        assignment_reference.get("recorded_occurrence_identity")
+        if type(assignment_reference) is dict
+        else None
+    )
+    assignment = ledger.get(assignment_identity)
+    if (
+        assignment is None
+        or assignment.kind != ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND
+        or ledger.integrity_of(assignment.identity) == CORRUPTED
+    ):
+        raise ValueError("recorded D.2 assignment provenance is malformed")
+    trigger = assignment.material.get(STANDING_DECLARATION_TRIGGER_COORDINATE)
+    if trigger is None:
+        return False
+    result_reference = (
+        trigger.get("measurement_result_reference")
+        if type(trigger) is dict
+        else None
+    )
+    result_identity = (
+        result_reference.get("recorded_occurrence_identity")
+        if type(result_reference) is dict
+        else None
+    )
+    result = ledger.get(result_identity)
+    if (
+        type(trigger) is not dict
+        or set(trigger) != {"measurement_result_reference", "finding"}
+        or result is None
+        or result.kind != ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND
+        or ledger.integrity_of(result.identity) == CORRUPTED
+        or result_reference != _addressed_material_result_reference(result)
+        or standing["measurement_occurrences"].get(result.identity)
+        != _addressed_material_result_reference(result)
+    ):
+        raise ValueError("recorded D.2 declaration provenance is malformed")
+    return True
+
+
+def _d2_subject_is_unassigned(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    subject: AddressedCoordinateDeclarationSubject,
+) -> bool:
+    expected = (
+        subject.direct_result_event_identity,
+        subject.source_position_coordinate_reference,
+    )
+    for kind in (
+        ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND,
+        ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+    ):
+        for event in ledger.iter_locality_kind(locality_identity, kind):
+            if ledger.integrity_of(event.identity) == CORRUPTED:
+                raise ValueError("recorded D.2 history is corrupted")
+            if _d2_subject_key(event.material) == expected:
+                return False
+    return True
+
+
+def _discover_d2_from_addressed_material_coordinate(
+    ledger: EventLedger, standing: dict[str, Any], locality_identity: str
+) -> AddressedCoordinateDeclarationSubject | None:
+    for occurrence_identity in standing["measurement_occurrences"]:
+        event = ledger.get(occurrence_identity)
+        if event is None or event.kind != ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND:
+            continue
+        findings = event.material.get("ordered_source_position_coordinate_findings")
+        if (
+            ledger.integrity_of(event.identity) == CORRUPTED
+            or event.exact_material is not None
+            or standing["measurement_occurrences"].get(event.identity)
+            != _addressed_material_result_reference(event)
+            or type(findings) is not list
+        ):
+            raise ValueError("current Standing carries a malformed addressed-material result")
+        for finding in findings:
+            direct = (
+                finding.get("direct_pair_position_result_reference")
+                if type(finding) is dict
+                else None
+            )
+            coordinate = (
+                finding.get("source_position_coordinate_reference")
+                if type(finding) is dict
+                else None
+            )
+            direct_identity = (
+                direct.get("recorded_occurrence_identity")
+                if type(direct) is dict
+                else None
+            )
+            if (
+                type(direct_identity) is not str
+                or not direct_identity
+                or type(coordinate) is not dict
+            ):
+                raise ValueError("current Standing carries a malformed addressed-material finding")
+            subject = AddressedCoordinateDeclarationSubject(
+                direct_identity,
+                deepcopy(coordinate),
+                event.identity,
+                deepcopy(finding),
+            )
+            if _d2_subject_is_unassigned(
+                ledger,
+                locality_identity=locality_identity,
+                subject=subject,
+            ):
+                return subject
+    return None
+
+
+def _record_d2_from_addressed_material_coordinate(
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    _locality_identity: str,
+    subject: AddressedCoordinateDeclarationSubject,
+) -> tuple[dict[str, Any], Event]:
+    return _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+        ledger,
+        direct_result_event_identity=subject.direct_result_event_identity,
+        addressed_source_byte_position_coordinate_reference=(
+            subject.source_position_coordinate_reference
+        ),
+        locality_standing=standing,
+        standing_declaration_trigger_reference={
+            "measurement_result_reference": _addressed_material_result_reference(
+                ledger.get(subject.trigger_result_event_identity)
+            ),
+            "finding": deepcopy(subject.trigger_finding),
+        },
+    )
+
+
+def _shared_position_subject_is_unassigned(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    determination_result_identity: str,
+) -> bool:
+    for event in ledger.iter_locality_kind(
+        locality_identity, SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND
+    ):
+        if ledger.integrity_of(event.identity) == CORRUPTED:
+            raise ValueError("recorded shared-position history is corrupted")
+        reference = event.material.get(D2_RESULT_REFERENCE_COORDINATE)
+        if reference is None:
+            continue
+        if type(reference) is not dict:
+            raise ValueError("recorded shared-position D.2 reference is malformed")
+        identity = reference.get("recorded_occurrence_identity")
+        if type(identity) is not str or not identity:
+            raise ValueError("recorded shared-position D.2 reference is malformed")
+        if identity == determination_result_identity:
+            return False
+    return True
+
+
+def _discover_shared_position_from_d2_result(
+    ledger: EventLedger, standing: dict[str, Any], locality_identity: str
+) -> str | None:
+    for occurrence_identity in standing["measurement_occurrences"]:
+        event = ledger.get(occurrence_identity)
+        if event is None or event.kind != ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND:
+            continue
+        references = event.material.get("ordered_assertion_references")
+        if (
+            ledger.integrity_of(event.identity) == CORRUPTED
+            or event.exact_material is not None
+            or standing["measurement_occurrences"].get(event.identity)
+            != _addressed_byte_reference_result_reference(event)
+            or type(references) is not list
+        ):
+            raise ValueError("current Standing carries a malformed D.2 result")
+        if len(references) != 2:
+            continue
+        if _shared_position_subject_is_unassigned(
+            ledger,
+            locality_identity=locality_identity,
+            determination_result_identity=event.identity,
+        ):
+            return event.identity
+    return None
+
+
+def _record_shared_position_from_d2_result(
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    _locality_identity: str,
+    determination_result_identity: str,
+) -> tuple[dict[str, Any], Event]:
+    return _record_shared_position_measurement_lifecycle_from_carried_d2_result(
+        ledger,
+        determination_result_event_identity=determination_result_identity,
+        locality_standing=standing,
+    )
+
+
 STANDING_MEASUREMENT_DECLARATIONS = (
     StandingMeasurementDeclaration(
         0,
@@ -457,6 +704,24 @@ STANDING_MEASUREMENT_DECLARATIONS = (
         _discover_addressed_material_coordinate_measurement,
         _record_addressed_material_coordinate_measurement,
         _record_addressed_material_coordinate_measurement_from_current,
+    ),
+    StandingMeasurementDeclaration(
+        3,
+        "01.Source.D.2",
+        ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND,
+        ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+        _discover_d2_from_addressed_material_coordinate,
+        _record_d2_from_addressed_material_coordinate,
+        _record_d2_from_addressed_material_coordinate,
+    ),
+    StandingMeasurementDeclaration(
+        4,
+        "01.Source.D",
+        SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+        SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+        _discover_shared_position_from_d2_result,
+        _record_shared_position_from_d2_result,
+        _record_shared_position_from_d2_result,
     ),
 )
 

@@ -158,6 +158,62 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "addressed_byte_occurrence_reference_determination_by_result_presence",
             ],
         },
+        {
+            "order": 3,
+            "book_clause": "01.Source.D.2",
+            "measurement": {
+                "identity": "addressed_byte_occurrence_reference_determination",
+                "subject": {
+                    "identity": "exact_pair_occurrence_position_Assertion_references_carrying_one_addressed_source_byte_position_coordinate_reference",
+                    "first_subject": "exact_pair_occurrence_position_Assertion_references",
+                    "relation": "carrying",
+                    "second_subject": "one_addressed_source_byte_position_coordinate_reference",
+                },
+            },
+            "subject": {
+                "finding": "one_source_position_coordinate_finding_carried_by_an_addressed_material_Measurement_result",
+                "direct_result": "finding_carried_direct_pair_position_result_reference",
+                "coordinate": "finding_source_position_coordinate_reference",
+            },
+            "requires": [
+                "current_Standing",
+                "exact_subject",
+                "no_exact_D_2_assignment_or_result_for_subject",
+            ],
+            "assignment_preserves": [
+                "addressed_material_Measurement_result_reference",
+                "exact_source_position_coordinate_finding",
+            ],
+            "standing_not_established": [
+                "Responsibility_assignment_by_finding_presence",
+                "Applicability_by_finding_presence",
+                "Act_by_finding_presence",
+            ],
+        },
+        {
+            "order": 4,
+            "book_clause": "01.Source.D",
+            "measurement": {
+                "identity": "measurement_of_shared_position_of_byte_pair_occurrences",
+                "first_subject": "shared_position_coordinate_reference",
+                "relation": "of",
+                "second_subject": "exact_recorded_pair_occurrence_relations",
+            },
+            "subject": {
+                "result": "one_exact_addressed_byte_occurrence_reference_determination_result",
+                "ordered_references": "exact_2_pair_position_Assertion_references",
+            },
+            "requires": [
+                "current_Standing",
+                "exact_subject",
+                "no_exact_shared_position_assignment_or_result_for_subject",
+            ],
+            "standing_not_established": [
+                "Responsibility_assignment_by_result_presence",
+                "Applicability_by_result_presence",
+                "Act_by_result_presence",
+            ],
+        },
     ]
     assert (
         "At one exact current Standing boundary, this Seed may record one "

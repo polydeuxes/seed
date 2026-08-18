@@ -5740,11 +5740,13 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
         )
         for declaration, measurement in zip(
             STANDING_MEASUREMENT_DECLARATIONS,
-            (
-                "measurement_of_position_coordinates_of_byte_pair_occurrences",
-                "measurement_of_exact_byte_occurrences",
-                "source_position_coordinates_carrying_addressed_material_measurement",
-            ),
+                (
+                    "measurement_of_position_coordinates_of_byte_pair_occurrences",
+                    "measurement_of_exact_byte_occurrences",
+                    "source_position_coordinates_carrying_addressed_material_measurement",
+                    "addressed_byte_occurrence_reference_determination",
+                    "measurement_of_shared_position_of_byte_pair_occurrences",
+                ),
             strict=True,
         )
     )
