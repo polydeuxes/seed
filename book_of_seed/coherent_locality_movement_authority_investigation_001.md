@@ -1,0 +1,460 @@
+# Coherent Locality movement Authority: investigation 001
+
+Findings only. This report amends no active Book clause, witness grammar,
+runtime, Rosetta entry, admission list, or test.
+
+## Independence and scope
+
+This investigation was performed at repository tip `6227915e`. Active Book
+material, witness grammar, runtime, tests, and history are read independently.
+They have Fidelity where exact relations connect them; none supplies Authority
+to another.
+
+The investigation asks one bounded question:
+
+> Does current material independently establish the Responsibility and
+> Authority under which this Seed may preserve one exact Assertion while
+> establishing a locality relation to one exact destination Locality?
+
+The question precedes any relation-discovery Act. It does not ask whether two
+Assertions in one Locality are equal, comparable, applicable, participating,
+or related. It does not ask whether the operator wants that result.
+
+## Method
+
+1. **Assignment test.** Find the exact Assertion whose Standing says that this
+   Seed bears the movement Responsibility.
+2. **Authority test.** Find the exact Authority under which the responsible
+   boundary may bear and perform that exact movement Act.
+3. **Input-separation test.** Remove the source Assertion's Authority in
+   thought and determine whether movement retains its own Authority.
+4. **Neighbor-clause test.** Compare `03.Movement.A` and `06.Locality.A` with
+   Locality clauses that explicitly assign this Seed a Responsibility.
+5. **Chronology.** Determine whether Book warrant preceded the runtime
+   behavior, or whether runtime and tests supplied the missing coordinate.
+6. **Two-movement test.** Keep two independently established Assertions and
+   their source coordinates separate while addressing one destination
+   Locality.
+7. **Negative boundary.** Record what coherent availability does not
+   establish.
+
+## Result
+
+Current active material does **not** independently establish a Seed-native
+Assertion Locality movement Responsibility or its Authority.
+
+`03.Movement.A` names the coordinates of one exact movement Assertion.
+`06.Locality.A` names the exact locality relation and permits a responsible
+movement occurrence to preserve an Assertion while establishing that one
+relation. Neither clause says that this Seed bears that Responsibility, names
+the exact assignment Assertion, or establishes the Authority under which Seed
+may perform the Act.
+
+The current runtime fills the vacancy by copying Authority from the source
+Assertion into the movement Responsibility assignment, Act Evidence, and
+result. Active material directly rejects that substitution:
+
+```text
+Authority of an input
+!=
+Authority under which the responsible boundary may bear and perform the Act
+```
+
+The source Assertion's Authority must stay with the source Assertion. It
+cannot authorize the new movement Act, and material movement cannot move
+Authority.
+
+The coherent-Locality construction therefore has a valid structural target
+but an unresolved constitutional boundary. The two exact Assertions may be
+preserved independently through two exact movement occurrences into one exact
+destination Locality only after each movement has its own exact assigned
+Responsibility and Authority.
+
+## 1. Source Assertion Authority
+
+### Current coordinate
+
+Each source Assertion carries its own Authority within its exact source
+coordinates. The position Assertion used by the calculator witness carries:
+
+```text
+Authority: unestablished
+```
+
+The path-comparison finding Assertion carries the Authority established for
+its own result road. Those values concern the source Assertions and the Acts
+that established them.
+
+### Active distinction
+
+The Responsibility-rooted Book says Authority carries the exact Authority
+under which the responsible boundary may bear and perform the exact Act. It
+also says:
+
+```text
+Authority
+!=
+Authority carried by an input
+```
+
+`01.Standing.D.1` requires further movement to have an applicable responsible
+occurrence with its own Act, Evidence, Scope, Authority, and limits.
+
+`08.Authority.A` says input support cannot authorize action or revise a
+Responsibility assignment. `08.Authority.D` requires a responsible Authority
+boundary for an authorized Act or movement.
+
+### Elimination
+
+If the source Assertion's Authority is removed from the movement assignment,
+no movement Authority survives in current runtime material. That is not a
+reason to copy it back. It exposes the exact vacancy.
+
+### Disposition
+
+**Preserved source coordinate; not movement Authority.**
+
+## 2. `03.Movement.A`
+
+### Current claim
+
+The active clause says a movement Assertion carries:
+
+- subject;
+- source and destination coordinates;
+- exact Act and occurrence;
+- Evidence;
+- Authority;
+- Scope;
+- limits;
+- Unknown; and
+- Standing.
+
+It then denies that writes, recorded Events, revisions, or labels establish
+movement.
+
+### Assignment test
+
+The clause does not say:
+
+```text
+this Book assigns this Seed ...
+```
+
+or:
+
+```text
+this Seed bears ...
+```
+
+It describes the coordinates required where a bounded movement exists. It
+does not instantiate the Responsibility, its assignment Assertion, or its
+Authority.
+
+### Elimination
+
+Removing the runtime Responsibility assignment leaves the clause's movement
+shape intact but supplies no exact responsible boundary permitted to perform
+the Act. Therefore the shape is not an assignment.
+
+### Disposition
+
+**Movement physiology; no recovered Seed assignment.**
+
+## 3. `06.Locality.A`
+
+### Current claim
+
+The clause establishes Locality as one exact evidenced relation between two
+exact bounded subjects. Co-presence, chronology, and shared labels establish
+no locality relation. A responsible movement occurrence may preserve an
+Assertion while establishing one new locality relation.
+
+### Assignment and Authority tests
+
+The words `a responsible movement occurrence may` require the responsible
+occurrence; they do not identify its responsible boundary, assign its
+Responsibility, or establish its Authority.
+
+The clause also says a locality relation cannot establish Authority. Thus the
+destination Locality cannot authorize the movement that establishes its
+relation.
+
+### Disposition
+
+**Exact relation grammar and limits; no recovered Seed assignment or
+Authority.**
+
+## 4. Neighboring Locality assignments
+
+`06.Locality.B`, `06.Locality.C`, and `06.Locality.D` show the active form of
+an independently assigned Seed Responsibility.
+
+- `06.Locality.B` says active Book assigns this Seed the bounded
+  Responsibility to preserve one exact prior Standing boundary as available
+  at one new Locality. It bounds active Book Authority to that direct
+  occurrence and result boundary.
+- `06.Locality.C` says active Book assigns this Seed the bounded
+  Responsibility for one direct Locality relation from one exact recorded
+  Standing-boundary result to one new Locality.
+- `06.Locality.D` says active Book assigns this Seed the bounded
+  Responsibility for one operator invocation Locality relation under the
+  exact operator-material occurrence and source Standing.
+
+None accepts an arbitrary source Assertion as its subject. None copies the
+source Standing into the destination. None authorizes `03.Movement.A` by
+proximity or shared vocabulary.
+
+The contrast is material:
+
+```text
+03.Movement.A / 06.Locality.A
+    describe required movement and relation coordinates
+
+06.Locality.B / C / D
+    explicitly assign this Seed exact bounded Responsibilities
+```
+
+### Disposition
+
+**Independent examples of valid assignment physiology; not Authority for the
+current Assertion movement.**
+
+## 5. Runtime behavior and chronology
+
+### Original runtime behavior
+
+The early Assertion Locality movement road recorded movement Authority as:
+
+```text
+unestablished
+```
+
+The runtime nevertheless emitted its Act Evidence and result. Witness grammar
+and tests later treated that shape as an exact movement coordinate. No active
+Book amendment independently established movement Authority.
+
+### Responsibility-assignment implementation
+
+Commit `c677a9b2` added a durable movement Responsibility assignment. Its
+assignment material set:
+
+```python
+"authority": source.material["dimensions"]["authority"]
+```
+
+The movement Act Evidence and result then copied that assignment value. The
+same commit updated tests to require the movement Authority to equal the
+source Assertion Authority.
+
+No independent active-Book assignment accompanied that substitution.
+
+### Current runtime
+
+The source family has been generalized, but the same relation remains:
+
+```python
+"authority": _source_assertion_authority(source)
+```
+
+This produces two revealing cases:
+
+- a source with an apparently useful Authority makes movement look
+  authorized; and
+- the calculator position Assertion makes movement proceed with Authority
+  `unestablished`.
+
+The second case exposes the earlier conflation. It does not create a new
+problem.
+
+### Disposition
+
+**Runtime substitution and test Fidelity; not independent Authority.**
+
+## 6. Book Authority, grammar, runtime, and operator purpose
+
+### Book Authority
+
+Active Book Authority is explicitly bounded where the Book assigns a
+Responsibility. Its presence in `06.Locality.B` does not flow into
+`03.Movement.A`; that would authorize another Act and occurrence.
+
+### Witness grammar
+
+`grammar.json` gives `03.Movement.A` an Authority coordinate and maps movement
+event kinds to that clause. That witnesses the required shape. It cannot
+instantiate the Authority value or make the Book assign the Responsibility.
+
+### Runtime registry and callable API
+
+An event-kind mapping, exported function, or successful append is not an
+assignment Assertion. It supplies no Authority to the Act it records.
+
+### Operator purpose
+
+The operator's wish to investigate `=` explains why the construction is
+useful. It establishes neither the Seed movement Responsibility nor the
+Authority to perform it. Operator Authority for an invocation is explicitly
+bounded to that invocation.
+
+### Disposition
+
+**None fills the movement-Authority vacancy.**
+
+## 7. The two-movement construction
+
+The smallest structural construction is not one movement over a pair:
+
+```text
+Assertion A -- movement occurrence 1 --\
+                                      destination Locality L
+Assertion B -- movement occurrence 2 --/
+```
+
+Each movement has one exact source Assertion and the same exact destination
+Locality. Each must preserve separately:
+
+- the source Assertion reference;
+- the source Assertion's own coordinates;
+- the source Standing boundary;
+- the movement Responsibility assignment;
+- the movement Act and occurrence;
+- the movement Evidence and Yield relation; and
+- the movement result.
+
+The common destination does not turn A and B into one collective subject. It
+does not cause either source Authority to authorize the other movement.
+
+The currently implemented destination Standing shape correctly demonstrates
+the target accumulation:
+
+```text
+Locality L Standing
+    movement result 1 -> exact source Assertion A
+    movement result 2 -> exact source Assertion B
+```
+
+That structure is useful testimony. Until the movement Responsibility and
+Authority are independently recovered, the emitted movement occurrences do
+not establish the constitutional table.
+
+### Disposition
+
+**Correct construction target; current occurrences lack recovered movement
+Authority.**
+
+## 8. Coherence and relation discovery are separate boundaries
+
+The proposed coherent-Locality responsibility and a later relation-discovery
+responsibility are not one Responsibility.
+
+### First boundary
+
+The unresolved first boundary would authorize one exact movement at a time:
+
+```text
+one independently established exact Assertion
++ one exact destination Locality
+-> one movement occurrence
+-> one preserved Assertion available at that Locality
+```
+
+Its result must establish no relation between that Assertion and any other
+Assertion already available there.
+
+### Later boundary
+
+Only after exact Assertions are lawfully available in one Locality can a
+separately assigned Responsibility ask whether either may participate in an
+exact relation-discovery Act.
+
+The first boundary cannot be phrased as responsibility to discover equality.
+That would make the intended later conclusion part of the movement's purpose
+and Authority.
+
+### Disposition
+
+**Two unresolved assignments, not one learning capability. This report
+investigates only the first.**
+
+## 9. Standing before Responsibility
+
+Current Book grammar says Standing whose subject is the exact Assertion that a
+responsible boundary bears a Responsibility is required for Seed to read that
+Responsibility. It also says Standing cannot create or perform the
+Responsibility by identity.
+
+Therefore the missing coordinate is not:
+
+```text
+Seed has A and B
+-> Seed may perform any useful movement or relation Act
+```
+
+The required road begins with an exact assignment Assertion carrying its own
+Evidence, Authority, Scope, limits, occurrence, and Standing. Only that exact
+Standing would permit Seed to read the assigned movement Responsibility.
+
+No such assignment Assertion for generic Assertion Locality movement was
+found in active material.
+
+### Disposition
+
+**Standing is required to read an exact assignment; co-presence cannot mint
+one.**
+
+## 10. Vacancy result
+
+The following coordinates are occupied:
+
+- source Assertion Authority: carried by the source Assertion;
+- source Assertion continuity: exact reference, coordinates, and source
+  Standing boundary;
+- movement shape: `03.Movement.A`;
+- locality relation shape and limits: `06.Locality.A`;
+- destination accumulation target: exact movement results in Locality
+  Standing; and
+- explicit assignment physiology: demonstrated independently by
+  `06.Locality.B/C/D`.
+
+The following coordinates remain unresolved for generic Assertion Locality
+movement:
+
+- the exact assignment Assertion whose subject is that this Seed bears the
+  bounded Responsibility;
+- the Authority under which Seed may bear and perform that exact movement
+  Act;
+- the Evidence supporting that assignment;
+- the exact Scope selecting one source Assertion and one destination
+  Locality; and
+- the occurrence and Standing that establish the assignment.
+
+This is a constitutional vacancy, not a missing decoder or adapter.
+
+## 11. What this report does not establish
+
+This report establishes no new Responsibility, Authority, assignment,
+Applicability, Participation, Act, movement occurrence, locality relation,
+Standing, or result. It does not amend `03.Movement.A` or `06.Locality.A`. It
+does not authorize source Authority, operator Authority, Book Authority from a
+neighboring clause, grammar enumeration, runtime code, or co-presence to fill
+the vacancy.
+
+It does not establish a collective subject from two Assertions in one
+Locality. It does not establish Compare, equality, meaning, or a
+relation-discovery responsibility.
+
+The bounded result is only:
+
+```text
+source Assertion Authority                preserved with source
+movement Authority from source            not warranted
+03.Movement.A                              movement physiology
+06.Locality.A                              locality relation grammar
+06.Locality.B/C/D                          separate exact assignments
+operator purpose                           no Seed movement Authority
+grammar/runtime/test agreement             Fidelity, not Authority
+two movements into one Locality            correct structural target
+Seed movement assignment and Authority     unresolved
+later relation-discovery assignment        separate and unresolved
+```
