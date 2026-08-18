@@ -308,6 +308,7 @@ class RecordedAssertionCarriedByLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
     locality_movement_event_identity: str
+    _source_assertion_coordinates_json: str
 
     @property
     def source_assertion_reference(self) -> dict[str, str]:
@@ -316,12 +317,16 @@ class RecordedAssertionCarriedByLocalityMovement:
             "assertion_identity": self.assertion_identity,
         }
 
+    @property
+    def source_assertion_coordinates(self) -> dict[str, Any]:
+        return json.loads(self._source_assertion_coordinates_json)
+
 
 @dataclass(frozen=True)
 class _RecordedPositionAssertionForLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
-    _authority_json: str
+    _source_assertion_coordinates_json: str
 
     @property
     def assertion_reference(self) -> dict[str, str]:
@@ -331,15 +336,15 @@ class _RecordedPositionAssertionForLocalityMovement:
         }
 
     @property
-    def authority(self) -> Any:
-        return json.loads(self._authority_json)
+    def source_assertion_coordinates(self) -> dict[str, Any]:
+        return json.loads(self._source_assertion_coordinates_json)
 
 
 @dataclass(frozen=True)
 class _RecordedPathComparisonFindingAssertionForLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
-    _authority_json: str
+    _source_assertion_coordinates_json: str
 
     @property
     def assertion_reference(self) -> dict[str, str]:
@@ -349,8 +354,8 @@ class _RecordedPathComparisonFindingAssertionForLocalityMovement:
         }
 
     @property
-    def authority(self) -> Any:
-        return json.loads(self._authority_json)
+    def source_assertion_coordinates(self) -> dict[str, Any]:
+        return json.loads(self._source_assertion_coordinates_json)
 
 
 _AssertionLocalityMovementSource = (
@@ -871,7 +876,18 @@ def _source_assertion_authority(
 ) -> Any:
     if type(source) is RecordedByteAssertion:
         return source.material["dimensions"]["authority"]
-    return source.authority
+    coordinates = source.source_assertion_coordinates
+    if type(source) is _RecordedPositionAssertionForLocalityMovement:
+        return coordinates["dimensions"]["authority"]
+    return coordinates["authority"]
+
+
+def _source_assertion_coordinates(
+    source: _AssertionLocalityMovementSource,
+) -> dict[str, Any]:
+    if type(source) is RecordedByteAssertion:
+        return source.material
+    return source.source_assertion_coordinates
 
 
 def _source_assertion_from_reference(
@@ -902,60 +918,47 @@ def _source_assertion_from_reference(
 
     from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        references_to_recorded_position_coordinates_of_byte_pair_occurrences,
+        _recorded_position_assertion_coordinates_for_locality_movement,
     )
 
     if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
-        source = next(
-            (
-                item
-                for item in references_to_recorded_position_coordinates_of_byte_pair_occurrences(
-                    ledger, source_event.identity
-                )
-                if item.assertion_identity == reference["assertion_identity"]
-            ),
-            None,
-        )
-        if source is not None:
-            assignment_reference = source_event.material.get(
-                "responsibility_assignment_reference"
+        try:
+            coordinates = _recorded_position_assertion_coordinates_for_locality_movement(
+                ledger,
+                result_event_identity=source_event.identity,
+                assertion_identity=reference["assertion_identity"],
             )
-            assignment = (
-                ledger.get(assignment_reference.get("recorded_occurrence_identity"))
-                if type(assignment_reference) is dict
-                else None
-            )
-            if assignment is None or assignment.material.get("authority") is None:
-                raise ByteMeasurementError(
-                    "Assertion movement carries no exact Authority"
-                )
+        except ValueError:
+            pass
+        else:
             return _RecordedPositionAssertionForLocalityMovement(
-                recorded_occurrence_identity=source.recorded_occurrence_identity,
-                assertion_identity=source.assertion_identity,
-                _authority_json=_canonical(assignment.material["authority"]),
+                recorded_occurrence_identity=source_event.identity,
+                assertion_identity=reference["assertion_identity"],
+                _source_assertion_coordinates_json=_canonical(coordinates),
             ), source_event
 
     from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+        _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement,
     )
 
     if (
         source_event.kind
         == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
-        reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
-            ledger, source_event.identity
-        )
-        finding = reading.get("finding")
-        if (
-            type(finding) is dict
-            and finding.get("identity") == reference["assertion_identity"]
-        ):
+        try:
+            coordinates = _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+                ledger,
+                result_event_identity=source_event.identity,
+                assertion_identity=reference["assertion_identity"],
+            )
+        except ValueError:
+            pass
+        else:
             return _RecordedPathComparisonFindingAssertionForLocalityMovement(
                 recorded_occurrence_identity=source_event.identity,
                 assertion_identity=reference["assertion_identity"],
-                _authority_json=_canonical(reading["authority"]),
+                _source_assertion_coordinates_json=_canonical(coordinates),
             ), source_event
     raise ByteMeasurementError("Assertion movement source cannot be read")
 
@@ -1076,6 +1079,7 @@ def _movement_assignment_material(
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "source_assertion_reference": _source_assertion_reference(source),
+        "source_assertion_coordinates": _source_assertion_coordinates(source),
         "source_locality": source_locality,
         "destination_locality": destination_locality,
         "source_standing_boundary_identity": source_standing_boundary_identity,
@@ -1501,6 +1505,9 @@ def _movement_result_material(
         ),
         "source_assertion_reference": assignment.material[
             "source_assertion_reference"
+        ],
+        "source_assertion_coordinates": assignment.material[
+            "source_assertion_coordinates"
         ],
         "assertion_identity": assignment.material["source_assertion_reference"][
             "assertion_identity"
@@ -1978,6 +1985,9 @@ def _assertion_carried_by_locality_movement_result(
         recorded_occurrence_identity=source.recorded_occurrence_identity,
         assertion_identity=source.assertion_identity,
         locality_movement_event_identity=movement.identity,
+        _source_assertion_coordinates_json=_canonical(
+            _source_assertion_coordinates(source)
+        ),
     )
 
 

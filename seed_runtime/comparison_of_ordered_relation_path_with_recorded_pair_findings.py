@@ -1213,6 +1213,26 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
     return deepcopy(event.material)
 
 
+def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+    ledger: EventLedger,
+    *,
+    result_event_identity: str,
+    assertion_identity: str,
+) -> dict[str, Any]:
+    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, result_event_identity
+    )
+    finding = reading.get("finding")
+    if (
+        type(finding) is not dict
+        or finding.get("identity") != assertion_identity
+    ):
+        raise ValueError(
+            "path-comparison finding Locality movement requires exact source coordinates"
+        )
+    return deepcopy(finding)
+
+
 def move_recorded_path_comparison_finding_assertion_to_locality(
     ledger: EventLedger,
     *,

@@ -1543,6 +1543,38 @@ def references_to_recorded_position_coordinates_of_byte_pair_occurrences(
     )
 
 
+def _recorded_position_assertion_coordinates_for_locality_movement(
+    ledger: EventLedger,
+    *,
+    result_event_identity: str,
+    assertion_identity: str,
+) -> dict[str, Any]:
+    event, finding, _assertion_population_read = _read_result(
+        ledger, result_event_identity
+    )
+    for first_position in range(len(finding.exact_material) - 1):
+        second_position = first_position + 1
+        exact_pair = finding.exact_material[first_position : second_position + 1]
+        if (
+            _assertion_identity(
+                finding,
+                exact_pair=exact_pair,
+                first_position=first_position,
+                second_position=second_position,
+            )
+            == assertion_identity
+        ):
+            return _assertion(
+                finding,
+                exact_pair=exact_pair,
+                first_position=first_position,
+                second_position=second_position,
+            )
+    raise ValueError(
+        "position Assertion Locality movement requires exact source coordinates"
+    )
+
+
 def move_recorded_position_assertion_to_locality(
     ledger: EventLedger,
     *,

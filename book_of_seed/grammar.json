@@ -2190,6 +2190,7 @@
             "recorded_occurrence_identity",
             "result_identity",
             "source_assertion_reference",
+            "source_assertion_coordinates",
             "source_standing_boundary_identity",
             "responsibility_assignment_reference",
             "responsible_act_evidence_identity",
@@ -2199,11 +2200,7 @@
               "first_subject": "Evidence",
               "relation": "of",
               "second_subject": "Yield_relation"
-            },
-            "authority",
-            "scope",
-            "limits",
-            "unknown"
+            }
           ]
         }
       },

@@ -584,11 +584,16 @@ def _assertion_locality_movement_occurrence_coordinates(
     assignment = ledger.get(assignment_reference["recorded_occurrence_identity"])
     if assignment is None:
         raise ValueError("Assertion Locality movement Standing is not exact")
+    source_reference = assignment.material["source_assertion_reference"]
+    source_event = ledger.get(source_reference["recorded_occurrence_identity"])
+    if source_event is None:
+        raise ValueError("Assertion Locality movement Standing is not exact")
     return {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
-        "source_assertion_reference": deepcopy(
-            event.material["source_assertion_reference"]
+        "source_assertion_reference": deepcopy(source_reference),
+        "source_assertion_coordinates": deepcopy(
+            assignment.material["source_assertion_coordinates"]
         ),
         "source_standing_boundary_identity": assignment.material[
             "source_standing_boundary_identity"
@@ -603,10 +608,6 @@ def _assertion_locality_movement_occurrence_coordinates(
         "evidence_of_yield_relation_identity": event.material[
             "evidence_of_yield_relation_identity"
         ],
-        "authority": deepcopy(assignment.material["authority"]),
-        "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
-        "unknown": list(assignment.material["unknown"]),
     }
 
 

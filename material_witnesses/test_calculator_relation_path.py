@@ -446,6 +446,13 @@ def test_two_assertion_movements_construct_one_locality_without_a_relation(
         distinction.source_assertion_reference,
         calculator_position.assertion_reference,
     )
+    assert tuple(
+        coordinates["source_assertion_coordinates"]
+        for coordinates in movements.values()
+    ) == (
+        distinction.source_assertion_coordinates,
+        calculator.source_assertion_coordinates,
+    )
     movement_events = tuple(ledger.get(identity) for identity in movements)
     assert tuple(
         (
@@ -466,6 +473,74 @@ def test_two_assertion_movements_construct_one_locality_without_a_relation(
     assert standing["comparison_result_occurrences"] == {}
     assert standing["applicability_result_occurrences"] == {}
     assert standing["recorded_relation_Standing"] == {}
+
+
+def test_position_assertion_coordinates_stay_distinct_from_movement_coordinates(
+    calculator_relation_witness,
+):
+    witness = calculator_relation_witness
+    ledger = witness["ledger"]
+    position = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+        ledger, witness["stdout_result"].identity
+    )[0]
+    carried = move_recorded_position_assertion_to_locality(
+        ledger,
+        source_assertion_reference=position.assertion_reference,
+        destination_locality="calculator-position-coordinate-preservation",
+    )
+    movement = ledger.get(carried.locality_movement_event_identity)
+    assignment = ledger.get(
+        movement.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    producer_assignment = ledger.get(
+        witness["stdout_result"].material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=movement.locality_identity
+    )
+    coordinates = standing["assertion_locality_movement_occurrences"][
+        movement.identity
+    ]
+    source_coordinates = carried.source_assertion_coordinates
+
+    assert source_coordinates["dimensions"]["authority"] == "unestablished"
+    assert (
+        source_coordinates["dimensions"]["identity"]
+        == position.assertion_identity
+    )
+    assert coordinates["source_assertion_coordinates"] == source_coordinates
+    assert assignment.material["authority"] == "unestablished"
+    assert assignment.material["authority"] != producer_assignment.material[
+        "authority"
+    ]
+    assert source_coordinates["assertion_scope"] != assignment.material["scope"]
+    assert coordinates["source_standing_boundary_identity"] == assignment.material[
+        "source_standing_boundary_identity"
+    ]
+    source_result = ledger.get(
+        coordinates["source_assertion_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    assert source_result is witness["stdout_result"]
+    assert tuple(
+        source_result.material[coordinate]
+        for coordinate in (
+            "responsible_act_evidence_identity",
+            "evidence_of_yield_relation_identity",
+        )
+    ) == (
+        witness["stdout_result"].material[
+            "responsible_act_evidence_identity"
+        ],
+        witness["stdout_result"].material[
+            "evidence_of_yield_relation_identity"
+        ],
+    )
 
 
 def _assert_assertion_movement_standing_requires_exact_source(
