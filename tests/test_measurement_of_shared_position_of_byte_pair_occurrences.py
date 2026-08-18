@@ -41,7 +41,9 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
+    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
     SharedPairPositionError,
@@ -1281,9 +1283,10 @@ def test_shared_position_result_survives_sqlite_restart(tmp_path):
     database = tmp_path / "shared-position.sqlite"
     ledger = SQLiteEventLedger(str(database))
     ledger, locality, _source, first, second = _fixture(ledger=ledger)
-    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
+    assignment, _applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
+    assignment_identity = assignment.identity
     result_identity = result.identity
     ledger.close()
 
@@ -1293,6 +1296,9 @@ def test_shared_position_result_survives_sqlite_restart(tmp_path):
     )
 
     assert reading["assertions"][0]["result"] == "ordered_relation_path"
+    assert get_shared_position_responsibility_assignment(
+        reopened, assignment_identity
+    ) == assignment.material
     assert result_identity in _standing(reopened, locality)[
         "measurement_occurrences"
     ]
@@ -1330,6 +1336,173 @@ def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path)
         "measurement_occurrences"
     ]
     reopened.close()
+
+
+def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
+    monkeypatch,
+):
+    ledger, locality, _source, first, second = _fixture()
+    assignment, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    original = operator_standing_module._read_shared_position_assignment
+    calls = []
+
+    def counted(*args, **kwargs):
+        calls.append(args[1])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_read_shared_position_assignment",
+        counted,
+    )
+
+    standing = _standing(ledger, locality)
+
+    assert calls == [assignment.identity]
+    assert result.identity in standing["measurement_occurrences"]
+
+
+@pytest.mark.parametrize(
+    "retained_input",
+    ("assignment", "result", "source", "pair"),
+)
+def test_operator_replay_requires_each_shared_input_occurrence_intact(
+    monkeypatch, retained_input
+):
+    ledger, locality, _source, first, second = _fixture()
+    _record_path(ledger, locality, first, second)
+    original = operator_standing_module._advance_shared_position_replay_reading
+    changed = False
+
+    def change_before_applicability(ledger, reading, event):
+        nonlocal changed
+        if (
+            not changed
+            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
+        ):
+            identities = {
+                "result": first.recorded_occurrence_identity,
+                "source": first.source_ingest_occurrence_identity,
+                "pair": first.pair_measurement_occurrence_identity,
+            }
+            target = (
+                reading.input_occurrences[0]
+                if retained_input == "assignment"
+                else next(
+                    occurrence
+                    for occurrence in reading.input_occurrences
+                    if occurrence.event.identity == identities[retained_input]
+                )
+            )
+            target.event.material["changed_between_shared_replay_phases"] = True
+            changed = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_shared_position_replay_reading",
+        change_before_applicability,
+    )
+
+    with pytest.raises(SharedPairPositionError, match="intact"):
+        _standing(ledger, locality)
+    assert changed is True
+
+
+@pytest.mark.parametrize(
+    ("phase_kind", "retained_phase"),
+    (
+        (
+            SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+            "applicability_act_occurrence",
+        ),
+        (
+            SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+            "applicability_result_occurrence",
+        ),
+        (
+            SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+            "measurement_act_occurrence",
+        ),
+    ),
+)
+def test_operator_replay_requires_each_shared_phase_occurrence_intact(
+    monkeypatch, phase_kind, retained_phase
+):
+    ledger, locality, _source, first, second = _fixture()
+    _record_path(ledger, locality, first, second)
+    original = operator_standing_module._advance_shared_position_replay_reading
+    changed = False
+
+    def change_before_next_phase(ledger, reading, event):
+        nonlocal changed
+        if not changed and event.kind == phase_kind:
+            occurrence = getattr(reading, retained_phase)
+            occurrence.event.material["changed_between_shared_replay_phases"] = True
+            changed = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_shared_position_replay_reading",
+        change_before_next_phase,
+    )
+
+    with pytest.raises(SharedPairPositionError, match="intact"):
+        _standing(ledger, locality)
+    assert changed is True
+
+
+def test_operator_replay_refuses_a_substituted_shared_assignment(monkeypatch):
+    ledger, locality, _source, first, second = _fixture()
+    _record_path(ledger, locality, first, second)
+    original = operator_standing_module._advance_shared_position_replay_reading
+    substituted = False
+
+    def substitute_before_applicability(ledger, reading, event):
+        nonlocal substituted
+        if not substituted:
+            assignment, inputs = reading.assignment_reading
+            reading.assignment_reading = (deepcopy(assignment), inputs)
+            substituted = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_shared_position_replay_reading",
+        substitute_before_applicability,
+    )
+
+    with pytest.raises(SharedPairPositionError, match="substituted"):
+        _standing(ledger, locality)
+
+
+def test_operator_shared_replay_starts_fresh_after_exception(monkeypatch):
+    ledger, locality, _source, first, second = _fixture()
+    _assignment, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    original = operator_standing_module._advance_shared_position_replay_reading
+    interrupted = False
+
+    def interrupt_once(ledger, reading, event):
+        nonlocal interrupted
+        if not interrupted:
+            interrupted = True
+            raise RuntimeError("interrupt shared replay")
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_shared_position_replay_reading",
+        interrupt_once,
+    )
+
+    with pytest.raises(RuntimeError, match="interrupt shared replay"):
+        _standing(ledger, locality)
+    assert result.identity in _standing(ledger, locality)["measurement_occurrences"]
 
 
 def test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers(
@@ -1435,6 +1608,11 @@ FIDELITY_SUBJECTS = {
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
+        test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle,
+        test_operator_replay_requires_each_shared_input_occurrence_intact,
+        test_operator_replay_requires_each_shared_phase_occurrence_intact,
+        test_operator_replay_refuses_a_substituted_shared_assignment,
+        test_operator_shared_replay_starts_fresh_after_exception,
         test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
         test_carried_standing_matches_replay_for_the_whole_new_elevator,
     ),

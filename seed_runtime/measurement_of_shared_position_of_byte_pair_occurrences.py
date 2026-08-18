@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any, NamedTuple
 
 from seed_runtime.event import Event
@@ -120,6 +121,24 @@ class SharedPairPositionInputs(NamedTuple):
         if not self.carries_one_position_coordinate_reference:
             return None
         return self.first_relation_second_position_coordinate_reference
+
+
+@dataclass(frozen=True)
+class _SharedPositionReplayOccurrence:
+    event: Event
+    material: dict[str, Any]
+    exact_material: bytes | None
+    locality_identity: str | None
+
+
+@dataclass
+class _SharedPositionReplayReading:
+    assignment_reading: tuple[Event, SharedPairPositionInputs]
+    input_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    applicability_act_occurrence: _SharedPositionReplayOccurrence | None = None
+    applicability_result_occurrence: _SharedPositionReplayOccurrence | None = None
+    measurement_act_occurrence: _SharedPositionReplayOccurrence | None = None
+    measurement_result_occurrence: _SharedPositionReplayOccurrence | None = None
 
 
 def _position_coordinate_reference(
@@ -1859,6 +1878,242 @@ def _read_measurement_result(
         result_kind=MEASUREMENT_RESULT_KIND,
     )
     return event, carried
+
+
+def _shared_position_replay_occurrence(
+    ledger: EventLedger,
+    event: Event,
+    *,
+    expected_material: dict[str, Any] | None = None,
+) -> _SharedPositionReplayOccurrence:
+    material = (
+        deepcopy(event.material)
+        if expected_material is None
+        else expected_material
+    )
+    recorded = ledger.get(event.identity) if type(event) is Event else None
+    if (
+        recorded is None
+        or recorded != event
+        or recorded.material != material
+        or recorded.exact_material != event.exact_material
+        or recorded.locality_identity != event.locality_identity
+        or type(event.locality_identity) is not str
+        or not event.locality_identity
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay input occurrence is absent or corrupted"
+        )
+    return _SharedPositionReplayOccurrence(
+        event=event,
+        material=material,
+        exact_material=event.exact_material,
+        locality_identity=event.locality_identity,
+    )
+
+
+def _require_shared_position_replay_occurrence(
+    ledger: EventLedger,
+    occurrence: _SharedPositionReplayOccurrence,
+) -> None:
+    recorded = ledger.get(occurrence.event.identity)
+    if (
+        recorded is None
+        or recorded != occurrence.event
+        or recorded.material != occurrence.material
+        or recorded.exact_material != occurrence.exact_material
+        or recorded.locality_identity != occurrence.locality_identity
+        or ledger.integrity_of(occurrence.event.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay requires an intact input occurrence"
+        )
+
+
+def _shared_position_replay_input_occurrences(
+    ledger: EventLedger,
+    assignment: Event,
+    inputs: SharedPairPositionInputs,
+) -> tuple[_SharedPositionReplayOccurrence, ...]:
+    """Retain the exact occurrences directly carried by both input readings."""
+
+    identities: list[str] = []
+    for reference in inputs:
+        identities.extend(
+            (
+                reference.recorded_occurrence_identity,
+                reference.source_ingest_occurrence_identity,
+            )
+        )
+        pair_result_identity = getattr(
+            reference, "pair_measurement_occurrence_identity", None
+        )
+        if type(pair_result_identity) is str and pair_result_identity:
+            identities.append(pair_result_identity)
+
+    occurrences = [
+        _shared_position_replay_occurrence(
+            ledger,
+            assignment,
+            expected_material=deepcopy(assignment.material),
+        )
+    ]
+    for event_identity in dict.fromkeys(identities):
+        event = ledger.get(event_identity)
+        if event is None:
+            raise SharedPairPositionError(
+                "shared-position replay input occurrence is absent"
+            )
+        occurrences.append(_shared_position_replay_occurrence(ledger, event))
+    return tuple(occurrences)
+
+
+def _shared_position_replay_reading(
+    ledger: EventLedger,
+    assignment_reading: tuple[Event, SharedPairPositionInputs],
+) -> _SharedPositionReplayReading:
+    assignment, inputs = assignment_reading
+    if type(assignment) is not Event or type(inputs) is not SharedPairPositionInputs:
+        raise SharedPairPositionError(
+            "shared-position replay requires one exact assignment reading"
+        )
+    reading = _SharedPositionReplayReading(
+        assignment_reading=assignment_reading,
+        input_occurrences=_shared_position_replay_input_occurrences(
+            ledger, assignment, inputs
+        ),
+    )
+    _require_exact_shared_position_replay_reading(ledger, reading)
+    return reading
+
+
+def _require_exact_shared_position_replay_reading(
+    ledger: EventLedger,
+    reading: _SharedPositionReplayReading,
+) -> None:
+    assignment, inputs = reading.assignment_reading
+    if (
+        type(assignment) is not Event
+        or type(inputs) is not SharedPairPositionInputs
+        or not reading.input_occurrences
+        or reading.input_occurrences[0].event is not assignment
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay assignment reading was substituted"
+        )
+    for occurrence in (
+        *reading.input_occurrences,
+        reading.applicability_act_occurrence,
+        reading.applicability_result_occurrence,
+        reading.measurement_act_occurrence,
+        reading.measurement_result_occurrence,
+    ):
+        if occurrence is not None:
+            _require_shared_position_replay_occurrence(ledger, occurrence)
+    _validated_inputs(inputs.first, inputs.second)
+
+
+def _advance_shared_position_replay_reading(
+    ledger: EventLedger,
+    reading: _SharedPositionReplayReading,
+    event: Event,
+) -> _SharedPositionReplayReading:
+    """Validate one later shared-position phase from one exact replay reading."""
+
+    _require_exact_shared_position_replay_reading(ledger, reading)
+    assignment, _inputs_reading = reading.assignment_reading
+    if event.locality_identity != assignment.locality_identity:
+        raise SharedPairPositionError(
+            "shared-position replay phase entered another Locality"
+        )
+    occurrence = _shared_position_replay_occurrence(
+        ledger,
+        event,
+        expected_material=deepcopy(event.material),
+    )
+    if event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND:
+        if reading.applicability_act_occurrence is not None:
+            raise SharedPairPositionError(
+                "shared-position replay duplicated Applicability Act"
+            )
+        _read_applicability_act(
+            ledger,
+            event.identity,
+            assignment_reading=reading.assignment_reading,
+        )
+        reading.applicability_act_occurrence = occurrence
+    elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
+        if (
+            reading.applicability_act_occurrence is None
+            or reading.applicability_result_occurrence is not None
+        ):
+            raise SharedPairPositionError(
+                "shared-position replay has no exact Applicability Act"
+            )
+        _read_applicability_result(
+            ledger,
+            event.identity,
+            assignment_reading=reading.assignment_reading,
+        )
+        reading.applicability_result_occurrence = occurrence
+    elif event.kind == SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND:
+        if (
+            reading.applicability_result_occurrence is None
+            or reading.measurement_act_occurrence is not None
+        ):
+            raise SharedPairPositionError(
+                "shared-position replay has no exact Applicability result"
+            )
+        _read_measurement_act(
+            ledger,
+            event.identity,
+            assignment_reading=reading.assignment_reading,
+        )
+        reading.measurement_act_occurrence = occurrence
+    elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
+        if (
+            reading.measurement_act_occurrence is None
+            or reading.measurement_result_occurrence is not None
+        ):
+            raise SharedPairPositionError(
+                "shared-position replay has no exact Measurement Act"
+            )
+        _read_measurement_result(
+            ledger,
+            event.identity,
+            assignment_reading=reading.assignment_reading,
+        )
+        reading.measurement_result_occurrence = occurrence
+    else:
+        raise SharedPairPositionError(
+            "shared-position replay phase is not exact"
+        )
+    ordered = tuple(
+        occurrence.event.identity
+        for occurrence in (
+            reading.input_occurrences[0],
+            reading.applicability_act_occurrence,
+            reading.applicability_result_occurrence,
+            reading.measurement_act_occurrence,
+            reading.measurement_result_occurrence,
+        )
+        if occurrence is not None
+    )
+    try:
+        resolved = ledger.occurrences_in_append_order(
+            ordered,
+            locality_identity=assignment.locality_identity,
+        )
+    except ValueError as error:
+        raise SharedPairPositionError(
+            "shared-position replay phase order is false"
+        ) from error
+    if tuple(item.identity for item in resolved) != ordered:
+        raise SharedPairPositionError(
+            "shared-position replay phase order is false"
+        )
+    return reading
 
 
 def get_recorded_shared_position_measurement(
