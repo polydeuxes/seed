@@ -1642,7 +1642,7 @@ def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represe
     ],
     ...,
 ]:
-    """Read both exact source Assertions beside every unresolved relation."""
+    """Read exact sources beside each unresolved represented_relation coordinate."""
 
     return tuple(
         (

@@ -491,7 +491,7 @@ def test_every_ordered_pair_candidate_exposes_every_nested_representation_path()
     assert ledger.append_boundary() == boundary_before_read
 
 
-def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_relation():
+def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
     result = record_complete_ordered_pair_candidate_standing(
@@ -499,9 +499,11 @@ def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pa
         recording_locality_identity="ordered-pair-candidates",
         source_append_boundary=ledger.append_boundary(),
     )
-    separate_paths = exact_representation_paths_from_every_ordered_pair_candidate(
-        ledger,
-        candidate_standing_result_event_identity=result.identity,
+    paths_by_candidate_source_role = (
+        exact_representation_paths_from_every_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
     )
     boundary_before_read = ledger.append_boundary()
 
@@ -511,7 +513,8 @@ def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pa
     )
 
     assert tuple(candidate for candidate, _relation, _pairs in paired_paths) == tuple(
-        candidate for candidate, _first, _second in separate_paths
+        candidate
+        for candidate, _first, _second in paths_by_candidate_source_role
     )
     for (
         _candidate,
@@ -521,7 +524,7 @@ def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pa
         _same_candidate,
         relation,
         pairs,
-    ) in zip(separate_paths, paired_paths):
+    ) in zip(paths_by_candidate_source_role, paired_paths):
         assert len(pairs) == len(first_paths) * len(second_paths)
         assert pairs == tuple(
             (first, second)
@@ -538,7 +541,7 @@ def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pa
     assert ledger.append_boundary() == boundary_before_read
 
 
-def test_every_cross_role_representation_path_pair_beside_unresolved_relation_replays_after_sqlite_restart(
+def test_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate_replays_after_sqlite_restart(
     tmp_path,
 ):
     database = str(tmp_path / "candidate-representation-path-pairs.sqlite")
@@ -1076,8 +1079,8 @@ FIDELITY_SUBJECTS = {
     ),
     "candidate_source_representation_path_order": (
         test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
-        test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_relation,
-        test_every_cross_role_representation_path_pair_beside_unresolved_relation_replays_after_sqlite_restart,
+        test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate,
+        test_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate_replays_after_sqlite_restart,
     ),
     "one_source_candidate_standing_responsibility_coordinates": (
         test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
