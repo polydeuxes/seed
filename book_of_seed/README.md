@@ -96,11 +96,11 @@ Support-relation Standing establishes no supported Assertion Standing, Applicabi
 
 ### Act-occurrence and non-occurrence branches
 
-These branches apply where the exact act occurs, including a failed act occurrence; or where a separate responsible occurrence establishes that the proposed act did not occur.
+These branches apply where the exact act occurs, including an act occurrence with failure; or where a separate responsible occurrence establishes that the proposed act did not occur.
 
 #### Act occurrence
 
-Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. A later responsibility finding that the proposed act did not occur establishes no act occurrence.
+Identifies the responsible occurrence at which the exact act happens. An act occurrence with failure remains an act occurrence. A later responsibility finding that the proposed act did not occur establishes no act occurrence.
 
 ```text
 act
@@ -124,7 +124,7 @@ absence finding
 
 #### Occurrence or non-occurrence evidence
 
-Identifies the evidence supporting the exact act-occurrence Assertion, failed-act-occurrence Assertion, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
+Identifies the evidence supporting the exact act-occurrence Assertion, act-occurrence-with-failure Assertion, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
 
 ### Result branches
 
@@ -132,7 +132,7 @@ These branches apply where the exact Act occurrence establishes or preserves a r
 
 #### Occurrence-result Evidence
 
-Identifies the Evidence that the exact Act occurrence established or preserved the exact result. Result existence and equal shape do not establish that relation.
+Identifies the Evidence that the exact Act occurrence established or preserved the exact result. Result existence and the same shape do not establish that relation.
 
 ```text
 same-shaped result
@@ -242,7 +242,7 @@ same occurrence != same Assertion
 > Maintain the constitutional grammar.  
 > This Seed may inspect this Witness. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
 
-Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new diagnostic Representation of the same grammar do not require revision.
+Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new Representation of the same grammar do not require revision.
 
 ## Chapters
 

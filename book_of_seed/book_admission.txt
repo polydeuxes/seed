@@ -42,7 +42,6 @@ assignment
 at
 attaching
 attempt
-audit
 authority
 authorization
 availability
@@ -68,13 +67,10 @@ carried
 carries
 carry
 carrying
-cases
 category
-certification
 characterization
 citing
 clause
-clauses
 code
 collection
 collective
@@ -106,7 +102,6 @@ copy
 copying
 correction
 corroboration
-corrupted
 count
 counted
 counting
@@ -115,7 +110,6 @@ create
 cross
 crossings
 current
-currentness
 d
 decision
 declarations
@@ -126,14 +120,12 @@ determination
 determine
 determines
 deterministic
-diagnostic
 difference
 different
 dimensional
 dimensions
 direct
 discarding
-discriminators
 displayed
 distinct
 distinction
@@ -146,17 +138,11 @@ each
 earlier
 effects
 eight
-elimination
 emission
 enclosure
-emit
 emitted
-endpoint
 enforceability
 entry
-equal
-equality
-equivalence
 erase
 erasure
 error
@@ -178,7 +164,6 @@ exists
 export
 f
 failure
-false
 families
 family
 fidelity
@@ -229,7 +214,6 @@ ledger
 legal
 limit
 limits
-live
 local
 localities
 locality
@@ -273,7 +257,6 @@ ordered
 other
 otherwise
 output
-override
 own
 packets
 pair
@@ -352,7 +335,6 @@ revision
 role
 roles
 root
-rosetta
 route
 rule
 run
@@ -373,7 +355,6 @@ single
 source
 stand
 standing
-standings
 stop
 stronger
 subject
@@ -396,14 +377,12 @@ timestamp
 to
 transition
 treatment
-true
 truth
 type
 uncertainty
 under
 unestablished
 unknown
-unrelated
 unresolved
 unsupported
 until
@@ -424,11 +403,9 @@ within
 without
 witness
 witnesses
-word
 words
 would
 write
-wrong
 x
 y
 yield

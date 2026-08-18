@@ -107,8 +107,8 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
     assert _ingested_materials(ledger, destination_standing) == [
         b"destination material\n"
     ]
-    assert point["standing"]["recorded_relation_standings"] == {}
-    assert destination_standing["recorded_relation_standings"] == {
+    assert point["standing"]["recorded_relation_Standing"] == {}
+    assert destination_standing["recorded_relation_Standing"] == {
         continuation.identity: None
     }
 

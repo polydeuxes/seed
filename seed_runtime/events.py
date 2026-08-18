@@ -40,7 +40,7 @@ class EventLedgerBoundary:
     """The exact identity of one append prefix.
 
     Callers may retain and return the value, but only an EventLedger reads
-    it. Equal ordered prefixes yield equal boundaries; a boundary does not
+    it. The same ordered prefix yields the same boundary; a boundary does not
     carry an append position.
     """
 
@@ -558,11 +558,11 @@ class SQLiteEventLedger(EventLedger):
         "occurrence_position_measurement_assignment_subject",
         "occurrence_position_measurement_occurrence",
         "occurrence_position_measurement_result",
-        "byte_pair_position_difference_one_assignment",
-        "byte_pair_position_difference_one_assignment_subject",
-        "byte_pair_position_difference_one_measurement_act",
-        "byte_pair_position_difference_one_measurement_act_occurrence",
-        "byte_pair_position_difference_one_measurement_result",
+        "byte_pair_occurrence_position_assignment",
+        "byte_pair_occurrence_position_assignment_subject",
+        "byte_pair_occurrence_position_measurement_act",
+        "byte_pair_occurrence_position_measurement_act_occurrence",
+        "byte_pair_occurrence_position_measurement_result",
         "act_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "result_of_measurement_of_recurrent_byte_pair_occurrence_position",

@@ -165,13 +165,13 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
-    record_position_difference_one_measurement_responsibility_assignment,
-    record_position_difference_one_measurement_act_evidence,
-    record_position_difference_one_measurement_result,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    record_byte_pair_occurrence_position_measurement_act_evidence,
+    record_byte_pair_occurrence_position_measurement_result,
 )
 from seed_runtime.evidence_of_yield_relation import (
-    LIVE_BOUNDARIES_OF_YIELD_RELATION,
+    OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION,
     read_requirements_of_evidence_carried_by_result_occurrence,
     read_requirements_of_yield_relation,
 )
@@ -261,7 +261,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
         "material_order": "preserved",
-        "equal_material_in_different_order_establishes_same_composite": False,
+        "same_material_in_different_order_identifies_one_composite": False,
         "requires": ["exact_material", "exact_order", "exact_path"],
         "relations": {
             "of": {
@@ -273,7 +273,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
                     "second_subject",
                     "exact_order",
                 ],
-                "equal_subjects_in_different_order_establish_same_relation": (
+                "same_subjects_in_different_order_establish_one_relation": (
                     False
                 ),
             }
@@ -945,9 +945,9 @@ def _occurrence_position_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _byte_pair_position_difference_one_yield_witness() -> dict:
+def _byte_pair_occurrence_position_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
-    locality = "byte-pair-position-difference-one"
+    locality = "byte-pair-occurrence-position"
     source = ingest_material(
         ledger,
         locality_identity=locality,
@@ -955,21 +955,21 @@ def _byte_pair_position_difference_one_yield_witness() -> dict:
         source_role="exact material",
         source_boundary="exact material boundary",
     )
-    assignment = record_position_difference_one_measurement_responsibility_assignment(
+    assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
         source_ingest_occurrence_identity=source.identity,
         locality_standing=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )
-    act = record_position_difference_one_measurement_act_evidence(
+    act = record_byte_pair_occurrence_position_measurement_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )
-    event = record_position_difference_one_measurement_result(
+    event = record_byte_pair_occurrence_position_measurement_result(
         ledger,
         responsible_act_evidence_event_identity=act.identity,
     )
@@ -1397,7 +1397,35 @@ def _material_ingest_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
+def _byte_measurement_result_has_exact_standing(ledger, event) -> bool:
+    if (
+        event is None
+        or event.kind != BYTE_MEASUREMENT_RECORDED_KIND
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        return False
+    try:
+        assertions_of_recorded_byte_measurement(ledger, event.identity)
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=event.locality_identity
+        )
+    except (TypeError, ValueError):
+        return False
+    return standing.get("measurement_occurrences", {}).get(event.identity) == {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material.get("result_identity"),
+        "act_occurrence_identity": event.material.get("act_occurrence_identity"),
+        "responsible_act_evidence_identity": event.material.get(
+            "responsible_act_evidence_identity"
+        ),
+        "evidence_of_yield_relation_identity": event.material.get(
+            "evidence_of_yield_relation_identity"
+        ),
+    }
+
+
 def _assertion_witness(bundle: dict) -> dict[str, str]:
+    ledger = bundle["ledger"]
     assertion = bundle["source_assertion"]
     event = bundle["event"]
     evidence_of_yield_relation = bundle["evidence_of_yield_relation"]
@@ -1435,7 +1463,12 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         "conflicts": UNKNOWN if material.get("conflicts") == "Unknown" else MISSING,
         "limits": EXACT if material.get("limits") else MISSING,
         "Unknown": EXACT if material.get("unknown") else MISSING,
-        "Standing": EXACT if dimensions.get("standing") else MISSING,
+        "Standing": (
+            EXACT
+            if evidence_relation
+            and _byte_measurement_result_has_exact_standing(ledger, event)
+            else MISSING
+        ),
     }
 
 
@@ -1495,9 +1528,9 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
             == "not established by Applicability"
             else MISSING
         ),
-        "currentness": (
+        "current_Standing": (
             INAPPLICABLE
-            if treatment.get("currentness", {}).get("treatment")
+            if treatment.get("current_Standing", {}).get("treatment")
             == "not required for this historical bounded source material"
             else MISSING
         ),
@@ -2168,8 +2201,8 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         ),
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
-        "byte_pair_position_coordinate_difference_one_measurement": (
-            _byte_pair_position_difference_one_yield_witness
+        "byte_pair_occurrence_position_measurement": (
+            _byte_pair_occurrence_position_yield_witness
         ),
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
         "shared_pair_position_applicability": (
@@ -2445,7 +2478,7 @@ def _relation_witness_specs() -> dict[str, dict]:
             "from": "Act_occurrence",
             "to": "result",
             "preserves": ["Act_occurrence_identity", "result_identity"],
-            "equal_result_content_establishes_identity": False,
+            "same_result_content_identifies_one_result": False,
             "requires": requirements,
         },
         "carried_by": {
@@ -3132,8 +3165,8 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         "Standing": (
             EXACT
             if exact_preserved
-            and isinstance(source_dimensions.get("standing"), str)
-            and source_dimensions["standing"]
+            and exact_source
+            and _byte_measurement_result_has_exact_standing(ledger, source_event)
             else MISSING
         ),
     }
@@ -3421,10 +3454,10 @@ def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_ma
     assert ("locality", "emission_attempt") in registered
     assert {
         boundary for relation, boundary in registered if relation == "yield"
-    } == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
+    } == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
 
 
-def test_every_evidence_of_yield_relation_site_declares_its_live_boundary():
+def test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary():
     declared: list[str] = []
     for path in sorted(RUNTIME.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -3436,11 +3469,11 @@ def test_every_evidence_of_yield_relation_site_declares_its_live_boundary():
             if node.func.id != "_record_evidence_of_yield_relation":
                 continue
             boundary = next(
-                (keyword.value for keyword in node.keywords if keyword.arg == "live_boundary"),
+                (keyword.value for keyword in node.keywords if keyword.arg == "occurrence_boundary"),
                 None,
             )
             assert isinstance(boundary, ast.Constant), (
-                f"{path.name}:{node.lineno} must declare one literal live_boundary"
+                f"{path.name}:{node.lineno} must declare one literal occurrence_boundary"
             )
             assert isinstance(boundary.value, str) and boundary.value
             responsible_act_evidence = next(
@@ -3457,7 +3490,7 @@ def test_every_evidence_of_yield_relation_site_declares_its_live_boundary():
             declared.append(boundary.value)
 
     assert len(declared) == len(set(declared))
-    assert set(declared) == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
+    assert set(declared) == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
 
 
 def test_byte_pair_yield_adversaries_change_one_requirement_each():
@@ -4002,7 +4035,7 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
         "provenance": EXACT,
         "Standing": EXACT,
         "support_relation_Standing": INAPPLICABLE,
-        "currentness": INAPPLICABLE,
+        "current_Standing": INAPPLICABLE,
         "occurrence_identity": EXACT,
         "known_loss": UNKNOWN,
         "conflicts": EXACT,
@@ -4434,7 +4467,7 @@ def _live_yield_exact_bundles() -> dict[str, dict]:
             for boundary, cases in _remaining_yield_requirement_bundles().items()
         }
     )
-    assert set(bundles) == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
+    assert set(bundles) == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
     return bundles
 
 
@@ -4630,8 +4663,8 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "successful_emission": _emission_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
-        "byte_pair_position_coordinate_difference_one_measurement": (
-            _byte_pair_position_difference_one_yield_witness
+        "byte_pair_occurrence_position_measurement": (
+            _byte_pair_occurrence_position_yield_witness
         ),
             "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
             "shared_pair_position_applicability": (
@@ -4678,7 +4711,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         {"event": second_pair["pair_event"]},
     )
 
-    assert set(pairs) == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
+    assert set(pairs) == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
     for boundary, (first, second) in pairs.items():
         occurrence_coordinate = (
             "applicability_act_occurrence_identity"
@@ -5363,11 +5396,11 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
     } & set(material)
 
 
-def test_position_coordinate_difference_one_measurement_is_structured_in_grammar():
+def test_byte_pair_occurrence_position_measurement_is_structured_in_grammar():
     declared = _clause("01.Source.D")["declared_measurements"][
-        "measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one"
+        "measurement_of_position_coordinates_of_byte_pair_occurrences"
     ]
-    bundle = _byte_pair_position_difference_one_yield_witness()
+    bundle = _byte_pair_occurrence_position_yield_witness()
     material = bundle["event"].material
     act_material = bundle["act_evidence"].material
 
@@ -5388,7 +5421,7 @@ def test_position_coordinate_difference_one_measurement_is_structured_in_grammar
     assert material[declared["witness"]["input_reference"]] == (
         act_material["participation"]["subject_reference"]
     )
-    assert declared["witness"]["input_applicability"] == {
+    assert declared["witness"]["input_relation"] == {
         "first_subject": "exact_Ingest_result",
         "relation": "input_to",
         "second_subject": "exact_Act",
@@ -5396,7 +5429,13 @@ def test_position_coordinate_difference_one_measurement_is_structured_in_grammar
     assert material["assertions"]["dimensions"]["content"] == {
         "exact_pair": "material at first_position through second_position",
         "first_position": "position",
-        "second_position": "difference from first_position is one",
+        "second_position": "position of the second byte occurrence",
+        "first_position_coordinate_reference": (
+            "exact source-byte position-coordinate reference"
+        ),
+        "second_position_coordinate_reference": (
+            "exact source-byte position-coordinate reference"
+        ),
     }
     assert material["assertions"]["occurrences"] == 2
 
@@ -5970,7 +6009,7 @@ FIDELITY_SUBJECTS = {
         test_position_result_act_and_assertion_responsibilities_do_not_absorb_each_other,
     ),
     "evidence_of_yield_relation_boundary": (
-        test_every_evidence_of_yield_relation_site_declares_its_live_boundary,
+        test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary,
     ),
     "yield_relation_required_coordinates": (
         test_byte_pair_yield_adversaries_change_one_requirement_each,
@@ -5991,7 +6030,7 @@ FIDELITY_SUBJECTS = {
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
         test_shared_position_measurement_decomposes_material_non_establishment,
-        test_position_coordinate_difference_one_measurement_is_structured_in_grammar,
+        test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,
     ),
     "it_result_relation": (
         test_measurement_result_pronoun_reference_does_not_compress_the_relation,

@@ -81,7 +81,7 @@ def test_the_disagreement_is_a_minority_and_is_exact():
 
 FIDELITY_SUBJECTS = {
     "read_refusal_boundary": (test_bytes_the_decoder_refuses_are_not_asked_about,),
-    "read_write_exact_material_equality": (
+    "read_write_exact_material_identity_distinction": (
         test_named_decoders_write_back_what_they_read,
     ),
     "read_material_multiplicity": (test_several_byte_sequences_may_read_as_one_thing,),

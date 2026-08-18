@@ -29,8 +29,8 @@ OCCURRENCE_POSITION_RESPONSIBILITY = (
     "establish each occurrence position within one exact Locality and boundary"
 )
 OCCURRENCE_POSITION_MEASUREMENT_RULE = (
-    "each exact occurrence in one exact Locality; position equal to its order "
-    "through one completeness boundary"
+    "preserve each exact occurrence in one exact Locality with its source-order "
+    "position coordinate through one completeness boundary"
 )
 OCCURRENCE_POSITION_AUTHORITY = "bounded repository authority"
 MEASURED_ASSERTION_RESPONSIBILITY = (
@@ -273,7 +273,6 @@ def _position_assertions(
                         content=content,
                     ),
                     "content": content,
-                    "standing": "measured",
                     "source_provenance": (
                         "complete exact Locality through one boundary"
                     ),
@@ -416,23 +415,92 @@ def _require_current_locality_standing(
     return boundary
 
 
-def record_occurrence_position_measurement_responsibility_assignment(
+def _require_carried_locality_standing_at_tip(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    locality_standing: dict[str, Any],
+    required_assignment_identity: str | None = None,
+) -> str | None:
+    """Validate same-call carried Standing without replaying its Locality."""
+
+    if type(locality_standing) is not dict:
+        raise ValueError(
+            "occurrence position Measurement requires exact current Locality Standing"
+        )
+    boundary = locality_standing.get("through_event_occurrence_identity")
+    carried = locality_standing.get("responsibility_assignment_occurrences")
+    if (
+        locality_standing.get("locality_identity") != locality_identity
+        or boundary is None
+        or type(boundary) is not str
+        or not boundary
+        or (
+            required_assignment_identity is not None
+            and (
+                type(carried) is not dict
+                or carried.get(required_assignment_identity, object()) is not None
+            )
+        )
+    ):
+        raise ValueError(
+            "occurrence position Measurement requires exact current Locality Standing"
+        )
+    event = ledger.get(boundary)
+    if (
+        event is None
+        or event.locality_identity != locality_identity
+        or ledger.integrity_of(boundary) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary)
+        != ledger.append_boundary()
+    ):
+        raise ValueError(
+            "occurrence position Measurement requires exact current Locality Standing"
+        )
+    return boundary
+
+
+def _record_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
     recording_locality_identity: str,
     finding: OccurrencePositionFinding,
     locality_standing: dict[str, Any],
+    carried: bool,
 ) -> Event:
-    """Record one exact Book-backed Responsibility assignment occurrence."""
-
     if type(recording_locality_identity) is not str or not recording_locality_identity:
         raise ValueError("occurrence position recording requires one exact Locality")
-    _exact_occurrence_position_finding(ledger, finding)
-    standing_boundary_identity = _require_current_locality_standing(
+    if carried:
+        if (
+            type(finding) is not OccurrencePositionFinding
+            or finding.source_locality_identity != recording_locality_identity
+            or finding.completeness_boundary != ledger.append_boundary()
+        ):
+            raise ValueError(
+                "occurrence position Measurement requires exact current Locality Standing"
+            )
+    else:
+        _exact_occurrence_position_finding(ledger, finding)
+    require_standing = (
+        _require_carried_locality_standing_at_tip
+        if carried
+        else _require_current_locality_standing
+    )
+    standing_boundary_identity = require_standing(
         ledger,
         locality_identity=recording_locality_identity,
         locality_standing=locality_standing,
     )
+    if (
+        carried
+        and (
+            not finding.occurrences
+            or finding.occurrences[-1][0] != standing_boundary_identity
+        )
+    ):
+        raise ValueError(
+            "occurrence position Measurement requires exact current Locality Standing"
+        )
     identities = {
         "assignment_identity": new_identity(
             "occurrence_position_measurement_assignment"
@@ -460,6 +528,42 @@ def record_occurrence_position_measurement_responsibility_assignment(
             **identities,
         ),
         locality_identity=recording_locality_identity,
+    )
+
+
+def record_occurrence_position_measurement_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    recording_locality_identity: str,
+    finding: OccurrencePositionFinding,
+    locality_standing: dict[str, Any],
+) -> Event:
+    """Record one exact Book-backed Responsibility assignment occurrence."""
+
+    return _record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity=recording_locality_identity,
+        finding=finding,
+        locality_standing=locality_standing,
+        carried=False,
+    )
+
+
+def _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    recording_locality_identity: str,
+    finding: OccurrencePositionFinding,
+    locality_standing: dict[str, Any],
+) -> Event:
+    """Assign a finding produced beside the exact carried Standing at the tip."""
+
+    return _record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity=recording_locality_identity,
+        finding=finding,
+        locality_standing=locality_standing,
+        carried=True,
     )
 
 
@@ -572,20 +676,24 @@ def get_occurrence_position_measurement_responsibility_assignment(
     return assignment
 
 
-def record_occurrence_position_measurement_responsible_act_evidence(
+def _record_occurrence_position_measurement_responsible_act_evidence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
+    carried: bool,
 ) -> Event:
-    """Record the responsible Act Evidence before its Yield and result."""
-
     assignment, finding = (
         _read_occurrence_position_measurement_responsibility_assignment(
             ledger, responsibility_assignment_event_identity
         )
     )
-    _require_current_locality_standing(
+    require_standing = (
+        _require_carried_locality_standing_at_tip
+        if carried
+        else _require_current_locality_standing
+    )
+    require_standing(
         ledger,
         locality_identity=assignment.locality_identity,
         locality_standing=responsibility_assignment_standing,
@@ -616,6 +724,123 @@ def record_occurrence_position_measurement_responsible_act_evidence(
             participation=participation,
         ),
         locality_identity=assignment.locality_identity,
+    )
+
+
+def record_occurrence_position_measurement_responsible_act_evidence(
+    ledger: EventLedger,
+    *,
+    responsibility_assignment_event_identity: str,
+    responsibility_assignment_standing: dict[str, Any],
+) -> Event:
+    """Record the responsible Act Evidence before its Yield and result."""
+
+    return _record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=(
+            responsibility_assignment_event_identity
+        ),
+        responsibility_assignment_standing=responsibility_assignment_standing,
+        carried=False,
+    )
+
+
+def _require_carried_occurrence_position_assignment(
+    ledger: EventLedger,
+    *,
+    responsibility_assignment: Event,
+    finding: OccurrencePositionFinding,
+) -> None:
+    if (
+        type(responsibility_assignment) is not Event
+        or type(finding) is not OccurrencePositionFinding
+        or responsibility_assignment.kind
+        != OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        or responsibility_assignment.exact_material is not None
+        or responsibility_assignment.locality_identity
+        != finding.source_locality_identity
+        or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED
+    ):
+        raise ValueError(
+            "occurrence position Measurement requires its exact carried assignment"
+        )
+    material = responsibility_assignment.material
+    identity_coordinates = {
+        coordinate: material.get(coordinate)
+        for coordinate in (
+            "assignment_identity",
+            "assignment_subject_identity",
+            "measurement_act_identity",
+            "act_occurrence_identity",
+            "measurement_result_identity",
+        )
+    }
+    standing_boundary_identity = material.get("standing_boundary_identity")
+    if (
+        any(
+            type(identity) is not str or not identity
+            for identity in identity_coordinates.values()
+        )
+        or len(set(identity_coordinates.values())) != len(identity_coordinates)
+        or material
+        != _assignment_material(
+            finding,
+            standing_boundary_identity=standing_boundary_identity,
+            **identity_coordinates,
+        )
+    ):
+        raise ValueError(
+            "occurrence position Measurement requires its exact carried assignment"
+        )
+
+
+def _record_occurrence_position_measurement_responsible_act_evidence_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    responsibility_assignment: Event,
+    finding: OccurrencePositionFinding,
+    responsibility_assignment_standing: dict[str, Any],
+) -> Event:
+    """Record the Act beside its just-carried exact assignment occurrence."""
+
+    _require_carried_occurrence_position_assignment(
+        ledger,
+        responsibility_assignment=responsibility_assignment,
+        finding=finding,
+    )
+    _require_carried_locality_standing_at_tip(
+        ledger,
+        locality_identity=responsibility_assignment.locality_identity,
+        locality_standing=responsibility_assignment_standing,
+        required_assignment_identity=responsibility_assignment.identity,
+    )
+    for prior_act in ledger.iter_locality_kind(
+        responsibility_assignment.locality_identity,
+        OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    ):
+        if (
+            prior_act.material.get("responsibility_assignment_reference")
+            == _assignment_reference(responsibility_assignment)
+            or prior_act.material.get("act_occurrence_identity")
+            == responsibility_assignment.material["act_occurrence_identity"]
+        ):
+            raise ValueError(
+                "the occurrence position Responsibility assignment already carries an Act"
+            )
+    participation = _occurrence_position_participation(
+        finding,
+        act_occurrence_identity=responsibility_assignment.material[
+            "act_occurrence_identity"
+        ],
+    )
+    return ledger.append(
+        OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+        _occurrence_position_act_evidence_material(
+            finding,
+            assignment=responsibility_assignment,
+            participation=participation,
+        ),
+        locality_identity=responsibility_assignment.locality_identity,
     )
 
 
@@ -683,18 +908,13 @@ def _read_occurrence_position_measurement_act_evidence(
     return act_evidence, assignment, finding
 
 
-def record_occurrence_position_measurement_result(
+def _record_occurrence_position_measurement_result(
     ledger: EventLedger,
     *,
-    responsible_act_evidence_event_identity: str,
+    act_evidence: Event,
+    assignment: Event,
+    finding: OccurrencePositionFinding,
 ) -> Event:
-    """Record the Yield and result of one exact evidenced Measurement Act."""
-
-    act_evidence, assignment, finding = (
-        _read_occurrence_position_measurement_act_evidence(
-            ledger, responsible_act_evidence_event_identity
-        )
-    )
     act_occurrence_identity = assignment.material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
         act_evidence.locality_identity,
@@ -743,7 +963,7 @@ def record_occurrence_position_measurement_result(
         result_identity=result_material["result_identity"],
         result_content=result_material,
         responsibility=OCCURRENCE_POSITION_RESPONSIBILITY,
-        live_boundary="occurrence_position_measurement",
+        occurrence_boundary="occurrence_position_measurement",
         responsible_boundary="this Seed",
     )
     recorded_material = {
@@ -770,6 +990,75 @@ def record_occurrence_position_measurement_result(
         OCCURRENCE_POSITION_RECORDED_KIND,
         recorded_material,
         locality_identity=act_evidence.locality_identity,
+    )
+
+
+def record_occurrence_position_measurement_result(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence_event_identity: str,
+) -> Event:
+    """Record the Yield and result of one exact evidenced Measurement Act."""
+
+    act_evidence, assignment, finding = (
+        _read_occurrence_position_measurement_act_evidence(
+            ledger, responsible_act_evidence_event_identity
+        )
+    )
+    return _record_occurrence_position_measurement_result(
+        ledger,
+        act_evidence=act_evidence,
+        assignment=assignment,
+        finding=finding,
+    )
+
+
+def _record_occurrence_position_measurement_result_from_carried_act_evidence(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence: Event,
+    responsibility_assignment: Event,
+    finding: OccurrencePositionFinding,
+) -> Event:
+    """Record the result beside its just-produced exact Act Evidence."""
+
+    _require_carried_occurrence_position_assignment(
+        ledger,
+        responsibility_assignment=responsibility_assignment,
+        finding=finding,
+    )
+    participation = _occurrence_position_participation(
+        finding,
+        act_occurrence_identity=responsibility_assignment.material[
+            "act_occurrence_identity"
+        ],
+    )
+    if (
+        type(responsible_act_evidence) is not Event
+        or responsible_act_evidence.kind != OCCURRENCE_POSITION_ACT_EVIDENCE_KIND
+        or responsible_act_evidence.exact_material is not None
+        or responsible_act_evidence.locality_identity
+        != responsibility_assignment.locality_identity
+        or ledger.integrity_of(responsible_act_evidence.identity) == CORRUPTED
+        or responsible_act_evidence.material
+        != _occurrence_position_act_evidence_material(
+            finding,
+            assignment=responsibility_assignment,
+            participation=participation,
+        )
+        or ledger.append_boundary_through_occurrence(
+            responsible_act_evidence.identity
+        )
+        != ledger.append_boundary()
+    ):
+        raise ValueError(
+            "occurrence position result requires its exact intact Act Evidence"
+        )
+    return _record_occurrence_position_measurement_result(
+        ledger,
+        act_evidence=responsible_act_evidence,
+        assignment=responsibility_assignment,
+        finding=finding,
     )
 
 

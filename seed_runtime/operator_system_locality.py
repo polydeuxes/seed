@@ -496,7 +496,7 @@ def record_operator_system_locality_result(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY,
-        live_boundary="operator_invocation_locality_relation",
+        occurrence_boundary="operator_invocation_locality_relation",
         responsible_boundary="this Seed",
     )
     return ledger.append(

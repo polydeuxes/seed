@@ -99,7 +99,7 @@ def test_witness_yield_relation_preserves_occurrence_and_result_identity():
     ]
     assert (
         grammar["relations"]["yield"][
-            "equal_result_content_establishes_identity"
+            "same_result_content_identifies_one_result"
         ]
         is False
     )
@@ -302,7 +302,7 @@ def test_witness_grammar_represents_the_book_without_identity_equality():
             "relation": "represents",
             "second_subject": "this_Book",
         },
-        "equal_identity": False,
+        "identifies_book": False,
     }
 
 
@@ -326,7 +326,6 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
         ("01.Standing.D.2", []),
         ("01.Standing.F", []),
         ("05.Recording.A", []),
-        ("05.Recording.B", []),
         ("05.Recording.C", []),
         ("05.Source.A", []),
         ("08.Authority.A", []),
@@ -535,7 +534,7 @@ FIDELITY_SUBJECTS = {
     "witness_clause_book_material_reference": (
         test_witness_clauses_address_their_exact_book_material,
     ),
-    "book_witness_clause_identity_equality": (
+    "book_witness_clause_identity_distinction": (
         test_book_and_witness_grammar_have_the_same_clauses,
     ),
 }

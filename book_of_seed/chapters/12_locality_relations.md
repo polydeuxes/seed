@@ -10,7 +10,7 @@ The exact locality relation between two exact bounded subjects.
 
 Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknown.
 
-One subject may bear several separately evidenced locality relations. Equal subjects under another occurrence cannot identify the same relation. A locality relation cannot enclose its subjects, create a hierarchy, establish Authority or Participation, or carry Standing for either subject.
+One subject may bear several separately evidenced locality relations. The same subjects under another occurrence cannot identify the same relation. A locality relation cannot enclose its subjects, create a hierarchy, establish Authority or Participation, or carry Standing for either subject.
 
 A responsible movement occurrence may preserve an Assertion while establishing a new locality relation between that Assertion and an exact bounded subject. Movement preserves the original Assertion reference and identity, its earlier locality relations, Scope, Evidence, Standing, Unknown, and limits. It establishes the new locality relation and no other relation: it cannot copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
 

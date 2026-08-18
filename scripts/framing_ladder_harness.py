@@ -33,7 +33,7 @@ replaced by a different one.
 
 **Phase is which source byte is treated as offset 0 of this read.** Not
 where a group begins: nothing here establishes that a group exists. Read from
-byte zero the two equal-result material tuples at stride 2 have 201 values and 2; read from byte one
+byte zero the two material tuples producing the same result at stride 2 have 201 values and 2; read from byte one
 they are 2 and 201, and the sets trade places exactly.
 
 The material's byte boundary is exact -- an occurrence begins at its first
@@ -47,7 +47,7 @@ What a rule would have to distinguish, once warranted:
   candidate stride     its offsets' supports stand in some exact relation
   primitive candidate  a candidate stride no proper divisor of which is one
   source phase         which source byte is offset 0 of the read
-  position pair        two exact positions whose difference is one
+  position pair        one exact two-byte occurrence with both source positions
   group boundary       where such a unit would begin and end
 ```
 

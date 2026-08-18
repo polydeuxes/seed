@@ -589,7 +589,7 @@ def test_changed_position_is_not_certified_by_unchanged_evidence():
 
 
 def test_result_carries_one_ordered_assertion_per_exact_position():
-    _ledger, occurrences, boundary, _finding, recorded = recorded_road()
+    ledger, occurrences, boundary, _finding, recorded = recorded_road()
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "responsible_act_evidence_identity",
@@ -617,6 +617,18 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert {
         item["dimensions"]["responsibility"] for item in assertions
     } == {MEASURED_ASSERTION_RESPONSIBILITY}
+    assert all("standing" not in item["dimensions"] for item in assertions)
+    assert _standing(ledger)["measurement_occurrences"][recorded.identity] == {
+        "recorded_occurrence_identity": recorded.identity,
+        "result_identity": recorded.material["result_identity"],
+        "act_occurrence_identity": recorded.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": recorded.material[
+            "responsible_act_evidence_identity"
+        ],
+        "evidence_of_yield_relation_identity": recorded.material[
+            "evidence_of_yield_relation_identity"
+        ],
+    }
     assert all(
         item["assertion_scope"] == {"source_localities": ["a"]}
         and item["result"] == "position"
@@ -624,6 +636,14 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         == OCCURRENCE_POSITION_MEASUREMENT_RULE
         for item in assertions
     )
+
+
+def test_measured_scalar_cannot_impersonate_occurrence_position_standing():
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    recorded.material["assertions"][0]["dimensions"]["standing"] = "measured"
+
+    with pytest.raises(ValueError, match="malformed Assertions"):
+        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
 @pytest.mark.parametrize(
@@ -800,6 +820,10 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
 
 
 FIDELITY_SUBJECTS = {
+    "assertion_standing_coordinates": (
+        test_result_carries_one_ordered_assertion_per_exact_position,
+        test_measured_scalar_cannot_impersonate_occurrence_position_standing,
+    ),
     "act_evidence_responsibility_boundary_occurrence_authority_scope": (
         test_assignment_act_yield_and_result_keep_distinct_exact_identities,
         test_act_requires_current_standing_that_carries_its_assignment,
@@ -825,7 +849,6 @@ FIDELITY_SUBJECTS = {
         test_recording_and_reading_do_not_reconstruct_complete_result_material,
         test_position_finding_establishes_no_stronger_relation,
         test_changed_position_is_not_certified_by_unchanged_evidence,
-        test_result_carries_one_ordered_assertion_per_exact_position,
         test_missing_reordered_duplicated_or_substituted_assertions_are_refused,
         test_wrong_result_boundary_coordinates_are_refused,
         test_wrong_boundary_is_refused_without_reconstructing_positions,

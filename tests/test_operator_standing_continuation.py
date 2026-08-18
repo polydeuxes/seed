@@ -139,7 +139,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         }
     ) == 7
     assert after_act["event_count"] == 2
-    assert after_act["recorded_relation_standings"] == {}
+    assert after_act["recorded_relation_Standing"] == {}
     assert after_act["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
@@ -215,7 +215,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         ledger, locality_identity=destination
     )
     assert incremental == replayed
-    assert replayed["recorded_relation_standings"] == {result.identity: None}
+    assert replayed["recorded_relation_Standing"] == {result.identity: None}
     assert replayed["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
@@ -246,7 +246,7 @@ def test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it(
     assert assignment_standing["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
-    assert assignment_standing["recorded_relation_standings"] == {}
+    assert assignment_standing["recorded_relation_Standing"] == {}
     representation_after_assignment = record_operator_representation(
         ledger,
         locality_identity=destination,
@@ -408,7 +408,7 @@ def test_continuation_is_direct_and_does_not_carry_an_earlier_relation():
     assert first_source_representation not in repr(second_recorded)
     assert read_operator_locality_standing(
         ledger, locality_identity=second_result.locality_identity
-    )["recorded_relation_standings"] == {second_result.identity: None}
+    )["recorded_relation_Standing"] == {second_result.identity: None}
 
 
 def test_one_continuation_act_cannot_yield_or_record_twice():
@@ -526,7 +526,7 @@ def test_incomplete_act_evidence_is_not_carried_as_a_relation():
         ledger, locality_identity=act_evidence.locality_identity
     )
 
-    assert standing["recorded_relation_standings"] == {}
+    assert standing["recorded_relation_Standing"] == {}
     assignment_identity = act_evidence.material[
         "responsibility_assignment_reference"
     ]["recorded_occurrence_identity"]
@@ -547,7 +547,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         ledger, locality_identity=result.locality_identity
     )
     broken = deepcopy(standing)
-    broken["recorded_relation_standings"] = [result.identity]
+    broken["recorded_relation_Standing"] = [result.identity]
 
     with pytest.raises(
         ValueError, match="exact recorded relation occurrences"

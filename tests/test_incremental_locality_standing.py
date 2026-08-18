@@ -1,4 +1,4 @@
-"""Advancing locality Standing equals replaying it, at every occurrence boundary.
+"""Advancing locality Standing matches replaying it at every occurrence boundary.
 
 The console rebuilt Locality Standing before every interaction, so each later
 interaction reread occurrence *j*.
@@ -37,9 +37,9 @@ from seed_runtime.operator_material_acquisition import (
 )
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.material_ingest import ingest_material
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
-    POSITION_DIFFERENCE_ONE_RESULT_KIND,
-    references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
@@ -95,17 +95,17 @@ def _ingress_event(index, *, unknown):
     )
 
 
-def test_operator_ingest_records_exact_position_coordinate_difference_one_result():
+def test_operator_ingest_records_exact_byte_pair_occurrence_position_result():
     ledger, _output = _console("2+2=5\n")
     results = tuple(
         event
         for event in ledger.list()
-        if event.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
 
     assert len(results) == 1
     references = (
-        references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one(
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
             ledger, results[0].identity
         )
     )
@@ -301,17 +301,41 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
 def test_the_console_never_replays_the_locality(monkeypatch):
     """One read from nothing recorded, for C0. No replay after that."""
     calls = []
-    from seed_runtime import operator_console
+    from seed_runtime import operator_console, operator_locality_standing
 
-    original = operator_console.read_operator_locality_standing
+    original = operator_locality_standing.read_operator_locality_standing
 
     def record(ledger, **kwargs):
         calls.append(len(ledger.list_locality(kwargs["locality_identity"])))
         return original(ledger, **kwargs)
 
+    monkeypatch.setattr(
+        operator_locality_standing, "read_operator_locality_standing", record
+    )
     monkeypatch.setattr(operator_console, "read_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
     assert calls == [0]
+
+
+def test_the_console_measures_each_occurrence_population_once(monkeypatch):
+    """The same-call assignment, Act, and result consume one exact finding."""
+
+    from seed_runtime import occurrence_position_measurement
+
+    calls = []
+    original = occurrence_position_measurement._measure_occurrence_position_through
+
+    def record(*args, **kwargs):
+        calls.append(kwargs["boundary"])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        occurrence_position_measurement,
+        "_measure_occurrence_position_through",
+        record,
+    )
+    _console("alpha\n")
+    assert len(calls) == 1
 
 
 def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
@@ -632,7 +656,7 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         (b"/locality existing\n", False, True),
     ),
 )
-def test_each_console_road_leaves_incremental_standing_equal_to_replay(
+def test_each_console_road_leaves_incremental_standing_matching_replay(
     monkeypatch, material, raw, existing_locality
 ):
     from seed_runtime import operator_console

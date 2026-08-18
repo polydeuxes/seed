@@ -375,8 +375,10 @@ extraction
 f
 fabricate
 facing
+fail
 failed
 failure
+fails
 false
 falsehood
 families

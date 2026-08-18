@@ -73,7 +73,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 }
 
 _FINDING_CATEGORIES = (
-    "equal_findings",
+    "same_content_findings",
     "conflicting_findings",
     "findings_of_earlier_result",
     "findings_of_later_result",
@@ -324,7 +324,8 @@ def _require_input_standing(
         not in standing["comparison_result_occurrences"]
     ):
         raise ValueError(
-            "comparison of ordered relation path with recorded pair findings requires both exact results in current Standing"
+            "comparison of ordered relation path with recorded pair findings requires "
+            "each exact result in current Standing"
         )
     boundary = _identity(
         standing.get("through_event_occurrence_identity"),
@@ -463,7 +464,7 @@ def _assignment_material(
         },
         "authority": _authority(),
         "limits": [
-            "pair-subject equality establishes no source relation",
+            "one exact pair subject under each input establishes no source relation",
             "carried comparison findings remain recorded",
             "the result establishes no later relation or recurrence",
         ],
@@ -795,7 +796,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
             if key != "responsible_act_evidence_identity"
         },
         responsibility=RESPONSIBILITY,
-        live_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
+        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
@@ -817,7 +818,7 @@ def _read_yielded(
     kind: str,
     act: Event,
     expected: dict[str, Any],
-    live_boundary: str,
+    occurrence_boundary: str,
     result_name: str,
     occurrence_coordinate: str = "act_occurrence_identity",
 ) -> Event:
@@ -841,7 +842,7 @@ def _read_yielded(
         event.locality_identity != act.locality_identity
         or carried != expected
         or evidence is None
-        or evidence.material.get("live_boundary") != live_boundary
+        or evidence.material.get("occurrence_boundary") != occurrence_boundary
         or evidence.material.get("result_kind") != result_name
         or not all(requirements.values())
     ):
@@ -870,7 +871,7 @@ def _read_applicability_result(
         kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
         act=act,
         expected=_applicability_result_material(act, assignment, inputs),
-        live_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
+        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         result_name=APPLICABILITY_RESULT_KIND,
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
@@ -1171,7 +1172,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
             if key != "responsible_act_evidence_identity"
         },
         responsibility=RESPONSIBILITY,
-        live_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
+        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         responsible_boundary="this Seed",
     )
     return ledger.append(
@@ -1199,7 +1200,7 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
         kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
         act=act,
         expected=_compare_result_material(act, assignment, applicability, inputs),
-        live_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
+        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         result_name=COMPARE_RESULT_KIND,
     )
     return deepcopy(event.material)

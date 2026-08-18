@@ -681,7 +681,7 @@ def _record_operator_material_acquire_result(
         result_identity=result_material["result_identity"],
         result_content=result_material,
         responsibility=OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY,
-        live_boundary="operator_material_acquire",
+        occurrence_boundary="operator_material_acquire",
         responsible_boundary="this Seed",
         result_exact_material=boundary_material.exact_bytes,
     )

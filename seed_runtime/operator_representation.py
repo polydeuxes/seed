@@ -1,4 +1,4 @@
-"""Record and emit bounded Representations."""
+"""Record and perform emission of bounded Representations."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND = (
 )
 REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY = (
-    "emit one exact Representation result"
+    "perform emission of one exact Representation result"
 )
 REPRESENTATION_EMISSION_RESULT_KIND = "Representation emission boundary result"
 REPRESENTATION_BOUNDARY_FAILURE_RESULT_KIND = "Representation boundary failure result"
@@ -270,7 +270,7 @@ def _record_operator_representation(
         result_identity=representation_identity,
         result_content=result_material,
         responsibility=REPRESENTATION_RESPONSIBILITY,
-        live_boundary="representation_result",
+        occurrence_boundary="representation_result",
         responsible_boundary="this Seed",
         result_exact_material=exact_material,
     )
@@ -970,7 +970,7 @@ def emit_operator_representation_material(
         result_content=result_content,
         result_exact_material=exact_material,
         responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
-        live_boundary="successful_emission",
+        occurrence_boundary="successful_emission",
         responsible_boundary="this Seed",
     )
     emitted_event = ledger.append(
@@ -1122,7 +1122,7 @@ def _record_exact_material_boundary_failure(
         result_identity=result_identity,
         result_content=result_material,
         responsibility=REPRESENTATION_BOUNDARY_FAILURE_RESPONSIBILITY,
-        live_boundary="failed_boundary",
+        occurrence_boundary="failed_boundary",
         responsible_boundary="this Seed",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
     )

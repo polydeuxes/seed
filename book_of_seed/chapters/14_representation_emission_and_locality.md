@@ -6,7 +6,7 @@ Bounded representation and movement between localities.
 ## Bounded resolution
 One exact Ingest Act preserves material supplied at one source boundary. Its occurrence yields the exact material and carries its source role, source boundary, Locality, known loss, and Unknown. Operator material and material supplied at another source boundary use the same Ingest Act. Different source coordinates do not revise the Act.
 
-Each Ingest occurrence has one distinct result identity. Two Ingest occurrences that yield equal material remain distinct occurrences; each has a distinct result identity and distinct Yield Evidence. Equal material content identifies neither occurrence nor result and establishes no Yield relation. A downstream Act may use the material through the exact result identity and Yield Evidence of the Ingest occurrence that yields it.
+Each Ingest occurrence has one distinct result identity. Two Ingest occurrences that yield the same material remain distinct occurrences; each has a distinct result identity and distinct Yield Evidence. The same material content identifies neither occurrence nor result and establishes no Yield relation. A downstream Act may use the material through the exact result identity and Yield Evidence of the Ingest occurrence that yields it.
 
 An Ingest occurrence establishes no Assertion about what the material represents, source relation, Seed truth, Authority, or later Standing.
 
@@ -32,7 +32,7 @@ Material movement cannot move Authority.
 - representation != source material
 - representation Act occurrence != emission
 - emission attempt != emission
-- failed emission != absence of occurrence
+- emission failure != absence of occurrence
 - boundary failure after accepted emission != emission nonoccurrence
 - absent Evidence establishing emission != boundary rejection
 - emission != Applicability
@@ -41,7 +41,7 @@ Material movement cannot move Authority.
 - Admission to one operator Locality != Admission to another operator Locality
 - Applicability != input support
 - material movement != Authority movement
-- equal material content != same Ingest occurrence, result identity, or Yield Evidence
+- same material content != same Ingest occurrence, result identity, or Yield Evidence
 - Assertion identity != Assertion occurrence
 - locality subjects != locality relation
 - operator material != Seed truth

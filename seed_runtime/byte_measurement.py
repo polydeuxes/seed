@@ -6,8 +6,8 @@ the exact raw material linked from every ingest occurrence in the declared
 Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
-Assertion and exists only where the total count exceeds one.  Byte equality
-establishes no character, word, position pair, grammar, or represented
+Assertion and exists only where the total count exceeds one.  The same byte
+material establishes no character, word, position pair, grammar, or represented
 relation.
 """
 
@@ -125,12 +125,12 @@ ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
     "preserve its identity, Standing, and carried limits"
 )
 BYTE_MEASUREMENT_RULE = (
-    "each exact byte in exact recorded Ingest material; equal when the byte "
-    "material is equal"
+    "each exact byte in exact recorded Ingest material with the same exact byte "
+    "material"
 )
 BYTE_PAIR_MEASUREMENT_RULE = (
-    "each ordered byte pair at position coordinates whose difference is one within "
-    "one exact recorded Ingest material occurrence; equal under the exact pair and order"
+    "each exact byte-pair occurrence in source order within one exact recorded Ingest "
+    "material occurrence with the same exact pair material and source order"
 )
 MEASUREMENT_EVIDENCE_SCOPE = (
     "exact byte-count Measurement Evidence; bounded byte Standing; source "
@@ -144,8 +144,8 @@ PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "measured pair and order; bounded pair Standing; source Standing not revised"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
-    "establish exact counts of byte pair occurrences at position coordinates whose difference is one "
-    "within the exact bounded source material"
+    "establish exact counts of byte-pair occurrences in source order within the exact "
+    "bounded source material"
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
@@ -400,7 +400,74 @@ def _seed_native_measurement_assignment(
     }
 
 
+def _recorded_input_assertion_standing(
+    ledger: EventLedger,
+    source: RecordedByteAssertion,
+    *,
+    measurement_locality_identity: str,
+) -> tuple[RecordedByteAssertion, dict[str, str | None]]:
+    """Resolve the exact result occurrence carrying one proposed input.
+
+    The Assertion's detached material is not Standing.  Its intact Measurement
+    result occurrence is the Standing carrier; an exact movement occurrence
+    preserves that Standing when the downstream Act has another Locality.
+    """
+
+    if type(source) is not RecordedByteAssertion:
+        raise ByteMeasurementError(
+            "byte-position-pair Applicability requires one recorded byte Assertion"
+        )
+    if source.locality_movement_event_identity is None:
+        source_event = ledger.get(source.recorded_occurrence_identity)
+        readings = assertions_of_recorded_byte_measurement(
+            ledger, source.recorded_occurrence_identity
+        )
+        exact = next(
+            (
+                reading
+                for reading in readings or ()
+                if reading.assertion_identity == source.assertion_identity
+            ),
+            None,
+        )
+        if (
+            source_event is None
+            or source_event.locality_identity != measurement_locality_identity
+        ):
+            exact = None
+    else:
+        exact = _validate_moved_byte_assertion(
+            ledger, source.locality_movement_event_identity
+        )
+        movement = ledger.get(source.locality_movement_event_identity)
+        if (
+            movement is None
+            or movement.locality_identity != measurement_locality_identity
+        ):
+            exact = None
+    if (
+        exact is None
+        or exact.result != "exact_source_material_set"
+        or exact.reference != source.reference
+        or exact.locality_movement_event_identity
+        != source.locality_movement_event_identity
+    ):
+        raise ByteMeasurementError(
+            "byte-position-pair Applicability requires exact input Standing"
+        )
+    return exact, {
+        "recorded_measurement_result_occurrence_identity": (
+            exact.recorded_occurrence_identity
+        ),
+        "assertion_identity": exact.assertion_identity,
+        "locality_movement_result_occurrence_identity": (
+            exact.locality_movement_event_identity
+        ),
+    }
+
+
 def _pair_input_applicability(
+    ledger: EventLedger,
     source: RecordedByteAssertion,
     *,
     downstream_act_identity: str,
@@ -410,6 +477,11 @@ def _pair_input_applicability(
 ) -> dict[str, Any]:
     """Determine this source Assertion's use by this exact pair Measurement."""
 
+    source, input_standing = _recorded_input_assertion_standing(
+        ledger,
+        source,
+        measurement_locality_identity=measurement_locality_identity,
+    )
     material = source.material
     scope = material["assertion_scope"]
     content = {
@@ -425,21 +497,7 @@ def _pair_input_applicability(
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
-    if material["dimensions"]["standing"] != "measured":
-        standing = "conflicting"
-        basis = "the input does not carry the measured Standing required by this Act"
-        applicability_scope = scope
-        source_provenance = material["dimensions"]["source_provenance"]
-        input_standing = material["dimensions"]["standing"]
-        input_authority = material["dimensions"]["authority"]
-        input_unknown = material["unknown"]
-        input_limits = material["limits"]
-        negative_authority = {
-            "carried": True,
-            "value": input_limits,
-            "treatment": "preserved as limits on this exact use",
-        }
-    elif (
+    if (
         material["dimensions"].get("authority") != "unestablished"
         or material["dimensions"].get("evidence_scope")
         != SOURCE_SET_EVIDENCE_SCOPE
@@ -448,7 +506,6 @@ def _pair_input_applicability(
         basis = "the input carries no recognized Evidence scope for this exact source-material use"
         applicability_scope = scope
         source_provenance = material["dimensions"]["source_provenance"]
-        input_standing = material["dimensions"]["standing"]
         input_authority = material["dimensions"]["authority"]
         input_unknown = material["unknown"]
         input_limits = material["limits"]
@@ -462,7 +519,6 @@ def _pair_input_applicability(
         basis = "exact bounded source material matches this Act and result boundary"
         applicability_scope = scope
         source_provenance = material["dimensions"]["source_provenance"]
-        input_standing = material["dimensions"]["standing"]
         input_authority = material["dimensions"]["authority"]
         input_unknown = material["unknown"]
         input_limits = material["limits"]
@@ -515,7 +571,7 @@ def _pair_input_applicability(
                 "treatment": "not established by Applicability",
             },
             "known_loss": {"carried": False, "treatment": "not represented by input"},
-            "currentness": {
+            "current_Standing": {
                 "carried": False,
                 "treatment": "not required for this historical bounded source material",
             },
@@ -749,7 +805,7 @@ def _move_byte_assertion_to_locality(
         result_identity=movement_result_identity,
         result_content=result_material,
         responsibility=ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-        live_boundary="assertion_locality_movement",
+        occurrence_boundary="assertion_locality_movement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
@@ -1017,7 +1073,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "identity": source_identity,
                 "content": source_content,
-                "standing": "measured",
                 "source_provenance": (
                     "complete declared Ingest through one boundary"
                 ),
@@ -1063,7 +1118,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "identity": identity,
                 "content": content,
-                "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
                 "authority": "unestablished",
@@ -1295,7 +1349,6 @@ def record_byte_measurement_result(
                 "content": (
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
-                "standing": "measured",
                 "source_provenance": "complete declared Ingest through one boundary",
                 "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
@@ -1331,7 +1384,7 @@ def record_byte_measurement_result(
         result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
-        live_boundary="byte_measurement",
+        occurrence_boundary="byte_measurement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
@@ -1384,7 +1437,6 @@ def assertions_of_recorded_byte_measurement(
                 "content": (
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
-            "standing": "measured",
             "source_provenance": (
                 "complete declared Ingest through one boundary"
             ),
@@ -1531,7 +1583,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "identity": identity,
                 "content": content,
-                "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
                 "authority": "unestablished",
@@ -1683,7 +1734,7 @@ def _record_pair_input_applicability(
         result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        live_boundary="byte_pair_applicability",
+        occurrence_boundary="byte_pair_applicability",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
     )
@@ -1836,6 +1887,44 @@ def get_recorded_pair_input_applicability(
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
     ):
         raise ByteMeasurementError(f"{event_identity} carries incoherent Applicability")
+    source_reference = material.get("input_assertion_reference")
+    movement_event_identity = material.get("input_movement_event_identity")
+    if (
+        type(source_reference) is not dict
+        or set(source_reference)
+        != {"recorded_occurrence_identity", "assertion_identity"}
+    ):
+        raise ByteMeasurementError(
+            f"{event_identity} carries no exact input Standing reference"
+        )
+    if movement_event_identity is None:
+        readings = assertions_of_recorded_byte_measurement(
+            ledger, source_reference.get("recorded_occurrence_identity")
+        )
+        source = next(
+            (
+                reading
+                for reading in readings or ()
+                if reading.assertion_identity
+                == source_reference.get("assertion_identity")
+            ),
+            None,
+        )
+    elif type(movement_event_identity) is str and movement_event_identity:
+        source = _validate_moved_byte_assertion(ledger, movement_event_identity)
+    else:
+        source = None
+    if source is None or source.reference != source_reference:
+        raise ByteMeasurementError(
+            f"{event_identity} carries no exact input Standing occurrence"
+        )
+    _validate_recorded_pair_input_applicability(
+        ledger,
+        applicability_assertion,
+        source=source,
+        event=event,
+        downstream_act_identity=material.get("downstream_act_identity"),
+    )
     return json.loads(_canonical(applicability_assertion))
 
 
@@ -1861,6 +1950,7 @@ def record_byte_position_pair_count_layer(
         "byte_pair_applicability_occurrence"
     )
     applicability = _pair_input_applicability(
+        ledger,
         source,
         downstream_act_identity=downstream_act_identity,
         applicability_act_identity=applicability_act_identity,
@@ -1894,7 +1984,6 @@ def record_byte_position_pair_count_layer(
             "content": (
                 "byte-position-pair count and recurrence Assertions"
             ),
-            "standing": "measured",
             "source_provenance": "the recorded source-material-set Assertion",
             "authority": "unestablished",
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
@@ -1935,7 +2024,7 @@ def record_byte_position_pair_count_layer(
         result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        live_boundary="byte_pair_measurement",
+        occurrence_boundary="byte_pair_measurement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
@@ -1951,6 +2040,7 @@ def record_byte_position_pair_count_layer(
 
 
 def _validate_recorded_pair_input_applicability(
+    ledger: EventLedger,
     applicability_assertion: Any,
     *,
     source: RecordedByteAssertion,
@@ -1959,6 +2049,11 @@ def _validate_recorded_pair_input_applicability(
 ) -> None:
     """Validate historical Applicability without determining it again."""
 
+    source, input_standing = _recorded_input_assertion_standing(
+        ledger,
+        source,
+        measurement_locality_identity=event.locality_identity,
+    )
     source_material = source.material
     scope = source_material["assertion_scope"]
     content = {
@@ -2012,7 +2107,7 @@ def _validate_recorded_pair_input_applicability(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality,
         "scope_locality": scope,
-        "input_standing": source_material["dimensions"]["standing"],
+        "input_standing": input_standing,
         "input_authority": source_material["dimensions"]["authority"],
         "input_unknown": source_material["unknown"],
         "input_limits": source_material["limits"],
@@ -2023,7 +2118,7 @@ def _validate_recorded_pair_input_applicability(
                 "treatment": "not established by Applicability",
             },
             "known_loss": {"carried": False, "treatment": "not represented by input"},
-            "currentness": {
+            "current_Standing": {
                 "carried": False,
                 "treatment": "not required for this historical bounded source material",
             },
@@ -2079,7 +2174,6 @@ def _read_recorded_byte_position_pair_measurement(
         "content": (
             "byte-position-pair count and recurrence Assertions"
         ),
-        "standing": "measured",
         "source_provenance": "the recorded source-material-set Assertion",
         "authority": "unestablished",
         "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
@@ -2243,6 +2337,7 @@ def _read_recorded_byte_position_pair_measurement(
             f"{event_identity} does not carry its exact input source boundary"
         )
     _validate_recorded_pair_input_applicability(
+        ledger,
         material.get("input_applicability"),
         source=source,
         event=event,
@@ -2309,13 +2404,11 @@ def _read_recorded_byte_position_pair_measurement(
                 != {
                     "identity",
                     "content",
-                    "standing",
                     "source_provenance",
                     "responsibility",
                     "authority",
                     "evidence_scope",
                 }
-            or dimensions.get("standing") != "measured"
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
             or dimensions.get("authority") != "unestablished"
             or dimensions.get("evidence_scope") != PAIR_MEASUREMENT_EVIDENCE_SCOPE

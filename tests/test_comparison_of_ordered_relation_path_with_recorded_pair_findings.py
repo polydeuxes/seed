@@ -277,7 +277,7 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
         for role in roles
         for reference in role["comparison_finding_references"]
     } <= {
-        "equal_findings",
+        "same_content_findings",
         "conflicting_findings",
         "findings_of_earlier_result",
         "findings_of_later_result",

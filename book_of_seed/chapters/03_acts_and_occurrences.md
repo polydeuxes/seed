@@ -10,16 +10,16 @@ What establishes that an Act occurred rather than that an Act-shaped representat
 
 ### 02.Acts.A — Exact Act and occurrence
 
-Validation of an Act-shaped result establishes no Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, equal shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
+Validation of an Act-shaped result establishes no Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, the same shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
 
-**Yield** is the exact evidenced relation from an Act occurrence to its result. Yield preserves the exact Act occurrence identity and result identity. Equal result content in distinct Act occurrences cannot identify one result or Yield relation. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
+**Yield** is the exact evidenced relation from an Act occurrence to its result. Yield preserves the exact Act occurrence identity and result identity. The same result content in distinct Act occurrences cannot identify one result or Yield relation. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
 
 A Responsibility bounds what Standing may be established, preserved, or revised for its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. Current Standing whose subject is its exact assignment is required to read that Responsibility. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing for a new subject is not revision of Standing for an existing subject, and neither is preservation of existing Standing. Each requires the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
 
 ## Important distinctions
 - boundary invocation != assertion-bearing branch != supplied result != effect beyond the boundary
 - successful return != every asserted effect occurred
-- failed Act != absence of Act occurrence
+- Act occurrence with failure != absence of Act occurrence
 - Act != representation describing an Act
 - proposal != occurrence
 - non-mutating behavior != no constitutional occurrence
@@ -28,7 +28,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - coherence validated != upstream assertion re-proven
 - Standing for a new downstream subject != revision of upstream-subject Standing
 - Act occurrence-to-result relation != Assertion truth
-- equal result content != same result identity or Yield relation
+- same result content != same result identity or Yield relation
 
 ## Counterexamples or failure modes
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.

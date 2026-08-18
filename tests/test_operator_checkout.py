@@ -181,7 +181,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     assert replayed["recorded_standing_boundary_locality_relations"] == {
         result.identity: None
     }
-    assert replayed["recorded_relation_standings"] == {}
+    assert replayed["recorded_relation_Standing"] == {}
     assert replayed["recorded_standing_boundary_references"] == {}
 
 

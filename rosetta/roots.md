@@ -126,6 +126,12 @@ Addressability of preserved coordinates
 A connective noun does not establish a Seed relation. Translation resolves the
 exact coordinates doing the work:
 
+### Fail / fails / failed
+
+These forms compress one exact Act occurrence plus a bounded failure Assertion
+or result, Evidence, Authority, Scope, and preserved limits. They do not mean
+absence of an Act occurrence, Stop, or completion by identity.
+
 ### Does
 
 `Does` is an ordinary auxiliary relation-carrier when it carries negation,

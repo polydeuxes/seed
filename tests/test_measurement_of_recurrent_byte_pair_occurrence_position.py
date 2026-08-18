@@ -140,6 +140,11 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
         == {"first_position", "second_position", "completeness_boundary"}
         for assertion in result.material["assertions"]
     )
+    assert "standing" not in result.material["dimensions"]
+    assert all(
+        "standing" not in assertion["dimensions"]
+        for assertion in result.material["assertions"]
+    )
     serialized = json.dumps(result.material).lower()
     assert "direction" not in serialized
     assert "displacement" not in serialized
@@ -488,6 +493,23 @@ def test_pair_occurrence_result_enters_standing_as_one_exact_measurement_referen
         admit_representation(ledger, representation)
 
 
+@pytest.mark.parametrize("carrier", ("result", "assertion"))
+def test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing(carrier):
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    _act, result = _record(ledger, locality, finding)
+    dimensions = (
+        result.material["dimensions"]
+        if carrier == "result"
+        else result.material["assertions"][0]["dimensions"]
+    )
+    dimensions["standing"] = "measured"
+
+    with pytest.raises(ValueError, match="differs from its exact finding"):
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, result.identity
+        )
+
+
 def test_same_bytes_cannot_substitute_another_ingest_occurrence():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     substitute = ingest_material(
@@ -577,7 +599,7 @@ def test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurr
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     _act, result = _record(ledger, locality, finding)
     evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
-    evidence.material["live_boundary"] = "occurrence_position_measurement"
+    evidence.material["occurrence_boundary"] = "occurrence_position_measurement"
 
     with pytest.raises(ValueError, match="no exact Evidence of Yield relation"):
         get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -619,6 +641,7 @@ FIDELITY_SUBJECTS = {
     "assertion_standing_coordinates": (
         test_measurement_result_does_not_promote_across_the_three_later_crossings,
         test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
+        test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing,
     ),
     "act_evidence_responsibility_boundary_occurrence_authority_scope": (
         test_act_evidence_has_inputs_and_responsibility_but_no_result_finding,

@@ -1,4 +1,4 @@
-"""Compose two exact yielded pair-position Assertions at one shared position."""
+"""Compose exact yielded pair-position Assertions at one shared position."""
 
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
-    POSITION_DIFFERENCE_ONE_RESULT_KIND,
-    ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne,
-    _references_to_recorded_position_coordinates_for_assertion_identities,
-    references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    ReferenceToRecordedPositionOfBytePairOccurrence,
+    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 
 
@@ -46,12 +46,13 @@ SHARED_POSITION_MEASUREMENT_RESULT_KIND = (
 )
 BOOK_CLAUSE = "01.Source.D"
 MEASUREMENT_RULE = (
-    "second position of first exact recorded pair occurrence Assertion and first "
-    "position of second exact recorded pair occurrence Assertion are equal"
+    "second position-coordinate reference of first exact recorded pair occurrence "
+    "Assertion and first position-coordinate reference of second exact recorded pair "
+    "occurrence Assertion identifies one exact byte occurrence"
 )
 RESPONSIBILITY = (
     "determine Applicability and Yield one ordered path where exact pair occurrence "
-    "Assertions have one equal position"
+    "Assertions carry one exact position-coordinate reference"
 )
 APPLICABILITY_ACT = (
     "determine Applicability of exact pair occurrence position Assertions to one "
@@ -59,7 +60,7 @@ APPLICABILITY_ACT = (
 )
 MEASUREMENT_ACT = "determine one shared position of exact byte pair occurrences"
 SHARED_POSITION_ASSERTION_RESPONSIBILITY = (
-    "preserve carried Standing coordinates of this measured Assertion"
+    "preserve exact coordinates of this Measurement Assertion"
 )
 APPLICABILITY_RESULT_KIND = "shared pair-position input Applicability result"
 MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
@@ -84,7 +85,7 @@ class SharedPairPositionError(ValueError):
 
 RecordedPairPositionReference = (
     ReferenceToRecordedRecurrentBytePairOccurrencePosition
-    | ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne
+    | ReferenceToRecordedPositionOfBytePairOccurrence
 )
 
 
@@ -93,12 +94,65 @@ class SharedPairPositionInputs(NamedTuple):
     second: RecordedPairPositionReference
 
     @property
-    def positions_equal(self) -> bool:
-        return self.first.second_position == self.second.first_position
+    def first_relation_second_position_coordinate_reference(self) -> dict[str, Any]:
+        return _position_coordinate_reference(self.first, role="second")
 
     @property
-    def shared_position(self) -> int | None:
-        return self.first.second_position if self.positions_equal else None
+    def second_relation_first_position_coordinate_reference(self) -> dict[str, Any]:
+        return _position_coordinate_reference(self.second, role="first")
+
+    @property
+    def carries_one_position_coordinate_reference(self) -> bool:
+        return self.first_relation_second_position_coordinate_reference[
+            "identity"
+        ] == self.second_relation_first_position_coordinate_reference["identity"]
+
+    @property
+    def shared_position_coordinate_reference(self) -> dict[str, Any] | None:
+        if not self.carries_one_position_coordinate_reference:
+            return None
+        return self.first_relation_second_position_coordinate_reference
+
+
+def _position_coordinate_reference(
+    reference: RecordedPairPositionReference,
+    *,
+    role: str,
+) -> dict[str, Any]:
+    if type(reference) is ReferenceToRecordedPositionOfBytePairOccurrence:
+        if role == "first":
+            return reference.first_position_coordinate_reference
+        if role == "second":
+            return reference.second_position_coordinate_reference
+        raise SharedPairPositionError("one exact pair role is required")
+    if role == "first":
+        position = reference.first_position
+        exact_material = reference.exact_pair[:1]
+    elif role == "second":
+        position = reference.second_position
+        exact_material = reference.exact_pair[1:]
+    else:
+        raise SharedPairPositionError("one exact pair role is required")
+    coordinates = {
+        "source_ingest_occurrence_identity": (
+            reference.source_ingest_occurrence_identity
+        ),
+        "locality_identity": reference.locality_identity,
+        "completeness_boundary_identity": (
+            reference.completeness_boundary_identity
+        ),
+        "position": position,
+        "exact_material": list(exact_material),
+    }
+    return {
+        "identity": "source-byte-position-coordinate:"
+        + hashlib.sha256(
+            json.dumps(
+                coordinates, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")
+        ).hexdigest(),
+        **coordinates,
+    }
 
 
 def _identity(value: Any, message: str) -> str:
@@ -123,6 +177,12 @@ def _reference_material(
         "exact_pair": list(reference.exact_pair),
         "first_position": reference.first_position,
         "second_position": reference.second_position,
+        "first_position_coordinate_reference": _position_coordinate_reference(
+            reference, role="first"
+        ),
+        "second_position_coordinate_reference": _position_coordinate_reference(
+            reference, role="second"
+        ),
     }
     if type(reference) is ReferenceToRecordedRecurrentBytePairOccurrencePosition:
         material["support_assertion_references"] = [
@@ -141,7 +201,7 @@ def _reference_material(
         ]
     elif (
         type(reference)
-        is ReferenceToRecordedPositionOfBytePairOccurrenceWhoseDifferenceIsOne
+        is ReferenceToRecordedPositionOfBytePairOccurrence
     ):
         material["support_assertion_references"] = []
     else:
@@ -173,8 +233,8 @@ def _references(
             ledger,
             result_occurrence_identity=result_occurrence_identity,
         )
-    if result.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND:
-        return references_to_recorded_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one(
+    if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        return references_to_recorded_position_coordinates_of_byte_pair_occurrences(
             ledger,
             result_occurrence_identity,
         )
@@ -193,23 +253,14 @@ def _resolve_reference(
         assertion_identity,
         "shared-position Measurement requires one exact Assertion identity",
     )
-    references = _references(
+    return _resolve_references(
         ledger,
         result_occurrence_identity=_identity(
             result_occurrence_identity,
             "shared-position Measurement requires one exact result occurrence",
         ),
-    )
-    matches = tuple(
-        reference
-        for reference in references
-        if reference.assertion_identity == assertion_identity
-    )
-    if len(matches) != 1:
-        raise SharedPairPositionError(
-            "shared-position Measurement requires one carried position Assertion"
-        )
-    return matches[0]
+        assertion_identities=(assertion_identity,),
+    )[0]
 
 
 def _resolve_references(
@@ -227,9 +278,9 @@ def _resolve_references(
         raise SharedPairPositionError(
             "shared-position Measurement requires one exact result occurrence"
         )
-    if result.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND:
+    if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
         try:
-            return _references_to_recorded_position_coordinates_for_assertion_identities(
+            return references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
                 ledger,
                 result_occurrence_identity,
                 assertion_identities,
@@ -284,9 +335,16 @@ def _inputs(
             result_occurrence_identity=second_result_occurrence_identity,
             assertion_identity=second_assertion_identity,
         )
+    return _validated_inputs(first, second)
+
+
+def _validated_inputs(
+    first: RecordedPairPositionReference,
+    second: RecordedPairPositionReference,
+) -> SharedPairPositionInputs:
     if first.assertion_reference == second.assertion_reference:
         raise SharedPairPositionError(
-            "one position Assertion cannot occupy both path relations"
+            "one position Assertion cannot occupy first and second path relations"
         )
     if (
         first.source_ingest_occurrence_identity
@@ -298,20 +356,104 @@ def _inputs(
         raise SharedPairPositionError(
             "shared-position inputs require one source occurrence, Locality, and boundary"
         )
-    if first.exact_pair[1] != second.exact_pair[0]:
-        raise SharedPairPositionError(
-            "shared-position inputs name different material at the proposed position"
-        )
     return SharedPairPositionInputs(first=first, second=second)
+
+
+def _direct_coordinates_from_assignment_material(
+    material: dict[str, Any],
+) -> tuple[bytes, int, int]:
+    exact_pair = material.get("exact_pair")
+    if (
+        type(exact_pair) is not list
+        or len(exact_pair) != 2
+        or any(
+            type(value) is not int or value < 0 or value > 255
+            for value in exact_pair
+        )
+    ):
+        raise SharedPairPositionError(
+            "shared-position assignment carries no exact inputs"
+        )
+    return (
+        bytes(exact_pair),
+        material.get("first_position"),
+        material.get("second_position"),
+    )
+
+
+def _inputs_from_assignment_material(
+    ledger: EventLedger,
+    *,
+    first: dict[str, Any],
+    second: dict[str, Any],
+) -> SharedPairPositionInputs:
+    result_identities = (
+        first.get("recorded_occurrence_identity"),
+        second.get("recorded_occurrence_identity"),
+    )
+    results = tuple(
+        ledger.get(identity) if type(identity) is str else None
+        for identity in result_identities
+    )
+    if all(
+        result is not None and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        for result in results
+    ):
+        materials = (first, second)
+        coordinates = tuple(
+            _direct_coordinates_from_assignment_material(material)
+            for material in materials
+        )
+        assertion_identities = tuple(
+            material.get("assertion_identity") for material in materials
+        )
+        try:
+            if result_identities[0] == result_identities[1]:
+                first_reference, second_reference = (
+                    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
+                        ledger,
+                        result_identities[0],
+                        assertion_identities,
+                        exact_coordinates=coordinates,
+                    )
+                )
+            else:
+                first_reference, second_reference = tuple(
+                    references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
+                        ledger,
+                        result_identity,
+                        (assertion_identity,),
+                        exact_coordinates=(coordinate,),
+                    )[0]
+                    for result_identity, assertion_identity, coordinate in zip(
+                        result_identities,
+                        assertion_identities,
+                        coordinates,
+                        strict=True,
+                    )
+                )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position assignment carries no exact inputs"
+            ) from error
+        return _validated_inputs(first_reference, second_reference)
+    return _inputs(
+        ledger,
+        first_result_occurrence_identity=result_identities[0],
+        first_assertion_identity=first.get("assertion_identity"),
+        second_result_occurrence_identity=result_identities[1],
+        second_assertion_identity=second.get("assertion_identity"),
+    )
 
 
 def _authority() -> dict[str, str]:
     return {
         "source": "this Book",
         "book_clause_identity": BOOK_CLAUSE,
-        "standing": "bounded",
+        "authority_limit": "bounded",
         "act": (
-            "determine exact position equality and Yield one ordered relation path"
+            "determine one exact shared position-coordinate reference and Yield "
+            "one ordered relation path"
         ),
         "negative_authority": (
             "establish no represented relation and no emission"
@@ -458,7 +600,7 @@ def record_shared_position_responsibility_assignment(
     second_assertion_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign the next elevator from two exact yielded position Assertions."""
+    """Assign the next elevator from first and second yielded position Assertions."""
 
     inputs = _inputs(
         ledger,
@@ -546,12 +688,10 @@ def _read_assignment(
     second = event.material.get("second_position_assertion")
     if type(first) is not dict or type(second) is not dict:
         raise SharedPairPositionError("shared-position assignment carries no exact inputs")
-    inputs = _inputs(
+    inputs = _inputs_from_assignment_material(
         ledger,
-        first_result_occurrence_identity=first.get("recorded_occurrence_identity"),
-        first_assertion_identity=first.get("assertion_identity"),
-        second_result_occurrence_identity=second.get("recorded_occurrence_identity"),
-        second_assertion_identity=second.get("assertion_identity"),
+        first=first,
+        second=second,
     )
     identities = {
         coordinate: event.material.get(coordinate)
@@ -738,15 +878,22 @@ def _applicability_result_material(
     assignment: Event,
     inputs: SharedPairPositionInputs,
 ) -> dict[str, Any]:
-    standing = "applicable" if inputs.positions_equal else "inapplicable"
+    applicable = inputs.carries_one_position_coordinate_reference
+    standing = "applicable" if applicable else "inapplicable"
     return {
         "result_identity": assignment.material["applicability_result_identity"],
         "dimensions": {
             "identity": assignment.material["applicability_result_identity"],
             "content": {
-                "first_relation_second_position": inputs.first.second_position,
-                "second_relation_first_position": inputs.second.first_position,
-                "position_equality": inputs.positions_equal,
+                "first_relation_second_position_coordinate_reference": (
+                    inputs.first_relation_second_position_coordinate_reference
+                ),
+                "second_relation_first_position_coordinate_reference": (
+                    inputs.second_relation_first_position_coordinate_reference
+                ),
+                "shared_position_coordinate_reference": (
+                    inputs.shared_position_coordinate_reference
+                ),
             },
             "standing": standing,
             "source_provenance": "exact recorded position Assertions",
@@ -759,7 +906,7 @@ def _applicability_result_material(
         "downstream_act_identity": assignment.material["measurement_act_identity"],
         "downstream_act_occurrence_identity": (
             assignment.material["measurement_act_occurrence_identity"]
-            if inputs.positions_equal
+            if applicable
             else None
         ),
         "applicability_act_identity": assignment.material[
@@ -857,7 +1004,7 @@ def record_shared_position_applicability_result(
             if coordinate != "responsible_act_evidence_identity"
         },
         responsibility=RESPONSIBILITY,
-        live_boundary="shared_pair_position_applicability",
+        occurrence_boundary="shared_pair_position_applicability",
         responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
@@ -921,7 +1068,7 @@ def _require_yield(
     *,
     event: Event,
     act: Event,
-    live_boundary: str,
+    occurrence_boundary: str,
     result_kind: str,
     result_occurrence_coordinate: str = "act_occurrence_identity",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
@@ -941,7 +1088,7 @@ def _require_yield(
     if (
         not all(requirements.values())
         or evidence is None
-        or evidence.material.get("live_boundary") != live_boundary
+        or evidence.material.get("occurrence_boundary") != occurrence_boundary
         or evidence.material.get("result_kind") != result_kind
     ):
         raise SharedPairPositionError("result carries no exact Evidence of Yield relation")
@@ -981,7 +1128,7 @@ def _read_applicability_result(
         ledger,
         event=event,
         act=act,
-        live_boundary=APPLICABILITY_BOUNDARY,
+        occurrence_boundary=APPLICABILITY_BOUNDARY,
         result_kind=APPLICABILITY_RESULT_KIND,
         result_occurrence_coordinate="applicability_act_occurrence_identity",
         responsible_act_occurrence_coordinate=(
@@ -1166,7 +1313,9 @@ def _path_assertion(
     }
     scope = {"source_localities": [inputs.first.locality_identity]}
     content = {
-        "shared_position": inputs.shared_position,
+        "shared_position_coordinate_reference": (
+            inputs.shared_position_coordinate_reference
+        ),
         "source_ingest_occurrence_identity": (
             inputs.first.source_ingest_occurrence_identity
         ),
@@ -1188,7 +1337,6 @@ def _path_assertion(
         "dimensions": {
             "identity": identity,
             "content": content,
-            "standing": "measured",
             "source_provenance": "exact recorded pair position Assertions",
             "responsibility": SHARED_POSITION_ASSERTION_RESPONSIBILITY,
             "authority": "unestablished",
@@ -1213,7 +1361,8 @@ def _path_assertion(
         "conflicts": "Unknown",
         "unknown": ["what this ordered relation path represents remains Unknown"],
         "limits": [
-            "one path bounded by exact position Assertions and one shared position"
+            "one path bounded by exact position Assertions and one exact shared "
+            "position-coordinate reference"
         ],
     }
 
@@ -1235,7 +1384,6 @@ def _measurement_result_material(
         "dimensions": {
             "identity": assignment.material["measurement_result_identity"],
             "content": "one exact ordered relation-path Assertion",
-            "standing": "measured",
             "source_provenance": "exact recorded pair position Assertions",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -1322,7 +1470,7 @@ def record_shared_position_measurement_result(
             if coordinate != "responsible_act_evidence_identity"
         },
         responsibility=RESPONSIBILITY,
-        live_boundary="shared_pair_position_measurement",
+        occurrence_boundary="shared_pair_position_measurement",
         responsible_boundary="this Seed",
     )
     return ledger.append(
@@ -1406,7 +1554,7 @@ def get_recorded_shared_position_measurement(
         ledger,
         event=event,
         act=act,
-        live_boundary=MEASUREMENT_BOUNDARY,
+        occurrence_boundary=MEASUREMENT_BOUNDARY,
         result_kind=MEASUREMENT_RESULT_KIND,
     )
     return json.loads(json.dumps(carried))

@@ -508,7 +508,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
 
     detached_material = count.material
     detached_material["dimensions"]["standing"] = "unsupported"
-    assert count.material["dimensions"]["standing"] == "measured"
+    assert "standing" not in count.material["dimensions"]
 
     detached_references = count.support_assertion_references
     detached_references[0]["assertion_identity"] = "unsupported"
@@ -727,6 +727,13 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["input_unknown"]
     assert applicability["input_limits"]
     assert applicability["conflicts"] == []
+    assert applicability["input_standing"] == {
+        "recorded_measurement_result_occurrence_identity": source.identity,
+        "assertion_identity": original.assertion_identity,
+        "locality_movement_result_occurrence_identity": event.material[
+            "source_movement_event_identity"
+        ],
+    }
     assert applicability["coordinate_treatment"]["support_relation_standing"] == {
         "carried": False,
         "treatment": "not established by Applicability",
@@ -759,7 +766,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     )
     detached = count.material
     detached["dimensions"]["standing"] = "unsupported"
-    assert count.material["dimensions"]["standing"] == "measured"
+    assert "standing" not in count.material["dimensions"]
     assert count.support_assertion_references[0]["recorded_occurrence_identity"] == source.identity
     movement = ledger.get(event.material["source_movement_event_identity"])
     assert movement.material["source_assertion_reference"]["recorded_occurrence_identity"] == source.identity
@@ -910,18 +917,20 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
         if item.result == "exact_source_material_set"
     )
     first = _pair_input_applicability(
+        ledger,
         source,
         downstream_act_identity="pair-act-1",
         applicability_act_identity="applicability-act-1",
         applicability_act_occurrence_identity="applicability-occurrence-1",
-        measurement_locality_identity="measurement",
+        measurement_locality_identity="byte-measurement",
     )
     second = _pair_input_applicability(
+        ledger,
         source,
         downstream_act_identity="pair-act-2",
         applicability_act_identity="applicability-act-2",
         applicability_act_occurrence_identity="applicability-occurrence-2",
-        measurement_locality_identity="measurement",
+        measurement_locality_identity="byte-measurement",
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
@@ -931,7 +940,7 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
     assert first["downstream_act_occurrence_identity"] is None
 
 
-def test_pair_applicability_has_unknown_and_conflicting_results():
+def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
     source = next(
@@ -939,48 +948,34 @@ def test_pair_applicability_has_unknown_and_conflicting_results():
         for item in assertions_of_recorded_byte_measurement(ledger, source_event.identity)
         if item.result == "exact_source_material_set"
     )
-    carried = source.material
-    carried["dimensions"]["authority"] = "unrecognized"
-    unknown_source = type(source)(
+    detached = source.material
+    detached["dimensions"]["standing"] = "reported"
+    detached_source = type(source)(
         assertion_identity=source.assertion_identity,
         recorded_occurrence_identity=source.recorded_occurrence_identity,
         representation=source.representation,
         result=source.result,
-        _material_json=json.dumps(carried),
+        _material_json=json.dumps(detached),
         _support_assertion_refs_json="[]",
     )
-    unknown = _pair_input_applicability(
-        unknown_source,
-        downstream_act_identity="pair-act-unknown-authority",
-        applicability_act_identity="applicability-act-unknown",
-        applicability_act_occurrence_identity="applicability-occurrence-unknown",
-        measurement_locality_identity="measurement",
-    )
-    conflicting_material = source.material
-    conflicting_material["dimensions"]["standing"] = "reported"
-    conflicting_source = type(source)(
-        assertion_identity=source.assertion_identity,
-        recorded_occurrence_identity=source.recorded_occurrence_identity,
-        representation=source.representation,
-        result=source.result,
-        _material_json=json.dumps(conflicting_material),
-        _support_assertion_refs_json="[]",
-    )
-    conflicting = _pair_input_applicability(
-        conflicting_source,
-        downstream_act_identity="pair-act-conflicting-standing",
-        applicability_act_identity="applicability-act-conflicting",
-        applicability_act_occurrence_identity="applicability-occurrence-conflicting",
-        measurement_locality_identity="measurement",
+    applicable = _pair_input_applicability(
+        ledger,
+        detached_source,
+        downstream_act_identity="pair-act-exact-standing",
+        applicability_act_identity="applicability-act-exact-standing",
+        applicability_act_occurrence_identity="applicability-occurrence-exact-standing",
+        measurement_locality_identity="byte-measurement",
     )
 
-    assert unknown["dimensions"]["standing"] == "Unknown"
-    assert len(unknown["unknown"]) == 2
-    assert conflicting["dimensions"]["standing"] == "conflicting"
-    assert len(conflicting["conflicts"]) == 1
-    assert conflicting["input_standing"] == "reported"
-    assert conflicting["input_assertion_reference"] == source.reference
-    assert conflicting["downstream_act_occurrence_identity"] is None
+    assert applicable["dimensions"]["standing"] == "applicable"
+    assert applicable["conflicts"] == []
+    assert applicable["input_standing"] == {
+        "recorded_measurement_result_occurrence_identity": source.recorded_occurrence_identity,
+        "assertion_identity": source.assertion_identity,
+        "locality_movement_result_occurrence_identity": None,
+    }
+    assert applicable["input_assertion_reference"] == source.reference
+    assert applicable["downstream_act_occurrence_identity"] is None
 
 
 def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities():
@@ -1164,6 +1159,28 @@ def test_pair_applicability_reader_refuses_changed_yield_result_identity():
         get_recorded_pair_input_applicability(ledger, applicability.identity)
 
 
+def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch):
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+
+    def refuse_detached_standing(*_args, **_kwargs):
+        raise ByteMeasurementError("detached input Standing")
+
+    monkeypatch.setattr(
+        "seed_runtime.byte_measurement._recorded_input_assertion_standing",
+        refuse_detached_standing,
+    )
+    with pytest.raises(ByteMeasurementError, match="detached input Standing"):
+        get_recorded_pair_input_applicability(
+            ledger, pair.material["input_applicability_event_identity"]
+        )
+
+
 def test_pair_result_reader_refuses_changed_yield_result_identity():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
@@ -1236,8 +1253,9 @@ FIDELITY_SUBJECTS = {
     "applicability_determination": (
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_downstream_act,
-        test_pair_applicability_has_unknown_and_conflicting_results,
+        test_pair_applicability_reads_exact_result_standing_instead_of_scalar,
         test_pair_applicability_reader_refuses_changed_yield_result_identity,
+        test_pair_applicability_reader_revalidates_exact_input_standing,
     ),
     "one_exact_movement_assertion": (
         test_locality_movement_assignment_is_earned_from_the_exact_source,

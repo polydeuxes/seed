@@ -29,6 +29,11 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 from seed_runtime.operator_representation_admission import RepresentationAdmissionError
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -42,6 +47,12 @@ _BYTE_MEASUREMENT_KINDS = (
     "operator.measurement.byte_responsible_act_evidenced",
     "operator.evidence_of_yield_relation_recorded",
     "operator.measurement.byte_counts_recorded",
+)
+_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
+    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    "operator.evidence_of_yield_relation_recorded",
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
 _OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -73,6 +84,7 @@ def _one_material_console_kinds():
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         *_INGEST_KINDS,
+        *_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
@@ -1498,6 +1510,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     kinds = {event.kind for event in ledger.list()}
     assert kinds == {
         *_INGEST_KINDS,
+        *_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,

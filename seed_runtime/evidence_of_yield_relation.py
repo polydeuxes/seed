@@ -24,14 +24,14 @@ RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND = "operator.evidence_of_yield_relation_
 EVENT_KIND_RESPONSIBILITIES = {
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND: "02.Acts.A",
 }
-LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
+OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
     {
         "assertion_locality_movement",
         "failed_boundary",
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",
-        "byte_pair_position_coordinate_difference_one_measurement",
+        "byte_pair_occurrence_position_measurement",
         "material_ingest",
         "occurrence_position_measurement",
         "measurement_of_recurrent_byte_pair_occurrence_position",
@@ -64,7 +64,7 @@ def read_requirements_of_evidence_carried_by_result_occurrence(
 
     The recording occurrence carries the exact Evidence occurrence by identity.
     The Evidence occurrence in turn names the Act occurrence whose result is
-    recorded.  Neither equal result content nor endpoint presence substitutes
+    recorded.  Neither the same result content nor endpoint presence substitutes
     for this carried relation.
     """
 
@@ -300,7 +300,7 @@ def _record_evidence_of_yield_relation(
     result_identity: str,
     result_content: dict[str, Any],
     responsibility: str,
-    live_boundary: str,
+    occurrence_boundary: str,
     responsible_boundary: str = "unestablished",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
     coordinates_of_recorded_result: dict[str, tuple[str, ...]] | None = None,
@@ -334,8 +334,10 @@ def _record_evidence_of_yield_relation(
         raise ValueError(
             "Evidence of Yield relation requires intact responsible Act Evidence for its occurrence"
         )
-    if live_boundary not in LIVE_BOUNDARIES_OF_YIELD_RELATION:
-        raise ValueError("Evidence of Yield relation requires one declared live boundary")
+    if occurrence_boundary not in OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION:
+        raise ValueError(
+            "Evidence of Yield relation requires one declared occurrence boundary"
+        )
     if type(result_content) is not dict:
         raise TypeError("Evidence of Yield relation requires one exact result")
     if not isinstance(result_identity, str) or not result_identity:
@@ -386,7 +388,7 @@ def _record_evidence_of_yield_relation(
             "result": deepcopy(result_content),
             "coordinates_of_recorded_result": preserved_coordinates_of_recorded_result,
             "result_kind": result_kind,
-            "live_boundary": live_boundary,
+            "occurrence_boundary": occurrence_boundary,
         },
         exact_material=result_exact_material,
         locality_identity=locality_identity,

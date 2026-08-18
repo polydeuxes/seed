@@ -362,7 +362,7 @@ def test_produced_measurements_enter_one_responsible_compare():
     }
     assert any(
         item["subject"] == {"result": "recurrence", "representation": [97, 98]}
-        for item in findings["equal_findings"]
+        for item in findings["same_content_findings"]
     )
     assert any(
         item["subject"] == {"result": "count", "representation": [97, 99]}
@@ -374,7 +374,7 @@ def test_produced_measurements_enter_one_responsible_compare():
     assert result.identity in standing["comparison_result_occurrences"]
 
 
-def test_equal_finding_labels_do_not_hide_changed_content():
+def test_same_content_finding_labels_do_not_hide_changed_content():
     ledger, *_rest, result = _comparison()
     findings = get_recorded_pair_measurement_comparison(ledger, result.identity)[
         "findings"
@@ -727,7 +727,7 @@ FIDELITY_SUBJECTS = {
         test_operator_occurrence_without_acquisition_cannot_supply_compare,
         test_operator_acquisition_before_the_premise_cannot_supply_compare,
         test_produced_measurements_enter_one_responsible_compare,
-        test_equal_finding_labels_do_not_hide_changed_content,
+        test_same_content_finding_labels_do_not_hide_changed_content,
         test_missing_provenance_cannot_supply_the_compare_rung,
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,

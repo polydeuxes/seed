@@ -108,7 +108,7 @@ def ingest_material(
         result_identity=result_identity,
         result_content=result,
         responsibility=MATERIAL_INGEST_RESPONSIBILITY,
-        live_boundary="material_ingest",
+        occurrence_boundary="material_ingest",
         responsible_boundary="this Seed",
         coordinates_of_recorded_result={key: (key,) for key in result},
         result_exact_material=exact_bytes,

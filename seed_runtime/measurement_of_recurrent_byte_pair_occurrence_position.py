@@ -739,7 +739,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                         second_position=second_position,
                     ),
                     "content": content,
-                    "standing": "measured",
                     "source_provenance": (
                         "the exact Yield-carried pair Assertion and later Ingest result"
                     ),
@@ -791,7 +790,6 @@ def _material_of_result_of_measurement(
         "dimensions": {
             "identity": "recurrent-byte-pair-occurrence-position-measurement",
             "content": "exact ordered pair occurrence position Assertions",
-            "standing": "measured",
             "source_provenance": (
                 "one recurrence Assertion carried by Evidence of Yield relation and one later "
                 "exact Ingest result"
@@ -883,7 +881,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         result_identity=result_identity,
         result_content=result,
         responsibility=RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        live_boundary="measurement_of_recurrent_byte_pair_occurrence_position",
+        occurrence_boundary="measurement_of_recurrent_byte_pair_occurrence_position",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
@@ -987,7 +985,7 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
     if (
         not all(requirements.values())
         or evidence_of_yield_relation is None
-        or evidence_of_yield_relation.material.get("live_boundary")
+        or evidence_of_yield_relation.material.get("occurrence_boundary")
         != MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY
         or evidence_of_yield_relation.material.get("result_kind")
         != RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND

@@ -395,7 +395,7 @@ def _result_material(act: Event) -> dict[str, Any]:
             "same_emission_Act_occurrence": True,
             "same_emission_result_boundary": True,
         },
-        "currentness": "current through exact Admission Standing boundary",
+        "current_Standing": "current through exact Admission Standing boundary",
         "known_loss": [],
         "conflicts": [],
         "unknown": [],
@@ -461,7 +461,7 @@ def _recorded_result_material(
         "standing": result["standing"],
         "support_relation_standing": result["support_relation_standing"],
         "validation": deepcopy(result["validation"]),
-        "currentness": result["currentness"],
+        "current_Standing": result["current_Standing"],
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),
         "unknown": list(result["unknown"]),
@@ -508,7 +508,7 @@ def record_representation_emission_applicability_result(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=REPRESENTATION_EMISSION_APPLICABILITY_RESPONSIBILITY,
-        live_boundary="representation_emission_applicability",
+        occurrence_boundary="representation_emission_applicability",
         responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"

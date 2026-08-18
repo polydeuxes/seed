@@ -494,9 +494,9 @@ def test_unknown_conflict_and_absence_remain_distinct():
     # No locality event records a conflict or a relation standing; both stay
     # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []
-    assert standing["recorded_relation_standings"] == {}
+    assert standing["recorded_relation_Standing"] == {}
     next_attempt = _attempt(ledger, "next\n", locality_standing=standing)
-    assert next_attempt["locality_standing"]["recorded_relation_standings"] == {}
+    assert next_attempt["locality_standing"]["recorded_relation_Standing"] == {}
 
 
 def test_one_attempt_records_only_responsible_representation_results():

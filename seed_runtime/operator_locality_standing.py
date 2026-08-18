@@ -19,22 +19,31 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESULT_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    _occurrence_position_result_material,
+    _position_assertions,
+    _require_carried_occurrence_position_assignment,
     get_occurrence_position_measurement_responsibility_assignment,
     get_recorded_occurrence_position_measurement,
+)
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    read_requirements_of_yield_relation,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
-    POSITION_DIFFERENCE_ONE_ASSIGNMENT_KIND,
-    POSITION_DIFFERENCE_ONE_ACT_EVIDENCE_KIND,
-    POSITION_DIFFERENCE_ONE_RESULT_KIND,
-    get_position_difference_one_measurement_responsibility_assignment,
-    get_position_difference_one_measurement_act_evidence,
-    get_recorded_position_difference_one_measurement,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    _require_carried_byte_pair_occurrence_position_assignment,
+    get_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    get_byte_pair_occurrence_position_measurement_act_evidence,
+    get_recorded_byte_pair_occurrence_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
@@ -131,8 +140,6 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
-from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
-
 # The writer of these occurrences declares their kinds. A reader declaring its
 # own copy would be a second contract, free to drift from the first.
 from seed_runtime.operator_representation import (
@@ -155,11 +162,11 @@ _MEASUREMENT_ACT_EVIDENCE_KINDS = {
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    POSITION_DIFFERENCE_ONE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
 }
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    POSITION_DIFFERENCE_ONE_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -167,7 +174,7 @@ _MEASUREMENT_RECORDED_KINDS = {
     OCCURRENCE_POSITION_RECORDED_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    POSITION_DIFFERENCE_ONE_RESULT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -472,7 +479,7 @@ def read_carried_recorded_standing(
             "checkpoint",
             locality_standing["recorded_standing_boundary_references"],
         ),
-        ("continuation", locality_standing["recorded_relation_standings"]),
+        ("continuation", locality_standing["recorded_relation_Standing"]),
         (
             "checkout",
             locality_standing["recorded_standing_boundary_locality_relations"],
@@ -590,7 +597,7 @@ def advance_operator_locality_standing(
     measurement_occurrences: dict[str, dict[str, str]] = {}
     exact_result_occurrences: dict[str, None] = {}
     representations: dict[str, dict[str, Any]] = {}
-    recorded_relation_standings: dict[str, None] = {}
+    recorded_relation_Standing: dict[str, None] = {}
     recorded_standing_boundary_references: dict[str, None] = {}
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
     operator_invocation_locality_relations: dict[str, None] = {}
@@ -624,8 +631,8 @@ def advance_operator_locality_standing(
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
         representations = prior["representations"]
-        recorded_relation_standings = prior["recorded_relation_standings"]
-        if type(recorded_relation_standings) is not dict:
+        recorded_relation_Standing = prior["recorded_relation_Standing"]
+        if type(recorded_relation_Standing) is not dict:
             raise ValueError(
                 "prior Locality Standing requires exact recorded relation occurrences"
             )
@@ -737,8 +744,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == POSITION_DIFFERENCE_ONE_ASSIGNMENT_KIND:
-            get_position_difference_one_measurement_responsibility_assignment(
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND:
+            get_byte_pair_occurrence_position_measurement_responsibility_assignment(
                 ledger, event.identity
             )
             responsibility_assignment_occurrences[event.identity] = None
@@ -951,7 +958,7 @@ def advance_operator_locality_standing(
             continue
         if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND:
             get_recorded_standing_locality_continuation(ledger, event.identity)
-            recorded_relation_standings[event.identity] = None
+            recorded_relation_Standing[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
@@ -985,8 +992,8 @@ def advance_operator_locality_standing(
                 _measurement_occurrence_coordinates(event)
             )
             continue
-        if event.kind == POSITION_DIFFERENCE_ONE_RESULT_KIND:
-            get_recorded_position_difference_one_measurement(ledger, event.identity)
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+            get_recorded_byte_pair_occurrence_position_measurement(ledger, event.identity)
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
@@ -1133,7 +1140,7 @@ def advance_operator_locality_standing(
         # establishes.
         # Exactly the relation standings recorded by Locality events;
         # emptiness is absence of record only.
-        "recorded_relation_standings": recorded_relation_standings,
+        "recorded_relation_Standing": recorded_relation_Standing,
         "recorded_standing_boundary_references": (
             recorded_standing_boundary_references
         ),
@@ -1157,6 +1164,142 @@ def advance_operator_locality_standing(
         "unknown": unknown,
         "conflicts": conflicts,
     }
+
+
+def _carry_occurrence_position_measurement_assignment_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    finding,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry the occurrence-position assignment produced beside this Standing."""
+
+    if (
+        type(locality_standing) is not dict
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError(
+            "occurrence position assignment must follow its carried finding"
+        )
+    _require_carried_occurrence_position_assignment(
+        ledger,
+        responsibility_assignment=event,
+        finding=finding,
+    )
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or event.identity in assignments
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("occurrence position assignment Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="occurrence position assignment Standing is not exact",
+    )
+    assignments[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_occurrence_position_measurement_result_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    responsible_act_evidence,
+    responsibility_assignment,
+    finding,
+) -> dict[str, Any]:
+    """Carry the occurrence-position result produced beside its exact Act."""
+
+    measurements = (
+        locality_standing.get("measurement_occurrences")
+        if type(locality_standing) is dict
+        else None
+    )
+    assignments = (
+        locality_standing.get("responsibility_assignment_occurrences")
+        if type(locality_standing) is dict
+        else None
+    )
+    event_count = (
+        locality_standing.get("event_count")
+        if type(locality_standing) is dict
+        else None
+    )
+    assertions = _position_assertions(finding)
+    result_material = _occurrence_position_result_material(
+        finding,
+        assignment=responsibility_assignment,
+        assertions=assertions,
+    )
+    expected = {
+        **result_material,
+        "responsible_act_evidence_identity": responsible_act_evidence.identity,
+        "evidence_of_yield_relation_identity": event.material.get(
+            "evidence_of_yield_relation_identity"
+        ),
+    }
+    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
+    evidence = ledger.get(evidence_identity) if type(evidence_identity) is str else None
+    try:
+        requirements = read_requirements_of_yield_relation(
+            ledger,
+            recorded_result_event_identity=event.identity,
+            evidence_of_yield_relation_event_identity=evidence_identity,
+            responsible_act_evidence_event_identity=responsible_act_evidence.identity,
+        )
+    except (TypeError, ValueError):
+        requirements = {}
+    if (
+        event.kind != OCCURRENCE_POSITION_RECORDED_KIND
+        or event.locality_identity != responsibility_assignment.locality_identity
+        or event.material != expected
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != responsible_act_evidence.identity
+        or type(measurements) is not dict
+        or event.identity in measurements
+        or type(assignments) is not dict
+        or responsibility_assignment.identity not in assignments
+        or evidence is None
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        or evidence.material.get("occurrence_boundary")
+        != "occurrence_position_measurement"
+        or evidence.material.get("result_kind") != OCCURRENCE_POSITION_RESULT_KIND
+        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or not all(requirements.values())
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(event.identity)
+        != ledger.append_boundary()
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("occurrence position Measurement Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="occurrence position Measurement Standing is not exact",
+    )
+    measurements[event.identity] = _measurement_occurrence_coordinates(event)
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
 
 
 def _carry_recorded_pair_measurement_into_standing(
@@ -1216,7 +1359,54 @@ def _carry_recorded_pair_measurement_into_standing(
     return locality_standing
 
 
-def _carry_position_difference_one_measurement_result_into_standing(
+def _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    finding,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry the byte-pair position assignment produced beside this Standing."""
+
+    if (
+        type(locality_standing) is not dict
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError(
+            "byte-pair position assignment must follow its carried finding"
+        )
+    _require_carried_byte_pair_occurrence_position_assignment(
+        ledger,
+        responsibility_assignment=event,
+        finding=finding,
+    )
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or event.identity in assignments
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("byte-pair position assignment Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="byte-pair position assignment Standing is not exact",
+    )
+    assignments[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
@@ -1226,7 +1416,7 @@ def _carry_position_difference_one_measurement_result_into_standing(
 
     if (
         type(locality_standing) is not dict
-        or event.kind != POSITION_DIFFERENCE_ONE_RESULT_KIND
+        or event.kind != BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
         or locality_standing.get("locality_identity") != event.locality_identity
         or locality_standing.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity

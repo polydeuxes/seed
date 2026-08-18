@@ -6,7 +6,7 @@ The locality of exact content and the boundary between supplied material and See
 
 ## Bounded resolution
 
-A supplied representation may enter as material with exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence establishes no equal identity or Standing.
+A supplied representation may enter as material with exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. The same content under another source or occurrence establishes no shared identity or Standing.
 
 Use of supplied material by an exact Responsibility requires its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate remains unsupported; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
 
@@ -30,11 +30,11 @@ This Book material acquisition witness is one declared distinction carried as th
 
 ### 01.Source.D — Measurement carries its declared result
 
-A declared Measurement occurrence may carry bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or position findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
+A declared Measurement occurrence may carry bounded exact identity distinctions, count, recurrence, prefix occurrence, declared-predicate result, or position findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
-A declared byte Measurement counts each exact byte occurrence in the exact Ingest material occurrences within its completeness boundary. Equal byte material identifies neither the occurrence nor position, and the result establishes no represented relation for a byte.
+A declared byte Measurement counts each exact byte occurrence in the exact Ingest material occurrences within its completeness boundary. The same byte material in another occurrence identifies neither occurrence nor position, and the result establishes no represented relation for a byte.
 
-Where current Standing in one Locality carries exact recorded position Assertions, this Seed may determine Applicability to one declared shared position Measurement. Exact pair occurrence Assertions from one exact source occurrence, Locality, and completeness boundary may participate. The second position of the first Assertion and the first position of the second Assertion establish one ordered relation path when each position is equal. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, exact shared position, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no material of the input pair occurrences and no represented relation.
+Where current Standing in one Locality carries exact recorded position Assertions, this Seed may determine Applicability to one declared shared position Measurement. Exact pair occurrence Assertions from one exact source occurrence, Locality, and completeness boundary may participate. The second position-coordinate reference of the first Assertion and the first position-coordinate reference of the second Assertion establish one ordered relation path only when both references identify one exact byte occurrence. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, the exact shared position-coordinate reference, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no other relation, material of the input pair occurrences, or represented relation.
 
 Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment cannot identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
 
@@ -56,7 +56,7 @@ Supplied material may assert that X represents or identifies Y. The responsible 
 
 Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed a Responsibility bounded to preservation of one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
 
-The assignment, exact Act, Act occurrence, Yield, and material result remain distinct by identity. Equal exact material under another occurrence identifies neither result nor occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
+The assignment, exact Act, Act occurrence, Yield, and material result remain distinct by identity. The same exact material under another occurrence identifies neither result nor occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
 
 When the boundary supplies no material, this Seed establishes no material result, Yield, or completion. Another operator material boundary occurrence requires another exact assignment and Act occurrence.
 
@@ -66,7 +66,7 @@ When the boundary supplies no material, this Seed establishes no material result
 - preserved source coordinates != applicable input
 - material != Evidence
 - carried relation Assertion != established relation
-- equal content != equal identity or Standing
+- same content != shared identity or Standing
 - Measurement != represented relation
 - operator material boundary occurrence != another boundary occurrence
 - no supplied material != completion

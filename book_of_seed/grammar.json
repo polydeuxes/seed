@@ -59,7 +59,7 @@
       "relation": "represents",
       "second_subject": "this_Book"
     },
-    "equal_identity": false
+    "identifies_book": false
   },
   "completeness": {
     "required_coordinates": [
@@ -151,7 +151,7 @@
   },
   "composite": {
     "material_order": "preserved",
-    "equal_material_in_different_order_establishes_same_composite": false,
+    "same_material_in_different_order_identifies_one_composite": false,
     "requires": ["exact_material", "exact_order", "exact_path"],
     "relations": {
       "of": {
@@ -159,7 +159,7 @@
         "to": "first_subject",
         "coordinate": "of",
         "requires": ["first_subject", "second_subject", "exact_order"],
-        "equal_subjects_in_different_order_establish_same_relation": false
+        "same_subjects_in_different_order_establish_one_relation": false
       }
     }
   },
@@ -196,7 +196,7 @@
       "to": "result",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"],
       "preserves": ["Act_occurrence_identity", "result_identity"],
-      "equal_result_content_establishes_identity": false
+      "same_result_content_identifies_one_result": false
     },
     "carried_by": {
       "book_clause": "02.Acts.A",
@@ -624,7 +624,7 @@
         {"subject": "supplied_material_invocation"},
         {"subject": "function_reference"},
         {"subject": "read_refusal_boundary"},
-        {"subject": "read_write_exact_material_equality"},
+        {"subject": "read_write_exact_material_identity_distinction"},
         {"subject": "read_material_multiplicity"},
         {"subject": "read_write_refusal_distinction"},
         {"subject": "read_write_difference"},
@@ -677,7 +677,7 @@
         {"subject": "witness_grammar_completeness"},
         {"subject": "clause_grammar_recorded_occurrence_kind_distinction"},
         {"subject": "witness_clause_book_material_reference"},
-        {"subject": "book_witness_clause_identity_equality"},
+        {"subject": "book_witness_clause_identity_distinction"},
         {"subject": "bounded_fidelity_comparison"},
         {"subject": "fidelity_witness_occurrence"},
         {"subject": "fidelity_witness_subject"},
@@ -723,7 +723,12 @@
         "complete_Measurement_results_recorded_after_Yield",
         "coordinate_value_and_treatment",
         "occurrences_carrying_result",
-        "position_coordinates_whose_difference_is_one"
+        {
+          "identity": "position_coordinates_of_byte_pair_occurrences",
+          "first_subject": "position_coordinates",
+          "relation": "of",
+          "second_subject": "byte_pair_occurrences"
+        }
       ],
       "result_carries": {
         "first_subject": "result",
@@ -750,7 +755,7 @@
       },
       "findings": ["count", "recurrence", "position", "ordered_relation_path"],
       "declared_measurements": {
-        "measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one": {
+        "measurement_of_position_coordinates_of_byte_pair_occurrences": {
           "measurement": {
             "subject": {
               "first_subject": "position",
@@ -785,7 +790,7 @@
               }
             ],
             "input_reference": "source_ingest_occurrence_identity",
-            "input_applicability": {
+            "input_relation": {
               "first_subject": "exact_Ingest_result",
               "relation": "input_to",
               "second_subject": "exact_Act"
@@ -798,6 +803,8 @@
               "exact_pair",
               "first_position",
               "second_position",
+              "first_position_coordinate_reference",
+              "second_position_coordinate_reference",
               {
                 "identity": "Evidence_of_Yield_relation",
                 "first_subject": "Evidence",
@@ -805,10 +812,15 @@
                 "second_subject": "Yield_relation"
               }
             ],
-            "determination": "position_coordinates_whose_difference_is_one"
+            "determination": "position_coordinates_of_byte_pair_occurrences"
           },
           "input_subject": "exact_Ingest_result",
-          "findings": ["first_position", "second_position"],
+          "findings": [
+            "first_position",
+            "second_position",
+            "first_position_coordinate_reference",
+            "second_position_coordinate_reference"
+          ],
           "bounded_by": ["Locality", "completeness_boundary"],
           "standing_not_established": [
             "count",
@@ -917,7 +929,7 @@
         "measurement_of_shared_position_of_byte_pair_occurrences": {
           "measurement": {
             "subject": {
-              "first_subject": "shared_position",
+              "first_subject": "shared_position_coordinate_reference",
               "relation": "of",
               "second_subject": "exact_recorded_pair_occurrence_relations"
             },
@@ -933,24 +945,31 @@
               "Locality",
               "completeness_boundary"
             ],
-            "Applicability": {
-              "first_subject": {
-                "Assertion": "first",
-                "coordinate": "second_position"
+            "Applicability": [
+              {
+                "first_subject": {
+                  "Assertion": "first",
+                  "coordinate": "second_position_coordinate_reference"
+                },
+                "relation": "identifies",
+                "second_subject": "one_exact_byte_occurrence"
               },
-              "relation": "equal_to",
-              "second_subject": {
-                "Assertion": "second",
-                "coordinate": "first_position"
+              {
+                "first_subject": {
+                  "Assertion": "second",
+                  "coordinate": "first_position_coordinate_reference"
+                },
+                "relation": "identifies",
+                "second_subject": "one_exact_byte_occurrence"
               }
-            },
+            ],
             "Participation": [
               "first_exact_pair_occurrence_relation",
               "second_exact_pair_occurrence_relation"
             ],
             "result_coordinates": [
               "each_exact_input_Assertion_reference",
-              "shared_position",
+              "shared_position_coordinate_reference",
               "Applicability_result_occurrence",
               {
                 "identity": "Evidence_of_Yield_relation",
@@ -1140,7 +1159,7 @@
         ["Responsibility_assignment", "exact_Act"],
         ["exact_Act", "Act_occurrence"],
         ["Act_occurrence", "material_result"],
-        ["equal_exact_material", "equal_result_identity"]
+        ["same_exact_material", "same_result_identity"]
       ]
     },
     "01.Standing.A": {
@@ -1476,7 +1495,7 @@
         "provenance",
         "Standing",
         "support_relation_Standing",
-        "currentness",
+        "current_Standing",
         "occurrence_identity",
         "known_loss",
         "conflicts",
@@ -1665,7 +1684,7 @@
         "second_subject": "Yield_relation",
         "coordinates": [
           "result_kind",
-          "live_boundary"
+          "occurrence_boundary"
         ]
       },
       "responsibility": {
@@ -1694,7 +1713,7 @@
         "Act_shaped_representation",
         "public_code",
         "direct_instantiation",
-        "equal_shape",
+        "same_shape",
         "behavior_without_mutation"
       ],
       "distinct_from": [
@@ -1785,7 +1804,7 @@
         "finding_subject": ["result_kind", "represented_byte_pair"],
         "content": "complete_measured_content",
         "results": [
-          "equal_finding",
+          "same_content_finding",
           "conflicting_finding",
           {
             "first_subject": "finding",
@@ -1875,7 +1894,7 @@
               "relation": "of",
               "second_subject": "ordered_relation_path"
             },
-            "relation": "equal_to",
+            "relation": "identifies",
             "second_subject": {
               "first_subject": "added_occurrence",
               "relation": "of",
@@ -1908,7 +1927,7 @@
         "relation": "carries",
         "second_subject": "complete_recorded_comparison_findings",
         "preserves_recorded_findings": [
-          "equal_finding",
+          "same_content_finding",
           "conflicting_finding",
           {
             "first_subject": "finding",
@@ -1967,35 +1986,6 @@
         "truth",
         "renewed_occurrence",
         "movement_to_another_Act"
-      ]
-    },
-    "05.Recording.B": {
-      "subject": "diagnostic_run_scoped_recording",
-      "book_material_reference": "05.Recording.B",
-      "grammar": "established",
-      "recorded_occurrence_kind": [],
-      "requires": [
-        "recorded_material_admitted_to_exact_diagnostic_Act",
-        {
-          "identity": "separate_responsible_occurrence_supplies_additional_Standing",
-          "first_subject": "separate_responsible_occurrence",
-          "relation": "supplies",
-          "second_subject": "additional_Standing"
-        }
-      ],
-      "preserves": {
-        "first_subject": "scoped_subject",
-        "relation": "of",
-        "second_subject": "recording"
-      },
-      "result": "bounded_availability",
-      "standing_not_established": [
-        {
-          "first_subject": "mutation",
-          "relation": "of",
-          "second_subject": "another_Assertion_Standing"
-        },
-        "Standing_beyond_diagnostic_Scope"
       ]
     },
     "05.Recording.C": {
@@ -2082,7 +2072,7 @@
       "recorded_occurrence_kind": [],
       "subjects_that_may_participate": [
         "recorded_Assertion",
-        "diagnostic_finding",
+        "recorded_finding",
         "Evidence_record"
       ],
       "requires": "exact_Act_Applicability_boundary",

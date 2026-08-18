@@ -458,7 +458,7 @@ def _comparison_inputs_from_carried_measurements(
         or locality_standing.get("locality_identity") != earlier.locality_identity
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires two carried pair Measurements"
+            "comparison requires first and second carried pair Measurements"
         )
     earlier, earlier_findings = _measurement_and_findings(
         ledger, earlier.identity
@@ -470,7 +470,7 @@ def _comparison_inputs_from_carried_measurements(
         or later.identity not in carried
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires two carried pair Measurements"
+            "comparison requires first and second carried pair Measurements"
         )
     try:
         ordered = ledger.occurrences_in_append_order(
@@ -661,7 +661,7 @@ def _require_measurement_standing(
         or not boundary_identity
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires both exact Measurement results in current Standing"
+            "comparison requires each exact Measurement result in current Standing"
         )
     identities = tuple(dict.fromkeys((*required, boundary_identity)))
     try:
@@ -670,11 +670,11 @@ def _require_measurement_standing(
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Standing boundary does not carry both inputs"
+            "comparison Standing boundary lacks a required input"
         ) from error
     if tuple(event.identity for event in ordered) != identities:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Standing boundary does not carry both inputs"
+            "comparison Standing boundary lacks a required input"
         )
     return boundary_identity
 
@@ -1193,7 +1193,7 @@ def _record_applicability_result_from_act(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        live_boundary="recorded_pair_measurement_comparison_applicability",
+        occurrence_boundary="recorded_pair_measurement_comparison_applicability",
         responsible_boundary="this Seed",
     )
     return ledger.append(
@@ -1451,7 +1451,7 @@ def _comparison_of_findings(
             "comparison input repeats one finding subject"
         )
     findings = {
-        "equal_findings": [],
+        "same_content_findings": [],
         "conflicting_findings": [],
         "findings_of_earlier_result": [],
         "findings_of_later_result": [],
@@ -1482,7 +1482,7 @@ def _comparison_of_findings(
             "later_content": second_content,
         }
         destination = (
-            "equal_findings"
+            "same_content_findings"
             if first_content == second_content
             else "conflicting_findings"
         )
@@ -1605,7 +1605,7 @@ def _record_comparison_result_from_act(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        live_boundary="recorded_pair_measurement_comparison",
+        occurrence_boundary="recorded_pair_measurement_comparison",
         responsible_boundary="this Seed",
     )
     return ledger.append(

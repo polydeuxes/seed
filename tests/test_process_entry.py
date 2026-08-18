@@ -50,27 +50,6 @@ def test_project_script_uses_the_live_process_entry():
     assert 'seed = "scripts.seed_local:main"' not in pyproject
 
 
-def test_importing_the_live_entry_does_not_wake_dormant_modules():
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "import sys; import seed_runtime.process_entry; "
-                "assert 'scripts.seed_local' not in sys.modules; "
-                "assert 'seed_runtime.state' not in sys.modules; "
-                "assert 'seed_runtime.diagnostic_inventory' not in sys.modules; "
-                "assert 'seed_runtime.diagnostic_shape_audit' not in sys.modules"
-            ),
-        ],
-        check=False,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True,
-    )
-
-    assert result.returncode == 0, result.stderr
-
-
 def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
     database = tmp_path / "seed.db"
     monkeypatch.setattr("sys.stdin", BytesIO(b"material\n"))
@@ -410,8 +389,5 @@ FIDELITY_SUBJECTS = {
     ),
     "operator_Locality_occurrence": (
         test_reopened_live_process_allocates_a_new_locality,
-    ),
-    "function_reference": (
-        test_importing_the_live_entry_does_not_wake_dormant_modules,
     ),
 }

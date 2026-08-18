@@ -626,7 +626,7 @@ def record_standing_locality_continuation_result(
         result_identity=result_identity,
         result_content=result_material,
         responsibility=STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
-        live_boundary="standing_locality_continuation",
+        occurrence_boundary="standing_locality_continuation",
         responsible_boundary="this Seed",
     )
     return ledger.append(

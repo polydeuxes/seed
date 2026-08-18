@@ -46,16 +46,21 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
         for reference in grammar["root_references"]
     }
     subjects = (
-        (BOOK, "this_Book", "book_material"),
-        (ROOT / "rosetta", "this_Rosetta", "rosetta_reference"),
+        (BOOK, "this_Book", "book_material", book_admission()),
+        (
+            ROOT / "rosetta",
+            "this_Rosetta",
+            "rosetta_reference",
+            set(_admission_entries(ROSETTA_ADMISSION)),
+        ),
     )
     missing: list[tuple[str, str, str]] = []
-    for root, subject, coordinate in subjects:
+    for root, subject, coordinate, admission in subjects:
         subject_words = set(
             re.findall(r"[A-Za-z]+", scan_active_line(subject).lower())
         )
         assert (subject, coordinate) in declared_references
-        assert subject_words <= book_admission()
+        assert subject_words <= admission
         for path in root.rglob("*.md"):
             for target in re.findall(
                 r"\]\(([^)#]+)(?:#[^)]+)?\)", path.read_text(encoding="utf-8")
@@ -96,6 +101,24 @@ def test_rosetta_admits_composite_support_relation_terms():
         "Warrant        exact support relation from Evidence + Authority + Scope "
         "+ preserved limits to one Assertion or assignment; composite only, no "
         "new relation by identity"
+    ) in roots
+
+
+def test_failure_is_book_material_and_performative_forms_are_rosetta_composites():
+    book_failure = {
+        word for word in book_admission() if word.startswith("fail")
+    }
+    rosetta_failure = {
+        word
+        for word in _admission_entries(ROSETTA_ADMISSION)
+        if word.startswith("fail")
+    }
+    assert book_failure == {"failure"}
+    assert rosetta_failure == {"fail", "failed", "failure", "fails"}
+    roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
+    assert (
+        "These forms compress one exact Act occurrence plus a bounded failure "
+        "Assertion\nor result, Evidence, Authority, Scope, and preserved limits."
     ) in roots
 
 
@@ -185,6 +208,7 @@ FIDELITY_SUBJECTS = {
     ),
     "rosetta_composite_support_relation_distinction": (
         test_rosetta_admits_composite_support_relation_terms,
+        test_failure_is_book_material_and_performative_forms_are_rosetta_composites,
     ),
     "clause_coordinate_word_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,

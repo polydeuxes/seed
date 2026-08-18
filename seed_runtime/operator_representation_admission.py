@@ -734,7 +734,7 @@ def record_representation_candidate_result(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=REPRESENTATION_CANDIDATE_RESPONSIBILITY,
-        live_boundary="representation_candidate",
+        occurrence_boundary="representation_candidate",
         responsible_boundary="this Seed",
     )
     return ledger.append(
@@ -1236,7 +1236,7 @@ def record_exact_material_representation_admission_result(
         result_identity=result["result_identity"],
         result_content=result,
         responsibility=REPRESENTATION_ADMISSION_RESPONSIBILITY,
-        live_boundary="representation_admission",
+        occurrence_boundary="representation_admission",
         responsible_boundary="this Seed",
     )
     return ledger.append(

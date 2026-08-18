@@ -87,22 +87,26 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
-    _carry_position_difference_one_measurement_result_into_standing,
+    _carry_occurrence_position_measurement_assignment_into_standing,
+    _carry_occurrence_position_measurement_result_into_standing,
+    _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
+    _carry_byte_pair_occurrence_position_measurement_result_into_standing,
     _carry_operator_material_acquisition_occurrence_into_standing,
     _carry_recorded_pair_measurement_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
 from seed_runtime.occurrence_position_measurement import (
+    _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    _record_occurrence_position_measurement_responsible_act_evidence_from_carried_standing,
+    _record_occurrence_position_measurement_result_from_carried_act_evidence,
     measure_occurrence_position,
-    record_occurrence_position_measurement_responsibility_assignment,
-    record_occurrence_position_measurement_responsible_act_evidence,
-    record_occurrence_position_measurement_result,
 )
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences_whose_difference_is_one import (
-    record_position_difference_one_measurement_responsibility_assignment,
-    record_position_difference_one_measurement_act_evidence,
-    record_position_difference_one_measurement_result,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding,
+    _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
+    _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
+    measure_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -304,25 +308,27 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         source_locality_identity=locality_identity,
     )
     position_measurement_assignment = (
-        record_occurrence_position_measurement_responsibility_assignment(
+        _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
             ledger,
             recording_locality_identity=locality_identity,
             finding=position_finding,
             locality_standing=standing,
         )
     )
-    standing = _advance_over(
+    standing = _carry_occurrence_position_measurement_assignment_into_standing(
         ledger,
         standing,
-        (position_measurement_assignment.identity,),
-        locality_identity=locality_identity,
+        position_measurement_assignment,
+        position_finding,
+        prior_through_event_occurrence_identity=standing[
+            "through_event_occurrence_identity"
+        ],
     )
     position_measurement_act_evidence = (
-        record_occurrence_position_measurement_responsible_act_evidence(
+        _record_occurrence_position_measurement_responsible_act_evidence_from_carried_standing(
             ledger,
-            responsibility_assignment_event_identity=(
-                position_measurement_assignment.identity
-            ),
+            responsibility_assignment=position_measurement_assignment,
+            finding=position_finding,
             responsibility_assignment_standing=standing,
         )
     )
@@ -332,47 +338,56 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         (position_measurement_act_evidence.identity,),
         locality_identity=locality_identity,
     )
-    position_measurement = record_occurrence_position_measurement_result(
-        ledger,
-        responsible_act_evidence_event_identity=(
-            position_measurement_act_evidence.identity
-        ),
+    position_measurement = (
+        _record_occurrence_position_measurement_result_from_carried_act_evidence(
+            ledger,
+            responsible_act_evidence=position_measurement_act_evidence,
+            responsibility_assignment=position_measurement_assignment,
+            finding=position_finding,
+        )
     )
-    standing = _advance_over(
+    standing = _carry_occurrence_position_measurement_result_into_standing(
         ledger,
         standing,
-        (
-            position_measurement.material["evidence_of_yield_relation_identity"],
-            position_measurement.identity,
-        ),
-        locality_identity=locality_identity,
+        position_measurement,
+        responsible_act_evidence=position_measurement_act_evidence,
+        responsibility_assignment=position_measurement_assignment,
+        finding=position_finding,
     )
     return standing, measurement
 
 
-def _record_position_difference_one_measurement(
+def _record_byte_pair_occurrence_position_measurement(
     ledger,
     standing,
     *,
     source_ingest_occurrence_identity,
     locality_identity,
 ):
-    """Record every two-position byte-pair occurrence of one Ingest result."""
+    """Record every byte-pair occurrence of one Ingest result."""
 
-    assignment = record_position_difference_one_measurement_responsibility_assignment(
+    finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
         source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+    )
+    assignment = _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding(
+        ledger,
+        finding=finding,
         locality_standing=standing,
     )
-    standing = _advance_over(
+    standing = _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
         ledger,
         standing,
-        (assignment.identity,),
-        locality_identity=locality_identity,
+        assignment,
+        finding,
+        prior_through_event_occurrence_identity=standing[
+            "through_event_occurrence_identity"
+        ],
     )
-    act = record_position_difference_one_measurement_act_evidence(
+    act = _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment=assignment,
+        finding=finding,
         responsibility_assignment_standing=standing,
     )
     standing = _advance_over(
@@ -381,11 +396,13 @@ def _record_position_difference_one_measurement(
         (act.identity,),
         locality_identity=locality_identity,
     )
-    result = record_position_difference_one_measurement_result(
+    result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence(
         ledger,
-        responsible_act_evidence_event_identity=act.identity,
+        responsible_act_evidence=act,
+        responsibility_assignment=assignment,
+        finding=finding,
     )
-    standing = _carry_position_difference_one_measurement_result_into_standing(
+    standing = _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         standing,
         result,
         prior_through_event_occurrence_identity=act.identity,
@@ -527,7 +544,7 @@ def _record_pair_measurement_comparison(
     later_pair_measurement,
     locality_identity,
 ):
-    """Carry two produced pair results into their responsible Compare."""
+    """Carry first and second produced pair results into their responsible Compare."""
 
     if (
         type(earlier_pair_measurement) is not Event
@@ -535,7 +552,7 @@ def _record_pair_measurement_comparison(
         or earlier_pair_measurement.locality_identity != locality_identity
         or later_pair_measurement.locality_identity != locality_identity
     ):
-        raise ValueError("pair Compare requires two carried Measurements")
+        raise ValueError("pair Compare requires first and second carried Measurements")
     result, standing = (
         _record_recorded_pair_measurement_comparison_from_carried_measurements(
             ledger,
@@ -701,8 +718,8 @@ def run_persistent_operator_console(
                     (command_occurrence["evidence_event_identity"],),
                     locality_identity=locality_identity,
                 )
-                locality_standing, _position_difference_one_measurement = (
-                    _record_position_difference_one_measurement(
+                locality_standing, _byte_pair_occurrence_position_measurement = (
+                    _record_byte_pair_occurrence_position_measurement(
                         ledger,
                         locality_standing,
                         source_ingest_occurrence_identity=command_occurrence[
@@ -1243,8 +1260,8 @@ def run_persistent_operator_console(
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
             )
-            locality_standing, _position_difference_one_measurement = (
-                _record_position_difference_one_measurement(
+            locality_standing, _byte_pair_occurrence_position_measurement = (
+                _record_byte_pair_occurrence_position_measurement(
                     ledger,
                     locality_standing,
                     source_ingest_occurrence_identity=ingest_occurrence[
