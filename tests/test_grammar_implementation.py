@@ -53,11 +53,13 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     EVENT_KIND_RESPONSIBILITIES as PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     measure_positions_for_recurrent_byte_pair_assertions,
     measure_positions_of_recurrent_byte_pair_occurrences,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
+    record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
@@ -1018,10 +1020,19 @@ def _pair_occurrence_yield_witness() -> dict:
         source_ingest_occurrence_identity=source.identity,
         occurrence_limit=16,
     )
-    act_evidence = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
-        recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    act_evidence = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
     event = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
@@ -1079,10 +1090,19 @@ def _shared_position_yield_witnesses() -> dict[str, dict]:
     )
     results = []
     for finding in findings:
-        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             finding=finding,
-            recording_locality_identity=locality,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality
+            ),
+        )
+        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality
+            ),
         )
         results.append(
             record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -2389,6 +2409,8 @@ def _additional_live_relation_fidelity_cases() -> dict[
 def _live_relation_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
+    byte_pair_yield_bundles = _byte_pair_yield_requirement_bundles()
+    remaining_yield_bundles = _remaining_yield_requirement_bundles()
     primary_boundaries = {
         "locality": "byte_measurement",
         "participation": "byte_pair_measurement",
@@ -2413,7 +2435,7 @@ def _live_relation_fidelity_cases() -> dict[
                 case: _occurrence_result_witness(bundle)
                 for case, bundle in cases.items()
             }
-            for boundary, cases in _byte_pair_yield_requirement_bundles().items()
+            for boundary, cases in byte_pair_yield_bundles.items()
         }
     )
     registered.update(
@@ -2422,7 +2444,7 @@ def _live_relation_fidelity_cases() -> dict[
                 case: _evidence_carried_by_result_occurrence_witness(bundle)
                 for case, bundle in cases.items()
             }
-            for boundary, cases in _byte_pair_yield_requirement_bundles().items()
+            for boundary, cases in byte_pair_yield_bundles.items()
         }
     )
     registered.update(
@@ -2431,7 +2453,7 @@ def _live_relation_fidelity_cases() -> dict[
                 case: _occurrence_result_witness(bundle)
                 for case, bundle in cases.items()
             }
-            for boundary, cases in _remaining_yield_requirement_bundles().items()
+            for boundary, cases in remaining_yield_bundles.items()
         }
     )
     registered.update(
@@ -2440,7 +2462,7 @@ def _live_relation_fidelity_cases() -> dict[
                 case: _evidence_carried_by_result_occurrence_witness(bundle)
                 for case, bundle in cases.items()
             }
-            for boundary, cases in _remaining_yield_requirement_bundles().items()
+            for boundary, cases in remaining_yield_bundles.items()
         }
     )
     return registered
@@ -2610,11 +2632,59 @@ def _occurrence_position_assignment_reference_is_exact(bundle: dict) -> bool:
     )
 
 
+def _pair_occurrence_assignment_from_reference(bundle: dict):
+    reference = bundle["event"].material.get(
+        "responsibility_assignment_reference"
+    )
+    if type(reference) is not dict:
+        return None
+    assignment = bundle["ledger"].get(
+        reference.get("recorded_occurrence_identity")
+    )
+    if assignment is None:
+        return None
+    try:
+        standing = read_operator_locality_standing_through(
+            bundle["ledger"],
+            locality_identity=assignment.locality_identity,
+            through_event_occurrence_identity=assignment.identity,
+        )
+    except (TypeError, ValueError):
+        return None
+    if (
+        assignment.kind
+        != RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        or reference
+        != {
+            "recorded_occurrence_identity": assignment.identity,
+            "assignment_identity": assignment.material["assignment_identity"],
+            "assignment_subject_identity": assignment.material[
+                "assignment_subject_identity"
+            ],
+        }
+        or standing.get("responsibility_assignment_occurrences", {}).get(
+            assignment.identity, object()
+        )
+        is not None
+    ):
+        return None
+    return assignment
+
+
+def _pair_occurrence_assignment_reference_is_exact(bundle: dict) -> bool:
+    return _pair_occurrence_assignment_from_reference(bundle) is not None
+
+
 def _responsibility_assignment_standing_is_exact(bundle: dict) -> bool:
     event = bundle["event"]
     assignment = event.material.get("responsibility_assignment_evidence")
     if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
         return _occurrence_position_assignment_reference_is_exact(bundle)
+    if (
+        event.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        return _pair_occurrence_assignment_reference_is_exact(bundle)
     return assignment.get("standing") == "assigned"
 
 
@@ -2672,7 +2742,17 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         allowed_results,
         source_reference_coordinate,
     ) = expected
-    assignment = material.get("responsibility_assignment_evidence")
+    pair_occurrence_assignment = None
+    if (
+        event.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        assignment = material.get("responsibility_assignment_reference")
+        pair_occurrence_assignment = _pair_occurrence_assignment_from_reference(
+            bundle
+        )
+    else:
+        assignment = material.get("responsibility_assignment_evidence")
     localities = material.get("source_localities")
     boundary = material.get("completeness_boundary")
     assertions = material.get("assertions")
@@ -2763,42 +2843,56 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         "completeness_boundary",
         "determination",
     }
-    if event.kind != OCCURRENCE_POSITION_RECORDED_KIND:
+    if event.kind not in {
+        OCCURRENCE_POSITION_RECORDED_KIND,
+        RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    }:
         expected_assignment_coordinates.add("standing")
-    assignment_is_exact = bool(
-        isinstance(assignment, dict)
-        and set(assignment) == expected_assignment_coordinates
-        and assignment["responsible_boundary"]
-        == SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
-        and _responsibility_assignment_standing_is_exact(bundle)
-        and isinstance(assignment["source_occurrence_references"], list)
-        and assignment["source_occurrence_references"]
-        and all(
-            isinstance(reference, dict)
-            and set(reference) == {source_reference_coordinate}
-            and isinstance(reference[source_reference_coordinate], str)
-            and reference[source_reference_coordinate]
-            for reference in assignment["source_occurrence_references"]
+    if pair_occurrence_assignment is not None:
+        assignment_is_exact = bool(
+            isinstance(assignment, dict)
+            and set(assignment)
+            == {
+                "recorded_occurrence_identity",
+                "assignment_identity",
+                "assignment_subject_identity",
+            }
         )
-        and isinstance(assignment["determination"], str)
-        and assignment["determination"]
-        and (
-            event.kind != OCCURRENCE_POSITION_RECORDED_KIND
-            or (
-                isinstance(assertions, list)
-                and assignment["source_occurrence_references"]
-                == [
-                    {
-                        "occurrence_identity": item.get(
-                            "assertion_subject", {}
-                        ).get("occurrence_identity")
-                    }
-                    for item in assertions
-                    if isinstance(item, dict)
-                ]
+    else:
+        assignment_is_exact = bool(
+            isinstance(assignment, dict)
+            and set(assignment) == expected_assignment_coordinates
+            and assignment["responsible_boundary"]
+            == SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+            and _responsibility_assignment_standing_is_exact(bundle)
+            and isinstance(assignment["source_occurrence_references"], list)
+            and assignment["source_occurrence_references"]
+            and all(
+                isinstance(reference, dict)
+                and set(reference) == {source_reference_coordinate}
+                and isinstance(reference[source_reference_coordinate], str)
+                and reference[source_reference_coordinate]
+                for reference in assignment["source_occurrence_references"]
+            )
+            and isinstance(assignment["determination"], str)
+            and assignment["determination"]
+            and (
+                event.kind != OCCURRENCE_POSITION_RECORDED_KIND
+                or (
+                    isinstance(assertions, list)
+                    and assignment["source_occurrence_references"]
+                    == [
+                        {
+                            "occurrence_identity": item.get(
+                                "assertion_subject", {}
+                            ).get("occurrence_identity")
+                        }
+                        for item in assertions
+                        if isinstance(item, dict)
+                    ]
+                )
             )
         )
-    )
     return {
         "responsibility": (
             EXACT
@@ -2832,7 +2926,15 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             and isinstance(boundary["identity"], str)
             and boundary["identity"]
             and isinstance(assignment, dict)
-            and assignment.get("completeness_boundary") == boundary["identity"]
+            and (
+                pair_occurrence_assignment.material.get(
+                    "completeness_boundary_identity"
+                )
+                == boundary["identity"]
+                if pair_occurrence_assignment is not None
+                else assignment.get("completeness_boundary")
+                == boundary["identity"]
+            )
             else MISSING
         ),
         "assertions": EXACT if carried_assertions_are_exact else MISSING,
@@ -5448,6 +5550,9 @@ def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own
             OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
         ],
         POSITION_EVENT_KIND_RESPONSIBILITIES[OCCURRENCE_POSITION_RECORDED_KIND],
+        PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES[
+            RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        ],
         PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES[
             RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
         ],

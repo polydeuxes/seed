@@ -31,6 +31,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
+    record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
@@ -126,10 +127,19 @@ def _record_path(ledger, pair_measurement, source):
     )
     results = []
     for finding in findings:
-        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             finding=finding,
-            recording_locality_identity=LOCALITY,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
         )
         results.append(
             record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -335,7 +345,9 @@ def test_availability_without_both_exact_standings_cannot_assign_comparison():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     standing = _standing(ledger)
     standing["comparison_result_occurrences"].pop(comparison.identity)
-    with pytest.raises(ValueError, match="both exact results"):
+    with pytest.raises(
+        ValueError, match="each exact result in current Standing"
+    ):
         record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
             ledger,
             path_result_event_identity=path.identity,

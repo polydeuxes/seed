@@ -32,9 +32,13 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+    _operator_standing_replay_validation,
+    _set_operator_standing_validation_context,
+    _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
+    _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
@@ -166,6 +170,7 @@ _MEASUREMENT_ACT_EVIDENCE_KINDS = {
 }
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
@@ -547,6 +552,7 @@ def read_carried_recorded_standing(
     }
 
 
+@_operator_standing_replay_validation
 def advance_operator_locality_standing(
     ledger: EventLedger,
     event_identities: Iterable[str],
@@ -619,6 +625,7 @@ def advance_operator_locality_standing(
     through_event_occurrence_identity: str | None = None
     event_count = 0
 
+    replay_started_from_empty = prior is None
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
@@ -702,6 +709,19 @@ def advance_operator_locality_standing(
     for event in events:
         if event.locality_identity != locality_identity:
             continue
+        if replay_started_from_empty:
+            _set_operator_standing_validation_context(
+                ledger,
+                locality_identity=locality_identity,
+                through_event_occurrence_identity=(
+                    through_event_occurrence_identity
+                ),
+                measurement_occurrences=measurement_occurrences,
+                ingest_occurrences=ingest_occurrences,
+                responsibility_assignment_occurrences=(
+                    responsibility_assignment_occurrences
+                ),
+            )
         if not (
             event.kind == MATERIAL_INGEST_OCCURRED_KIND
             or event.kind.startswith("operator.representation.")
@@ -723,6 +743,7 @@ def advance_operator_locality_standing(
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingest event: {event.kind}")
         event_count += 1
+        prior_through_event_occurrence_identity = through_event_occurrence_identity
         through_event_occurrence_identity = event.identity
         for key, collected in (
             ("known_loss", known_loss),
@@ -747,6 +768,24 @@ def advance_operator_locality_standing(
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND:
             get_byte_pair_occurrence_position_measurement_responsibility_assignment(
                 ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
+            == RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        ):
+            _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+                ledger,
+                event.identity,
+                prior_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "measurement_occurrences": measurement_occurrences,
+                    "ingest_occurrences": ingest_occurrences,
+                },
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
@@ -981,7 +1020,21 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND:
-            get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, event.identity)
+            _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+                ledger,
+                event.identity,
+                prior_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "measurement_occurrences": measurement_occurrences,
+                    "ingest_occurrences": ingest_occurrences,
+                    "responsibility_assignment_occurrences": (
+                        responsibility_assignment_occurrences
+                    ),
+                },
+            )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

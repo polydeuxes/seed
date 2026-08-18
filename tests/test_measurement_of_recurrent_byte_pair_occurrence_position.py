@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 
 import pytest
@@ -12,20 +13,30 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import EventLedger, EventLedgerBoundary
+from seed_runtime.events import EventLedger, EventLedgerBoundary, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    _operator_standing_replay_validation,
+    _operator_standing_validation_context,
+    _set_operator_standing_validation_context,
+    get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
     measure_positions_for_recurrent_byte_pair_assertions,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
+    record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
+)
+from seed_runtime.occurrence_position_measurement import (
+    measure_occurrence_position,
+    record_occurrence_position_measurement_responsibility_assignment,
 )
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
@@ -36,8 +47,13 @@ from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_r
 from seed_runtime.operator_representation_admission import RepresentationAdmissionError
 
 
-def _fixture(*, current: bytes = b"ba---ab", premise: bytes = b"abxxab"):
-    ledger = EventLedger()
+def _fixture(
+    *,
+    current: bytes = b"ba---ab",
+    premise: bytes = b"abxxab",
+    ledger=None,
+):
+    ledger = ledger or EventLedger()
     locality = "pair-occurrence-measurement"
     ingest_material(
         ledger,
@@ -87,10 +103,19 @@ def _fixture(*, current: bytes = b"ba---ab", premise: bytes = b"abxxab"):
 
 
 def _record(ledger, locality, finding):
-    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
-        recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
     result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
@@ -148,6 +173,275 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
     serialized = json.dumps(result.material).lower()
     assert "direction" not in serialized
     assert "displacement" not in serialized
+
+
+def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_identities():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+
+    assert assignment.kind == RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, assignment.identity
+    ) == assignment
+    assert standing["responsibility_assignment_occurrences"] == {
+        assignment.identity: None
+    }
+    assert "standing" not in assignment.material
+
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=standing,
+    )
+    result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+    )
+    evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
+    identities = {
+        assignment.identity,
+        assignment.material["assignment_identity"],
+        assignment.material["assignment_subject_identity"],
+        assignment.material["measurement_act_identity"],
+        assignment.material["act_occurrence_identity"],
+        assignment.material["measurement_result_identity"],
+        act.identity,
+        evidence.identity,
+        result.identity,
+    }
+    assert len(identities) == 9
+    assert act.material["responsibility_assignment_reference"] == {
+        "recorded_occurrence_identity": assignment.identity,
+        "assignment_identity": assignment.material["assignment_identity"],
+        "assignment_subject_identity": assignment.material[
+            "assignment_subject_identity"
+        ],
+    }
+    assert result.material["responsibility_assignment_reference"] == act.material[
+        "responsibility_assignment_reference"
+    ]
+
+
+def test_stale_standing_cannot_authorize_the_assigned_measurement_act():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    stale = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=stale,
+    )
+
+    with pytest.raises(ValueError, match="exact current Locality Standing"):
+        record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=stale,
+        )
+
+
+def test_shaped_standing_without_the_exact_assignment_cannot_authorize_the_act():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    shaped = deepcopy(
+        read_operator_locality_standing(ledger, locality_identity=locality)
+    )
+    shaped["responsibility_assignment_occurrences"] = {
+        "same-shape-assignment": None
+    }
+
+    with pytest.raises(ValueError, match="exact current Locality Standing"):
+        record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=shaped,
+        )
+
+
+def test_corrupted_assignment_occurrence_cannot_authorize_the_act():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    assignment.material["occurrence_limit"] += 1
+
+    with pytest.raises(ValueError, match="coordinates are not exact"):
+        get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, assignment.identity
+        )
+
+
+def test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    occurrence_finding = measure_occurrence_position(
+        ledger, source_locality_identity=locality
+    )
+    unrelated = record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity=locality,
+        finding=occurrence_finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    unrelated.material["responsibility"] = "corrupted unrelated Responsibility"
+
+    with pytest.raises(ValueError, match="coordinates are not exact"):
+        read_operator_locality_standing(ledger, locality_identity=locality)
+    with pytest.raises(ValueError, match="coordinates are not exact"):
+        get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, assignment.identity
+        )
+
+
+def test_replay_validation_context_nests_and_clears_after_failure():
+    ledger, locality, pair, _recurrence, _source, _finding = _fixture()
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+
+    @_operator_standing_replay_validation
+    def outer():
+        _set_operator_standing_validation_context(
+            ledger,
+            locality_identity=locality,
+            through_event_occurrence_identity=standing[
+                "through_event_occurrence_identity"
+            ],
+            measurement_occurrences=standing["measurement_occurrences"],
+            ingest_occurrences=standing["ingest_occurrences"],
+            responsibility_assignment_occurrences=standing[
+                "responsibility_assignment_occurrences"
+            ],
+        )
+        outer_context = _operator_standing_validation_context(
+            ledger, locality_identity=locality
+        )
+        assert outer_context is not None
+
+        @_operator_standing_replay_validation
+        def nested():
+            _set_operator_standing_validation_context(
+                ledger,
+                locality_identity="different-locality",
+                through_event_occurrence_identity=pair.identity,
+                measurement_occurrences={},
+                ingest_occurrences=[],
+                responsibility_assignment_occurrences={},
+            )
+            assert _operator_standing_validation_context(
+                ledger, locality_identity=locality
+            ) is None
+
+        nested()
+        assert _operator_standing_validation_context(
+            ledger, locality_identity=locality
+        ) == outer_context
+        raise RuntimeError("exercise replay-context cleanup")
+
+    with pytest.raises(RuntimeError, match="cleanup"):
+        outer()
+    assert _operator_standing_validation_context(
+        ledger, locality_identity=locality
+    ) is None
+
+
+def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
+    ledger, locality, pair, _recurrence, _source, finding = _fixture()
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=standing,
+    )
+
+    @_operator_standing_replay_validation
+    def read_from_false_earlier_context():
+        _set_operator_standing_validation_context(
+            ledger,
+            locality_identity=locality,
+            through_event_occurrence_identity=pair.identity,
+            measurement_occurrences=standing["measurement_occurrences"],
+            ingest_occurrences=standing["ingest_occurrences"],
+            responsibility_assignment_occurrences={assignment.identity: None},
+        )
+        return get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, assignment.identity
+        )
+
+    with pytest.raises(ValueError, match="order is false"):
+        read_from_false_earlier_context()
+
+
+def test_assignment_act_and_result_survive_distinct_durable_restarts(tmp_path):
+    database = tmp_path / "recurrent-pair-position.sqlite"
+    ledger = SQLiteEventLedger(database)
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture(
+        ledger=ledger
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    ledger.close()
+
+    ledger = SQLiteEventLedger(database)
+    assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, assignment.identity
+    ).identity == assignment.identity
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    ledger.close()
+
+    ledger = SQLiteEventLedger(database)
+    result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+    )
+    ledger.close()
+
+    ledger = SQLiteEventLedger(database)
+    assert get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, result.identity
+    ) == finding
+    ledger.close()
 
 
 def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference():
@@ -406,10 +700,19 @@ def test_same_boundary_pair_subjects_keep_each_result_evidence_distinct():
 
 def test_act_evidence_has_inputs_and_responsibility_but_no_result_finding():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         finding=finding,
-        recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
 
     assert {
@@ -524,10 +827,12 @@ def test_same_bytes_cannot_substitute_another_ingest_occurrence():
     )
 
     with pytest.raises(ValueError, match="outside its exact boundary"):
-        record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             finding=substituted,
-            recording_locality_identity=locality,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality
+            ),
         )
 
 
@@ -639,6 +944,14 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
 
 FIDELITY_SUBJECTS = {
     "assertion_standing_coordinates": (
+        test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_identities,
+        test_stale_standing_cannot_authorize_the_assigned_measurement_act,
+        test_shaped_standing_without_the_exact_assignment_cannot_authorize_the_act,
+        test_corrupted_assignment_occurrence_cannot_authorize_the_act,
+        test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier,
+        test_replay_validation_context_nests_and_clears_after_failure,
+        test_replay_context_before_the_recorded_assignment_boundary_is_refused,
+        test_assignment_act_and_result_survive_distinct_durable_restarts,
         test_measurement_result_does_not_promote_across_the_three_later_crossings,
         test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
         test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing,

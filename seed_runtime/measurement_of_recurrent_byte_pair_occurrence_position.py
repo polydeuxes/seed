@@ -13,6 +13,8 @@ stored as caller-supplied signs or grammatical meanings.
 from __future__ import annotations
 
 import hashlib
+from contextvars import ContextVar
+from functools import wraps
 from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
@@ -41,6 +43,10 @@ RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_
 RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND = (
     "operator.measurement_of_recurrent_byte_pair_occurrence_position."
     "evidence_of_act_occurrence_recorded"
+)
+RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND = (
+    "operator.measurement_of_recurrent_byte_pair_occurrence_position."
+    "responsibility_assignment_recorded"
 )
 RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
     "result of exact Measurement of recurrent byte-pair occurrence position"
@@ -75,7 +81,7 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "act_occurrence_identity",
         "responsibility",
         "responsible_boundary",
-        "responsibility_assignment_evidence",
+        "responsibility_assignment_reference",
         "measurement_rule",
         "source_localities",
         "completeness_boundary",
@@ -88,9 +94,74 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
     }
 )
 EVENT_KIND_RESPONSIBILITIES = {
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: "01.Source.D",
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: "01.Source.D",
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: "02.Acts.A",
 }
+
+
+_OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
+    dict[str, Any] | None
+] = ContextVar(
+    "recurrent_pair_position_operator_standing_validation_context",
+    default=None,
+)
+
+
+def _operator_standing_replay_validation(function):
+    """Bound replay-only validation context, including across nested reads."""
+
+    @wraps(function)
+    def bounded(*args, **kwargs):
+        token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)
+
+    return bounded
+
+
+def _set_operator_standing_validation_context(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    through_event_occurrence_identity: str | None,
+    measurement_occurrences: dict[str, Any],
+    ingest_occurrences: list[dict[str, Any]],
+    responsibility_assignment_occurrences: dict[str, None],
+) -> None:
+    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+        {
+            "ledger": ledger,
+            "locality_identity": locality_identity,
+            "through_event_occurrence_identity": (
+                through_event_occurrence_identity
+            ),
+            "measurement_occurrences": measurement_occurrences,
+            "ingest_occurrences": ingest_occurrences,
+            "responsibility_assignment_occurrences": (
+                responsibility_assignment_occurrences
+            ),
+        }
+    )
+
+
+def _operator_standing_validation_context(
+    ledger: EventLedger, *, locality_identity: str
+) -> dict[str, Any] | None:
+    context = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
+    if (
+        type(context) is not dict
+        or context.get("ledger") is not ledger
+        or context.get("locality_identity") != locality_identity
+    ):
+        return None
+    return {
+        key: value
+        for key, value in context.items()
+        if key != "ledger"
+    }
 
 
 class ReferenceToRecordedRecurrentBytePair(NamedTuple):
@@ -515,21 +586,293 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     )
 
 
-def _responsibility_assignment_of_measurement(finding: FindingOfRecurrentBytePairOccurrencePositions) -> dict[str, Any]:
+def _responsibility_assignment_reference(assignment: Event) -> dict[str, str]:
     return {
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "standing": "assigned",
-        "source_occurrence_references": [
-            {
-                "occurrence_identity": (
-                    finding.pair_reference.recorded_occurrence_identity
-                )
-            },
-            {"occurrence_identity": finding.source_ingest_occurrence_identity},
+        "recorded_occurrence_identity": assignment.identity,
+        "assignment_identity": assignment.material["assignment_identity"],
+        "assignment_subject_identity": assignment.material[
+            "assignment_subject_identity"
         ],
-        "completeness_boundary": finding.completeness_boundary.identity,
-        "determination": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     }
+
+
+def _responsibility_assignment_material(
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    *,
+    assignment_identity: str,
+    assignment_subject_identity: str,
+    measurement_act_identity: str,
+    act_occurrence_identity: str,
+    measurement_result_identity: str,
+    standing_boundary_identity: str,
+) -> dict[str, Any]:
+    return {
+        "assignment_identity": assignment_identity,
+        "assignment_subject_identity": assignment_subject_identity,
+        "measurement_act_identity": measurement_act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
+        "measurement_result_identity": measurement_result_identity,
+        "book_clause_identity": "01.Source.D",
+        "responsibility": (
+            RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
+        ),
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "pair_assertion_reference": finding.pair_reference.assertion_reference,
+        "source_ingest_occurrence_identity": (
+            finding.source_ingest_occurrence_identity
+        ),
+        "source_locality_identity": finding.source_locality_identity,
+        "completeness_boundary_identity": finding.completeness_boundary.identity,
+        "occurrence_limit": finding.occurrence_limit,
+        "standing_boundary_identity": standing_boundary_identity,
+        "scope": {
+            "source_locality_identity": finding.source_locality_identity,
+            "completeness_boundary_identity": (
+                finding.completeness_boundary.identity
+            ),
+            "occurrence_limit": finding.occurrence_limit,
+        },
+        "authority": (
+            AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
+        ),
+        "limits": [
+            "assignment is bounded to the exact pair Assertion, Ingest result, "
+            "completeness boundary, and occurrence limit"
+        ],
+        "unknown": ["what the measured pair relation represents remains Unknown"],
+    }
+
+
+def _require_current_assignment_standing(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    locality_standing: dict[str, Any],
+    required_assignment_identity: str | None = None,
+) -> str:
+    if type(locality_standing) is not dict:
+        raise ValueError(
+            "pair occurrence Measurement requires exact current Locality Standing"
+        )
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    current = read_operator_locality_standing(
+        ledger, locality_identity=finding.source_locality_identity
+    )
+    measurements = locality_standing.get("measurement_occurrences")
+    ingests = locality_standing.get("ingest_occurrences")
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    boundary = locality_standing.get("through_event_occurrence_identity")
+    if (
+        locality_standing != current
+        or locality_standing.get("locality_identity")
+        != finding.source_locality_identity
+        or type(boundary) is not str
+        or not boundary
+        or type(measurements) is not dict
+        or finding.pair_reference.recorded_occurrence_identity not in measurements
+        or type(ingests) is not list
+        or not any(
+            type(occurrence) is dict
+            and occurrence.get("evidence_event_identity")
+            == finding.source_ingest_occurrence_identity
+            for occurrence in ingests
+        )
+        or (
+            required_assignment_identity is not None
+            and (
+                type(assignments) is not dict
+                or assignments.get(required_assignment_identity, object()) is not None
+            )
+        )
+    ):
+        raise ValueError(
+            "pair occurrence Measurement requires exact current Locality Standing"
+        )
+    return boundary
+
+
+def record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    locality_standing: dict[str, Any],
+) -> Event:
+    """Record one exact Responsibility assignment before its Measurement Act."""
+
+    _validate_exact_finding_of_measurement(ledger, finding)
+    standing_boundary_identity = _require_current_assignment_standing(
+        ledger, finding=finding, locality_standing=locality_standing
+    )
+    identities = {
+        "assignment_identity": new_identity(
+            "recurrent_pair_position_measurement_assignment"
+        ),
+        "assignment_subject_identity": new_identity(
+            "recurrent_pair_position_measurement_assignment_subject"
+        ),
+        "measurement_act_identity": new_identity(
+            "act_of_measurement_of_recurrent_byte_pair_occurrence_position"
+        ),
+        "act_occurrence_identity": new_identity(
+            "act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position"
+        ),
+        "measurement_result_identity": new_identity(
+            "result_of_measurement_of_recurrent_byte_pair_occurrence_position"
+        ),
+    }
+    if len(set(identities.values())) != len(identities):
+        raise ValueError("pair occurrence Measurement lifecycle identities collapsed")
+    return ledger.append(
+        RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+        _responsibility_assignment_material(
+            finding,
+            standing_boundary_identity=standing_boundary_identity,
+            **identities,
+        ),
+        locality_identity=finding.source_locality_identity,
+    )
+
+
+def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    ledger: EventLedger,
+    assignment_event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
+) -> tuple[Event, FindingOfRecurrentBytePairOccurrencePositions]:
+    if type(assignment_event_identity) is not str or not assignment_event_identity:
+        raise ValueError("pair occurrence Measurement requires one exact assignment")
+    assignment = ledger.get(assignment_event_identity)
+    if (
+        assignment is None
+        or assignment.kind
+        != RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        or type(assignment.locality_identity) is not str
+        or not assignment.locality_identity
+        or ledger.integrity_of(assignment.identity) == CORRUPTED
+    ):
+        raise ValueError("pair occurrence assignment is absent or corrupted")
+    material = assignment.material
+    identities = {
+        coordinate: material.get(coordinate)
+        for coordinate in (
+            "assignment_identity",
+            "assignment_subject_identity",
+            "measurement_act_identity",
+            "act_occurrence_identity",
+            "measurement_result_identity",
+        )
+    }
+    pair_reference = material.get("pair_assertion_reference")
+    if (
+        any(type(identity) is not str or not identity for identity in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or type(pair_reference) is not dict
+        or set(pair_reference) != {"recorded_occurrence_identity", "assertion_identity"}
+        or any(type(value) is not str or not value for value in pair_reference.values())
+        or type(material.get("source_ingest_occurrence_identity")) is not str
+        or not material["source_ingest_occurrence_identity"]
+        or type(material.get("completeness_boundary_identity")) is not str
+        or not material["completeness_boundary_identity"]
+        or type(material.get("occurrence_limit")) is not int
+        or material["occurrence_limit"] <= 0
+        or type(material.get("standing_boundary_identity")) is not str
+        or not material["standing_boundary_identity"]
+    ):
+        raise ValueError("pair occurrence assignment carries malformed coordinates")
+    finding = measure_positions_of_recurrent_byte_pair_occurrences(
+        ledger,
+        pair_measurement_occurrence_identity=pair_reference[
+            "recorded_occurrence_identity"
+        ],
+        recurrence_assertion_identity=pair_reference["assertion_identity"],
+        source_ingest_occurrence_identity=material[
+            "source_ingest_occurrence_identity"
+        ],
+        occurrence_limit=material["occurrence_limit"],
+        through=EventLedgerBoundary(material["completeness_boundary_identity"]),
+    )
+    expected = _responsibility_assignment_material(
+        finding,
+        standing_boundary_identity=material["standing_boundary_identity"],
+        **identities,
+    )
+    if (
+        assignment.locality_identity != finding.source_locality_identity
+        or material != expected
+    ):
+        raise ValueError("pair occurrence assignment coordinates are not exact")
+    standing_boundary_identity = material["standing_boundary_identity"]
+    if prior_standing is None:
+        prior_standing = _operator_standing_validation_context(
+            ledger, locality_identity=assignment.locality_identity
+        )
+        if prior_standing is None:
+            from seed_runtime.operator_locality_standing import (
+                read_operator_locality_standing_through,
+            )
+
+            prior_standing = read_operator_locality_standing_through(
+                ledger,
+                locality_identity=assignment.locality_identity,
+                through_event_occurrence_identity=standing_boundary_identity,
+            )
+    measurements = prior_standing.get("measurement_occurrences")
+    ingests = prior_standing.get("ingest_occurrences")
+    carried_assignments = prior_standing.get(
+        "responsibility_assignment_occurrences"
+    )
+    prior_boundary_identity = prior_standing.get(
+        "through_event_occurrence_identity"
+    )
+    boundary_is_exact = prior_boundary_identity == standing_boundary_identity
+    assignment_is_carried_later = bool(
+        type(prior_boundary_identity) is str
+        and prior_boundary_identity
+        and type(carried_assignments) is dict
+        and carried_assignments.get(assignment.identity, object()) is None
+    )
+    if (
+        prior_standing.get("locality_identity") != assignment.locality_identity
+        or not (boundary_is_exact or assignment_is_carried_later)
+        or type(measurements) is not dict
+        or finding.pair_reference.recorded_occurrence_identity not in measurements
+        or type(ingests) is not list
+        or not any(
+            type(occurrence) is dict
+            and occurrence.get("evidence_event_identity")
+            == finding.source_ingest_occurrence_identity
+            for occurrence in ingests
+        )
+    ):
+        raise ValueError("pair occurrence assignment has no exact prior Standing")
+    order = (
+        (standing_boundary_identity, assignment.identity)
+        if boundary_is_exact or prior_boundary_identity == assignment.identity
+        else (
+            standing_boundary_identity,
+            assignment.identity,
+            prior_boundary_identity,
+        )
+    )
+    try:
+        ledger.occurrences_in_append_order(
+            order,
+            locality_identity=assignment.locality_identity,
+        )
+    except ValueError as error:
+        raise ValueError("pair occurrence assignment order is false") from error
+    return assignment, finding
+
+
+def get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+    ledger: EventLedger, assignment_event_identity: str
+) -> Event:
+    return _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, assignment_event_identity
+    )[0]
 
 
 def _participation_in_measurement(
@@ -560,16 +903,19 @@ def _participation_in_measurement(
 def _material_of_evidence_of_act_occurrence(
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     *,
-    act_identity: str,
-    act_occurrence_identity: str,
+    assignment: Event,
 ) -> dict[str, Any]:
+    act_identity = assignment.material["measurement_act_identity"]
+    act_occurrence_identity = assignment.material["act_occurrence_identity"]
     return {
         "downstream_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment_evidence": _responsibility_assignment_of_measurement(finding),
+        "responsibility_assignment_reference": _responsibility_assignment_reference(
+            assignment
+        ),
         "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
@@ -619,75 +965,74 @@ def _validate_exact_finding_of_measurement(
 def record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
     ledger: EventLedger,
     *,
-    finding: FindingOfRecurrentBytePairOccurrencePositions,
-    recording_locality_identity: str,
+    responsibility_assignment_event_identity: str,
+    responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
     """Record the responsible Measurement Act before its Yield and result."""
 
-    if (
-        type(recording_locality_identity) is not str
-        or not recording_locality_identity
-        or recording_locality_identity != finding.source_locality_identity
+    assignment, finding = _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, responsibility_assignment_event_identity
+    )
+    _require_current_assignment_standing(
+        ledger,
+        finding=finding,
+        locality_standing=responsibility_assignment_standing,
+        required_assignment_identity=assignment.identity,
+    )
+    for event in ledger.iter_locality_kind(
+        assignment.locality_identity,
+        RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ):
-        raise ValueError("pair occurrence Measurement requires its exact Locality")
-    _validate_exact_finding_of_measurement(ledger, finding)
-    act_identity = new_identity("act_of_measurement_of_recurrent_byte_pair_occurrence_position")
-    act_occurrence_identity = new_identity("act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position")
+        if (
+            event.material.get("responsibility_assignment_reference")
+            == _responsibility_assignment_reference(assignment)
+            or event.material.get("act_occurrence_identity")
+            == assignment.material["act_occurrence_identity"]
+        ):
+            raise ValueError("pair occurrence assignment already carries an Act")
     return ledger.append(
         RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
         _material_of_evidence_of_act_occurrence(
             finding,
-            act_identity=act_identity,
-            act_occurrence_identity=act_occurrence_identity,
+            assignment=assignment,
         ),
-        locality_identity=recording_locality_identity,
+        locality_identity=assignment.locality_identity,
     )
 
 
 def _finding_of_measurement_from_evidence_of_act_occurrence(
     ledger: EventLedger,
     act_evidence: Event,
-) -> FindingOfRecurrentBytePairOccurrencePositions:
+    *,
+    prior_standing: dict[str, Any] | None = None,
+) -> tuple[Event, FindingOfRecurrentBytePairOccurrencePositions]:
     material = act_evidence.material
-    pair_reference = material.get("pair_assertion_reference")
-    boundary = material.get("completeness_boundary")
-    source_localities = material.get("source_localities")
+    assignment_reference = material.get("responsibility_assignment_reference")
     if (
-        type(pair_reference) is not dict
-        or set(pair_reference)
-        != {"recorded_occurrence_identity", "assertion_identity"}
-        or any(type(value) is not str or not value for value in pair_reference.values())
-        or type(boundary) is not dict
-        or set(boundary) != {"identity"}
-        or type(boundary["identity"]) is not str
-        or not boundary["identity"]
-        or type(source_localities) is not list
-        or len(source_localities) != 1
-        or type(source_localities[0]) is not str
-        or not source_localities[0]
-        or type(material.get("source_ingest_occurrence_identity")) is not str
-        or not material["source_ingest_occurrence_identity"]
-        or type(material.get("occurrence_limit")) is not int
-        or material["occurrence_limit"] <= 0
+        type(assignment_reference) is not dict
+        or set(assignment_reference)
+        != {
+            "recorded_occurrence_identity",
+            "assignment_identity",
+            "assignment_subject_identity",
+        }
     ):
         raise ValueError("pair occurrence Act Evidence carries malformed coordinates")
-    finding = measure_positions_of_recurrent_byte_pair_occurrences(
+    assignment, finding = _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
-        pair_measurement_occurrence_identity=pair_reference[
-            "recorded_occurrence_identity"
-        ],
-        recurrence_assertion_identity=pair_reference["assertion_identity"],
-        source_ingest_occurrence_identity=material[
-            "source_ingest_occurrence_identity"
-        ],
-        occurrence_limit=material["occurrence_limit"],
-        through=EventLedgerBoundary(boundary["identity"]),
+        assignment_reference.get("recorded_occurrence_identity"),
+        prior_standing=prior_standing,
     )
-    if finding.source_locality_identity != source_localities[0]:
-        raise ValueError(
-            "pair occurrence Act Evidence names a different source Locality"
-        )
-    return finding
+    expected = _material_of_evidence_of_act_occurrence(
+        finding, assignment=assignment
+    )
+    if (
+        act_evidence.locality_identity != assignment.locality_identity
+        or assignment_reference != _responsibility_assignment_reference(assignment)
+        or material != expected
+    ):
+        raise ValueError("pair occurrence Act Evidence carries no exact assignment")
+    return assignment, finding
 
 
 def _identity_of_position_assertion(
@@ -776,9 +1121,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
 def _material_of_result_of_measurement(
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     *,
-    result_identity: str,
-    act_identity: str,
-    act_occurrence_identity: str,
+    assignment: Event,
 ) -> dict[str, Any]:
     known_loss = (
         ["pair occurrences beyond the exact occurrence limit are not carried"]
@@ -786,7 +1129,7 @@ def _material_of_result_of_measurement(
         else []
     )
     return {
-        "result_identity": result_identity,
+        "result_identity": assignment.material["measurement_result_identity"],
         "dimensions": {
             "identity": "recurrent-byte-pair-occurrence-position-measurement",
             "content": "exact ordered pair occurrence position Assertions",
@@ -798,11 +1141,13 @@ def _material_of_result_of_measurement(
             "evidence_scope": EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         },
         "exact_act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        "downstream_act_identity": act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
+        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment_evidence": _responsibility_assignment_of_measurement(finding),
+        "responsibility_assignment_reference": _responsibility_assignment_reference(
+            assignment
+        ),
         "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
@@ -840,11 +1185,11 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         or ledger.integrity_of(act_evidence.identity) == CORRUPTED
     ):
         raise ValueError("pair occurrence result requires intact Act Evidence")
-    finding = _finding_of_measurement_from_evidence_of_act_occurrence(ledger, act_evidence)
+    assignment, finding = _finding_of_measurement_from_evidence_of_act_occurrence(
+        ledger, act_evidence
+    )
     expected_act = _material_of_evidence_of_act_occurrence(
-        finding,
-        act_identity=act_evidence.material.get("downstream_act_identity"),
-        act_occurrence_identity=act_evidence.material.get("act_occurrence_identity"),
+        finding, assignment=assignment
     )
     if act_evidence.material != expected_act:
         raise ValueError(
@@ -864,12 +1209,8 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             == act_occurrence_identity
         ):
             raise ValueError("pair occurrence Measurement Act already has a result")
-    result_identity = new_identity("result_of_measurement_of_recurrent_byte_pair_occurrence_position")
     result = _material_of_result_of_measurement(
-        finding,
-        result_identity=result_identity,
-        act_identity=act_evidence.material["downstream_act_identity"],
-        act_occurrence_identity=act_occurrence_identity,
+        finding, assignment=assignment
     )
     evidence = _record_evidence_of_yield_relation(
         ledger,
@@ -878,7 +1219,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind=RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND,
-        result_identity=result_identity,
+        result_identity=result["result_identity"],
         result_content=result,
         responsibility=RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         occurrence_boundary="measurement_of_recurrent_byte_pair_occurrence_position",
@@ -894,8 +1235,8 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "act_occurrence_identity": result["act_occurrence_identity"],
             "responsibility": result["responsibility"],
             "responsible_boundary": result["responsible_boundary"],
-            "responsibility_assignment_evidence": result[
-                "responsibility_assignment_evidence"
+            "responsibility_assignment_reference": result[
+                "responsibility_assignment_reference"
             ],
             "measurement_rule": result["measurement_rule"],
             "source_localities": result["source_localities"],
@@ -917,12 +1258,12 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
     )
 
 
-def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+def _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
     ledger: EventLedger,
     event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
-    """Read one pair-occurrence result through its exact Act and Yield."""
-
     event = ledger.get(event_identity)
     if (
         event is None
@@ -951,21 +1292,18 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
         or ledger.integrity_of(act_evidence.identity) == CORRUPTED
     ):
         raise ValueError("pair occurrence result carries no exact Act Evidence")
-    finding = _finding_of_measurement_from_evidence_of_act_occurrence(ledger, act_evidence)
+    assignment, finding = _finding_of_measurement_from_evidence_of_act_occurrence(
+        ledger, act_evidence, prior_standing=prior_standing
+    )
     expected_act = _material_of_evidence_of_act_occurrence(
-        finding,
-        act_identity=material.get("downstream_act_identity"),
-        act_occurrence_identity=material.get("act_occurrence_identity"),
+        finding, assignment=assignment
     )
     if act_evidence.material != expected_act:
         raise ValueError(
             "pair occurrence result differs from its exact Act Evidence"
         )
     result = _material_of_result_of_measurement(
-        finding,
-        result_identity=material.get("result_identity"),
-        act_identity=material.get("downstream_act_identity"),
-        act_occurrence_identity=material.get("act_occurrence_identity"),
+        finding, assignment=assignment
     )
     carried = {
         key: value
@@ -992,6 +1330,17 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
     ):
         raise ValueError("pair occurrence result carries no exact Evidence of Yield relation")
     return finding
+
+
+def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+    ledger: EventLedger,
+    event_identity: str,
+) -> FindingOfRecurrentBytePairOccurrencePositions:
+    """Read one pair-occurrence result through its exact Act and Yield."""
+
+    return _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, event_identity
+    )
 
 
 def references_to_recorded_recurrent_byte_pair_occurrence_positions(
