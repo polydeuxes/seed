@@ -4,8 +4,10 @@ import pytest
 
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     BOOK_CLAUSE,
-    CANDIDATE_RULE,
-    ORDERED_PAIR_CANDIDATE_RULE,
+    ONE_SOURCE_CANDIDATE_ACT,
+    ONE_SOURCE_CANDIDATE_RESPONSIBILITY,
+    ORDERED_PAIR_CANDIDATE_ACT,
+    ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     SOURCE_RULE,
     boundaries_of_recorded_candidate_standing,
     get_recorded_candidate_standing_applicability,
@@ -108,7 +110,8 @@ def test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion()
     )
 
     assert standing["source_rule"] == SOURCE_RULE
-    assert standing["candidate_rule"] == CANDIDATE_RULE
+    assert standing["responsibility"] == ONE_SOURCE_CANDIDATE_RESPONSIBILITY
+    assert standing["exact_act"] == ONE_SOURCE_CANDIDATE_ACT
     assert tuple(standing["source_assertion_references"]) == source_references
     assert len(standing["candidate_assertions"]) == len(source_references)
     assert tuple(
@@ -233,7 +236,8 @@ def test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs():
         for candidate in standing["candidate_assertions"]
     )
 
-    assert standing["candidate_rule"] == ORDERED_PAIR_CANDIDATE_RULE
+    assert standing["responsibility"] == ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    assert standing["exact_act"] == ORDERED_PAIR_CANDIDATE_ACT
     assert recorded == expected
     assert standing["completeness"] == {
         "required_candidate_count": len(expected),
@@ -262,7 +266,7 @@ def test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate():
 
 
 @pytest.mark.parametrize("change", ("missing", "extra", "reordered"))
-def test_replay_refuses_rows_different_from_the_source_and_candidate_rules(change):
+def test_replay_refuses_rows_different_from_the_exact_source_and_act(change):
     ledger = EventLedger()
     _source(ledger)
     result = record_complete_candidate_standing(
@@ -298,17 +302,17 @@ def test_replay_requires_each_source_result_occurrence_intact():
 
 
 @pytest.mark.parametrize(
-    "candidate_rule", (CANDIDATE_RULE, ORDERED_PAIR_CANDIDATE_RULE)
+    "record_complete",
+    (record_complete_candidate_standing, record_complete_ordered_pair_candidate_standing),
 )
 def test_empty_source_surface_records_one_complete_empty_candidate_standing(
-    candidate_rule,
+    record_complete,
 ):
     ledger = EventLedger()
-    result = record_complete_candidate_standing(
+    result = record_complete(
         ledger,
         recording_locality_identity="candidate-production",
         source_append_boundary=ledger.append_boundary(),
-        candidate_rule=candidate_rule,
     )
 
     standing = get_recorded_candidate_standing(ledger, result.identity)
@@ -322,20 +326,20 @@ def test_empty_source_surface_records_one_complete_empty_candidate_standing(
 
 
 @pytest.mark.parametrize(
-    "candidate_rule", (CANDIDATE_RULE, ORDERED_PAIR_CANDIDATE_RULE)
+    "record_complete",
+    (record_complete_candidate_standing, record_complete_ordered_pair_candidate_standing),
 )
 def test_complete_candidate_standing_replays_after_sqlite_restart(
-    tmp_path, candidate_rule
+    tmp_path, record_complete
 ):
     database = str(tmp_path / "candidate-standing.sqlite")
     ledger = SQLiteEventLedger(database)
     _source(ledger)
     source_boundary = ledger.append_boundary()
-    result = record_complete_candidate_standing(
+    result = record_complete(
         ledger,
         recording_locality_identity="candidate-production",
         source_append_boundary=source_boundary,
-        candidate_rule=candidate_rule,
     )
     expected = get_recorded_candidate_standing(ledger, result.identity)
     ledger.close()
@@ -352,56 +356,59 @@ def test_complete_candidate_standing_replays_after_sqlite_restart(
     )
 
 
-def test_machine_grammar_names_the_exact_first_source_and_candidate_rules():
+def test_machine_grammar_names_the_exact_one_source_candidate_responsibility():
     import json
 
     with open("book_of_seed/grammar.json", encoding="utf-8") as source:
         clause = json.load(source)["clause_coordinates"][BOOK_CLAUSE]
 
     assert clause["source_rule"]["identity"] == SOURCE_RULE.replace(" ", "_")
-    assert clause["candidate_rule"]["identity"] == CANDIDATE_RULE.replace(" ", "_")
-    assert clause["candidate_rule"]["source_input_relation"] == {
+    coordinate = clause["one_source_candidate_responsibility"]
+    assert coordinate["responsibility"] == (
+        ONE_SOURCE_CANDIDATE_RESPONSIBILITY.replace(" ", "_")
+    )
+    assert coordinate["exact_Act"] == ONE_SOURCE_CANDIDATE_ACT.replace(" ", "_")
+    assert coordinate["source_input_relation"] == {
         "first_subject": "exact_source_Assertion",
         "relation": "input_to",
-        "second_subject": (
-            "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule"
-        ),
+        "second_subject": ONE_SOURCE_CANDIDATE_ACT.replace(" ", "_"),
         "role": "input",
     }
-    assert clause["candidate_rule"]["source_Participation"] == {
+    assert coordinate["source_Participation"] == {
         "subject_reference": "exact_source_Assertion",
         "role": "input",
-        "act": (
-            "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule"
-        ),
+        "act": ONE_SOURCE_CANDIDATE_ACT.replace(" ", "_"),
         "act_occurrence": "exact_Candidate_Act_occurrence",
     }
 
 
-def test_machine_grammar_names_the_exact_ordered_pair_candidate_rule():
+def test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility():
     import json
 
     with open("book_of_seed/grammar.json", encoding="utf-8") as source:
-        rule = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
-            "ordered_pair_candidate_rule"
+        coordinate = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
+            "ordered_pair_candidate_responsibility"
         ]
 
-    assert rule["identity"] == ORDERED_PAIR_CANDIDATE_RULE.replace(" ", "_")
-    assert rule["source_pair"] == {
+    assert coordinate["exact_Act"] == ORDERED_PAIR_CANDIDATE_ACT.replace(" ", "_")
+    assert coordinate["responsibility"] == (
+        ORDERED_PAIR_CANDIDATE_RESPONSIBILITY.replace(" ", "_")
+    )
+    assert coordinate["source_pair"] == {
         "first_subject": "ordered_pair",
         "relation": "of",
         "second_subject": "distinct_exact_source_Assertions",
     }
-    assert rule["candidate_source_roles"] == [
+    assert coordinate["candidate_source_roles"] == [
         "first_source_Assertion",
         "second_source_Assertion",
     ]
-    assert rule["requires"] == "distinct_exact_source_Assertion_references"
-    assert rule["order"] == [
+    assert coordinate["requires"] == "distinct_exact_source_Assertion_references"
+    assert coordinate["order"] == [
         "first_source_event_order",
         "second_source_event_order",
     ]
-    assert rule["represented_relation"] == "Unknown"
+    assert coordinate["represented_relation"] == "Unknown"
 
 
 FIDELITY_SUBJECTS = {
@@ -415,14 +422,14 @@ FIDELITY_SUBJECTS = {
         test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion,
         test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
-        test_replay_refuses_rows_different_from_the_source_and_candidate_rules,
+        test_replay_refuses_rows_different_from_the_exact_source_and_act,
         test_empty_source_surface_records_one_complete_empty_candidate_standing,
         test_complete_candidate_standing_replays_after_sqlite_restart,
     ),
-    "complete_candidate_standing_grammar_coordinates": (
-        test_machine_grammar_names_the_exact_first_source_and_candidate_rules,
+    "one_source_candidate_standing_responsibility_coordinates": (
+        test_machine_grammar_names_the_exact_one_source_candidate_responsibility,
     ),
-    "ordered_pair_candidate_standing_grammar_coordinates": (
-        test_machine_grammar_names_the_exact_ordered_pair_candidate_rule,
+    "ordered_pair_candidate_standing_responsibility_coordinates": (
+        test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility,
     ),
 }

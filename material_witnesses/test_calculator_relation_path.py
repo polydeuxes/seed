@@ -347,7 +347,7 @@ def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
     assert calculator_position.assertion_identity in candidate_source_identities
     assert all(
         set(candidate["assertion_subject"])
-        == {"source_assertion_reference", "candidate_rule"}
+        == {"source_assertion_reference"}
         for candidate in candidate_standing["candidate_assertions"]
     )
     path_reference = next(

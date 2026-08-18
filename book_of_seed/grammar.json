@@ -566,19 +566,19 @@
           ]
         },
         {
-          "subject": "complete_candidate_standing_grammar_coordinates",
+          "subject": "one_source_candidate_standing_responsibility_coordinates",
           "grammar_coordinate_reference": [
             "clause_coordinates",
             "01.Source.E.1",
-            "candidate_rule"
+            "one_source_candidate_responsibility"
           ]
         },
         {
-          "subject": "ordered_pair_candidate_standing_grammar_coordinates",
+          "subject": "ordered_pair_candidate_standing_responsibility_coordinates",
           "grammar_coordinate_reference": [
             "clause_coordinates",
             "01.Source.E.1",
-            "ordered_pair_candidate_rule"
+            "ordered_pair_candidate_responsibility"
           ]
         },
         {"subject": "participation_relation_coordinates"},
@@ -1379,25 +1379,31 @@
           "Unknown"
         ]
       },
-      "candidate_rule": {
-        "identity": "one_candidate_for_each_exact_source_Assertion_in_event_order",
+      "one_source_candidate_responsibility": {
+        "responsibility": "determine_Applicability_and_record_one_Candidate_for_each_exact_source_Assertion_through_one_exact_ledger_boundary",
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "record_one_Candidate_for_each_exact_source_Assertion_in_event_order",
         "source_input_relation": {
           "first_subject": "exact_source_Assertion",
           "relation": "input_to",
-          "second_subject": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "second_subject": "record_one_Candidate_for_each_exact_source_Assertion_in_event_order",
           "role": "input"
         },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",
           "role": "input",
-          "act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "act": "record_one_Candidate_for_each_exact_source_Assertion_in_event_order",
           "act_occurrence": "exact_Candidate_Act_occurrence"
         },
-        "result": "candidate_Assertion",
+        "result": "complete_Candidate_Standing_result_carrying_one_Candidate_for_each_exact_source_Assertion",
         "represented_relation": "Unknown"
       },
-      "ordered_pair_candidate_rule": {
-        "identity": "one_candidate_for_each_ordered_pair_in_source_event_order",
+      "ordered_pair_candidate_responsibility": {
+        "responsibility": "determine_Applicability_and_record_one_Candidate_for_each_distinct_ordered_source_Assertion_pair_through_one_exact_ledger_boundary",
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "record_one_Candidate_for_each_distinct_ordered_source_Assertion_pair_in_source_event_order",
         "source_pair": {
           "first_subject": "ordered_pair",
           "relation": "of",
@@ -1406,13 +1412,13 @@
         "source_input_relation": {
           "first_subject": "exact_source_Assertion",
           "relation": "input_to",
-          "second_subject": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "second_subject": "record_one_Candidate_for_each_distinct_ordered_source_Assertion_pair_in_source_event_order",
           "role": "input"
         },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",
           "role": "input",
-          "act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "act": "record_one_Candidate_for_each_distinct_ordered_source_Assertion_pair_in_source_event_order",
           "act_occurrence": "exact_Candidate_Act_occurrence"
         },
         "candidate_source_roles": [
@@ -1424,19 +1430,20 @@
           "first_source_event_order",
           "second_source_event_order"
         ],
-        "result": "candidate_Assertion",
+        "result": "complete_Candidate_Standing_result_carrying_one_Candidate_for_each_ordered_pair",
         "represented_relation": "Unknown"
       },
       "responsibility": {
-        "responsible_boundary": "this_Seed",
-        "assignment": "this_Book",
-        "exact_Act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
-        "result": "complete_Candidate_Standing_result"
+        "coordinates": [
+          "one_source_candidate_responsibility",
+          "ordered_pair_candidate_responsibility"
+        ]
       },
       "requires": [
         "exact_ledger_boundary",
         "exact_source_rule",
-        "exact_candidate_rule",
+        "exact_Candidate_Responsibility",
+        "exact_Candidate_Act",
         "source_Applicability",
         "source_Participation",
         "complete_ordered_candidate_references",

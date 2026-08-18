@@ -40,21 +40,30 @@ SOURCE_RULE = (
     "exact Measurement or Compare result Assertions and each exact Assertion "
     "carried by that result and Locality Standing through one exact ledger boundary"
 )
-CANDIDATE_RULE = "one candidate for each exact source Assertion in event order"
-ORDERED_PAIR_CANDIDATE_RULE = (
-    "one candidate for each ordered pair in source event order"
+ONE_SOURCE_CANDIDATE_RESPONSIBILITY = (
+    "determine Applicability and record one Candidate for each exact source "
+    "Assertion through one exact ledger boundary"
 )
-_CANDIDATE_RULES = frozenset((CANDIDATE_RULE, ORDERED_PAIR_CANDIDATE_RULE))
-RESPONSIBILITY = (
-    "determine Applicability and record every candidate required by exact result "
-    "Assertion Standing through one exact ledger boundary"
+ORDERED_PAIR_CANDIDATE_RESPONSIBILITY = (
+    "determine Applicability and record one Candidate for each distinct ordered "
+    "source Assertion pair through one exact ledger boundary"
+)
+_CANDIDATE_RESPONSIBILITIES = frozenset(
+    (
+        ONE_SOURCE_CANDIDATE_RESPONSIBILITY,
+        ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
+    )
 )
 APPLICABILITY_ACT = (
     "determine Applicability of every exact source Assertion required by the "
     "Candidate Standing source rule"
 )
-CANDIDATE_ACT = (
-    "record every candidate required by one exact source rule and candidate rule"
+ONE_SOURCE_CANDIDATE_ACT = (
+    "record one Candidate for each exact source Assertion in event order"
+)
+ORDERED_PAIR_CANDIDATE_ACT = (
+    "record one Candidate for each distinct ordered source Assertion pair in source "
+    "event order"
 )
 APPLICABILITY_RESULT_NAME = (
     "Applicability result for exact Candidate Standing source Assertions"
@@ -87,10 +96,17 @@ def _identity(value: Any, message: str) -> str:
     return value
 
 
-def _candidate_rule(value: Any) -> str:
-    if value not in _CANDIDATE_RULES:
-        raise ValueError("Candidate Standing requires one exact candidate rule")
+def _candidate_responsibility(value: Any) -> str:
+    if value not in _CANDIDATE_RESPONSIBILITIES:
+        raise ValueError("Candidate Standing requires one exact Responsibility")
     return value
+
+
+def _candidate_act_for_responsibility(responsibility: str) -> str:
+    exact = _candidate_responsibility(responsibility)
+    if exact == ONE_SOURCE_CANDIDATE_RESPONSIBILITY:
+        return ONE_SOURCE_CANDIDATE_ACT
+    return ORDERED_PAIR_CANDIDATE_ACT
 
 
 def _event(
@@ -399,12 +415,13 @@ def source_assertion_references_for_candidate_standing(
     )
 
 
-def _authority() -> dict[str, Any]:
+def _authority(responsibility: str) -> dict[str, Any]:
+    exact_responsibility = _candidate_responsibility(responsibility)
     return {
         "source": "this Book",
         "book_clause_identity": BOOK_CLAUSE,
         "responsible_boundary": "this Seed",
-        "scope": "record every Candidate required by the exact source rule and exact candidate rule",
+        "scope": exact_responsibility,
         "standing_not_established": [
             "represented relation",
             "Admission",
@@ -438,12 +455,14 @@ def _assignment_material(
     prior_recording_occurrence_identity: str | None,
     source_append_boundary_identity: str,
     source_assertion_references: list[dict[str, str]],
-    candidate_rule: str,
+    responsibility: str,
 ) -> dict[str, Any]:
+    exact_responsibility = _candidate_responsibility(responsibility)
+    exact_candidate_act = _candidate_act_for_responsibility(exact_responsibility)
     return {
         "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": BOOK_CLAUSE,
-        "responsibility": RESPONSIBILITY,
+        "responsibility": exact_responsibility,
         "responsible_boundary": "this Seed",
         "applicability_act_identity": applicability_act_identity,
         "applicability_act_occurrence_identity": (
@@ -451,10 +470,10 @@ def _assignment_material(
         ),
         "applicability_result_identity": applicability_result_identity,
         "candidate_act_identity": candidate_act_identity,
+        "candidate_act": exact_candidate_act,
         "candidate_act_occurrence_identity": candidate_act_occurrence_identity,
         "candidate_result_identity": candidate_result_identity,
         "source_rule": SOURCE_RULE,
-        "candidate_rule": _candidate_rule(candidate_rule),
         "source_ledger_boundary_identity": source_append_boundary_identity,
         "source_assertion_references": deepcopy(source_assertion_references),
         "prior_recording_occurrence_identity": prior_recording_occurrence_identity,
@@ -463,7 +482,7 @@ def _assignment_material(
             "recording_locality_identity": recording_locality_identity,
             "source_ledger_boundary_identity": source_append_boundary_identity,
         },
-        "authority": _authority(),
+        "authority": _authority(exact_responsibility),
         "limits": [
             "the complete result is bounded to the exact source ledger boundary"
         ],
@@ -485,19 +504,19 @@ def _require_latest_in_locality(ledger: EventLedger, event: Event, message: str)
         raise ValueError(message)
 
 
-def record_candidate_standing_responsibility_assignment(
+def _record_candidate_standing_responsibility_assignment(
     ledger: EventLedger,
     *,
     source_append_boundary: EventLedgerBoundary,
     recording_locality_identity: str,
-    candidate_rule: str = CANDIDATE_RULE,
+    responsibility: str,
 ) -> Event:
     if not isinstance(ledger, EventLedger):
         raise TypeError("Candidate Standing requires one EventLedger")
     if type(recording_locality_identity) is not str or not recording_locality_identity:
         raise ValueError("Candidate Standing requires one exact recording Locality")
     boundary = _boundary(ledger, source_append_boundary.identity)
-    exact_candidate_rule = _candidate_rule(candidate_rule)
+    exact_responsibility = _candidate_responsibility(responsibility)
     references = _source_assertion_references_through(ledger, boundary)
     for recorded in ledger.iter_locality_kind(
         recording_locality_identity,
@@ -507,7 +526,7 @@ def record_candidate_standing_responsibility_assignment(
             recorded.material.get("source_ledger_boundary_identity")
             == boundary.identity
             and recorded.material.get("source_rule") == SOURCE_RULE
-            and recorded.material.get("candidate_rule") == exact_candidate_rule
+            and recorded.material.get("responsibility") == exact_responsibility
         ):
             raise ValueError(
                 "Candidate Standing already carries one assignment for this exact source boundary"
@@ -538,9 +557,37 @@ def record_candidate_standing_responsibility_assignment(
             prior_recording_occurrence_identity=prior,
             source_append_boundary_identity=boundary.identity,
             source_assertion_references=references,
-            candidate_rule=exact_candidate_rule,
+            responsibility=exact_responsibility,
         ),
         locality_identity=recording_locality_identity,
+    )
+
+
+def record_one_source_candidate_standing_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    source_append_boundary: EventLedgerBoundary,
+    recording_locality_identity: str,
+) -> Event:
+    return _record_candidate_standing_responsibility_assignment(
+        ledger,
+        source_append_boundary=source_append_boundary,
+        recording_locality_identity=recording_locality_identity,
+        responsibility=ONE_SOURCE_CANDIDATE_RESPONSIBILITY,
+    )
+
+
+def record_ordered_pair_candidate_standing_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    source_append_boundary: EventLedgerBoundary,
+    recording_locality_identity: str,
+) -> Event:
+    return _record_candidate_standing_responsibility_assignment(
+        ledger,
+        source_append_boundary=source_append_boundary,
+        recording_locality_identity=recording_locality_identity,
+        responsibility=ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     )
 
 
@@ -556,7 +603,7 @@ def _read_assignment(ledger: EventLedger, event_identity: Any) -> Event:
         ledger, material.get("source_ledger_boundary_identity")
     )
     references = _source_assertion_references_through(ledger, boundary)
-    exact_candidate_rule = _candidate_rule(material.get("candidate_rule"))
+    exact_responsibility = _candidate_responsibility(material.get("responsibility"))
     identities = (
         "assignment_subject_identity",
         "applicability_act_identity",
@@ -589,7 +636,7 @@ def _read_assignment(ledger: EventLedger, event_identity: Any) -> Event:
         prior_recording_occurrence_identity=prior,
         source_append_boundary_identity=boundary.identity,
         source_assertion_references=references,
-        candidate_rule=exact_candidate_rule,
+        responsibility=exact_responsibility,
     )
     if material != expected:
         raise ValueError("Candidate Standing Responsibility assignment is not exact")
@@ -619,14 +666,14 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "responsibility": RESPONSIBILITY,
+        "responsibility": assignment.material["responsibility"],
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "source_ledger_boundary_identity": assignment.material[
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
+        "candidate_act": assignment.material["candidate_act"],
         "input_relations": [
             {
                 "source_assertion_reference": deepcopy(reference),
@@ -710,14 +757,14 @@ def _applicability_result_material(
             "applicability_act_occurrence_identity"
         ],
         "exact_act": APPLICABILITY_ACT,
-        "responsibility": RESPONSIBILITY,
+        "responsibility": assignment.material["responsibility"],
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "source_ledger_boundary_identity": assignment.material[
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
+        "candidate_act": assignment.material["candidate_act"],
         "applicability_findings": [
             {
                 "source_assertion_reference": deepcopy(reference),
@@ -732,7 +779,7 @@ def _applicability_result_material(
         ],
         "scope": deepcopy(assignment.material["scope"]),
         "authority": deepcopy(assignment.material["authority"]),
-        "evidence_scope": "exact Candidate Standing candidate rule",
+        "evidence_scope": "exact Candidate Act",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
         "responsible_act_evidence_identity": act.identity,
@@ -769,7 +816,7 @@ def record_candidate_standing_applicability_result(
                 "evidence_of_yield_relation_identity",
             }
         },
-        responsibility=RESPONSIBILITY,
+        responsibility=assignment.material["responsibility"],
         occurrence_boundary="complete_candidate_standing_applicability",
         responsible_boundary="this Seed",
     )
@@ -832,8 +879,8 @@ def _candidate_act_material(
         "act_occurrence_identity": assignment.material[
             "candidate_act_occurrence_identity"
         ],
-        "act": CANDIDATE_ACT,
-        "responsibility": RESPONSIBILITY,
+        "act": assignment.material["candidate_act"],
+        "responsibility": assignment.material["responsibility"],
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "applicability_result_event_identity": applicability.identity,
@@ -841,7 +888,6 @@ def _candidate_act_material(
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
         "participation": [
             {
                 "source_assertion_reference": deepcopy(reference),
@@ -854,7 +900,7 @@ def _candidate_act_material(
         ],
         "scope": deepcopy(assignment.material["scope"]),
         "authority": deepcopy(assignment.material["authority"]),
-        "evidence_scope": "exact Candidate Standing candidate rule",
+        "evidence_scope": "exact Candidate Act",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
@@ -918,7 +964,8 @@ def _unary_candidate_identity(
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
+        "responsibility": assignment.material["responsibility"],
+        "candidate_act": assignment.material["candidate_act"],
         "source_assertion_reference": reference,
         "position": position,
     }
@@ -938,7 +985,8 @@ def _ordered_pair_candidate_identity(
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
+        "responsibility": assignment.material["responsibility"],
+        "candidate_act": assignment.material["candidate_act"],
         "first_source_assertion_reference": first_reference,
         "second_source_assertion_reference": second_reference,
         "position": position,
@@ -962,7 +1010,7 @@ def _unary_candidates(assignment: Event) -> list[dict[str, Any]]:
                         "source_ledger_boundary_identity"
                     ],
                     "source_rule": SOURCE_RULE,
-                    "candidate_rule": assignment.material["candidate_rule"],
+                    "candidate_act": assignment.material["candidate_act"],
                 },
                 "source_provenance": "exact source Assertion reference",
                 "responsibility": CANDIDATE_ASSERTION_RESPONSIBILITY,
@@ -974,7 +1022,6 @@ def _unary_candidates(assignment: Event) -> list[dict[str, Any]]:
             "result": "candidate",
             "assertion_subject": {
                 "source_assertion_reference": deepcopy(reference),
-                "candidate_rule": assignment.material["candidate_rule"],
             },
             "assertion_scope": deepcopy(assignment.material["scope"]),
             "represented_relation": "Unknown",
@@ -1020,7 +1067,7 @@ def _ordered_pair_candidates(assignment: Event) -> list[dict[str, Any]]:
                         "source_ledger_boundary_identity"
                     ],
                     "source_rule": SOURCE_RULE,
-                    "candidate_rule": assignment.material["candidate_rule"],
+                    "candidate_act": assignment.material["candidate_act"],
                 },
                 "source_provenance": "exact source Assertion references",
                 "responsibility": CANDIDATE_ASSERTION_RESPONSIBILITY,
@@ -1035,7 +1082,6 @@ def _ordered_pair_candidates(assignment: Event) -> list[dict[str, Any]]:
                 "second_source_assertion_reference": deepcopy(
                     second_reference
                 ),
-                "candidate_rule": assignment.material["candidate_rule"],
             },
             "assertion_scope": deepcopy(assignment.material["scope"]),
             "represented_relation": "Unknown",
@@ -1053,15 +1099,20 @@ def _ordered_pair_candidates(assignment: Event) -> list[dict[str, Any]]:
 
 
 def _candidates(assignment: Event) -> list[dict[str, Any]]:
-    rule = _candidate_rule(assignment.material.get("candidate_rule"))
-    if rule == CANDIDATE_RULE:
+    if (
+        _candidate_responsibility(assignment.material.get("responsibility"))
+        == ONE_SOURCE_CANDIDATE_RESPONSIBILITY
+    ):
         return _unary_candidates(assignment)
     return _ordered_pair_candidates(assignment)
 
 
 def _required_candidate_count(assignment: Event) -> int:
     source_count = len(assignment.material["source_assertion_references"])
-    if _candidate_rule(assignment.material.get("candidate_rule")) == CANDIDATE_RULE:
+    if (
+        _candidate_responsibility(assignment.material.get("responsibility"))
+        == ONE_SOURCE_CANDIDATE_RESPONSIBILITY
+    ):
         return source_count
     return source_count * (source_count - 1)
 
@@ -1080,8 +1131,8 @@ def _candidate_result_material(
         "act_occurrence_identity": assignment.material[
             "candidate_act_occurrence_identity"
         ],
-        "exact_act": CANDIDATE_ACT,
-        "responsibility": RESPONSIBILITY,
+        "exact_act": assignment.material["candidate_act"],
+        "responsibility": assignment.material["responsibility"],
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "applicability_result_event_identity": applicability.identity,
@@ -1089,7 +1140,6 @@ def _candidate_result_material(
             "source_ledger_boundary_identity"
         ],
         "source_rule": SOURCE_RULE,
-        "candidate_rule": assignment.material["candidate_rule"],
         "source_assertion_references": deepcopy(
             assignment.material["source_assertion_references"]
         ),
@@ -1124,7 +1174,7 @@ def record_candidate_standing_result(
     evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
-        exact_act=CANDIDATE_ACT,
+        exact_act=assignment.material["candidate_act"],
         act_occurrence_identity=act.material["act_occurrence_identity"],
         responsible_act_evidence_identity=act.identity,
         result_kind=CANDIDATE_RESULT_NAME,
@@ -1138,7 +1188,7 @@ def record_candidate_standing_result(
                 "evidence_of_yield_relation_identity",
             }
         },
-        responsibility=RESPONSIBILITY,
+        responsibility=assignment.material["responsibility"],
         occurrence_boundary="complete_candidate_standing",
         responsible_boundary="this Seed",
     )
@@ -1223,16 +1273,14 @@ def record_complete_candidate_standing(
     *,
     recording_locality_identity: str,
     source_append_boundary: EventLedgerBoundary | None = None,
-    candidate_rule: str = CANDIDATE_RULE,
 ) -> Event:
-    """Record one complete Candidate Standing lifecycle under one exact rule."""
+    """Record one Candidate for each source Assertion through the boundary."""
 
     boundary = source_append_boundary or ledger.append_boundary()
-    assignment = record_candidate_standing_responsibility_assignment(
+    assignment = record_one_source_candidate_standing_responsibility_assignment(
         ledger,
         source_append_boundary=boundary,
         recording_locality_identity=recording_locality_identity,
-        candidate_rule=candidate_rule,
     )
     applicability_act = record_candidate_standing_applicability_act_evidence(
         ledger,
@@ -1260,9 +1308,25 @@ def record_complete_ordered_pair_candidate_standing(
 ) -> Event:
     """Record every ordered pair Candidate owed by the frozen source surface."""
 
-    return record_complete_candidate_standing(
+    boundary = source_append_boundary or ledger.append_boundary()
+    assignment = record_ordered_pair_candidate_standing_responsibility_assignment(
         ledger,
+        source_append_boundary=boundary,
         recording_locality_identity=recording_locality_identity,
-        source_append_boundary=source_append_boundary,
-        candidate_rule=ORDERED_PAIR_CANDIDATE_RULE,
+    )
+    applicability_act = record_candidate_standing_applicability_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+    )
+    applicability = record_candidate_standing_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    act = record_candidate_standing_act_evidence(
+        ledger,
+        applicability_result_event_identity=applicability.identity,
+    )
+    return record_candidate_standing_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
     )
