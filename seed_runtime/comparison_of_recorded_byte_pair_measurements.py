@@ -1400,7 +1400,10 @@ def record_recorded_pair_measurement_comparison_act_evidence(
 
 
 def _comparison_act_reading(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: _AssignmentReading | None = None,
 ) -> tuple[Event, _AssignmentReading, Event]:
     event = ledger.get(_identity(event_identity, "comparison requires Act Evidence"))
     if (
@@ -1413,14 +1416,13 @@ def _comparison_act_reading(
             "comparison Act Evidence is absent or corrupted"
         )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment_reading = (
-        _assignment_reading(
+    if assignment_reading is None:
+        assignment_reading = _assignment_reading(
             ledger,
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
         )
-    )
     assignment, _inputs = assignment_reading
     applicability = ledger.get(event.material.get("applicability_result_event_identity"))
     if applicability is None:
@@ -1718,9 +1720,12 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
     return result, locality_standing
 
 
-def get_recorded_pair_measurement_comparison(
-    ledger: EventLedger, event_identity: str
-) -> dict[str, Any]:
+def _recorded_pair_measurement_comparison_reading(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: _AssignmentReading | None = None,
+) -> tuple[dict[str, Any], _AssignmentReading]:
     event = ledger.get(_identity(event_identity, "comparison requires one result"))
     if (
         event is None
@@ -1733,7 +1738,9 @@ def get_recorded_pair_measurement_comparison(
         )
     act, assignment_reading, _applicability = (
         _comparison_act_reading(
-            ledger, event.material.get("responsible_act_evidence_identity")
+            ledger,
+            event.material.get("responsible_act_evidence_identity"),
+            assignment_reading=assignment_reading,
         )
     )
     expected = _recorded_comparison_result_material(
@@ -1759,4 +1766,12 @@ def get_recorded_pair_measurement_comparison(
         raise RecordedPairMeasurementComparisonError(
             "comparison result carries no exact Yield"
         )
-    return deepcopy(event.material)
+    return deepcopy(event.material), assignment_reading
+
+
+def get_recorded_pair_measurement_comparison(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    return _recorded_pair_measurement_comparison_reading(
+        ledger, event_identity
+    )[0]

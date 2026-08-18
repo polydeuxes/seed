@@ -7,6 +7,7 @@ import json
 
 import pytest
 
+import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -1459,6 +1460,64 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert "dimensions" not in movement.material
 
 
+def test_same_locality_pair_result_reuses_one_exact_prior_standing(monkeypatch):
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"tatatata\n",
+        source_role="system",
+        source_boundary="exact same-locality source",
+    )
+    source = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="source",
+    )
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="source",
+    )
+    standing_reads = []
+    original = operator_standing_module.read_operator_locality_standing_through
+
+    def witnessed(
+        ledger,
+        *,
+        locality_identity,
+        through_event_occurrence_identity,
+    ):
+        standing_reads.append(
+            (locality_identity, through_event_occurrence_identity)
+        )
+        return original(
+            ledger,
+            locality_identity=locality_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
+        )
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        witnessed,
+    )
+
+    assert assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair.identity
+    )
+    assert standing_reads == [
+        (
+            "source",
+            ledger.get(
+                pair.material["responsibility_assignment_reference"][
+                    "recorded_occurrence_identity"
+                ]
+            ).material["standing_boundary_identity"],
+        )
+    ]
+
+
 def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
@@ -2788,6 +2847,7 @@ FIDELITY_SUBJECTS = {
         test_position_pairs_never_cross_ingest_boundaries,
         test_position_pair_measurement_remains_byte_not_character_based,
         test_recorded_pair_results_replay_the_complete_bounded_source_read,
+        test_same_locality_pair_result_reuses_one_exact_prior_standing,
         test_pair_validation_refuses_a_self_consistent_truncated_result_inputs,
         test_pair_result_is_derived_from_source_without_a_measured_carrier_argument,
         test_pair_validation_does_not_perform_the_pair_measurement_again,

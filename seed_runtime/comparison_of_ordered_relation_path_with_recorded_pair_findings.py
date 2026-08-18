@@ -9,8 +9,7 @@ from typing import Any
 
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
-    get_recorded_pair_measurement_comparison,
-    get_recorded_pair_measurement_comparison_responsibility_assignment,
+    _recorded_pair_measurement_comparison_reading,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -233,18 +232,19 @@ def _comparison_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any
         kind=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
         message="comparison of ordered relation path with recorded pair findings requires one exact recorded comparison result",
     )
-    material = get_recorded_pair_measurement_comparison(ledger, event.identity)
+    material, assignment_reading = (
+        _recorded_pair_measurement_comparison_reading(ledger, event.identity)
+    )
+    assignment = assignment_reading[0]
     assignment_reference = material.get("responsibility_assignment_reference")
     assignment_identity = (
         assignment_reference.get("recorded_occurrence_identity")
         if type(assignment_reference) is dict
         else None
     )
-    assignment = get_recorded_pair_measurement_comparison_responsibility_assignment(
-        ledger, assignment_identity
-    )
     if (
-        assignment.material.get("comparison_result_identity")
+        assignment.identity != assignment_identity
+        or assignment.material.get("comparison_result_identity")
         != material.get("result_identity")
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings comparison assignment is crossed")

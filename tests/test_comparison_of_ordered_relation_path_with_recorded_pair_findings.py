@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
+import seed_runtime.comparison_of_recorded_byte_pair_measurements as recorded_pair_comparison_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
@@ -393,6 +394,40 @@ def test_changed_input_compare_is_refused_on_later_read():
         )
 
 
+def test_higher_input_preserves_the_validated_comparison_assignment(monkeypatch):
+    ledger, _earlier_source, _added, comparison, _path = _inputs()
+    assignment_reads = []
+    original = recorded_pair_comparison_module._assignment_reading
+
+    def witnessed(ledger, event_identity):
+        assignment_reads.append(event_identity)
+        return original(ledger, event_identity)
+
+    monkeypatch.setattr(
+        recorded_pair_comparison_module, "_assignment_reading", witnessed
+    )
+    reading = comparison_module._comparison_input(ledger, comparison.identity)
+
+    assignment_identity = comparison.material[
+        "responsibility_assignment_reference"
+    ]["recorded_occurrence_identity"]
+    assert reading["assignment_event_identity"] == assignment_identity
+    assert assignment_reads == [assignment_identity]
+
+
+def test_higher_input_handoff_still_refuses_comparison_assignment_corruption():
+    ledger, _earlier_source, _added, comparison, _path = _inputs()
+    assignment = ledger.get(
+        comparison.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    assignment.material["comparison_result_identity"] = "crossed-result"
+
+    with pytest.raises(ValueError):
+        comparison_module._comparison_input(ledger, comparison.identity)
+
+
 def test_corrupted_higher_compare_yield_is_refused():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
@@ -528,6 +563,8 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice,
         test_changed_input_compare_is_refused_on_later_read,
+        test_higher_input_preserves_the_validated_comparison_assignment,
+        test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
         test_corrupted_higher_compare_yield_is_refused,
         test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache,
     ),

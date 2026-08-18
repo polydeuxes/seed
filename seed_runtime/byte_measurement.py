@@ -2655,11 +2655,12 @@ def _record_byte_measurement_result_from_carried_act_evidence(
     )
 
 
-def assertions_of_recorded_byte_measurement(
-    ledger: EventLedger, event_identity: str
+def _assertions_of_recorded_byte_measurement(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[RecordedByteAssertion, ...] | None:
-    """Read the exact byte results after replaying their bounded source read."""
-
     event = ledger.get(event_identity)
     if event is None:
         return None
@@ -2754,7 +2755,9 @@ def assertions_of_recorded_byte_measurement(
         )
     _validated_act, assignment, measured = (
         _measurement_of_responsible_act_evidence(
-            ledger, act_evidence.identity
+            ledger,
+            act_evidence.identity,
+            prior_standing=prior_standing,
         )
     )
     _require_exact_result_yield(
@@ -2815,6 +2818,16 @@ def assertions_of_recorded_byte_measurement(
             )
         )
     return tuple(read)
+
+
+def assertions_of_recorded_byte_measurement(
+    ledger: EventLedger, event_identity: str
+) -> tuple[RecordedByteAssertion, ...] | None:
+    """Read the exact byte results after replaying their bounded source read."""
+
+    return _assertions_of_recorded_byte_measurement(
+        ledger, event_identity
+    )
 
 
 def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
@@ -3133,6 +3146,34 @@ def _append_pair_measurement_responsibility_assignment(
     )
 
 
+def _prior_standing_for_pair_measurement_assignment(
+    ledger: EventLedger,
+    *,
+    assignment: Event,
+    boundary: str,
+) -> dict[str, Any]:
+    from seed_runtime.operator_locality_standing import (
+        _operator_standing_validation_context,
+        read_operator_locality_standing_through,
+    )
+
+    prior_standing = _operator_standing_validation_context(
+        ledger, locality_identity=assignment.locality_identity
+    )
+    if prior_standing is not None:
+        return prior_standing
+    try:
+        return read_operator_locality_standing_through(
+            ledger,
+            locality_identity=assignment.locality_identity,
+            through_event_occurrence_identity=boundary,
+        )
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            "byte-position-pair Measurement assignment has no exact prior Standing"
+        ) from error
+
+
 def _read_pair_measurement_responsibility_assignment(
     ledger: EventLedger,
     assignment_event_identity: str,
@@ -3164,12 +3205,22 @@ def _read_pair_measurement_responsibility_assignment(
     identities = {key: material.get(key) for key in identity_keys}
     reference = material.get("source_assertion_reference")
     movement_identity = material.get("source_movement_event_identity")
+    boundary = material.get("standing_boundary_identity")
+    if type(boundary) is not str or not boundary:
+        raise ByteMeasurementError(
+            "byte-position-pair Measurement assignment carries no Standing boundary"
+        )
     if movement_identity is None:
-        readings = assertions_of_recorded_byte_measurement(
+        if prior_standing is None:
+            prior_standing = _prior_standing_for_pair_measurement_assignment(
+                ledger, assignment=assignment, boundary=boundary
+            )
+        readings = _assertions_of_recorded_byte_measurement(
             ledger,
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
+            prior_standing=prior_standing,
         )
         source = next(
             (
@@ -3196,11 +3247,6 @@ def _read_pair_measurement_responsibility_assignment(
         )
     scope = source.material["assertion_scope"]
     content = source.material["dimensions"]["content"]
-    boundary = material.get("standing_boundary_identity")
-    if type(boundary) is not str or not boundary:
-        raise ByteMeasurementError(
-            "byte-position-pair Measurement assignment carries no Standing boundary"
-        )
     expected = _pair_measurement_assignment_material(
         source=source,
         scope=scope,
@@ -3214,25 +3260,9 @@ def _read_pair_measurement_responsibility_assignment(
             "byte-position-pair Measurement assignment coordinates are not exact"
         )
     if prior_standing is None:
-        from seed_runtime.operator_locality_standing import (
-            _operator_standing_validation_context,
-            read_operator_locality_standing_through,
+        prior_standing = _prior_standing_for_pair_measurement_assignment(
+            ledger, assignment=assignment, boundary=boundary
         )
-
-        prior_standing = _operator_standing_validation_context(
-            ledger, locality_identity=assignment.locality_identity
-        )
-        if prior_standing is None:
-            try:
-                prior_standing = read_operator_locality_standing_through(
-                    ledger,
-                    locality_identity=assignment.locality_identity,
-                    through_event_occurrence_identity=boundary,
-                )
-            except (TypeError, ValueError) as error:
-                raise ByteMeasurementError(
-                    "byte-position-pair Measurement assignment has no exact prior Standing"
-                ) from error
     standing_boundary = prior_standing.get("through_event_occurrence_identity")
     assignments = prior_standing.get("responsibility_assignment_occurrences")
     boundary_is_exact = standing_boundary == boundary

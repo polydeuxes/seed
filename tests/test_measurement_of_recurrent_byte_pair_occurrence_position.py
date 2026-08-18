@@ -7,6 +7,7 @@ import pytest
 from tests.representation_admission import admit_representation
 
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
+import seed_runtime.operator_locality_standing as operator_standing
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
@@ -659,6 +660,137 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     } == {(source.identity, source.locality_identity, through.identity, 16)}
 
 
+def test_assignment_read_threads_one_exact_standing_to_pair_validation(monkeypatch):
+    ledger, locality, pair, _recurrence, _source, finding = _fixture()
+    prior_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=prior_standing,
+    )
+    pair_reads = []
+    original = (
+        pair_occurrence_measurement._validated_recorded_byte_position_pair_measurement
+    )
+
+    def witnessed(
+        ledger,
+        event_identity,
+        *,
+        findings_only,
+        prior_standing=None,
+    ):
+        pair_reads.append((event_identity, prior_standing))
+        return original(
+            ledger,
+            event_identity,
+            findings_only=findings_only,
+            prior_standing=prior_standing,
+        )
+
+    monkeypatch.setattr(
+        pair_occurrence_measurement,
+        "_validated_recorded_byte_position_pair_measurement",
+        witnessed,
+    )
+
+    ambient_standing = deepcopy(prior_standing)
+
+    def ambient_must_not_override_explicit_standing(*_args, **_kwargs):
+        return ambient_standing
+
+    monkeypatch.setattr(
+        operator_standing,
+        "_operator_standing_validation_context",
+        ambient_must_not_override_explicit_standing,
+    )
+    read_assignment, read_finding = pair_occurrence_measurement._read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        assignment.identity,
+        prior_standing=prior_standing,
+    )
+
+    assert read_assignment == assignment
+    assert read_finding == finding
+    assert pair_reads == [(pair.identity, prior_standing)]
+    assert _operator_standing_validation_context(
+        ledger, locality_identity=locality
+    ) is None
+
+
+def test_assignment_pair_handoff_still_refuses_later_pair_corruption():
+    ledger, locality, pair, _recurrence, _source, finding = _fixture()
+    prior_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=prior_standing,
+    )
+    pair.material["assertions"][0]["dimensions"]["content"] = {
+        "crossed": True
+    }
+
+    with pytest.raises(ValueError):
+        pair_occurrence_measurement._read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            assignment.identity,
+            prior_standing=prior_standing,
+        )
+
+
+def test_public_assignment_read_still_reconstructs_prior_standing(monkeypatch):
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    prior_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=prior_standing,
+    )
+    standing_reads = []
+    original = operator_standing.read_operator_locality_standing_through
+
+    def witnessed(
+        ledger,
+        *,
+        locality_identity,
+        through_event_occurrence_identity,
+    ):
+        standing_reads.append(
+            (locality_identity, through_event_occurrence_identity)
+        )
+        return original(
+            ledger,
+            locality_identity=locality_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
+        )
+
+    monkeypatch.setattr(
+        operator_standing, "read_operator_locality_standing_through", witnessed
+    )
+
+    assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger, assignment.identity
+    ) == assignment
+    assert (
+        locality,
+        assignment.material["standing_boundary_identity"],
+    ) in standing_reads
+    assert all(
+        (
+            read_locality == locality
+            and type(read_boundary) is str
+            and read_boundary
+        )
+        for read_locality, read_boundary in standing_reads
+    )
+
+
 def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects():
     ledger, _locality, pair, recurrence, source, _finding = _fixture()
     through = ledger.append_boundary()
@@ -1030,6 +1162,9 @@ FIDELITY_SUBJECTS = {
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
         test_same_boundary_pair_subjects_have_one_pair_result_read,
+        test_assignment_read_threads_one_exact_standing_to_pair_validation,
+        test_assignment_pair_handoff_still_refuses_later_pair_corruption,
+        test_public_assignment_read_still_reconstructs_prior_standing,
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_result_evidence_distinct,
         test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,

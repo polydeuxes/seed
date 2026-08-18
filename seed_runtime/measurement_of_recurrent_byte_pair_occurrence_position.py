@@ -278,6 +278,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     *,
     measurement_occurrence_identity: str,
     recurrence_assertion_identities: tuple[str, ...],
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedRecurrentBytePair, ...]:
     """Resolve several subjects from one independently validated result read."""
 
@@ -307,8 +308,17 @@ def _references_to_recorded_recurrent_byte_pairs(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ValueError("recurrent pair reference requires one intact pair Measurement")
-    reading = _validated_recorded_byte_position_pair_measurement(
-        ledger, event.identity, findings_only=True
+    reading = (
+        _validated_recorded_byte_position_pair_measurement(
+            ledger,
+            event.identity,
+            findings_only=True,
+            prior_standing=prior_standing,
+        )
+        if prior_standing is not None
+        else _validated_recorded_byte_position_pair_measurement(
+            ledger, event.identity, findings_only=True
+        )
     )
     findings = reading.results if reading is not None else None
     findings_by_identity = {
@@ -761,28 +771,6 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or not material["standing_boundary_identity"]
     ):
         raise ValueError("pair occurrence assignment carries malformed coordinates")
-    finding = measure_positions_of_recurrent_byte_pair_occurrences(
-        ledger,
-        pair_measurement_occurrence_identity=pair_reference[
-            "recorded_occurrence_identity"
-        ],
-        recurrence_assertion_identity=pair_reference["assertion_identity"],
-        source_ingest_occurrence_identity=material[
-            "source_ingest_occurrence_identity"
-        ],
-        occurrence_limit=material["occurrence_limit"],
-        through=EventLedgerBoundary(material["completeness_boundary_identity"]),
-    )
-    expected = _responsibility_assignment_material(
-        finding,
-        standing_boundary_identity=material["standing_boundary_identity"],
-        **identities,
-    )
-    if (
-        assignment.locality_identity != finding.source_locality_identity
-        or material != expected
-    ):
-        raise ValueError("pair occurrence assignment coordinates are not exact")
     standing_boundary_identity = material["standing_boundary_identity"]
     ambient_replay_carrier = False
     if prior_standing is None:
@@ -804,6 +792,39 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
                 locality_identity=assignment.locality_identity,
                 through_event_occurrence_identity=standing_boundary_identity,
             )
+    pair_validation_standing = (
+        prior_standing
+        if type(prior_standing.get("responsibility_assignment_occurrences"))
+        is dict
+        else None
+    )
+    pair_subject = _references_to_recorded_recurrent_byte_pairs(
+        ledger,
+        measurement_occurrence_identity=pair_reference[
+            "recorded_occurrence_identity"
+        ],
+        recurrence_assertion_identities=(pair_reference["assertion_identity"],),
+        prior_standing=pair_validation_standing,
+    )[0]
+    finding = _measure_through(
+        ledger,
+        pair_reference=pair_subject,
+        source_ingest_occurrence_identity=material[
+            "source_ingest_occurrence_identity"
+        ],
+        boundary=EventLedgerBoundary(material["completeness_boundary_identity"]),
+        occurrence_limit=material["occurrence_limit"],
+    )
+    expected = _responsibility_assignment_material(
+        finding,
+        standing_boundary_identity=material["standing_boundary_identity"],
+        **identities,
+    )
+    if (
+        assignment.locality_identity != finding.source_locality_identity
+        or material != expected
+    ):
+        raise ValueError("pair occurrence assignment coordinates are not exact")
     measurements = prior_standing.get("measurement_occurrences")
     ingests = prior_standing.get("ingest_occurrences")
     carried_assignments = prior_standing.get(

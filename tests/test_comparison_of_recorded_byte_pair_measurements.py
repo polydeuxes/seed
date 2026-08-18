@@ -7,6 +7,7 @@ from tests.binary_input import binary_input
 
 import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
+import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
@@ -467,6 +468,188 @@ def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
     ]
 
 
+def test_result_reader_preserves_its_exact_assignment_and_public_getter_delegates(
+    monkeypatch,
+):
+    ledger, *_inputs, assignment, _applicability, result = _comparison()
+    material, assignment_reading = (
+        comparison_module._recorded_pair_measurement_comparison_reading(
+            ledger, result.identity
+        )
+    )
+
+    assert material == result.material
+    assert assignment_reading[0] == assignment
+
+    calls = []
+    original = comparison_module._recorded_pair_measurement_comparison_reading
+
+    def witnessed(ledger, event_identity):
+        calls.append(event_identity)
+        return original(ledger, event_identity)
+
+    monkeypatch.setattr(
+        comparison_module,
+        "_recorded_pair_measurement_comparison_reading",
+        witnessed,
+    )
+    assert get_recorded_pair_measurement_comparison(
+        ledger, result.identity
+    ) == result.material
+    assert calls == [result.identity]
+
+
+def test_standing_replay_carries_one_validated_assignment_across_comparison_stages(
+    monkeypatch,
+):
+    ledger, *_rest, result = _comparison()
+    calls = []
+    original = (
+        operator_standing_module._recorded_pair_comparison_assignment_reading
+    )
+
+    def witnessed(ledger, event_identity):
+        calls.append(event_identity)
+        return original(ledger, event_identity)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_recorded_pair_comparison_assignment_reading",
+        witnessed,
+    )
+    monkeypatch.setattr(comparison_module, "_assignment_reading", witnessed)
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    assignment_identity = result.material[
+        "responsibility_assignment_reference"
+    ]["recorded_occurrence_identity"]
+    assert result.identity in standing["comparison_result_occurrences"]
+    assert calls == [assignment_identity]
+
+    get_recorded_pair_measurement_comparison(ledger, result.identity)
+    assert calls == [assignment_identity, assignment_identity]
+
+
+@pytest.mark.parametrize("callback", ("assignment", "input", "append"))
+def test_standing_replay_carry_refuses_callback_change_and_leaks_no_state(
+    monkeypatch, callback
+):
+    ledger, _source, _added, earlier, _later, assignment, _applicability, _result = (
+        _comparison()
+    )
+    assignment_material = deepcopy(assignment.material)
+    earlier_material = deepcopy(earlier.material)
+    original = (
+        operator_standing_module._recorded_pair_comparison_applicability_act_reading
+    )
+    callback_crossed = False
+
+    def cross_after_assignment(*args, **kwargs):
+        nonlocal callback_crossed
+        if not callback_crossed:
+            callback_crossed = True
+            if callback == "assignment":
+                assignment.material["responsibility"] = "changed after validation"
+            elif callback == "input":
+                earlier.material["measurement_rule"] = "changed after validation"
+            else:
+                ledger.append(
+                    "test.unrelated_callback",
+                    {"unknown": ["append after comparison assignment validation"]},
+                    locality_identity="unrelated-callback",
+                )
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_recorded_pair_comparison_applicability_act_reading",
+        cross_after_assignment,
+    )
+    with pytest.raises(RecordedPairMeasurementComparisonError):
+        read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+
+    assignment.material.clear()
+    assignment.material.update(assignment_material)
+    earlier.material.clear()
+    earlier.material.update(earlier_material)
+    assert read_operator_locality_standing(
+        ledger, locality_identity=LOCALITY
+    )["comparison_result_occurrences"]
+
+
+def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
+    monkeypatch,
+):
+    ledger, _source, _added, earlier, later = _inputs()
+    first = record_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        earlier_result_event_identity=earlier.identity,
+        later_result_event_identity=later.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+    second = record_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        earlier_result_event_identity=earlier.identity,
+        later_result_event_identity=later.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+
+    def finish(assignment):
+        applicability_act = record_recorded_pair_measurement_comparison_applicability_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+        applicability = record_recorded_pair_measurement_comparison_applicability_result(
+            ledger,
+            responsible_act_evidence_event_identity=applicability_act.identity,
+        )
+        act = record_recorded_pair_measurement_comparison_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            applicability_result_event_identity=applicability.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+        return record_recorded_pair_measurement_comparison_result(
+            ledger, responsible_act_evidence_event_identity=act.identity
+        )
+
+    results = (finish(first), finish(second))
+    calls = []
+    original = (
+        operator_standing_module._recorded_pair_comparison_assignment_reading
+    )
+
+    def witnessed(ledger, event_identity):
+        calls.append(event_identity)
+        return original(ledger, event_identity)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_recorded_pair_comparison_assignment_reading",
+        witnessed,
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=LOCALITY
+    )
+
+    assert all(
+        result.identity in standing["comparison_result_occurrences"]
+        for result in results
+    )
+    assert calls == [first.identity, second.identity]
+
+
 def test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers(
     monkeypatch,
 ):
@@ -821,6 +1004,7 @@ FIDELITY_SUBJECTS = {
         test_one_console_call_revalidates_only_the_pair_crossing_a_callback,
         test_changed_pair_crossing_a_callback_cannot_enter_compare_standing,
         test_one_result_read_validates_each_pair_measurement_once,
+        test_result_reader_preserves_its_exact_assignment_and_public_getter_delegates,
         test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
         test_later_result_read_revalidates_changed_pair_measurement_evidence,
         test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
