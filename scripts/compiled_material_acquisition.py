@@ -263,6 +263,42 @@ def measure_material_time_counts(
     return measurements, exact_compares, return_compares
 
 
+def added_position_act_occurrence_count(returned_admissions):
+    if type(returned_admissions) is not tuple or not returned_admissions:
+        raise TypeError("addition Act count requires exact returned Admissions")
+    occurrence_count = 0
+    for admission in returned_admissions:
+        result_reference = getattr(admission, "result_reference", None)
+        admitted_material = getattr(result_reference, "admitted_material", None)
+        if (
+            type(admitted_material) is not tuple
+            or not admitted_material
+            or any(
+                type(material) is not tuple or not material
+                for material in admitted_material
+            )
+        ):
+            raise TypeError("addition Act count requires exact admitted material")
+        for material in admitted_material:
+            exact_material = tuple(
+                getattr(reference, "exact_material", None)
+                for reference in material
+            )
+            if any(
+                type(reference_material) is not bytes
+                or len(reference_material) != 1
+                for reference_material in exact_material
+            ):
+                raise TypeError(
+                    "addition Act count requires exact one-byte admitted material"
+                )
+            occurrence_count += sum(
+                (len(reference_material) + 1) * len(material)
+                for reference_material in exact_material
+            )
+    return occurrence_count
+
+
 def measure_added_material(
     implementation_functions,
     references,
@@ -420,7 +456,7 @@ def main() -> int:
         source_occurrences,
         returned,
         time_limit_second_count=second_count,
-        act_occurrence_count_limit=len(references) * len(functions),
+        act_occurrence_count_limit=added_position_act_occurrence_count(returned),
     )
     measure_material_and_act_results(
         functions,
