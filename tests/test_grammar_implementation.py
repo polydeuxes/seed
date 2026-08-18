@@ -1847,7 +1847,7 @@ def _representation_locality_requirements(bundle: dict) -> dict[str, bool]:
     }
 
 
-def _relation_fidelity_cases() -> dict[str, dict[str, str]]:
+def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
     locality = _byte_measurement_witness()
     alternate_locality = _byte_measurement_witness()
     corrupted_locality = _byte_measurement_witness()
@@ -2105,7 +2105,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     }
 
 
-def _emission_relation_fidelity_cases() -> dict[str, dict[str, str]]:
+def _emission_relation_fidelity_findings() -> dict[str, dict[str, str]]:
     bundles = _successful_emission_requirement_bundles()
     witnesses = {
         "locality": _emission_locality_witness,
@@ -2114,8 +2114,11 @@ def _emission_relation_fidelity_cases() -> dict[str, dict[str, str]]:
         "carried_by": _evidence_carried_by_result_occurrence_witness,
     }
     return {
-        relation: {case: witnesses[relation](bundle) for case, bundle in cases.items()}
-        for relation, cases in bundles.items()
+        relation: {
+            treatment: witnesses[relation](bundle)
+            for treatment, bundle in relation_bundles.items()
+        }
+        for relation, relation_bundles in bundles.items()
     }
 
 
@@ -2284,7 +2287,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     return boundaries
 
 
-def _additional_live_relation_fidelity_cases() -> dict[
+def _additional_relation_occurrence_fidelity_findings() -> dict[
     tuple[str, str], dict[str, str]
 ]:
     representation, alternate_representation = _repeated_representation_witness()
@@ -2419,7 +2422,7 @@ def _additional_live_relation_fidelity_cases() -> dict[
     }
 
 
-def _live_relation_fidelity_cases() -> dict[
+def _relation_occurrence_fidelity_findings() -> dict[
     tuple[str, str], dict[str, str]
 ]:
     byte_pair_yield_bundles = _byte_pair_yield_requirement_bundles()
@@ -2431,17 +2434,17 @@ def _live_relation_fidelity_cases() -> dict[
         "carried_by": "byte_measurement",
     }
     registered = {
-        (relation, primary_boundaries[relation]): cases
-        for relation, cases in _relation_fidelity_cases().items()
+        (relation, primary_boundaries[relation]): findings
+        for relation, findings in _relation_fidelity_findings().items()
     }
     registered.update(
         {
-            (relation, "successful_emission"): cases
-            for relation, cases in _emission_relation_fidelity_cases().items()
+            (relation, "successful_emission"): findings
+            for relation, findings in _emission_relation_fidelity_findings().items()
         }
     )
-    registered.update(_additional_live_relation_fidelity_cases())
-    registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
+    registered.update(_additional_relation_occurrence_fidelity_findings())
+    registered[("locality", "assertion_movement")] = _locality_fidelity_findings()
     registered.update(
         {
             ("yield", boundary): {
@@ -2481,8 +2484,8 @@ def _live_relation_fidelity_cases() -> dict[
     return registered
 
 
-def test_primary_relation_measurements_preserve_their_live_boundaries():
-    registered = _live_relation_fidelity_cases()
+def test_primary_relation_measurements_preserve_their_occurrence_boundaries():
+    registered = _relation_occurrence_fidelity_findings()
 
     assert ("locality", "byte_measurement") in registered
     assert ("participation", "byte_pair_measurement") in registered
@@ -3394,7 +3397,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
     }
 
 
-def _locality_fidelity_cases() -> dict[str, str]:
+def _locality_fidelity_findings() -> dict[str, str]:
     exact = _recorded_applicability()
 
     relation_missing = _recorded_applicability()
@@ -3635,43 +3638,45 @@ def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order
         raise AssertionError("inverted Fidelity Representation order escaped")
 
 
-def test_every_relation_has_live_fidelity_cases():
+def test_every_relation_has_exact_fidelity_findings():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    cases = _relation_fidelity_cases()
+    findings = _relation_fidelity_findings()
     specs = _relation_witness_specs()
-    expected = grammar["witness"]["fidelity_cases"]
+    expected = grammar["witness"]["fidelity_findings"]
 
     _assert_relation_anatomy(grammar, specs)
-    assert set(cases) == set(grammar["relations"])
-    assert all(set(relation_cases) == set(expected) for relation_cases in cases.values())
-    assert cases == {
+    assert set(findings) == set(grammar["relations"])
+    assert all(
+        set(relation_findings) == set(expected)
+        for relation_findings in findings.values()
+    )
+    assert findings == {
         relation: expected for relation in grammar["relations"]
     }
     for relation, spec in specs.items():
         for adversary in spec["requires"].values():
-            assert cases[relation][adversary] == MISSING
+            assert findings[relation][adversary] == MISSING
 
 
 def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    cases = _emission_relation_fidelity_cases()
-    expected = grammar["witness"]["fidelity_cases"]
+    findings = _emission_relation_fidelity_findings()
+    expected = grammar["witness"]["fidelity_findings"]
 
-    assert set(cases) == set(grammar["relations"])
-    assert set(cases) == set(grammar["relations"])
-    assert cases == {relation: expected for relation in cases}
+    assert set(findings) == set(grammar["relations"])
+    assert findings == {relation: expected for relation in findings}
 
 
-def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix():
+def test_every_registered_relation_occurrence_obeys_the_full_fidelity_matrix():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    expected = grammar["witness"]["fidelity_cases"]
-    registered = _live_relation_fidelity_cases()
+    expected = grammar["witness"]["fidelity_findings"]
+    registered = _relation_occurrence_fidelity_findings()
 
     assert registered
     assert {relation for relation, _boundary in registered} == set(
         grammar["relations"]
     )
-    assert all(cases == expected for cases in registered.values())
+    assert all(findings == expected for findings in registered.values())
     assert ("locality", "representation_result") in registered
     assert ("locality", "emission_attempt") in registered
     assert {
@@ -6064,7 +6069,7 @@ def test_every_locality_evidence_kind_is_declared_once_and_registered():
         f"  only live:     {sorted(set(discovered) - set(LOCALITY_BOUNDARY_BY_KIND))}\n"
         f"  only registry: {sorted(set(LOCALITY_BOUNDARY_BY_KIND) - set(discovered))}"
     )
-    registered = _live_relation_fidelity_cases()
+    registered = _relation_occurrence_fidelity_findings()
     assert {
         boundary for relation, boundary in registered if relation == "locality"
     } == (
@@ -6287,7 +6292,7 @@ FIDELITY_SUBJECTS = {
         test_byte_measurement_adversaries_change_one_requirement_each,
     ),
     "relation_occurrence_boundary": (
-        test_primary_relation_measurements_preserve_their_live_boundaries,
+        test_primary_relation_measurements_preserve_their_occurrence_boundaries,
     ),
     "relation_required_coordinates": (
         test_changed_relation_anatomy_is_detected,
@@ -6417,9 +6422,9 @@ FIDELITY_SUBJECTS = {
     "content_locality_occurrence_distinction": (
         test_witness_discriminates_content_locality_and_occurrence,
     ),
-    "relation_fidelity_cases": (test_every_relation_has_live_fidelity_cases,),
-    "relation_occurrence_fidelity_cases": (
-        test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix,
+    "relation_fidelity_findings": (test_every_relation_has_exact_fidelity_findings,),
+    "relation_occurrence_fidelity_findings": (
+        test_every_registered_relation_occurrence_obeys_the_full_fidelity_matrix,
     ),
     "bounded_fidelity_comparison": (
         test_fidelity_is_bounded_witness_grammar_comparison_for_this_seed,

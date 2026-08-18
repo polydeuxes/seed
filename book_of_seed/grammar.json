@@ -292,7 +292,7 @@
         "carried_by": ["exact_relation", "occurrence_witness", "intact_evidence"]
       }
     },
-    "fidelity_cases": {
+    "fidelity_findings": {
       "exact": "exact",
       "relation_missing": "missing",
       "wrong_occurrence": "missing",
@@ -547,8 +547,8 @@
         {"subject": "emission_attempt_locality_relation"},
         {"subject": "successful_emission_locality_relation"},
         {"subject": "composite_material_order"},
-        {"subject": "relation_fidelity_cases"},
-        {"subject": "relation_occurrence_fidelity_cases"},
+        {"subject": "relation_fidelity_findings"},
+        {"subject": "relation_occurrence_fidelity_findings"},
         {"subject": "admission_preservation_relation"},
         {"subject": "material_function_admission_equivalence"},
         {"subject": "material_function_admission_distinction"},
