@@ -83,7 +83,7 @@ Participant    subject + exact Participation relation to one Act occurrence unde
 Consumption    Participation in an exact Act occurrence
 Uptake         availability + Applicability + Participation
 Handoff        movement, or an exact Responsibility/Authority change
-Memory         addressed prior Locality Standing boundary + Book-bounded Responsibility assignment + direct Standing Locality continuation + new Locality; availability != Applicability; another exact Act remains required
+Memory         addressed prior Locality Standing boundary + Book-bounded Responsibility assignment + direct Standing Locality continuation + new Locality; availability != Applicability; another exact Act required
 Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, Standing, temporal relation, or result
 Checkout       exact recorded Standing boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
 Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence, Standing, or Evidence equality

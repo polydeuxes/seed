@@ -501,10 +501,9 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
 
 def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    earlier_clause = grammar["clause_coordinates"]["01.Standing.D.1"]
     clause = grammar["clause_coordinates"]["01.Standing.D.2"]
 
-    assert earlier_clause["relation_preservation"] == [
+    assert clause["movement_preserves"] == [
         {
             "first_subject": "responsible_movement_occurrence",
             "relation": "preserves",

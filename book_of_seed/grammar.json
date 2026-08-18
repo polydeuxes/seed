@@ -1588,23 +1588,6 @@
         "Standing_revision",
         "Stop"
       ],
-      "relation_preservation": [
-        {
-          "first_subject": "responsible_movement_occurrence",
-          "relation": "preserves",
-          "second_subject": "previously_established_coordinates"
-        },
-        {
-          "first_subject": "responsible_movement_occurrence",
-          "relation": "preserves",
-          "second_subject": "Unknown"
-        },
-        {
-          "first_subject": "responsible_movement_occurrence",
-          "relation": "preserves",
-          "second_subject": "exact_subject_coordinate"
-        }
-      ],
       "different_identity": {
         "when": "asserted_content_is_different",
         "result": "different_Assertion"
@@ -1674,10 +1657,21 @@
         "participation_in_another_Act": "unestablished"
       },
       "movement_preserves": [
-        "established_movement",
-        "previously_established_coordinates",
-        "Unknown_coordinates",
-        "same_subject"
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "previously_established_coordinates"
+        },
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "Unknown"
+        },
+        {
+          "first_subject": "responsible_movement_occurrence",
+          "relation": "preserves",
+          "second_subject": "exact_subject_coordinate"
+        }
       ],
       "standing_not_established": [
         "current_Standing_into_Compare",

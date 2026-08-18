@@ -37,7 +37,7 @@ STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
 STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality continuation"
 STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY = (
     "preserve availability of one exact prior Locality Standing boundary at one other "
-    "exact Locality and preserve its carried subject coordinates"
+    "exact Locality"
 )
 STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact prior Locality Standing boundary"
