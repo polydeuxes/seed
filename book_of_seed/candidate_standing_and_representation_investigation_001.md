@@ -7,6 +7,12 @@ Investigation only.
 This report changes no active Book material, machine grammar, Rosetta
 material, runtime, admission, or test.
 
+Amended after review: the first version correctly separated the producing
+Responsibilities and Acts, then incorrectly used that distinction to exclude
+the Candidate result from Representation. Distinct producers do not establish
+distinct result kinds. This report now treats both Candidate membership in
+Representation and Candidate exclusion from Representation as Unknown.
+
 The operator and curator supplied this orientation:
 
 ```text
@@ -193,7 +199,7 @@ forms higher Assertion subjects and owes all of them through its boundary.
 Disposition: **complete formation of higher Candidate Assertions is a real
 remaining distinction**.
 
-## 5. Active Representation material forbids the collapse
+## 5. Active material separates the Acts, not necessarily their result kinds
 
 `05.Source.A` currently states:
 
@@ -208,7 +214,8 @@ Candidate production creates higher subjects. In particular, an ordered-pair
 Candidate carries two lower Assertion references under two exact roles as its
 own Assertion subject.
 
-Therefore the current active distinction is direct:
+Therefore the current active distinction between the producing Acts is
+direct:
 
 ```text
 Representation Act
@@ -218,16 +225,40 @@ Candidate-production Act
     creates Candidate Assertions with higher bounded subjects
 ```
 
-Removing `Candidate Standing` in favor of `Representation` would either:
+This proves that the Candidate-production Act is not the exact Representation
+Act described by `05.Source.A`. It does not prove that the result of the
+Candidate-production Act cannot itself bear Representation Standing.
+
+The Book separately states:
+
+```text
+representation != Act that established it
+```
+
+and says that a recording boundary may create an exact representation of
+Events. Recording is not thereby the Representation Act. This supplies a
+counterexample to the first report's inference:
+
+```text
+Act A != Representation Act
+does not establish
+result of Act A != Representation
+```
+
+Collapsing the two Acts would still either:
 
 - erase the higher-subject formation that the Candidate Act actually owes;
   or
 - silently strengthen Representation so that it can create higher subjects.
 
-Neither follows from the shared preservation shape.
+Neither follows from the shared preservation shape. But recognizing a result
+of the Candidate Act as a Representation would not necessarily collapse the
+Acts. It could instead establish Representation Standing for that exact
+result under its own support relation.
 
-Disposition: **Candidate Standing is not one constitutional Representation
-under current active material**.
+Disposition: **Candidate-production Act != existing Representation Act is
+established; Candidate Standing = Representation and Candidate Standing !=
+Representation are both Unknown**.
 
 ## 6. The preserved coordinate sets overlap but are not identical
 
@@ -280,7 +311,7 @@ the Candidate Act's source surface, formation debt, or higher subjects.
 
 Disposition: **shared preservation law; distinct exact coordinate debt**.
 
-## 7. Their result-to-Standing relations remain distinct
+## 7. Runtime carries separate result coordinates without proving exclusion
 
 Locality Standing replay carries the roads separately:
 
@@ -313,8 +344,17 @@ Standing carried by its material
 Thus neither a Representation nor a Candidate result becomes the Standing of
 everything it references.
 
-Disposition: **both may be carried by later Standing, but under different
-result coordinates and different recovery obligations**.
+But separate runtime maps are implementation addressability. They establish
+that the current readers recover different exact result coordinates. They do
+not establish that one result cannot also receive Standing under a broader
+constitutional kind.
+
+The same caution applies in the other direction. A representation-shaped
+result does not acquire Representation Standing because its Python material
+resembles another represented result.
+
+Disposition: **different current recovery obligations are established;
+constitutional exclusion from Representation is not**.
 
 ## 8. The Representation road has an unresolved assignment boundary
 
@@ -343,9 +383,9 @@ newer Candidate road merely because both preserve sources.
 Disposition: **Representation Responsibility assignment and Authority remain
 an independent vacancy**.
 
-## 9. Candidate Standing may be represented later
+## 9. Producer identity does not determine Representation Standing
 
-The elimination test leaves a narrower possibility:
+The original report proposed a later wrapper:
 
 ```text
 Candidate Standing result
@@ -365,33 +405,88 @@ Representation of Candidate Standing
 Candidate Standing
 ```
 
-It would also fit `05.Source.A`: an exact Representation may represent
-asserted content and source coordinates without creating the higher subject.
-The Candidate Act already created the Candidate subject; the later
-Representation would only preserve it.
+That remains one possible later road, but it assumes the Candidate result and
+Representation are already distinct kinds. The current evidence does not
+warrant that assumption.
 
-Current runtime does not provide this crossing. Representation source reading
-accepts selected exact-material, Measurement, and Compare result families. It
-does not accept a Candidate Standing result as its exact source, even though
-Locality Standing carries Candidate results separately.
+The active Book gives two important counterpressures.
 
-Disposition: **Representation of Candidate Standing is plausible but
-currently absent; it must not be inferred from result presence**.
+First:
+
+```text
+A recording boundary may create an exact representation of Events.
+```
+
+Therefore Representation need not be the exclusive result of the current
+Representation Act family.
+
+Second:
+
+```text
+representation shape != constitutional kind
+representation != Act that established it
+```
+
+Therefore preservation shape and producer identity do not independently
+establish Representation Standing.
+
+The sharper question is not whether another Representation Act can wrap the
+Candidate result. It is:
+
+```text
+What exact Standing makes one result a Representation?
+```
+
+Active constitutional Standing requires the exact support relation from the
+result's Evidence, Authority, Scope, and preserved limits to the Assertion
+whose Standing is claimed. A name, result shape, behavior, producer kind,
+Locality, or record address cannot supply that relation.
+
+For the Candidate result, the required Assertion would be bounded to:
+
+```text
+this exact Candidate result
+    is one Representation
+```
+
+with its exact responsible occurrence, Evidence, Authority, Scope, limits,
+Unknown, and Standing. Current Candidate material establishes its exact
+production, source debt, higher Assertions, completeness, and negative
+boundaries. It does not carry an Assertion or support relation establishing
+that the result is a Representation.
+
+Absence of that Assertion establishes no contrary result:
+
+```text
+no Standing that Candidate result is Representation
+!=
+Standing that Candidate result is not Representation
+```
+
+Current runtime also provides no such classification. Its Representation
+source reader accepts selected exact-material, Measurement, and Compare result
+families, while Candidate results are carried separately. That is testimony
+about current readers, not a constitutional negative relation.
+
+Disposition: **the exact relation between Candidate Standing and
+Representation is Unknown in both directions**.
 
 ## 10. Elimination matrix
 
 | Candidate/Representation use | Actual distinction carried | If collapsed | Disposition |
 |---|---|---|---|
 | `C` | append boundary through Candidate result | boundary becomes a result kind | reducible to boundary |
-| Act/Yield/result sequence | generic responsible-Act physiology | all Act families become Representation | shared, not identifying |
+| Act/Yield/result sequence | generic responsible-Act physiology | all Act families become one Act | shared, not identifying |
 | source preservation | conservation of exact carried coordinates | little lost at this level | shared law |
-| exact source surface through B | exhaustive Candidate source debt | source population disappears | Candidate-specific |
-| unary and ordered-pair formation | higher Assertion subjects | forbidden Representation strengthening | Candidate-specific |
-| completeness replay | every owed Candidate must be recoverable | omission becomes invisible | Candidate-specific |
-| exact-material preservation rule | same exact source material and occurrence | material boundary disappears | Representation-specific |
-| Representation Locality Evidence | exact Representation-to-occurrence Locality | Locality relation disappears | Representation-specific |
-| Representation assignment/Authority | currently incomplete | cannot authorize collapse | unresolved |
-| Candidate result as later Representation source | possible preservation crossing | absent implementation treated as fact | Unknown |
+| exact source surface through B | exhaustive Candidate source debt | source population disappears | Candidate-Act-specific |
+| unary and ordered-pair formation | higher Assertion subjects | exact formation debt disappears | Candidate-Act-specific |
+| completeness replay | every owed Candidate must be recoverable | omission becomes invisible | Candidate-Act-specific |
+| exact-material preservation rule | same exact source material and occurrence | material boundary disappears | current Representation-road-specific |
+| Representation Locality Evidence | exact Representation-to-occurrence Locality | Locality relation disappears | current Representation-road-specific |
+| recording-created representation | Representation result from another Act family | producer identity becomes necessary | cross-Act counterexample |
+| result shape or name | implementation/presentation testimony | kind inferred without Standing | insufficient |
+| Candidate result is Representation | exact result-kind Assertion and support relation | currently absent | Unknown |
+| Candidate result is not Representation | exact negative finding and support relation | currently absent | Unknown |
 
 ## 11. Answer
 
@@ -401,19 +496,28 @@ The narrow answer is:
 C
 = the Candidate result append boundary
 
-Candidate Standing through C
-!= one constitutional Representation
+Candidate-production Responsibility
+!= existing Representation Responsibility
+
+Candidate-production Act
+!= existing Representation Act
+
+Candidate Standing = Representation
+Unknown
+
+Candidate Standing != Representation
+Unknown
 ```
 
 Candidate Standing is **representation-shaped** in ordinary explanatory
 language because it preserves exact lower references and coordinates without
 establishing their represented relation. That resemblance recovers a common
-conservation law, not one exact Act family.
+conservation law. It neither grants nor refuses Representation Standing.
 
-The distinction that survives is:
+The distinction that survives is between the exact producing Acts:
 
 ```text
-Representation
+existing Representation Act
     preserves an addressed source and its coordinates
 
 Candidate production
@@ -433,38 +537,56 @@ Standing
     -> Standing
 ```
 
-`heartbeat` is good Rosetta testimony for that recurrence. Restricting every
-beat to Representation would erase the exact work performed by Measurement,
-Compare, Candidate production, and other Act families.
+`heartbeat` is good Rosetta testimony for that recurrence. A stronger
+hypothesis remains open:
+
+```text
+Standing_n
+    -> several exact Responsibilities
+    -> several exact Acts
+    -> exact results
+    -> Representation_n+1 where independently established
+    -> Standing_n+1
+```
+
+This topology preserves distinct Acts while allowing several result families
+to bear Representation Standing. Current material does not yet establish
+which results do.
 
 ## 12. Smallest next question
 
-Do not rename Candidate Standing as Representation.
+Do not rename Candidate Standing as Representation and do not establish its
+exclusion from Representation.
 
 The next bounded question exposed by this investigation is:
 
 ```text
-Can one exact Representation Act represent
-one exact Candidate Standing result through C,
-without becoming that result,
-creating its higher subjects,
-or strengthening its Standing?
+What exact Standing makes one exact result
+a Representation independently of the Act family that produced it?
 ```
 
 That investigation must recover independently:
 
-- the exact Representation Responsibility assignment;
-- its Authority;
-- Candidate Standing Applicability to that Representation Act;
-- the exact source reference and source Standing boundary;
-- preservation of the Candidate result's coordinates;
-- no new higher subject, relation Standing, Admission, Participation in
-  another Act, or source movement.
+- the exact result subject;
+- the Assertion that the result is a Representation;
+- the responsible occurrence supporting that Assertion;
+- Evidence, Authority, Scope, limits, Unknown, and Standing;
+- which Representation coordinates are necessary for that exact result;
+- whether Candidate Standing already carries those coordinates;
+- what independent coordinate, if any, Candidate Standing lacks;
+- what this establishes neither about the producing Act nor about what the
+  result represents.
 
 Until those coordinates are established:
 
 ```text
-Candidate Standing may be representable
+Candidate Standing is a Representation
 ```
 
-remains a bounded hypothesis, not current Standing.
+and
+
+```text
+Candidate Standing is not a Representation
+```
+
+both remain bounded hypotheses, not current Standing.
