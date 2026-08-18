@@ -3010,7 +3010,7 @@ def _require_exact_pair_measurement_assignment_event(
     assignment: Event,
     source: RecordedByteAssertion,
 ) -> None:
-    """Validate one stored assignment against its already validated source."""
+    """Validate one recorded assignment against its already validated source."""
 
     if (
         type(assignment) is not Event
@@ -3764,7 +3764,7 @@ def _record_pair_measurement_act_from_carried_applicability(
         != BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND
     ):
         raise ByteMeasurementError(
-            "pair Measurement Act requires exact stored assignment and Applicability"
+            "pair Measurement Act requires exact recorded assignment and Applicability"
         )
     _require_exact_pair_applicability_result_event(
         ledger,
@@ -4104,13 +4104,13 @@ def _pair_measurement_replay_occurrence(
         if expected_material is None
         else expected_material
     )
-    stored = ledger.get(event.identity) if type(event) is Event else None
+    recorded = ledger.get(event.identity) if type(event) is Event else None
     if (
-        stored is None
-        or stored != event
-        or stored.material != material
-        or stored.exact_material != event.exact_material
-        or stored.locality_identity != event.locality_identity
+        recorded is None
+        or recorded != event
+        or recorded.material != material
+        or recorded.exact_material != event.exact_material
+        or recorded.locality_identity != event.locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
@@ -4128,13 +4128,13 @@ def _require_exact_pair_measurement_replay_occurrence(
     ledger: EventLedger,
     occurrence: _PairMeasurementReplayOccurrence,
 ) -> None:
-    stored = ledger.get(occurrence.event.identity)
+    recorded = ledger.get(occurrence.event.identity)
     if (
-        stored is None
-        or stored != occurrence.event
-        or stored.material != occurrence.material
-        or stored.exact_material != occurrence.exact_material
-        or stored.locality_identity != occurrence.locality_identity
+        recorded is None
+        or recorded != occurrence.event
+        or recorded.material != occurrence.material
+        or recorded.exact_material != occurrence.exact_material
+        or recorded.locality_identity != occurrence.locality_identity
         or ledger.integrity_of(occurrence.event.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(

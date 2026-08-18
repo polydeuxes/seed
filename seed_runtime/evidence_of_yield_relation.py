@@ -155,7 +155,7 @@ def read_requirements_of_yield_relation(
     """Read the three witness-grammar requirements of one exact Yield relation.
 
     The caller supplies exact occurrence identities under pressure.  Seed
-    resolves the stored occurrences itself; it does not accept read
+    resolves the recorded occurrences itself; it does not accept read
     event materials and does not re-encode the exact result.  A missing
     result-evidence occurrence makes every requirement absent.  Changing an
     unrelated event coordinate does not.

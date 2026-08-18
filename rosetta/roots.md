@@ -118,6 +118,7 @@ Interrogator   exact material + implementation-function invocation occurrence + 
 Exposure       availability at an exact Locality, or an emitted Representation; resolve the exact Act
 Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
 Replay         exact recorded Locality occurrences in recorded order + Standing read from no prior Standing; a recorded Act does not occur
+Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, Standing, or relation
 Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
 Addressability of preserved coordinates
 ```

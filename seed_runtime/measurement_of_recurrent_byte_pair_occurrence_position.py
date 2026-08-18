@@ -6,8 +6,8 @@ movement.  Its inputs: two distinct occurrence references:
 * the recurrence Assertion yielded by an earlier byte-pair Measurement; and
 * one later exact Ingest result in the same Locality.
 
-Ordering and distance are views over the two measured positions.  They are not
-stored as caller-supplied signs or grammatical meanings.
+Ordering and distance are views over the two measured positions.  The result
+carries neither a caller-supplied sign nor a grammatical meaning.
 """
 
 from __future__ import annotations

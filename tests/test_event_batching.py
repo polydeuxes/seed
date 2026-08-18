@@ -21,9 +21,9 @@ def _events() -> list[Event]:
 def test_append_many_preserves_event_ordering():
     ledger = EventLedger()
 
-    stored = ledger.append_many(_events())
+    recorded = ledger.append_many(_events())
 
-    assert [event.kind for event in stored] == [
+    assert [event.kind for event in recorded] == [
         "batch.first",
         "batch.second",
         "batch.third",

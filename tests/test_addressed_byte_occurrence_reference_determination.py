@@ -307,7 +307,7 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
 
 
 @pytest.mark.parametrize(
-    ("stage", "reader"),
+    ("occurrence_coordinate", "reader"),
     (
         (
             "assignment",
@@ -331,10 +331,12 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
         ),
     ),
 )
-def test_every_stored_stage_refuses_its_own_corruption(stage, reader):
+def test_each_recorded_occurrence_refuses_its_corruption(
+    occurrence_coordinate, reader
+):
     ledger = EventLedger()
     recorded = _record(ledger)
-    event = recorded[stage]
+    event = recorded[occurrence_coordinate]
     event.material["responsibility"] = "changed responsibility"
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         reader(ledger, event.identity)
@@ -784,7 +786,7 @@ FIDELITY_SUBJECTS = {
         test_repeated_byte_occurrences_remain_distinct_by_position_assertion,
         test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically,
         test_each_stage_reader_refuses_corrupted_prior_stage,
-        test_every_stored_stage_refuses_its_own_corruption,
+        test_each_recorded_occurrence_refuses_its_corruption,
         test_applicability_refuses_wrong_yield_kind_or_boundary,
         test_determination_refuses_wrong_yield_kind_or_boundary,
         test_one_act_cannot_append_a_second_yield_or_result,

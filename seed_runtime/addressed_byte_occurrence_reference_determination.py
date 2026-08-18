@@ -311,7 +311,7 @@ def _current_standing(
     return current
 
 
-def _require_unchanged_stored_event(
+def _require_intact_recorded_occurrence(
     ledger: EventLedger,
     *,
     event: Event,
@@ -459,7 +459,7 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         result_event_identity=source_result.identity,
         coordinate_reference=addressed_source_byte_position_coordinate_reference,
     )
-    _require_unchanged_stored_event(
+    _require_intact_recorded_occurrence(
         ledger,
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -696,14 +696,14 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_e
             "addressed_source_byte_position_coordinate_reference"
         ],
     )
-    _require_unchanged_stored_event(
+    _require_intact_recorded_occurrence(
         ledger,
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
         message="Applicability Act requires an intact exact source",
     )
-    _require_unchanged_stored_event(
+    _require_intact_recorded_occurrence(
         ledger,
         event=assignment,
         kind=RESPONSIBILITY_ASSIGNMENT_KIND,
@@ -1038,7 +1038,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     act_read, assignment_read, source_read, _references_read = (
         _read_applicability_act(ledger, act.identity)
     )
-    for stored, read, kind, material_read, message in (
+    for recorded, read, kind, material_read, message in (
         (
             act,
             act_read,
@@ -1061,14 +1061,14 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             "Applicability Yield requires an intact exact source",
         ),
     ):
-        _require_unchanged_stored_event(
+        _require_intact_recorded_occurrence(
             ledger,
-            event=stored,
+            event=recorded,
             kind=kind,
             material=material_read,
             message=message,
         )
-        if read != stored:
+        if read != recorded:
             raise AddressedByteOccurrenceReferenceDeterminationError(message)
     _require_stage_at_append_tip(
         ledger, event=act, message="Applicability Act left the append tip"
@@ -1089,7 +1089,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "Applicability result requires an intact exact stage"
         )
-    for stored, kind, material_read, message in (
+    for recorded, kind, material_read, message in (
         (
             act,
             APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -1109,9 +1109,9 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             "Applicability result requires an intact exact source",
         ),
     ):
-        _require_unchanged_stored_event(
+        _require_intact_recorded_occurrence(
             ledger,
-            event=stored,
+            event=recorded,
             kind=kind,
             material=material_read,
             message=message,
@@ -1304,7 +1304,7 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
         source_read,
         _references_read,
     ) = _read_applicability_result(ledger, applicability.identity)
-    for stored, read, kind, material_read, message in (
+    for recorded, read, kind, material_read, message in (
         (
             applicability,
             applicability_read,
@@ -1334,14 +1334,14 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
             "determination Measurement Act requires an intact exact source",
         ),
     ):
-        _require_unchanged_stored_event(
+        _require_intact_recorded_occurrence(
             ledger,
-            event=stored,
+            event=recorded,
             kind=kind,
             material=material_read,
             message=message,
         )
-        if read != stored:
+        if read != recorded:
             raise AddressedByteOccurrenceReferenceDeterminationError(message)
     _require_stage_at_append_tip(
         ledger,
@@ -1538,7 +1538,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
         source_read,
         _references_read,
     ) = _read_determination_act(ledger, act.identity)
-    for stored, read, kind, material_read, message in (
+    for recorded, read, kind, material_read, message in (
         (
             act,
             act_read,
@@ -1568,14 +1568,14 @@ def record_addressed_byte_occurrence_reference_determination_result(
             "determination Measurement Yield requires an intact exact source",
         ),
     ):
-        _require_unchanged_stored_event(
+        _require_intact_recorded_occurrence(
             ledger,
-            event=stored,
+            event=recorded,
             kind=kind,
             material=material_read,
             message=message,
         )
-        if read != stored:
+        if read != recorded:
             raise AddressedByteOccurrenceReferenceDeterminationError(message)
     _require_stage_at_append_tip(
         ledger,
@@ -1603,7 +1603,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Measurement result requires an intact exact stage"
         )
-    for stored, kind, material_read, message in (
+    for recorded, kind, material_read, message in (
         (
             act,
             DETERMINATION_ACT_EVIDENCE_KIND,
@@ -1629,9 +1629,9 @@ def record_addressed_byte_occurrence_reference_determination_result(
             "determination Measurement result requires an intact exact source",
         ),
     ):
-        _require_unchanged_stored_event(
+        _require_intact_recorded_occurrence(
             ledger,
-            event=stored,
+            event=recorded,
             kind=kind,
             material=material_read,
             message=message,
@@ -1803,7 +1803,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
 
     def require_intact() -> None:
         for event, kind, material in exact_stage_material:
-            _require_unchanged_stored_event(
+            _require_intact_recorded_occurrence(
                 ledger,
                 event=event,
                 kind=kind,

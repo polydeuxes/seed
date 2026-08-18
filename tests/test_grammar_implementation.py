@@ -1655,8 +1655,8 @@ def _occurrences_of_result_under_pressure(bundle: dict):
     def record_if_supplied_representation_changed(event):
         if event is None:
             return None
-        stored = ledger.get(event.identity)
-        if stored == event:
+        recorded = ledger.get(event.identity)
+        if recorded == event:
             return event.identity
         recorded = deepcopy(event)
         object.__setattr__(
@@ -3768,17 +3768,11 @@ def test_each_fidelity_test_subject_names_one_exact_witness_grammar_coordinate()
     missing = []
 
     for test_subject in test_subjects:
-        reference = test_subject.get("witness_grammar_coordinate_reference")
+        reference = test_subject.get("grammar_coordinate_reference")
         if reference is None:
             missing.append(test_subject["subject"])
             continue
-        assert reference == {
-            "first_subject": test_subject["subject"],
-            "relation": "witness_for",
-            "second_subject": "this_Grammar",
-            "coordinate": reference["coordinate"],
-        }
-        coordinate = reference["coordinate"]
+        coordinate = reference
         assert type(coordinate) is list
         assert len(coordinate) >= 3
         assert coordinate[0] == "clause_coordinates"

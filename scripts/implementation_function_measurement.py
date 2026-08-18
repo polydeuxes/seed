@@ -594,25 +594,15 @@ def _fidelity_test_subjects() -> dict[str, dict[str, object]]:
         for name, value in coordinates.items():
             if type(name) is not str:
                 raise TypeError("exact Fidelity test subject coordinates are required")
-            if name != "witness_grammar_coordinate_reference":
+            if name != "grammar_coordinate_reference":
                 if type(value) is not str:
                     raise TypeError(
                         "exact Fidelity test subject coordinates are required"
                     )
                 continue
             if (
-                type(value) is not dict
-                or tuple(value) != (
-                    "first_subject",
-                    "relation",
-                    "second_subject",
-                    "coordinate",
-                )
-                or value["first_subject"] != subject
-                or value["relation"] != "witness_for"
-                or value["second_subject"] != "this_Grammar"
-                or type(value["coordinate"]) is not list
-                or not value["coordinate"]
+                type(value) is not list
+                or not value
                 or any(
                     not (
                         (type(part) is str and part)
@@ -630,11 +620,11 @@ def _fidelity_test_subjects() -> dict[str, dict[str, object]]:
                             )
                         )
                     )
-                    for part in value["coordinate"]
+                    for part in value
                 )
             ):
                 raise TypeError(
-                    "one exact witness grammar coordinate reference is required"
+                    "one exact grammar coordinate reference is required"
                 )
         declared[subject] = {
             **coordinates,

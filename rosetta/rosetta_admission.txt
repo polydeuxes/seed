@@ -907,6 +907,9 @@ still
 stop
 stopping
 stops
+storage
+store
+stored
 stories
 story
 stream

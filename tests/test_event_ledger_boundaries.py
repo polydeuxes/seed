@@ -540,9 +540,9 @@ def test_the_two_ledgers_preserve_the_same_material(tmp_path):
             "numbers": [1, 1.5, True, False, None],
         }
         in_memory = memory.append("k", preservable)
-        stored = durable.append("k", preservable)
+        recorded = durable.append("k", preservable)
         assert memory.get(in_memory.identity).material == preservable
-        assert durable.get(stored.identity).material == preservable
+        assert durable.get(recorded.identity).material == preservable
 
         # And what neither can preserve is refused by both, identically.
         for material in (
@@ -608,8 +608,8 @@ def test_a_material_carrying_a_non_json_number_is_refused(tmp_path):
         finite = {"large": 1e308, "small": 5e-324, "negative zero": -0.0,
                   "int": 0, "negative": -5, "bool": True}
         in_memory = memory.append("k", finite)
-        stored = durable.append("k", finite)
-        assert memory.get(in_memory.identity).material == durable.get(stored.identity).material
+        recorded = durable.append("k", finite)
+        assert memory.get(in_memory.identity).material == durable.get(recorded.identity).material
     finally:
         durable.close()
 
@@ -657,10 +657,10 @@ def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
         # bool is an int subclass and must remain admissible.
         both = {"true": True, "false": False, "int": 1}
         in_memory = memory.append("k", both)
-        stored = durable.append("k", both)
+        recorded = durable.append("k", both)
         assert memory.get(in_memory.identity).material == both
-        assert durable.get(stored.identity).material == both
-        assert type(durable.get(stored.identity).material["true"]) is bool
+        assert durable.get(recorded.identity).material == both
+        assert type(durable.get(recorded.identity).material["true"]) is bool
     finally:
         durable.close()
 
