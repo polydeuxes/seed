@@ -774,6 +774,55 @@ def test_represented_relation_coordinate_reader_refuses_filled_relation_material
         )
 
 
+def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinates():
+    import json
+
+    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+        responsibility = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
+            "ordered_pair_candidate_responsibility"
+        ]
+    assert responsibility["candidate_source_roles"] == [
+        "first_source_Assertion",
+        "second_source_Assertion",
+    ]
+    assert responsibility["represented_relation"] == "Unknown"
+
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+    exposed = represented_relation_coordinates_from_every_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+
+    assert tuple(candidate for candidate, *_coordinates in exposed) == tuple(
+        candidate["dimensions"]["identity"]
+        for candidate in standing["candidate_assertions"]
+    )
+    for candidate, reading in zip(standing["candidate_assertions"], exposed):
+        _candidate_identity, first_reference, second_reference, relation = reading
+        assert candidate["assertion_subject"] == {
+            "first_source_assertion_reference": first_reference,
+            "second_source_assertion_reference": second_reference,
+        }
+        assert candidate["represented_relation"] == "Unknown"
+        assert relation == {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "represented_relation",
+            ],
+            "coordinate": "represented_relation",
+            "material": "Unknown",
+        }
+
+
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -1031,5 +1080,8 @@ FIDELITY_SUBJECTS = {
         test_exact_sources_beside_every_relation_coordinate_replay_after_sqlite_restart,
         test_represented_relation_coordinate_reader_refuses_one_source_candidate,
         test_represented_relation_coordinate_reader_refuses_filled_relation_material,
+    ),
+    "ordered_pair_candidate_source_roles_and_represented_relation_coordinates": (
+        test_ordered_pair_candidate_source_roles_and_represented_relation_coordinates,
     ),
 }

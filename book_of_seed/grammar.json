@@ -591,6 +591,14 @@
             "represented_relation"
           ]
         },
+        {
+          "subject": "ordered_pair_candidate_source_roles_and_represented_relation_coordinates",
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Source.E.1",
+            "ordered_pair_candidate_responsibility"
+          ]
+        },
         {"subject": "participation_relation_coordinates"},
         {"subject": "locality_relation_coordinates"},
         {"subject": "locality_relation_distinctions"},
