@@ -114,7 +114,7 @@ def test_book_material_acquisition_witness_has_one_admitted_subject():
         )
     )
 
-    fidelity = grammar["clauses"]["01.Source.C"]
+    fidelity = grammar["clause_coordinates"]["01.Source.C"]
 
     assert fidelity["test_subject_relation"] == {
         "first_subject": "test_subject",

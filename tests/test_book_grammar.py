@@ -116,7 +116,7 @@ def _assert_recorded_occurrence_kind_families(grammar):
         ("event_occurrence",),
         ("Assertion_occurrence",),
     }
-    for clause in grammar["clauses"].values():
+    for clause in grammar["clause_coordinates"].values():
         kinds = clause["recorded_occurrence_kind"]
         assert type(kinds) is list
         assert tuple(kinds) in allowed
@@ -126,9 +126,9 @@ def _assert_recorded_occurrence_kind_families(grammar):
 def test_witness_clauses_separate_recovered_grammar_from_recorded_occurrence_kind():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["clauses"]
+    assert grammar["clause_coordinates"]
     active_book = _active_book()
-    for clause_identity, clause in grammar["clauses"].items():
+    for clause_identity, clause in grammar["clause_coordinates"].items():
         assert clause["subject"]
         assert clause["grammar"] == "established"
         assert not (
@@ -143,9 +143,9 @@ def test_recorded_occurrence_kind_families_refuse_wrong_shape_or_crossing():
 
     def assert_refused(identity, value, *, remove_responsibility=False):
         changed = json.loads(json.dumps(grammar))
-        changed["clauses"][identity]["recorded_occurrence_kind"] = value
+        changed["clause_coordinates"][identity]["recorded_occurrence_kind"] = value
         if remove_responsibility:
-            changed["clauses"][identity].pop("responsibility", None)
+            changed["clause_coordinates"][identity].pop("responsibility", None)
         try:
             _assert_recorded_occurrence_kind_families(changed)
         except (AssertionError, TypeError):
@@ -236,8 +236,8 @@ def test_witness_clauses_address_their_exact_book_material():
     assert grammar["book_material_reference"] == "this_Book"
     assert tuple(
         (identity, clause["book_material_reference"])
-        for identity, clause in grammar["clauses"].items()
-    ) == tuple((identity, identity) for identity in grammar["clauses"])
+        for identity, clause in grammar["clause_coordinates"].items()
+    ) == tuple((identity, identity) for identity in grammar["clause_coordinates"])
 
 
 def test_witness_root_references_remain_distinct_and_in_declared_order():
@@ -280,11 +280,11 @@ def test_witness_root_references_remain_distinct_and_in_declared_order():
             "second_subject": "Seed",
         },
         {
-            "reference": "this_Rosetta",
-            "coordinate": "rosetta_reference",
+            "reference": "this_separate_admission_material",
+            "coordinate": "separate_admission_material_reference",
             "first_subject": "this",
             "relation": "identifies",
-            "second_subject": "Rosetta",
+            "second_subject": "separate_admission_material",
         },
         {
             "reference": "this_Fidelity",
@@ -315,7 +315,7 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declarations = tuple(
         (identity, clause["recorded_occurrence_kind"])
-        for identity, clause in grammar["clauses"].items()
+        for identity, clause in grammar["clause_coordinates"].items()
         if clause["recorded_occurrence_kind"] == []
     )
 
@@ -338,14 +338,14 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
         ("08.Authority.C", []),
     )
     assert all(
-        "responsibility" not in grammar["clauses"][identity]
+        "responsibility" not in grammar["clause_coordinates"][identity]
         for identity, _recorded_occurrence_kind in declarations
     )
 
 
 def test_supporting_finding_standing_not_established_participation_by_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    clause = grammar["clauses"]["08.Authority.B"]
+    clause = grammar["clause_coordinates"]["08.Authority.B"]
 
     assert clause["supporting_findings"] == [
         "established_support_relation",
@@ -360,14 +360,14 @@ def test_supporting_finding_standing_not_established_participation_by_identity()
 def test_public_export_standing_not_established_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["clauses"]["01.Standing.C"]["standing_not_established"][-1] == (
+    assert grammar["clause_coordinates"]["01.Standing.C"]["standing_not_established"][-1] == (
         "Standing_by_public_export"
     )
 
 
 def test_applicability_requires_more_than_usefulness_agreement_or_availability():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    clause = grammar["clauses"]["01.Standing.E.1"]
+    clause = grammar["clause_coordinates"]["01.Standing.E.1"]
 
     assert clause["standing_not_established"] == [
         "Applicability_by_usefulness",
@@ -388,7 +388,7 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
 def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["clauses"]["01.Standing.E.1"]["responsibility"] == {
+    assert grammar["clause_coordinates"]["01.Standing.E.1"]["responsibility"] == {
         "default": "exact_Act_Responsibility",
         "assignment": "assigned_responsible_occurrence",
     }
@@ -440,7 +440,7 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
     for crossing in completeness["required_crossings"]:
         assert tuple(crossing) == ("subject", *required_identities)
         assert crossing["grammar"] == "established"
-        assert crossing["grammar_reference"] in grammar["clauses"]
+        assert crossing["grammar_reference"] in grammar["clause_coordinates"]
         target = (
             complete_subjects
             if _crossing_is_complete(required, crossing)

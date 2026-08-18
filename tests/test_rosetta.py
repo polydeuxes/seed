@@ -166,24 +166,24 @@ def test_rosetta_admission_detects_an_unadmitted_word_without_naming_it():
 
 
 FIDELITY_SUBJECTS = {
-    "rosetta_participation_relation": (
+    "separate_admission_material_participation_relation": (
         test_rosetta_participant_decompresses_to_the_participation_relation,
     ),
-    "rosetta_relation_order": (
+    "separate_admission_material_relation_order": (
         test_rosetta_follows_witness_grammar_relation_order,
         test_rosetta_reversed_relation_is_detected,
     ),
-    "rosetta_function_reference_resolution": (
+    "separate_admission_material_function_reference_resolution": (
         test_rosetta_implementation_references_resolve,
         test_rosetta_missing_implementation_reference_is_detected,
     ),
-    "rosetta_book_reference": (
+    "separate_admission_material_book_reference": (
         test_rosetta_book_decompresses_to_language_clauses_and_lexicon,
     ),
-    "rosetta_admission_clause_distinction": (
+    "separate_admission_material_Admission_clause_distinction": (
         test_rosetta_admission_does_not_establish_a_clause,
     ),
-    "rosetta_words_admission": (
+    "separate_admission_material_words_admission": (
         test_rosetta_prose_has_lexical_admission,
         test_rosetta_admission_detects_an_unadmitted_word_without_naming_it,
     ),

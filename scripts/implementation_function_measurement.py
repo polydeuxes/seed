@@ -570,7 +570,7 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
     grammar = json.loads(
         (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
     )
-    fidelity = grammar["clauses"]["01.Source.C"]
+    fidelity = grammar["clause_coordinates"]["01.Source.C"]
     relation = fidelity["test_subject_relation"]
     if relation != {
         "first_subject": "test_subject",

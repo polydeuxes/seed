@@ -621,7 +621,7 @@ def test_each_event_kind_responsibility_names_one_witness_grammar_clause():
         kind: values for kind, values in accounted.items() if len(values) != 1
     }
     assert duplicate == {}, f"event species declare several responsibilities: {duplicate}"
-    clauses = set(grammar["clauses"])
+    clauses = set(grammar["clause_coordinates"])
     unknown = {
         kind: values[0]
         for kind, values in accounted.items()
@@ -752,7 +752,7 @@ def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_cl
         for values in _runtime_assertion_responsibility_clauses().values()
         if len(values) == 1
     }
-    witness = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"]
+    witness = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clause_coordinates"]
     witness_clauses = set(witness)
     declared_event_occurrences = {
         identity

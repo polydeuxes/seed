@@ -49,8 +49,8 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
         (BOOK, "this_Book", "book_material", book_admission()),
         (
             ROOT / "rosetta",
-            "this_Rosetta",
-            "rosetta_reference",
+            "this_separate_admission_material",
+            "separate_admission_material_reference",
             set(_admission_entries(ROSETTA_ADMISSION)),
         ),
     )
@@ -203,17 +203,17 @@ FIDELITY_SUBJECTS = {
     "admitted_material_reference_relative_resolution": (
         test_admitted_material_reference_subjects_resolve_relative_markdown_links,
     ),
-    "book_rosetta_admission_distinction": (
+    "book_separate_admission_material_Admission_distinction": (
         test_book_has_its_own_admission_and_points_to_rosetta,
     ),
-    "rosetta_composite_support_relation_distinction": (
+    "separate_admission_material_composite_support_relation_distinction": (
         test_rosetta_admits_composite_support_relation_terms,
         test_failure_is_book_material_and_performative_forms_are_rosetta_composites,
     ),
     "clause_coordinate_words_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,
     ),
-    "book_rosetta_composite_admission_distinction": (
+    "book_separate_admission_material_composite_admission_distinction": (
         test_composite_admission_is_broad_in_rosetta_and_singular_in_book,
     ),
     "active_book_within_book_admission": (

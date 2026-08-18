@@ -37,11 +37,11 @@
       "second_subject": "Seed"
     },
     {
-      "reference": "this_Rosetta",
-      "coordinate": "rosetta_reference",
+      "reference": "this_separate_admission_material",
+      "coordinate": "separate_admission_material_reference",
       "first_subject": "this",
       "relation": "identifies",
-      "second_subject": "Rosetta"
+      "second_subject": "separate_admission_material"
     },
     {
       "reference": "this_Fidelity",
@@ -305,7 +305,7 @@
       ["locality", "occurrence"]
     ]
   },
-  "clauses": {
+  "clause_coordinates": {
     "01.Source.A": {
       "subject": "Representation_source_coordinates",
       "book_material_reference": "01.Source.A",
@@ -420,8 +420,8 @@
         },
         {"subject": "assertion_standing_coordinates"},
         {"subject": "responsibility_assignment_standing_distinction"},
-        {"subject": "standing_boundary_reference_responsibility_clauses"},
-        {"subject": "standing_locality_continuation_responsibility_clauses"},
+        {"subject": "standing_boundary_reference_responsibility_clause_coordinates"},
+        {"subject": "standing_locality_continuation_responsibility_clause_coordinates"},
         {"subject": "representation_source_standing_boundary_distinction"},
         {"subject": "one_exact_recorded_Standing_boundary_reference"},
         {"subject": "one_direct_recorded_Standing_boundary_Locality_relation"},
@@ -442,8 +442,8 @@
         {"subject": "scope_locality_distinction"},
         {"subject": "position_result_act_assertion_responsibility_distinction"},
         {"subject": "cross_boundary_participation_scope_limits"},
-        {"subject": "recorded_boundary_locality_responsibility_clauses"},
-        {"subject": "operator_material_acquisition_responsibility_clauses"},
+        {"subject": "recorded_boundary_locality_responsibility_clause_coordinates"},
+        {"subject": "operator_material_acquisition_responsibility_clause_coordinates"},
         {"subject": "authority_evidence_scope_distinction"},
         {"subject": "applicability_responsibility"},
         {"subject": "witness_clause_grammar_recorded_occurrence_kind"},
@@ -556,39 +556,39 @@
         {"subject": "prior_admission_identity"},
         {"subject": "ordered_admission_pair_comparison"},
         {
-          "subject": "rosetta_participation_relation",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_participation_relation",
+          "material_reference": "this_separate_admission_material"
         },
         {
-          "subject": "rosetta_relation_order",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_relation_order",
+          "material_reference": "this_separate_admission_material"
         },
         {
-          "subject": "rosetta_admission_clause_distinction",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_Admission_clause_distinction",
+          "material_reference": "this_separate_admission_material"
         },
         {
-          "subject": "rosetta_words_admission",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_words_admission",
+          "material_reference": "this_separate_admission_material"
         },
         {"subject": "later_reference_relation_distinction"},
         {"subject": "repeated_reference_relation"},
         {"subject": "relation_book_clause_reference"},
         {"subject": "applicability_usefulness_agreement_availability_distinction"},
         {
-          "subject": "book_rosetta_admission_distinction",
+          "subject": "book_separate_admission_material_Admission_distinction",
           "first_material_reference": "this_Book",
-          "second_material_reference": "this_Rosetta"
+          "second_material_reference": "this_separate_admission_material"
         },
         {
-          "subject": "rosetta_composite_support_relation_distinction",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_composite_support_relation_distinction",
+          "material_reference": "this_separate_admission_material"
         },
         {"subject": "clause_coordinate_words_admission"},
         {
-          "subject": "book_rosetta_composite_admission_distinction",
+          "subject": "book_separate_admission_material_composite_admission_distinction",
           "first_material_reference": "this_Book",
-          "second_material_reference": "this_Rosetta"
+          "second_material_reference": "this_separate_admission_material"
         },
         {"subject": "active_book_within_book_admission"},
         {"subject": "book_admission_active_law_use"},
@@ -664,12 +664,12 @@
           "material_reference": "this_Book"
         },
         {
-          "subject": "rosetta_function_reference_resolution",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_function_reference_resolution",
+          "material_reference": "this_separate_admission_material"
         },
         {
-          "subject": "rosetta_book_reference",
-          "material_reference": "this_Rosetta"
+          "subject": "separate_admission_material_book_reference",
+          "material_reference": "this_separate_admission_material"
         },
         {"subject": "witness_root_reference"},
         {"subject": "witness_root_reference_order"},

@@ -233,7 +233,7 @@ class _IntegrityAdversaryLedger(EventLedger):
 
 
 def _clause(clause_identity: str) -> dict:
-    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][clause_identity]
+    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["clause_coordinates"][clause_identity]
 
 
 def _coordinate_identities(coordinates: list[object]) -> tuple[str, ...]:
@@ -350,15 +350,15 @@ def test_every_grammar_representation_composite_preserves_material_order():
 
 def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    assert grammar["clauses"]["01.Standing.B"]["standing_not_established"][1] == {
+    assert grammar["clause_coordinates"]["01.Standing.B"]["standing_not_established"][1] == {
         "first_subject": "material_with_same_name",
         "relation": "identifies",
         "second_subject": "same_subject",
         "standing": "not_established",
     }
     mutations = (
-        grammar["clauses"]["01.Standing.B"]["standing_not_established"][3],
-        grammar["clauses"]["01.Source.C"]["test_subjects"][77],
+        grammar["clause_coordinates"]["01.Standing.B"]["standing_not_established"][3],
+        grammar["clause_coordinates"]["01.Source.C"]["test_subjects"][77],
     )
     assert mutations[0]["identity"] == "Authority_supports_exact_Act"
     assert mutations[1]["subject"] == (
@@ -368,9 +368,9 @@ def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address
     for structured_relation in mutations:
         changed = json.loads(json.dumps(grammar))
         target = (
-            changed["clauses"]["01.Standing.B"]["standing_not_established"][3]
+            changed["clause_coordinates"]["01.Standing.B"]["standing_not_established"][3]
             if "identity" in structured_relation
-            else changed["clauses"]["01.Source.C"]["test_subjects"][77]
+            else changed["clause_coordinates"]["01.Source.C"]["test_subjects"][77]
         )
         target["relation"] = "dances_with"
         try:
@@ -3641,14 +3641,14 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "subject": "this_book_material_acquisition_witness",
         "material_reference": "this_Book",
     }
-    assert by_subject["rosetta_relation_order"] == {
-        "subject": "rosetta_relation_order",
-        "material_reference": "this_Rosetta",
+    assert by_subject["separate_admission_material_relation_order"] == {
+        "subject": "separate_admission_material_relation_order",
+        "material_reference": "this_separate_admission_material",
     }
-    assert by_subject["book_rosetta_admission_distinction"] == {
-        "subject": "book_rosetta_admission_distinction",
+    assert by_subject["book_separate_admission_material_Admission_distinction"] == {
+        "subject": "book_separate_admission_material_Admission_distinction",
         "first_material_reference": "this_Book",
-        "second_material_reference": "this_Rosetta",
+        "second_material_reference": "this_separate_admission_material",
     }
     assert fidelity["comparison"]["first_subject"] != fidelity["comparison"][
         "second_subject"
@@ -3665,11 +3665,11 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
 def test_fidelity_is_bounded_witness_grammar_comparison_for_this_seed():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    _assert_ordered_fidelity_representation(grammar["clauses"]["01.Source.C"])
+    _assert_ordered_fidelity_representation(grammar["clause_coordinates"]["01.Source.C"])
 
 
 def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order():
-    fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][
+    fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clause_coordinates"][
         "01.Source.C"
     ]
 
@@ -5319,7 +5319,7 @@ def test_assertion_movement_coordinates_refuse_crossing_or_loss():
         assert _movement_coordinate_witness(bundle)[coordinate] == MISSING
 
 
-def test_standing_locality_continuation_stages_keep_distinct_witness_clauses():
+def test_standing_locality_continuation_stages_keep_distinct_clause_coordinates():
     assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
         STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "06.Locality.B"
@@ -5331,7 +5331,7 @@ def test_standing_locality_continuation_stages_keep_distinct_witness_clauses():
     ] == "06.Locality.A"
 
 
-def test_operator_material_acquire_stages_keep_distinct_witness_clauses():
+def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "01.Source.G"
@@ -5343,7 +5343,7 @@ def test_operator_material_acquire_stages_keep_distinct_witness_clauses():
     ] == "01.Source.G"
 
 
-def test_standing_boundary_reference_stages_keep_distinct_witness_clauses():
+def test_standing_boundary_reference_stages_keep_distinct_clause_coordinates():
     assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
         STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "05.Recording.D"
@@ -5355,7 +5355,7 @@ def test_standing_boundary_reference_stages_keep_distinct_witness_clauses():
     ] == "05.Recording.D"
 
 
-def test_recorded_boundary_locality_stages_keep_distinct_witness_clauses():
+def test_recorded_boundary_locality_stages_keep_distinct_clause_coordinates():
     assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
         RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "06.Locality.C"
@@ -6433,8 +6433,8 @@ FIDELITY_SUBJECTS = {
     "movement_coordinate_distinction": (
         test_assertion_movement_coordinates_refuse_crossing_or_loss,
     ),
-    "standing_boundary_reference_responsibility_clauses": (
-        test_standing_boundary_reference_stages_keep_distinct_witness_clauses,
+    "standing_boundary_reference_responsibility_clause_coordinates": (
+        test_standing_boundary_reference_stages_keep_distinct_clause_coordinates,
     ),
     "locality_relation_coordinates": (
         test_locality_relation_clause_is_checked_against_the_live_pair_witness,
@@ -6457,17 +6457,17 @@ FIDELITY_SUBJECTS = {
     "locality_relation_occurrence_evidence": (
         test_every_locality_evidence_kind_is_declared_once_and_registered,
     ),
-    "standing_locality_continuation_responsibility_clauses": (
-        test_standing_locality_continuation_stages_keep_distinct_witness_clauses,
+    "standing_locality_continuation_responsibility_clause_coordinates": (
+        test_standing_locality_continuation_stages_keep_distinct_clause_coordinates,
     ),
-    "recorded_boundary_locality_responsibility_clauses": (
-        test_recorded_boundary_locality_stages_keep_distinct_witness_clauses,
+    "recorded_boundary_locality_responsibility_clause_coordinates": (
+        test_recorded_boundary_locality_stages_keep_distinct_clause_coordinates,
     ),
     "Responsibility_assignment_of_operator_invocation_Locality_relation": (
         test_operator_system_locality_stages_keep_distinct_witness_clauses,
     ),
-    "operator_material_acquisition_responsibility_clauses": (
-        test_operator_material_acquire_stages_keep_distinct_witness_clauses,
+    "operator_material_acquisition_responsibility_clause_coordinates": (
+        test_operator_material_acquire_stages_keep_distinct_clause_coordinates,
     ),
     "authority_evidence_scope_distinction": (
         test_runtime_authority_does_not_carry_evidence_scope_prose,
