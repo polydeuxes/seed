@@ -41,7 +41,7 @@ def test_book_proper_scope_excludes_rosetta():
 
 def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
-    grammar_references = {
+    declared_references = {
         (reference["reference"], reference["coordinate"])
         for reference in grammar["root_references"]
     }
@@ -59,7 +59,7 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
         subject_words = set(
             re.findall(r"[A-Za-z]+", scan_active_line(subject).lower())
         )
-        assert (subject, coordinate) in grammar_references
+        assert (subject, coordinate) in declared_references
         assert subject_words <= admission
         for path in root.rglob("*.md"):
             for target in re.findall(
@@ -104,7 +104,7 @@ def test_rosetta_admits_composite_support_relation_terms():
     ) in roots
 
 
-def test_failure_is_book_material_and_performative_words_are_rosetta_composites():
+def test_failure_is_book_material_and_performative_forms_are_rosetta_composites():
     book_failure = {
         word for word in book_admission() if word.startswith("fail")
     }
@@ -220,7 +220,7 @@ FIDELITY_SUBJECTS = {
     ),
     "separate_admission_material_composite_support_relation_distinction": (
         test_rosetta_admits_composite_support_relation_terms,
-        test_failure_is_book_material_and_performative_words_are_rosetta_composites,
+        test_failure_is_book_material_and_performative_forms_are_rosetta_composites,
     ),
     "clause_coordinate_words_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,

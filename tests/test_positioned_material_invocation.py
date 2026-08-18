@@ -126,7 +126,7 @@ def test_position_pair_admission_preserves_equal_occurrence_references():
 
 
 FIDELITY_SUBJECTS = {
-    "exact_rule_measurement_result": (
+    "declared_measurement_result": (
         test_equal_material_at_different_positions_keeps_each_occurrence,
         test_exact_position_pairs_pair_again_at_the_exact_next_position,
     ),

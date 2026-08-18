@@ -756,27 +756,31 @@ def _refuse_result(ledger: EventLedger, act: Event, result_kind: str) -> None:
         act.material.get("applicability_act_occurrence_identity")
         or act.material.get("act_occurrence_identity")
     )
-    for kind in (result_kind, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND):
-        for occurrence in ledger.iter_locality_kind(act.locality_identity, kind):
-            if (
-                occurrence.material.get("responsible_act_evidence_identity")
-                == act.identity
-                or occurrence.material.get("act_occurrence_identity")
-                == act_occurrence
-                or occurrence.material.get(
-                    "applicability_act_occurrence_identity"
-                )
-                == act_occurrence
-            ):
-                raise ValueError("one comparison of ordered relation path with recorded pair findings Act cannot Yield twice")
+    for occurrence in ledger.list_locality(act.locality_identity):
+        if occurrence.kind not in {result_kind, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND}:
+            continue
+        if (
+            occurrence.material.get("responsible_act_evidence_identity") == act.identity
+            or occurrence.material.get("act_occurrence_identity") == act_occurrence
+            or occurrence.material.get("applicability_act_occurrence_identity")
+            == act_occurrence
+        ):
+            raise ValueError("one comparison of ordered relation path with recorded pair findings Act cannot Yield twice")
 
 
-def _record_applicability_yield_evidence(
-    ledger: EventLedger, *, act: Event, result: dict[str, Any]
+def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
 ) -> Event:
-    """Record the one exact 04.Compare.B Applicability Yield boundary."""
-
-    return _record_evidence_of_yield_relation(
+    act, assignment, inputs = _read_applicability_act(
+        ledger, responsible_act_evidence_event_identity
+    )
+    result = _applicability_result_material(act, assignment, inputs)
+    _refuse_result(
+        ledger,
+        act,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    )
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=APPLICABILITY_ACT,
@@ -797,23 +801,6 @@ def _record_applicability_yield_evidence(
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
-    )
-
-
-def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
-) -> Event:
-    act, assignment, inputs = _read_applicability_act(
-        ledger, responsible_act_evidence_event_identity
-    )
-    result = _applicability_result_material(act, assignment, inputs)
-    _refuse_result(
-        ledger,
-        act,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    )
-    evidence = _record_applicability_yield_evidence(
-        ledger, act=act, result=result
     )
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
@@ -1161,12 +1148,19 @@ def _recorded_compare_result_material(
     }
 
 
-def _record_compare_yield_evidence(
-    ledger: EventLedger, *, act: Event, result: dict[str, Any]
+def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
+    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
 ) -> Event:
-    """Record the one exact 04.Compare.B Compare Yield boundary."""
-
-    return _record_evidence_of_yield_relation(
+    act, assignment, applicability, inputs = _read_compare_act(
+        ledger, responsible_act_evidence_event_identity
+    )
+    result = _compare_result_material(act, assignment, applicability, inputs)
+    _refuse_result(
+        ledger,
+        act,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    )
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=COMPARE_ACT,
@@ -1183,21 +1177,6 @@ def _record_compare_yield_evidence(
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         responsible_boundary="this Seed",
     )
-
-
-def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
-) -> Event:
-    act, assignment, applicability, inputs = _read_compare_act(
-        ledger, responsible_act_evidence_event_identity
-    )
-    result = _compare_result_material(act, assignment, applicability, inputs)
-    _refuse_result(
-        ledger,
-        act,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    )
-    evidence = _record_compare_yield_evidence(ledger, act=act, result=result)
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
         _recorded_compare_result_material(
@@ -1205,433 +1184,6 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
         ),
         locality_identity=act.locality_identity,
     )
-
-
-def _require_carried_input_events(
-    ledger: EventLedger,
-    inputs: dict[str, Any],
-    *,
-    path_result: Event,
-    recorded_pair_comparison_result: Event,
-    input_materials: tuple[dict[str, Any], dict[str, Any]],
-) -> None:
-    """Bind carried readings to their still-intact exact input occurrences."""
-
-    path = inputs.get("path") if type(inputs) is dict else None
-    comparison = inputs.get("comparison") if type(inputs) is dict else None
-    if (
-        type(path) is not dict
-        or type(comparison) is not dict
-        or path.get("event") is not path_result
-        or comparison.get("event") is not recorded_pair_comparison_result
-        or path_result.kind != SHARED_POSITION_MEASUREMENT_RESULT_KIND
-        or recorded_pair_comparison_result.kind
-        != RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
-        or path_result.exact_material is not None
-        or recorded_pair_comparison_result.exact_material is not None
-        or type(input_materials) is not tuple
-        or len(input_materials) != 2
-        or path_result.material != input_materials[0]
-        or recorded_pair_comparison_result.material != input_materials[1]
-        or path_result.locality_identity
-        != recorded_pair_comparison_result.locality_identity
-        or ledger.integrity_of(path_result.identity) == CORRUPTED
-        or ledger.integrity_of(recorded_pair_comparison_result.identity)
-        == CORRUPTED
-    ):
-        raise ValueError(
-            "comparison of ordered relation path with recorded pair findings "
-            "carried inputs are not exact"
-        )
-
-
-def _require_current_carried_occurrence(
-    ledger: EventLedger,
-    event: Event,
-    *,
-    kind: str,
-    expected_material: dict[str, Any],
-) -> None:
-    """Require one exact newly produced occurrence at the current append tip."""
-
-    recorded = ledger.get(event.identity) if isinstance(event, Event) else None
-    if (
-        recorded != event
-        or event.kind != kind
-        or event.material != expected_material
-        or event.exact_material is not None
-        or ledger.integrity_of(event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
-    ):
-        raise ValueError(
-            "comparison of ordered relation path with recorded pair findings "
-            "carried occurrence is not exact at the current tip"
-        )
-
-
-def _require_current_carried_standing(
-    ledger: EventLedger,
-    standing: dict[str, Any],
-    *,
-    locality_identity: str,
-) -> str:
-    boundary = (
-        standing.get("through_event_occurrence_identity")
-        if type(standing) is dict
-        else None
-    )
-    event = ledger.get(boundary) if type(boundary) is str else None
-    if (
-        event is None
-        or event.locality_identity != locality_identity
-        or ledger.integrity_of(event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
-    ):
-        raise ValueError(
-            "comparison of ordered relation path with recorded pair findings "
-            "requires exact current carried Standing"
-        )
-    return boundary
-
-
-def _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
-    ledger: EventLedger,
-    *,
-    path_result: Event,
-    recorded_pair_comparison_result: Event,
-    locality_standing: dict[str, Any],
-) -> tuple[Event, dict[str, Any]]:
-    """Record one complete 04.Compare.B lifecycle from exact carried results."""
-
-    if not isinstance(path_result, Event) or not isinstance(
-        recorded_pair_comparison_result, Event
-    ):
-        raise TypeError("carried 04.Compare.B inputs must be exact Events")
-    inputs = _inputs(
-        ledger,
-        path_result_event_identity=path_result.identity,
-        comparison_result_event_identity=recorded_pair_comparison_result.identity,
-    )
-    # The public input readers return these exact ledger objects for the
-    # in-memory road.  A durable reader returns structurally equal objects, so
-    # bind the caller's objects to the validated readings before carrying them.
-    if inputs["path"]["event"] != path_result or inputs["comparison"][
-        "event"
-    ] != recorded_pair_comparison_result:
-        raise ValueError("carried 04.Compare.B input objects were substituted")
-    inputs["path"]["event"] = path_result
-    inputs["comparison"]["event"] = recorded_pair_comparison_result
-    input_materials = (
-        deepcopy(path_result.material),
-        deepcopy(recorded_pair_comparison_result.material),
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    boundary = _require_input_standing(ledger, inputs, locality_standing)
-    if (
-        _require_current_carried_standing(
-            ledger,
-            locality_standing,
-            locality_identity=inputs["locality_identity"],
-        )
-        != boundary
-    ):
-        raise ValueError("carried 04.Compare.B Standing boundary was substituted")
-    # A refused callback may leave legitimately recorded prefix occurrences,
-    # but it must not partly amend the Standing object supplied by the caller.
-    locality_standing = deepcopy(locality_standing)
-    identities = _new_identities()
-    if len(set(identities.values())) != len(identities):
-        raise ValueError(
-            "comparison of ordered relation path with recorded pair findings "
-            "lifecycle identities collapsed"
-        )
-
-    from seed_runtime.operator_locality_standing import (
-        _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing,
-    )
-
-    assignment_material = _assignment_material(inputs, boundary, identities)
-    assignment = ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(inputs, boundary, identities),
-        locality_identity=inputs["locality_identity"],
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        assignment,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
-        expected_material=assignment_material,
-    )
-    locality_standing = _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
-        locality_standing,
-        assignment,
-        prior_through_event_occurrence_identity=boundary,
-    )
-
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_assignment_standing(assignment, locality_standing)
-    _require_current_carried_occurrence(
-        ledger,
-        assignment,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
-        expected_material=assignment_material,
-    )
-    applicability_act_material = _applicability_act_material(assignment)
-    applicability_act = ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
-        _applicability_act_material(assignment),
-        locality_identity=assignment.locality_identity,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
-        expected_material=applicability_act_material,
-    )
-    locality_standing = _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
-        locality_standing,
-        applicability_act,
-        prior_through_event_occurrence_identity=assignment.identity,
-    )
-
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
-        expected_material=applicability_act_material,
-    )
-    applicability_material = _applicability_result_material(
-        applicability_act, assignment, inputs
-    )
-    if applicability_material["applicability"] != "applicable":
-        raise ValueError("carried relation-path input is not applicable to Compare")
-    _refuse_result(
-        ledger,
-        applicability_act,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
-        expected_material=applicability_act_material,
-    )
-    applicability_evidence = _record_applicability_yield_evidence(
-        ledger, act=applicability_act, result=applicability_material
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability_evidence,
-        kind=RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-        expected_material=applicability_evidence.material,
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    applicability_recorded_material = _recorded_applicability_result_material(
-        applicability_material, evidence_identity=applicability_evidence.identity
-    )
-    applicability = ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            applicability_material,
-            evidence_identity=applicability_evidence.identity,
-        ),
-        locality_identity=assignment.locality_identity,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        expected_material=applicability_recorded_material,
-    )
-    _read_yielded(
-        ledger,
-        applicability.identity,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        act=applicability_act,
-        expected=applicability_material,
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
-        result_name=APPLICABILITY_RESULT_KIND,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        applicability,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        expected_material=applicability_recorded_material,
-    )
-    locality_standing = _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
-        locality_standing,
-        applicability,
-        prior_through_event_occurrence_identity=applicability_act.identity,
-    )
-
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_compare_standing(assignment, applicability, locality_standing)
-    _require_current_carried_occurrence(
-        ledger,
-        applicability,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-        expected_material=applicability_recorded_material,
-    )
-    compare_act_material = _compare_act_material(assignment, applicability)
-    compare_act = ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
-        _compare_act_material(assignment, applicability),
-        locality_identity=assignment.locality_identity,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        compare_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
-        expected_material=compare_act_material,
-    )
-    locality_standing = _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
-        locality_standing,
-        compare_act,
-        prior_through_event_occurrence_identity=applicability.identity,
-    )
-
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        compare_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
-        expected_material=compare_act_material,
-    )
-    result_material = _compare_result_material(
-        compare_act, assignment, applicability, inputs
-    )
-    _refuse_result(
-        ledger,
-        compare_act,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        compare_act,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
-        expected_material=compare_act_material,
-    )
-    result_evidence = _record_compare_yield_evidence(
-        ledger, act=compare_act, result=result_material
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        result_evidence,
-        kind=RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-        expected_material=result_evidence.material,
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    recorded_result_material = _recorded_compare_result_material(
-        result_material, evidence_identity=result_evidence.identity
-    )
-    result = ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        _recorded_compare_result_material(
-            result_material, evidence_identity=result_evidence.identity
-        ),
-        locality_identity=assignment.locality_identity,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        result,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        expected_material=recorded_result_material,
-    )
-    _read_yielded(
-        ledger,
-        result.identity,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        act=compare_act,
-        expected=result_material,
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
-        result_name=COMPARE_RESULT_KIND,
-    )
-    _require_carried_input_events(
-        ledger,
-        inputs,
-        path_result=path_result,
-        recorded_pair_comparison_result=recorded_pair_comparison_result,
-        input_materials=input_materials,
-    )
-    _require_current_carried_occurrence(
-        ledger,
-        result,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        expected_material=recorded_result_material,
-    )
-    locality_standing = _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
-        locality_standing,
-        result,
-        prior_through_event_occurrence_identity=compare_act.identity,
-    )
-    return result, locality_standing
 
 
 def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(

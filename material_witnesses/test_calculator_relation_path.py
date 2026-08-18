@@ -24,9 +24,13 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     recorded_distinction_pins_from_current_standing,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -60,8 +64,8 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.standing_measurement_responsibility_order import (
-    record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
+from seed_runtime.standing_measurement_declarations import (
+    record_declared_measurements_from_current_standing,
 )
 
 
@@ -85,10 +89,10 @@ def _standing(ledger):
     )
 
 
-def _pair_measurement(ledger, standing_measurement_responsibility_order):
+def _pair_measurement(ledger, declared):
     byte_result = next(
         event
-        for event in standing_measurement_responsibility_order.result_occurrences
+        for event in declared.result_occurrences
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
     return record_byte_position_pair_count_layer(
@@ -125,12 +129,30 @@ def _pair_comparison(ledger, earlier, later):
     )
 
 
-def _path_comparison(ledger, path, pair_comparison, standing):
-    return _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+def _path_comparison(ledger, path, pair_comparison):
+    assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
         ledger,
-        path_result=path,
-        recorded_pair_comparison_result=pair_comparison,
-        locality_standing=standing,
+        path_result_event_identity=path.identity,
+        comparison_result_event_identity=pair_comparison.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=_standing(ledger),
+    )
+    return record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
     )
 
 
@@ -142,11 +164,11 @@ def _claim_path(ledger):
         source_role="system",
         source_boundary="earlier exact supplied material boundary",
     )
-    earlier_standing_measurement_responsibility_order = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+    earlier_declared = record_declared_measurements_from_current_standing(
         ledger,
         locality_identity=earlier_source.locality_identity,
     )
-    earlier_pair = _pair_measurement(ledger, earlier_standing_measurement_responsibility_order)
+    earlier_pair = _pair_measurement(ledger, earlier_declared)
     source = ingest_material(
         ledger,
         locality_identity="calculator-claim",
@@ -155,17 +177,17 @@ def _claim_path(ledger):
         source_boundary="exact supplied claim boundary",
         provenance_occurrence_references=(earlier_source.identity,),
     )
-    standing_measurement_responsibility_order = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+    declared = record_declared_measurements_from_current_standing(
         ledger,
         locality_identity=source.locality_identity,
     )
-    standing = standing_measurement_responsibility_order.locality_standing
+    standing = declared.locality_standing
     direct_result = next(
         event
-        for event in standing_measurement_responsibility_order.result_occurrences
+        for event in declared.result_occurrences
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
-    claim_pair = _pair_measurement(ledger, standing_measurement_responsibility_order)
+    claim_pair = _pair_measurement(ledger, declared)
     pair_comparison = _pair_comparison(ledger, earlier_pair, claim_pair)
     standing = _standing(ledger)
     coordinate = _source_position_coordinate_reference(
@@ -236,9 +258,8 @@ def _claim_path(ledger):
         measurement_act_evidence_event_identity=shared_act.identity,
     )
     standing = _advance(ledger, standing, shared_result)
-    path_comparison, standing = _path_comparison(
-        ledger, shared_result, pair_comparison, standing
-    )
+    path_comparison = _path_comparison(ledger, shared_result, pair_comparison)
+    standing = _standing(ledger)
     return source, shared_result, path_comparison, standing
 
 

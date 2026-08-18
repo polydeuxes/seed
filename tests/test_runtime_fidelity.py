@@ -76,7 +76,7 @@ def test_each_runtime_module_participates_in_live_process_imports():
 
 
 def _module_strings(tree: ast.Module) -> dict[str, str]:
-    module_strings = {}
+    declared = {}
     for node in tree.body:
         if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Constant):
             continue
@@ -84,8 +84,8 @@ def _module_strings(tree: ast.Module) -> dict[str, str]:
             continue
         for name in node.targets:
             if isinstance(name, ast.Name):
-                module_strings[name.id] = node.value.value
-    return module_strings
+                declared[name.id] = node.value.value
+    return declared
 
 
 def _module_functions(tree: ast.Module):
@@ -227,10 +227,10 @@ def _runtime_assertion_responsibility_clauses() -> dict[
 ]:
     found: dict[str, list[tuple[str, str]]] = {}
     for path, tree in _runtime_trees():
-        for responsibility, clause_coordinates in _assertion_responsibility_clauses(
+        for responsibility, declarations in _assertion_responsibility_clauses(
             path, tree
         ).items():
-            found.setdefault(responsibility, []).extend(clause_coordinates)
+            found.setdefault(responsibility, []).extend(declarations)
     return found
 
 
@@ -601,16 +601,16 @@ def test_unresolved_event_material_expansion_remains_visible():
     ) == [1]
 
 
-def test_every_runtime_event_kind_names_its_witness_grammar_responsibility():
+def test_every_runtime_event_kind_declares_its_witness_grammar_responsibility():
     """A new event species cannot gain constitutional force from its name."""
 
-    event_kinds = _runtime_event_kinds()
+    declared = _runtime_event_kinds()
     accounted = _runtime_event_kind_responsibilities()
 
-    assert set(event_kinds) == set(accounted), (
+    assert set(declared) == set(accounted), (
         "\nLive event kinds and witness-grammar responsibilities disagree."
-        f"\n  only live: {sorted(set(event_kinds) - set(accounted))}"
-        f"\n  only responsibility coordinate: {sorted(set(accounted) - set(event_kinds))}"
+        f"\n  only live: {sorted(set(declared) - set(accounted))}"
+        f"\n  only responsibility declaration: {sorted(set(accounted) - set(declared))}"
     )
 
 
@@ -620,7 +620,7 @@ def test_each_event_kind_responsibility_names_one_witness_grammar_clause():
     duplicate = {
         kind: values for kind, values in accounted.items() if len(values) != 1
     }
-    assert duplicate == {}, f"event species name several responsibilities: {duplicate}"
+    assert duplicate == {}, f"event species declare several responsibilities: {duplicate}"
     clauses = set(grammar["clause_coordinates"])
     unknown = {
         kind: values[0]
@@ -630,7 +630,7 @@ def test_each_event_kind_responsibility_names_one_witness_grammar_clause():
     assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
 
 
-def test_each_live_assertion_responsibility_has_one_clause_coordinate():
+def test_each_live_assertion_responsibility_has_one_clause_declaration():
     live = _runtime_assertion_responsibilities()
     accounted = _runtime_assertion_responsibility_clauses()
     unresolved = [
@@ -641,9 +641,9 @@ def test_each_live_assertion_responsibility_has_one_clause_coordinate():
 
     assert unresolved == [], f"unresolved nested Assertion responsibility: {unresolved}"
     assert set(live) == set(accounted), (
-        "\nLive nested Assertion responsibilities and clause coordinates disagree."
+        "\nLive nested Assertion responsibilities and clause declarations disagree."
         f"\n  only live: {sorted(set(live) - set(accounted))}"
-        f"\n  only clause coordinate: {sorted(set(accounted) - set(live))}"
+        f"\n  only declaration: {sorted(set(accounted) - set(live))}"
     )
     duplicate = {
         responsibility: values
@@ -708,7 +708,7 @@ material = {
     ) == [("adversary.py", 4)]
 
 
-def test_nested_assertion_clause_coordinates_preserve_duplicates():
+def test_nested_assertion_clause_declarations_preserve_duplicates():
     tree = ast.parse(
         """
 RESPONSIBILITY = "one exact responsibility"
@@ -728,13 +728,13 @@ ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "02.Acts.A"}
 def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     event_clauses = {
         clause
-        for clause_coordinates in _runtime_event_kind_responsibilities().values()
-        for _path, clause in clause_coordinates
+        for declarations in _runtime_event_kind_responsibilities().values()
+        for _path, clause in declarations
     }
     assertion_clauses = {
         clause
-        for clause_coordinates in _runtime_assertion_responsibility_clauses().values()
-        for _path, clause in clause_coordinates
+        for declarations in _runtime_assertion_responsibility_clauses().values()
+        for _path, clause in declarations
     }
 
     assert "01.Standing.D.1" not in event_clauses
@@ -754,17 +754,17 @@ def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_cl
     }
     witness = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clause_coordinates"]
     witness_clauses = set(witness)
-    event_occurrences_in_grammar = {
+    declared_event_occurrences = {
         identity
         for identity, clause in witness.items()
         if clause["recorded_occurrence_kind"] == ["event_occurrence"]
     }
-    assertion_occurrences_in_grammar = {
+    declared_assertion_occurrences = {
         identity
         for identity, clause in witness.items()
         if clause["recorded_occurrence_kind"] == ["Assertion_occurrence"]
     }
-    grammar_without_recorded_occurrence_kind = {
+    declared_without_recorded_occurrence_kind = {
         identity
         for identity, clause in witness.items()
         if clause["recorded_occurrence_kind"] == []
@@ -772,13 +772,13 @@ def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_cl
     implemented_clauses = event_clauses | assertion_clauses
 
     assert all(clause["grammar"] == "established" for clause in witness.values())
-    assert event_clauses == event_occurrences_in_grammar
-    assert assertion_clauses == assertion_occurrences_in_grammar
-    assert witness_clauses - implemented_clauses == grammar_without_recorded_occurrence_kind
+    assert event_clauses == declared_event_occurrences
+    assert assertion_clauses == declared_assertion_occurrences
+    assert witness_clauses - implemented_clauses == declared_without_recorded_occurrence_kind
     assert (
-        event_occurrences_in_grammar
-        | assertion_occurrences_in_grammar
-        | grammar_without_recorded_occurrence_kind
+        declared_event_occurrences
+        | declared_assertion_occurrences
+        | declared_without_recorded_occurrence_kind
     ) == witness_clauses
 
 
@@ -1021,7 +1021,7 @@ def _unread_event_materials():
                     yield path.name, call.lineno, value
 
 
-def test_every_recorded_event_occurrence_carries_its_material_to_the_sirens():
+def test_every_declared_event_occurrence_carries_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 
@@ -1050,7 +1050,7 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     )
 
 
-def test_witness_grammar_carries_the_four_exact_relations():
+def test_witness_grammar_declares_the_four_exact_relations():
     grammar_relations = set(
         json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     )
@@ -1122,7 +1122,7 @@ def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurre
     )
 
 
-def test_recorded_representation_carries_each_exact_evidence_pointer():
+def test_recorded_representation_declares_each_exact_evidence_pointer():
     required = {
         "result_identity",
         "representation_act_identity",
@@ -1171,7 +1171,7 @@ def _standing_values(node) -> list[str]:
     return found
 
 
-def test_every_event_standing_claim_has_an_exact_grammar_responsibility():
+def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
     accounted = set(_runtime_event_kind_responsibilities())
     unaccounted = []
     for path, tree in _runtime_trees():
@@ -1234,16 +1234,16 @@ def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
 
 FIDELITY_SUBJECTS = {
     "event_standing_grammar_responsibility": (
-        test_every_event_standing_claim_has_an_exact_grammar_responsibility,
+        test_every_event_standing_claim_has_a_declared_grammar_responsibility,
     ),
     "event_kind_grammar_responsibility": (
-        test_every_runtime_event_kind_names_its_witness_grammar_responsibility,
+        test_every_runtime_event_kind_declares_its_witness_grammar_responsibility,
     ),
     "event_kind_responsibility_clause": (
         test_each_event_kind_responsibility_names_one_witness_grammar_clause,
     ),
-    "assertion_responsibility_clause_coordinates": (
-        test_each_live_assertion_responsibility_has_one_clause_coordinate,
+    "assertion_responsibility_clause_declarations": (
+        test_each_live_assertion_responsibility_has_one_clause_declaration,
     ),
     "assertion_responsibility_witness_clause": (
         test_each_assertion_responsibility_names_one_witness_grammar_clause,
@@ -1254,8 +1254,8 @@ FIDELITY_SUBJECTS = {
     "assertion_responsibility_coordinate_resolution": (
         test_nested_assertion_responsibility_discovery_refuses_an_opaque_coordinate,
     ),
-    "assertion_responsibility_duplicate_clause_coordinates": (
-        test_nested_assertion_clause_coordinates_preserve_duplicates,
+    "assertion_responsibility_duplicate_declarations": (
+        test_nested_assertion_clause_declarations_preserve_duplicates,
     ),
     "assertion_event_responsibility_distinction": (
         test_nested_assertion_clause_is_not_an_event_kind_responsibility,
@@ -1269,14 +1269,14 @@ FIDELITY_SUBJECTS = {
     "event_record_relation_admission": (
         test_every_relation_shaped_runtime_record_is_an_admitted_relation,
     ),
-    "witness_relation_coordinates": (
-        test_witness_grammar_carries_the_four_exact_relations,
+    "witness_relation_declarations": (
+        test_witness_grammar_declares_the_four_exact_relations,
     ),
     "standing_boundary_reference_representation_emission_distinction": (
         test_checkpoint_names_the_representation_it_addresses_not_an_emission,
     ),
     "representation_exact_evidence_references": (
-        test_recorded_representation_carries_each_exact_evidence_pointer,
+        test_recorded_representation_declares_each_exact_evidence_pointer,
     ),
     "seed_function_path": (
         test_each_runtime_module_participates_in_live_process_imports,
@@ -1306,7 +1306,7 @@ FIDELITY_SUBJECTS = {
         test_coordinate_substitution_siren_detects_one_shared_reference,
     ),
     "event_occurrence_material_inspection": (
-        test_every_recorded_event_occurrence_carries_its_material_to_the_sirens,
+        test_every_declared_event_occurrence_carries_its_material_to_the_sirens,
     ),
     "operator_request_write_exclusion": (
         test_command_handler_receives_no_constitutional_write_capability,

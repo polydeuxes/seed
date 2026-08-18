@@ -193,17 +193,6 @@ addition Act occurrence
 A connective composite receives no Act, relation, Evidence, Authority, or
 Standing by identity.
 
-### Declare / declares / declared / declaring / declaration / declarations
-
-These forms are ordinary auxiliary compression for one already exact relation:
-a Book clause assigns a Responsibility; an exact rule determines a result kind;
-a grammar coordinate names a subject, rule, result, or boundary; or an
-implementation order identifies one Measurement whose exact required
-coordinates are carried under an existing Responsibility assignment. The forms
-perform none of those relations and by
-identity establish no Responsibility, Authority, Applicability, Act, Yield,
-result, boundary, Standing, or truth.
-
 ### Increment
 
 `Increment` is a composite relation only: one exact earlier count, one exact

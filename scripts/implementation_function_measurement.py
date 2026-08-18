@@ -582,40 +582,40 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
     test_subjects = fidelity["test_subjects"]
     if type(test_subjects) is not list or not test_subjects:
         raise TypeError("exact Fidelity test subjects are required")
-    fidelity_subject_coordinates: dict[str, dict[str, str]] = {}
+    declared: dict[str, dict[str, str]] = {}
     for coordinates in test_subjects:
         if type(coordinates) is not dict:
             raise TypeError("exact Fidelity test subject coordinates are required")
         subject = coordinates.get("subject")
         if type(subject) is not str or not subject:
             raise TypeError("one exact Fidelity test subject is required")
-        if subject in fidelity_subject_coordinates:
+        if subject in declared:
             raise ValueError("Fidelity test subject entered the grammar twice")
         if any(
             type(name) is not str or type(value) is not str
             for name, value in coordinates.items()
         ):
             raise TypeError("exact Fidelity test subject coordinates are required")
-        fidelity_subject_coordinates[subject] = {
+        declared[subject] = {
             **coordinates,
             "witness_for": relation["second_subject"],
             "distinct_from": relation["first_subject_distinct_from"],
         }
 
     admission = book_admission()
-    for subject in fidelity_subject_coordinates:
+    for subject in declared:
         subject_words = tuple(
             word.lower() for word in re.findall(r"[A-Za-z]+", subject)
         )
         if not subject_words or any(word not in admission for word in subject_words):
             raise ValueError("test subject carries words absent from Book admission")
-    return fidelity_subject_coordinates
+    return declared
 
 
 def _pytest_subject(
     module: object,
     function_under_test: object,
-    fidelity_subject_coordinates: dict[str, dict[str, str]],
+    declared: dict[str, dict[str, str]],
 ) -> dict[str, str]:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
@@ -649,7 +649,7 @@ def _pytest_subject(
             raise ValueError("one exact test subject is required")
         subject = matches[0]
     try:
-        return fidelity_subject_coordinates[subject]
+        return declared[subject]
     except KeyError as error:
         raise ValueError("test subject is absent from witness grammar") from error
 
@@ -659,14 +659,9 @@ def pytest_collection_modifyitems(
     session: object, config: object, items: list[object]
 ) -> None:
     del session, config
-    fidelity_subject_coordinates = _fidelity_test_subjects()
+    declared = _fidelity_test_subjects()
     resolved = tuple(
-        _pytest_subject(
-            item.module,
-            item.function,
-            fidelity_subject_coordinates,
-        )
-        for item in items
+        _pytest_subject(item.module, item.function, declared) for item in items
     )
     for item, coordinates in zip(items, resolved):
         item.stash[_PYTEST_SUBJECT_COORDINATES] = coordinates

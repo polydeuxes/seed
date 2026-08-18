@@ -95,11 +95,11 @@ def test_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
-def test_standing_measurement_responsibility_order_requires_one_current_standing_pin():
+def test_source_measurement_declarations_require_one_current_standing_pin():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     source = grammar["clause_coordinates"]["01.Source.D"]
 
-    assert source["standing_measurement_responsibility_order"] == [
+    assert source["standing_emission_declarations"] == [
         {
             "order": 0,
             "book_clause": "01.Source.D",
@@ -136,97 +136,10 @@ def test_standing_measurement_responsibility_order_requires_one_current_standing
                 "Act_by_subject_presence",
             ],
         },
-        {
-            "order": 2,
-            "book_clause": "01.Source.D",
-            "measurement": {
-                "identity": "measurement_of_source_position_coordinates_carrying_addressed_material",
-                "first_subject": "Measurement",
-                "relation": "of",
-                "second_subject": {
-                    "first_subject": "source_position_coordinate_references",
-                    "relation": "carrying",
-                    "second_subject": "addressed_coordinate_exact_one_byte_material",
-                },
-            },
-            "subject": {
-                "addressed_reference": "one_exact_addressed_byte_occurrence_reference_determination_result",
-                "collection": "ordered_current_intact_direct_pair_position_result_set",
-            },
-            "bounded_by": ["Locality", "current_Standing_boundary"],
-            "requires": ["current_Standing", "exact_subject"],
-            "standing_not_established": [
-                "Responsibility_assignment_by_subject_presence",
-                "Applicability_by_subject_presence",
-                "Act_by_subject_presence",
-                "addressed_byte_occurrence_reference_determination_by_result_presence",
-            ],
-        },
-        {
-            "order": 3,
-            "book_clause": "01.Source.D.2",
-            "measurement": {
-                "identity": "addressed_byte_occurrence_reference_determination",
-                "subject": {
-                    "identity": "exact_pair_occurrence_position_Assertion_references_carrying_one_addressed_source_byte_position_coordinate_reference",
-                    "first_subject": "exact_pair_occurrence_position_Assertion_references",
-                    "relation": "carrying",
-                    "second_subject": "one_addressed_source_byte_position_coordinate_reference",
-                },
-            },
-            "subject": {
-                "finding": "one_source_position_coordinate_finding_carried_by_an_addressed_material_Measurement_result",
-                "direct_result": "finding_carried_direct_pair_position_result_reference",
-                "coordinate": "finding_source_position_coordinate_reference",
-            },
-            "requires": [
-                "current_Standing",
-                "exact_subject",
-                "no_exact_D_2_assignment_or_result_for_subject",
-            ],
-            "assignment_preserves": {
-                "source_reference_for_standing_measurement_responsibility_order": {
-                    "measurement_result_reference": (
-                        "addressed_material_Measurement_result_reference"
-                    ),
-                    "finding": "exact_source_position_coordinate_finding",
-                }
-            },
-            "standing_not_established": [
-                "Responsibility_assignment_by_finding_presence",
-                "Applicability_by_finding_presence",
-                "Act_by_finding_presence",
-            ],
-        },
-        {
-            "order": 4,
-            "book_clause": "01.Source.D",
-            "measurement": {
-                "identity": "measurement_of_shared_position_of_byte_pair_occurrences",
-                "first_subject": "shared_position_coordinate_reference",
-                "relation": "of",
-                "second_subject": "exact_recorded_pair_occurrence_relations",
-            },
-            "subject": {
-                "result": "one_exact_addressed_byte_occurrence_reference_determination_result",
-                "ordered_references": "exact_2_pair_position_Assertion_references",
-            },
-            "requires": [
-                "current_Standing",
-                "exact_subject",
-                "no_exact_shared_position_assignment_or_result_for_subject",
-            ],
-            "standing_not_established": [
-                "Responsibility_assignment_by_result_presence",
-                "Applicability_by_result_presence",
-                "Act_by_result_presence",
-            ],
-        },
     ]
     assert (
-        "Under the Standing Measurement Responsibility order, this Seed may, "
-        "at one exact current Standing boundary, record one exact Responsibility "
-        "assignment in the exact order of this Book"
+        "At one exact current Standing boundary, this Seed may record one "
+        "declared Responsibility assignment in declared order"
     ) in _active_book()
 
 
@@ -383,7 +296,7 @@ def test_witness_clauses_address_their_exact_book_material():
     ) == tuple((identity, identity) for identity in grammar["clause_coordinates"])
 
 
-def test_witness_root_references_remain_distinct_and_in_exact_order():
+def test_witness_root_references_remain_distinct_and_in_declared_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["root_references"] == [
@@ -463,13 +376,13 @@ def test_witness_grammar_represents_the_book_without_identity_equality():
 
 def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    clause_coordinates_without_recorded_kind = tuple(
+    declarations = tuple(
         (identity, clause["recorded_occurrence_kind"])
         for identity, clause in grammar["clause_coordinates"].items()
         if clause["recorded_occurrence_kind"] == []
     )
 
-    assert clause_coordinates_without_recorded_kind == (
+    assert declarations == (
         ("01.Source.B", []),
         ("01.Source.C", []),
         ("01.Source.D.1", []),
@@ -489,9 +402,7 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
     )
     assert all(
         "responsibility" not in grammar["clause_coordinates"][identity]
-        for identity, _recorded_occurrence_kind in (
-            clause_coordinates_without_recorded_kind
-        )
+        for identity, _recorded_occurrence_kind in declarations
     )
 
 
@@ -805,7 +716,7 @@ FIDELITY_SUBJECTS = {
     ),
     "standing_responsibility_path": (
         test_witness_readable_grammar_traverses_responsibility_from_standing,
-        test_standing_measurement_responsibility_order_requires_one_current_standing_pin,
+        test_source_measurement_declarations_require_one_current_standing_pin,
     ),
     "public_export_standing_distinction": (
         test_public_export_standing_not_established_standing,
@@ -838,7 +749,7 @@ FIDELITY_SUBJECTS = {
     ),
     "witness_root_reference": (test_this_occurs_only_as_exact_witness_roots,),
     "witness_root_reference_order": (
-        test_witness_root_references_remain_distinct_and_in_exact_order,
+        test_witness_root_references_remain_distinct_and_in_declared_order,
     ),
     "witness_grammar_represents_book": (
         test_witness_grammar_represents_the_book_without_identity_equality,

@@ -56,14 +56,14 @@ RESPONSIBILITY = (
 )
 APPLICABILITY_ACT = "addressed byte occurrence reference determination Applicability"
 DETERMINATION_ACT = (
-    "exact Measurement of exact pair-occurrence position Assertion "
+    "declared Measurement of exact pair-occurrence position Assertion "
     "references carrying one addressed source-byte position-coordinate reference"
 )
 APPLICABILITY_YIELD_RESULT_KIND = (
     "addressed byte occurrence reference determination Applicability result"
 )
 DETERMINATION_YIELD_RESULT_KIND = (
-    "result of exact Measurement of exact pair-occurrence position "
+    "result of declared Measurement of exact pair-occurrence position "
     "Assertion references carrying one addressed source-byte position-coordinate "
     "reference"
 )
@@ -71,9 +71,6 @@ APPLICABILITY_BOUNDARY = (
     "addressed_byte_occurrence_reference_determination_applicability"
 )
 DETERMINATION_BOUNDARY = "addressed_byte_occurrence_reference_determination"
-SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE = (
-    "source_reference_for_standing_measurement_responsibility_order"
-)
 DETERMINATION_RULE = (
     "every exact pair-occurrence position Assertion reference carrying the "
     "addressed source-byte position-coordinate reference and no other Assertion "
@@ -364,9 +361,8 @@ def _assignment_material(
     coordinate_reference: dict[str, Any],
     standing_boundary_identity: str,
     identities: dict[str, str],
-    source_reference_for_standing_measurement_responsibility_order: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    material = {
+    return {
         "assignment_identity": identities["assignment_identity"],
         "assignment_subject_identity": identities["assignment_subject_identity"],
         "applicability_act_identity": identities["applicability_act_identity"],
@@ -403,11 +399,6 @@ def _assignment_material(
         "limits": list(LIMITS),
         "unknown": list(UNKNOWN),
     }
-    if source_reference_for_standing_measurement_responsibility_order is not None:
-        material[SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE] = deepcopy(
-            source_reference_for_standing_measurement_responsibility_order
-        )
-    return material
 
 
 def record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
@@ -510,7 +501,6 @@ def _read_assignment(
     Event,
     tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ]:
-    full_trigger_validation_required = prior_standing is None
     event = ledger.get(event_identity)
     if (
         event is None
@@ -538,9 +528,6 @@ def _read_assignment(
     )
     identities = {key: material.get(key) for key in _IDENTITY_COORDINATES}
     standing_boundary = material.get("standing_boundary_identity")
-    source_reference_for_standing_measurement_responsibility_order = material.get(
-        SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE
-    )
     if (
         event.locality_identity != source_result.locality_identity
         or any(type(value) is not str or not value for value in identities.values())
@@ -553,7 +540,6 @@ def _read_assignment(
             coordinate_reference=coordinate_reference,
             standing_boundary_identity=standing_boundary,
             identities=identities,
-            source_reference_for_standing_measurement_responsibility_order=source_reference_for_standing_measurement_responsibility_order,
         )
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -575,76 +561,6 @@ def _read_assignment(
         source_result=source_result,
         required_boundary_identity=standing_boundary,
     )
-    if source_reference_for_standing_measurement_responsibility_order is not None:
-        try:
-            from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
-                MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_RESULT_KIND,
-                _read_measurement_result as _read_addressed_material_result,
-                measurement_result_reference as addressed_material_result_reference,
-            )
-
-            trigger_result_reference = source_reference_for_standing_measurement_responsibility_order[
-                "measurement_result_reference"
-            ]
-            trigger_finding = source_reference_for_standing_measurement_responsibility_order["finding"]
-            if set(source_reference_for_standing_measurement_responsibility_order) != {
-                "measurement_result_reference",
-                "finding",
-            }:
-                raise ValueError
-            trigger_identity = trigger_result_reference[
-                "recorded_occurrence_identity"
-            ]
-            trigger_result = ledger.get(trigger_identity)
-            if trigger_result is None:
-                raise ValueError
-            if full_trigger_validation_required:
-                trigger_result_read, _measured = _read_addressed_material_result(
-                    ledger, trigger_identity
-                )
-                if trigger_result_read != trigger_result:
-                    raise ValueError
-            measured_material = (
-                trigger_result.material[
-                    "ordered_source_position_coordinate_findings"
-                ]
-            )
-            trigger_direct = trigger_finding[
-                "direct_pair_position_result_reference"
-            ]["recorded_occurrence_identity"]
-            trigger_coordinate = trigger_finding[
-                "source_position_coordinate_reference"
-            ]
-            if (
-                trigger_result.kind != ADDRESSED_MATERIAL_RESULT_KIND
-                or trigger_result_reference
-                != addressed_material_result_reference(trigger_result)
-                or trigger_finding not in measured_material
-                or trigger_direct != source_result.identity
-                or trigger_coordinate != coordinate_reference
-                or type(prior_standing.get("measurement_occurrences")) is not dict
-                or prior_standing["measurement_occurrences"].get(
-                    trigger_result.identity
-                )
-                != addressed_material_result_reference(trigger_result)
-            ):
-                raise ValueError
-            ledger.occurrences_in_append_order(
-                tuple(
-                    dict.fromkeys(
-                        (
-                            trigger_result.identity,
-                            standing_boundary,
-                            event.identity,
-                        )
-                    )
-                ),
-                locality_identity=event.locality_identity,
-            )
-        except (KeyError, TypeError, ValueError) as error:
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "determination assignment source reference for the Standing Measurement Responsibility order is not exact"
-            ) from error
     try:
         ledger.occurrences_in_append_order(
             (standing_boundary, event.identity),
@@ -1045,29 +961,6 @@ def _recorded_applicability_result_material(
     }
 
 
-def _record_applicability_yield_evidence(
-    ledger: EventLedger, *, act: Event, material: dict[str, Any]
-) -> Event:
-    return _record_evidence_of_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="addressed_byte_occurrence_reference_determination_applicability",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
-    )
-
-
 def record_addressed_byte_occurrence_reference_determination_applicability_result(
     ledger: EventLedger,
     *,
@@ -1126,10 +1019,23 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     _require_stage_at_append_tip(
         ledger, event=act, message="Applicability Act left the append tip"
     )
-    evidence = _record_applicability_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
-        act=act,
-        material=material,
+        locality_identity=act.locality_identity,
+        exact_act=APPLICABILITY_ACT,
+        act_occurrence_identity=act.material[
+            "applicability_act_occurrence_identity"
+        ],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
+        result_identity=material["result_identity"],
+        result_content=material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="addressed_byte_occurrence_reference_determination_applicability",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate=(
+            "applicability_act_occurrence_identity"
+        ),
     )
     act_read, assignment_read, source_read, _references_read = (
         _read_applicability_act(ledger, act.identity)
@@ -1318,7 +1224,7 @@ def _determination_act_material(
         "result_identity": assignment.material["determination_result_identity"],
         "scope": deepcopy(assignment.material["scope"]),
         "authority": deepcopy(assignment.material["authority"]),
-        "evidence_scope": "Evidence for this exact Measurement Act occurrence",
+        "evidence_scope": "Evidence for this exact declared Measurement Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
@@ -1557,29 +1463,6 @@ def _recorded_determination_result_material(
     }
 
 
-def _record_determination_yield_evidence(
-    ledger: EventLedger, *, act: Event, material: dict[str, Any]
-) -> Event:
-    return _record_evidence_of_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=DETERMINATION_ACT,
-        act_occurrence_identity=act.material[
-            "determination_act_occurrence_identity"
-        ],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=DETERMINATION_YIELD_RESULT_KIND,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="addressed_byte_occurrence_reference_determination",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate=(
-            "determination_act_occurrence_identity"
-        ),
-    )
-
-
 def record_addressed_byte_occurrence_reference_determination_result(
     ledger: EventLedger,
     *,
@@ -1658,10 +1541,23 @@ def record_addressed_byte_occurrence_reference_determination_result(
         event=act,
         message="determination Measurement Act left the append tip",
     )
-    evidence = _record_determination_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
-        act=act,
-        material=material,
+        locality_identity=act.locality_identity,
+        exact_act=DETERMINATION_ACT,
+        act_occurrence_identity=act.material[
+            "determination_act_occurrence_identity"
+        ],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=DETERMINATION_YIELD_RESULT_KIND,
+        result_identity=material["result_identity"],
+        result_content=material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="addressed_byte_occurrence_reference_determination",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate=(
+            "determination_act_occurrence_identity"
+        ),
     )
     (
         act_read,
@@ -1784,777 +1680,3 @@ def get_recorded_addressed_byte_occurrence_reference_determination(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     return deepcopy(_read_determination_result(ledger, event_identity)[0].material)
-
-
-def _determination_subject_key(material: dict[str, Any]) -> tuple[Any, Any]:
-    direct = material.get("direct_pair_position_result_reference")
-    return (
-        direct.get("recorded_occurrence_identity")
-        if type(direct) is dict
-        else None,
-        material.get("addressed_source_byte_position_coordinate_reference"),
-    )
-
-
-def _incomplete_determination_assignment_for_subject(
-    ledger: EventLedger,
-    *,
-    locality_identity: str,
-    direct_result_event_identity: str,
-    addressed_source_byte_position_coordinate_reference: dict[str, Any],
-) -> Event | None:
-    expected = (
-        direct_result_event_identity,
-        addressed_source_byte_position_coordinate_reference,
-    )
-    assignments = [
-        event
-        for event in ledger.iter_locality_kind(
-            locality_identity, RESPONSIBILITY_ASSIGNMENT_KIND
-        )
-        if _determination_subject_key(event.material) == expected
-    ]
-    results = [
-        event
-        for event in ledger.iter_locality_kind(locality_identity, DETERMINATION_RESULT_KIND)
-        if _determination_subject_key(event.material) == expected
-    ]
-    if any(
-        ledger.integrity_of(event.identity) == CORRUPTED
-        for event in (*assignments, *results)
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination lifecycle history is corrupted"
-        )
-    if len(assignments) > 1 or len(results) > 1 or (results and not assignments):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination lifecycle history is ambiguous"
-        )
-    return assignments[0] if assignments and not results else None
-
-
-def _determination_events_for_assignment(
-    ledger: EventLedger, *, assignment: Event, kind: str
-) -> tuple[Event, ...]:
-    matches = []
-    for event in ledger.iter_locality_kind(assignment.locality_identity, kind):
-        reference = event.material.get("responsibility_assignment_reference")
-        if (
-            type(reference) is dict
-            and reference.get("recorded_occurrence_identity") == assignment.identity
-        ):
-            if ledger.integrity_of(event.identity) == CORRUPTED:
-                raise AddressedByteOccurrenceReferenceDeterminationError(
-                    "determination partial lifecycle is corrupted"
-                )
-            matches.append(event)
-    if len(matches) > 1:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination partial lifecycle is ambiguous"
-        )
-    return tuple(matches)
-
-
-def _determination_yield_for_act(ledger: EventLedger, *, act: Event) -> Event | None:
-    matches = [
-        event
-        for event in ledger.iter_locality_kind(
-            act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        )
-        if event.material.get("responsible_act_evidence_identity") == act.identity
-    ]
-    if any(ledger.integrity_of(event.identity) == CORRUPTED for event in matches):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination partial Yield is corrupted"
-        )
-    if len(matches) > 1:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination partial Yield is ambiguous"
-        )
-    return matches[0] if matches else None
-
-
-def _require_determination_partial_yield(
-    ledger: EventLedger,
-    *,
-    evidence: Event,
-    act: Event,
-    result_material: dict[str, Any],
-    result_kind: str,
-    yielded_result_kind: str,
-    occurrence_boundary: str,
-    act_occurrence_coordinate: str,
-) -> None:
-    expected = {
-        "responsible_act_evidence_identity": act.identity,
-        "result_identity": result_material["result_identity"],
-        "dimensions": {
-            "identity": (
-                f"yield-evidence:{act.material[act_occurrence_coordinate]}:"
-                f"{result_material['result_identity']}"
-            ),
-            "exact_act": act.material["act"],
-            "act_occurrence_identity": act.material[act_occurrence_coordinate],
-            "responsibility": RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
-            "authority": "unestablished",
-        },
-        "coordinates_of_carried_result": list(result_material),
-        "result": deepcopy(result_material),
-        "coordinates_of_recorded_result": {
-            coordinate: [coordinate] for coordinate in result_material
-        },
-        "result_kind": yielded_result_kind,
-        "occurrence_boundary": occurrence_boundary,
-    }
-    if (
-        evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or evidence.exact_material is not None
-        or evidence.locality_identity != act.locality_identity
-        or evidence.material != expected
-        or ledger.get(evidence.identity) != evidence
-        or ledger.integrity_of(evidence.identity) == CORRUPTED
-        or not ledger.list_locality(act.locality_identity)
-        or ledger.list_locality(act.locality_identity)[-1].identity
-        != evidence.identity
-        or any(
-            event.material.get("responsible_act_evidence_identity") == act.identity
-            for event in ledger.iter_locality_kind(act.locality_identity, result_kind)
-        )
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination partial Yield cannot be continued"
-        )
-
-
-def _determination_continuation_write_snapshot(
-    ledger: EventLedger, *, prior: Event
-) -> tuple[Any, int]:
-    locality_events = ledger.list_locality(prior.locality_identity)
-    if (
-        ledger.get(prior.identity) != prior
-        or ledger.integrity_of(prior.identity) == CORRUPTED
-        or not locality_events
-        or locality_events[-1].identity != prior.identity
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination continuation prior phase is not Locality-current"
-        )
-    return ledger.append_boundary(), len(ledger.list())
-
-
-def _require_determination_serialized_append(
-    ledger: EventLedger, *, snapshot: tuple[Any, int], event: Event
-) -> None:
-    _boundary, count = snapshot
-    events = ledger.list()
-    if (
-        len(events) != count + 1
-        or events[-1] != event
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination continuation write was not globally serialized"
-        )
-
-
-def _continue_addressed_byte_occurrence_reference_determination_lifecycle(
-    ledger: EventLedger,
-    *,
-    responsibility_assignment_event_identity: str,
-    locality_standing: dict[str, Any],
-) -> tuple[dict[str, Any], Event]:
-    """Continue one exact intact determination prefix after reopen."""
-
-    from seed_runtime.operator_locality_standing import advance_operator_locality_standing
-
-    assignment, source_result, references = _read_assignment(
-        ledger, responsibility_assignment_event_identity
-    )
-    if (
-        locality_standing.get("locality_identity") != assignment.locality_identity
-        or assignment.identity
-        not in locality_standing.get("responsibility_assignment_occurrences", {})
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination continuation requires its exact current Standing"
-        )
-
-    def advance(standing: dict[str, Any], event: Event) -> dict[str, Any]:
-        return advance_operator_locality_standing(
-            ledger,
-            (event.identity,),
-            locality_identity=assignment.locality_identity,
-            prior=standing,
-        )
-
-    applicability_acts = _determination_events_for_assignment(
-        ledger, assignment=assignment, kind=APPLICABILITY_ACT_EVIDENCE_KIND
-    )
-    applicability_results = _determination_events_for_assignment(
-        ledger, assignment=assignment, kind=APPLICABILITY_RESULT_KIND
-    )
-    determination_acts = _determination_events_for_assignment(
-        ledger, assignment=assignment, kind=DETERMINATION_ACT_EVIDENCE_KIND
-    )
-    determination_results = _determination_events_for_assignment(
-        ledger, assignment=assignment, kind=DETERMINATION_RESULT_KIND
-    )
-    if determination_results:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination lifecycle is already complete"
-        )
-    if (
-        (applicability_results and not applicability_acts)
-        or (determination_acts and not applicability_results)
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination partial lifecycle order is false"
-        )
-
-    if applicability_acts:
-        applicability_act = applicability_acts[0]
-        _read_applicability_act(ledger, applicability_act.identity)
-    else:
-        _refuse_existing_act(
-            ledger,
-            assignment=assignment,
-            kind=APPLICABILITY_ACT_EVIDENCE_KIND,
-            occurrence_coordinate="applicability_act_occurrence_identity",
-        )
-        assignment, source_result, references = _read_assignment(
-            ledger, assignment.identity
-        )
-        snapshot = _determination_continuation_write_snapshot(
-            ledger, prior=assignment
-        )
-        applicability_act = ledger.append(
-            APPLICABILITY_ACT_EVIDENCE_KIND,
-            _applicability_act_material(
-                assignment=assignment, source_result=source_result
-            ),
-            locality_identity=assignment.locality_identity,
-        )
-        _require_determination_serialized_append(
-            ledger, snapshot=snapshot, event=applicability_act
-        )
-        locality_standing = advance(locality_standing, applicability_act)
-
-    if applicability_results:
-        applicability = applicability_results[0]
-        _read_applicability_result(ledger, applicability.identity)
-    else:
-        applicability_material = _applicability_result_material(
-            act=applicability_act,
-            assignment=assignment,
-            source_result=source_result,
-        )
-        evidence = _determination_yield_for_act(ledger, act=applicability_act)
-        if evidence is None:
-            _refuse_existing_result(
-                ledger,
-                act=applicability_act,
-                result_kind=APPLICABILITY_RESULT_KIND,
-                occurrence_coordinate="applicability_act_occurrence_identity",
-            )
-            applicability_act, assignment, source_result, references = (
-                _read_applicability_act(ledger, applicability_act.identity)
-            )
-            snapshot = _determination_continuation_write_snapshot(
-                ledger, prior=applicability_act
-            )
-            evidence = _record_applicability_yield_evidence(
-                ledger, act=applicability_act, material=applicability_material
-            )
-            _require_determination_serialized_append(
-                ledger, snapshot=snapshot, event=evidence
-            )
-            snapshot = _determination_continuation_write_snapshot(
-                ledger, prior=evidence
-            )
-            applicability = ledger.append(
-                APPLICABILITY_RESULT_KIND,
-                _recorded_applicability_result_material(
-                    applicability_material,
-                    act=applicability_act,
-                    evidence=evidence,
-                ),
-                locality_identity=assignment.locality_identity,
-            )
-            _require_determination_serialized_append(
-                ledger, snapshot=snapshot, event=applicability
-            )
-        else:
-            _require_determination_partial_yield(
-                ledger,
-                evidence=evidence,
-                act=applicability_act,
-                result_material=applicability_material,
-                result_kind=APPLICABILITY_RESULT_KIND,
-                yielded_result_kind=APPLICABILITY_YIELD_RESULT_KIND,
-                occurrence_boundary=APPLICABILITY_BOUNDARY,
-                act_occurrence_coordinate="applicability_act_occurrence_identity",
-            )
-            snapshot = _determination_continuation_write_snapshot(
-                ledger, prior=evidence
-            )
-            applicability = ledger.append(
-                APPLICABILITY_RESULT_KIND,
-                _recorded_applicability_result_material(
-                    applicability_material,
-                    act=applicability_act,
-                    evidence=evidence,
-                ),
-                locality_identity=assignment.locality_identity,
-            )
-            _require_determination_serialized_append(
-                ledger, snapshot=snapshot, event=applicability
-            )
-        locality_standing = advance(locality_standing, applicability)
-
-    if determination_acts:
-        determination_act = determination_acts[0]
-        _read_determination_act(ledger, determination_act.identity)
-    else:
-        _refuse_existing_act(
-            ledger,
-            assignment=assignment,
-            kind=DETERMINATION_ACT_EVIDENCE_KIND,
-            occurrence_coordinate="determination_act_occurrence_identity",
-        )
-        applicability, _app_act, assignment, source_result, references = (
-            _read_applicability_result(ledger, applicability.identity)
-        )
-        snapshot = _determination_continuation_write_snapshot(
-            ledger, prior=applicability
-        )
-        determination_act = ledger.append(
-            DETERMINATION_ACT_EVIDENCE_KIND,
-            _determination_act_material(
-                assignment=assignment,
-                source_result=source_result,
-                applicability_result=applicability,
-            ),
-            locality_identity=assignment.locality_identity,
-        )
-        _require_determination_serialized_append(
-            ledger, snapshot=snapshot, event=determination_act
-        )
-        locality_standing = advance(locality_standing, determination_act)
-
-    result_material = _determination_result_material(
-        act=determination_act,
-        applicability=applicability,
-        assignment=assignment,
-        source_result=source_result,
-        references=references,
-    )
-    evidence = _determination_yield_for_act(ledger, act=determination_act)
-    if evidence is None:
-        _refuse_existing_result(
-            ledger,
-            act=determination_act,
-            result_kind=DETERMINATION_RESULT_KIND,
-            occurrence_coordinate="determination_act_occurrence_identity",
-        )
-        (
-            determination_act,
-            applicability,
-            assignment,
-            source_result,
-            references,
-        ) = _read_determination_act(ledger, determination_act.identity)
-        result_material = _determination_result_material(
-            act=determination_act,
-            applicability=applicability,
-            assignment=assignment,
-            source_result=source_result,
-            references=references,
-        )
-        snapshot = _determination_continuation_write_snapshot(
-            ledger, prior=determination_act
-        )
-        evidence = _record_determination_yield_evidence(
-            ledger, act=determination_act, material=result_material
-        )
-        _require_determination_serialized_append(
-            ledger, snapshot=snapshot, event=evidence
-        )
-        snapshot = _determination_continuation_write_snapshot(
-            ledger, prior=evidence
-        )
-        result = ledger.append(
-            DETERMINATION_RESULT_KIND,
-            _recorded_determination_result_material(
-                result_material, act=determination_act, evidence=evidence
-            ),
-            locality_identity=assignment.locality_identity,
-        )
-        _require_determination_serialized_append(
-            ledger, snapshot=snapshot, event=result
-        )
-    else:
-        _require_determination_partial_yield(
-            ledger,
-            evidence=evidence,
-            act=determination_act,
-            result_material=result_material,
-            result_kind=DETERMINATION_RESULT_KIND,
-            yielded_result_kind=DETERMINATION_YIELD_RESULT_KIND,
-            occurrence_boundary=DETERMINATION_BOUNDARY,
-            act_occurrence_coordinate="determination_act_occurrence_identity",
-        )
-        snapshot = _determination_continuation_write_snapshot(
-            ledger, prior=evidence
-        )
-        result = ledger.append(
-            DETERMINATION_RESULT_KIND,
-            _recorded_determination_result_material(
-                result_material, act=determination_act, evidence=evidence
-            ),
-            locality_identity=assignment.locality_identity,
-        )
-        _require_determination_serialized_append(
-            ledger, snapshot=snapshot, event=result
-        )
-    locality_standing = advance(locality_standing, result)
-    return locality_standing, result
-
-
-def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
-    ledger: EventLedger,
-    *,
-    direct_result_event_identity: str,
-    addressed_source_byte_position_coordinate_reference: dict[str, Any],
-    locality_standing: dict[str, Any],
-    source_reference_for_standing_measurement_responsibility_order: dict[str, Any] | None = None,
-) -> tuple[dict[str, Any], Event]:
-    """Record one existing D.2 road while carrying its exact occurrences."""
-
-    from seed_runtime.operator_locality_standing import (
-        _exact_standing_additions,
-        _record_distinct,
-    )
-
-    standing = deepcopy(locality_standing)
-    locality_identity = standing.get("locality_identity")
-    boundary = standing.get("through_event_occurrence_identity")
-    source_result, references = _source(
-        ledger,
-        result_event_identity=direct_result_event_identity,
-        coordinate_reference=addressed_source_byte_position_coordinate_reference,
-    )
-    _standing_carries_source(
-        ledger,
-        standing=standing,
-        source_result=source_result,
-        required_boundary_identity=boundary,
-    )
-    boundary_event = ledger.get(boundary)
-    locality_events = (
-        ledger.list_locality(locality_identity) if boundary_event is not None else ()
-    )
-    if (
-        boundary_event is None
-        or boundary_event.locality_identity != locality_identity
-        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or not locality_events
-        or locality_events[-1].identity != boundary_event.identity
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment requires exact current Locality Standing"
-        )
-    initial_global_boundary = ledger.append_boundary()
-    source_material = deepcopy(source_result.material)
-    identities = {
-        name: new_identity(prefix)
-        for name, prefix in (
-            ("assignment_identity", "addressed_byte_occurrence_reference_assignment"),
-            ("assignment_subject_identity", "addressed_byte_occurrence_reference_assignment_subject"),
-            ("applicability_act_identity", "addressed_byte_occurrence_reference_applicability_act"),
-            ("applicability_act_occurrence_identity", "addressed_byte_occurrence_reference_applicability_act_occurrence"),
-            ("applicability_result_identity", "addressed_byte_occurrence_reference_applicability_result"),
-            ("determination_act_identity", "addressed_byte_occurrence_reference_determination_measurement_act"),
-            ("determination_act_occurrence_identity", "addressed_byte_occurrence_reference_determination_measurement_act_occurrence"),
-            ("determination_result_identity", "addressed_byte_occurrence_reference_determination_measurement_result"),
-        )
-    }
-    if len(set(identities.values())) != len(identities):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination lifecycle identities collapsed"
-        )
-
-    snapshots: list[tuple[Event, str, dict[str, Any]]] = [
-        (source_result, BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND, source_material)
-    ]
-    if source_reference_for_standing_measurement_responsibility_order is not None:
-        try:
-            from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
-                MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_RESULT_KIND,
-                measurement_result_reference as addressed_material_result_reference,
-            )
-
-            if set(source_reference_for_standing_measurement_responsibility_order) != {
-                "measurement_result_reference",
-                "finding",
-            }:
-                raise ValueError
-            trigger_reference = source_reference_for_standing_measurement_responsibility_order[
-                "measurement_result_reference"
-            ]
-            trigger_finding = source_reference_for_standing_measurement_responsibility_order["finding"]
-            trigger = ledger.get(trigger_reference["recorded_occurrence_identity"])
-            if (
-                trigger is None
-                or trigger.kind != ADDRESSED_MATERIAL_RESULT_KIND
-                or trigger_reference != addressed_material_result_reference(trigger)
-                or standing.get("measurement_occurrences", {}).get(trigger.identity)
-                != addressed_material_result_reference(trigger)
-                or trigger_finding
-                not in trigger.material.get(
-                    "ordered_source_position_coordinate_findings", ()
-                )
-                or trigger_finding["direct_pair_position_result_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                != source_result.identity
-                or trigger_finding["source_position_coordinate_reference"]
-                != addressed_source_byte_position_coordinate_reference
-            ):
-                raise ValueError
-            snapshots.append(
-                (trigger, ADDRESSED_MATERIAL_RESULT_KIND, deepcopy(trigger.material))
-            )
-        except (KeyError, TypeError, ValueError) as error:
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "determination source reference for the Standing Measurement Responsibility order is not exact"
-            ) from error
-
-    def require_intact() -> None:
-        for event, kind, material in snapshots:
-            _require_unchanged_stored_event(
-                ledger,
-                event=event,
-                kind=kind,
-                material=material,
-                message="determination carried source changed",
-            )
-
-    def carry(event: Event, *, prior: str) -> None:
-        assignments = standing.get("responsibility_assignment_occurrences")
-        applicability_results = standing.get("applicability_result_occurrences")
-        measurements = standing.get("measurement_occurrences")
-        count = standing.get("event_count")
-        if (
-            type(assignments) is not dict
-            or type(applicability_results) is not dict
-            or type(measurements) is not dict
-            or type(count) is not int
-            or standing.get("through_event_occurrence_identity") != prior
-            or event.locality_identity != locality_identity
-            or ledger.get(event.identity) != event
-            or ledger.integrity_of(event.identity) == CORRUPTED
-            or ledger.append_boundary_through_occurrence(event.identity)
-            != ledger.append_boundary()
-        ):
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "produced determination occurrence is not exact"
-            )
-        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
-            lawful = (
-                event.material.get("standing_boundary_identity") == prior
-                and event.identity not in assignments
-            )
-        elif event.kind == APPLICABILITY_ACT_EVIDENCE_KIND:
-            lawful = (
-                event.material["responsibility_assignment_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                == prior
-                and prior in assignments
-            )
-        elif event.kind == APPLICABILITY_RESULT_KIND:
-            lawful = (
-                event.material.get("responsible_act_evidence_identity") == prior
-                and event.material["responsibility_assignment_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                in assignments
-                and event.identity not in applicability_results
-            )
-        elif event.kind == DETERMINATION_ACT_EVIDENCE_KIND:
-            lawful = (
-                event.material["applicability_result_reference"][
-                    "recorded_occurrence_identity"
-                ]
-                == prior
-                and prior in applicability_results
-            )
-        elif event.kind == DETERMINATION_RESULT_KIND:
-            lawful = (
-                event.material.get("responsible_act_evidence_identity") == prior
-                and event.identity not in measurements
-            )
-        else:
-            lawful = False
-        if not lawful:
-            raise AddressedByteOccurrenceReferenceDeterminationError(
-                "produced determination occurrence has false Standing"
-            )
-        additions = _exact_standing_additions(
-            standing,
-            event,
-            error_message="produced determination Standing is not exact",
-        )
-        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
-            assignments[event.identity] = None
-        elif event.kind == APPLICABILITY_RESULT_KIND:
-            applicability_results[event.identity] = None
-        elif event.kind == DETERMINATION_RESULT_KIND:
-            measurements[event.identity] = _determination_result_reference(event)
-        for key, values in additions.items():
-            for value in values:
-                _record_distinct(standing[key], value)
-        standing["through_event_occurrence_identity"] = event.identity
-        standing["event_count"] = count + 1
-
-    assignment_material = _assignment_material(
-        source_result=source_result,
-        coordinate_reference=addressed_source_byte_position_coordinate_reference,
-        standing_boundary_identity=boundary,
-        identities=identities,
-        source_reference_for_standing_measurement_responsibility_order=(
-            source_reference_for_standing_measurement_responsibility_order
-        ),
-    )
-    if ledger.append_boundary() != initial_global_boundary:
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination global recording boundary changed before assignment"
-        )
-    assignment = ledger.append(
-        RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(
-            source_result=source_result,
-            coordinate_reference=(
-                addressed_source_byte_position_coordinate_reference
-            ),
-            standing_boundary_identity=boundary,
-            identities=identities,
-            source_reference_for_standing_measurement_responsibility_order=(
-                source_reference_for_standing_measurement_responsibility_order
-            ),
-        ),
-        locality_identity=locality_identity,
-    )
-    snapshots.append((assignment, RESPONSIBILITY_ASSIGNMENT_KIND, deepcopy(assignment_material)))
-    require_intact()
-    carry(assignment, prior=boundary)
-
-    applicability_act_material = _applicability_act_material(
-        assignment=assignment, source_result=source_result
-    )
-    applicability_act = ledger.append(
-        APPLICABILITY_ACT_EVIDENCE_KIND,
-        _applicability_act_material(
-            assignment=assignment,
-            source_result=source_result,
-        ),
-        locality_identity=locality_identity,
-    )
-    snapshots.append((applicability_act, APPLICABILITY_ACT_EVIDENCE_KIND, deepcopy(applicability_act_material)))
-    require_intact()
-    carry(applicability_act, prior=assignment.identity)
-
-    applicability_material = _applicability_result_material(
-        act=applicability_act,
-        assignment=assignment,
-        source_result=source_result,
-    )
-    _prepare_result_yield(
-        ledger,
-        act=applicability_act,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-        result_event_kind=APPLICABILITY_RESULT_KIND,
-    )
-    applicability_evidence = _record_applicability_yield_evidence(
-        ledger,
-        act=applicability_act,
-        material=applicability_material,
-    )
-    require_intact()
-    _require_yield_at_append_tip(ledger, applicability_evidence)
-    applicability_recorded = _recorded_applicability_result_material(
-        applicability_material,
-        act=applicability_act,
-        evidence=applicability_evidence,
-    )
-    applicability = ledger.append(
-        APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            applicability_material,
-            act=applicability_act,
-            evidence=applicability_evidence,
-        ),
-        locality_identity=locality_identity,
-    )
-    snapshots.append((applicability, APPLICABILITY_RESULT_KIND, deepcopy(applicability_recorded)))
-    require_intact()
-    carry(applicability, prior=applicability_act.identity)
-
-    act_material = _determination_act_material(
-        assignment=assignment,
-        source_result=source_result,
-        applicability_result=applicability,
-    )
-    act = ledger.append(
-        DETERMINATION_ACT_EVIDENCE_KIND,
-        _determination_act_material(
-            assignment=assignment,
-            source_result=source_result,
-            applicability_result=applicability,
-        ),
-        locality_identity=locality_identity,
-    )
-    snapshots.append((act, DETERMINATION_ACT_EVIDENCE_KIND, deepcopy(act_material)))
-    require_intact()
-    carry(act, prior=applicability.identity)
-
-    result_material = _determination_result_material(
-        act=act,
-        applicability=applicability,
-        assignment=assignment,
-        source_result=source_result,
-        references=references,
-    )
-    _prepare_result_yield(
-        ledger,
-        act=act,
-        occurrence_coordinate="determination_act_occurrence_identity",
-        result_event_kind=DETERMINATION_RESULT_KIND,
-    )
-    evidence = _record_determination_yield_evidence(
-        ledger,
-        act=act,
-        material=result_material,
-    )
-    require_intact()
-    _require_yield_at_append_tip(ledger, evidence)
-    result_recorded = _recorded_determination_result_material(
-        result_material,
-        act=act,
-        evidence=evidence,
-    )
-    result = ledger.append(
-        DETERMINATION_RESULT_KIND,
-        _recorded_determination_result_material(
-            result_material,
-            act=act,
-            evidence=evidence,
-        ),
-        locality_identity=locality_identity,
-    )
-    snapshots.append((result, DETERMINATION_RESULT_KIND, deepcopy(result_recorded)))
-    require_intact()
-    carry(result, prior=act.identity)
-    return standing, result

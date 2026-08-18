@@ -202,11 +202,11 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
         FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": ("first",)}
     )
 
-    fidelity_subject_coordinates = measured._fidelity_test_subjects()
+    declared = measured._fidelity_test_subjects()
     with pytest.raises(ValueError, match="one exact test subject"):
-        measured._pytest_subject(empty, first, fidelity_subject_coordinates)
+        measured._pytest_subject(empty, first, declared)
     assert (
-        measured._pytest_subject(uniform, first, fidelity_subject_coordinates)
+        measured._pytest_subject(uniform, first, declared)
         == {
             "subject": "this_book_material_acquisition_witness",
             "material_reference": "this_Book",
@@ -215,17 +215,17 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
         }
     )
     with pytest.raises(ValueError, match="two Fidelity subject boundaries"):
-        measured._pytest_subject(crossed, first, fidelity_subject_coordinates)
+        measured._pytest_subject(crossed, first, declared)
     with pytest.raises(ValueError, match="entered Fidelity subjects twice"):
-        measured._pytest_subject(repeated, first, fidelity_subject_coordinates)
+        measured._pytest_subject(repeated, first, declared)
     with pytest.raises(ValueError, match="absent from witness grammar"):
-        measured._pytest_subject(uncurated, first, fidelity_subject_coordinates)
+        measured._pytest_subject(uncurated, first, declared)
     with pytest.raises(TypeError, match="exact Fidelity subject families"):
-        measured._pytest_subject(list_family, first, fidelity_subject_coordinates)
+        measured._pytest_subject(list_family, first, declared)
     with pytest.raises(TypeError, match="exact Fidelity subject families"):
-        measured._pytest_subject(functions_list, first, fidelity_subject_coordinates)
+        measured._pytest_subject(functions_list, first, declared)
     with pytest.raises(TypeError, match="exact Fidelity subject functions"):
-        measured._pytest_subject(nonfunction_family, first, fidelity_subject_coordinates)
+        measured._pytest_subject(nonfunction_family, first, declared)
 
 
 def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
@@ -405,10 +405,10 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
         assert set(entered) == test_functions, path
         assert len(entered) == len(test_functions), path
 
-    fidelity_subject_coordinates = measured._fidelity_test_subjects()
-    assert set(fidelity_subject_coordinates) == subjects
-    assert next(iter(fidelity_subject_coordinates)).lower().count("standing") == 1
-    assert tuple(fidelity_subject_coordinates)[-1] == "fidelity_witness_subject_completeness"
+    declared = measured._fidelity_test_subjects()
+    assert set(declared) == subjects
+    assert next(iter(declared)).lower().count("standing") == 1
+    assert tuple(declared)[-1] == "fidelity_witness_subject_completeness"
 
 
 FIDELITY_SUBJECTS = {

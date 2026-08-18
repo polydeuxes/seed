@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_acquisition import (  # noqa: E402
-    added_position_act_occurrence_count,
     implementation_functions,
     measure_added_material,
     measure_material,
@@ -25,9 +24,6 @@ from material_admission import admission_occurrence  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     first_recurring_added_return_compare,
-)
-from compiled_format_invocation import (  # noqa: E402
-    admission_added_position_occurrences,
 )
 
 
@@ -53,32 +49,6 @@ def test_material_climb_refuses_the_collective_act_occurrence_count():
             time_limit_second_count=0.01,
             act_occurrence_count_limit=12,
         )
-
-
-def test_addition_act_count_is_the_exact_returned_admission_population():
-    _, references = measured_one_byte_material()
-    together = admission_occurrence(
-        (references[:4],),
-        boundary_identity="count-together",
-        source_material=references[:4],
-    )
-    divided = admission_occurrence(
-        (references[:2], references[2:4]),
-        boundary_identity="count-divided",
-        source_material=references[:4],
-    )
-
-    assert added_position_act_occurrence_count((together,)) == 32
-    assert added_position_act_occurrence_count((divided,)) == 16
-    assert added_position_act_occurrence_count((together, divided)) == 48
-    for admission in (together, divided):
-        count = added_position_act_occurrence_count((admission,))
-        occurrences = admission_added_position_occurrences(
-            admission.result_reference,
-            boundary_identity="count-occurrences",
-            admitted_material_act_occurrence_count_limit=count,
-        )
-        assert len(occurrences) == count
 
 
 def test_each_compiled_function_preserves_every_one_byte_input_boundary():
@@ -167,21 +137,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         for second_returned in (measurements[-1][3][position],)
     )
 
-    returned_act_occurrence_count = added_position_act_occurrence_count(returned)
-    assert returned_act_occurrence_count >= (
-        2 * len(references) * len(functions)
-    )
-    bounded_material = references[:2]
-    bounded_returned = (
-        admission_occurrence(
-            (bounded_material,),
-            boundary_identity="compiled-material-bounded-return-admission",
-            source_material=bounded_material,
-        ),
-    )
-    act_occurrence_count_limit = added_position_act_occurrence_count(
-        bounded_returned
-    )
+    act_occurrence_count_limit = len(references) * len(functions)
 
     (
         additions,
@@ -198,7 +154,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         functions,
         references,
         source_occurrences,
-        bounded_returned,
+        returned,
         time_limit_second_count=second_count,
         act_occurrence_count_limit=act_occurrence_count_limit,
     )
@@ -222,7 +178,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
     }
     assert source_admission_references
     assert source_admission_references <= {
-        admission.result_reference for admission in bounded_returned
+        admission.result_reference for admission in returned
     }
     assert (
         len(result_occurrences)

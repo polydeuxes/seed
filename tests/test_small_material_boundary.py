@@ -950,7 +950,7 @@ FIDELITY_SUBJECTS = {
         test_compiled_invocation_preserves_exact_book_material_offered_at_input,
         test_every_addition_position_has_an_exact_invocation,
     ),
-    "exact_rule_measurement_result": (
+    "declared_measurement_result": (
         test_small_boundary_refuses_a_lookalike_material_reference,
     ),
     "measurement_result_distinctions": (

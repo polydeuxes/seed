@@ -13,7 +13,7 @@ A recording boundary may create an exact representation of Events carrying sourc
 ## Boundaries for recorded-revision witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its exact carried Scope. A later exact Act may consider that Assertion through Applicability. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
+A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared Scope. A later exact Act may consider that Assertion through Applicability. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
 
 ### 05.Recording.C — Preservation and discard of measurements
 Seed need not preserve every measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing. Record existence establishes neither that Standing nor the upstream Assertion and performs no Compare.

@@ -48,8 +48,6 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "recorded_standing_boundary_locality_relation",
         "shared_pair_position_applicability",
         "shared_pair_position_measurement",
-        "source_position_coordinates_carrying_addressed_material_applicability",
-        "measurement_of_source_position_coordinates_carrying_addressed_material",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         "standing_boundary_reference",
@@ -340,7 +338,7 @@ def _record_evidence_of_yield_relation(
         )
     if occurrence_boundary not in OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION:
         raise ValueError(
-            "Evidence of Yield relation requires one exact occurrence boundary"
+            "Evidence of Yield relation requires one declared occurrence boundary"
         )
     if type(result_content) is not dict:
         raise TypeError("Evidence of Yield relation requires one exact result")
@@ -350,19 +348,19 @@ def _record_evidence_of_yield_relation(
         raise ValueError("Evidence of Yield relation result identity must be carried by its result")
     if result_exact_material is not None and type(result_exact_material) is not bytes:
         raise TypeError("Evidence of Yield relation exact material must be exact bytes or absent")
-    exact_coordinates_of_recorded_result = (
+    declared_coordinates_of_recorded_result = (
         {coordinate: (coordinate,) for coordinate in result_content}
         if coordinates_of_recorded_result is None
         else coordinates_of_recorded_result
     )
-    if type(exact_coordinates_of_recorded_result) is not dict or set(
-        exact_coordinates_of_recorded_result
+    if type(declared_coordinates_of_recorded_result) is not dict or set(
+        declared_coordinates_of_recorded_result
     ) != set(result_content):
         raise ValueError(
             "Evidence of Yield relation requires one carried coordinate for every result coordinate"
         )
     preserved_coordinates_of_recorded_result = {}
-    for coordinate, carried_at in exact_coordinates_of_recorded_result.items():
+    for coordinate, carried_at in declared_coordinates_of_recorded_result.items():
         if type(coordinate) is not str or not coordinate:
             raise TypeError("a result coordinate must be one exact representation")
         if type(carried_at) is not tuple or not carried_at or not all(

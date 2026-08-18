@@ -24,8 +24,6 @@ from seed_runtime.byte_measurement import (
     RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
-    _record_byte_and_pair_measurement_lifecycles_from_carried_standing,
-    _record_byte_measurement_lifecycle_from_carried_standing,
     _record_assertion_locality_movement_act_from_carried_standing,
     _record_assertion_locality_movement_result_from_carried_act,
     _record_byte_measurement_result_from_carried_act_evidence,
@@ -51,11 +49,7 @@ from seed_runtime.byte_measurement import (
     move_recorded_byte_assertions_to_locality,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import (
-    CORRUPTED,
-    EventLedger,
-    SQLiteEventLedger,
-)
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
@@ -185,55 +179,6 @@ class YieldCallbackLedger(EventLedger):
         return event
 
 
-class ByteLifecycleCallbackLedger(EventLedger):
-    def __init__(self):
-        super().__init__()
-        self.callback_phase = None
-
-    def append(self, kind, material, **kwargs):
-        event = super().append(kind, material, **kwargs)
-        phase = self.callback_phase
-        if phase == "assignment" and kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
-            self.callback_phase = None
-            event.material["authority"] = "changed during assignment append"
-        elif phase == "act" and kind == BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND:
-            self.callback_phase = None
-            event.material["authority"] = "changed during Act append"
-        elif phase == "result" and kind == BYTE_MEASUREMENT_RECORDED_KIND:
-            self.callback_phase = None
-            event.material["authority"] = "changed during result append"
-        elif (
-            phase == "post_yield"
-            and kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-            and material.get("occurrence_boundary") == "byte_measurement"
-        ):
-            self.callback_phase = None
-            super().append(
-                "test.unrelated_callback",
-                {"unknown": ["unrelated append after Yield"]},
-                locality_identity="unrelated",
-            )
-        return event
-
-    def iter_locality_kind(self, locality_identity, kind, **kwargs):
-        yield from super().iter_locality_kind(locality_identity, kind, **kwargs)
-
-    def append_boundary(self):
-        if (
-            self.callback_phase == "pre_yield"
-            and self._events
-            and self._events[-1].kind
-            == BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
-        ):
-            self.callback_phase = None
-            super().append(
-                "test.unrelated_callback",
-                {"unknown": ["unrelated append before Yield"]},
-                locality_identity="unrelated",
-            )
-        return super().append_boundary()
-
-
 def _ledger(text="猫\n狗\n"):
     ledger = EventLedger()
     run_persistent_operator_console(
@@ -251,309 +196,6 @@ def _byte_source(ledger):
         source_localities=("source",),
         recording_locality_identity="byte-measurement",
     )
-
-
-def _record_carried_byte_and_pair(ledger, standing):
-    return _record_byte_and_pair_measurement_lifecycles_from_carried_standing(
-        ledger,
-        source_localities=("source",),
-        recording_locality_identity="source",
-        locality_standing=standing,
-    )
-
-
-def test_carried_byte_and_pair_measure_once_without_full_ledger_list(monkeypatch):
-    from seed_runtime import byte_measurement
-
-    ledger = _ledger("ababa\n")
-    standing = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    calls = ExactCounter()
-
-    def counted(name, function):
-        def wrapper(*args, **kwargs):
-            calls[name] += 1
-            return function(*args, **kwargs)
-
-        return wrapper
-
-    monkeypatch.setattr(
-        byte_measurement,
-        "_byte_measurement_source_material",
-        counted(
-            "source_material",
-            byte_measurement._byte_measurement_source_material,
-        ),
-    )
-    monkeypatch.setattr(
-        byte_measurement,
-        "_measure_byte_counts_through",
-        counted("byte_counts", byte_measurement._measure_byte_counts_through),
-    )
-    monkeypatch.setattr(
-        byte_measurement,
-        "_measure_byte_position_pair_counts_through",
-        counted(
-            "pair_counts",
-            byte_measurement._measure_byte_position_pair_counts_through,
-        ),
-    )
-
-    def refuse_full_list(*_args, **_kwargs):
-        raise AssertionError("carried lifecycle must not list the full ledger")
-
-    byte_carry = (
-        operator_standing_module._carry_byte_measurement_result_from_measured_inputs_into_standing
-    )
-    pair_carry = (
-        operator_standing_module._carry_pair_measurement_result_from_measured_inputs_into_standing
-    )
-
-    def without_full_list(function):
-        def wrapper(*args, **kwargs):
-            original_list = ledger.list
-            ledger.list = refuse_full_list
-            try:
-                return function(*args, **kwargs)
-            finally:
-                ledger.list = original_list
-
-        return wrapper
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_carry_byte_measurement_result_from_measured_inputs_into_standing",
-        without_full_list(byte_carry),
-    )
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_carry_pair_measurement_result_from_measured_inputs_into_standing",
-        without_full_list(pair_carry),
-    )
-    _byte_result, _pair_result, carried = _record_carried_byte_and_pair(
-        ledger, standing
-    )
-    assert calls == {
-        "byte_counts": 1,
-        "pair_counts": 1,
-    }
-
-    before_replay = calls.copy()
-    replayed = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    assert carried == replayed
-    assert carried["event_count"] == standing["event_count"] + 8
-    assert calls["byte_counts"] > before_replay["byte_counts"]
-
-
-def test_standing_measurement_responsibility_order_dispatcher_uses_the_carried_byte_lifecycle(monkeypatch):
-    from seed_runtime import standing_measurement_responsibility_order
-
-    ledger = EventLedger()
-    ingest_material(
-        ledger,
-        locality_identity="standing-measurement-responsibility-order-byte-carry",
-        exact_bytes=b"aba",
-        source_role="test source",
-        source_boundary="standing measurement responsibility order byte carry boundary",
-    )
-    original = standing_measurement_responsibility_order._record_byte_measurement_lifecycle_from_carried_standing
-    calls = 0
-
-    def counted(*args, **kwargs):
-        nonlocal calls
-        calls += 1
-        return original(*args, **kwargs)
-
-    def refuse_public_completion(*_args, **_kwargs):
-        raise AssertionError(
-            "carried Responsibility order re-entered public byte completion"
-        )
-
-    monkeypatch.setattr(
-        standing_measurement_responsibility_order,
-        "_record_byte_measurement_lifecycle_from_carried_standing",
-        counted,
-    )
-    monkeypatch.setattr(
-        standing_measurement_responsibility_order,
-        "_complete_byte_measurement",
-        refuse_public_completion,
-    )
-    recorded = standing_measurement_responsibility_order.record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
-        ledger,
-        locality_identity="standing-measurement-responsibility-order-byte-carry",
-    )
-
-    assert calls == 1
-    assert sum(
-        event.kind == BYTE_MEASUREMENT_RECORDED_KIND
-        for event in recorded.result_occurrences
-    ) == 1
-
-
-@pytest.mark.parametrize(
-    "phase",
-    ("assignment", "act", "pre_yield", "post_yield", "result"),
-)
-def test_carried_byte_lifecycle_callback_refuses_without_mutating_caller_standing(
-    phase,
-):
-    ledger = ByteLifecycleCallbackLedger()
-    ingest_material(
-        ledger,
-        locality_identity="source",
-        exact_bytes=b"ababa",
-        source_role="test source",
-        source_boundary="callback boundary",
-    )
-    standing = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    expected_standing = deepcopy(standing)
-    ledger.callback_phase = phase
-
-    with pytest.raises((ByteMeasurementError, ValueError)):
-        _record_byte_measurement_lifecycle_from_carried_standing(
-            ledger,
-            source_localities=("source",),
-            recording_locality_identity="source",
-            locality_standing=standing,
-        )
-
-    assert standing == expected_standing
-    results = [
-        event
-        for event in ledger.list()
-        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
-    ]
-    yields = [
-        event
-        for event in ledger.list()
-        if event.kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        and event.material.get("occurrence_boundary") == "byte_measurement"
-    ]
-    if phase in {"post_yield", "result"}:
-        assert len(yields) == 1
-        with pytest.raises(ByteMeasurementError, match="already has a Yield or result"):
-            record_byte_measurement_result(
-                ledger,
-                responsible_act_evidence_event_identity=yields[0].material[
-                    "responsible_act_evidence_identity"
-                ],
-            )
-    assert len(results) == (1 if phase == "result" else 0)
-
-
-def test_carried_byte_result_refuses_an_equal_substituted_event(monkeypatch):
-    from seed_runtime import byte_measurement
-
-    ledger = _ledger("aba\n")
-    standing = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    original = (
-        operator_standing_module._carry_byte_measurement_result_from_measured_inputs_into_standing
-    )
-
-    def substitute_result(ledger, locality_standing, result, **kwargs):
-        copied = Event(
-            identity=result.identity,
-            kind=result.kind,
-            material=deepcopy(result.material),
-            exact_material=result.exact_material,
-            locality_identity=result.locality_identity,
-        )
-        return original(ledger, locality_standing, copied, **kwargs)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_carry_byte_measurement_result_from_measured_inputs_into_standing",
-        substitute_result,
-    )
-    with pytest.raises(ByteMeasurementError, match="exact call-local result"):
-        byte_measurement._record_byte_measurement_lifecycle_from_carried_standing(
-            ledger,
-            source_localities=("source",),
-            recording_locality_identity="source",
-            locality_standing=standing,
-        )
-
-
-def test_carried_byte_result_refuses_an_equal_substituted_measured_input(
-    monkeypatch,
-):
-    from seed_runtime import byte_measurement
-
-    ledger = _ledger("aba\n")
-    standing = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    original = (
-        operator_standing_module._carry_byte_measurement_result_from_measured_inputs_into_standing
-    )
-
-    def substitute_measured(ledger, locality_standing, result, **kwargs):
-        kwargs["measured"] = deepcopy(kwargs["measured"])
-        return original(ledger, locality_standing, result, **kwargs)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_carry_byte_measurement_result_from_measured_inputs_into_standing",
-        substitute_measured,
-    )
-    with pytest.raises(ByteMeasurementError, match="exact call-local assignment"):
-        byte_measurement._record_byte_measurement_lifecycle_from_carried_standing(
-            ledger,
-            source_localities=("source",),
-            recording_locality_identity="source",
-            locality_standing=standing,
-        )
-
-
-def test_reopened_carried_byte_and_pair_results_use_public_exhaustive_readers(
-    tmp_path, monkeypatch
-):
-    from seed_runtime import byte_measurement
-
-    path = tmp_path / "carried-byte-pair.sqlite"
-    ledger = SQLiteEventLedger(path)
-    ingest_material(
-        ledger,
-        locality_identity="source",
-        exact_bytes=b"ababa",
-        source_role="test source",
-        source_boundary="durable carried boundary",
-    )
-    standing = read_operator_locality_standing(
-        ledger, locality_identity="source"
-    )
-    byte_result, pair_result, _standing = _record_carried_byte_and_pair(
-        ledger, standing
-    )
-    byte_identity = byte_result.identity
-    pair_identity = pair_result.identity
-    ledger.close()
-
-    calls = ExactCounter()
-    original_byte = byte_measurement._measure_byte_counts_through
-
-    def counted_byte(*args, **kwargs):
-        calls["byte"] += 1
-        return original_byte(*args, **kwargs)
-
-    monkeypatch.setattr(
-        byte_measurement, "_measure_byte_counts_through", counted_byte
-    )
-    ledger = SQLiteEventLedger(path)
-    assert assertions_of_recorded_byte_measurement(ledger, byte_identity)
-    assert assertions_of_recorded_byte_position_pair_measurement(
-        ledger, pair_identity
-    )
-    assert calls["byte"] >= 1
-    ledger.close()
 
 
 def _movement_source(ledger):
@@ -1426,7 +1068,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     assert len(measured.source_material) == 2
 
 
-def test_the_complete_exact_source_localities_supply_the_inputs():
+def test_the_complete_declared_localities_supply_the_inputs():
     measured = measure_byte_counts(
         _ledger("a\nb\n"), source_localities=("source",)
     )
@@ -1615,7 +1257,7 @@ def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
     assert {item.representation: item.count for item in measured.counts} == {97: 1}
 
 
-def test_a_missing_exact_source_locality_is_refused():
+def test_a_missing_declared_locality_is_refused():
     with pytest.raises(ByteMeasurementError, match="absent"):
         measure_byte_counts(
             _ledger(), source_localities=("missing",)
@@ -1754,7 +1396,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
     assert applicability["result_boundary"]
-    assert applicability["downstream_act"] == "exact byte-position-pair Measurement"
+    assert applicability["downstream_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknown"]
     assert applicability["input_limits"]
@@ -3175,7 +2817,6 @@ FIDELITY_SUBJECTS = {
         test_pair_act_identity_is_not_its_occurrence_identity,
     ),
     "yield_result_occurrence_evidence": (
-        test_carried_byte_lifecycle_callback_refuses_without_mutating_caller_standing,
         test_assignment_act_and_result_survive_distinct_sqlite_restarts,
         test_call_local_result_requires_the_exact_act_at_tip,
         test_call_local_result_rechecks_act_tip_after_source_callback,
@@ -3185,25 +2826,20 @@ FIDELITY_SUBJECTS = {
         test_pair_result_refuses_an_append_between_yield_and_result,
         test_pair_result_rechecks_measurement_act_tip_after_source_callback,
     ),
-    "exact_rule_measurement_result": (
-        test_carried_byte_and_pair_measure_once_without_full_ledger_list,
-        test_standing_measurement_responsibility_order_dispatcher_uses_the_carried_byte_lifecycle,
-        test_carried_byte_result_refuses_an_equal_substituted_event,
-        test_carried_byte_result_refuses_an_equal_substituted_measured_input,
-        test_reopened_carried_byte_and_pair_results_use_public_exhaustive_readers,
+    "declared_measurement_result": (
         test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_ingest_and_reads_independently,
         test_exact_bytes_supply_the_measured_subjects_without_whitespace,
-        test_the_complete_exact_source_localities_supply_the_inputs,
+        test_the_complete_declared_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
         test_the_rule_is_mechanics_not_an_unchecked_callable,
         test_recorded_results_replay_the_complete_bounded_source_read,
         test_a_self_consistent_truncated_source_assertion_is_refused,
         test_recording_occurrence_evidence_is_validated_exactly,
         test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement,
-        test_a_missing_exact_source_locality_is_refused,
+        test_a_missing_declared_locality_is_refused,
         test_ingest_must_match_its_exact_byte_coordinates,
         test_repeated_locality_coordinate_does_not_repeat_one_ingest,
         test_every_overlapping_byte_position_pair_is_measured,

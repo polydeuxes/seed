@@ -96,7 +96,7 @@ def test_durable_large_scalar_lists_do_not_repeat_material_traversal(
 PROCESS_LOCAL_ID_PREFIXES: frozenset = frozenset()
 
 
-def test_every_minted_prefix_is_reserved_or_exact_process_local():
+def test_every_minted_prefix_is_reserved_or_declared_process_local():
     """The invariant, held at one boundary instead of one pocket at a time.
 
     What requires reservation is narrower than "every `new_identity` call": an
@@ -130,15 +130,15 @@ def test_every_minted_prefix_is_reserved_or_exact_process_local():
             minted.setdefault(match.group(1), set()).add(os.path.basename(path))
 
     assert minted, "no minted prefixes were found, so this would pass vacuously"
-    unaccounted = {
+    undeclared = {
         prefix: sorted(files)
         for prefix, files in minted.items()
         if prefix not in reserved
     }
-    assert not unaccounted, (
-        "these identity prefixes are minted but neither reserved nor exact "
+    assert not undeclared, (
+        "these identity prefixes are minted but neither reserved nor declared "
         "process-local, so if any reaches a durable material it restarts at one "
-        f"in every process: {unaccounted}"
+        f"in every process: {undeclared}"
     )
 
 
@@ -155,6 +155,6 @@ FIDELITY_SUBJECTS = {
         test_durable_large_scalar_lists_do_not_repeat_material_traversal,
     ),
     "identity_prefix": (
-        test_every_minted_prefix_is_reserved_or_exact_process_local,
+        test_every_minted_prefix_is_reserved_or_declared_process_local,
     ),
 }
