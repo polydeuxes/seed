@@ -25,6 +25,8 @@ from seed_runtime.byte_measurement import (
     ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
+    MeasuredByteInputs,
+    MeasuredBytePairInputs,
     RecordedByteAssertion,
     _moved_byte_assertion_from_carried_source,
     _movement_act_material,
@@ -44,6 +46,10 @@ from seed_runtime.byte_measurement import (
     _require_exact_pair_applicability_result_event,
     _require_exact_pair_measurement_act_event,
     _require_exact_pair_measurement_result_event,
+    _require_exact_pair_measurement_result_from_measured_inputs,
+    _require_exact_byte_measurement_assignment_from_measured_inputs,
+    _require_exact_byte_measurement_act_from_measured_inputs,
+    _require_exact_byte_measurement_result_from_measured_inputs,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
 )
@@ -2001,6 +2007,187 @@ def _carry_byte_measurement_assignment_into_standing(
     return locality_standing
 
 
+def _carry_validated_byte_measurement_occurrence_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+    destination_coordinate: str | None,
+) -> dict[str, Any]:
+    """Carry one exact-byte lifecycle occurrence validated in this call."""
+
+    if (
+        type(locality_standing) is not dict
+        or ledger.get(event.identity) != event
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or event.locality_identity != locality_standing.get("locality_identity")
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+        or ledger.append_boundary_through_occurrence(event.identity)
+        != ledger.append_boundary()
+    ):
+        raise ValueError("byte Measurement lifecycle Standing is not exact")
+    try:
+        ledger.occurrences_in_append_order(
+            (prior_through_event_occurrence_identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except ValueError as error:
+        raise ValueError(
+            "byte Measurement lifecycle Standing order is not exact"
+        ) from error
+    destination = (
+        locality_standing[destination_coordinate]
+        if destination_coordinate is not None
+        else None
+    )
+    event_count = locality_standing.get("event_count")
+    if (
+        type(event_count) is not int
+        or event_count < 0
+        or (destination is not None and event.identity in destination)
+    ):
+        raise ValueError("byte Measurement lifecycle Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="byte Measurement lifecycle Standing is not exact",
+    )
+    if destination is locality_standing["measurement_occurrences"]:
+        destination[event.identity] = _measurement_occurrence_coordinates(event)
+    elif destination is not None:
+        destination[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_byte_measurement_assignment_from_measured_inputs_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    assignment,
+    measured: MeasuredByteInputs,
+    *,
+    expected_material: dict[str, Any],
+    retained_assignment,
+    retained_measured,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_byte_measurement_assignment_from_measured_inputs(
+        ledger,
+        assignment,
+        measured,
+        expected_material,
+        retained_assignment,
+        retained_measured,
+    )
+    if (
+        assignment.material.get("standing_boundary_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError("byte Measurement assignment Standing is not exact")
+    return _carry_validated_byte_measurement_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        assignment,
+        prior_through_event_occurrence_identity=(
+            prior_through_event_occurrence_identity
+        ),
+        destination_coordinate="responsibility_assignment_occurrences",
+    )
+
+
+def _carry_byte_measurement_act_from_measured_inputs_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    act,
+    *,
+    assignment,
+    measured: MeasuredByteInputs,
+    assignment_material: dict[str, Any],
+    expected_material: dict[str, Any],
+    retained_assignment,
+    retained_act,
+    retained_measured,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_byte_measurement_act_from_measured_inputs(
+        ledger,
+        act,
+        assignment,
+        measured,
+        assignment_material,
+        expected_material,
+        retained_assignment,
+        retained_act,
+        retained_measured,
+    )
+    if prior_through_event_occurrence_identity != assignment.identity:
+        raise ValueError("byte Measurement Act Standing is not exact")
+    return _carry_validated_byte_measurement_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        act,
+        prior_through_event_occurrence_identity=(
+            prior_through_event_occurrence_identity
+        ),
+        destination_coordinate=None,
+    )
+
+
+def _carry_byte_measurement_result_from_measured_inputs_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    result,
+    *,
+    evidence,
+    act,
+    assignment,
+    measured: MeasuredByteInputs,
+    assignment_material: dict[str, Any],
+    act_material: dict[str, Any],
+    result_material: dict[str, Any],
+    expected_material: dict[str, Any],
+    retained_assignment,
+    retained_act,
+    retained_result,
+    retained_measured,
+    prior_through_event_occurrence_identity: str,
+) -> tuple[dict[str, Any], tuple[RecordedByteAssertion, ...]]:
+    assertions = _require_exact_byte_measurement_result_from_measured_inputs(
+        ledger,
+        result,
+        evidence=evidence,
+        act=act,
+        assignment=assignment,
+        measured=measured,
+        assignment_material=assignment_material,
+        act_material=act_material,
+        result_material=result_material,
+        expected_material=expected_material,
+        retained_assignment=retained_assignment,
+        retained_act=retained_act,
+        retained_result=retained_result,
+        retained_measured=retained_measured,
+    )
+    if prior_through_event_occurrence_identity != act.identity:
+        raise ValueError("byte Measurement result Standing is not exact")
+    standing = _carry_validated_byte_measurement_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        result,
+        prior_through_event_occurrence_identity=(
+            prior_through_event_occurrence_identity
+        ),
+        destination_coordinate="measurement_occurrences",
+    )
+    return standing, assertions
+
+
 def _carry_assertion_locality_movement_assignment_into_standing(
     ledger: EventLedger,
     locality_standing: dict[str, Any],
@@ -2586,6 +2773,50 @@ def _carry_pair_measurement_result_into_standing(
         locality_standing,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate="measurement_occurrences",
+    )
+
+
+def _carry_pair_measurement_result_from_measured_inputs_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    evidence,
+    responsible_act_evidence,
+    assignment,
+    source,
+    applicability_event,
+    applicability_act_evidence,
+    measured: MeasuredBytePairInputs,
+    expected_material: dict[str, Any],
+    stage_materials: dict[str, dict[str, Any]],
+    retained_result,
+    retained_measured,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_measurement_result_from_measured_inputs(
+        ledger,
+        event,
+        evidence=evidence,
+        responsible_act_evidence=responsible_act_evidence,
+        assignment=assignment,
+        source=source,
+        applicability_event=applicability_event,
+        applicability_act_evidence=applicability_act_evidence,
+        measured=measured,
+        expected_material=expected_material,
+        stage_materials=stage_materials,
+        retained_result=retained_result,
+        retained_measured=retained_measured,
+    )
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        event,
+        prior_through_event_occurrence_identity=(
+            prior_through_event_occurrence_identity
+        ),
         destination_coordinate="measurement_occurrences",
     )
 

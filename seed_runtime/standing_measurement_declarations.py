@@ -19,7 +19,7 @@ from typing import Any, Callable, NamedTuple
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    _record_byte_measurement_responsibility_assignment_from_carried_standing,
+    _record_byte_measurement_lifecycle_from_carried_standing,
     _record_byte_measurement_responsible_act_evidence_from_carried_standing,
     _record_byte_measurement_result_from_carried_act_evidence,
     record_byte_measurement_responsibility_assignment,
@@ -364,15 +364,15 @@ def _record_byte_measurement(
     locality_identity: str,
     _subject_identity: str,
 ) -> tuple[dict[str, Any], Event]:
-    assignment = _record_byte_measurement_responsibility_assignment_from_carried_standing(
-        ledger,
-        source_localities=(locality_identity,),
-        recording_locality_identity=locality_identity,
-        locality_standing=standing,
+    result, _source, standing = (
+        _record_byte_measurement_lifecycle_from_carried_standing(
+            ledger,
+            source_localities=(locality_identity,),
+            recording_locality_identity=locality_identity,
+            locality_standing=standing,
+        )
     )
-    return _complete_byte_measurement(
-        ledger, standing, locality_identity, assignment
-    )
+    return standing, result
 
 
 def _record_byte_measurement_from_current(

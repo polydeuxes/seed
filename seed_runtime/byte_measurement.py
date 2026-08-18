@@ -15,6 +15,7 @@ from __future__ import annotations
 
 
 from collections import Counter
+from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
 import json
@@ -2072,7 +2073,7 @@ def _prepare_byte_measurement_responsibility_assignment(
     return localities, boundary, source_material
 
 
-def _append_byte_measurement_responsibility_assignment(
+def _record_byte_measurement_responsibility_assignment_from_exact_inputs(
     ledger: EventLedger,
     *,
     source_localities: tuple[str, ...],
@@ -2080,7 +2081,7 @@ def _append_byte_measurement_responsibility_assignment(
     completeness_boundary_identity: str,
     standing_boundary_identity: str | None,
     recording_locality_identity: str,
-) -> Event:
+) -> tuple[Event, dict[str, Any]]:
     identities = {
         "assignment_identity": new_identity("byte_measurement_assignment"),
         "assignment_subject_identity": new_identity(
@@ -2094,7 +2095,14 @@ def _append_byte_measurement_responsibility_assignment(
         raise ByteMeasurementError(
             "byte Measurement lifecycle identities collapsed"
         )
-    return ledger.append(
+    expected_material = _byte_measurement_assignment_material(
+        source_localities=source_localities,
+        source_material=source_material,
+        completeness_boundary_identity=completeness_boundary_identity,
+        standing_boundary_identity=standing_boundary_identity,
+        **identities,
+    )
+    event = ledger.append(
         BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
         _byte_measurement_assignment_material(
             source_localities=source_localities,
@@ -2105,6 +2113,29 @@ def _append_byte_measurement_responsibility_assignment(
         ),
         locality_identity=recording_locality_identity,
     )
+    return event, expected_material
+
+
+def _append_byte_measurement_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    source_localities: tuple[str, ...],
+    source_material: tuple[dict[str, str], ...],
+    completeness_boundary_identity: str,
+    standing_boundary_identity: str | None,
+    recording_locality_identity: str,
+) -> Event:
+    event, _expected_material = (
+        _record_byte_measurement_responsibility_assignment_from_exact_inputs(
+            ledger,
+            source_localities=source_localities,
+            source_material=source_material,
+            completeness_boundary_identity=completeness_boundary_identity,
+            standing_boundary_identity=standing_boundary_identity,
+            recording_locality_identity=recording_locality_identity,
+        )
+    )
+    return event
 
 
 def record_byte_measurement_responsibility_assignment(
@@ -2502,15 +2533,13 @@ def _require_byte_measurement_act_without_result(
                 )
 
 
-def _record_byte_measurement_result_from_exact_inputs(
-    ledger: EventLedger,
-    *,
+def _byte_measurement_result_material(
     responsible_act_evidence: Event,
     assignment: Event,
     measured: MeasuredByteInputs,
-) -> Event:
+) -> dict[str, Any]:
     result_identity = assignment.material["measurement_result_identity"]
-    result_material = {
+    return {
         "result_identity": result_identity,
         "dimensions": {
                 "identity": "byte-count-measurement-occurrence",
@@ -2540,6 +2569,37 @@ def _record_byte_measurement_result_from_exact_inputs(
         },
         "assertions": _assertions(measured),
     }
+
+
+def _recorded_byte_measurement_result_material(
+    result_material: dict[str, Any],
+    *,
+    responsible_act_evidence_identity: str,
+    evidence_of_yield_relation_identity: str,
+) -> dict[str, Any]:
+    return {
+        **result_material,
+        "evidence_of_yield_relation_identity": (
+            evidence_of_yield_relation_identity
+        ),
+        "responsible_act_evidence_identity": (
+            responsible_act_evidence_identity
+        ),
+        "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
+    }
+
+
+def _record_byte_measurement_result_and_yield_from_exact_inputs(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence: Event,
+    assignment: Event,
+    measured: MeasuredByteInputs,
+) -> tuple[Event, Event, dict[str, Any]]:
+    result_material = _byte_measurement_result_material(
+        responsible_act_evidence, assignment, measured
+    )
+    result_identity = result_material["result_identity"]
     evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=responsible_act_evidence.locality_identity,
@@ -2555,16 +2615,52 @@ def _record_byte_measurement_result_from_exact_inputs(
         occurrence_boundary="byte_measurement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
-    return ledger.append(
+    if (
+        ledger.get(evidence.identity) != evidence
+        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(evidence.identity)
+        != ledger.append_boundary()
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement result requires its exact Yield at the append tip"
+        )
+    recorded_material = _recorded_byte_measurement_result_material(
+        result_material,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
+        evidence_of_yield_relation_identity=evidence.identity,
+    )
+    expected_material = deepcopy(recorded_material)
+    result = ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
         {
-            **result_material,
+            **_byte_measurement_result_material(
+                responsible_act_evidence, assignment, measured
+            ),
             "evidence_of_yield_relation_identity": evidence.identity,
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
         locality_identity=responsible_act_evidence.locality_identity,
     )
+    return result, evidence, expected_material
+
+
+def _record_byte_measurement_result_from_exact_inputs(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence: Event,
+    assignment: Event,
+    measured: MeasuredByteInputs,
+) -> Event:
+    result, _evidence, _expected_material = (
+        _record_byte_measurement_result_and_yield_from_exact_inputs(
+            ledger,
+            responsible_act_evidence=responsible_act_evidence,
+            assignment=assignment,
+            measured=measured,
+        )
+    )
+    return result
 
 
 def record_byte_measurement_result(
@@ -2653,6 +2749,343 @@ def _record_byte_measurement_result_from_carried_act_evidence(
         assignment=responsibility_assignment,
         measured=measured,
     )
+
+
+def _require_exact_byte_measurement_assignment_from_measured_inputs(
+    ledger: EventLedger,
+    assignment: Event,
+    measured: MeasuredByteInputs,
+    expected_material: dict[str, Any],
+    retained_assignment: Event,
+    retained_measured: MeasuredByteInputs,
+) -> None:
+    """Validate one call-local assignment without reading its sources again."""
+
+    if (
+        type(assignment) is not Event
+        or type(measured) is not MeasuredByteInputs
+        or measured is not retained_measured
+        or assignment.kind
+        != BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        or assignment.exact_material is not None
+        or type(assignment.locality_identity) is not str
+        or not assignment.locality_identity
+        or assignment is not retained_assignment
+        or ledger.get(assignment.identity) != assignment
+        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        or assignment.material != expected_material
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires its exact call-local assignment"
+        )
+    material = assignment.material
+    identities = {
+        coordinate: material.get(coordinate)
+        for coordinate in (
+            "assignment_identity",
+            "assignment_subject_identity",
+            "measurement_act_identity",
+            "act_occurrence_identity",
+            "measurement_result_identity",
+        )
+    }
+    standing_boundary_identity = material.get("standing_boundary_identity")
+    if (
+        any(type(identity) is not str or not identity for identity in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or type(standing_boundary_identity) is not str
+        or not standing_boundary_identity
+        or material
+        != _byte_measurement_assignment_material(
+            source_localities=measured.source_localities,
+            source_material=measured.source_material,
+            completeness_boundary_identity=(
+                measured.completeness_boundary.identity
+            ),
+            standing_boundary_identity=standing_boundary_identity,
+            **identities,
+        )
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement call-local assignment coordinates are not exact"
+        )
+
+
+def _require_exact_byte_measurement_act_from_measured_inputs(
+    ledger: EventLedger,
+    act: Event,
+    assignment: Event,
+    measured: MeasuredByteInputs,
+    assignment_material: dict[str, Any],
+    expected_material: dict[str, Any],
+    retained_assignment: Event,
+    retained_act: Event,
+    retained_measured: MeasuredByteInputs,
+) -> None:
+    _require_exact_byte_measurement_assignment_from_measured_inputs(
+        ledger,
+        assignment,
+        measured,
+        assignment_material,
+        retained_assignment,
+        retained_measured,
+    )
+    if (
+        type(act) is not Event
+        or act.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+        or act.exact_material is not None
+        or act.locality_identity != assignment.locality_identity
+        or act is not retained_act
+        or ledger.get(act.identity) != act
+        or ledger.integrity_of(act.identity) == CORRUPTED
+        or act.material != expected_material
+        or act.material != _byte_measurement_act_evidence_material(assignment)
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires its exact call-local Act"
+        )
+
+
+def _recorded_byte_assertions_from_measured_inputs(
+    event: Event, measured: MeasuredByteInputs
+) -> tuple[RecordedByteAssertion, ...]:
+    expected = _assertions(measured)
+    if event.material.get("assertions") != expected:
+        raise ByteMeasurementError(
+            "byte Measurement call-local result carries different findings"
+        )
+    readings = []
+    for assertion in expected:
+        local_identities = assertion["input_support"][
+            "local_assertion_references"
+        ]
+        readings.append(
+            RecordedByteAssertion(
+                assertion_identity=assertion["dimensions"]["identity"],
+                recorded_occurrence_identity=event.identity,
+                representation=assertion["assertion_subject"].get(
+                    "representation"
+                ),
+                result=assertion["result"],
+                _material_json=_canonical(assertion),
+                _support_assertion_refs_json=_canonical(
+                    [
+                        {
+                            "recorded_occurrence_identity": event.identity,
+                            "assertion_identity": local_identity,
+                        }
+                        for local_identity in local_identities
+                    ]
+                ),
+            )
+        )
+    return tuple(readings)
+
+
+def _require_exact_byte_measurement_result_from_measured_inputs(
+    ledger: EventLedger,
+    result: Event,
+    *,
+    evidence: Event,
+    act: Event,
+    assignment: Event,
+    measured: MeasuredByteInputs,
+    assignment_material: dict[str, Any],
+    act_material: dict[str, Any],
+    result_material: dict[str, Any],
+    expected_material: dict[str, Any],
+    retained_assignment: Event,
+    retained_act: Event,
+    retained_result: Event,
+    retained_measured: MeasuredByteInputs,
+) -> tuple[RecordedByteAssertion, ...]:
+    _require_exact_byte_measurement_act_from_measured_inputs(
+        ledger,
+        act,
+        assignment,
+        measured,
+        assignment_material,
+        act_material,
+        retained_assignment,
+        retained_act,
+        retained_measured,
+    )
+    if type(result) is not Event:
+        raise ByteMeasurementError(
+            "byte Measurement requires its exact call-local result"
+        )
+    evidence_identity = evidence.identity if type(evidence) is Event else None
+    expected = _recorded_byte_measurement_result_material(
+        result_material,
+        responsible_act_evidence_identity=act.identity,
+        evidence_of_yield_relation_identity=evidence_identity,
+    )
+    if (
+        result.kind != BYTE_MEASUREMENT_RECORDED_KIND
+        or result is not retained_result
+        or result.exact_material is not None
+        or result.locality_identity != assignment.locality_identity
+        or ledger.get(result.identity) != result
+        or ledger.integrity_of(result.identity) == CORRUPTED
+        or ledger.get(evidence_identity) != evidence
+        or type(evidence) is not Event
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or expected_material != expected
+        or result.material != expected
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires its exact call-local result"
+        )
+    _require_exact_result_yield(
+        ledger, result, evidence, act, result_name="byte Measurement"
+    )
+    return _recorded_byte_assertions_from_measured_inputs(result, measured)
+
+
+def _record_byte_measurement_lifecycle_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    source_localities: Iterable[str],
+    recording_locality_identity: str,
+    locality_standing: dict[str, Any],
+) -> tuple[Event, RecordedByteAssertion, dict[str, Any]]:
+    """Record one exact-byte lifecycle and retain its exact source Assertion."""
+
+    if (
+        type(recording_locality_identity) is not str
+        or not recording_locality_identity
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement recording requires an exact Locality"
+        )
+    localities = tuple(dict.fromkeys(source_localities))
+    if (
+        not localities
+        or any(type(locality) is not str or not locality for locality in localities)
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires exact declared source Localities"
+        )
+    initial_boundary = ledger.append_boundary()
+    measured = _measure_byte_counts_through(
+        ledger, localities=localities, boundary=initial_boundary
+    )
+    standing_boundary_identity = (
+        _require_carried_byte_measurement_standing_at_tip(
+            ledger,
+            recording_locality_identity=recording_locality_identity,
+            locality_standing=locality_standing,
+        )
+    )
+    locality_standing = deepcopy(locality_standing)
+    assignment, assignment_material = (
+        _record_byte_measurement_responsibility_assignment_from_exact_inputs(
+            ledger,
+            source_localities=measured.source_localities,
+            source_material=measured.source_material,
+            completeness_boundary_identity=measured.completeness_boundary.identity,
+            standing_boundary_identity=standing_boundary_identity,
+            recording_locality_identity=recording_locality_identity,
+        )
+    )
+    from seed_runtime.operator_locality_standing import (
+        _carry_byte_measurement_assignment_from_measured_inputs_into_standing,
+        _carry_byte_measurement_act_from_measured_inputs_into_standing,
+        _carry_byte_measurement_result_from_measured_inputs_into_standing,
+    )
+
+    locality_standing = (
+        _carry_byte_measurement_assignment_from_measured_inputs_into_standing(
+            ledger,
+            locality_standing,
+            assignment,
+            measured,
+            expected_material=assignment_material,
+            retained_assignment=assignment,
+            retained_measured=measured,
+            prior_through_event_occurrence_identity=standing_boundary_identity,
+        )
+    )
+    act_material = _byte_measurement_act_evidence_material(assignment)
+    act = _append_byte_measurement_responsible_act_evidence(
+        ledger, assignment=assignment
+    )
+    locality_standing = (
+        _carry_byte_measurement_act_from_measured_inputs_into_standing(
+            ledger,
+            locality_standing,
+            act,
+            assignment=assignment,
+            measured=measured,
+            assignment_material=assignment_material,
+            expected_material=act_material,
+            retained_assignment=assignment,
+            retained_act=act,
+            retained_measured=measured,
+            prior_through_event_occurrence_identity=assignment.identity,
+        )
+    )
+    _require_exact_byte_measurement_act_from_measured_inputs(
+        ledger,
+        act,
+        assignment,
+        measured,
+        assignment_material,
+        act_material,
+        assignment,
+        act,
+        measured,
+    )
+    if (
+        ledger.append_boundary_through_occurrence(act.identity)
+        != ledger.append_boundary()
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement result requires its exact Act at the append tip"
+        )
+    result_material = _byte_measurement_result_material(act, assignment, measured)
+    result, evidence, recorded_result_material = (
+        _record_byte_measurement_result_and_yield_from_exact_inputs(
+            ledger,
+            responsible_act_evidence=act,
+            assignment=assignment,
+            measured=measured,
+        )
+    )
+    locality_standing, assertions = (
+        _carry_byte_measurement_result_from_measured_inputs_into_standing(
+            ledger,
+            locality_standing,
+            result,
+            evidence=evidence,
+            act=act,
+            assignment=assignment,
+            measured=measured,
+            assignment_material=assignment_material,
+            act_material=act_material,
+            result_material=result_material,
+            expected_material=recorded_result_material,
+            retained_assignment=assignment,
+            retained_act=act,
+            retained_result=result,
+            retained_measured=measured,
+            prior_through_event_occurrence_identity=act.identity,
+        )
+    )
+    source = next(
+        (
+            assertion
+            for assertion in assertions
+            if assertion.result == "exact_source_material_set"
+        ),
+        None,
+    )
+    if source is None:
+        raise ByteMeasurementError(
+            "byte Measurement result carries no exact source-material-set Assertion"
+        )
+    return result, source, locality_standing
 
 
 def _assertions_of_recorded_byte_measurement(
@@ -3868,7 +4301,7 @@ def _pair_measurement_result_material(
     }
 
 
-def _record_pair_measurement_result_from_carried_act(
+def _record_pair_measurement_result_and_inputs_from_carried_act(
     ledger: EventLedger,
     *,
     responsible_act_evidence: Event,
@@ -3877,7 +4310,13 @@ def _record_pair_measurement_result_from_carried_act(
     applicability_event: Event,
     applicability_act_evidence: Event,
     locality_standing: dict[str, Any],
-) -> Event:
+) -> tuple[
+    Event,
+    Event,
+    MeasuredBytePairInputs,
+    dict[str, Any],
+    dict[str, dict[str, Any]],
+]:
     _require_exact_pair_measurement_act_event(
         ledger,
         responsible_act_evidence,
@@ -3894,6 +4333,10 @@ def _record_pair_measurement_result_from_carried_act(
         required_assignment_identity=assignment.identity,
         required_applicability_identity=applicability_event.identity,
     )
+    assignment_material = deepcopy(assignment.material)
+    applicability_act_material = deepcopy(applicability_act_evidence.material)
+    applicability_material = deepcopy(applicability_event.material)
+    act_material = deepcopy(responsible_act_evidence.material)
     if (
         responsible_act_evidence.kind != BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
         or ledger.integrity_of(responsible_act_evidence.identity) == CORRUPTED
@@ -3928,6 +4371,16 @@ def _record_pair_measurement_result_from_carried_act(
     if (
         ledger.get(responsible_act_evidence.identity) != responsible_act_evidence
         or ledger.integrity_of(responsible_act_evidence.identity) == CORRUPTED
+        or assignment.material != assignment_material
+        or applicability_act_evidence.material != applicability_act_material
+        or applicability_event.material != applicability_material
+        or responsible_act_evidence.material != act_material
+        or responsible_act_evidence.material
+        != _pair_measurement_act_material(
+            assignment,
+            source,
+            applicability_event,
+        )
         or ledger.append_boundary_through_occurrence(
             responsible_act_evidence.identity
         )
@@ -3975,11 +4428,155 @@ def _record_pair_measurement_result_from_carried_act(
         "responsible_act_evidence_identity": responsible_act_evidence.identity,
         "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
     }
-    return ledger.append(
+    expected_material = deepcopy(recorded_material)
+    result = ledger.append(
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
         recorded_material,
         locality_identity=assignment.locality_identity,
     )
+    return result, evidence, measured, expected_material, {
+        "assignment": assignment_material,
+        "applicability_act": applicability_act_material,
+        "applicability": applicability_material,
+        "act": act_material,
+    }
+
+
+def _record_pair_measurement_result_from_carried_act(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence: Event,
+    assignment: Event,
+    source: RecordedByteAssertion,
+    applicability_event: Event,
+    applicability_act_evidence: Event,
+    locality_standing: dict[str, Any],
+) -> Event:
+    result, _evidence, _measured, _recorded_material, _stage_materials = (
+        _record_pair_measurement_result_and_inputs_from_carried_act(
+            ledger,
+            responsible_act_evidence=responsible_act_evidence,
+            assignment=assignment,
+            source=source,
+            applicability_event=applicability_event,
+            applicability_act_evidence=applicability_act_evidence,
+            locality_standing=locality_standing,
+        )
+    )
+    return result
+
+
+def _require_exact_pair_measurement_result_from_measured_inputs(
+    ledger: EventLedger,
+    event: Event,
+    *,
+    evidence: Event,
+    responsible_act_evidence: Event,
+    assignment: Event,
+    source: RecordedByteAssertion,
+    applicability_event: Event,
+    applicability_act_evidence: Event,
+    measured: MeasuredBytePairInputs,
+    expected_material: dict[str, Any],
+    stage_materials: dict[str, dict[str, Any]],
+    retained_result: Event,
+    retained_measured: MeasuredBytePairInputs,
+) -> None:
+    """Validate the exact same-call pair result without measuring it again."""
+
+    if (
+        type(event) is not Event
+        or type(measured) is not MeasuredBytePairInputs
+        or measured is not retained_measured
+    ):
+        raise ByteMeasurementError("pair Measurement result is not exact")
+    _require_exact_pair_measurement_assignment_event(ledger, assignment, source)
+    expected_applicability = _pair_input_applicability_from_exact_source(
+        source,
+        assignment=assignment,
+        measurement_locality_identity=assignment.locality_identity,
+    )
+    expected_applicability_act = _pair_applicability_act_material(
+        assignment, source
+    )
+    applicability_evidence_identity = applicability_event.material.get(
+        "evidence_of_yield_relation_identity"
+    )
+    expected_applicability_material = {
+        **_pair_applicability_result_material(
+            assignment, source, expected_applicability
+        ),
+        "evidence_of_yield_relation_identity": applicability_evidence_identity,
+        "responsible_act_evidence_identity": applicability_act_evidence.identity,
+    }
+    applicability_evidence = ledger.get(applicability_evidence_identity)
+    evidence_identity = evidence.identity if type(evidence) is Event else None
+    expected = {
+        **_pair_measurement_result_material(
+            measured,
+            assignment=assignment,
+            applicability_event=applicability_event,
+        ),
+        "evidence_of_yield_relation_identity": evidence_identity,
+        "responsible_act_evidence_identity": responsible_act_evidence.identity,
+        "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
+    }
+    try:
+        requirements = read_requirements_of_yield_relation(
+            ledger,
+            recorded_result_event_identity=event.identity,
+            evidence_of_yield_relation_event_identity=evidence_identity,
+            responsible_act_evidence_event_identity=(
+                responsible_act_evidence.identity
+            ),
+        )
+    except (TypeError, ValueError):
+        requirements = {}
+    if (
+        event is not retained_result
+        or ledger.get(event.identity) != event
+        or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        or event.locality_identity != assignment.locality_identity
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or ledger.get(evidence_identity) != evidence
+        or stage_materials
+        != {
+            "assignment": assignment.material,
+            "applicability_act": applicability_act_evidence.material,
+            "applicability": applicability_event.material,
+            "act": responsible_act_evidence.material,
+        }
+        or applicability_act_evidence.kind
+        != BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND
+        or ledger.get(applicability_act_evidence.identity)
+        != applicability_act_evidence
+        or applicability_act_evidence.material != expected_applicability_act
+        or applicability_event.kind != BYTE_PAIR_APPLICABILITY_RECORDED_KIND
+        or ledger.get(applicability_event.identity) != applicability_event
+        or applicability_event.material != expected_applicability_material
+        or type(applicability_evidence) is not Event
+        or ledger.integrity_of(applicability_evidence.identity) == CORRUPTED
+        or responsible_act_evidence.kind
+        != BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
+        or ledger.get(responsible_act_evidence.identity)
+        != responsible_act_evidence
+        or responsible_act_evidence.material
+        != _pair_measurement_act_material(
+            assignment, source, applicability_event
+        )
+        or expected_material != expected
+        or event.material != expected_material
+        or type(evidence) is not Event
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        or evidence.locality_identity != event.locality_identity
+        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or evidence.material.get("result_kind")
+        != BYTE_PAIR_MEASUREMENT_RESULT_KIND
+        or evidence.material.get("occurrence_boundary")
+        != "byte_pair_measurement"
+        or not all(requirements.values())
+    ):
+        raise ByteMeasurementError("pair Measurement result is not exact")
 
 
 def _require_exact_pair_measurement_result_event(
@@ -4057,7 +4654,7 @@ def _require_exact_pair_measurement_result_event(
         raise ByteMeasurementError("pair Measurement result is not exact")
 
 
-def _record_byte_position_pair_count_layer_from_carried_standing(
+def _record_byte_position_pair_count_layer_from_exact_source_standing(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
@@ -4071,7 +4668,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         _carry_pair_applicability_result_into_standing,
         _carry_pair_measurement_act_into_standing,
         _carry_pair_measurement_assignment_into_standing,
-        _carry_pair_measurement_result_into_standing,
+        _carry_pair_measurement_result_from_measured_inputs_into_standing,
     )
 
     boundary = _require_carried_pair_measurement_standing_at_tip(
@@ -4080,6 +4677,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         recording_locality_identity=recording_locality_identity,
         locality_standing=standing,
     )
+    standing = deepcopy(standing)
     assignment = _append_pair_measurement_responsibility_assignment(
         ledger,
         source=source,
@@ -4095,8 +4693,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         source,
         prior_through_event_occurrence_identity=boundary,
     )
-    applicability = _pair_input_applicability(
-        ledger,
+    applicability = _pair_input_applicability_from_exact_source(
         source,
         assignment=assignment,
         measurement_locality_identity=recording_locality_identity,
@@ -4154,27 +4751,93 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         applicability_act_evidence=applicability_act,
         prior_through_event_occurrence_identity=applicability_event.identity,
     )
-    result = _record_pair_measurement_result_from_carried_act(
-        ledger,
-        responsible_act_evidence=responsible_act_evidence,
-        assignment=assignment,
-        source=source,
-        applicability_event=applicability_event,
-        applicability_act_evidence=applicability_act,
-        locality_standing=standing,
+    result, evidence, measured, result_material, stage_materials = (
+        _record_pair_measurement_result_and_inputs_from_carried_act(
+            ledger,
+            responsible_act_evidence=responsible_act_evidence,
+            assignment=assignment,
+            source=source,
+            applicability_event=applicability_event,
+            applicability_act_evidence=applicability_act,
+            locality_standing=standing,
+        )
     )
-    standing = _carry_pair_measurement_result_into_standing(
+    standing = _carry_pair_measurement_result_from_measured_inputs_into_standing(
         ledger,
         standing,
         result,
+        evidence=evidence,
         responsible_act_evidence=responsible_act_evidence,
         assignment=assignment,
         source=source,
         applicability_event=applicability_event,
         applicability_act_evidence=applicability_act,
+        measured=measured,
+        expected_material=result_material,
+        stage_materials=stage_materials,
+        retained_result=result,
+        retained_measured=measured,
         prior_through_event_occurrence_identity=responsible_act_evidence.identity,
     )
     return result, standing
+
+
+def _record_byte_position_pair_count_layer_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    source: RecordedByteAssertion,
+    scope: dict[str, Any],
+    content: dict[str, Any],
+    recording_locality_identity: str,
+    standing: dict[str, Any],
+) -> tuple[Event, dict[str, Any]]:
+    exact_source, _input_standing = _recorded_input_assertion_standing(
+        ledger,
+        source,
+        measurement_locality_identity=recording_locality_identity,
+    )
+    if exact_source != source:
+        raise ByteMeasurementError(
+            "byte-position-pair Measurement requires exact input Standing"
+        )
+    return _record_byte_position_pair_count_layer_from_exact_source_standing(
+        ledger,
+        source=exact_source,
+        scope=scope,
+        content=content,
+        recording_locality_identity=recording_locality_identity,
+        standing=standing,
+    )
+
+
+def _record_byte_and_pair_measurement_lifecycles_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    source_localities: Iterable[str],
+    recording_locality_identity: str,
+    locality_standing: dict[str, Any],
+) -> tuple[Event, Event, dict[str, Any]]:
+    """Record adjacent family lifecycles from one exact byte source reading."""
+
+    byte_result, source, standing = (
+        _record_byte_measurement_lifecycle_from_carried_standing(
+            ledger,
+            source_localities=source_localities,
+            recording_locality_identity=recording_locality_identity,
+            locality_standing=locality_standing,
+        )
+    )
+    pair_result, standing = (
+        _record_byte_position_pair_count_layer_from_exact_source_standing(
+            ledger,
+            source=source,
+            scope=source.material["assertion_scope"],
+            content=source.material["dimensions"]["content"],
+            recording_locality_identity=recording_locality_identity,
+            standing=standing,
+        )
+    )
+    return byte_result, pair_result, standing
 
 
 def _record_byte_position_pair_count_layer_from_carried_locality_standing(
