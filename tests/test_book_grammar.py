@@ -448,9 +448,11 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
             },
         ],
     }
-    assert clause["Assertion_identity_findings"] == [
-        {"subject": "each_Assertion", "finding": "distinct_identity"}
-    ]
+    assert clause["Assertion_coordinates"] == {
+        "first_subject": "each_Assertion",
+        "relation": "carries",
+        "second_subject": "exact_coordinates",
+    }
     assert clause["persistent_Standing"] == {
         "standing_not_established": [
             {
@@ -486,7 +488,26 @@ def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims
     ]
 
     assert clause["earlier_Assertions"] == {
-        "preserves": ["exact_identity", "exact_reference"],
+        "preservation_relations": [
+            {
+                "first_subject": {
+                    "first_subject": "preservation",
+                    "relation": "of",
+                    "second_subject": "earlier_Assertions",
+                },
+                "relation": "carries",
+                "second_subject": "exact_reference",
+            },
+            {
+                "first_subject": {
+                    "first_subject": "preservation",
+                    "relation": "of",
+                    "second_subject": "earlier_Assertions",
+                },
+                "relation": "carries",
+                "second_subject": "exact_coordinates",
+            },
+        ],
         "standing_not_established": [
             {
                 "first_subject": {

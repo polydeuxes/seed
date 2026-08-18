@@ -1555,7 +1555,26 @@
         "second_subject": "current_Standing"
       },
       "earlier_Assertions": {
-        "preserves": ["exact_identity", "exact_reference"],
+        "preservation_relations": [
+          {
+            "first_subject": {
+              "first_subject": "preservation",
+              "relation": "of",
+              "second_subject": "earlier_Assertions"
+            },
+            "relation": "carries",
+            "second_subject": "exact_reference"
+          },
+          {
+            "first_subject": {
+              "first_subject": "preservation",
+              "relation": "of",
+              "second_subject": "earlier_Assertions"
+            },
+            "relation": "carries",
+            "second_subject": "exact_coordinates"
+          }
+        ],
         "standing_not_established": [
           {
             "first_subject": {
@@ -1833,12 +1852,11 @@
         "Act_occurrence_or_nonoccurrence",
         "output_Standing"
       ],
-      "Assertion_identity_findings": [
-        {
-          "subject": "each_Assertion",
-          "finding": "distinct_identity"
-        }
-      ],
+      "Assertion_coordinates": {
+        "first_subject": "each_Assertion",
+        "relation": "carries",
+        "second_subject": "exact_coordinates"
+      },
       "distinct_from": [
         ["Applicability", "Admission"],
         ["Applicability", "Act_occurrence"],
