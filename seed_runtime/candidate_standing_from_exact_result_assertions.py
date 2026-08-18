@@ -1415,10 +1415,10 @@ def exact_source_assertion_materials_from_every_ordered_pair_candidate(
     )
 
 
-def _exact_material_coordinates(
+def _exact_representation_paths(
     material: Any, path: tuple[str | int, ...] = ()
 ) -> tuple[dict[str, Any], ...]:
-    coordinates: list[dict[str, Any]] = []
+    paths: list[dict[str, Any]] = []
     if type(material) is dict:
         carried = material.items()
     elif type(material) is list:
@@ -1427,17 +1427,17 @@ def _exact_material_coordinates(
         return ()
     for coordinate, value in carried:
         exact_path = (*path, coordinate)
-        coordinates.append(
+        paths.append(
             {
                 "path": list(exact_path),
                 "material": deepcopy(value),
             }
         )
-        coordinates.extend(_exact_material_coordinates(value, exact_path))
-    return tuple(coordinates)
+        paths.extend(_exact_representation_paths(value, exact_path))
+    return tuple(paths)
 
 
-def exact_material_coordinates_from_every_ordered_pair_candidate(
+def exact_representation_paths_from_every_ordered_pair_candidate(
     ledger: EventLedger,
     *,
     candidate_standing_result_event_identity: str,
@@ -1449,13 +1449,13 @@ def exact_material_coordinates_from_every_ordered_pair_candidate(
     ],
     ...,
 ]:
-    """Read every nested lower-Assertion coordinate without comparing material."""
+    """Read every nested representation path without assigning it grammar."""
 
     return tuple(
         (
             candidate_identity,
-            _exact_material_coordinates(first),
-            _exact_material_coordinates(second),
+            _exact_representation_paths(first),
+            _exact_representation_paths(second),
         )
         for candidate_identity, first, second in (
             exact_source_assertion_materials_from_every_ordered_pair_candidate(

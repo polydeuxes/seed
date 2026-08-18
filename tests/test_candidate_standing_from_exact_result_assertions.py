@@ -11,7 +11,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_ordered_pair_candidate,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
-    exact_material_coordinates_from_every_ordered_pair_candidate,
+    exact_representation_paths_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
@@ -429,7 +429,7 @@ def test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read(
     assert ledger.append_boundary() == boundary_before_read
 
 
-def test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate():
+def test_every_ordered_pair_candidate_exposes_every_nested_representation_path():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
     result = record_complete_ordered_pair_candidate_standing(
@@ -444,8 +444,8 @@ def test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate():
         )
     )
     boundary_before_read = ledger.append_boundary()
-    coordinate_readings = (
-        exact_material_coordinates_from_every_ordered_pair_candidate(
+    path_readings = (
+        exact_representation_paths_from_every_ordered_pair_candidate(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
@@ -457,32 +457,32 @@ def test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate():
             found = found[coordinate]
         return found
 
-    assert tuple(reading[0] for reading in coordinate_readings) == tuple(
+    assert tuple(reading[0] for reading in path_readings) == tuple(
         reading[0] for reading in source_readings
     )
-    assert all(first_coordinates and second_coordinates for (
+    assert all(first_paths and second_paths for (
         _candidate_identity,
-        first_coordinates,
-        second_coordinates,
-    ) in coordinate_readings)
+        first_paths,
+        second_paths,
+    ) in path_readings)
     for (
         _candidate_identity,
         first,
         second,
     ), (
         _same_candidate_identity,
-        first_coordinates,
-        second_coordinates,
-    ) in zip(source_readings, coordinate_readings):
+        first_paths,
+        second_paths,
+    ) in zip(source_readings, path_readings):
         assert all(
             material_at_path(first, coordinate["path"])
             == coordinate["material"]
-            for coordinate in first_coordinates
+            for coordinate in first_paths
         )
         assert all(
             material_at_path(second, coordinate["path"])
             == coordinate["material"]
-            for coordinate in second_coordinates
+            for coordinate in second_paths
         )
     assert ledger.append_boundary() == boundary_before_read
 
@@ -719,12 +719,14 @@ FIDELITY_SUBJECTS = {
         test_ordered_pair_candidate_reads_both_exact_lower_assertions_without_an_append,
         test_ordered_pair_source_material_read_refuses_one_source_candidate,
         test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read,
-        test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate,
         test_both_exact_candidate_responsibilities_use_one_source_boundary,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_exact_source_and_act,
         test_empty_source_surface_records_one_complete_empty_candidate_standing,
         test_complete_candidate_standing_replays_after_sqlite_restart,
+    ),
+    "candidate_source_representation_path_order": (
+        test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
     ),
     "one_source_candidate_standing_responsibility_coordinates": (
         test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
