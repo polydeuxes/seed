@@ -316,6 +316,7 @@ def _inputs(
     first_assertion_identity: str,
     second_result_occurrence_identity: str,
     second_assertion_identity: str,
+    prior_standing: dict[str, Any] | None = None,
 ) -> SharedPairPositionInputs:
     if first_result_occurrence_identity == second_result_occurrence_identity:
         first, second = _resolve_references(
@@ -373,6 +374,7 @@ def _inputs(
                             ),
                         ),
                     ),
+                    prior_standing=prior_standing,
                 )
             )
             return _validated_inputs(first, second)
@@ -437,6 +439,7 @@ def _inputs_from_assignment_material(
     *,
     first: dict[str, Any],
     second: dict[str, Any],
+    prior_standing: dict[str, Any] | None = None,
 ) -> SharedPairPositionInputs:
     result_identities = (
         first.get("recorded_occurrence_identity"),
@@ -494,6 +497,7 @@ def _inputs_from_assignment_material(
         first_assertion_identity=first.get("assertion_identity"),
         second_result_occurrence_identity=result_identities[1],
         second_assertion_identity=second.get("assertion_identity"),
+        prior_standing=prior_standing,
     )
 
 
@@ -968,6 +972,7 @@ def _read_assignment(
             ledger,
             first=first,
             second=second,
+            prior_standing=prior_standing,
         )
     identities = {
         coordinate: event.material.get(coordinate)

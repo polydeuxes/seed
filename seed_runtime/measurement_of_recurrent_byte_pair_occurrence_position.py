@@ -1526,6 +1526,7 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
     result_and_assertion_identities: tuple[
         tuple[str, str], tuple[str, str]
     ],
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
@@ -1574,15 +1575,18 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
                 break
         if later_boundary is None:
             raise ValueError("addressed pair-position Standing boundaries are crossed")
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing_through,
-    )
+    if prior_standing is None:
+        from seed_runtime.operator_locality_standing import (
+            read_operator_locality_standing_through,
+        )
 
-    prior_standing = read_operator_locality_standing_through(
-        ledger,
-        locality_identity=localities[0],
-        through_event_occurrence_identity=later_boundary,
-    )
+        prior_standing = read_operator_locality_standing_through(
+            ledger,
+            locality_identity=localities[0],
+            through_event_occurrence_identity=later_boundary,
+        )
+    elif type(prior_standing) is not dict:
+        raise ValueError("addressed pair-position results require exact prior Standing")
     addressed = []
     for result_identity, assertion_identity in result_and_assertion_identities:
         event, finding = (

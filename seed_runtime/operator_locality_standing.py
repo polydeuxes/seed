@@ -1336,6 +1336,7 @@ def advance_operator_locality_standing(
                 prior_through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
+            "ingest_occurrences": ingest_occurrences,
             "responsibility_assignment_occurrences": (
                 responsibility_assignment_occurrences
             ),

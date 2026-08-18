@@ -478,6 +478,114 @@ def test_two_recurrent_results_share_one_exact_later_standing_read(monkeypatch):
     assert len(standing_reads) == 2
 
 
+def test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_override(
+    monkeypatch,
+):
+    ledger, locality, _source, first, second = _fixture()
+    prior_standing = _standing(ledger, locality)
+    assignment = record_shared_position_responsibility_assignment(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+        locality_standing=prior_standing,
+    )
+
+    def replay_must_not_run(*_args, **_kwargs):
+        raise AssertionError("explicit shared-position prior Standing was replayed")
+
+    def ambient_must_not_override(*_args, **_kwargs):
+        raise AssertionError("ambient Standing overrode an explicit carrier")
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        replay_must_not_run,
+    )
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_operator_standing_validation_context",
+        ambient_must_not_override,
+    )
+
+    read_assignment, inputs = shared_position_module._read_assignment(
+        ledger,
+        assignment.identity,
+        prior_standing=prior_standing,
+    )
+
+    assert read_assignment == assignment
+    assert inputs.first == first
+    assert inputs.second == second
+
+
+@pytest.mark.parametrize(
+    "changed_prior",
+    ("stale", "wrong locality", "substituted assignment"),
+)
+def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior):
+    ledger, locality, _source, first, second = _fixture()
+    exact_prior = _standing(ledger, locality)
+    assignment = record_shared_position_responsibility_assignment(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+        locality_standing=exact_prior,
+    )
+    forged = deepcopy(exact_prior)
+    if changed_prior == "stale":
+        first_act = _recurrent_lifecycle_occurrences(ledger, first)["act"]
+        forged = operator_standing_module.read_operator_locality_standing_through(
+            ledger,
+            locality_identity=locality,
+            through_event_occurrence_identity=first_act.identity,
+        )
+    elif changed_prior == "wrong locality":
+        forged["locality_identity"] = "another-shared-position-locality"
+    else:
+        second_assignment = _recurrent_lifecycle_occurrences(
+            ledger, second
+        )["assignment"]
+        del forged["responsibility_assignment_occurrences"][
+            second_assignment.identity
+        ]
+        forged["responsibility_assignment_occurrences"][
+            "substituted-same-shaped-assignment"
+        ] = None
+
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._read_assignment(
+            ledger,
+            assignment.identity,
+            prior_standing=forged,
+        )
+
+
+def test_shared_assignment_explicit_prior_revalidates_later_input_mutation():
+    ledger, locality, _source, first, second = _fixture()
+    exact_prior = _standing(ledger, locality)
+    assignment = record_shared_position_responsibility_assignment(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+        locality_standing=exact_prior,
+    )
+    changed_result = _recurrent_lifecycle_occurrences(ledger, second)["result"]
+    changed_result.material["known_loss"] = not changed_result.material["known_loss"]
+
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._read_assignment(
+            ledger,
+            assignment.identity,
+            prior_standing=exact_prior,
+        )
+
+
 @pytest.mark.parametrize(
     "changed_occurrence",
     ("result", "act", "assignment", "pair", "source"),
@@ -613,6 +721,7 @@ def test_recurrent_result_batch_and_public_readers_survive_restart(
     database = tmp_path / "recurrent-result-batch.sqlite"
     ledger = SQLiteEventLedger(str(database))
     ledger, locality, _source, first, second = _fixture(ledger=ledger)
+    assignment = _assignment(ledger, locality, first, second)
     ledger.close()
     reopened = SQLiteEventLedger(str(database))
     standing_reads = []
@@ -648,6 +757,12 @@ def test_recurrent_result_batch_and_public_readers_survive_restart(
         result_occurrence_identity=second.recorded_occurrence_identity,
     )
     assert len(standing_reads) == 2
+
+    standing_reads.clear()
+    assert get_shared_position_responsibility_assignment(
+        reopened, assignment.identity
+    ) == assignment.material
+    assert len(standing_reads) == 1
     assert _standing(reopened, locality)["locality_identity"] == locality
     reopened.close()
 
@@ -1116,6 +1231,7 @@ def test_each_shared_position_lifecycle_read_validates_inputs_once_without_cache
         first.assertion_identity,
         second.recorded_occurrence_identity,
         second.assertion_identity,
+        None,
     )
 
     measurement_act = record_shared_position_measurement_act_evidence(
@@ -1302,6 +1418,9 @@ FIDELITY_SUBJECTS = {
         test_d2_shared_assignment_revalidates_after_callback_atomically,
         test_corrupted_shared_position_yield_relations_are_refused,
         test_two_recurrent_results_share_one_exact_later_standing_read,
+        test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_override,
+        test_shared_assignment_refuses_inexact_explicit_prior_standing,
+        test_shared_assignment_explicit_prior_revalidates_later_input_mutation,
         test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing,
         test_recurrent_result_batch_refuses_assertion_and_locality_substitution,
         test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary,
