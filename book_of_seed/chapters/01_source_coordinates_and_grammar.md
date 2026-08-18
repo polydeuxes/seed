@@ -60,6 +60,14 @@ For one explicitly addressed exact Representation, emission Act, and destination
 
 A candidate preserves every applicable source role, representation Act occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material establishes neither a missing Act occurrence nor occurrence-result relation.
 
+### 01.Source.E.1 — Candidate Standing from exact result Assertions
+
+At one exact ledger boundary, this Book assigns this Seed the bounded Responsibility to determine Applicability and record one candidate for each exact Measurement or Compare result Assertion and each exact Assertion carried by that result and by Locality Standing through that boundary, in event order. The exact Act records one complete result carrying every candidate.
+
+Each source Assertion may participate only through its exact result reference, source Locality, source Standing boundary, Evidence, Authority, Scope, limits, and Unknown. Each candidate carries those exact references and coordinates and bears the Responsibility to preserve its carried Standing coordinates. What the candidate represents: Unknown. Candidate Standing establishes no represented relation, Admission, Applicability to another Act, Participation in another Act, or movement of the source Assertion.
+
+The complete result carries the exact ledger boundary, source rule, candidate rule, Responsibility assignment, Act occurrence, Evidence of Yield relation, and each ordered candidate reference. A missing required candidate, candidate not required by the exact rule, repeated candidate, different order, different source reference, unsupported source, occurrence not intact, or partial result establishes no complete Candidate Standing.
+
 ### 01.Source.F — Supplied material may assert a relation
 
 Supplied material may assert one exact relation from X to Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknown. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.

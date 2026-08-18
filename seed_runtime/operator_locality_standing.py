@@ -199,6 +199,18 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
+from seed_runtime.candidate_standing_from_exact_result_assertions import (
+    CANDIDATE_STANDING_RESPONSIBILITY_ASSIGNMENT_KIND,
+    CANDIDATE_STANDING_APPLICABILITY_ACT_EVIDENCE_KIND,
+    CANDIDATE_STANDING_APPLICABILITY_RESULT_KIND,
+    CANDIDATE_STANDING_ACT_EVIDENCE_KIND,
+    CANDIDATE_STANDING_RESULT_KIND,
+    get_candidate_standing_responsibility_assignment,
+    get_candidate_standing_applicability_act_evidence,
+    get_recorded_candidate_standing_applicability,
+    get_candidate_standing_act_evidence,
+    get_recorded_candidate_standing,
+)
 # The writer of these occurrences declares their kinds. A reader declaring its
 # own copy would be a second contract, free to drift from the first.
 from seed_runtime.operator_representation import (
@@ -500,6 +512,13 @@ _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 }
+_CANDIDATE_STANDING_KINDS = {
+    CANDIDATE_STANDING_RESPONSIBILITY_ASSIGNMENT_KIND,
+    CANDIDATE_STANDING_APPLICABILITY_ACT_EVIDENCE_KIND,
+    CANDIDATE_STANDING_APPLICABILITY_RESULT_KIND,
+    CANDIDATE_STANDING_ACT_EVIDENCE_KIND,
+    CANDIDATE_STANDING_RESULT_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -518,6 +537,7 @@ _SUPPORTED_KINDS = {
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
+    *_CANDIDATE_STANDING_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -1110,6 +1130,7 @@ def advance_operator_locality_standing(
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
+            or event.kind in _CANDIDATE_STANDING_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -1800,6 +1821,30 @@ def advance_operator_locality_standing(
                 ledger, event.identity
             )
             comparison_result_occurrences[event.identity] = None
+            continue
+        if event.kind == CANDIDATE_STANDING_RESPONSIBILITY_ASSIGNMENT_KIND:
+            get_candidate_standing_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == CANDIDATE_STANDING_APPLICABILITY_ACT_EVIDENCE_KIND:
+            get_candidate_standing_applicability_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == CANDIDATE_STANDING_APPLICABILITY_RESULT_KIND:
+            get_recorded_candidate_standing_applicability(
+                ledger, event.identity
+            )
+            applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == CANDIDATE_STANDING_ACT_EVIDENCE_KIND:
+            get_candidate_standing_act_evidence(ledger, event.identity)
+            continue
+        if event.kind == CANDIDATE_STANDING_RESULT_KIND:
+            get_recorded_candidate_standing(ledger, event.identity)
+            candidate_result_occurrences[event.identity] = None
             continue
         if (
             event.kind

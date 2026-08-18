@@ -38,6 +38,11 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_responsibility_assignment,
     record_recorded_pair_measurement_comparison_result,
 )
+from seed_runtime.candidate_standing_from_exact_result_assertions import (
+    boundaries_of_recorded_candidate_standing,
+    get_recorded_candidate_standing,
+    record_complete_candidate_standing,
+)
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     ByteMeasurementError,
@@ -271,6 +276,12 @@ def calculator_relation_witness():
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
         and event.material["source_ingest_occurrence_identity"] == stdout.identity
     )
+    candidate_source_boundary = ledger.append_boundary()
+    candidate_standing_result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity="calculator-candidate-standing",
+        source_append_boundary=candidate_source_boundary,
+    )
     return {
         "ledger": ledger,
         "claim_source": claim_source,
@@ -280,8 +291,80 @@ def calculator_relation_witness():
         "system_locality": system_locality,
         "stdout": stdout,
         "stdout_result": stdout_result,
+        "candidate_source_boundary": candidate_source_boundary,
+        "candidate_standing_result": candidate_standing_result,
         "raw_output": raw_output.getvalue(),
     }
+
+
+def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
+    calculator_relation_witness,
+):
+    witness = calculator_relation_witness
+    ledger = witness["ledger"]
+    path_finding = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, witness["path_comparison"].identity
+    )["finding"]
+    calculator_position = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, witness["stdout_result"].identity
+        )[0]
+    )
+    candidate_standing = get_recorded_candidate_standing(
+        ledger, witness["candidate_standing_result"].identity
+    )
+    references = candidate_standing["source_assertion_references"]
+    assertion_identities = {
+        reference["assertion_identity"] for reference in references
+    }
+
+    assert path_finding["identity"] in assertion_identities
+    assert calculator_position.assertion_identity in assertion_identities
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in candidate_standing["candidate_assertions"]
+    )
+    assert all(
+        len(candidate["input_support"]["assertion_references"]) == 1
+        for candidate in candidate_standing["candidate_assertions"]
+    )
+    assert not any(
+        {
+            reference["assertion_identity"]
+            for reference in candidate["input_support"]["assertion_references"]
+        }
+        == {path_finding["identity"], calculator_position.assertion_identity}
+        for candidate in candidate_standing["candidate_assertions"]
+    )
+    path_reference = next(
+        reference
+        for reference in references
+        if reference["assertion_identity"] == path_finding["identity"]
+    )
+    calculator_reference = next(
+        reference
+        for reference in references
+        if reference["assertion_identity"]
+        == calculator_position.assertion_identity
+    )
+    assert path_reference["source_locality_identity"] == "calculator-claim"
+    assert (
+        calculator_reference["source_locality_identity"]
+        == witness["system_locality"]
+    )
+    assert witness["candidate_standing_result"].locality_identity == (
+        "calculator-candidate-standing"
+    )
+    boundaries = boundaries_of_recorded_candidate_standing(
+        ledger, witness["candidate_standing_result"].identity
+    )
+    assert boundaries["source_ledger_boundary"] == witness[
+        "candidate_source_boundary"
+    ]
+    assert (
+        boundaries["source_ledger_boundary"]
+        != boundaries["candidate_result_ledger_boundary"]
+    )
 
 
 def test_claim_preserves_one_uninterpreted_path(calculator_relation_witness):

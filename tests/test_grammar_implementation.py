@@ -52,6 +52,9 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 )
+from seed_runtime.candidate_standing_from_exact_result_assertions import (
+    record_complete_candidate_standing,
+)
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
@@ -740,6 +743,36 @@ def _representation_admission_yield_witness() -> dict:
 def _representation_emission_applicability_yield_witness() -> dict:
     return _representation_candidate_admission_yield_witnesses()[
         "representation_emission_applicability"
+    ]
+
+
+def _complete_candidate_standing_yield_witnesses() -> dict[str, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity="complete-candidate-standing-yield",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    applicability = ledger.get(
+        result.material["applicability_result_event_identity"]
+    )
+    return {
+        "complete_candidate_standing_applicability": _yield_bundle(
+            ledger, applicability
+        ),
+        "complete_candidate_standing": _yield_bundle(ledger, result),
+    }
+
+
+def _complete_candidate_standing_applicability_yield_witness() -> dict:
+    return _complete_candidate_standing_yield_witnesses()[
+        "complete_candidate_standing_applicability"
+    ]
+
+
+def _complete_candidate_standing_yield_witness() -> dict:
+    return _complete_candidate_standing_yield_witnesses()[
+        "complete_candidate_standing"
     ]
 
 
@@ -2288,6 +2321,12 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     witnesses = {
+        "complete_candidate_standing_applicability": (
+            _complete_candidate_standing_applicability_yield_witness
+        ),
+        "complete_candidate_standing": (
+            _complete_candidate_standing_yield_witness
+        ),
         "representation_candidate": _representation_candidate_yield_witness,
         "representation_admission": _representation_admission_yield_witness,
         "representation_emission_applicability": (
@@ -3681,8 +3720,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 223
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 223
+    assert len(test_subjects) == 226
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 226
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -5057,6 +5096,12 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
 
 def test_different_yield_occurrences_do_not_share_result_identity():
     factories = {
+        "complete_candidate_standing_applicability": (
+            _complete_candidate_standing_applicability_yield_witness
+        ),
+        "complete_candidate_standing": (
+            _complete_candidate_standing_yield_witness
+        ),
         "representation_candidate": _representation_candidate_yield_witness,
         "representation_admission": _representation_admission_yield_witness,
         "representation_emission_applicability": (
