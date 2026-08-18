@@ -1278,7 +1278,7 @@ FIDELITY_SUBJECTS = {
     "representation_exact_evidence_references": (
         test_recorded_representation_declares_each_exact_evidence_pointer,
     ),
-    "live_seed_function_path": (
+    "seed_function_path": (
         test_each_runtime_module_participates_in_live_process_imports,
     ),
     "unresolved_event_material_visibility": (

@@ -6255,7 +6255,7 @@ FIDELITY_SUBJECTS = {
     "relation_witness_evidence": (
         test_every_live_relation_witness_names_its_relation_and_its_evidence,
     ),
-    "relation_live_witness": (test_each_relation_has_a_live_witness,),
+    "relation_occurrence_witness": (test_each_relation_has_a_live_witness,),
     "relation_witness_required_coordinates": (
         test_every_live_relation_witness_returns_its_relation_required_coordinates,
     ),
@@ -6376,7 +6376,7 @@ FIDELITY_SUBJECTS = {
         test_witness_discriminates_content_locality_and_occurrence,
     ),
     "relation_fidelity_cases": (test_every_relation_has_live_fidelity_cases,),
-    "live_relation_fidelity_cases": (
+    "relation_occurrence_fidelity_cases": (
         test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix,
     ),
     "bounded_fidelity_comparison": (
