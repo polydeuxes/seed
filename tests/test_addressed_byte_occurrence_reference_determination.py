@@ -562,7 +562,7 @@ def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
     )
 
 
-def test_carried_lifecycle_requires_source_material_to_remain_intact_and_preserves_supplied_standing():
+def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_standing():
     ledger = CallbackEventLedger()
     source, direct_result, standing = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
@@ -631,7 +631,7 @@ def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypa
     ) == prior
 
 
-def test_act_requires_retained_assignment_to_remain_intact_during_duplicate_iterator():
+def test_act_requires_intact_retained_assignment_during_duplicate_iterator():
     ledger = CallbackEventLedger()
     source, direct_result, standing = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
@@ -711,7 +711,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     ) == prior
 
 
-def test_determination_act_requires_applicability_to_remain_intact_during_iterator():
+def test_determination_act_requires_intact_applicability_during_iterator():
     ledger = CallbackEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
     prior = deepcopy(recorded["standing"])
@@ -793,11 +793,11 @@ FIDELITY_SUBJECTS = {
         test_carried_lifecycle_is_exact_after_sqlite_restart,
         test_determination_uses_addressed_kernel_without_full_reference_scan,
         test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay,
-        test_carried_lifecycle_requires_source_material_to_remain_intact_and_preserves_supplied_standing,
+        test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_standing,
         test_assignment_refuses_unrelated_append_during_source_revalidation,
-        test_act_requires_retained_assignment_to_remain_intact_during_duplicate_iterator,
+        test_act_requires_intact_retained_assignment_during_duplicate_iterator,
         test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield,
-        test_determination_act_requires_applicability_to_remain_intact_during_iterator,
+        test_determination_act_requires_intact_applicability_during_iterator,
         test_determination_result_refuses_iterator_append_without_yield,
     )
 }
