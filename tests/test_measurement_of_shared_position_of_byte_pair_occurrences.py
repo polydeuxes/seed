@@ -7,7 +7,9 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
+import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as recurrent_position_module
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position_module
+import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_act_evidence,
     record_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
@@ -137,10 +139,14 @@ def _direct_d2(
     return source, direct_result, determination_result
 
 
-def _fixture(*, current: bytes = b"abc", ledger=None):
+def _fixture(
+    *,
+    current: bytes = b"abc",
+    ledger=None,
+    locality: str = "shared-pair-position",
+):
     if ledger is None:
         ledger = EventLedger()
-    locality = "shared-pair-position"
     ingest_material(
         ledger,
         locality_identity=locality,
@@ -250,6 +256,25 @@ def _assignment(ledger, locality, first, second):
         second_assertion_identity=second.assertion_identity,
         locality_standing=_standing(ledger, locality),
     )
+
+
+def _recurrent_lifecycle_occurrences(ledger, reference):
+    result = ledger.get(reference.recorded_occurrence_identity)
+    act = ledger.get(result.material["responsible_act_evidence_identity"])
+    assignment = ledger.get(
+        act.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    pair = ledger.get(reference.pair_measurement_occurrence_identity)
+    source = ledger.get(reference.source_ingest_occurrence_identity)
+    return {
+        "result": result,
+        "act": act,
+        "assignment": assignment,
+        "pair": pair,
+        "source": source,
+    }
 
 
 def _record_path(ledger, locality, first, second):
@@ -397,6 +422,234 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert reading["authority"] != reading["scope"]
     assert result.exact_material is None
     assert result.identity in _standing(ledger, locality)["measurement_occurrences"]
+
+
+def test_two_recurrent_results_share_one_exact_later_standing_read(monkeypatch):
+    ledger, locality, _source, first, second = _fixture()
+    standing_reads = []
+    original = operator_standing_module.read_operator_locality_standing_through
+
+    def witnessed(
+        ledger,
+        *,
+        locality_identity,
+        through_event_occurrence_identity,
+    ):
+        standing_reads.append(
+            (locality_identity, through_event_occurrence_identity)
+        )
+        return original(
+            ledger,
+            locality_identity=locality_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
+        )
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        witnessed,
+    )
+    inputs = shared_position_module._inputs(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+    )
+    second_assignment = _recurrent_lifecycle_occurrences(
+        ledger, second
+    )["assignment"]
+
+    assert inputs.first == first
+    assert inputs.second == second
+    assert standing_reads == [
+        (locality, second_assignment.material["standing_boundary_identity"])
+    ]
+
+    standing_reads.clear()
+    references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        ledger,
+        result_occurrence_identity=first.recorded_occurrence_identity,
+    )
+    references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        ledger,
+        result_occurrence_identity=second.recorded_occurrence_identity,
+    )
+    assert len(standing_reads) == 2
+
+
+@pytest.mark.parametrize(
+    "changed_occurrence",
+    ("result", "act", "assignment", "pair", "source"),
+)
+def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing(
+    monkeypatch, changed_occurrence
+):
+    ledger, _locality, _source, first, second = _fixture()
+    changed = _recurrent_lifecycle_occurrences(ledger, first)[
+        changed_occurrence
+    ]
+    original_material = deepcopy(changed.material)
+    original = operator_standing_module.read_operator_locality_standing_through
+    changed_once = False
+
+    def change_after_standing(*args, **kwargs):
+        nonlocal changed_once
+        standing = original(*args, **kwargs)
+        if not changed_once:
+            if changed_occurrence == "source":
+                changed.material["source_role"] = "changed after Standing"
+            elif changed_occurrence == "pair":
+                changed.material["assertions"][0]["dimensions"][
+                    "content"
+                ] = {"changed_after_standing": True}
+            else:
+                changed.material["changed_after_standing"] = True
+            changed_once = True
+        return standing
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        change_after_standing,
+    )
+    identities = {
+        "first_result_occurrence_identity": first.recorded_occurrence_identity,
+        "first_assertion_identity": first.assertion_identity,
+        "second_result_occurrence_identity": second.recorded_occurrence_identity,
+        "second_assertion_identity": second.assertion_identity,
+    }
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._inputs(ledger, **identities)
+
+    changed.material.clear()
+    changed.material.update(original_material)
+    assert shared_position_module._inputs(ledger, **identities).first == first
+
+
+def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_append(
+    monkeypatch,
+):
+    ledger, locality, _source, first, second = _fixture()
+    original = operator_standing_module.read_operator_locality_standing_through
+    appended = False
+
+    def append_after_standing(*args, **kwargs):
+        nonlocal appended
+        standing = original(*args, **kwargs)
+        if not appended:
+            ledger.append(
+                "test.unrelated.recorded",
+                {"source": "unrelated"},
+                locality_identity=locality,
+            )
+            appended = True
+        return standing
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        append_after_standing,
+    )
+    inputs = shared_position_module._inputs(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+    )
+
+    assert inputs.first == first
+    assert inputs.second == second
+    assert appended is True
+
+
+def test_recurrent_result_batch_refuses_assertion_and_locality_substitution():
+    ledger, _locality, _source, first, second = _fixture()
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._inputs(
+            ledger,
+            first_result_occurrence_identity=first.recorded_occurrence_identity,
+            first_assertion_identity=second.assertion_identity,
+            second_result_occurrence_identity=second.recorded_occurrence_identity,
+            second_assertion_identity=second.assertion_identity,
+        )
+
+    _ledger, _other_locality, _other_source, _other_first, other_second = (
+        _fixture(ledger=ledger, locality="another-shared-pair-position")
+    )
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._inputs(
+            ledger,
+            first_result_occurrence_identity=first.recorded_occurrence_identity,
+            first_assertion_identity=first.assertion_identity,
+            second_result_occurrence_identity=(
+                other_second.recorded_occurrence_identity
+            ),
+            second_assertion_identity=other_second.assertion_identity,
+        )
+
+
+def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
+    ledger, _locality, _source, first, second = _fixture()
+    assignment = _recurrent_lifecycle_occurrences(ledger, first)["assignment"]
+    assignment.material["standing_boundary_identity"] = (
+        second.recorded_occurrence_identity
+    )
+
+    with pytest.raises((SharedPairPositionError, ValueError)):
+        shared_position_module._inputs(
+            ledger,
+            first_result_occurrence_identity=first.recorded_occurrence_identity,
+            first_assertion_identity=first.assertion_identity,
+            second_result_occurrence_identity=second.recorded_occurrence_identity,
+            second_assertion_identity=second.assertion_identity,
+        )
+
+
+def test_recurrent_result_batch_and_public_readers_survive_restart(
+    monkeypatch, tmp_path
+):
+    database = tmp_path / "recurrent-result-batch.sqlite"
+    ledger = SQLiteEventLedger(str(database))
+    ledger, locality, _source, first, second = _fixture(ledger=ledger)
+    ledger.close()
+    reopened = SQLiteEventLedger(str(database))
+    standing_reads = []
+    original = operator_standing_module.read_operator_locality_standing_through
+
+    def witnessed(*args, **kwargs):
+        standing_reads.append(kwargs["through_event_occurrence_identity"])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "read_operator_locality_standing_through",
+        witnessed,
+    )
+    inputs = shared_position_module._inputs(
+        reopened,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+    )
+    assert inputs.first == first
+    assert inputs.second == second
+    assert len(standing_reads) == 1
+
+    standing_reads.clear()
+    references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        reopened,
+        result_occurrence_identity=first.recorded_occurrence_identity,
+    )
+    references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        reopened,
+        result_occurrence_identity=second.recorded_occurrence_identity,
+    )
+    assert len(standing_reads) == 2
+    assert _standing(reopened, locality)["locality_identity"] == locality
+    reopened.close()
 
 
 def test_direct_position_coordinate_assertions_compose_without_recurrence_support(
@@ -1048,6 +1301,12 @@ FIDELITY_SUBJECTS = {
         test_d2_result_corruption_invalidates_shared_assignment_reader,
         test_d2_shared_assignment_revalidates_after_callback_atomically,
         test_corrupted_shared_position_yield_relations_are_refused,
+        test_two_recurrent_results_share_one_exact_later_standing_read,
+        test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing,
+        test_recurrent_result_batch_refuses_assertion_and_locality_substitution,
+        test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary,
+        test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_append,
+        test_recurrent_result_batch_and_public_readers_survive_restart,
     ),
     "declared_measurement_result": (
         test_exact_yielded_pair_relations_compose_at_one_shared_position,

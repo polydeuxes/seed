@@ -720,6 +720,38 @@ def test_assignment_read_threads_one_exact_standing_to_pair_validation(monkeypat
     ) is None
 
 
+@pytest.mark.parametrize("changed_input", ("measurement", "ingest"))
+def test_explicit_prior_standing_binds_each_exact_input_occurrence(changed_input):
+    ledger, locality, pair, _recurrence, source, finding = _fixture()
+    prior_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+    assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        locality_standing=prior_standing,
+    )
+    forged = deepcopy(prior_standing)
+    if changed_input == "measurement":
+        forged["measurement_occurrences"][pair.identity][
+            "result_identity"
+        ] = "substituted-result"
+    else:
+        carried = next(
+            occurrence
+            for occurrence in forged["ingest_occurrences"]
+            if occurrence["evidence_event_identity"] == source.identity
+        )
+        carried["result_identity"] = "substituted-result"
+
+    with pytest.raises(ValueError, match="no exact prior Standing"):
+        pair_occurrence_measurement._read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            assignment.identity,
+            prior_standing=forged,
+        )
+
+
 def test_assignment_pair_handoff_still_refuses_later_pair_corruption():
     ledger, locality, pair, _recurrence, _source, finding = _fixture()
     prior_standing = read_operator_locality_standing(
@@ -1146,6 +1178,7 @@ FIDELITY_SUBJECTS = {
         test_replay_validation_context_refuses_unbound_accumulators_and_clears,
         test_replay_context_before_the_recorded_assignment_boundary_is_refused,
         test_replay_context_refuses_forged_exact_boundary_input_coordinates,
+        test_explicit_prior_standing_binds_each_exact_input_occurrence,
         test_assignment_act_and_result_survive_distinct_durable_restarts,
         test_measurement_result_does_not_promote_across_the_three_later_crossings,
         test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,

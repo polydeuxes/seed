@@ -23,6 +23,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+    _references_to_addressed_recorded_recurrent_pair_position_results,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -332,6 +333,49 @@ def _inputs(
             ),
         )
     else:
+        result_occurrences = tuple(
+            ledger.get(identity)
+            if type(identity) is str and identity
+            else None
+            for identity in (
+                first_result_occurrence_identity,
+                second_result_occurrence_identity,
+            )
+        )
+        if all(
+            result is not None
+            and result.kind
+            == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+            for result in result_occurrences
+        ):
+            first, second = (
+                _references_to_addressed_recorded_recurrent_pair_position_results(
+                    ledger,
+                    result_and_assertion_identities=(
+                        (
+                            _identity(
+                                first_result_occurrence_identity,
+                                "shared-position Measurement requires one exact result occurrence",
+                            ),
+                            _identity(
+                                first_assertion_identity,
+                                "shared-position Measurement requires one exact Assertion identity",
+                            ),
+                        ),
+                        (
+                            _identity(
+                                second_result_occurrence_identity,
+                                "shared-position Measurement requires one exact result occurrence",
+                            ),
+                            _identity(
+                                second_assertion_identity,
+                                "shared-position Measurement requires one exact Assertion identity",
+                            ),
+                        ),
+                    ),
+                )
+            )
+            return _validated_inputs(first, second)
         first = _resolve_reference(
             ledger,
             result_occurrence_identity=first_result_occurrence_identity,
