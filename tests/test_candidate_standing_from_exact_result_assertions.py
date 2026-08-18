@@ -12,6 +12,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     exact_source_assertion_materials_from_ordered_pair_candidate,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_representation_paths_from_every_ordered_pair_candidate,
+    exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
@@ -600,6 +601,71 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
     assert reopened.append_boundary() == boundary
 
 
+def test_every_ordered_pair_relation_coordinate_carries_both_exact_source_assertions():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    expected = exact_source_assertion_materials_from_every_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+    boundary_before_read = ledger.append_boundary()
+
+    readings = exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+
+    assert tuple(
+        (candidate_identity, first, second)
+        for candidate_identity, first, second, _relation in readings
+    ) == expected
+    assert all(
+        relation == {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "represented_relation",
+            ],
+            "coordinate": "represented_relation",
+            "material": "Unknown",
+        }
+        for _candidate_identity, _first, _second, relation in readings
+    )
+    assert ledger.append_boundary() == boundary_before_read
+
+
+def test_exact_sources_beside_every_relation_coordinate_replay_after_sqlite_restart(
+    tmp_path,
+):
+    database = str(tmp_path / "candidate-relation-exact-sources.sqlite")
+    ledger = SQLiteEventLedger(database)
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    expected = exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+    boundary = ledger.append_boundary()
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    assert exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+    ) == expected
+    assert reopened.append_boundary() == boundary
+
+
 def test_represented_relation_coordinate_reader_refuses_one_source_candidate():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -886,6 +952,8 @@ FIDELITY_SUBJECTS = {
     "ordered_pair_candidate_represented_relation_coordinate": (
         test_every_ordered_pair_candidate_exposes_its_unresolved_represented_relation_coordinate,
         test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sqlite_restart,
+        test_every_ordered_pair_relation_coordinate_carries_both_exact_source_assertions,
+        test_exact_sources_beside_every_relation_coordinate_replay_after_sqlite_restart,
         test_represented_relation_coordinate_reader_refuses_one_source_candidate,
         test_represented_relation_coordinate_reader_refuses_filled_relation_material,
     ),

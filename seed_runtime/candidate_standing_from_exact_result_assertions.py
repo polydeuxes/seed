@@ -1629,6 +1629,42 @@ def represented_relation_coordinates_from_every_ordered_pair_candidate(
     return tuple(coordinates)
 
 
+def exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[
+        str,
+        dict[str, Any],
+        dict[str, Any],
+        dict[str, Any],
+    ],
+    ...,
+]:
+    """Read both exact source Assertions beside every unresolved relation."""
+
+    return tuple(
+        (
+            candidate_identity,
+            _exact_source_assertion_material(ledger, first_reference),
+            _exact_source_assertion_material(ledger, second_reference),
+            relation_coordinate,
+        )
+        for (
+            candidate_identity,
+            first_reference,
+            second_reference,
+            relation_coordinate,
+        ) in represented_relation_coordinates_from_every_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=(
+                candidate_standing_result_event_identity
+            ),
+        )
+    )
+
+
 def boundaries_of_recorded_candidate_standing(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, EventLedgerBoundary]:
