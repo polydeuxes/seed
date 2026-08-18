@@ -1301,7 +1301,7 @@
         "result": "different_Assertion"
       },
       "Unknown": {
-        "requires_elimination": false
+        "may_remain": "Unknown"
       }
     },
     "01.Standing.D.2": {
