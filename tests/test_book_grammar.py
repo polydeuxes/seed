@@ -102,12 +102,20 @@ def test_witness_yield_relation_preserves_occurrence_and_result_identity():
         "Act_occurrence_identity",
         "result_identity",
     ]
-    assert (
-        grammar["relations"]["yield"][
-            "same_result_content_identifies_one_result"
-        ]
-        is False
-    )
+    assert grammar["relations"]["yield"]["standing_not_established"] == [
+        {
+            "first_subject": "same_result_content_in_distinct_Act_occurrences",
+            "relation": "identifies",
+            "second_subject": "one_result",
+            "standing": "not_established",
+        },
+        {
+            "first_subject": "same_result_content_in_distinct_Act_occurrences",
+            "relation": "identifies",
+            "second_subject": "one_Yield_relation",
+            "standing": "not_established",
+        },
+    ]
 
 
 def _assert_recorded_occurrence_kind_families(grammar):
@@ -307,7 +315,14 @@ def test_witness_grammar_represents_the_book_without_identity_equality():
             "relation": "represents",
             "second_subject": "this_Book",
         },
-        "identifies_book": False,
+        "standing_not_established": [
+            {
+                "first_subject": "this_Grammar",
+                "relation": "identifies",
+                "second_subject": "this_Book",
+                "standing": "not_established",
+            }
+        ],
     }
 
 
@@ -383,6 +398,105 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
     assert clause["emission_input_Applicability_occurrence"][
         "each_other_Applicability_finding"
     ] == {"requires": "separate_evidenced_determination"}
+    assert clause["excluded_input"] == {
+        "relation_findings": [
+            {
+                "first_subject": "excluded_input",
+                "relation": "Participation",
+                "second_subject": "exact_Act",
+                "finding": "excluded",
+            },
+            {
+                "first_subject": "excluded_input",
+                "relation": "supports",
+                "second_subject": "result",
+                "finding": "excluded",
+            },
+        ],
+        "standing_not_established": [
+            {
+                "first_subject": {
+                    "first_subject": "exclusion",
+                    "relation": "of",
+                    "second_subject": "one_proposed_input",
+                },
+                "relation": "establish",
+                "second_subject": "Act_nonoccurrence",
+                "standing": "not_established",
+            },
+            {
+                "first_subject": {
+                    "first_subject": "exclusion",
+                    "relation": "of",
+                    "second_subject": "one_proposed_input",
+                },
+                "relation": "establish",
+                "second_subject": "Act_prohibition",
+                "standing": "not_established",
+            },
+        ],
+    }
+    assert clause["Assertion_identity_findings"] == [
+        {"subject": "each_Assertion", "finding": "distinct_identity"}
+    ]
+    assert clause["persistent_Standing"] == {
+        "standing_not_established": [
+            {
+                "first_subject": "persistent_Standing",
+                "relation": "supplies",
+                "second_subject": "another_Act",
+                "standing": "not_established",
+            }
+        ]
+    }
+
+
+def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    clause = grammar["clause_coordinates"]["01.Standing.D.2"]
+
+    assert clause["earlier_Assertions"] == {
+        "preserves": ["exact_identity", "exact_reference"],
+        "standing_not_established": [
+            {
+                "first_subject": {
+                    "first_subject": "preservation",
+                    "relation": "of",
+                    "second_subject": "earlier_Assertions",
+                },
+                "relation": "establish",
+                "second_subject": "separate_Applicability_boundary_for_each_Assertion",
+                "standing": "not_established",
+            },
+            {
+                "first_subject": {
+                    "first_subject": "preservation",
+                    "relation": "of",
+                    "second_subject": "earlier_Assertions",
+                },
+                "relation": "requires",
+                "second_subject": {
+                    "first_subject": "Compare",
+                    "relation": "of",
+                    "second_subject": {
+                        "first_subject": "later_Assertion",
+                        "relation": "with",
+                        "second_subject": "each_earlier_Assertion",
+                    },
+                },
+                "standing": "not_established",
+            },
+        ],
+    }
+    assert clause["Compare_result"] == {
+        "may_have_own_subject": [
+            "comparison",
+            "coordinate_distinction",
+            "result_shape",
+        ],
+        "preserves": ["upstream_subject"],
+        "participation_in_another_Act": "unestablished",
+    }
 
 
 def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
@@ -527,6 +641,9 @@ FIDELITY_SUBJECTS = {
     ),
     "applicability_usefulness_agreement_availability_distinction": (
         test_applicability_requires_more_than_usefulness_agreement_or_availability,
+    ),
+    "later_Assertion_current_Standing_boundary": (
+        test_later_assertion_meets_current_standing_without_collapsed_boolean_claims,
     ),
     "content_locality_occurrence_distinction": (
         test_witness_discriminates_content_locality_and_occurrence,

@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 import sqlite3
 
 import pytest
@@ -68,6 +70,29 @@ def test_one_repeated_reference_relation_is_collected_once(tmp_path):
     assert comparison.references_from(events[1].identity) == [
         ("source_reference", events[0].identity)
     ]
+    grammar = json.loads(
+        (Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert grammar["clause_coordinates"]["01.Source.D.1"][
+        "repeated_reference_to_one_occurrence"
+    ] == {
+        "standing_not_established": [
+            {
+                "first_subject": "repeated_reference_to_one_occurrence",
+                "relation": "create",
+                "second_subject": "another_occurrence",
+                "standing": "not_established",
+            },
+            {
+                "first_subject": "repeated_reference_to_one_occurrence",
+                "relation": "increment",
+                "second_subject": "another_occurrence",
+                "standing": "not_established",
+            },
+        ]
+    }
 
 
 def test_collection_stays_at_its_exact_boundary_after_the_ledger_advances(tmp_path):

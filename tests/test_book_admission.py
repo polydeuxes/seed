@@ -193,6 +193,18 @@ def test_book_admission_carries_no_unused_words():
 
 def test_witness_grammar_words_in_book_admission():
     assert witness_grammar_words() <= book_admission()
+    grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
+
+    def contains_host_boolean(value: object) -> bool:
+        if type(value) is bool:
+            return True
+        if type(value) is dict:
+            return any(contains_host_boolean(nested) for nested in value.values())
+        if type(value) is list:
+            return any(contains_host_boolean(nested) for nested in value)
+        return False
+
+    assert not contains_host_boolean(grammar)
 
 
 FIDELITY_SUBJECTS = {

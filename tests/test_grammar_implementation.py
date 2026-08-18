@@ -278,7 +278,14 @@ def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
         "material_order": "preserved",
-        "same_material_in_different_order_identifies_one_composite": False,
+        "standing_not_established": [
+            {
+                "first_subject": "same_material_in_different_order",
+                "relation": "identifies",
+                "second_subject": "one_composite",
+                "standing": "not_established",
+            }
+        ],
         "requires": ["exact_material", "exact_order", "exact_path"],
         "relations": {
             "of": {
@@ -290,9 +297,14 @@ def test_every_grammar_representation_composite_preserves_material_order():
                     "second_subject",
                     "exact_order",
                 ],
-                "same_subjects_in_different_order_establish_one_relation": (
-                    False
-                ),
+                "standing_not_established": [
+                    {
+                        "first_subject": "same_subjects_in_different_order",
+                        "relation": "establish",
+                        "second_subject": "one_relation",
+                        "standing": "not_established",
+                    }
+                ],
             }
         },
     }
@@ -1952,7 +1964,7 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
                 corrupted_locality,
                 occurrence_identity=corrupted_locality["event"].identity,
             ),
-            "occurrence_of_different_relation": _assertion_locality_witness(
+            "different_relation_occurrence": _assertion_locality_witness(
                 unrelated_locality,
                 occurrence_identity=locality["event"].identity,
             ),
@@ -1970,7 +1982,7 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
             "evidence_not_intact": _participation_witness(
                 corrupted_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
-            "occurrence_of_different_relation": _participation_witness(
+            "different_relation_occurrence": _participation_witness(
                 unrelated_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
         },
@@ -1979,7 +1991,7 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
             "relation_missing": _occurrence_result_witness(missing_yield),
             "different_occurrence": _occurrence_result_witness(wrong_yield),
             "evidence_not_intact": _occurrence_result_witness(corrupted_yield),
-            "occurrence_of_different_relation": _occurrence_result_witness(unrelated_yield),
+            "different_relation_occurrence": _occurrence_result_witness(unrelated_yield),
         },
         "carried_by": {
             "exact": _evidence_carried_by_result_occurrence_witness(
@@ -1996,7 +2008,7 @@ def _relation_fidelity_findings() -> dict[str, dict[str, str]]:
                     corrupted_yield
                 )
             ),
-            "occurrence_of_different_relation": (
+            "different_relation_occurrence": (
                 _evidence_carried_by_result_occurrence_witness(
                     unrelated_yield
                 )
@@ -2087,28 +2099,28 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
             "relation_missing": missing_locality,
             "different_occurrence": wrong_locality,
             "evidence_not_intact": corrupted_locality,
-            "occurrence_of_different_relation": unrelated_locality,
+            "different_relation_occurrence": unrelated_locality,
         },
         "participation": {
             "exact": emission,
             "relation_missing": missing_participation,
             "different_occurrence": wrong_participation,
             "evidence_not_intact": corrupted_participation,
-            "occurrence_of_different_relation": unrelated_participation,
+            "different_relation_occurrence": unrelated_participation,
         },
         "yield": {
             "exact": emission,
             "relation_missing": missing_yield,
             "different_occurrence": wrong_yield,
             "evidence_not_intact": corrupted_yield,
-            "occurrence_of_different_relation": unrelated_yield,
+            "different_relation_occurrence": unrelated_yield,
         },
         "carried_by": {
             "exact": emission,
             "relation_missing": missing_yield,
             "different_occurrence": wrong_yield,
             "evidence_not_intact": corrupted_yield,
-            "occurrence_of_different_relation": unrelated_yield,
+            "different_relation_occurrence": unrelated_yield,
         },
     }
 
@@ -2180,7 +2192,7 @@ def _yield_requirement_bundles(
         "relation_missing": missing,
         "different_occurrence": different_occurrence,
         "evidence_not_intact": corrupted,
-        "occurrence_of_different_relation": unrelated,
+        "different_relation_occurrence": unrelated,
     }
 
 
@@ -2397,7 +2409,7 @@ def _additional_relation_occurrence_fidelity_findings() -> dict[
             "evidence_not_intact": _representation_locality_witness(
                 corrupted_representation_locality
             ),
-            "occurrence_of_different_relation": _representation_locality_witness(
+            "different_relation_occurrence": _representation_locality_witness(
                 unrelated_representation_locality
             ),
         },
@@ -2412,7 +2424,7 @@ def _additional_relation_occurrence_fidelity_findings() -> dict[
             "evidence_not_intact": _occurrence_result_witness(
                 corrupted_representation_yield
             ),
-            "occurrence_of_different_relation": _occurrence_result_witness(
+            "different_relation_occurrence": _occurrence_result_witness(
                 unrelated_representation_yield
             ),
         },
@@ -2423,7 +2435,7 @@ def _additional_relation_occurrence_fidelity_findings() -> dict[
             "evidence_not_intact": _emission_attempt_locality_witness(
                 corrupted_attempt
             ),
-            "occurrence_of_different_relation": _emission_attempt_locality_witness(
+            "different_relation_occurrence": _emission_attempt_locality_witness(
                 unrelated_attempt
             ),
         },
@@ -2524,7 +2536,20 @@ def _relation_witness_specs() -> dict[str, dict]:
             "from": "Act_occurrence",
             "to": "result",
             "preserves": ["Act_occurrence_identity", "result_identity"],
-            "same_result_content_identifies_one_result": False,
+            "standing_not_established": [
+                {
+                    "first_subject": "same_result_content_in_distinct_Act_occurrences",
+                    "relation": "identifies",
+                    "second_subject": "one_result",
+                    "standing": "not_established",
+                },
+                {
+                    "first_subject": "same_result_content_in_distinct_Act_occurrences",
+                    "relation": "identifies",
+                    "second_subject": "one_Yield_relation",
+                    "standing": "not_established",
+                },
+            ],
             "requires": requirements,
         },
         "carried_by": {
@@ -3497,7 +3522,7 @@ def _locality_fidelity_findings() -> dict[str, str]:
         "relation_missing": _locality_witness(relation_missing),
         "different_occurrence": _locality_witness(different_occurrence),
         "evidence_not_intact": _locality_witness(evidence_not_intact),
-        "occurrence_of_different_relation": _locality_witness(occurrence_of_different_relation),
+        "different_relation_occurrence": _locality_witness(occurrence_of_different_relation),
     }
 
 
@@ -3626,8 +3651,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 221
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 221
+    assert len(test_subjects) == 222
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 222
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -3795,7 +3820,7 @@ def test_byte_pair_yield_adversaries_change_one_requirement_each():
         "relation_missing": (False, True, True),
         "different_occurrence": (True, False, True),
         "evidence_not_intact": (True, True, False),
-        "occurrence_of_different_relation": (True, True, True),
+        "different_relation_occurrence": (True, True, True),
     }
     boundaries = _byte_pair_yield_requirement_bundles()
 
@@ -3814,7 +3839,7 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
         "relation_missing": (False, True, True),
         "different_occurrence": (True, False, True),
         "evidence_not_intact": (True, True, False),
-        "occurrence_of_different_relation": (True, True, True),
+        "different_relation_occurrence": (True, True, True),
     }
     boundaries = _remaining_yield_requirement_bundles()
 
@@ -3908,7 +3933,7 @@ def test_successful_emission_adversaries_change_one_requirement_each():
             "occurrence_witness": True,
             "intact_evidence": False,
         },
-        "occurrence_of_different_relation": {
+        "different_relation_occurrence": {
             "exact_relation": True,
             "occurrence_witness": True,
             "intact_evidence": True,
@@ -3976,7 +4001,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
         "relation_missing": (False, True, True),
         "different_occurrence": (True, False, True),
         "evidence_not_intact": (True, True, False),
-        "occurrence_of_different_relation": (True, True, True),
+        "different_relation_occurrence": (True, True, True),
     }
     bundles = {
         "locality": {
@@ -3984,21 +4009,21 @@ def test_representation_result_adversaries_change_one_requirement_each():
             "relation_missing": missing_locality,
             "different_occurrence": wrong_locality,
             "evidence_not_intact": corrupted_locality,
-            "occurrence_of_different_relation": unrelated_locality,
+            "different_relation_occurrence": unrelated_locality,
         },
         "yield": {
             "exact": exact,
             "relation_missing": missing_yield,
             "different_occurrence": wrong_yield,
             "evidence_not_intact": corrupted_yield,
-            "occurrence_of_different_relation": unrelated_yield,
+            "different_relation_occurrence": unrelated_yield,
         },
         "carried_by": {
             "exact": exact,
             "relation_missing": missing_yield,
             "different_occurrence": wrong_yield,
             "evidence_not_intact": corrupted_yield,
-            "occurrence_of_different_relation": unrelated_yield,
+            "different_relation_occurrence": unrelated_yield,
         },
     }
     witnesses = {
@@ -4087,7 +4112,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
         "relation_missing": (False, True, True),
         "different_occurrence": (True, False, True),
         "evidence_not_intact": (True, True, False),
-        "occurrence_of_different_relation": (True, True, True),
+        "different_relation_occurrence": (True, True, True),
     }
     actual = {
         "locality": {
@@ -4104,7 +4129,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
                 corrupted_locality,
                 occurrence_identity=corrupted_locality["event"].identity,
             ),
-            "occurrence_of_different_relation": _assertion_locality_requirements(
+            "different_relation_occurrence": _assertion_locality_requirements(
                 unrelated_locality, occurrence_identity=locality["event"].identity
             ),
         },
@@ -4115,7 +4140,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
                 "relation_missing": missing_participation,
                 "different_occurrence": wrong_participation,
                 "evidence_not_intact": corrupted_participation,
-                "occurrence_of_different_relation": unrelated_participation,
+                "different_relation_occurrence": unrelated_participation,
             }.items()
         },
         "yield": {
@@ -4125,7 +4150,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
                 "relation_missing": missing_yield,
                 "different_occurrence": wrong_yield,
                 "evidence_not_intact": corrupted_yield,
-                "occurrence_of_different_relation": unrelated_yield,
+                "different_relation_occurrence": unrelated_yield,
             }.items()
         },
     }
@@ -4347,7 +4372,7 @@ def test_input_is_an_open_act_local_role_before_participation():
 
     assert grammar["input_role"] == {
         "kind": "Act_local_role",
-        "preserves_subject_identity": True,
+        "preserves": ["subject_identity"],
         "distinct_from": [
             "subject",
             "candidate",
@@ -4377,7 +4402,6 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             ["candidate", "Participation_relation"],
             ["Participation_relation", "candidate"],
         ],
-        "ordered_coordinate_pair_establishes_relation": False,
         "candidate_coordinates": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -4401,6 +4425,12 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "candidate_by_subject_identity",
             "Participation_relation_by_subject_identity",
             "Participation_by_candidate_identity",
+            {
+                "first_subject": "ordered_coordinate_pair",
+                "relation": "establish",
+                "second_subject": "relation",
+                "standing": "not_established",
+            },
         ],
     }
     assert len(distinctions["ordered_coordinate_pair"]) == 6
@@ -4414,7 +4444,9 @@ def _assert_role_distinctions(distinctions: dict) -> None:
         first != second
         for first, second in distinctions["ordered_coordinate_pair"]
     )
-    assert distinctions["ordered_coordinate_pair_establishes_relation"] is False
+    assert distinctions["standing_not_established"][-1]["standing"] == (
+        "not_established"
+    )
 
 
 def test_subject_candidate_and_participation_relation_are_distinguished_in_both_directions():
@@ -4451,7 +4483,7 @@ def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
     assert_refused(missing_comparison)
 
     promoted_by_identity = deepcopy(distinctions)
-    promoted_by_identity["ordered_coordinate_pair_establishes_relation"] = True
+    promoted_by_identity["standing_not_established"][-1]["standing"] = "established"
     assert_refused(promoted_by_identity)
 
     compressed_coordinates = deepcopy(distinctions)
@@ -4617,7 +4649,14 @@ def test_unjoined_subjects_do_not_witness_an_input_to_act_relation():
     assert bundle["applicability"]["downstream_act_identity"]
     assert bundle["applicability"]["applicability_act_occurrence_identity"]
     assert grammar["relation_witness_coordinates"] == {
-        "subject_presence_establishes_relation": False,
+        "standing_not_established": [
+            {
+                "first_subject": "subject_presence",
+                "relation": "establish",
+                "second_subject": "relation",
+                "standing": "not_established",
+            }
+        ],
         "families": {
             "candidate_participation": ["exact_relation", "occurrence_witness"],
             "participation": [
@@ -4694,14 +4733,14 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
         "relation_missing": relation_missing,
         "different_occurrence": different_occurrence,
         "evidence_not_intact": evidence_not_intact,
-        "occurrence_of_different_relation": occurrence_of_different_relation,
+        "different_relation_occurrence": occurrence_of_different_relation,
     }
     assert {name: _locality_witness(case) for name, case in cases.items()} == {
         "exact": EXACT,
         "relation_missing": MISSING,
         "different_occurrence": MISSING,
         "evidence_not_intact": MISSING,
-        "occurrence_of_different_relation": EXACT,
+        "different_relation_occurrence": EXACT,
     }
     assert _locality_requirements(relation_missing) == {
         "exact_relation": False,
@@ -4722,6 +4761,17 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
 
 def test_occurrence_and_result_subjects_do_not_establish_their_relation():
     bundle = _byte_measurement_witness()
+    assert _clause("02.Acts.A")["occurrence_to_result"] == {
+        "requires": "Evidence",
+        "standing_not_established": [
+            {
+                "first_subject": "result_existence_by_identity",
+                "relation": "establish",
+                "second_subject": "occurrence_to_result_relation",
+                "standing": "not_established",
+            }
+        ],
+    }
     assert _occurrence_result_witness(bundle) == EXACT
 
     event = bundle["event"]
@@ -5332,6 +5382,28 @@ def test_standing_locality_continuation_stages_keep_distinct_clause_coordinates(
 
 
 def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
+    assert _clause("01.Source.G")["no_material_boundary"] == {
+        "standing_not_established": [
+            {
+                "first_subject": "boundary_supplies_no_material",
+                "relation": "establish",
+                "second_subject": "material_result",
+                "standing": "not_established",
+            },
+            {
+                "first_subject": "boundary_supplies_no_material",
+                "relation": "establish",
+                "second_subject": "Yield",
+                "standing": "not_established",
+            },
+            {
+                "first_subject": "boundary_supplies_no_material",
+                "relation": "establish",
+                "second_subject": "completion",
+                "standing": "not_established",
+            },
+        ]
+    }
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "01.Source.G"
