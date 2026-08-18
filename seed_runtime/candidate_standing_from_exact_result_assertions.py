@@ -1570,6 +1570,65 @@ def exact_source_assertion_coordinates_from_every_ordered_pair_candidate(
     return tuple(coordinates)
 
 
+def represented_relation_coordinates_from_every_ordered_pair_candidate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[
+        str,
+        dict[str, Any],
+        dict[str, Any],
+        dict[str, Any],
+    ],
+    ...,
+]:
+    """Read every ordered Candidate relation coordinate without filling it."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    coordinates = []
+    for candidate in result.material["candidate_assertions"]:
+        subject = candidate.get("assertion_subject")
+        if type(subject) is not dict or set(subject) != {
+            "first_source_assertion_reference",
+            "second_source_assertion_reference",
+        }:
+            raise ValueError(
+                "Candidate is not one exact ordered source Assertion pair"
+            )
+        represented_relation = candidate.get("represented_relation")
+        if represented_relation != "Unknown":
+            raise ValueError("Candidate represented relation is not Unknown")
+        coordinates.append(
+            (
+                _assertion_identity(
+                    candidate,
+                    "ordered-pair Candidate requires one exact identity",
+                ),
+                deepcopy(subject["first_source_assertion_reference"]),
+                deepcopy(subject["second_source_assertion_reference"]),
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        BOOK_CLAUSE,
+                        "ordered_pair_candidate_responsibility",
+                        "represented_relation",
+                    ],
+                    "coordinate": "represented_relation",
+                    "material": represented_relation,
+                },
+            )
+        )
+    return tuple(coordinates)
+
+
 def boundaries_of_recorded_candidate_standing(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, EventLedgerBoundary]:
