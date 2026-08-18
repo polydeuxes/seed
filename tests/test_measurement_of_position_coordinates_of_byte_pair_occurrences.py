@@ -5,6 +5,15 @@ import pytest
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 import seed_runtime.operator_locality_standing as standing_module
 from seed_runtime.evidence_of_yield_relation import _record_evidence_of_yield_relation
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+)
+from seed_runtime.byte_measurement import (
+    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ByteMeasurementError,
+)
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -16,6 +25,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     get_byte_pair_occurrence_position_measurement_responsibility_assignment,
     get_recorded_byte_pair_occurrence_position_measurement,
     measure_position_coordinates_of_byte_pair_occurrences,
+    move_recorded_position_assertion_to_locality,
     record_byte_pair_occurrence_position_measurement_act_evidence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     record_byte_pair_occurrence_position_measurement_result,
@@ -23,6 +33,38 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
+
+
+class MovementSourceChangeLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self.source_event_identity = None
+        self.trigger_kind = None
+        self.changed = False
+
+    def append(
+        self,
+        kind,
+        material=None,
+        *,
+        exact_material=None,
+        locality_identity=None,
+    ):
+        event = super().append(
+            kind,
+            material,
+            exact_material=exact_material,
+            locality_identity=locality_identity,
+        )
+        if (
+            not self.changed
+            and kind == self.trigger_kind
+            and type(self.source_event_identity) is str
+        ):
+            self.changed = True
+            source = self.get(self.source_event_identity)
+            source.material["unknown"] = ["changed after movement occurrence"]
+        return event
 from seed_runtime.operator_locality_standing import (
     _carry_byte_pair_occurrence_position_measurement_result_into_standing,
     read_operator_locality_standing,
@@ -719,6 +761,65 @@ def test_refused_same_call_result_does_not_change_prior_standing():
     assert prior == unchanged
 
 
+def _assert_position_assertion_movement_requires_its_exact_source(
+    trigger_kind, result_occurrences
+):
+    ledger = MovementSourceChangeLedger()
+    _source_event, _assignment, _act, result = _record(
+        ledger, exact=b"4\n", locality="calculator-result"
+    )
+    reference = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+        ledger, result.identity
+    )[0]
+    ledger.source_event_identity = result.identity
+    ledger.trigger_kind = trigger_kind
+
+    with pytest.raises((ByteMeasurementError, ValueError)):
+        move_recorded_position_assertion_to_locality(
+            ledger,
+            source_assertion_reference=reference.assertion_reference,
+            destination_locality="calculator-relation-construction",
+        )
+
+    assert ledger.changed is True
+    assert len(
+        tuple(
+            ledger.iter_locality_kind(
+                "calculator-relation-construction",
+                ASSERTION_LOCALITY_MOVEMENT_KIND,
+            )
+        )
+    ) == result_occurrences
+
+
+def test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment():
+    _assert_position_assertion_movement_requires_its_exact_source(
+        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+        0,
+    )
+
+
+def test_position_assertion_movement_requires_its_exact_source_after_act_evidence():
+    _assert_position_assertion_movement_requires_its_exact_source(
+        ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+        0,
+    )
+
+
+def test_position_assertion_movement_requires_its_exact_source_after_evidence_of_yield_relation():
+    _assert_position_assertion_movement_requires_its_exact_source(
+        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+        0,
+    )
+
+
+def test_position_assertion_movement_requires_its_exact_source_when_carrying_the_result_into_standing():
+    _assert_position_assertion_movement_requires_its_exact_source(
+        ASSERTION_LOCALITY_MOVEMENT_KIND,
+        1,
+    )
+
+
 def test_result_carries_only_its_declared_measurement_coordinates():
     ledger = EventLedger()
     _source_event, assignment, _act, result = _record(ledger)
@@ -760,6 +861,12 @@ FIDELITY_SUBJECTS = {
     ),
     "yield_result_occurrence_evidence": (
         test_result_refuses_an_intact_yield_from_another_exact_family,
+    ),
+    "one_exact_movement_assertion": (
+        test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment,
+        test_position_assertion_movement_requires_its_exact_source_after_act_evidence,
+        test_position_assertion_movement_requires_its_exact_source_after_evidence_of_yield_relation,
+        test_position_assertion_movement_requires_its_exact_source_when_carrying_the_result_into_standing,
     ),
     "declared_measurement_result": (
         test_each_input_pair_has_first_and_second_exact_position_coordinates,

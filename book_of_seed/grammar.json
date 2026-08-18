@@ -611,6 +611,15 @@
         {"subject": "operator_Locality_occurrence"},
         {"subject": "content_locality_occurrence_distinction"},
         {"subject": "one_exact_movement_assertion"},
+        {
+          "subject": "assertion_locality_movement_standing_coordinates",
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "03.Movement.A",
+            "destination_Standing_coordinates",
+            "assertion_locality_movement_occurrences"
+          ]
+        },
         {"subject": "movement_coordinate_distinction"},
         {"subject": "emission_locality_distinction"},
         {"subject": "exact_emission_boundary"},
@@ -2153,6 +2162,50 @@
           "Unknown",
           "Standing"
         ]
+      },
+      "source_Assertion_coordinates": [
+        {
+          "first_subject": "position_coordinate_Assertion",
+          "relation": "carried_by",
+          "second_subject": {
+            "first_subject": "Measurement_result",
+            "relation": "of",
+            "second_subject": {
+              "identity": "position_coordinates_of_byte_pair_occurrences",
+              "first_subject": "position_coordinates",
+              "relation": "of",
+              "second_subject": "byte_pair_occurrences"
+            }
+          }
+        },
+        {
+          "first_subject": "path_comparison_finding_Assertion",
+          "relation": "carried_by",
+          "second_subject": "ordered_relation_path_and_recorded_pair_findings_Compare_result"
+        }
+      ],
+      "destination_Standing_coordinates": {
+        "assertion_locality_movement_occurrences": {
+          "carries": [
+            "recorded_occurrence_identity",
+            "result_identity",
+            "source_assertion_reference",
+            "source_standing_boundary_identity",
+            "responsibility_assignment_reference",
+            "responsible_act_evidence_identity",
+            "movement_act_occurrence_identity",
+            {
+              "identity": "evidence_of_yield_relation_identity",
+              "first_subject": "Evidence",
+              "relation": "of",
+              "second_subject": "Yield_relation"
+            },
+            "authority",
+            "scope",
+            "limits",
+            "unknown"
+          ]
+        }
       },
       "standing_not_established": [
         "movement_by_write",

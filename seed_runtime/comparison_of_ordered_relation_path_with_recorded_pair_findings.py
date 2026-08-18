@@ -5,7 +5,12 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 import json
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+if TYPE_CHECKING:
+    from seed_runtime.byte_measurement import (
+        RecordedAssertionCarriedByLocalityMovement,
+    )
 
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -1206,6 +1211,37 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
         result_name=COMPARE_RESULT_KIND,
     )
     return deepcopy(event.material)
+
+
+def move_recorded_path_comparison_finding_assertion_to_locality(
+    ledger: EventLedger,
+    *,
+    comparison_result_occurrence_identity: str,
+    destination_locality: str,
+) -> RecordedAssertionCarriedByLocalityMovement:
+    """Carry one exact recorded path-comparison finding through 03.Movement.A."""
+
+    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, comparison_result_occurrence_identity
+    )
+    finding = reading.get("finding")
+    assertion_identity = finding.get("identity") if type(finding) is dict else None
+    if type(assertion_identity) is not str or not assertion_identity:
+        raise ValueError(
+            "path-comparison finding Assertion movement requires one exact finding"
+        )
+    from seed_runtime.byte_measurement import (
+        _move_assertion_reference_to_locality,
+    )
+
+    return _move_assertion_reference_to_locality(
+        ledger,
+        source_assertion_reference={
+            "recorded_occurrence_identity": comparison_result_occurrence_identity,
+            "assertion_identity": assertion_identity,
+        },
+        destination_locality=destination_locality,
+    )
 
 
 class RecordedDistinctionPin(NamedTuple):

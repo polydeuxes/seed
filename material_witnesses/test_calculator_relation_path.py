@@ -9,6 +9,7 @@ compares it with the path finding or establishes arithmetic meaning.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+    move_recorded_path_comparison_finding_assertion_to_locality,
     recorded_distinction_pins_from_current_standing,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
@@ -38,14 +40,16 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    ByteMeasurementError,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _source_position_coordinate_reference,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
+    move_recorded_position_assertion_to_locality,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     get_recorded_shared_position_measurement,
@@ -396,3 +400,181 @@ def test_no_current_act_compares_recorded_distinction_with_calculator_result(
         for event in witness["ledger"].list()
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
+
+
+def test_two_assertion_movements_construct_one_locality_without_a_relation(
+    calculator_relation_witness,
+):
+    witness = calculator_relation_witness
+    ledger = witness["ledger"]
+    destination = "calculator-relation-construction"
+    distinction = move_recorded_path_comparison_finding_assertion_to_locality(
+        ledger,
+        comparison_result_occurrence_identity=witness["path_comparison"].identity,
+        destination_locality=destination,
+    )
+    ingest_material(
+        ledger,
+        locality_identity="unrelated-locality",
+        exact_bytes=b"unrelated",
+        source_role="test source",
+        source_boundary="between two Assertion movements",
+    )
+    calculator_position = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, witness["stdout_result"].identity
+        )[0]
+    )
+    calculator = move_recorded_position_assertion_to_locality(
+        ledger,
+        source_assertion_reference=calculator_position.assertion_reference,
+        destination_locality=destination,
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=destination
+    )
+    movements = standing["assertion_locality_movement_occurrences"]
+
+    assert tuple(movements) == (
+        distinction.locality_movement_event_identity,
+        calculator.locality_movement_event_identity,
+    )
+    assert tuple(
+        coordinates["source_assertion_reference"]
+        for coordinates in movements.values()
+    ) == (
+        distinction.source_assertion_reference,
+        calculator_position.assertion_reference,
+    )
+    movement_events = tuple(ledger.get(identity) for identity in movements)
+    assert tuple(
+        (
+            event.material["locality_relation"]["first_subject"],
+            event.material["locality_relation"]["second_subject"],
+        )
+        for event in movement_events
+    ) == (
+        (distinction.source_assertion_reference, destination),
+        (calculator_position.assertion_reference, destination),
+    )
+    assert len(
+        {
+            event.material["locality_relation"]["relation_occurrence_identity"]
+            for event in movement_events
+        }
+    ) == 2
+    assert standing["comparison_result_occurrences"] == {}
+    assert standing["applicability_result_occurrences"] == {}
+    assert standing["recorded_relation_Standing"] == {}
+
+
+def _assert_assertion_movement_standing_requires_exact_source(
+    witness, source_name
+):
+    ledger = witness["ledger"]
+    destination = f"calculator-relation-source-integrity-{source_name}"
+    move_recorded_path_comparison_finding_assertion_to_locality(
+        ledger,
+        comparison_result_occurrence_identity=witness["path_comparison"].identity,
+        destination_locality=destination,
+    )
+    calculator_position = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, witness["stdout_result"].identity
+        )[0]
+    )
+    move_recorded_position_assertion_to_locality(
+        ledger,
+        source_assertion_reference=calculator_position.assertion_reference,
+        destination_locality=destination,
+    )
+    source = witness[source_name]
+    exact_material = deepcopy(source.material)
+    source.material["unknown"] = ["changed after both movement results"]
+    try:
+        with pytest.raises((ByteMeasurementError, ValueError)):
+            read_operator_locality_standing(
+                ledger, locality_identity=destination
+            )
+    finally:
+        source.material.clear()
+        source.material.update(exact_material)
+
+
+def test_assertion_movement_standing_requires_exact_path_comparison_result(
+    calculator_relation_witness,
+):
+    _assert_assertion_movement_standing_requires_exact_source(
+        calculator_relation_witness,
+        "path_comparison",
+    )
+
+
+def test_assertion_movement_standing_requires_exact_position_measurement_result(
+    calculator_relation_witness,
+):
+    _assert_assertion_movement_standing_requires_exact_source(
+        calculator_relation_witness,
+        "stdout_result",
+    )
+
+
+def test_two_assertion_movement_coordinates_replay_after_restart(tmp_path):
+    path = tmp_path / "calculator-relation-construction.sqlite"
+    ledger = SQLiteEventLedger(path)
+    _claim_source, _path_result, path_comparison, _claim_standing = _claim_path(
+        ledger
+    )
+    calculator_source = ingest_material(
+        ledger,
+        locality_identity="calculator-result",
+        exact_bytes=b"4\n",
+        source_role="system",
+        source_boundary="exact calculator result boundary",
+    )
+    calculator_declared = record_declared_measurements_from_current_standing(
+        ledger, locality_identity=calculator_source.locality_identity
+    )
+    calculator_result = next(
+        event
+        for event in calculator_declared.result_occurrences
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
+    calculator_position = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, calculator_result.identity
+        )[0]
+    )
+    destination = "calculator-relation-construction"
+    move_recorded_path_comparison_finding_assertion_to_locality(
+        ledger,
+        comparison_result_occurrence_identity=path_comparison.identity,
+        destination_locality=destination,
+    )
+    move_recorded_position_assertion_to_locality(
+        ledger,
+        source_assertion_reference=calculator_position.assertion_reference,
+        destination_locality=destination,
+    )
+    expected = deepcopy(
+        read_operator_locality_standing(ledger, locality_identity=destination)
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        replayed = read_operator_locality_standing(
+            reopened, locality_identity=destination
+        )
+        assert replayed == expected
+        assert tuple(
+            coordinates["source_assertion_reference"]
+            for coordinates in replayed[
+                "assertion_locality_movement_occurrences"
+            ].values()
+        )[-1] == calculator_position.assertion_reference
+        assert replayed["comparison_result_occurrences"] == {}
+        assert replayed["applicability_result_occurrences"] == {}
+        assert replayed["recorded_relation_Standing"] == {}
+    finally:
+        reopened.close()

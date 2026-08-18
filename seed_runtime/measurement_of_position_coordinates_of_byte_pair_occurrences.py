@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+if TYPE_CHECKING:
+    from seed_runtime.byte_measurement import (
+        RecordedAssertionCarriedByLocalityMovement,
+    )
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -1535,4 +1540,23 @@ def references_to_recorded_position_coordinates_of_byte_pair_occurrences(
             second_position=first_position + 1,
         )
         for first_position in range(len(finding.exact_material) - 1)
+    )
+
+
+def move_recorded_position_assertion_to_locality(
+    ledger: EventLedger,
+    *,
+    source_assertion_reference: dict[str, str],
+    destination_locality: str,
+) -> RecordedAssertionCarriedByLocalityMovement:
+    """Carry one exact recorded position Assertion through 03.Movement.A."""
+
+    from seed_runtime.byte_measurement import (
+        _move_assertion_reference_to_locality,
+    )
+
+    return _move_assertion_reference_to_locality(
+        ledger,
+        source_assertion_reference=source_assertion_reference,
+        destination_locality=destination_locality,
     )

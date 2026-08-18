@@ -3681,8 +3681,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 222
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 222
+    assert len(test_subjects) == 223
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 223
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -5392,6 +5392,28 @@ def test_assertion_movement_result_names_and_witnesses_its_witness_clause():
     ]
 
 
+def test_assertion_movement_standing_carries_the_exact_grammar_coordinates():
+    clause = _clause("03.Movement.A")
+    bundle = _recorded_applicability()
+    standing = read_operator_locality_standing(
+        bundle["ledger"], locality_identity=bundle["movement"].locality_identity
+    )
+    coordinates = standing["assertion_locality_movement_occurrences"][
+        bundle["movement"].identity
+    ]
+
+    grammar_coordinates = clause["destination_Standing_coordinates"][
+        "assertion_locality_movement_occurrences"
+    ]["carries"]
+    assert set(coordinates) == {
+        coordinate["identity"] if type(coordinate) is dict else coordinate
+        for coordinate in grammar_coordinates
+    }
+    assert coordinates["source_assertion_reference"] == bundle[
+        "movement"
+    ].material["source_assertion_reference"]
+
+
 def test_assertion_movement_coordinates_refuse_crossing_or_loss():
     adversaries = {
         "subject": lambda bundle: bundle["movement"].material.__setitem__(
@@ -6791,6 +6813,9 @@ FIDELITY_SUBJECTS = {
     ),
     "one_exact_movement_assertion": (
         test_assertion_movement_result_names_and_witnesses_its_witness_clause,
+    ),
+    "assertion_locality_movement_standing_coordinates": (
+        test_assertion_movement_standing_carries_the_exact_grammar_coordinates,
     ),
     "movement_coordinate_distinction": (
         test_assertion_movement_coordinates_refuse_crossing_or_loss,
