@@ -3499,7 +3499,7 @@ def test_witness_discriminates_content_locality_and_occurrence():
     assert first.locality_identity == repeated.locality_identity
     assert first.identity != repeated.identity
 
-    assert grammar["discriminators"] == ["content", "locality", "occurrence"]
+    assert grammar["distinctions"] == ["content", "locality", "occurrence"]
     assert grammar["non_equivalence"] == [
         ["content", "locality"],
         ["content", "occurrence"],

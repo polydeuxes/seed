@@ -278,7 +278,7 @@
     ]
   },
   "witness": {
-    "discriminators": ["content", "locality", "occurrence"],
+    "distinctions": ["content", "locality", "occurrence"],
     "relations": {
       "locality_relation": ["first_subject", "second_subject"]
     },

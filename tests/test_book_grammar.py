@@ -83,7 +83,7 @@ def test_witness_readable_grammar_traverses_responsibility_from_standing():
 def test_witness_discriminates_content_locality_and_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["witness"]["discriminators"] == [
+    assert grammar["witness"]["distinctions"] == [
         "content",
         "locality",
         "occurrence",
