@@ -11,6 +11,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_ordered_pair_candidate,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
+    exact_material_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
@@ -428,6 +429,64 @@ def test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read(
     assert ledger.append_boundary() == boundary_before_read
 
 
+def test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    source_readings = (
+        exact_source_assertion_materials_from_every_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
+    boundary_before_read = ledger.append_boundary()
+    coordinate_readings = (
+        exact_material_coordinates_from_every_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
+
+    def material_at_path(material, path):
+        found = material
+        for coordinate in path:
+            found = found[coordinate]
+        return found
+
+    assert tuple(reading[0] for reading in coordinate_readings) == tuple(
+        reading[0] for reading in source_readings
+    )
+    assert all(first_coordinates and second_coordinates for (
+        _candidate_identity,
+        first_coordinates,
+        second_coordinates,
+    ) in coordinate_readings)
+    for (
+        _candidate_identity,
+        first,
+        second,
+    ), (
+        _same_candidate_identity,
+        first_coordinates,
+        second_coordinates,
+    ) in zip(source_readings, coordinate_readings):
+        assert all(
+            material_at_path(first, coordinate["path"])
+            == coordinate["material"]
+            for coordinate in first_coordinates
+        )
+        assert all(
+            material_at_path(second, coordinate["path"])
+            == coordinate["material"]
+            for coordinate in second_coordinates
+        )
+    assert ledger.append_boundary() == boundary_before_read
+
+
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -660,6 +719,7 @@ FIDELITY_SUBJECTS = {
         test_ordered_pair_candidate_reads_both_exact_lower_assertions_without_an_append,
         test_ordered_pair_source_material_read_refuses_one_source_candidate,
         test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read,
+        test_every_ordered_pair_candidate_exposes_every_nested_source_coordinate,
         test_both_exact_candidate_responsibilities_use_one_source_boundary,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_exact_source_and_act,

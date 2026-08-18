@@ -1415,6 +1415,59 @@ def exact_source_assertion_materials_from_every_ordered_pair_candidate(
     )
 
 
+def _exact_material_coordinates(
+    material: Any, path: tuple[str | int, ...] = ()
+) -> tuple[dict[str, Any], ...]:
+    coordinates: list[dict[str, Any]] = []
+    if type(material) is dict:
+        carried = material.items()
+    elif type(material) is list:
+        carried = enumerate(material)
+    else:
+        return ()
+    for coordinate, value in carried:
+        exact_path = (*path, coordinate)
+        coordinates.append(
+            {
+                "path": list(exact_path),
+                "material": deepcopy(value),
+            }
+        )
+        coordinates.extend(_exact_material_coordinates(value, exact_path))
+    return tuple(coordinates)
+
+
+def exact_material_coordinates_from_every_ordered_pair_candidate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[
+        str,
+        tuple[dict[str, Any], ...],
+        tuple[dict[str, Any], ...],
+    ],
+    ...,
+]:
+    """Read every nested lower-Assertion coordinate without comparing material."""
+
+    return tuple(
+        (
+            candidate_identity,
+            _exact_material_coordinates(first),
+            _exact_material_coordinates(second),
+        )
+        for candidate_identity, first, second in (
+            exact_source_assertion_materials_from_every_ordered_pair_candidate(
+                ledger,
+                candidate_standing_result_event_identity=(
+                    candidate_standing_result_event_identity
+                ),
+            )
+        )
+    )
+
+
 def boundaries_of_recorded_candidate_standing(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, EventLedgerBoundary]:
