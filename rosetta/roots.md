@@ -132,6 +132,15 @@ These forms compress one exact Act occurrence plus a bounded failure Assertion
 or result, Evidence, Authority, Scope, and preserved limits. They do not mean
 absence of an Act occurrence, Stop, or completion by identity.
 
+### Shared
+
+`Shared` is an auxiliary composite only. For exact named subjects and one
+exact named coordinate, occurrence, boundary, or label, each subject carries
+or identifies that one exact subject through its own exact relation, Evidence,
+Authority, Scope, and limits. The word alone establishes no identity,
+equality, sameness, Locality, Participation, Applicability, Standing,
+represented relation, or Act.
+
 ### Does
 
 `Does` is an ordinary auxiliary relation-carrier when it carries negation,
