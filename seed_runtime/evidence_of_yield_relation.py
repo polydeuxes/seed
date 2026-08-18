@@ -27,6 +27,8 @@ EVENT_KIND_RESPONSIBILITIES = {
 OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
     {
         "assertion_locality_movement",
+        "addressed_byte_occurrence_reference_determination",
+        "addressed_byte_occurrence_reference_determination_applicability",
         "failed_boundary",
         "byte_measurement",
         "byte_pair_applicability",

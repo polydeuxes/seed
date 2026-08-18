@@ -1336,6 +1336,99 @@ def _reference_at_exact_coordinates(
     )
 
 
+def _position_of_exact_source_position_coordinate_reference(
+    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
+    position_coordinate_reference: dict[str, Any],
+) -> int:
+    coordinate_keys = {
+        "identity",
+        "source_ingest_occurrence_identity",
+        "locality_identity",
+        "completeness_boundary_identity",
+        "position",
+        "exact_material",
+    }
+    if (
+        type(position_coordinate_reference) is not dict
+        or set(position_coordinate_reference) != coordinate_keys
+        or type(position_coordinate_reference.get("identity")) is not str
+        or not position_coordinate_reference["identity"]
+        or type(position_coordinate_reference.get("source_ingest_occurrence_identity"))
+        is not str
+        or not position_coordinate_reference["source_ingest_occurrence_identity"]
+        or type(position_coordinate_reference.get("locality_identity")) is not str
+        or not position_coordinate_reference["locality_identity"]
+        or type(
+            position_coordinate_reference.get("completeness_boundary_identity")
+        )
+        is not str
+        or not position_coordinate_reference["completeness_boundary_identity"]
+        or type(position_coordinate_reference.get("position")) is not int
+        or type(position_coordinate_reference.get("exact_material")) is not list
+        or len(position_coordinate_reference["exact_material"]) != 1
+        or type(position_coordinate_reference["exact_material"][0]) is not int
+        or not 0 <= position_coordinate_reference["exact_material"][0] <= 255
+    ):
+        raise ValueError(
+            "addressed source position requires one exact coordinate reference"
+        )
+    position = position_coordinate_reference["position"]
+    if position < 0 or position >= len(finding.exact_material):
+        raise ValueError(
+            "addressed source position is outside the exact Ingest result"
+        )
+    expected = _source_position_coordinate_reference(
+        source_ingest_occurrence_identity=(
+            finding.source_ingest_occurrence_identity
+        ),
+        source_locality_identity=finding.source_locality_identity,
+        completeness_boundary_identity=finding.completeness_boundary.identity,
+        position=position,
+        exact_material=finding.exact_material[position : position + 1],
+    )
+    if position_coordinate_reference != expected:
+        raise ValueError(
+            "addressed source position is not the exact recorded coordinate"
+        )
+    return position
+
+
+def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(
+    ledger: EventLedger,
+    result_event_identity: str,
+    position_coordinate_reference: dict[str, Any],
+) -> tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]:
+    """Read pair Assertions carrying one exact addressed source coordinate."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("addressed source position requires one EventLedger")
+    if type(result_event_identity) is not str or not result_event_identity:
+        raise ValueError("addressed source position requires one result occurrence")
+    event, finding, _assertion_population_read = _read_result(
+        ledger, result_event_identity
+    )
+    position = _position_of_exact_source_position_coordinate_reference(
+        finding, position_coordinate_reference
+    )
+    first_positions = []
+    if position > 0:
+        first_positions.append(position - 1)
+    if position + 1 < len(finding.exact_material):
+        first_positions.append(position)
+    return tuple(
+        _recorded_position_reference(
+            event,
+            finding,
+            exact_pair=finding.exact_material[
+                first_position : first_position + 2
+            ],
+            first_position=first_position,
+            second_position=first_position + 1,
+        )
+        for first_position in first_positions
+    )
+
+
 def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
     ledger: EventLedger,
     result_event_identity: str,

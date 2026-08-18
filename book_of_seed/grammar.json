@@ -526,6 +526,7 @@
         {"subject": "declared_Measurement_result"},
         {"subject": "read_write_difference_count"},
         {"subject": "recurrent_byte_pair_occurrence_position_measurement"},
+        {"subject": "addressed_byte_occurrence_reference_determination"},
         {"subject": "measurement_result_coordinates"},
         {"subject": "byte_measurement_relation"},
         {"subject": "position_support"},
@@ -1082,6 +1083,168 @@
         ]
       },
       "counting_references": "different_declared_Measurement"
+    },
+    "01.Source.D.2": {
+      "subject": "addressed_byte_occurrence_reference_determination",
+      "book_material_reference": "01.Source.D.2",
+      "grammar": "established",
+      "recorded_occurrence_kind": ["event_occurrence"],
+      "responsibility": {
+        "kind": "addressed_byte_occurrence_reference_determination_Measurement_result_boundary",
+        "responsible_boundary": "this_Seed",
+        "assignment": "exact_Responsibility_assignment_occurrence",
+        "Act": "declared_Measurement",
+        "result": "declared_Measurement_result",
+        "coordinates": [
+          "responsibility_assignment_reference",
+          "assignment_current_Standing",
+          "direct_pair_position_result_reference",
+          "addressed_source_byte_position_coordinate_reference",
+          "Applicability_Act_occurrence",
+          "Applicability_Act_Evidence",
+          {
+            "identity": "Applicability_Evidence_of_Yield_relation",
+            "first_subject": "Applicability_Evidence",
+            "relation": "of",
+            "second_subject": "Applicability_Yield_relation"
+          },
+          "Applicability_result_occurrence",
+          "determination_Act_occurrence",
+          "determination_Act_Evidence",
+          {
+            "identity": "determination_Evidence_of_Yield_relation",
+            "first_subject": "determination_Evidence",
+            "relation": "of",
+            "second_subject": "determination_Yield_relation"
+          },
+          "determination_result_occurrence",
+          "Locality",
+          "completeness_boundary",
+          "Scope",
+          "Authority",
+          "limits",
+          "Unknown"
+        ]
+      },
+      "source_coordinates": {
+        "direct_pair_position_result": {
+          "kind": "position_coordinate_Measurement_result",
+          "Standing": "current",
+          "source": "one_exact_Ingest_result",
+          "boundary": "one_exact_completeness_boundary"
+        },
+        "addressed_source_byte_position_coordinate_reference": {
+          "coordinates": [
+            "exact_source_occurrence_identity",
+            "Locality",
+            "completeness_boundary",
+            "position",
+            "exact_byte_material"
+          ],
+          "addressed_coordinate_relation": {
+            "first_subject": "addressed_source_byte_position_coordinate_reference",
+            "relation": "identifies",
+            "second_subject": "exact_source_byte_occurrence"
+          }
+        }
+      },
+      "determination": {
+        "addressed_coordinate_relation_occurrences": [
+          {
+            "first_subject": "first_position_coordinate_reference",
+            "relation": "identifies",
+            "second_subject": "addressed_byte_occurrence"
+          },
+          {
+            "first_subject": "second_position_coordinate_reference",
+            "relation": "identifies",
+            "second_subject": "addressed_byte_occurrence"
+          }
+        ],
+        "carries": "every_exact_pair_position_Assertion_reference_with_one_addressed_coordinate",
+        "standing_not_established": "each_pair_position_Assertion_reference_with_no_addressed_coordinate",
+        "order": "source_occurrence_order",
+        "lawful_no_reference_result": {
+          "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+          "carried_pair_position_Assertion_references": []
+        }
+      },
+      "occurrence_order": [
+        "Responsibility_assignment_occurrence",
+        "assignment_current_Standing",
+        "Applicability_Act_occurrence",
+        "Applicability_Act_Evidence",
+        {
+          "identity": "Applicability_Evidence_of_Yield_relation",
+          "first_subject": "Applicability_Evidence",
+          "relation": "of",
+          "second_subject": "Applicability_Yield_relation"
+        },
+        "Applicability_result_occurrence",
+        "determination_Act_occurrence",
+        "determination_Act_Evidence",
+        {
+          "identity": "determination_Evidence_of_Yield_relation",
+          "first_subject": "determination_Evidence",
+          "relation": "of",
+          "second_subject": "determination_Yield_relation"
+        },
+        "determination_result_occurrence"
+      ],
+      "distinct_from": [
+        ["Applicability_Act_occurrence", "determination_Act_occurrence"],
+        ["Applicability_Act_Evidence", "determination_Act_Evidence"],
+        {
+          "first_subject": {
+            "identity": "Applicability_Evidence_of_Yield_relation",
+            "first_subject": "Applicability_Evidence",
+            "relation": "of",
+            "second_subject": "Applicability_Yield_relation"
+          },
+          "relation": "distinct_from",
+          "second_subject": {
+            "identity": "determination_Evidence_of_Yield_relation",
+            "first_subject": "determination_Evidence",
+            "relation": "of",
+            "second_subject": "determination_Yield_relation"
+          }
+        },
+        [
+          "Applicability_result_occurrence",
+          "determination_result_occurrence"
+        ]
+      ],
+      "unsupported_coordinates": {
+        "assignment_not_established": [
+          "missing_direct_pair_position_result",
+          "unsupported_direct_pair_position_result",
+          "different_source_occurrence",
+          "different_Locality",
+          "different_completeness_boundary",
+          "missing_position",
+          "different_position",
+          "missing_exact_byte_material",
+          "different_exact_byte_material"
+        ],
+        "Act_Yield_result_not_established": [
+          "missing_exact_Responsibility_assignment_occurrence",
+          "assignment_not_in_current_Standing",
+          "missing_exact_Applicability_Act_occurrence",
+          "missing_exact_Applicability_Act_Evidence",
+          "missing_exact_Applicability_Yield_Evidence_relation",
+          "missing_exact_Applicability_result_occurrence",
+          "Applicability_not_in_current_Standing"
+        ],
+        "standing_not_established": [
+          "addressed_occurrence_by_scalar_byte",
+          "addressed_occurrence_by_scalar_position",
+          "recurrence",
+          "shared_position_relation",
+          "Participation_beyond_exact_Act",
+          "represented_relation",
+          "other_relation"
+        ]
+      }
     },
     "01.Source.E": {
       "subject": "candidate",

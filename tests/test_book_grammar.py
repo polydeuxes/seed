@@ -615,7 +615,57 @@ def test_generic_admission_grammar_precedes_each_concrete_lifecycle():
     assert concrete["Standing"] == "Admission_Standing"
 
 
+def test_addressed_byte_occurrence_reference_determination_is_constitutional():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    clause = grammar["clause_coordinates"]["01.Source.D.2"]
+    chapter = (CHAPTERS / "01_source_coordinates_and_grammar.md").read_text(
+        encoding="utf-8"
+    )
+    material = chapter.split(
+        "### 01.Source.D.2 — Addressed byte occurrence reference determination\n\n",
+        1,
+    )[1].split("\n\n### 01.Source.E", 1)[0]
+
+    assert clause["book_material_reference"] == "01.Source.D.2"
+    assert clause["recorded_occurrence_kind"] == ["event_occurrence"]
+    assert clause["responsibility"]["responsible_boundary"] == "this_Seed"
+    assert clause["occurrence_order"][2:6] == [
+        "Applicability_Act_occurrence",
+        "Applicability_Act_Evidence",
+        {
+            "identity": "Applicability_Evidence_of_Yield_relation",
+            "first_subject": "Applicability_Evidence",
+            "relation": "of",
+            "second_subject": "Applicability_Yield_relation",
+        },
+        "Applicability_result_occurrence",
+    ]
+    assert clause["occurrence_order"][6:] == [
+        "determination_Act_occurrence",
+        "determination_Act_Evidence",
+        {
+            "identity": "determination_Evidence_of_Yield_relation",
+            "first_subject": "determination_Evidence",
+            "relation": "of",
+            "second_subject": "determination_Yield_relation",
+        },
+        "determination_result_occurrence",
+    ]
+    assert clause["determination"]["order"] == "source_occurrence_order"
+    assert clause["determination"]["lawful_no_reference_result"] == {
+        "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+        "carried_pair_position_Assertion_references": [],
+    }
+    assert "every exact pair-occurrence position Assertion reference" in material
+    assert "carries no Assertion reference" in material
+    assert "remains Unknown" in material
+    assert not {"selection", "equality", "math"} & set(material.casefold().split())
+
+
 FIDELITY_SUBJECTS = {
+    "addressed_byte_occurrence_reference_determination": (
+        test_addressed_byte_occurrence_reference_determination_is_constitutional,
+    ),
     "standing_responsibility_path": (
         test_witness_readable_grammar_traverses_responsibility_from_standing,
     ),

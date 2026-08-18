@@ -90,6 +90,18 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     get_shared_position_measurement_act_evidence,
     get_recorded_shared_position_measurement,
 )
+from seed_runtime.addressed_byte_occurrence_reference_determination import (
+    RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND,
+    APPLICABILITY_ACT_EVIDENCE_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    APPLICABILITY_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
+    DETERMINATION_ACT_EVIDENCE_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND,
+    DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+    _read_assignment as _read_addressed_byte_reference_assignment,
+    _read_applicability_act as _read_addressed_byte_reference_applicability_act,
+    _read_applicability_result as _read_addressed_byte_reference_applicability_result,
+    _read_determination_act as _read_addressed_byte_reference_determination_act,
+    _read_determination_result as _read_addressed_byte_reference_determination_result,
+)
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -362,6 +374,13 @@ _SHARED_POSITION_MEASUREMENT_KINDS = {
     SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 }
+_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
+    ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
+    ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND,
+    ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+}
 _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -385,6 +404,7 @@ _SUPPORTED_KINDS = {
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
+    *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -442,6 +462,24 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
             "responsible_act_evidence_identity"
         ],
         "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
+    }
+
+
+def _addressed_byte_reference_determination_coordinates(event) -> dict[str, str]:
+    """Carry the exact D.2 determination stage identities."""
+
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material[
+            "determination_act_occurrence_identity"
+        ],
+        "responsible_act_evidence_identity": event.material[
+            "responsible_act_evidence_identity"
+        ],
+        "evidence_of_yield_relation_identity": event.material[
+            "evidence_of_yield_relation_identity"
+        ],
     }
 
 
@@ -894,6 +932,7 @@ def advance_operator_locality_standing(
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
+            or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
         ):
             continue
@@ -1187,6 +1226,49 @@ def advance_operator_locality_standing(
             )
             applicability_result_occurrences[event.identity] = None
             continue
+        addressed_byte_reference_prior_standing = {
+            "locality_identity": locality_identity,
+            "through_event_occurrence_identity": (
+                prior_through_event_occurrence_identity
+            ),
+            "measurement_occurrences": measurement_occurrences,
+            "responsibility_assignment_occurrences": (
+                responsibility_assignment_occurrences
+            ),
+            "applicability_result_occurrences": (
+                applicability_result_occurrences
+            ),
+        }
+        if event.kind == ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND:
+            _read_addressed_byte_reference_assignment(
+                ledger,
+                event.identity,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND:
+            _read_addressed_byte_reference_applicability_act(
+                ledger,
+                event.identity,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            continue
+        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND:
+            _read_addressed_byte_reference_applicability_result(
+                ledger,
+                event.identity,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND:
+            _read_addressed_byte_reference_determination_act(
+                ledger,
+                event.identity,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            continue
         if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
             get_shared_position_responsibility_assignment(
                 ledger, event.identity
@@ -1327,6 +1409,28 @@ def advance_operator_locality_standing(
             get_recorded_byte_pair_occurrence_position_measurement(ledger, event.identity)
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
+            )
+            continue
+        if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND:
+            _read_addressed_byte_reference_determination_result(
+                ledger,
+                event.identity,
+                prior_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "measurement_occurrences": measurement_occurrences,
+                    "responsibility_assignment_occurrences": (
+                        responsibility_assignment_occurrences
+                    ),
+                    "applicability_result_occurrences": (
+                        applicability_result_occurrences
+                    ),
+                },
+            )
+            measurement_occurrences[event.identity] = (
+                _addressed_byte_reference_determination_coordinates(event)
             )
             continue
         if event.kind in {

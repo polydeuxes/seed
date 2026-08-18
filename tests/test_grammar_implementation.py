@@ -368,9 +368,17 @@ def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address
         "second_subject": "same_subject",
         "standing": "not_established",
     }
+    relation_subject = next(
+        coordinates
+        for coordinates in grammar["clause_coordinates"]["01.Source.C"][
+            "test_subjects"
+        ]
+        if coordinates.get("subject")
+        == "measurement_result_input_to_second_measurement"
+    )
     mutations = (
         grammar["clause_coordinates"]["01.Standing.B"]["standing_not_established"][3],
-        grammar["clause_coordinates"]["01.Source.C"]["test_subjects"][77],
+        relation_subject,
     )
     assert mutations[0]["identity"] == "Authority_supports_exact_Act"
     assert mutations[1]["subject"] == (
@@ -382,7 +390,14 @@ def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address
         target = (
             changed["clause_coordinates"]["01.Standing.B"]["standing_not_established"][3]
             if "identity" in structured_relation
-            else changed["clause_coordinates"]["01.Source.C"]["test_subjects"][77]
+            else next(
+                coordinates
+                for coordinates in changed["clause_coordinates"]["01.Source.C"][
+                    "test_subjects"
+                ]
+                if coordinates.get("subject")
+                == "measurement_result_input_to_second_measurement"
+            )
         )
         target["relation"] = "dances_with"
         try:
@@ -877,6 +892,47 @@ def _ordered_relation_path_pair_finding_comparison_applicability_yield_witness()
 def _ordered_relation_path_pair_finding_comparison_yield_witness() -> dict:
     return _ordered_relation_path_pair_finding_comparison_yield_witnesses()[
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare"
+    ]
+
+
+def _addressed_byte_occurrence_reference_determination_yield_witnesses() -> dict[
+    str, dict
+]:
+    from tests.test_addressed_byte_occurrence_reference_determination import (
+        _record,
+    )
+
+    ledger = _IntegrityAdversaryLedger()
+    recorded = _record(ledger)
+    applicability = _yield_bundle(ledger, recorded["applicability"])
+    applicability["recorded_result_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    applicability["act_evidence_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    determination = _yield_bundle(ledger, recorded["result"])
+    determination["recorded_result_occurrence_coordinate"] = (
+        "determination_act_occurrence_identity"
+    )
+    determination["act_evidence_occurrence_coordinate"] = (
+        "determination_act_occurrence_identity"
+    )
+    return {
+        "addressed_byte_occurrence_reference_determination_applicability": applicability,
+        "addressed_byte_occurrence_reference_determination": determination,
+    }
+
+
+def _addressed_byte_occurrence_reference_determination_applicability_yield_witness() -> dict:
+    return _addressed_byte_occurrence_reference_determination_yield_witnesses()[
+        "addressed_byte_occurrence_reference_determination_applicability"
+    ]
+
+
+def _addressed_byte_occurrence_reference_determination_yield_witness() -> dict:
+    return _addressed_byte_occurrence_reference_determination_yield_witnesses()[
+        "addressed_byte_occurrence_reference_determination"
     ]
 
 
@@ -2279,6 +2335,12 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare": (
             _ordered_relation_path_pair_finding_comparison_yield_witness
         ),
+        "addressed_byte_occurrence_reference_determination_applicability": (
+            _addressed_byte_occurrence_reference_determination_applicability_yield_witness
+        ),
+        "addressed_byte_occurrence_reference_determination": (
+            _addressed_byte_occurrence_reference_determination_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -3651,8 +3713,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 222
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 222
+    assert len(test_subjects) == 223
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 223
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -5031,6 +5093,12 @@ def test_different_yield_occurrences_do_not_share_result_identity():
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare": (
             _ordered_relation_path_pair_finding_comparison_yield_witness
         ),
+        "addressed_byte_occurrence_reference_determination_applicability": (
+            _addressed_byte_occurrence_reference_determination_applicability_yield_witness
+        ),
+        "addressed_byte_occurrence_reference_determination": (
+            _addressed_byte_occurrence_reference_determination_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -5066,9 +5134,12 @@ def test_different_yield_occurrences_do_not_share_result_identity():
                 "representation_emission_applicability",
                 "shared_pair_position_applicability",
                 "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
+                "addressed_byte_occurrence_reference_determination_applicability",
             }
             else "movement_act_occurrence_identity"
             if boundary == "assertion_locality_movement"
+            else "determination_act_occurrence_identity"
+            if boundary == "addressed_byte_occurrence_reference_determination"
             else "act_occurrence_identity"
         )
         assert first["event"].material[occurrence_coordinate] != second[
@@ -5585,6 +5656,132 @@ def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
         "relation": "identifies",
         "second_subject": "result",
     }
+
+
+def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
+    clause = _clause("01.Source.D.2")
+
+    assert clause["subject"] == (
+        "addressed_byte_occurrence_reference_determination"
+    )
+    assert clause["responsibility"] == {
+        "kind": "addressed_byte_occurrence_reference_determination_Measurement_result_boundary",
+        "responsible_boundary": "this_Seed",
+        "assignment": "exact_Responsibility_assignment_occurrence",
+        "Act": "declared_Measurement",
+        "result": "declared_Measurement_result",
+        "coordinates": [
+            "responsibility_assignment_reference",
+            "assignment_current_Standing",
+            "direct_pair_position_result_reference",
+            "addressed_source_byte_position_coordinate_reference",
+            "Applicability_Act_occurrence",
+            "Applicability_Act_Evidence",
+            {
+                "identity": "Applicability_Evidence_of_Yield_relation",
+                "first_subject": "Applicability_Evidence",
+                "relation": "of",
+                "second_subject": "Applicability_Yield_relation",
+            },
+            "Applicability_result_occurrence",
+            "determination_Act_occurrence",
+            "determination_Act_Evidence",
+            {
+                "identity": "determination_Evidence_of_Yield_relation",
+                "first_subject": "determination_Evidence",
+                "relation": "of",
+                "second_subject": "determination_Yield_relation",
+            },
+            "determination_result_occurrence",
+            "Locality",
+            "completeness_boundary",
+            "Scope",
+            "Authority",
+            "limits",
+            "Unknown",
+        ],
+    }
+    assert clause["determination"] == {
+        "addressed_coordinate_relation_occurrences": [
+            {
+                "first_subject": "first_position_coordinate_reference",
+                "relation": "identifies",
+                "second_subject": "addressed_byte_occurrence",
+            },
+            {
+                "first_subject": "second_position_coordinate_reference",
+                "relation": "identifies",
+                "second_subject": "addressed_byte_occurrence",
+            },
+        ],
+        "carries": "every_exact_pair_position_Assertion_reference_with_one_addressed_coordinate",
+        "standing_not_established": "each_pair_position_Assertion_reference_with_no_addressed_coordinate",
+        "order": "source_occurrence_order",
+        "lawful_no_reference_result": {
+            "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+            "carried_pair_position_Assertion_references": [],
+        },
+    }
+    assert clause["occurrence_order"] == [
+        "Responsibility_assignment_occurrence",
+        "assignment_current_Standing",
+        "Applicability_Act_occurrence",
+        "Applicability_Act_Evidence",
+        {
+            "identity": "Applicability_Evidence_of_Yield_relation",
+            "first_subject": "Applicability_Evidence",
+            "relation": "of",
+            "second_subject": "Applicability_Yield_relation",
+        },
+        "Applicability_result_occurrence",
+        "determination_Act_occurrence",
+        "determination_Act_Evidence",
+        {
+            "identity": "determination_Evidence_of_Yield_relation",
+            "first_subject": "determination_Evidence",
+            "relation": "of",
+            "second_subject": "determination_Yield_relation",
+        },
+        "determination_result_occurrence",
+    ]
+    assert clause["distinct_from"] == [
+        ["Applicability_Act_occurrence", "determination_Act_occurrence"],
+        ["Applicability_Act_Evidence", "determination_Act_Evidence"],
+        {
+            "first_subject": {
+                "identity": "Applicability_Evidence_of_Yield_relation",
+                "first_subject": "Applicability_Evidence",
+                "relation": "of",
+                "second_subject": "Applicability_Yield_relation",
+            },
+            "relation": "distinct_from",
+            "second_subject": {
+                "identity": "determination_Evidence_of_Yield_relation",
+                "first_subject": "determination_Evidence",
+                "relation": "of",
+                "second_subject": "determination_Yield_relation",
+            },
+        },
+        ["Applicability_result_occurrence", "determination_result_occurrence"],
+    ]
+    assert clause["unsupported_coordinates"]["standing_not_established"] == [
+        "addressed_occurrence_by_scalar_byte",
+        "addressed_occurrence_by_scalar_position",
+        "recurrence",
+        "shared_position_relation",
+        "Participation_beyond_exact_Act",
+        "represented_relation",
+        "other_relation",
+    ]
+    registered = _relation_occurrence_fidelity_findings()
+    assert (
+        "yield",
+        "addressed_byte_occurrence_reference_determination_applicability",
+    ) in registered
+    assert (
+        "yield",
+        "addressed_byte_occurrence_reference_determination",
+    ) in registered
 
 
 def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation():
@@ -6375,6 +6572,9 @@ def test_every_live_relation_witness_returns_its_relation_required_coordinates()
 
 
 FIDELITY_SUBJECTS = {
+    "addressed_byte_occurrence_reference_determination": (
+        test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds,
+    ),
     "assertion_standing_coordinates": (
         test_assertion_clause_is_checked_against_a_live_byte_assertion,
     ),

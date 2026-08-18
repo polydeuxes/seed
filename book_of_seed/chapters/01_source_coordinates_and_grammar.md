@@ -42,6 +42,16 @@ Where a Seed performs a Seed-native declared Measurement over exact material rel
 
 Each counted occurrence is distinguished by exact occurrence identity. Repeated reference to one occurrence cannot create or increment another occurrence. Counting references is a different declared Measurement.
 
+### 01.Source.D.2 — Addressed byte occurrence reference determination
+
+Where current Standing in one Locality carries one exact recorded Measurement result of position coordinates of byte-pair occurrences, this Book assigns this Seed the bounded Responsibility for one declared Measurement that determines the exact Assertion references addressed by one exact source-byte position-coordinate reference within that result's exact Ingest result and completeness boundary.
+
+Before the declared Measurement Act, current Standing must carry the exact Responsibility assignment, the exact Applicability Act occurrence, its Act Evidence, Evidence of its Yield relation, and its exact result occurrence. The Measurement Act occurrence, its Act Evidence, Evidence of its Yield relation, and its exact result occurrence are distinct from the Applicability occurrences. The Measurement result carries every exact pair-occurrence position Assertion reference whose first or second position-coordinate reference identifies the addressed byte occurrence, in source occurrence order. It carries no Assertion reference whose first and second position-coordinate references identify other byte occurrences.
+
+Where no first or second position-coordinate reference identifies the addressed byte occurrence, the exact result carries no Assertion reference. This establishes no failure and no other result.
+
+A missing, unsupported, or different result, source occurrence, Locality, completeness boundary, position, exact byte material, assignment, or Applicability establishes no Measurement Act occurrence, Yield, or result. A scalar byte or position establishes no addressed occurrence. The Measurement establishes no recurrence, shared position relation, Participation beyond this exact Act, represented relation, or other relation. The represented relation of the addressed byte occurrence or carried references remains Unknown.
+
 ### 01.Source.E — Candidates preserve source coordinates
 
 For one explicitly addressed exact Representation, emission Act, and destination operator Locality, this Book assigns this Seed the bounded Responsibility to preserve one candidate.
