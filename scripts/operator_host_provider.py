@@ -25,6 +25,7 @@ _IMPLEMENTATIONS = {
     b"ls": b"/usr/bin/ls",
     b"cat": b"/usr/bin/cat",
 }
+_CALCULATOR_INVOCATION = (b"/usr/bin/gnome-calculator",)
 _PYTEST_INVOCATION = (
     os.fsencode(sys.executable),
     b"-m",
@@ -76,6 +77,8 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
     )
     if name == b"pytest":
         invocation = _PYTEST_INVOCATION
+    elif name == b"calculator":
+        invocation = _CALCULATOR_INVOCATION
     else:
         implementation = _IMPLEMENTATIONS.get(name)
         if implementation is None:
@@ -83,6 +86,10 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
         invocation = (implementation,)
     if b"\x00" in argument:
         raise OperatorHostProviderError("exact material cannot cross this boundary")
+    if name == b"calculator":
+        if not argument:
+            raise OperatorHostProviderError("one exact invocation is required")
+        return *invocation, b"--solve=" + argument
     if not argument:
         return invocation
     if name == b"pytest":

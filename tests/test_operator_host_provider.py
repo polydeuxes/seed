@@ -34,6 +34,10 @@ def _invoke(command):
     (
         (b"!ls\n", (b"/usr/bin/ls",)),
         (
+            b"!calculator 2+2\n",
+            (b"/usr/bin/gnome-calculator", b"--solve=2+2"),
+        ),
+        (
             b"!cat path with spaces\r\n",
             (b"/usr/bin/cat", b"--", b"path with spaces"),
         ),
@@ -103,7 +107,14 @@ def test_pytest_provider_has_one_exact_argument_and_a_clean_environment(
 
 @pytest.mark.parametrize(
     "command",
-    (b"!sh\n", b"!cat a\x00b\n", b"!pytest a\x00b\n", b"ls\n"),
+    (
+        b"!sh\n",
+        b"!cat a\x00b\n",
+        b"!pytest a\x00b\n",
+        b"!calculator\n",
+        b"!calculator 2+\x002\n",
+        b"ls\n",
+    ),
 )
 def test_unknown_or_unrepresentable_host_invocation_is_refused_before_process(
     monkeypatch, command
@@ -115,6 +126,53 @@ def test_unknown_or_unrepresentable_host_invocation_is_refused_before_process(
     )
     with pytest.raises(operator_host_provider.OperatorHostProviderError):
         operator_host_provider.invoke_operator_host(command, lambda _item: None)
+
+
+def test_calculator_provider_preserves_supplied_material_and_completion(
+    monkeypatch,
+):
+    def bounded(argv, *, supply):
+        assert argv == (
+            b"/usr/bin/gnome-calculator",
+            b"--solve=2+2",
+        )
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"exact output material",
+                "invocation output occurrence 0",
+                True,
+            )
+        )
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"exact error material",
+                "invocation error occurrence 0",
+                True,
+            )
+        )
+        return False, False, False
+
+    monkeypatch.setattr(operator_host_provider, "_bounded_invocation", bounded)
+
+    supplied = _invoke(b"!calculator 2+2\n")
+
+    assert supplied == (
+        SuppliedSystemMaterialOccurrence(
+            b"exact output material",
+            "invocation output occurrence 0",
+            True,
+        ),
+        SuppliedSystemMaterialOccurrence(
+            b"exact error material",
+            "invocation error occurrence 0",
+            True,
+        ),
+        SuppliedSystemMaterialOccurrence(
+            b"",
+            "invocation completion",
+            False,
+        ),
+    )
 
 
 def test_cat_preserves_exact_posix_path_and_material(tmp_path):
