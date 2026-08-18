@@ -270,10 +270,14 @@ def _recurrent_lifecycle_occurrences(ledger, reference):
     )
     pair = ledger.get(reference.pair_measurement_occurrence_identity)
     source = ledger.get(reference.source_ingest_occurrence_identity)
+    evidence_of_yield = ledger.get(
+        result.material["evidence_of_yield_relation_identity"]
+    )
     return {
         "result": result,
         "act": act,
         "assignment": assignment,
+        "evidence_of_yield": evidence_of_yield,
         "pair": pair,
         "source": source,
     }
@@ -1366,7 +1370,15 @@ def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
 
 @pytest.mark.parametrize(
     "retained_input",
-    ("assignment", "result", "source", "pair"),
+    (
+        "shared_assignment",
+        "result",
+        "source",
+        "pair",
+        "recurrent_assignment",
+        "recurrent_act",
+        "recurrent_yield",
+    ),
 )
 def test_operator_replay_requires_each_shared_input_occurrence_intact(
     monkeypatch, retained_input
@@ -1382,14 +1394,18 @@ def test_operator_replay_requires_each_shared_input_occurrence_intact(
             not changed
             and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
         ):
+            recurrent = _recurrent_lifecycle_occurrences(ledger, first)
             identities = {
                 "result": first.recorded_occurrence_identity,
                 "source": first.source_ingest_occurrence_identity,
                 "pair": first.pair_measurement_occurrence_identity,
+                "recurrent_assignment": recurrent["assignment"].identity,
+                "recurrent_act": recurrent["act"].identity,
+                "recurrent_yield": recurrent["evidence_of_yield"].identity,
             }
             target = (
                 reading.input_occurrences[0]
-                if retained_input == "assignment"
+                if retained_input == "shared_assignment"
                 else next(
                     occurrence
                     for occurrence in reading.input_occurrences

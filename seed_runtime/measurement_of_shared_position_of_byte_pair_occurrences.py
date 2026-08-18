@@ -22,6 +22,8 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _read_determination_result,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     _references_to_addressed_recorded_recurrent_pair_position_results,
@@ -126,6 +128,7 @@ class SharedPairPositionInputs(NamedTuple):
 @dataclass(frozen=True)
 class _SharedPositionReplayOccurrence:
     event: Event
+    kind: str
     material: dict[str, Any]
     exact_material: bytes | None
     locality_identity: str | None
@@ -1891,13 +1894,14 @@ def _shared_position_replay_occurrence(
         if expected_material is None
         else expected_material
     )
-    recorded = ledger.get(event.identity) if type(event) is Event else None
+    ledger_event = ledger.get(event.identity) if type(event) is Event else None
     if (
-        recorded is None
-        or recorded != event
-        or recorded.material != material
-        or recorded.exact_material != event.exact_material
-        or recorded.locality_identity != event.locality_identity
+        ledger_event is None
+        or ledger_event != event
+        or ledger_event.kind != event.kind
+        or ledger_event.material != material
+        or ledger_event.exact_material != event.exact_material
+        or ledger_event.locality_identity != event.locality_identity
         or type(event.locality_identity) is not str
         or not event.locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED
@@ -1907,6 +1911,7 @@ def _shared_position_replay_occurrence(
         )
     return _SharedPositionReplayOccurrence(
         event=event,
+        kind=event.kind,
         material=material,
         exact_material=event.exact_material,
         locality_identity=event.locality_identity,
@@ -1917,18 +1922,71 @@ def _require_shared_position_replay_occurrence(
     ledger: EventLedger,
     occurrence: _SharedPositionReplayOccurrence,
 ) -> None:
-    recorded = ledger.get(occurrence.event.identity)
+    ledger_event = ledger.get(occurrence.event.identity)
     if (
-        recorded is None
-        or recorded != occurrence.event
-        or recorded.material != occurrence.material
-        or recorded.exact_material != occurrence.exact_material
-        or recorded.locality_identity != occurrence.locality_identity
+        ledger_event is None
+        or ledger_event != occurrence.event
+        or ledger_event.kind != occurrence.kind
+        or ledger_event.material != occurrence.material
+        or ledger_event.exact_material != occurrence.exact_material
+        or ledger_event.locality_identity != occurrence.locality_identity
         or ledger.integrity_of(occurrence.event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError(
             "shared-position replay requires an intact input occurrence"
         )
+
+
+def _recurrent_input_lifecycle_occurrences(
+    ledger: EventLedger,
+    result: Event,
+) -> tuple[Event, Event, Event]:
+    if (
+        result.kind
+        != RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay recurrent input result is not exact"
+        )
+    act_identity = result.material.get("responsible_act_evidence_identity")
+    yield_identity = result.material.get("evidence_of_yield_relation_identity")
+    act = ledger.get(act_identity) if type(act_identity) is str else None
+    evidence_of_yield = (
+        ledger.get(yield_identity) if type(yield_identity) is str else None
+    )
+    assignment_reference = (
+        act.material.get("responsibility_assignment_reference")
+        if act is not None
+        else None
+    )
+    assignment_identity = (
+        assignment_reference.get("recorded_occurrence_identity")
+        if type(assignment_reference) is dict
+        else None
+    )
+    assignment = (
+        ledger.get(assignment_identity)
+        if type(assignment_identity) is str
+        else None
+    )
+    if (
+        act is None
+        or act.kind
+        != RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        or assignment is None
+        or assignment.kind
+        != RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        or evidence_of_yield is None
+        or evidence_of_yield.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        or any(
+            occurrence.locality_identity != result.locality_identity
+            for occurrence in (assignment, act, evidence_of_yield)
+        )
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay recurrent input lifecycle is not exact"
+        )
+    return assignment, act, evidence_of_yield
 
 
 def _shared_position_replay_input_occurrences(
@@ -1939,6 +1997,7 @@ def _shared_position_replay_input_occurrences(
     """Retain the exact occurrences directly carried by both input readings."""
 
     identities: list[str] = []
+    recurrent_lifecycle_events: list[Event] = []
     for reference in inputs:
         identities.extend(
             (
@@ -1951,6 +2010,18 @@ def _shared_position_replay_input_occurrences(
         )
         if type(pair_result_identity) is str and pair_result_identity:
             identities.append(pair_result_identity)
+        if (
+            type(reference)
+            is ReferenceToRecordedRecurrentBytePairOccurrencePosition
+        ):
+            result = ledger.get(reference.recorded_occurrence_identity)
+            if result is None:
+                raise SharedPairPositionError(
+                    "shared-position replay recurrent input result is absent"
+                )
+            recurrent_lifecycle_events.extend(
+                _recurrent_input_lifecycle_occurrences(ledger, result)
+            )
 
     occurrences = [
         _shared_position_replay_occurrence(
@@ -1966,6 +2037,11 @@ def _shared_position_replay_input_occurrences(
                 "shared-position replay input occurrence is absent"
             )
         occurrences.append(_shared_position_replay_occurrence(ledger, event))
+    entered = {occurrence.event.identity for occurrence in occurrences}
+    for event in recurrent_lifecycle_events:
+        if event.identity not in entered:
+            occurrences.append(_shared_position_replay_occurrence(ledger, event))
+            entered.add(event.identity)
     return tuple(occurrences)
 
 
