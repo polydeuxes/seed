@@ -796,7 +796,7 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
             "assignment_subject_identity"
         ],
         "occurrence_position_measurement_act": recorded.material[
-            "downstream_act_identity"
+            "addressed_act_identity"
         ],
         "occurrence_position_measurement_occurrence": recorded.material[
             "act_occurrence_identity"

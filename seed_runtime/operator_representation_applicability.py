@@ -151,11 +151,11 @@ def _act_material(
         "representation_reference": deepcopy(admission["representation_reference"]),
         "input_identity": admission["candidate_reference"]["result_identity"],
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
-        "downstream_act_identity": admission["emission_act_identity"],
-        "downstream_act_occurrence_identity": admission[
+        "addressed_act_identity": admission["emission_act_identity"],
+        "addressed_act_occurrence_identity": admission[
             "emission_act_occurrence_identity"
         ],
-        "downstream_result_boundary_identity": admission[
+        "addressed_result_boundary_identity": admission[
             "emission_result_boundary_identity"
         ],
         "destination_operator_boundary_identity": admission[
@@ -346,12 +346,12 @@ def _result_material(act: Event) -> dict[str, Any]:
         "representation_reference": deepcopy(material["representation_reference"]),
         "input_identity": material["input_identity"],
         "input_role": material["input_role"],
-        "downstream_act_identity": material["downstream_act_identity"],
-        "downstream_act_occurrence_identity": material[
-            "downstream_act_occurrence_identity"
+        "addressed_act_identity": material["addressed_act_identity"],
+        "addressed_act_occurrence_identity": material[
+            "addressed_act_occurrence_identity"
         ],
-        "downstream_result_boundary_identity": material[
-            "downstream_result_boundary_identity"
+        "addressed_result_boundary_identity": material[
+            "addressed_result_boundary_identity"
         ],
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
@@ -432,12 +432,12 @@ def _recorded_result_material(
         "representation_reference": deepcopy(result["representation_reference"]),
         "input_identity": result["input_identity"],
         "input_role": result["input_role"],
-        "downstream_act_identity": result["downstream_act_identity"],
-        "downstream_act_occurrence_identity": result[
-            "downstream_act_occurrence_identity"
+        "addressed_act_identity": result["addressed_act_identity"],
+        "addressed_act_occurrence_identity": result[
+            "addressed_act_occurrence_identity"
         ],
-        "downstream_result_boundary_identity": result[
-            "downstream_result_boundary_identity"
+        "addressed_result_boundary_identity": result[
+            "addressed_result_boundary_identity"
         ],
         "destination_operator_boundary_identity": result[
             "destination_operator_boundary_identity"

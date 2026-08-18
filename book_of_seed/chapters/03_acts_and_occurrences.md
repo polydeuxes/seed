@@ -10,7 +10,7 @@ What establishes that an Act occurred rather than that an Act-shaped representat
 
 ### 02.Acts.A — Exact Act and occurrence
 
-Validation of an Act-shaped result establishes no Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, the same shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
+Validation of an Act-shaped result establishes no Act occurrence. A boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the Act that carried the material occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, the same shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
 
 Each finding established by an exact declared Measurement Act occurrence is carried by that Measurement result. The result carries separate exact finding, responsible-occurrence, Evidence, and result-boundary references. This establishes no finding for another Act kind.
 
@@ -27,8 +27,8 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - non-mutating behavior != no constitutional occurrence
 - representation != Act that established it
 - exact Act != Assertion whose subject is that Act
-- coherence validated != upstream assertion re-proven
-- Standing for a new downstream subject != revision of upstream-subject Standing
+- coherence validated != carried Assertion established again
+- Standing for a new subject != revision of Standing for a prior subject
 - Act occurrence-to-result relation != Assertion truth
 
 ## Counterexamples or failure modes

@@ -545,7 +545,6 @@ def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims
             "coordinate_distinction",
             "result_shape",
         ],
-        "preserves": ["upstream_subject"],
         "participation_in_another_Act": "unestablished",
     }
 
@@ -594,7 +593,7 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
         },
         "result_occurrence",
         "Standing",
-        "downstream_Act",
+        "addressed_Act",
     ]
     complete_subjects = set()
     incomplete_subjects = set()
@@ -637,7 +636,7 @@ def test_generic_admission_grammar_precedes_each_concrete_lifecycle():
         "Representation_emission_Responsibility"
     )
     assert admission["responsibility_assignment"] == "this_Book"
-    assert admission["downstream_Act"] == "Representation_emission_Act"
+    assert admission["addressed_Act"] == "Representation_emission_Act"
     assert admission["Act_Evidence"] == "unestablished"
     assert admission["Evidence_of_Yield_relation"] == {
         "first_subject": "Evidence",

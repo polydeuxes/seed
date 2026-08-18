@@ -91,7 +91,7 @@ ASSERTION_RESPONSIBILITIES = {
 
 
 class SharedPairPositionError(ValueError):
-    """One shared-position Measurement lifecycle is incoherent."""
+    """One shared-position Measurement is incoherent."""
 
 
 RecordedPairPositionReference = (
@@ -141,11 +141,11 @@ class _SharedPositionReplayReading:
     input_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
     source_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
     pair_measurement_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
-    input_responsibility_assignment_occurrences: tuple[
+    responsibility_assignment_occurrences: tuple[
         _SharedPositionReplayOccurrence, ...
     ]
-    input_act_evidence_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
-    input_evidence_of_yield_relation_occurrences: tuple[
+    act_evidence_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    evidence_of_yield_relation_occurrences: tuple[
         _SharedPositionReplayOccurrence, ...
     ]
     applicability_act_occurrence: _SharedPositionReplayOccurrence | None = None
@@ -739,7 +739,9 @@ def _record_shared_position_assignment(
     )
     identities = _new_assignment_identities()
     if len(set(identities.values())) != len(identities):
-        raise SharedPairPositionError("shared-position lifecycle identities collapsed")
+        raise SharedPairPositionError(
+            "shared-position Measurement occurrence identities collapsed"
+        )
     return ledger.append(
         SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
         _assignment_material(
@@ -854,7 +856,9 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
     )
     identities = _new_assignment_identities()
     if len(set(identities.values())) != len(identities):
-        raise SharedPairPositionError("shared-position lifecycle identities collapsed")
+        raise SharedPairPositionError(
+            "shared-position Measurement occurrence identities collapsed"
+        )
 
     result_read, inputs_read = _d2_result_inputs(
         ledger,
@@ -1071,7 +1075,7 @@ def _applicability_act_material(
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material["applicability_act_identity"],
+        "addressed_act_identity": assignment.material["applicability_act_identity"],
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
@@ -1086,7 +1090,7 @@ def _applicability_act_material(
                 "identity": assignment.material["first_input_relation_identity"],
                 "role": "first exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.first),
-                "downstream_act_identity": assignment.material[
+                "addressed_act_identity": assignment.material[
                     "measurement_act_identity"
                 ],
             },
@@ -1094,7 +1098,7 @@ def _applicability_act_material(
                 "identity": assignment.material["second_input_relation_identity"],
                 "role": "second exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.second),
-                "downstream_act_identity": assignment.material[
+                "addressed_act_identity": assignment.material[
                     "measurement_act_identity"
                 ],
             },
@@ -1221,8 +1225,8 @@ def _applicability_result_material(
             "scope": assignment.material["scope"],
         },
         "exact_act": APPLICABILITY_ACT,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
-        "downstream_act_occurrence_identity": (
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_occurrence_identity": (
             assignment.material["measurement_act_occurrence_identity"]
             if applicable
             else None
@@ -1347,9 +1351,9 @@ def _recorded_applicability_result_material(
         "result_identity": result["result_identity"],
         "dimensions": deepcopy(result["dimensions"]),
         "exact_act": result["exact_act"],
-        "downstream_act_identity": result["downstream_act_identity"],
-        "downstream_act_occurrence_identity": result[
-            "downstream_act_occurrence_identity"
+        "addressed_act_identity": result["addressed_act_identity"],
+        "addressed_act_occurrence_identity": result[
+            "addressed_act_occurrence_identity"
         ],
         "applicability_act_identity": result["applicability_act_identity"],
         "applicability_act_occurrence_identity": result[
@@ -1472,7 +1476,7 @@ def _measurement_act_material(
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -1719,7 +1723,7 @@ def _measurement_result_material(
             "scope": assignment.material["scope"],
         },
         "exact_act": MEASUREMENT_ACT,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -1820,7 +1824,7 @@ def _recorded_measurement_result_material(
         "result_identity": result["result_identity"],
         "dimensions": deepcopy(result["dimensions"]),
         "exact_act": result["exact_act"],
-        "downstream_act_identity": result["downstream_act_identity"],
+        "addressed_act_identity": result["addressed_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "responsibility": result["responsibility"],
         "responsible_boundary": result["responsible_boundary"],
@@ -1947,7 +1951,7 @@ def _require_shared_position_replay_occurrence(
         )
 
 
-def _recurrent_input_lifecycle_occurrences(
+def _recurrent_result_assignment_act_and_yield_evidence(
     ledger: EventLedger,
     result: Event,
 ) -> tuple[Event, Event, Event]:
@@ -1994,7 +1998,8 @@ def _recurrent_input_lifecycle_occurrences(
         )
     ):
         raise SharedPairPositionError(
-            "shared-position replay recurrent input lifecycle is not exact"
+            "shared-position replay recurrent result carries no exact assignment, "
+            "Act Evidence, or Evidence of Yield relation"
         )
     return assignment, act, evidence_of_yield
 
@@ -2036,7 +2041,7 @@ def _shared_position_replay_occurrence_coordinates(
                     "shared-position replay recurrent input result is absent"
                 )
             responsibility_assignment, act_evidence, evidence_of_yield = (
-                _recurrent_input_lifecycle_occurrences(ledger, result)
+                _recurrent_result_assignment_act_and_yield_evidence(ledger, result)
             )
             responsibility_assignments.append(responsibility_assignment)
             act_evidence_occurrences.append(act_evidence)
@@ -2088,9 +2093,9 @@ def _shared_position_replay_reading(
         input_results,
         sources,
         pair_measurement_results,
-        input_responsibility_assignments,
-        input_act_evidence,
-        input_evidence_of_yield_relations,
+        responsibility_assignments,
+        act_evidence,
+        evidence_of_yield_relations,
     ) = _shared_position_replay_occurrence_coordinates(ledger, inputs)
     reading = _SharedPositionReplayReading(
         assignment_reading=assignment_reading,
@@ -2102,13 +2107,9 @@ def _shared_position_replay_reading(
         input_result_occurrences=input_results,
         source_occurrences=sources,
         pair_measurement_result_occurrences=pair_measurement_results,
-        input_responsibility_assignment_occurrences=(
-            input_responsibility_assignments
-        ),
-        input_act_evidence_occurrences=input_act_evidence,
-        input_evidence_of_yield_relation_occurrences=(
-            input_evidence_of_yield_relations
-        ),
+        responsibility_assignment_occurrences=responsibility_assignments,
+        act_evidence_occurrences=act_evidence,
+        evidence_of_yield_relation_occurrences=evidence_of_yield_relations,
     )
     _require_exact_shared_position_replay_reading(ledger, reading)
     return reading
@@ -2134,9 +2135,9 @@ def _require_exact_shared_position_replay_reading(
         *reading.input_result_occurrences,
         *reading.source_occurrences,
         *reading.pair_measurement_result_occurrences,
-        *reading.input_responsibility_assignment_occurrences,
-        *reading.input_act_evidence_occurrences,
-        *reading.input_evidence_of_yield_relation_occurrences,
+        *reading.responsibility_assignment_occurrences,
+        *reading.act_evidence_occurrences,
+        *reading.evidence_of_yield_relation_occurrences,
         reading.applicability_act_occurrence,
         reading.applicability_result_occurrence,
         reading.measurement_act_occurrence,
@@ -2152,13 +2153,13 @@ def _advance_shared_position_replay_reading(
     reading: _SharedPositionReplayReading,
     event: Event,
 ) -> _SharedPositionReplayReading:
-    """Validate one later shared-position phase from one exact replay reading."""
+    """Validate one later shared-position occurrence from one exact replay reading."""
 
     _require_exact_shared_position_replay_reading(ledger, reading)
     assignment, _inputs_reading = reading.assignment_reading
     if event.locality_identity != assignment.locality_identity:
         raise SharedPairPositionError(
-            "shared-position replay phase entered another Locality"
+            "shared-position replay occurrence entered another Locality"
         )
     occurrence = _shared_position_replay_occurrence(
         ledger,
@@ -2220,7 +2221,7 @@ def _advance_shared_position_replay_reading(
         reading.measurement_result_occurrence = occurrence
     else:
         raise SharedPairPositionError(
-            "shared-position replay phase is not exact"
+            "shared-position replay occurrence is not exact"
         )
     ordered = tuple(
         occurrence.event.identity
@@ -2240,11 +2241,11 @@ def _advance_shared_position_replay_reading(
         )
     except ValueError as error:
         raise SharedPairPositionError(
-            "shared-position replay phase order is false"
+            "shared-position replay occurrence order is false"
         ) from error
     if tuple(item.identity for item in resolved) != ordered:
         raise SharedPairPositionError(
-            "shared-position replay phase order is false"
+            "shared-position replay occurrence order is false"
         )
     return reading
 

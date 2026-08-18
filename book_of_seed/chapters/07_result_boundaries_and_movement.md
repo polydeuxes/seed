@@ -20,7 +20,7 @@ Where current Standing in one Locality carries an earlier and a later exact byte
 
 The exact comparison rule requires Compare of complete measured content under each finding subject of result kind and represented byte pair. The result preserves findings with the same complete measured content, conflicting findings with the same subject and result kind but different measured content, findings of the earlier result, findings of the later result, and Unknown findings. It preserves each exact Measurement result reference, each exact Assertion reference, the ordered source occurrence references, the added occurrence, provenance, Scope, Locality, Evidence, Authority, conflicts, limits, and Unknown.
 
-The exact input relation is Evidence for each exact comparison input; it establishes no source relation from the added occurrence to a measured difference. The same content establishes no truth, corroboration, Admission, represented relation, or downstream Applicability. A difference establishes no source relation, correction, or movement by identity.
+The exact input relation is Evidence for each exact comparison input; it establishes no source relation from the added occurrence to a measured difference. The same content establishes no truth, corroboration, Admission, represented relation, or Applicability for another Act. A difference establishes no source relation, correction, or movement by identity.
 
 ### 04.Compare.B — Comparison of one ordered relation path with recorded pair findings
 

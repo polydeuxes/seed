@@ -1070,7 +1070,7 @@ def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurre
         if not (name.endswith("ACT_EVIDENCE_KIND") or value.endswith("act_evidenced")):
             continue
         act_identities = {
-            key for key in keys if key == "downstream_act_identity" or key.endswith("_act_identity")
+            key for key in keys if key == "addressed_act_identity" or key.endswith("_act_identity")
         }
         occurrence_identities = {
             key

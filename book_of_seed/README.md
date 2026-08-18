@@ -201,11 +201,11 @@ Carries any separately retained representation or record preserving an Act, Stan
 
 #### Separate Authorization standing
 
-Carries any separately established Authorization input by the exact downstream act. It remains distinct from the responsibility's general Authority coordinate.
+Carries any separately established Authorization input by the exact Act. It remains distinct from the responsibility's general Authority coordinate.
 
 #### Applicability and admission standing
 
-Carries any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, participation, and input support remain distinct.
+Carries any act-local applicability or admission standing required before material may participate in that exact Act. Applicability, admission, participation, and input support remain distinct.
 
 #### Lawful Stopping
 

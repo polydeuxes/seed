@@ -1142,7 +1142,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "result_identity",
         "dimensions",
         "exact_act",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "act_occurrence_identity",
         "responsibility",
         "responsible_boundary",
@@ -1396,7 +1396,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
     assert applicability["result_boundary"]
-    assert applicability["downstream_act"] == "declared byte-position-pair Measurement"
+    assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknown"]
     assert applicability["input_limits"]
@@ -1640,7 +1640,7 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
     assert assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
 
 
-def test_applicability_identity_is_bound_to_one_exact_downstream_act():
+def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
     first_result = record_byte_position_pair_count_layer(
@@ -1674,10 +1674,10 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
     assert first["responsibility_assignment_reference"]["assignment_identity"] == (
         first_assignment.material["assignment_identity"]
     )
-    assert first["downstream_act_identity"] == first_assignment.material[
+    assert first["addressed_act_identity"] == first_assignment.material[
         "measurement_act_identity"
     ]
-    assert first["downstream_act_occurrence_identity"] is None
+    assert first["addressed_act_occurrence_identity"] is None
 
 
 def test_pair_assignment_enters_current_standing_before_distinct_acts_and_result():
@@ -1993,7 +1993,7 @@ def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
         "locality_movement_result_occurrence_identity": None,
     }
     assert applicable["input_assertion_reference"] == source.reference
-    assert applicable["downstream_act_occurrence_identity"] is None
+    assert applicable["addressed_act_occurrence_identity"] is None
 
 
 def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities():
@@ -2649,11 +2649,11 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
         recording_locality_identity="measurement",
     )
 
-    assert result.material["downstream_act_identity"] != result.material["act_occurrence_identity"]
-    assert result.material["input_applicability"]["downstream_act_identity"] == (
-        result.material["downstream_act_identity"]
+    assert result.material["addressed_act_identity"] != result.material["act_occurrence_identity"]
+    assert result.material["input_applicability"]["addressed_act_identity"] == (
+        result.material["addressed_act_identity"]
     )
-    assert result.material["input_applicability"]["downstream_act_occurrence_identity"] is None
+    assert result.material["input_applicability"]["addressed_act_occurrence_identity"] is None
 
 
 def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
@@ -2863,7 +2863,7 @@ FIDELITY_SUBJECTS = {
     ),
     "applicability_determination": (
         test_pair_validation_refuses_unsupported_input_applicability,
-        test_applicability_identity_is_bound_to_one_exact_downstream_act,
+        test_applicability_identity_is_bound_to_one_exact_addressed_act,
         test_pair_applicability_reads_exact_result_standing_instead_of_scalar,
         test_pair_applicability_reader_refuses_changed_yield_result_identity,
         test_pair_applicability_reader_revalidates_exact_input_standing,

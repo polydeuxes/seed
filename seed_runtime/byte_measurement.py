@@ -58,7 +58,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "result_identity",
         "dimensions",
         "exact_act",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "act_occurrence_identity",
         "responsibility",
         "responsible_boundary",
@@ -76,7 +76,7 @@ BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.measurement.byte_responsibility_assignment_recorded"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
-    "downstream_act_identity",
+    "addressed_act_identity",
     "act_occurrence_identity",
     "responsibility",
     "responsible_boundary",
@@ -103,7 +103,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "responsibility_assignment_reference",
         "applicability_act_identity",
         "applicability_act_occurrence_identity",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "input_assertion_reference",
         "input_movement_event_identity",
         "input_role",
@@ -178,7 +178,7 @@ BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "in one exact byte-position-pair Measurement Act"
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
-    "determine Applicability of this exact proposed input to this exact downstream "
+    "determine Applicability of this exact proposed input to this exact addressed "
     "Act; establishes no Applicability for another Act; the resulting Standing, "
     "not this authority, determines participation"
 )
@@ -266,7 +266,7 @@ class MeasuredBytePairInputs:
     source_assertion_reference: dict[str, str]
     source_movement_event_identity: str | None
     input_applicability: dict[str, Any]
-    downstream_act_identity: str
+    addressed_act_identity: str
     act_occurrence_identity: str
     counts: tuple[MeasuredBytePairCount, ...]
 
@@ -448,7 +448,7 @@ def _recorded_input_assertion_standing(
 
     The Assertion's detached material is not Standing.  Its intact Measurement
     result occurrence is the Standing carrier; an exact movement occurrence
-    preserves that Standing when the downstream Act has another Locality.
+    preserves that Standing when the addressed Act has another Locality.
     """
 
     if type(source) is not RecordedByteAssertion:
@@ -551,8 +551,8 @@ def _pair_input_applicability_from_exact_source(
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
-        "downstream_act": "declared byte-position-pair Measurement",
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act": "declared byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -618,8 +618,8 @@ def _pair_input_applicability_from_exact_source(
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
-        "downstream_act_occurrence_identity": None,
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_occurrence_identity": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -631,7 +631,7 @@ def _pair_input_applicability_from_exact_source(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "downstream_act": "declared byte-position-pair Measurement",
+        "addressed_act": "declared byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "scope_locality": applicability_scope,
@@ -657,7 +657,7 @@ def _pair_input_applicability_from_exact_source(
             *([basis] if standing == "Unknown" else []),
         ],
         "limits": [
-            "Applicability to this Measurement is not downstream applicability, "
+            "Applicability to this Measurement is not Applicability for another Act, "
             "admission, represented relation, or authority for another use"
         ],
     }
@@ -1710,7 +1710,7 @@ def _measure_byte_position_pair_counts_through(
     source_assertion_reference: dict[str, str],
     source_movement_event_identity: str | None,
     input_applicability: dict[str, Any],
-    downstream_act_identity: str,
+    addressed_act_identity: str,
     act_occurrence_identity: str,
 ) -> MeasuredBytePairInputs:
     missing = [
@@ -1769,7 +1769,7 @@ def _measure_byte_position_pair_counts_through(
         source_assertion_reference=source_assertion_reference,
         source_movement_event_identity=source_movement_event_identity,
         input_applicability=input_applicability,
-        downstream_act_identity=downstream_act_identity,
+        addressed_act_identity=addressed_act_identity,
         act_occurrence_identity=act_occurrence_identity,
         counts=counts,
     )
@@ -2354,7 +2354,7 @@ def _byte_measurement_act_evidence_material(
     assignment: Event,
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material[
+        "addressed_act_identity": assignment.material[
             "measurement_act_identity"
         ],
         "act_occurrence_identity": assignment.material[
@@ -2556,8 +2556,8 @@ def _record_byte_measurement_result_from_exact_inputs(
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
         "exact_act": "declared exact-byte Measurement",
-        "downstream_act_identity": responsible_act_evidence.material[
-            "downstream_act_identity"
+        "addressed_act_identity": responsible_act_evidence.material[
+            "addressed_act_identity"
         ],
         "act_occurrence_identity": responsible_act_evidence.material[
             "act_occurrence_identity"
@@ -2717,11 +2717,11 @@ def _assertions_of_recorded_byte_measurement(
         or material.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
         or material.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
-        or not isinstance(material.get("downstream_act_identity"), str)
-        or not material["downstream_act_identity"]
+        or not isinstance(material.get("addressed_act_identity"), str)
+        or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)
         or not material["act_occurrence_identity"]
-        or material["downstream_act_identity"] == material["act_occurrence_identity"]
+        or material["addressed_act_identity"] == material["act_occurrence_identity"]
         or material.get("dimensions")
         != {
             "identity": "byte-count-measurement-occurrence",
@@ -2762,7 +2762,7 @@ def _assertions_of_recorded_byte_measurement(
     act_evidence_identity = material.get("responsible_act_evidence_identity")
     act_evidence = ledger.get(act_evidence_identity) if isinstance(act_evidence_identity, str) else None
     expected_act_evidence = {
-        "downstream_act_identity": material["downstream_act_identity"],
+        "addressed_act_identity": material["addressed_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": "declared exact-byte Measurement",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
@@ -3358,7 +3358,7 @@ def _pair_applicability_act_material(
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         "evidence_scope": (
             "Evidence for this exact input Applicability determination occurrence"
@@ -3422,7 +3422,7 @@ def _pair_applicability_result_material(
         "result_identity": assignment.material["applicability_result_identity"],
         "dimensions": {
             "identity": applicability_assertion["dimensions"]["identity"],
-            "content": "exact source-Assertion to downstream-Act Applicability",
+            "content": "exact source-Assertion to addressed-Act Applicability",
             "standing": applicability_assertion["dimensions"]["standing"],
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
@@ -3437,7 +3437,7 @@ def _pair_applicability_result_material(
         "applicability_act_occurrence_identity": applicability_assertion[
             "applicability_act_occurrence_identity"
         ],
-        "downstream_act_identity": applicability_assertion["downstream_act_identity"],
+        "addressed_act_identity": applicability_assertion["addressed_act_identity"],
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
@@ -3694,7 +3694,7 @@ def _pair_measurement_act_material(
     applicability_event: Event,
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -3879,7 +3879,7 @@ def _pair_measurement_result_material(
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
         "exact_act": "declared byte-position-pair Measurement",
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -3954,7 +3954,7 @@ def _record_pair_measurement_result_from_carried_act(
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
         input_applicability=applicability_event.material["applicability"],
-        downstream_act_identity=assignment.material["measurement_act_identity"],
+        addressed_act_identity=assignment.material["measurement_act_identity"],
         act_occurrence_identity=assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4043,7 +4043,7 @@ def _require_exact_pair_measurement_result_event(
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
         input_applicability=applicability_event.material["applicability"],
-        downstream_act_identity=assignment.material["measurement_act_identity"],
+        addressed_act_identity=assignment.material["measurement_act_identity"],
         act_occurrence_identity=assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4570,11 +4570,11 @@ def _validated_recorded_byte_position_pair_measurement(
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
         or material.get("exact_act") != "declared byte-position-pair Measurement"
         or material.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or not isinstance(material.get("downstream_act_identity"), str)
-        or not material["downstream_act_identity"]
+        or not isinstance(material.get("addressed_act_identity"), str)
+        or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)
         or not material["act_occurrence_identity"]
-        or material["downstream_act_identity"] == material["act_occurrence_identity"]
+        or material["addressed_act_identity"] == material["act_occurrence_identity"]
         or material.get("dimensions") != expected_dimensions
         or material.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
     ):

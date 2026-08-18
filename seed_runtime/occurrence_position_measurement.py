@@ -39,7 +39,7 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
         "result_identity",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "act_occurrence_identity",
         "exact_act",
         "responsibility",
@@ -151,7 +151,7 @@ def _occurrence_position_result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": assignment.material["measurement_result_identity"],
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
         "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
@@ -355,7 +355,7 @@ def _occurrence_position_act_evidence_material(
     participation: list[dict[str, str]],
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": OCCURRENCE_POSITION_ACT,
         "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
@@ -976,7 +976,7 @@ def _record_occurrence_position_measurement_result(
     )
     recorded_material = {
         "result_identity": result_material["result_identity"],
-        "downstream_act_identity": result_material["downstream_act_identity"],
+        "addressed_act_identity": result_material["addressed_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
         "responsibility": result_material["responsibility"],
@@ -1117,11 +1117,11 @@ def get_recorded_occurrence_position_measurement(
         or type(material.get("assertions")) is not list
         or type(material.get("result_identity")) is not str
         or not material["result_identity"]
-        or type(material.get("downstream_act_identity")) is not str
-        or not material["downstream_act_identity"]
+        or type(material.get("addressed_act_identity")) is not str
+        or not material["addressed_act_identity"]
         or type(material.get("act_occurrence_identity")) is not str
         or not material["act_occurrence_identity"]
-        or material["downstream_act_identity"]
+        or material["addressed_act_identity"]
         == material["act_occurrence_identity"]
     ):
         raise ValueError(

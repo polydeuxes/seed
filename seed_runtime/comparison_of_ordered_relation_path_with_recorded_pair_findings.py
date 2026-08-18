@@ -592,7 +592,7 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
                 "relation_identity": material["path_input_relation_identity"],
                 "subject_reference": deepcopy(material["path_assertion_reference"]),
                 "role": "ordered relation path input",
-                "downstream_act_identity": material["compare_act_identity"],
+                "addressed_act_identity": material["compare_act_identity"],
             },
             {
                 "relation_identity": material[
@@ -602,7 +602,7 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
                     material["comparison_result_reference"]
                 ),
                 "role": "recorded pair comparison input",
-                "downstream_act_identity": material["compare_act_identity"],
+                "addressed_act_identity": material["compare_act_identity"],
             },
         ],
         "comparison_rule": COMPARISON_RULE,
@@ -687,8 +687,8 @@ def _applicability_result_material(
             "scope": deepcopy(assignment.material["scope"]),
         },
         "exact_act": APPLICABILITY_ACT,
-        "downstream_act_identity": assignment.material["compare_act_identity"],
-        "downstream_act_occurrence_identity": (
+        "addressed_act_identity": assignment.material["compare_act_identity"],
+        "addressed_act_occurrence_identity": (
             assignment.material["compare_act_occurrence_identity"]
             if inputs["applicable"]
             else None
@@ -722,9 +722,9 @@ def _recorded_applicability_result_material(
         "result_identity": result["result_identity"],
         "dimensions": deepcopy(result["dimensions"]),
         "exact_act": result["exact_act"],
-        "downstream_act_identity": result["downstream_act_identity"],
-        "downstream_act_occurrence_identity": result[
-            "downstream_act_occurrence_identity"
+        "addressed_act_identity": result["addressed_act_identity"],
+        "addressed_act_occurrence_identity": result[
+            "addressed_act_occurrence_identity"
         ],
         "applicability_act_identity": result["applicability_act_identity"],
         "applicability_act_occurrence_identity": result[

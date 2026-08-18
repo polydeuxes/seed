@@ -129,7 +129,6 @@ displayed
 distinct
 distinction
 distinctions
-downstream
 duplicate
 durable
 e
@@ -378,7 +377,6 @@ unknown
 unresolved
 unsupported
 until
-upstream
 use
 usefulness
 validation

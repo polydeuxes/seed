@@ -655,7 +655,7 @@ def _applicability_act_material(
             ]
         ),
         "determination_rule": DETERMINATION_RULE,
-        "downstream_act_identity": assignment.material[
+        "addressed_act_identity": assignment.material[
             "determination_act_identity"
         ],
         "scope": deepcopy(assignment.material["scope"]),
@@ -836,10 +836,10 @@ def _applicability_result_material(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "downstream_act_identity": assignment.material[
+        "addressed_act_identity": assignment.material[
             "determination_act_identity"
         ],
-        "downstream_act_occurrence_identity": assignment.material[
+        "addressed_act_occurrence_identity": assignment.material[
             "determination_act_occurrence_identity"
         ],
         "responsibility": RESPONSIBILITY,
@@ -989,9 +989,9 @@ def _recorded_applicability_result_material(
         "applicability_act_occurrence_identity": material[
             "applicability_act_occurrence_identity"
         ],
-        "downstream_act_identity": material["downstream_act_identity"],
-        "downstream_act_occurrence_identity": material[
-            "downstream_act_occurrence_identity"
+        "addressed_act_identity": material["addressed_act_identity"],
+        "addressed_act_occurrence_identity": material[
+            "addressed_act_occurrence_identity"
         ],
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],

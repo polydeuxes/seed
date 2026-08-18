@@ -701,9 +701,9 @@ def emit_operator_representation_material(
         or applicability["admission_result_event_identity"]
         != admission_result_event_identity
         or applicability["standing"] != "applicable"
-        or applicability["downstream_act_identity"]
+        or applicability["addressed_act_identity"]
         != admission["emission_act_identity"]
-        or applicability["downstream_act_occurrence_identity"]
+        or applicability["addressed_act_occurrence_identity"]
         != admission["emission_act_occurrence_identity"]
         or applicability["destination_operator_boundary_rule"]
         != admission["destination_operator_boundary_rule"]
@@ -793,7 +793,7 @@ def emit_operator_representation_material(
                 authority="unestablished",
                 evidence_scope=(
                     "bounded to this attempt occurrence; establishes no output-boundary "
-                    "acceptance or downstream effect"
+                    "acceptance or effect at another boundary"
                 ),
                 scope=scope,
                 occurrence="emission attempt occurrence recorded before output",
@@ -1066,7 +1066,7 @@ def _record_exact_material_boundary_failure(
     result_identity = new_identity("operator_representation_boundary_failure_result")
     result_material = {
         "result_identity": result_identity,
-        "downstream_act_identity": act_identity,
+        "addressed_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "attempt_reference": attempt_event_identity,
         "representation_reference": representation["representation_identity"],
@@ -1081,7 +1081,7 @@ def _record_exact_material_boundary_failure(
             responsibility=REPRESENTATION_BOUNDARY_FAILURE_RESPONSIBILITY,
             authority="unestablished",
             evidence_scope=(
-                "bounded to this failure occurrence; establishes no downstream effect "
+                "bounded to this failure occurrence; establishes no effect at another boundary "
                 "and no acceptance beyond the reported result"
             ),
             scope=scope,
@@ -1100,7 +1100,7 @@ def _record_exact_material_boundary_failure(
     act_evidence = ledger.append(
         REPRESENTATION_BOUNDARY_FAILURE_ACT_EVIDENCE_KIND,
         {
-            "downstream_act_identity": act_identity,
+            "addressed_act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "act": "Representation boundary failure after exact write invocation",
             "responsibility": REPRESENTATION_BOUNDARY_FAILURE_RESPONSIBILITY,

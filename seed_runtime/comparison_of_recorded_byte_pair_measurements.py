@@ -800,7 +800,7 @@ def _assignment_material(
         "limits": [
             "comparison establishes no source relation",
             "comparison establishes no represented relation",
-            "comparison establishes no Admission or downstream Applicability",
+            "comparison establishes no Admission or Applicability for another Act",
         ],
         "unknown": [
             "what the measured difference represents: Unknown"
@@ -1033,14 +1033,14 @@ def _applicability_of_input_to_compare(assignment: Event) -> list[dict[str, Any]
             "relation_identity": material["earlier_input_relation_identity"],
             "input_role": "earlier recorded pair Measurement result",
             "input_reference": deepcopy(material["earlier_measurement_reference"]),
-            "downstream_act_identity": material["comparison_act_identity"],
+            "addressed_act_identity": material["comparison_act_identity"],
             "standing": "applicable",
         },
         {
             "relation_identity": material["later_input_relation_identity"],
             "input_role": "later recorded pair Measurement result",
             "input_reference": deepcopy(material["later_measurement_reference"]),
-            "downstream_act_identity": material["comparison_act_identity"],
+            "addressed_act_identity": material["comparison_act_identity"],
             "standing": "applicable",
         },
     ]
@@ -1564,7 +1564,7 @@ def _comparison_result_material(
         "limits": [
             "matching content establishes no corroboration or truth",
             "difference establishes no causal source relation or meaning",
-            "comparison result establishes no downstream Applicability",
+            "comparison result establishes no Applicability for another Act",
         ],
         "unknown": [
             "what each measured match or difference represents: Unknown"

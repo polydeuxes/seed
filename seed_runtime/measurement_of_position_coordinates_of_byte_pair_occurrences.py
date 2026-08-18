@@ -664,7 +664,7 @@ def _act_material(
     assignment: Event,
 ) -> dict[str, Any]:
     return {
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": EXACT_ACT,
         "responsibility": RESPONSIBILITY,
@@ -1035,7 +1035,7 @@ def _result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": assignment.material["measurement_result_identity"],
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "exact_act": EXACT_ACT,
         "responsibility": RESPONSIBILITY,
@@ -1118,7 +1118,7 @@ def _record_byte_pair_occurrence_position_measurement_result(
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         {
             "result_identity": result["result_identity"],
-            "downstream_act_identity": result["downstream_act_identity"],
+            "addressed_act_identity": result["addressed_act_identity"],
             "act_occurrence_identity": result["act_occurrence_identity"],
             "exact_act": result["exact_act"],
             "responsibility": result["responsibility"],

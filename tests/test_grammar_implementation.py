@@ -1578,9 +1578,9 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     )
     act_relation = (
         act_evidence is not None
-        and event.material.get("downstream_act_identity")
-        == applicability.get("downstream_act_identity")
-        == act_evidence.material.get("downstream_act_identity")
+        and event.material.get("addressed_act_identity")
+        == applicability.get("addressed_act_identity")
+        == act_evidence.material.get("addressed_act_identity")
     )
     occurrence_relation = (
         act_evidence is not None
@@ -1597,7 +1597,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     return {
         "input_identity": EXACT if input_relation else MISSING,
         "exact_Act": EXACT if act_relation else MISSING,
-        "subject": EXACT if content.get("downstream_act") else MISSING,
+        "subject": EXACT if content.get("addressed_act") else MISSING,
         "result_boundary": EXACT if applicability.get("result_boundary") else MISSING,
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
         "locality": EXACT if applicability.get("measurement_locality") else MISSING,
@@ -2650,8 +2650,8 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     )
     joined = (
         act_evidence is not None
-        and event.material["downstream_act_identity"]
-        == act_evidence.material["downstream_act_identity"]
+        and event.material["addressed_act_identity"]
+        == act_evidence.material["addressed_act_identity"]
         and event.material["act_occurrence_identity"]
         == act_evidence.material["act_occurrence_identity"]
         and event.material["responsibility"]
@@ -3588,7 +3588,7 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     )
     applicable_to_act = (
         applicability["dimensions"]["standing"] == "applicable"
-        and applicability["downstream_act_identity"] == pair.material["downstream_act_identity"]
+        and applicability["addressed_act_identity"] == pair.material["addressed_act_identity"]
         and applicability["dimensions"]["identity"]
         == act_evidence.material["input_applicability_identity"]
     )
@@ -4414,7 +4414,7 @@ def test_input_is_an_open_act_local_role_before_participation():
         ],
     }
     assert applicability["input_role"] == BYTE_PAIR_INPUT_ROLE
-    assert applicability["downstream_act_occurrence_identity"] is None
+    assert applicability["addressed_act_occurrence_identity"] is None
 
 
 def _assert_role_distinctions(distinctions: dict) -> None:
@@ -4676,7 +4676,7 @@ def test_unjoined_subjects_do_not_witness_an_input_to_act_relation():
     witness = _applicability_witness(bundle)
 
     assert bundle["applicability"]["input_assertion_reference"]
-    assert bundle["applicability"]["downstream_act_identity"]
+    assert bundle["applicability"]["addressed_act_identity"]
     assert bundle["applicability"]["applicability_act_occurrence_identity"]
     assert grammar["relation_witness_coordinates"] == {
         "standing_not_established": [
@@ -5127,7 +5127,7 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
         _coordinate_identities(clause["responsibility"]["coordinates"])
     )
     assert set(witness.values()) == {EXACT}
-    assert bundle["event"].material["downstream_act_identity"] != bundle["event"].material[
+    assert bundle["event"].material["addressed_act_identity"] != bundle["event"].material[
         "act_occurrence_identity"
     ]
     assert _occurrence_result_witness(bundle) == EXACT
@@ -5310,12 +5310,12 @@ def test_emission_applicability_witnesses_every_declared_coordinate():
         ],
         "input_identity": material["input_identity"],
         "input_role": material["input_role"],
-        "emission_Act": material["downstream_act_identity"],
+        "emission_Act": material["addressed_act_identity"],
         "emission_Act_occurrence": material[
-            "downstream_act_occurrence_identity"
+            "addressed_act_occurrence_identity"
         ],
         "emission_result_boundary": material[
-            "downstream_result_boundary_identity"
+            "addressed_result_boundary_identity"
         ],
         "Standing_boundary": material["standing_boundary_identity"],
         "destination_operator_boundary": material[
@@ -6287,7 +6287,7 @@ def test_measurement_result_adversaries_change_the_declared_coordinate_only():
 def test_act_and_occurrence_identities_do_not_establish_their_relation():
     bundle = _byte_measurement_witness()
     event = bundle["event"]
-    assert event.material["downstream_act_identity"]
+    assert event.material["addressed_act_identity"]
     assert event.material["act_occurrence_identity"]
     bundle["act_evidence"] = None
     witness = _act_occurrence_witness(bundle)

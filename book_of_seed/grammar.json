@@ -54,7 +54,7 @@
       },
       "result_occurrence",
       "Standing",
-      "downstream_Act"
+      "addressed_Act"
     ],
     "required_crossings": [
       {
@@ -72,7 +72,7 @@
         },
         "result_occurrence": "candidate_result_occurrence",
         "Standing": "candidate_Standing",
-        "downstream_Act": "Representation_emission_Act"
+        "addressed_Act": "Representation_emission_Act"
       },
       {
         "subject": "Admission",
@@ -89,7 +89,7 @@
         },
         "result_occurrence": "unestablished",
         "Standing": "unestablished",
-        "downstream_Act": "Representation_emission_Act"
+        "addressed_Act": "Representation_emission_Act"
       },
       {
         "subject": "emission_candidate_Admission_to_operator_Locality",
@@ -106,7 +106,7 @@
         },
         "result_occurrence": "Admission_result_occurrence",
         "Standing": "Admission_Standing",
-        "downstream_Act": "Representation_emission_Act"
+        "addressed_Act": "Representation_emission_Act"
       },
       {
         "subject": "emission_input_Applicability",
@@ -123,7 +123,7 @@
         },
         "result_occurrence": "Applicability_result_occurrence",
         "Standing": "applicable_input_Standing",
-        "downstream_Act": "Representation_emission_Act"
+        "addressed_Act": "Representation_emission_Act"
       }
     ]
   },
@@ -1618,7 +1618,6 @@
           "coordinate_distinction",
           "result_shape"
         ],
-        "preserves": ["upstream_subject"],
         "participation_in_another_Act": "unestablished"
       },
       "movement_preserves": [
@@ -1860,8 +1859,8 @@
         ["Applicability", "Admission"],
         ["Applicability", "Act_occurrence"],
         ["Act_occurrence", "output_Standing"],
-        ["output_Standing", "downstream_Applicability"],
-        ["output_Standing", "downstream_Admission"]
+        ["output_Standing", "Applicability_for_another_Act"],
+        ["output_Standing", "Admission_for_another_Act"]
       ],
       "persistent_Standing": {
         "standing_not_established": [
@@ -2221,7 +2220,7 @@
         "corroboration",
         "Admission",
         "represented_relation",
-        "downstream_Applicability",
+        "Applicability_for_another_Act",
         "correction",
         "movement"
       ]
@@ -2383,7 +2382,12 @@
       ],
       "standing_not_established": [
         "Standing_by_record_existence",
-        "upstream_Assertion_by_record_existence",
+        {
+          "first_subject": "record_existence",
+          "relation": "establishes",
+          "second_subject": "Assertion_carried_by_record",
+          "standing": "not_established"
+        },
         "Compare_by_record_existence"
       ]
     },
@@ -2727,7 +2731,7 @@
       "book_material_reference": "08.Authority.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "downstream_Act_may_stand_on_established_content_bounded_by": [
+      "exact_Act_may_stand_on_established_content_bounded_by": [
         "exact_role",
         "addressed_subject",
         "result_boundary",

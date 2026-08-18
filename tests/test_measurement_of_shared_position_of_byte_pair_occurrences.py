@@ -260,7 +260,7 @@ def _assignment(ledger, locality, first, second):
     )
 
 
-def _recurrent_lifecycle_occurrences(ledger, reference):
+def _recurrent_result_coordinates(ledger, reference):
     result = ledger.get(reference.recorded_occurrence_identity)
     act = ledger.get(result.material["responsible_act_evidence_identity"])
     assignment = ledger.get(
@@ -462,7 +462,7 @@ def test_two_recurrent_results_share_one_exact_later_standing_read(monkeypatch):
         second_result_occurrence_identity=second.recorded_occurrence_identity,
         second_assertion_identity=second.assertion_identity,
     )
-    second_assignment = _recurrent_lifecycle_occurrences(
+    second_assignment = _recurrent_result_coordinates(
         ledger, second
     )["assignment"]
 
@@ -543,7 +543,7 @@ def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior
     )
     forged = deepcopy(exact_prior)
     if changed_prior == "stale":
-        first_act = _recurrent_lifecycle_occurrences(ledger, first)["act"]
+        first_act = _recurrent_result_coordinates(ledger, first)["act"]
         forged = operator_standing_module.read_operator_locality_standing_through(
             ledger,
             locality_identity=locality,
@@ -552,7 +552,7 @@ def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior
     elif changed_prior == "wrong locality":
         forged["locality_identity"] = "another-shared-position-locality"
     else:
-        second_assignment = _recurrent_lifecycle_occurrences(
+        second_assignment = _recurrent_result_coordinates(
             ledger, second
         )["assignment"]
         del forged["responsibility_assignment_occurrences"][
@@ -581,7 +581,7 @@ def test_shared_assignment_explicit_prior_revalidates_later_input_mutation():
         second_assertion_identity=second.assertion_identity,
         locality_standing=exact_prior,
     )
-    changed_result = _recurrent_lifecycle_occurrences(ledger, second)["result"]
+    changed_result = _recurrent_result_coordinates(ledger, second)["result"]
     changed_result.material["known_loss"] = not changed_result.material["known_loss"]
 
     with pytest.raises((SharedPairPositionError, ValueError)):
@@ -600,7 +600,7 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_stand
     monkeypatch, changed_occurrence
 ):
     ledger, _locality, _source, first, second = _fixture()
-    changed = _recurrent_lifecycle_occurrences(ledger, first)[
+    changed = _recurrent_result_coordinates(ledger, first)[
         changed_occurrence
     ]
     original_material = deepcopy(changed.material)
@@ -706,7 +706,7 @@ def test_recurrent_result_batch_refuses_assertion_and_locality_substitution():
 
 def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
     ledger, _locality, _source, first, second = _fixture()
-    assignment = _recurrent_lifecycle_occurrences(ledger, first)["assignment"]
+    assignment = _recurrent_result_coordinates(ledger, first)["assignment"]
     assignment.material["standing_boundary_identity"] = (
         second.recorded_occurrence_identity
     )
@@ -1043,7 +1043,7 @@ def test_d2_shared_assignment_revalidates_after_callback_atomically(
     ) == before_assignments
 
 
-def test_later_direct_lifecycle_reads_use_assignment_carried_exact_coordinates(
+def test_later_direct_occurrence_read_requires_assignment_carried_exact_coordinates(
     monkeypatch,
 ):
     ledger = EventLedger()
@@ -1209,7 +1209,7 @@ def test_each_new_elevator_crossing_is_read_from_its_exact_occurrences():
         del event.material["changed_after_recording"]
 
 
-def test_each_shared_position_lifecycle_read_validates_inputs_once_without_cache(
+def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -1342,7 +1342,7 @@ def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path)
     reopened.close()
 
 
-def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
+def test_one_complete_shared_measurement_requires_one_assignment_read(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -1368,24 +1368,21 @@ def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
     assert result.identity in standing["measurement_occurrences"]
 
 
+_EXACT_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING = (
+    ("input_result_occurrences", "result"),
+    ("source_occurrences", "source"),
+    ("pair_measurement_result_occurrences", "pair"),
+    ("responsibility_assignment_occurrences", "recurrent_assignment"),
+    ("act_evidence_occurrences", "recurrent_act"),
+    ("evidence_of_yield_relation_occurrences", "recurrent_yield"),
+)
+
+
 @pytest.mark.parametrize(
     ("reading_coordinate", "input_coordinate"),
-    (
-        ("input_result_occurrences", "result"),
-        ("source_occurrences", "source"),
-        ("pair_measurement_result_occurrences", "pair"),
-        (
-            "input_responsibility_assignment_occurrences",
-            "recurrent_assignment",
-        ),
-        ("input_act_evidence_occurrences", "recurrent_act"),
-        (
-            "input_evidence_of_yield_relation_occurrences",
-            "recurrent_yield",
-        ),
-    ),
+    _EXACT_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING,
 )
-def test_operator_replay_requires_each_exact_upstream_occurrence_intact(
+def test_carried_standing_requires_each_exact_occurrence_coordinate_intact(
     monkeypatch, reading_coordinate, input_coordinate
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -1399,7 +1396,7 @@ def test_operator_replay_requires_each_exact_upstream_occurrence_intact(
             not changed
             and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
         ):
-            recurrent = _recurrent_lifecycle_occurrences(ledger, first)
+            recurrent = _recurrent_result_coordinates(ledger, first)
             identities = {
                 "result": first.recorded_occurrence_identity,
                 "source": first.source_ingest_occurrence_identity,
@@ -1413,7 +1410,7 @@ def test_operator_replay_requires_each_exact_upstream_occurrence_intact(
                 for occurrence in getattr(reading, reading_coordinate)
                 if occurrence.event.identity == identities[input_coordinate]
             )
-            target.event.material["changed_between_shared_replay_phases"] = True
+            target.event.material["changed_between_shared_replay_occurrences"] = True
             changed = True
         return original(ledger, reading, event)
 
@@ -1428,7 +1425,7 @@ def test_operator_replay_requires_each_exact_upstream_occurrence_intact(
     assert changed is True
 
 
-def test_operator_replay_requires_its_shared_assignment_occurrence_intact(
+def test_carried_standing_requires_its_shared_assignment_occurrence_intact(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -1443,7 +1440,7 @@ def test_operator_replay_requires_its_shared_assignment_occurrence_intact(
             and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
         ):
             reading.assignment_occurrence.event.material[
-                "changed_between_shared_replay_phases"
+                "changed_between_shared_replay_occurrences"
             ] = True
             changed = True
         return original(ledger, reading, event)
@@ -1459,43 +1456,48 @@ def test_operator_replay_requires_its_shared_assignment_occurrence_intact(
     assert changed is True
 
 
-@pytest.mark.parametrize(
-    ("phase_kind", "retained_phase"),
+_LATER_SHARED_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING = (
     (
-        (
-            SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-            "applicability_act_occurrence",
-        ),
-        (
-            SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
-            "applicability_result_occurrence",
-        ),
-        (
-            SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-            "measurement_act_occurrence",
-        ),
+        SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+        "applicability_act_occurrence",
+    ),
+    (
+        SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+        "applicability_result_occurrence",
+    ),
+    (
+        SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+        "measurement_act_occurrence",
     ),
 )
-def test_operator_replay_requires_each_shared_phase_occurrence_intact(
-    monkeypatch, phase_kind, retained_phase
+
+
+@pytest.mark.parametrize(
+    ("occurrence_kind", "reading_coordinate"),
+    _LATER_SHARED_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING,
+)
+def test_carried_standing_requires_each_later_shared_occurrence_intact(
+    monkeypatch, occurrence_kind, reading_coordinate
 ):
     ledger, locality, _source, first, second = _fixture()
     _record_path(ledger, locality, first, second)
     original = operator_standing_module._advance_shared_position_replay_reading
     changed = False
 
-    def change_before_next_phase(ledger, reading, event):
+    def change_before_next_occurrence(ledger, reading, event):
         nonlocal changed
-        if not changed and event.kind == phase_kind:
-            occurrence = getattr(reading, retained_phase)
-            occurrence.event.material["changed_between_shared_replay_phases"] = True
+        if not changed and event.kind == occurrence_kind:
+            occurrence = getattr(reading, reading_coordinate)
+            occurrence.event.material[
+                "changed_between_shared_replay_occurrences"
+            ] = True
             changed = True
         return original(ledger, reading, event)
 
     monkeypatch.setattr(
         operator_standing_module,
         "_advance_shared_position_replay_reading",
-        change_before_next_phase,
+        change_before_next_occurrence,
     )
 
     with pytest.raises(SharedPairPositionError, match="intact"):
@@ -1631,9 +1633,9 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_one_act_cannot_yield_two_shared_position_results,
         test_each_new_elevator_crossing_is_read_from_its_exact_occurrences,
-        test_each_shared_position_lifecycle_read_validates_inputs_once_without_cache,
+        test_each_shared_position_occurrence_read_requires_exact_input_coordinates,
         test_generic_assignment_refuses_raw_direct_result_inputs_atomically,
-        test_later_direct_lifecycle_reads_use_assignment_carried_exact_coordinates,
+        test_later_direct_occurrence_read_requires_assignment_carried_exact_coordinates,
         test_d2_shared_assignment_refuses_stale_or_forged_standing_atomically,
         test_d2_result_corruption_invalidates_shared_assignment_reader,
         test_d2_shared_assignment_revalidates_after_callback_atomically,
@@ -1656,10 +1658,10 @@ FIDELITY_SUBJECTS = {
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
-        test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle,
-        test_operator_replay_requires_each_exact_upstream_occurrence_intact,
-        test_operator_replay_requires_its_shared_assignment_occurrence_intact,
-        test_operator_replay_requires_each_shared_phase_occurrence_intact,
+        test_one_complete_shared_measurement_requires_one_assignment_read,
+        test_carried_standing_requires_each_exact_occurrence_coordinate_intact,
+        test_carried_standing_requires_its_shared_assignment_occurrence_intact,
+        test_carried_standing_requires_each_later_shared_occurrence_intact,
         test_operator_replay_refuses_a_substituted_shared_assignment,
         test_operator_shared_replay_starts_fresh_after_exception,
         test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,

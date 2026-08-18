@@ -726,7 +726,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
     assert result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     assert set(result.material) == {
         "result_identity",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "act_occurrence_identity",
         "exact_act",
         "responsibility",

@@ -109,7 +109,7 @@ def test_admission_applicability_participation_and_emission_remain_distinct():
         "same_emission_result_boundary": True,
     }
     assert applicability["admission_result_event_identity"] == admission.identity
-    assert applicability["downstream_act_occurrence_identity"] == (
+    assert applicability["addressed_act_occurrence_identity"] == (
         emission.material["act_occurrence_identity"]
     )
     assert act_evidence.material["input_applicability_event_identity"] == (

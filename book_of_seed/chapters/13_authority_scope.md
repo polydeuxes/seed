@@ -14,7 +14,7 @@ A Representation may carry Authority for an exact responsible boundary, Act or m
 ## Boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support
-A downstream Act may stand on established content within bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support establishes no Standing or Authority beyond those bounds and cannot prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
+An Act may stand on established content within bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support establishes no Standing or Authority beyond those bounds and cannot prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification

@@ -75,7 +75,7 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "result_identity",
         "dimensions",
         "exact_act",
-        "downstream_act_identity",
+        "addressed_act_identity",
         "act_occurrence_identity",
         "responsibility",
         "responsible_boundary",
@@ -947,7 +947,7 @@ def _material_of_evidence_of_act_occurrence(
     act_identity = assignment.material["measurement_act_identity"]
     act_occurrence_identity = assignment.material["act_occurrence_identity"]
     return {
-        "downstream_act_identity": act_identity,
+        "addressed_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
@@ -1180,7 +1180,7 @@ def _material_of_result_of_measurement(
             "evidence_scope": EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         },
         "exact_act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        "downstream_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -1270,7 +1270,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "result_identity": result["result_identity"],
             "dimensions": result["dimensions"],
             "exact_act": result["exact_act"],
-            "downstream_act_identity": result["downstream_act_identity"],
+            "addressed_act_identity": result["addressed_act_identity"],
             "act_occurrence_identity": result["act_occurrence_identity"],
             "responsibility": result["responsibility"],
             "responsible_boundary": result["responsible_boundary"],
