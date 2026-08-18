@@ -7,6 +7,13 @@ Investigation only.
 This report changes no active Book material, machine grammar, Rosetta
 material, runtime, admission, or test.
 
+Amended after review: `Representation Standing` is explanatory shorthand in
+this report, not an exact named active-Book or machine-grammar coordinate. The
+first version correctly required an exact supported Assertion, but then
+prematurely supplied its relation as `this result is a Representation`. The
+word `is` does not recover that relation. The exact relation position itself
+remains unresolved.
+
 It continues `candidate_standing_and_representation_investigation_001.md`
 after review corrected this category jump:
 
@@ -234,7 +241,7 @@ operator Representation road.
 Disposition: **active uses recover several family-local Representation
 positions, not one universal result criterion**.
 
-## 5. The minimum Standing shape is relational, not structural
+## 5. Generic Standing requirements do not recover the exact relation
 
 The general Standing rule supplies the narrowest recoverable requirement.
 
@@ -243,12 +250,25 @@ relation must connect the Assertion with its Evidence, Authority, Scope, and
 preserved limits. The Assertion and relation retain their exact subject,
 responsible occurrence, provenance, conflicts, Unknown, and result boundary.
 
-Applied here, the subject is not every coordinate inside the result. It is the
-bounded claim concerning:
+Applied here, the subject is not every coordinate inside the result. The first
+version named the bounded claim as:
 
 ```text
 Representation Standing of this exact result
 ```
+
+That phrase is useful orientation, but active Book and machine grammar do not
+name `Representation Standing` as one exact coordinate. It compresses at
+least:
+
+```text
+exact result reference
++ exact Representation-bearing relation position
++ exact Assertion carrying that relation
++ exact Standing for that Assertion
+```
+
+The active material does not yet establish the second coordinate.
 
 The required coordinates are at least:
 
@@ -267,16 +287,54 @@ Unknown
 Standing boundary
 ```
 
-This list does not define what Representation means. It defines what must
-bound a lawful Standing claim once an exact family establishes that subject.
+This list does not define what Representation means or which relation connects
+the result to that word. It defines what must bound a lawful Standing claim
+once an exact family establishes the subject and relation.
 
-The missing coordinate is therefore not a Python field named
-`representation`. It is the exact supported Assertion and Standing relation
-for the result.
+The missing coordinate is therefore neither a Python field named
+`representation` nor an Assertion whose connective is silently filled with
+`is`. It is the exact relation position, supported Assertion, and Standing for
+the result.
 
-Disposition: **Representation Standing requires its own exact supported
-subject; no current universal rule establishes that subject for arbitrary
-results**.
+Disposition: **the generic Standing physiology is recovered; the exact
+result-to-Representation relation is not**.
+
+### 5.1 `is` cannot fill the vacancy
+
+The active Book uses `is` widely for materially different work, including:
+
+- named distinctions such as `Responsibility is not Standing`;
+- statements about exact subjects;
+- ordinary English connective material;
+- negative boundaries;
+- descriptions of what one relation or result carries.
+
+`is` is admitted to Book material, but Rosetta currently supplies no
+decomposition that gives all of those uses one exact relation. The repository
+therefore cannot use the sentence:
+
+```text
+this result is a Representation
+```
+
+as though `is` already established identity, membership, classification,
+predication, equality, or another exact relation. Those proposed
+interpretations are reader testimony.
+
+The safer unresolved shape is:
+
+```text
+exact result
+    -- exact relation: Unknown -->
+Representation-oriented subject: unresolved
+```
+
+Even that drawing is orientation. A responsible occurrence must establish
+the exact participants, roles, relation Assertion, Evidence, Authority,
+Scope, limits, Unknown, and Standing before the relation can be carried as
+Standing.
+
+Disposition: **`is` is the vacancy carrier, not its solution**.
 
 ## 6. Candidate Standing result audit
 
@@ -309,7 +367,8 @@ Representation Standing of this exact Candidate result
 ```
 
 No current Candidate Assertion, result coordinate, or support relation has
-that exact subject.
+that exact subject. More precisely, no current occurrence establishes the
+exact relation that the shorthand `Representation Standing` would require.
 
 The Candidate result also carries no negative finding that excludes
 Representation Standing. Distinct current event kinds and Locality Standing
@@ -453,20 +512,22 @@ No active universal rule currently answers:
 What exact Standing makes any result a Representation?
 ```
 
-The repository recovers family-local positive positions and a general
-Standing requirement:
+The repository recovers family-local positive positions and generic Standing
+requirements. It does not recover the connective in this earlier proposed
+shape:
 
 ```text
 exact result
-+ exact Assertion whose subject is Representation Standing for that result
++ exact relation to a Representation-oriented subject
++ exact Assertion carrying that relation
 + exact responsible occurrence
 + Evidence / support relation / Authority / Scope / limits / Unknown
-    -> bounded Representation Standing
+    -> bounded Standing for that exact Assertion
 ```
 
-But it does not yet recover one producer-independent rule that supplies the
-Representation-standing subject for Candidate, Measurement, Compare, or all
-other exact results.
+The exact relation remains Unknown. Calling it `is`, Identity, membership,
+classification, predication, or equality would supply the result of the
+investigation in advance.
 
 The exact current dispositions are:
 
@@ -493,8 +554,9 @@ all current Standing through C
 = one recursively updated Representation          not established
 ```
 
-The relation between result and what it represents is a separate boundary and
-may remain Unknown even where Representation Standing is established.
+The relation between a result and what it represents is a separate boundary.
+The relation by which a result bears whatever humans call Representation is
+also unresolved; neither can be inferred from the other.
 
 ## 12. Smallest next recovery
 
@@ -506,9 +568,10 @@ The smallest next recovery is family-local:
 
 ```text
 For one exact Candidate result,
-what exact responsible occurrence and support relation,
-if any,
-establish Representation Standing for that result?
+what exact relation position, responsible occurrence,
+and support relation, if any,
+connect that result with the currently unresolved
+Representation-oriented subject?
 ```
 
 That recovery must preserve:
@@ -522,6 +585,9 @@ That recovery must preserve:
 - no automatic Representation Standing for Measurement, Compare, or every
   result by analogy;
 - no aggregate Standing Representation by co-presence.
+
+It must not prefill the relation with `is`, identity, membership,
+classification, predication, equality, or a Python kind check.
 
 If no exact occurrence assigns or supports that result-level subject, the
 answer remains Unknown. The usefulness of the heartbeat hypothesis cannot
