@@ -573,6 +573,14 @@
             "candidate_rule"
           ]
         },
+        {
+          "subject": "ordered_pair_candidate_standing_grammar_coordinates",
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Source.E.1",
+            "ordered_pair_candidate_rule"
+          ]
+        },
         {"subject": "participation_relation_coordinates"},
         {"subject": "locality_relation_coordinates"},
         {"subject": "locality_relation_distinctions"},
@@ -1385,6 +1393,37 @@
           "act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
           "act_occurrence": "exact_Candidate_Act_occurrence"
         },
+        "result": "candidate_Assertion",
+        "represented_relation": "Unknown"
+      },
+      "ordered_pair_candidate_rule": {
+        "identity": "one_candidate_for_each_ordered_pair_in_source_event_order",
+        "source_pair": {
+          "first_subject": "ordered_pair",
+          "relation": "of",
+          "second_subject": "distinct_exact_source_Assertions"
+        },
+        "source_input_relation": {
+          "first_subject": "exact_source_Assertion",
+          "relation": "input_to",
+          "second_subject": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "role": "input"
+        },
+        "source_Participation": {
+          "subject_reference": "exact_source_Assertion",
+          "role": "input",
+          "act": "record_every_candidate_required_by_one_exact_source_rule_and_candidate_rule",
+          "act_occurrence": "exact_Candidate_Act_occurrence"
+        },
+        "candidate_source_roles": [
+          "first_source_Assertion",
+          "second_source_Assertion"
+        ],
+        "requires": "distinct_exact_source_Assertion_references",
+        "order": [
+          "first_source_event_order",
+          "second_source_event_order"
+        ],
         "result": "candidate_Assertion",
         "represented_relation": "Unknown"
       },

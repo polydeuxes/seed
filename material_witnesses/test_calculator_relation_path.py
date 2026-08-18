@@ -42,6 +42,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
+    record_complete_ordered_pair_candidate_standing,
 )
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -282,6 +283,15 @@ def calculator_relation_witness():
         recording_locality_identity="calculator-candidate-standing",
         source_append_boundary=candidate_source_boundary,
     )
+    ordered_pair_candidate_standing_result = (
+        record_complete_ordered_pair_candidate_standing(
+            ledger,
+            recording_locality_identity=(
+                "calculator-ordered-pair-candidate-standing"
+            ),
+            source_append_boundary=candidate_source_boundary,
+        )
+    )
     return {
         "ledger": ledger,
         "claim_source": claim_source,
@@ -293,6 +303,9 @@ def calculator_relation_witness():
         "stdout_result": stdout_result,
         "candidate_source_boundary": candidate_source_boundary,
         "candidate_standing_result": candidate_standing_result,
+        "ordered_pair_candidate_standing_result": (
+            ordered_pair_candidate_standing_result
+        ),
         "raw_output": raw_output.getvalue(),
     }
 
@@ -358,6 +371,71 @@ def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
     )
     boundaries = boundaries_of_recorded_candidate_standing(
         ledger, witness["candidate_standing_result"].identity
+    )
+    assert boundaries["source_ledger_boundary"] == witness[
+        "candidate_source_boundary"
+    ]
+    assert (
+        boundaries["source_ledger_boundary"]
+        != boundaries["candidate_result_ledger_boundary"]
+    )
+
+
+def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
+    calculator_relation_witness,
+):
+    witness = calculator_relation_witness
+    ledger = witness["ledger"]
+    path_finding = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, witness["path_comparison"].identity
+    )["finding"]
+    calculator_position = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, witness["stdout_result"].identity
+        )[0]
+    )
+    result = witness["ordered_pair_candidate_standing_result"]
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+    source_orders = tuple(
+        (
+            candidate["assertion_subject"][
+                "first_source_assertion_reference"
+            ]["assertion_identity"],
+            candidate["assertion_subject"][
+                "second_source_assertion_reference"
+            ]["assertion_identity"],
+        )
+        for candidate in standing["candidate_assertions"]
+    )
+    exact_orders = {
+        (path_finding["identity"], calculator_position.assertion_identity),
+        (calculator_position.assertion_identity, path_finding["identity"]),
+    }
+
+    assert exact_orders <= set(source_orders)
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in standing["candidate_assertions"]
+        if (
+            candidate["assertion_subject"][
+                "first_source_assertion_reference"
+            ]["assertion_identity"],
+            candidate["assertion_subject"][
+                "second_source_assertion_reference"
+            ]["assertion_identity"],
+        )
+        in exact_orders
+    )
+    assert result.locality_identity == (
+        "calculator-ordered-pair-candidate-standing"
+    )
+    result_locality_standing = read_operator_locality_standing(
+        ledger, locality_identity=result.locality_identity
+    )
+    assert result_locality_standing["comparison_result_occurrences"] == {}
+    assert result_locality_standing["recorded_relation_Standing"] == {}
+    boundaries = boundaries_of_recorded_candidate_standing(
+        ledger, result.identity
     )
     assert boundaries["source_ledger_boundary"] == witness[
         "candidate_source_boundary"

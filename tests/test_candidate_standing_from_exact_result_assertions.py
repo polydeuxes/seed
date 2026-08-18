@@ -5,11 +5,13 @@ import pytest
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     BOOK_CLAUSE,
     CANDIDATE_RULE,
+    ORDERED_PAIR_CANDIDATE_RULE,
     SOURCE_RULE,
     boundaries_of_recorded_candidate_standing,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
+    record_complete_ordered_pair_candidate_standing,
     source_assertion_references_for_candidate_standing,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -199,6 +201,66 @@ def test_source_and_candidate_result_boundaries_and_localities_stay_distinct():
     )
 
 
+def test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    source_boundary = ledger.append_boundary()
+    source_references = source_assertion_references_for_candidate_standing(
+        ledger, source_append_boundary=source_boundary
+    )
+
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidate-standing",
+        source_append_boundary=source_boundary,
+    )
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+    expected = tuple(
+        (first, second)
+        for first_position, first in enumerate(source_references)
+        for second_position, second in enumerate(source_references)
+        if first_position != second_position
+    )
+    recorded = tuple(
+        (
+            candidate["assertion_subject"][
+                "first_source_assertion_reference"
+            ],
+            candidate["assertion_subject"][
+                "second_source_assertion_reference"
+            ],
+        )
+        for candidate in standing["candidate_assertions"]
+    )
+
+    assert standing["candidate_rule"] == ORDERED_PAIR_CANDIDATE_RULE
+    assert recorded == expected
+    assert standing["completeness"] == {
+        "required_candidate_count": len(expected),
+        "recorded_candidate_count": len(expected),
+        "partial": False,
+    }
+    assert all(first != second for first, second in recorded)
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in standing["candidate_assertions"]
+    )
+
+
+def test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidate-standing",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    ledger.get(result.identity).material["candidate_assertions"].pop()
+
+    with pytest.raises(ValueError, match="not complete and exact"):
+        get_recorded_candidate_standing(ledger, result.identity)
+
+
 @pytest.mark.parametrize("change", ("missing", "extra", "reordered"))
 def test_replay_refuses_rows_different_from_the_source_and_candidate_rules(change):
     ledger = EventLedger()
@@ -235,12 +297,18 @@ def test_replay_requires_each_source_result_occurrence_intact():
         get_recorded_candidate_standing(ledger, result.identity)
 
 
-def test_empty_source_surface_records_one_complete_empty_candidate_standing():
+@pytest.mark.parametrize(
+    "candidate_rule", (CANDIDATE_RULE, ORDERED_PAIR_CANDIDATE_RULE)
+)
+def test_empty_source_surface_records_one_complete_empty_candidate_standing(
+    candidate_rule,
+):
     ledger = EventLedger()
     result = record_complete_candidate_standing(
         ledger,
         recording_locality_identity="candidate-production",
         source_append_boundary=ledger.append_boundary(),
+        candidate_rule=candidate_rule,
     )
 
     standing = get_recorded_candidate_standing(ledger, result.identity)
@@ -253,7 +321,12 @@ def test_empty_source_surface_records_one_complete_empty_candidate_standing():
     }
 
 
-def test_complete_candidate_standing_replays_after_sqlite_restart(tmp_path):
+@pytest.mark.parametrize(
+    "candidate_rule", (CANDIDATE_RULE, ORDERED_PAIR_CANDIDATE_RULE)
+)
+def test_complete_candidate_standing_replays_after_sqlite_restart(
+    tmp_path, candidate_rule
+):
     database = str(tmp_path / "candidate-standing.sqlite")
     ledger = SQLiteEventLedger(database)
     _source(ledger)
@@ -262,6 +335,7 @@ def test_complete_candidate_standing_replays_after_sqlite_restart(tmp_path):
         ledger,
         recording_locality_identity="candidate-production",
         source_append_boundary=source_boundary,
+        candidate_rule=candidate_rule,
     )
     expected = get_recorded_candidate_standing(ledger, result.identity)
     ledger.close()
@@ -304,6 +378,32 @@ def test_machine_grammar_names_the_exact_first_source_and_candidate_rules():
     }
 
 
+def test_machine_grammar_names_the_exact_ordered_pair_candidate_rule():
+    import json
+
+    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+        rule = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
+            "ordered_pair_candidate_rule"
+        ]
+
+    assert rule["identity"] == ORDERED_PAIR_CANDIDATE_RULE.replace(" ", "_")
+    assert rule["source_pair"] == {
+        "first_subject": "ordered_pair",
+        "relation": "of",
+        "second_subject": "distinct_exact_source_Assertions",
+    }
+    assert rule["candidate_source_roles"] == [
+        "first_source_Assertion",
+        "second_source_Assertion",
+    ]
+    assert rule["requires"] == "distinct_exact_source_Assertion_references"
+    assert rule["order"] == [
+        "first_source_event_order",
+        "second_source_event_order",
+    ]
+    assert rule["represented_relation"] == "Unknown"
+
+
 FIDELITY_SUBJECTS = {
     "complete_candidate_standing_source_coordinates": (
         test_source_rule_exposes_every_result_assertion_in_event_order,
@@ -313,11 +413,16 @@ FIDELITY_SUBJECTS = {
     ),
     "complete_candidate_standing_coordinate_order": (
         test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion,
+        test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs,
+        test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_source_and_candidate_rules,
         test_empty_source_surface_records_one_complete_empty_candidate_standing,
         test_complete_candidate_standing_replays_after_sqlite_restart,
     ),
     "complete_candidate_standing_grammar_coordinates": (
         test_machine_grammar_names_the_exact_first_source_and_candidate_rules,
+    ),
+    "ordered_pair_candidate_standing_grammar_coordinates": (
+        test_machine_grammar_names_the_exact_ordered_pair_candidate_rule,
     ),
 }
