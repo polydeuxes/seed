@@ -380,7 +380,7 @@ FIDELITY_SUBJECTS = {
     "supplied_material_invocation": (
         test_live_process_ingests_each_supplied_pytest_occurrence,
     ),
-    "declared_Measurement_result": (
+    "exact_rule_Measurement_result": (
         test_live_process_preserves_the_exact_pytest_measurement_result,
     ),
     "exact_emission_boundary": (

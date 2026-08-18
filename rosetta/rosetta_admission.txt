@@ -182,12 +182,12 @@ compatibility
 competence
 competent
 compiled
+compresses
+compressions
 complete
 completeness
 completing
 completion
-compresses
-compressions
 concept
 concepts
 concern
@@ -248,8 +248,11 @@ cutting
 d
 dataclass
 decision
+declaration
 declarations
+declare
 declared
+declares
 declaring
 decomposed
 decomposition
@@ -401,6 +404,7 @@ flush
 focus
 for
 forget
+forms
 freshness
 from
 function

@@ -1191,7 +1191,7 @@ FIDELITY_SUBJECTS = {
         test_pair_occurrence_measurement_yield_preserves_the_exact_finding,
         test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurrence_position_yield,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
         test_same_boundary_pair_subjects_have_one_pair_result_read,

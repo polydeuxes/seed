@@ -50,9 +50,9 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.standing_measurement_declarations import (
-    _record_declared_measurements_from_carried_standing,
-    record_declared_measurements_from_current_standing,
+from seed_runtime.standing_measurement_responsibility_order import (
+    _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing,
+    record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
@@ -197,7 +197,7 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
     )
 
 
-def test_one_current_standing_pin_records_each_declared_ingest_measurement_once():
+def test_one_current_standing_pin_records_each_standing_measurement_responsibility_order_ingest_measurement_once():
     ledger = EventLedger()
     first = ingest_material(
         ledger,
@@ -214,7 +214,7 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
         source_boundary="second exact boundary",
     )
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity="s",
     )
@@ -233,7 +233,7 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
     )
 
     boundary = ledger.append_boundary()
-    again = record_declared_measurements_from_current_standing(
+    again = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity="s",
     )
@@ -241,7 +241,7 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
     assert ledger.append_boundary() == boundary
 
 
-def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
+def test_standing_measurement_responsibility_order_measurements_do_not_promote_an_ingest_without_exact_yield():
     ledger = EventLedger()
     source = ledger.append(
         MATERIAL_INGEST_OCCURRED_KIND,
@@ -257,7 +257,7 @@ def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
         locality_identity="s",
     )
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity="s",
     )
@@ -280,7 +280,7 @@ def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
     ]
 
 
-def test_carried_declaration_refuses_a_pin_followed_by_another_locality_append():
+def test_carried_responsibility_order_accepts_local_pin_after_another_locality_append():
     ledger = EventLedger()
     ingest_material(
         ledger,
@@ -295,20 +295,23 @@ def test_carried_declaration_refuses_a_pin_followed_by_another_locality_append()
         {"unknown": []},
         locality_identity="another-locality",
     )
-    boundary = ledger.append_boundary()
+    foreign_boundary = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="current append boundary"):
-        _record_declared_measurements_from_carried_standing(
-            ledger,
-            standing,
-            locality_identity="s",
-        )
+    recorded = _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
+        ledger,
+        standing,
+        locality_identity="s",
+    )
 
-    assert ledger.append_boundary() == boundary
+    assert recorded.result_occurrences
+    assert ledger.append_boundary() != foreign_boundary
+    assert all(
+        event.locality_identity == "s" for event in recorded.result_occurrences
+    )
 
 
-def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_path):
-    path = str(tmp_path / "standing-declarations.sqlite")
+def test_completed_standing_measurement_responsibility_order_measurements_remain_quiet_after_sqlite_reopen(tmp_path):
+    path = str(tmp_path / "standing-measurement-responsibility-order.sqlite")
     ledger = SQLiteEventLedger(path)
     try:
         ingest_material(
@@ -318,7 +321,7 @@ def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_pa
             source_role="exact supplied material",
             source_boundary="exact claim boundary",
         )
-        first = record_declared_measurements_from_current_standing(
+        first = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger,
             locality_identity="s",
         )
@@ -332,7 +335,7 @@ def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_pa
 
     reopened = SQLiteEventLedger(path)
     try:
-        second = record_declared_measurements_from_current_standing(
+        second = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             reopened,
             locality_identity="s",
         )

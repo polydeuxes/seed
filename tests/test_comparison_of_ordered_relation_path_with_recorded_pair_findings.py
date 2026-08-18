@@ -850,7 +850,7 @@ FIDELITY_SUBJECTS = {
         test_carried_higher_lifecycle_refuses_an_interleaved_append,
         test_carried_higher_lifecycle_rechecks_tip_after_duplicate_refusal,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_ordered_path_and_recorded_findings_survive_sqlite_restart,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
         test_carried_higher_lifecycle_validates_inputs_once_and_matches_replay,

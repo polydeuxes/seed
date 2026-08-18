@@ -475,7 +475,7 @@ def test_pair_and_compare_carriers_require_exact_types(exact_pair):
 
 
 FIDELITY_SUBJECTS = {
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_recurrence_not_adjacency_alone_warrants_one_pair_subject,
         test_source_order_does_not_select_which_pair_identities_exist,
         test_pair_subject_order_follows_first_exact_material_positions,

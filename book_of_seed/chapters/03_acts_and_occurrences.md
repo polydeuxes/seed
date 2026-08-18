@@ -12,7 +12,7 @@ What establishes that an Act occurred rather than that an Act-shaped representat
 
 Validation of an Act-shaped result establishes no Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, the same shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
 
-Each finding established by an exact declared Measurement Act occurrence is carried by that Measurement result; the finding, responsible occurrence, Evidence, and result boundary remain distinct. This establishes no finding for another Act kind.
+Each finding established by an exact Measurement Act occurrence under its Responsibility assignment is carried by that Measurement result; the finding, responsible occurrence, Evidence, and result boundary remain distinct. This establishes no finding for another Act kind.
 
 **Yield** is the exact evidenced relation from an Act occurrence to its result. Yield preserves the exact Act occurrence identity and result identity. The same result content in distinct Act occurrences cannot identify one result or Yield relation. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
 

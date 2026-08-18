@@ -21,7 +21,7 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 - a preventing Assertion != a Stopping occurrence
 
 ## Counterexamples or failure modes
-- Declaring completion because no candidate Act occurred.
+- No candidate Act occurrence establishes completion.
 - Continuing movement after the bounded result has satisfied Standing.
 
 ## Related chapters

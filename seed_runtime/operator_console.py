@@ -99,9 +99,9 @@ from seed_runtime.occurrence_position_measurement import (
     _record_occurrence_position_measurement_result_from_carried_act_evidence,
     measure_occurrence_position,
 )
-from seed_runtime.standing_measurement_declarations import (
-    _record_declared_measurements_from_carried_standing,
-    record_declared_measurements_from_current_standing,
+from seed_runtime.standing_measurement_responsibility_order import (
+    _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing,
+    record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -330,7 +330,7 @@ def _record_occurrence_position_measurement(
     return standing
 
 
-def _record_occurrence_position_after_declared_measurements(
+def _record_occurrence_position_after_standing_measurement_responsibility_order_measurements(
     ledger, recorded, *, locality_identity
 ):
     byte_measurements = tuple(
@@ -349,14 +349,14 @@ def _record_occurrence_position_after_declared_measurements(
 
 
 def _record_measurements_after_pin(ledger, standing, *, locality_identity):
-    """Exhaust declared Ingest roads, then record the explicit Locality road."""
+    """Exhaust Ingest roads in the Responsibility order, then record the Locality road."""
 
-    recorded = _record_declared_measurements_from_carried_standing(
+    recorded = _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
         ledger,
         standing,
         locality_identity=locality_identity,
     )
-    return _record_occurrence_position_after_declared_measurements(
+    return _record_occurrence_position_after_standing_measurement_responsibility_order_measurements(
         ledger,
         recorded,
         locality_identity=locality_identity,
@@ -364,13 +364,13 @@ def _record_measurements_after_pin(ledger, standing, *, locality_identity):
 
 
 def _record_measurements_after_current_pin(ledger, *, locality_identity):
-    """Exhaust declarations from independently read current Locality Standing."""
+    """Exhaust Ingest roads in the Responsibility order from current Standing."""
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity=locality_identity,
     )
-    return _record_occurrence_position_after_declared_measurements(
+    return _record_occurrence_position_after_standing_measurement_responsibility_order_measurements(
         ledger,
         recorded,
         locality_identity=locality_identity,

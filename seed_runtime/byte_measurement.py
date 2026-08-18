@@ -2,7 +2,7 @@
 
 This is the first acquisition boundary that does not receive its measured
 subjects from a caller.  The subjects are the literal byte values carried by
-the exact material linked from every ingest occurrence in the declared
+the exact material linked from every ingest occurrence in the assigned
 Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
@@ -154,7 +154,7 @@ SOURCE_SET_EVIDENCE_SCOPE = (
     "exact bounded source-material Measurement Evidence"
 )
 PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
-    "declared exact-source ordered byte-position-pair Measurement Evidence; exact "
+    "exact-source ordered byte-position-pair Measurement Evidence; exact "
     "measured pair and order; bounded pair Standing; source Standing not revised"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
@@ -198,7 +198,7 @@ ASSERTION_RESPONSIBILITIES = {
 
 
 class ByteMeasurementError(ValueError):
-    """The exact byte Measurement could not be performed as declared."""
+    """The exact byte Measurement could not be performed under its exact rule."""
 
 
 def _require_exact_result_yield(
@@ -532,7 +532,7 @@ def _pair_input_applicability_from_exact_source(
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_identity": assignment.material["measurement_act_identity"],
-        "downstream_act": "declared byte-position-pair Measurement",
+        "downstream_act": "exact byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -611,7 +611,7 @@ def _pair_input_applicability_from_exact_source(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "downstream_act": "declared byte-position-pair Measurement",
+        "downstream_act": "exact byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "scope_locality": applicability_scope,
@@ -659,12 +659,12 @@ def measure_byte_counts(
     *,
     source_localities: Iterable[str],
 ) -> MeasuredByteInputs:
-    """Count every exact byte in every declared Locality through one boundary."""
+    """Count every exact byte in every exact source Locality through one boundary."""
 
     localities = tuple(dict.fromkeys(source_localities))
     if not localities or any(not isinstance(item, str) or not item for item in localities):
         raise ByteMeasurementError(
-            "byte Measurement requires exact declared source Localities"
+            "byte Measurement requires exact source Localities"
         )
     boundary = ledger.append_boundary()
     return _measure_byte_counts_through(
@@ -687,7 +687,7 @@ def _measure_byte_counts_through(
     ]
     if missing:
         raise ByteMeasurementError(
-            "declared source Localities are absent through the Measurement boundary: "
+            "exact source Localities are absent through the Measurement boundary: "
             + ", ".join(missing)
         )
 
@@ -711,7 +711,7 @@ def _measure_byte_counts_through(
                 totals[value] += count
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "exact source Localities contain no Ingest through the Measurement boundary"
         )
     counts = tuple(
         MeasuredByteCount(
@@ -1700,7 +1700,7 @@ def _measure_byte_position_pair_counts_through(
     ]
     if missing:
         raise ByteMeasurementError(
-            "declared source Localities are absent through the Measurement boundary: "
+            "exact source Localities are absent through the Measurement boundary: "
             + ", ".join(missing)
         )
 
@@ -1732,7 +1732,7 @@ def _measure_byte_position_pair_counts_through(
                 carrying[pair] = carrying.get(pair, 0) + 1
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "exact source Localities contain no Ingest through the Measurement boundary"
         )
     counts = tuple(
         MeasuredBytePairCount(
@@ -1778,7 +1778,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "identity": source_identity,
                 "content": source_content,
                 "source_provenance": (
-                    "complete declared Ingest through one boundary"
+                    "complete exact Ingest through one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
                 "authority": "unestablished",
@@ -1884,7 +1884,7 @@ def _byte_measurement_source_material(
     ]
     if missing:
         raise ByteMeasurementError(
-            "declared source Localities are absent through the Measurement boundary: "
+            "exact source Localities are absent through the Measurement boundary: "
             + ", ".join(missing)
         )
     source_material = []
@@ -1904,7 +1904,7 @@ def _byte_measurement_source_material(
             )
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "exact source Localities contain no Ingest through the Measurement boundary"
         )
     return tuple(source_material)
 
@@ -1954,7 +1954,7 @@ def _byte_measurement_assignment_material(
         },
         "authority": "unestablished",
         "limits": [
-            "assignment is bounded to the exact declared source Localities, "
+            "assignment is bounded to the exact source Localities, "
             "Ingest occurrences, and completeness boundary"
         ],
         "unknown": ["what the exact source material represents remains Unknown"],
@@ -2032,12 +2032,17 @@ def _require_carried_byte_measurement_standing_at_tip(
             "byte Measurement requires exact current Locality Standing"
         )
     event = ledger.get(boundary)
+    locality_events = (
+        ledger.list_locality(recording_locality_identity)
+        if event is not None
+        else ()
+    )
     if (
         event is None
         or event.locality_identity != recording_locality_identity
         or ledger.integrity_of(boundary) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary)
-        != ledger.append_boundary()
+        or not locality_events
+        or locality_events[-1].identity != boundary
     ):
         raise ByteMeasurementError(
             "byte Measurement requires exact current Locality Standing"
@@ -2064,7 +2069,7 @@ def _prepare_byte_measurement_responsibility_assignment(
         or any(type(locality) is not str or not locality for locality in localities)
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires exact declared source Localities"
+            "byte Measurement requires exact source Localities"
         )
     boundary = ledger.append_boundary()
     source_material = _byte_measurement_source_material(
@@ -2159,6 +2164,10 @@ def record_byte_measurement_responsibility_assignment(
         recording_locality_identity=recording_locality_identity,
         locality_standing=locality_standing,
     )
+    if ledger.append_boundary() != boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
     return _append_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=localities,
@@ -2190,6 +2199,10 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
             locality_standing=locality_standing,
         )
     )
+    if ledger.append_boundary() != boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
     return _append_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=localities,
@@ -2357,7 +2370,7 @@ def _byte_measurement_act_evidence_material(
         "act_occurrence_identity": assignment.material[
             "act_occurrence_identity"
         ],
-        "act": "declared exact-byte Measurement",
+        "act": "exact byte Measurement",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -2546,11 +2559,11 @@ def _byte_measurement_result_material(
                 "content": (
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
-                "source_provenance": "complete declared Ingest through one boundary",
+                "source_provenance": "complete exact Ingest through one boundary",
                 "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
-        "exact_act": "declared exact-byte Measurement",
+        "exact_act": "exact byte Measurement",
         "downstream_act_identity": responsible_act_evidence.material[
             "downstream_act_identity"
         ],
@@ -2603,7 +2616,7 @@ def _record_byte_measurement_result_and_yield_from_exact_inputs(
     evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=responsible_act_evidence.locality_identity,
-        exact_act="declared exact-byte Measurement",
+        exact_act="exact byte Measurement",
         act_occurrence_identity=responsible_act_evidence.material[
             "act_occurrence_identity"
         ],
@@ -2965,7 +2978,7 @@ def _record_byte_measurement_lifecycle_from_carried_standing(
         or any(type(locality) is not str or not locality for locality in localities)
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires exact declared source Localities"
+            "byte Measurement requires exact source Localities"
         )
     initial_boundary = ledger.append_boundary()
     measured = _measure_byte_counts_through(
@@ -2978,6 +2991,10 @@ def _record_byte_measurement_lifecycle_from_carried_standing(
             locality_standing=locality_standing,
         )
     )
+    if ledger.append_boundary() != initial_boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
     locality_standing = deepcopy(locality_standing)
     assignment, assignment_material = (
         _record_byte_measurement_responsibility_assignment_from_exact_inputs(
@@ -3112,7 +3129,7 @@ def _assertions_of_recorded_byte_measurement(
         )
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared exact-byte Measurement"
+        or material.get("exact_act") != "exact byte Measurement"
         or material.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
         or material.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
@@ -3128,7 +3145,7 @@ def _assertions_of_recorded_byte_measurement(
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
             "source_provenance": (
-                "complete declared Ingest through one boundary"
+                "complete exact Ingest through one boundary"
             ),
             "authority": "unestablished",
             "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
@@ -3163,7 +3180,7 @@ def _assertions_of_recorded_byte_measurement(
     expected_act_evidence = {
         "downstream_act_identity": material["downstream_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "act": "declared exact-byte Measurement",
+        "act": "exact byte Measurement",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": material[
@@ -4097,7 +4114,7 @@ def _pair_measurement_act_material(
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
-        "act": "declared byte-position-pair Measurement",
+        "act": "exact byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -4277,7 +4294,7 @@ def _pair_measurement_result_material(
             "authority": "unestablished",
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
-        "exact_act": "declared byte-position-pair Measurement",
+        "exact_act": "exact byte-position-pair Measurement",
         "downstream_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
@@ -4397,7 +4414,7 @@ def _record_pair_measurement_result_and_inputs_from_carried_act(
     evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=assignment.locality_identity,
-        exact_act="declared byte-position-pair Measurement",
+        exact_act="exact byte-position-pair Measurement",
         act_occurrence_identity=assignment.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4964,7 +4981,7 @@ def _validated_recorded_byte_position_pair_measurement(
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared byte-position-pair Measurement"
+        or material.get("exact_act") != "exact byte-position-pair Measurement"
         or material.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or not isinstance(material.get("downstream_act_identity"), str)
         or not material["downstream_act_identity"]

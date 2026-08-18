@@ -1,6 +1,6 @@
 """Measure source-position coordinates carrying one addressed byte material.
 
-The value used by this declared predicate comes only from one exact D.2
+The value used by this exact Measurement rule comes only from one exact D.2
 addressed source-byte coordinate.  The Measurement scans the intact direct
 pair-position results carried by the same current Locality Standing and
 returns every distinct source-position coordinate carrying that exact
@@ -65,7 +65,7 @@ APPLICABILITY_ACT = (
     "addressed-material source-position coordinate Measurement Applicability"
 )
 MEASUREMENT_ACT = (
-    "declared Measurement of source-position coordinate references carrying "
+    "exact Measurement of source-position coordinate references carrying "
     "the exact one-byte material of one addressed coordinate"
 )
 MEASUREMENT_RULE = (
@@ -78,14 +78,14 @@ APPLICABILITY_RESULT_NAME = (
     "addressed-material source-position coordinate Applicability result"
 )
 MEASUREMENT_RESULT_NAME = (
-    "result of declared Measurement of source-position coordinate references "
+    "result of exact Measurement of source-position coordinate references "
     "carrying addressed exact material"
 )
 APPLICABILITY_BOUNDARY = (
     "source_position_coordinates_carrying_addressed_material_applicability"
 )
 MEASUREMENT_BOUNDARY = (
-    "source_position_coordinates_carrying_addressed_material_measurement"
+    "measurement_of_source_position_coordinates_carrying_addressed_material"
 )
 LIMITS = [
     "bounded to one exact D.2 result, one current Locality Standing boundary, "
@@ -603,6 +603,7 @@ def _append_assignment(
     addressed_result: Event,
     addressed_coordinate: dict[str, Any],
     population: tuple[dict[str, str], ...],
+    expected_global_boundary: Any | None = None,
 ) -> Event:
     boundary = standing["through_event_occurrence_identity"]
     expected_material = _assignment_material(
@@ -617,11 +618,16 @@ def _append_assignment(
         locality_identity=addressed_result.locality_identity,
         key=_subject_key(expected_material),
     )
-    _require_tip(
-        ledger,
-        ledger.get(boundary),
-        "addressed-material Measurement source left the append tip",
-    )
+    if expected_global_boundary is None:
+        _require_tip(
+            ledger,
+            ledger.get(boundary),
+            "addressed-material Measurement source left the append tip",
+        )
+    elif ledger.append_boundary() != expected_global_boundary:
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material global recording boundary changed before assignment"
+        )
     event = ledger.append(
         RESPONSIBILITY_ASSIGNMENT_KIND,
         _assignment_material(
@@ -1058,25 +1064,41 @@ def _record_applicability_yield_and_result(
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
     _require_tip(ledger, act, "Applicability result requires its Act at the append tip")
-    evidence = _record_evidence_of_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=act.material["act"],
-        act_occurrence_identity=act.material["applicability_act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=APPLICABILITY_RESULT_NAME,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="source_position_coordinates_carrying_addressed_material_applicability",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
+    evidence = _record_applicability_yield_evidence(
+        ledger, act=act, result_material=material
     )
     _require_tip(
         ledger,
         evidence,
         "addressed-material result requires Yield Evidence at the append tip",
     )
+    return _append_addressed_material_applicability_result(
+        ledger, act=act, assignment=assignment, evidence=evidence
+    )
+
+
+def _record_applicability_yield_evidence(
+    ledger: EventLedger, *, act: Event, result_material: dict[str, Any]
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=act.material["act"],
+        act_occurrence_identity=act.material["applicability_act_occurrence_identity"],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=APPLICABILITY_RESULT_NAME,
+        result_identity=result_material["result_identity"],
+        result_content=result_material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="source_position_coordinates_carrying_addressed_material_applicability",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
+    )
+
+
+def _append_addressed_material_applicability_result(
+    ledger: EventLedger, *, act: Event, assignment: Event, evidence: Event
+) -> Event:
     return ledger.append(
         APPLICABILITY_RESULT_KIND,
         {
@@ -1113,25 +1135,56 @@ def _record_measurement_yield_and_result(
         occurrence_coordinate="measurement_act_occurrence_identity",
     )
     _require_tip(ledger, act, "Measurement result requires its Act at the append tip")
-    evidence = _record_evidence_of_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=act.material["act"],
-        act_occurrence_identity=act.material["measurement_act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=MEASUREMENT_RESULT_NAME,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="source_position_coordinates_carrying_addressed_material_measurement",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate="measurement_act_occurrence_identity",
+    evidence = _record_measurement_yield_evidence(
+        ledger, act=act, result_material=material
     )
     _require_tip(
         ledger,
         evidence,
         "addressed-material result requires Yield Evidence at the append tip",
     )
+    return _append_addressed_material_measurement_result(
+        ledger,
+        act=act,
+        applicability=applicability,
+        assignment=assignment,
+        coordinate=coordinate,
+        population=population,
+        measured=measured,
+        evidence=evidence,
+    )
+
+
+def _record_measurement_yield_evidence(
+    ledger: EventLedger, *, act: Event, result_material: dict[str, Any]
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=act.material["act"],
+        act_occurrence_identity=act.material["measurement_act_occurrence_identity"],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=MEASUREMENT_RESULT_NAME,
+        result_identity=result_material["result_identity"],
+        result_content=result_material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="measurement_of_source_position_coordinates_carrying_addressed_material",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate="measurement_act_occurrence_identity",
+    )
+
+
+def _append_addressed_material_measurement_result(
+    ledger: EventLedger,
+    *,
+    act: Event,
+    applicability: Event,
+    assignment: Event,
+    coordinate: dict[str, Any],
+    population: tuple[dict[str, str], ...],
+    measured: tuple[MeasuredAddressedMaterialCoordinate, ...],
+    evidence: Event,
+) -> Event:
     return ledger.append(
         MEASUREMENT_RESULT_KIND,
         {
@@ -1289,7 +1342,7 @@ def _measurement_act_material(assignment: Event, applicability: Event) -> dict[s
         "result_identity": assignment.material["measurement_result_identity"],
         "scope": deepcopy(assignment.material["scope"]),
         "authority": deepcopy(assignment.material["authority"]),
-        "evidence_scope": "Evidence for this exact declared Measurement Act occurrence",
+        "evidence_scope": "Evidence for this exact Measurement Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
@@ -1654,11 +1707,22 @@ def _record_addressed_material_coordinate_measurement_lifecycle_from_carried_sta
 
     boundary = locality_standing.get("through_event_occurrence_identity")
     working_standing = deepcopy(locality_standing)
-    _require_tip(
-        ledger,
-        ledger.get(boundary) if type(boundary) is str else None,
-        "addressed-material Measurement requires carried Standing at the append tip",
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    locality_events = (
+        ledger.list_locality(locality_standing.get("locality_identity"))
+        if boundary_event is not None
+        else ()
     )
+    if (
+        boundary_event is None
+        or not locality_events
+        or locality_events[-1].identity != boundary_event.identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material Measurement requires exact current Locality Standing"
+        )
+    initial_global_boundary = ledger.append_boundary()
     addressed, coordinate, population = _standing_source(
         ledger,
         standing=locality_standing,
@@ -1698,6 +1762,7 @@ def _record_addressed_material_coordinate_measurement_lifecycle_from_carried_sta
         addressed_result=addressed,
         addressed_coordinate=coordinate,
         population=population,
+        expected_global_boundary=initial_global_boundary,
     )
     assignment_material_snapshot = deepcopy(assignment.material)
     standing = _carry_produced_occurrence(
@@ -1801,6 +1866,390 @@ def _record_addressed_material_coordinate_measurement_lifecycle_from_carried_sta
     return standing, result
 
 
+def _events_for_addressed_material_assignment(
+    ledger: EventLedger,
+    *,
+    assignment: Event,
+    kind: str,
+) -> tuple[Event, ...]:
+    events = []
+    for event in ledger.iter_locality_kind(assignment.locality_identity, kind):
+        reference = event.material.get("responsibility_assignment_reference")
+        if (
+            type(reference) is dict
+            and reference.get("recorded_occurrence_identity") == assignment.identity
+        ):
+            if ledger.integrity_of(event.identity) == CORRUPTED:
+                raise AddressedMaterialCoordinateMeasurementError(
+                    "addressed-material partial lifecycle is corrupted"
+                )
+            events.append(event)
+    if len(events) > 1:
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material partial lifecycle is ambiguous"
+        )
+    return tuple(events)
+
+
+def _addressed_material_yield_for_act(
+    ledger: EventLedger,
+    *,
+    act: Event,
+) -> Event | None:
+    events = []
+    for event in ledger.iter_locality_kind(
+        act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+    ):
+        if event.material.get("responsible_act_evidence_identity") == act.identity:
+            if ledger.integrity_of(event.identity) == CORRUPTED:
+                raise AddressedMaterialCoordinateMeasurementError(
+                    "addressed-material partial Yield is corrupted"
+                )
+            events.append(event)
+    if len(events) > 1:
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material partial Yield is ambiguous"
+        )
+    return events[0] if events else None
+
+
+def _require_addressed_material_partial_yield(
+    ledger: EventLedger,
+    *,
+    evidence: Event,
+    act: Event,
+    result_material: dict[str, Any],
+    result_kind: str,
+    result_name: str,
+    occurrence_boundary: str,
+    act_occurrence_coordinate: str,
+) -> None:
+    expected = {
+        "responsible_act_evidence_identity": act.identity,
+        "result_identity": result_material["result_identity"],
+        "dimensions": {
+            "identity": (
+                f"yield-evidence:{act.material[act_occurrence_coordinate]}:"
+                f"{result_material['result_identity']}"
+            ),
+            "exact_act": act.material["act"],
+            "act_occurrence_identity": act.material[act_occurrence_coordinate],
+            "responsibility": RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "authority": "unestablished",
+        },
+        "coordinates_of_carried_result": list(result_material),
+        "result": deepcopy(result_material),
+        "coordinates_of_recorded_result": {
+            coordinate: [coordinate] for coordinate in result_material
+        },
+        "result_kind": result_name,
+        "occurrence_boundary": occurrence_boundary,
+    }
+    if (
+        evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        or evidence.exact_material is not None
+        or evidence.locality_identity != act.locality_identity
+        or evidence.material != expected
+        or ledger.get(evidence.identity) != evidence
+        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or not ledger.list_locality(act.locality_identity)
+        or ledger.list_locality(act.locality_identity)[-1].identity
+        != evidence.identity
+        or any(
+            event.material.get("responsible_act_evidence_identity") == act.identity
+            for event in ledger.iter_locality_kind(act.locality_identity, result_kind)
+        )
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material partial Yield cannot be continued"
+        )
+
+
+def _addressed_material_continuation_write_snapshot(
+    ledger: EventLedger, *, prior: Event
+) -> tuple[Any, int]:
+    locality_events = ledger.list_locality(prior.locality_identity)
+    if (
+        ledger.get(prior.identity) != prior
+        or ledger.integrity_of(prior.identity) == CORRUPTED
+        or not locality_events
+        or locality_events[-1].identity != prior.identity
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material continuation prior phase is not Locality-current"
+        )
+    return ledger.append_boundary(), len(ledger.list())
+
+
+def _require_addressed_material_serialized_append(
+    ledger: EventLedger,
+    *,
+    snapshot: tuple[Any, int],
+    event: Event,
+) -> None:
+    _boundary, count = snapshot
+    events = ledger.list()
+    if (
+        len(events) != count + 1
+        or events[-1] != event
+        or ledger.append_boundary_through_occurrence(event.identity)
+        != ledger.append_boundary()
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material continuation write was not globally serialized"
+        )
+
+
+def _continue_addressed_material_coordinate_measurement_lifecycle(
+    ledger: EventLedger,
+    *,
+    responsibility_assignment_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> tuple[dict[str, Any], Event]:
+    """Continue one exact intact recorded lifecycle prefix after reopen."""
+
+    from seed_runtime.operator_locality_standing import (
+        advance_operator_locality_standing,
+    )
+
+    assignment, _addressed, coordinate, population = _read_assignment(
+        ledger, responsibility_assignment_event_identity
+    )
+    if (
+        locality_standing.get("locality_identity") != assignment.locality_identity
+        or assignment.identity
+        not in locality_standing.get("responsibility_assignment_occurrences", {})
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material continuation requires its exact current Standing"
+        )
+
+    def advance(standing: dict[str, Any], event: Event) -> dict[str, Any]:
+        return advance_operator_locality_standing(
+            ledger,
+            (event.identity,),
+            locality_identity=assignment.locality_identity,
+            prior=standing,
+        )
+
+    applicability_acts = _events_for_addressed_material_assignment(
+        ledger, assignment=assignment, kind=APPLICABILITY_ACT_EVIDENCE_KIND
+    )
+    applicability_results = _events_for_addressed_material_assignment(
+        ledger, assignment=assignment, kind=APPLICABILITY_RESULT_KIND
+    )
+    measurement_acts = _events_for_addressed_material_assignment(
+        ledger, assignment=assignment, kind=MEASUREMENT_ACT_EVIDENCE_KIND
+    )
+    measurement_results = _events_for_addressed_material_assignment(
+        ledger, assignment=assignment, kind=MEASUREMENT_RESULT_KIND
+    )
+    if measurement_results:
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material lifecycle is already complete"
+        )
+    if (
+        (applicability_results and not applicability_acts)
+        or (measurement_acts and not applicability_results)
+    ):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material partial lifecycle order is false"
+        )
+
+    if applicability_acts:
+        applicability_act = applicability_acts[0]
+        _read_applicability_act(ledger, applicability_act.identity)
+    else:
+        _refuse_act(
+            ledger,
+            assignment,
+            APPLICABILITY_ACT_EVIDENCE_KIND,
+            "applicability_act_occurrence_identity",
+        )
+        snapshot = _addressed_material_continuation_write_snapshot(
+            ledger, prior=assignment
+        )
+        applicability_act = ledger.append(
+            APPLICABILITY_ACT_EVIDENCE_KIND,
+            _applicability_act_material(assignment),
+            locality_identity=assignment.locality_identity,
+        )
+        _require_addressed_material_serialized_append(
+            ledger, snapshot=snapshot, event=applicability_act
+        )
+        locality_standing = advance(locality_standing, applicability_act)
+
+    if applicability_results:
+        applicability = applicability_results[0]
+        _read_applicability_result(ledger, applicability.identity)
+    else:
+        applicability_material = _applicability_result_material(
+            applicability_act, assignment
+        )
+        applicability_yield = _addressed_material_yield_for_act(
+            ledger, act=applicability_act
+        )
+        if applicability_yield is None:
+            _refuse_result(
+                ledger,
+                act=applicability_act,
+                result_kind=APPLICABILITY_RESULT_KIND,
+                occurrence_coordinate="applicability_act_occurrence_identity",
+            )
+            snapshot = _addressed_material_continuation_write_snapshot(
+                ledger, prior=applicability_act
+            )
+            applicability_yield = _record_applicability_yield_evidence(
+                ledger,
+                act=applicability_act,
+                result_material=applicability_material,
+            )
+            _require_addressed_material_serialized_append(
+                ledger, snapshot=snapshot, event=applicability_yield
+            )
+            snapshot = _addressed_material_continuation_write_snapshot(
+                ledger, prior=applicability_yield
+            )
+            applicability = _append_addressed_material_applicability_result(
+                ledger,
+                act=applicability_act,
+                assignment=assignment,
+                evidence=applicability_yield,
+            )
+            _require_addressed_material_serialized_append(
+                ledger, snapshot=snapshot, event=applicability
+            )
+        else:
+            _require_addressed_material_partial_yield(
+                ledger,
+                evidence=applicability_yield,
+                act=applicability_act,
+                result_material=applicability_material,
+                result_kind=APPLICABILITY_RESULT_KIND,
+                result_name=APPLICABILITY_RESULT_NAME,
+                occurrence_boundary=APPLICABILITY_BOUNDARY,
+                act_occurrence_coordinate="applicability_act_occurrence_identity",
+            )
+            snapshot = _addressed_material_continuation_write_snapshot(
+                ledger, prior=applicability_yield
+            )
+            applicability = _append_addressed_material_applicability_result(
+                ledger,
+                act=applicability_act,
+                assignment=assignment,
+                evidence=applicability_yield,
+            )
+            _require_addressed_material_serialized_append(
+                ledger, snapshot=snapshot, event=applicability
+            )
+        locality_standing = advance(locality_standing, applicability)
+
+    if measurement_acts:
+        measurement_act = measurement_acts[0]
+        _read_measurement_act(ledger, measurement_act.identity)
+    else:
+        _refuse_act(
+            ledger,
+            assignment,
+            MEASUREMENT_ACT_EVIDENCE_KIND,
+            "measurement_act_occurrence_identity",
+        )
+        snapshot = _addressed_material_continuation_write_snapshot(
+            ledger, prior=applicability
+        )
+        measurement_act = ledger.append(
+            MEASUREMENT_ACT_EVIDENCE_KIND,
+            _measurement_act_material(assignment, applicability),
+            locality_identity=assignment.locality_identity,
+        )
+        _require_addressed_material_serialized_append(
+            ledger, snapshot=snapshot, event=measurement_act
+        )
+        locality_standing = advance(locality_standing, measurement_act)
+
+    measured = _measured_coordinates(
+        ledger,
+        direct_result_references=population,
+        addressed_coordinate=coordinate,
+        locality_identity=assignment.locality_identity,
+    )
+    result_material = _measurement_result_material(
+        act=measurement_act,
+        applicability=applicability,
+        assignment=assignment,
+        coordinate=coordinate,
+        population=population,
+        measured=measured,
+    )
+    measurement_yield = _addressed_material_yield_for_act(
+        ledger, act=measurement_act
+    )
+    if measurement_yield is None:
+        _refuse_result(
+            ledger,
+            act=measurement_act,
+            result_kind=MEASUREMENT_RESULT_KIND,
+            occurrence_coordinate="measurement_act_occurrence_identity",
+        )
+        snapshot = _addressed_material_continuation_write_snapshot(
+            ledger, prior=measurement_act
+        )
+        measurement_yield = _record_measurement_yield_evidence(
+            ledger,
+            act=measurement_act,
+            result_material=result_material,
+        )
+        _require_addressed_material_serialized_append(
+            ledger, snapshot=snapshot, event=measurement_yield
+        )
+        snapshot = _addressed_material_continuation_write_snapshot(
+            ledger, prior=measurement_yield
+        )
+        result = _append_addressed_material_measurement_result(
+            ledger,
+            act=measurement_act,
+            applicability=applicability,
+            assignment=assignment,
+            coordinate=coordinate,
+            population=population,
+            measured=measured,
+            evidence=measurement_yield,
+        )
+        _require_addressed_material_serialized_append(
+            ledger, snapshot=snapshot, event=result
+        )
+    else:
+        _require_addressed_material_partial_yield(
+            ledger,
+            evidence=measurement_yield,
+            act=measurement_act,
+            result_material=result_material,
+            result_kind=MEASUREMENT_RESULT_KIND,
+            result_name=MEASUREMENT_RESULT_NAME,
+            occurrence_boundary=MEASUREMENT_BOUNDARY,
+            act_occurrence_coordinate="measurement_act_occurrence_identity",
+        )
+        snapshot = _addressed_material_continuation_write_snapshot(
+            ledger, prior=measurement_yield
+        )
+        result = _append_addressed_material_measurement_result(
+            ledger,
+            act=measurement_act,
+            applicability=applicability,
+            assignment=assignment,
+            coordinate=coordinate,
+            population=population,
+            measured=measured,
+            evidence=measurement_yield,
+        )
+        _require_addressed_material_serialized_append(
+            ledger, snapshot=snapshot, event=result
+        )
+    locality_standing = advance(locality_standing, result)
+    return locality_standing, result
+
+
 def _subject_is_unmeasured(
     ledger: EventLedger,
     *,
@@ -1821,3 +2270,39 @@ def _subject_is_unmeasured(
             if _subject_key(event.material) == key:
                 return False
     return True
+
+
+def _incomplete_assignment_for_subject(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    addressed_result_identity: str,
+    population: tuple[dict[str, str], ...],
+) -> Event | None:
+    key = (
+        addressed_result_identity,
+        tuple(item["recorded_occurrence_identity"] for item in population),
+    )
+    assignments = []
+    for event in ledger.iter_locality_kind(
+        locality_identity, RESPONSIBILITY_ASSIGNMENT_KIND
+    ):
+        if ledger.integrity_of(event.identity) == CORRUPTED:
+            raise AddressedMaterialCoordinateMeasurementError(
+                "addressed-material Measurement history is corrupted"
+            )
+        if _subject_key(event.material) == key:
+            assignments.append(event)
+    results = []
+    for event in ledger.iter_locality_kind(locality_identity, MEASUREMENT_RESULT_KIND):
+        if ledger.integrity_of(event.identity) == CORRUPTED:
+            raise AddressedMaterialCoordinateMeasurementError(
+                "addressed-material Measurement history is corrupted"
+            )
+        if _subject_key(event.material) == key:
+            results.append(event)
+    if len(assignments) > 1 or len(results) > 1 or (results and not assignments):
+        raise AddressedMaterialCoordinateMeasurementError(
+            "addressed-material Measurement history is ambiguous"
+        )
+    return assignments[0] if assignments and not results else None

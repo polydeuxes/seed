@@ -938,8 +938,8 @@ def _addressed_byte_occurrence_reference_determination_yield_witness() -> dict:
 
 def _addressed_material_coordinate_measurement_yield_witnesses() -> dict[str, dict]:
     import seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material as material_measurement
-    from seed_runtime.standing_measurement_declarations import (
-        record_declared_measurements_from_current_standing,
+    from seed_runtime.standing_measurement_responsibility_order import (
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
     )
     from tests.test_addressed_byte_occurrence_reference_determination import (
         _direct,
@@ -949,7 +949,7 @@ def _addressed_material_coordinate_measurement_yield_witnesses() -> dict[str, di
     ledger = _IntegrityAdversaryLedger()
     _record(ledger, exact=b"aba", position=0, locality="addressed-material-yield")
     _direct(ledger, exact=b"cad", locality="addressed-material-yield")
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="addressed-material-yield"
     )
     result = next(
@@ -978,7 +978,7 @@ def _addressed_material_coordinate_measurement_yield_witnesses() -> dict[str, di
     )
     return {
         "source_position_coordinates_carrying_addressed_material_applicability": applicability_bundle,
-        "source_position_coordinates_carrying_addressed_material_measurement": measurement_bundle,
+        "measurement_of_source_position_coordinates_carrying_addressed_material": measurement_bundle,
     }
 
 
@@ -990,7 +990,7 @@ def _addressed_material_coordinate_applicability_yield_witness() -> dict:
 
 def _addressed_material_coordinate_measurement_yield_witness() -> dict:
     return _addressed_material_coordinate_measurement_yield_witnesses()[
-        "source_position_coordinates_carrying_addressed_material_measurement"
+        "measurement_of_source_position_coordinates_carrying_addressed_material"
     ]
 
 
@@ -2402,7 +2402,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "source_position_coordinates_carrying_addressed_material_applicability": (
             _addressed_material_coordinate_applicability_yield_witness
         ),
-        "source_position_coordinates_carrying_addressed_material_measurement": (
+        "measurement_of_source_position_coordinates_carrying_addressed_material": (
             _addressed_material_coordinate_measurement_yield_witness
         ),
         "failed_boundary": _failed_boundary_yield_witness,
@@ -2708,19 +2708,19 @@ def _assert_relation_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
     relation_families = grammar["witness"]["relation_witness_coordinates"][
         "families"
     ]
-    for relation, declared in grammar["relations"].items():
+    for relation, relation_coordinates in grammar["relations"].items():
         witnessed = specs[relation]
-        declared_anatomy = {
+        grammar_anatomy = {
             key: value
-            for key, value in declared.items()
+            for key, value in relation_coordinates.items()
             if key not in {"book_clause", "requires"}
         }
         witnessed_anatomy = {
             key: value for key, value in witnessed.items() if key != "requires"
         }
-        assert witnessed_anatomy == declared_anatomy
-        assert list(witnessed["requires"]) == declared["requires"]
-        assert declared["requires"] == relation_families[relation]
+        assert witnessed_anatomy == grammar_anatomy
+        assert list(witnessed["requires"]) == relation_coordinates["requires"]
+        assert relation_coordinates["requires"] == relation_families[relation]
 
 
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
@@ -3904,8 +3904,8 @@ def test_every_registered_relation_occurrence_obeys_the_full_fidelity_matrix():
     } == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
 
 
-def test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary():
-    declared: list[str] = []
+def test_every_evidence_of_yield_relation_site_carries_its_occurrence_boundary():
+    occurrence_boundaries: list[str] = []
     for path in sorted(RUNTIME.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
@@ -3920,7 +3920,7 @@ def test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary(
                 None,
             )
             assert isinstance(boundary, ast.Constant), (
-                f"{path.name}:{node.lineno} must declare one literal occurrence_boundary"
+                f"{path.name}:{node.lineno} must carry one literal occurrence_boundary"
             )
             assert isinstance(boundary.value, str) and boundary.value
             responsible_act_evidence = next(
@@ -3934,10 +3934,10 @@ def test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary(
             assert responsible_act_evidence is not None, (
                 f"{path.name}:{node.lineno} must name responsible Act Evidence"
             )
-            declared.append(boundary.value)
+            occurrence_boundaries.append(boundary.value)
 
-    assert len(declared) == len(set(declared))
-    assert set(declared) == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
+    assert len(occurrence_boundaries) == len(set(occurrence_boundaries))
+    assert set(occurrence_boundaries) == set(OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION)
 
 
 def test_byte_pair_yield_adversaries_change_one_requirement_each():
@@ -5166,7 +5166,7 @@ def test_different_yield_occurrences_do_not_share_result_identity():
         "source_position_coordinates_carrying_addressed_material_applicability": (
             _addressed_material_coordinate_applicability_yield_witness
         ),
-        "source_position_coordinates_carrying_addressed_material_measurement": (
+        "measurement_of_source_position_coordinates_carrying_addressed_material": (
             _addressed_material_coordinate_measurement_yield_witness
         ),
         "failed_boundary": _failed_boundary_yield_witness,
@@ -5212,7 +5212,7 @@ def test_different_yield_occurrences_do_not_share_result_identity():
             else "determination_act_occurrence_identity"
             if boundary == "addressed_byte_occurrence_reference_determination"
             else "measurement_act_occurrence_identity"
-            if boundary == "source_position_coordinates_carrying_addressed_material_measurement"
+            if boundary == "measurement_of_source_position_coordinates_carrying_addressed_material"
             else "act_occurrence_identity"
         )
         assert first["event"].material[occurrence_coordinate] != second[
@@ -5399,7 +5399,7 @@ def test_emission_applicability_species_keep_act_and_result_clauses_distinct():
     }
 
 
-def test_emission_applicability_witnesses_every_declared_coordinate():
+def test_emission_applicability_witnesses_every_exact_coordinate():
     clause = _clause("01.Standing.E.1")[
         "emission_input_Applicability_occurrence"
     ]
@@ -5694,7 +5694,6 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
         "recurrence",
         "position",
         "ordered_relation_path",
-        "declared_rule_result",
     ]
     for bundle in (byte, pair, position, pair_occurrence):
         witness = _measurement_result_witness(bundle)
@@ -5718,12 +5717,69 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
     }
 
 
-def test_standing_measurement_declarations_match_the_curated_runtime_order():
-    from seed_runtime.standing_measurement_declarations import (
-        STANDING_MEASUREMENT_DECLARATIONS,
+def test_standing_measurement_responsibility_order_matches_the_curated_runtime_order():
+    import seed_runtime.addressed_byte_occurrence_reference_determination as d2
+    import seed_runtime.standing_measurement_responsibility_order as runtime_order
+
+    coordinate_name = runtime_order.__name__.rsplit(".", 1)[-1]
+    runtime_coordinates = getattr(runtime_order, coordinate_name.upper())
+    book_order = _clause("01.Source.D")[coordinate_name]
+    source_book = (
+        GRAMMAR.parent / "chapters" / "01_source_coordinates_and_grammar.md"
+    ).read_text(encoding="utf-8")
+    exact_name = "Standing Measurement Responsibility order"
+
+    assert exact_name in source_book
+    assert coordinate_name == exact_name.casefold().replace(" ", "_")
+    assert type(runtime_coordinates[0]).__name__ == (
+        "".join(word.capitalize() for word in coordinate_name.split("_"))
+        + "Coordinate"
     )
 
-    declared = _clause("01.Source.D")["standing_emission_declarations"]
+    source_reference_name = next(iter(book_order[3]["assignment_preserves"]))
+    assert "source reference for the Standing Measurement Responsibility order" in (
+        source_book
+    )
+    assert getattr(d2, source_reference_name.upper() + "_COORDINATE") == (
+        source_reference_name
+    )
+
+    source_clause = _clause("01.Source.D")
+    assert source_clause["measurement_responsibility_assignment"] == {
+        "assigned_by": "this_Book",
+        "responsible_boundary": "this_Seed",
+        "for_each": {
+            "first_subject": "Measurement",
+            "relation": "named_by",
+            "second_subject": "one_exact_Measurement_rule_coordinate",
+        },
+        "requires": {
+            "first_subject": "exact_material",
+            "relation": "locality",
+            "second_subject": "this_Seed",
+            "Evidence": "exact_Locality_Evidence",
+        },
+    }
+    measurement_rules = source_clause["measurement_rule_coordinates"]
+    assert measurement_rules[
+        "measurement_of_source_position_coordinates_carrying_addressed_material"
+    ]["measurement"]["finding"] == {
+        "identity": (
+            "source_position_coordinate_reference_carrying_"
+            "addressed_coordinate_exact_one_byte_material"
+        ),
+        "first_subject": "source_position_coordinate_reference",
+        "relation": "carrying",
+        "second_subject": "addressed_coordinate_exact_one_byte_material",
+    }
+    for coordinate in book_order:
+        measurement_identity = coordinate["measurement"]["identity"]
+        if coordinate["book_clause"] == "01.Source.D":
+            assert measurement_identity in measurement_rules
+        else:
+            assert _clause(coordinate["book_clause"])["responsibility"][
+                "assigned_by"
+            ] == "this_Book"
 
     assert tuple(
         (
@@ -5731,26 +5787,16 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
             coordinate["book_clause"],
             coordinate["measurement"]["identity"],
         )
-        for coordinate in declared
+        for coordinate in book_order
     ) == tuple(
         (
-            declaration.order,
-            declaration.book_clause_identity,
-            measurement,
+            responsibility_coordinate.order,
+            responsibility_coordinate.book_clause_identity,
+            responsibility_coordinate.measurement_identity,
         )
-        for declaration, measurement in zip(
-            STANDING_MEASUREMENT_DECLARATIONS,
-                (
-                    "measurement_of_position_coordinates_of_byte_pair_occurrences",
-                    "measurement_of_exact_byte_occurrences",
-                    "source_position_coordinates_carrying_addressed_material_measurement",
-                    "addressed_byte_occurrence_reference_determination",
-                    "measurement_of_shared_position_of_byte_pair_occurrences",
-                ),
-            strict=True,
-        )
+        for responsibility_coordinate in runtime_coordinates
     )
-    assert _clause("01.Source.D")["declared_measurements"][
+    assert _clause("01.Source.D")["measurement_rule_coordinates"][
         "measurement_of_exact_byte_occurrences"
     ] == {
         "measurement": {
@@ -5767,13 +5813,13 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
     }
 
 
-def test_each_declared_measurement_names_its_finding_and_responsible_occurrence():
-    assert _clause("02.Acts.A")["declared_Measurement_finding_occurrence_pair"] == {
-        "first_subject": "exact_declared_Measurement_Act_occurrence",
+def test_each_exact_measurement_rule_names_its_finding_and_responsible_occurrence():
+    assert _clause("02.Acts.A")["exact_Measurement_finding_occurrence_pair"] == {
+        "first_subject": "exact_Measurement_Act_occurrence_under_Responsibility_assignment",
         "relation": "establishes",
         "second_subject": "finding",
-        "finding": "declared_Measurement_result_finding",
-        "responsible_occurrence_reference": "exact_declared_Measurement_Act_occurrence",
+        "finding": "exact_Measurement_result_finding",
+        "responsible_occurrence_reference": "exact_Measurement_Act_occurrence_under_Responsibility_assignment",
         "evidence_reference": {
             "first_subject": "Evidence",
             "relation": "of",
@@ -5785,20 +5831,21 @@ def test_each_declared_measurement_names_its_finding_and_responsible_occurrence(
     clause = _clause("01.Source.D")
     assert clause["recorded_occurrence_kind"] == ["event_occurrence"]
     assert "assertions" in clause["responsibility"]["coordinates"]
-    for declared in clause["declared_measurements"].values():
-        measurement = declared["measurement"]
-        finding_coordinates = tuple(
-            coordinate
-            for key in ("finding", "findings")
-            for coordinate in (
-                [measurement[key]]
-                if key in measurement and isinstance(measurement[key], str)
-                else measurement.get(key, [])
+    for rule_coordinates in clause["measurement_rule_coordinates"].values():
+        measurement = rule_coordinates["measurement"]
+        finding = measurement.get("finding")
+        finding_coordinates = (
+            (finding,)
+            if type(finding) is str
+            else (
+                (finding["identity"],)
+                if type(finding) is dict
+                else tuple(measurement.get("findings", ()))
             )
         )
         assert finding_coordinates
         assert all(type(coordinate) is str and coordinate for coordinate in finding_coordinates)
-        assert declared.get("standing_not_established")
+        assert rule_coordinates.get("standing_not_established")
 
 
 def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
@@ -5806,7 +5853,7 @@ def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
         "first_subject": "result",
         "relation": "carries",
         "second_subject": "findings",
-        "bounded_by": ["declared_rule", "declared_boundary"],
+        "bounded_by": ["exact_rule", "exact_rule_boundary"],
     }
     assert _clause("01.Source.D")["it_reference"] == {
         "first_subject": "it",
@@ -5823,10 +5870,11 @@ def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
     )
     assert clause["responsibility"] == {
         "kind": "addressed_byte_occurrence_reference_determination_Measurement_result_boundary",
+        "assigned_by": "this_Book",
         "responsible_boundary": "this_Seed",
         "assignment": "exact_Responsibility_assignment_occurrence",
-        "Act": "declared_Measurement",
-        "result": "declared_Measurement_result",
+        "Act": "exact_Measurement_under_Responsibility_assignment",
+        "result": "exact_Measurement_result",
         "coordinates": [
             "responsibility_assignment_reference",
             "assignment_current_Standing",
@@ -5942,13 +5990,13 @@ def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
 
 
 def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation():
-    declared = _clause("01.Source.D")["declared_measurements"][
+    rule_coordinates = _clause("01.Source.D")["measurement_rule_coordinates"][
         "measurement_of_recurrent_byte_pair_occurrence_position"
     ]
     result_witness = _pair_occurrence_yield_witness()
     material = result_witness["event"].material
 
-    assert declared == {
+    assert rule_coordinates == {
         "measurement": {
             "subject": {
                 "first_subject": "occurrence",
@@ -6056,7 +6104,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         == {"first_position", "second_position", "completeness_boundary"}
         for assertion in material["assertions"]
     )
-    grammar_witness = declared["witness"]
+    grammar_witness = rule_coordinates["witness"]
     assert set(grammar_witness["input_references"]) <= set(material)
     result_coordinate_identities = {
         coordinate["identity"] if type(coordinate) is dict else coordinate
@@ -6130,14 +6178,14 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
 
 
 def test_byte_pair_occurrence_position_measurement_is_structured_in_grammar():
-    declared = _clause("01.Source.D")["declared_measurements"][
+    rule_coordinates = _clause("01.Source.D")["measurement_rule_coordinates"][
         "measurement_of_position_coordinates_of_byte_pair_occurrences"
     ]
     bundle = _byte_pair_occurrence_position_yield_witness()
     material = bundle["event"].material
     act_material = bundle["act_evidence"].material
 
-    assert declared["measurement"] == {
+    assert rule_coordinates["measurement"] == {
         "subject": {
             "first_subject": "position",
             "relation": "of",
@@ -6150,11 +6198,11 @@ def test_byte_pair_occurrence_position_measurement_is_structured_in_grammar():
         },
         "finding": "position",
     }
-    assert declared["witness"]["input_reference"] in material
-    assert material[declared["witness"]["input_reference"]] == (
+    assert rule_coordinates["witness"]["input_reference"] in material
+    assert material[rule_coordinates["witness"]["input_reference"]] == (
         act_material["participation"]["subject_reference"]
     )
-    assert declared["witness"]["input_relation"] == {
+    assert rule_coordinates["witness"]["input_relation"] == {
         "first_subject": "exact_Ingest_result",
         "relation": "input_to",
         "second_subject": "exact_Act",
@@ -6264,11 +6312,11 @@ def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
 
 
 def test_shared_position_measurement_decomposes_material_non_establishment():
-    declared = _clause("01.Source.D")["declared_measurements"][
+    rule_coordinates = _clause("01.Source.D")["measurement_rule_coordinates"][
         "measurement_of_shared_position_of_byte_pair_occurrences"
     ]
 
-    assert declared["standing_not_established"][0] == {
+    assert rule_coordinates["standing_not_established"][0] == {
         "first_subject": "input_pair_occurrences",
         "relation": "establish",
         "second_subject": {
@@ -6281,8 +6329,8 @@ def test_shared_position_measurement_decomposes_material_non_establishment():
 
 
 def test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause_distinct():
-    declared = _clause("04.Compare.B")
-    assert declared["subject"] == {
+    clause = _clause("04.Compare.B")
+    assert clause["subject"] == {
         "identity": "bounded_comparison_of_ordered_relation_path_with_recorded_pair_findings",
         "first_subject": "bounded_comparison",
         "relation": "of",
@@ -6299,7 +6347,7 @@ def test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND: "04.Compare.B",
     }
-    assert declared["standing_not_established"] == [
+    assert clause["standing_not_established"] == [
         "source_relation",
         "recurrence",
         "represented_relation",
@@ -6346,7 +6394,7 @@ def test_measurement_result_distinction_adversaries_collapse_one_boundary_each()
         )
 
 
-def test_measurement_result_adversaries_change_the_declared_coordinate_only():
+def test_measurement_result_adversaries_change_the_exact_coordinate_only():
     mutations = {
         "responsibility": lambda material: material.__setitem__(
             "responsibility", BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
@@ -6526,7 +6574,7 @@ LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {
 }
 
 
-def _declared_kind_constants(family: str) -> dict[str, list[str]]:
+def _event_kind_constants(family: str) -> dict[str, list[str]]:
     """Every module-level kind constant naming this relation, found by read code.
 
     Discovery from the runtime, as with Yield: the registry above is not
@@ -6553,10 +6601,10 @@ def _declared_kind_constants(family: str) -> dict[str, list[str]]:
     return found
 
 
-def test_every_locality_evidence_kind_is_declared_once_and_registered():
+def test_every_locality_evidence_kind_is_named_once_and_registered():
     """The Yield discovery pattern, applied to the second relation."""
 
-    discovered = _declared_kind_constants("LOCALITY_EVIDENCE_KIND")
+    discovered = _event_kind_constants("LOCALITY_EVIDENCE_KIND")
 
     duplicated = {
         kind: modules for kind, modules in discovered.items() if len(modules) > 1
@@ -6759,7 +6807,7 @@ FIDELITY_SUBJECTS = {
         test_position_result_act_and_assertion_responsibilities_do_not_absorb_each_other,
     ),
     "evidence_of_yield_relation_boundary": (
-        test_every_evidence_of_yield_relation_site_declares_its_occurrence_boundary,
+        test_every_evidence_of_yield_relation_site_carries_its_occurrence_boundary,
     ),
     "yield_relation_required_coordinates": (
         test_byte_pair_yield_adversaries_change_one_requirement_each,
@@ -6777,10 +6825,10 @@ FIDELITY_SUBJECTS = {
     "different_yield_result_identity": (
         test_different_yield_occurrences_do_not_share_result_identity,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
-        test_standing_measurement_declarations_match_the_curated_runtime_order,
-        test_each_declared_measurement_names_its_finding_and_responsible_occurrence,
+        test_standing_measurement_responsibility_order_matches_the_curated_runtime_order,
+        test_each_exact_measurement_rule_names_its_finding_and_responsible_occurrence,
         test_shared_position_measurement_decomposes_material_non_establishment,
         test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,
     ),
@@ -6794,7 +6842,7 @@ FIDELITY_SUBJECTS = {
         test_measurement_result_distinction_adversaries_collapse_one_boundary_each,
     ),
     "measurement_result_coordinates": (
-        test_measurement_result_adversaries_change_the_declared_coordinate_only,
+        test_measurement_result_adversaries_change_the_exact_coordinate_only,
     ),
     "byte_measurement_relation": (
         test_byte_measurement_adversaries_change_one_requirement_each,
@@ -6828,7 +6876,7 @@ FIDELITY_SUBJECTS = {
     ),
     "applicability_determination": (
         test_applicability_clause_is_checked_against_a_live_pair_determination,
-        test_emission_applicability_witnesses_every_declared_coordinate,
+        test_emission_applicability_witnesses_every_exact_coordinate,
     ),
     "input_role_participation_distinction": (
         test_input_is_an_open_act_local_role_before_participation,
@@ -6886,7 +6934,7 @@ FIDELITY_SUBJECTS = {
         test_successful_emission_locality_binds_the_exact_representation,
     ),
     "locality_relation_occurrence_evidence": (
-        test_every_locality_evidence_kind_is_declared_once_and_registered,
+        test_every_locality_evidence_kind_is_named_once_and_registered,
     ),
     "standing_locality_continuation_responsibility_clause_coordinates": (
         test_standing_locality_continuation_stages_keep_distinct_clause_coordinates,

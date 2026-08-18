@@ -84,7 +84,6 @@ complete
 completeness
 completion
 composite
-compressions
 conclusion
 concordance
 confidence
@@ -111,8 +110,6 @@ crossings
 current
 d
 decision
-declarations
-declared
 default
 destination
 determination

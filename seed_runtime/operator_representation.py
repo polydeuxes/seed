@@ -469,7 +469,7 @@ def _exact_source_material(
         reader = _MEASUREMENT_READERS.get(source.kind)
         if reader is None:
             raise ValueError(
-                "Representation source is not a declared Measurement result"
+                "Representation source is not an exact Measurement result"
             )
         structured_result = reader(ledger, source.identity)
         if structured_result is None:
@@ -787,7 +787,10 @@ def emit_operator_representation_material(
             ],
             "dimensions": _dimensions(
                 identity=f"emission-attempt:{representation['representation_identity']}",
-                content="exact Representation for the declared emission boundary",
+                content=(
+                    "exact Representation for the boundary carried by the exact "
+                    "emission rule"
+                ),
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -980,7 +983,10 @@ def emit_operator_representation_material(
             **result_material,
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
-                content="exact Representation emitted at the declared boundary",
+                content=(
+                    "exact Representation emitted at the boundary carried by the "
+                    "exact emission rule"
+                ),
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
                 authority="unestablished",

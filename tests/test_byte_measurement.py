@@ -348,18 +348,18 @@ def test_carried_byte_and_pair_measure_once_without_full_ledger_list(monkeypatch
     assert calls["byte_counts"] > before_replay["byte_counts"]
 
 
-def test_declared_dispatcher_uses_the_carried_byte_lifecycle(monkeypatch):
-    from seed_runtime import standing_measurement_declarations as declarations
+def test_standing_measurement_responsibility_order_dispatcher_uses_the_carried_byte_lifecycle(monkeypatch):
+    from seed_runtime import standing_measurement_responsibility_order
 
     ledger = EventLedger()
     ingest_material(
         ledger,
-        locality_identity="declared-byte-carry",
+        locality_identity="standing-measurement-responsibility-order-byte-carry",
         exact_bytes=b"aba",
         source_role="test source",
-        source_boundary="declared byte carry boundary",
+        source_boundary="standing measurement responsibility order byte carry boundary",
     )
-    original = declarations._record_byte_measurement_lifecycle_from_carried_standing
+    original = standing_measurement_responsibility_order._record_byte_measurement_lifecycle_from_carried_standing
     calls = 0
 
     def counted(*args, **kwargs):
@@ -368,21 +368,23 @@ def test_declared_dispatcher_uses_the_carried_byte_lifecycle(monkeypatch):
         return original(*args, **kwargs)
 
     def refuse_public_completion(*_args, **_kwargs):
-        raise AssertionError("carried declaration re-entered public byte completion")
+        raise AssertionError(
+            "carried Responsibility order re-entered public byte completion"
+        )
 
     monkeypatch.setattr(
-        declarations,
+        standing_measurement_responsibility_order,
         "_record_byte_measurement_lifecycle_from_carried_standing",
         counted,
     )
     monkeypatch.setattr(
-        declarations,
+        standing_measurement_responsibility_order,
         "_complete_byte_measurement",
         refuse_public_completion,
     )
-    recorded = declarations.record_declared_measurements_from_current_standing(
+    recorded = standing_measurement_responsibility_order.record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
-        locality_identity="declared-byte-carry",
+        locality_identity="standing-measurement-responsibility-order-byte-carry",
     )
 
     assert calls == 1
@@ -1424,7 +1426,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     assert len(measured.source_material) == 2
 
 
-def test_the_complete_declared_localities_supply_the_inputs():
+def test_the_complete_exact_source_localities_supply_the_inputs():
     measured = measure_byte_counts(
         _ledger("a\nb\n"), source_localities=("source",)
     )
@@ -1613,7 +1615,7 @@ def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
     assert {item.representation: item.count for item in measured.counts} == {97: 1}
 
 
-def test_a_missing_declared_locality_is_refused():
+def test_a_missing_exact_source_locality_is_refused():
     with pytest.raises(ByteMeasurementError, match="absent"):
         measure_byte_counts(
             _ledger(), source_localities=("missing",)
@@ -1752,7 +1754,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
     assert applicability["result_boundary"]
-    assert applicability["downstream_act"] == "declared byte-position-pair Measurement"
+    assert applicability["downstream_act"] == "exact byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknown"]
     assert applicability["input_limits"]
@@ -3183,9 +3185,9 @@ FIDELITY_SUBJECTS = {
         test_pair_result_refuses_an_append_between_yield_and_result,
         test_pair_result_rechecks_measurement_act_tip_after_source_callback,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_carried_byte_and_pair_measure_once_without_full_ledger_list,
-        test_declared_dispatcher_uses_the_carried_byte_lifecycle,
+        test_standing_measurement_responsibility_order_dispatcher_uses_the_carried_byte_lifecycle,
         test_carried_byte_result_refuses_an_equal_substituted_event,
         test_carried_byte_result_refuses_an_equal_substituted_measured_input,
         test_reopened_carried_byte_and_pair_results_use_public_exhaustive_readers,
@@ -3194,14 +3196,14 @@ FIDELITY_SUBJECTS = {
         test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_ingest_and_reads_independently,
         test_exact_bytes_supply_the_measured_subjects_without_whitespace,
-        test_the_complete_declared_localities_supply_the_inputs,
+        test_the_complete_exact_source_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
         test_the_rule_is_mechanics_not_an_unchecked_callable,
         test_recorded_results_replay_the_complete_bounded_source_read,
         test_a_self_consistent_truncated_source_assertion_is_refused,
         test_recording_occurrence_evidence_is_validated_exactly,
         test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement,
-        test_a_missing_declared_locality_is_refused,
+        test_a_missing_exact_source_locality_is_refused,
         test_ingest_must_match_its_exact_byte_coordinates,
         test_repeated_locality_coordinate_does_not_repeat_one_ingest,
         test_every_overlapping_byte_position_pair_is_measured,

@@ -122,7 +122,7 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
     }
 
 
-def test_admission_refuses_an_undeclared_representation_and_boundary_rule_pair():
+def test_admission_refuses_a_different_representation_and_boundary_rule_pair():
     ledger = EventLedger()
     representation = _exact_representation(ledger)
 

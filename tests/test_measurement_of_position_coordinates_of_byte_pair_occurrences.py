@@ -719,7 +719,7 @@ def test_refused_same_call_result_does_not_change_prior_standing():
     assert prior == unchanged
 
 
-def test_result_carries_only_its_declared_measurement_coordinates():
+def test_result_carries_only_its_exact_measurement_coordinates():
     ledger = EventLedger()
     _source_event, assignment, _act, result = _record(ledger)
 
@@ -761,7 +761,7 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_result_refuses_an_intact_yield_from_another_exact_family,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_each_input_pair_has_first_and_second_exact_position_coordinates,
         test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,
         test_material_without_a_byte_pair_yields_an_exact_empty_result,
@@ -774,6 +774,6 @@ FIDELITY_SUBJECTS = {
         test_addressed_source_position_refuses_a_changed_coordinate,
         test_equal_byte_material_at_another_position_does_not_identify_the_address,
         test_addressed_source_position_from_another_exact_result_is_refused,
-        test_result_carries_only_its_declared_measurement_coordinates,
+        test_result_carries_only_its_exact_measurement_coordinates,
     ),
 }

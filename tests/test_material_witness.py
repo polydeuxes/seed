@@ -3970,7 +3970,7 @@ FIDELITY_SUBJECTS = {
     "content_locality_occurrence_distinction": (
         test_every_supplied_material_has_its_own_ingest,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_pair_material_comes_from_the_complete_recorded_measurement,
         test_byte_material_comes_from_the_complete_recorded_measurement,
         test_measured_book_pairs_reach_one_compiled_material_function,

@@ -12,9 +12,9 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.standing_measurement_declarations import (
-    _record_declared_measurements_from_carried_standing,
-    record_declared_measurements_from_current_standing,
+from seed_runtime.standing_measurement_responsibility_order import (
+    _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing,
+    record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
 )
 from tests.test_addressed_byte_occurrence_reference_determination import (
     _direct,
@@ -47,6 +47,39 @@ class YieldInterleaveLedger(EventLedger):
                 "test.addressed_material.unrelated",
                 {"unknown": ["interleaved after Yield Evidence"]},
                 locality_identity=kwargs["locality_identity"],
+            )
+        return event
+
+
+class FailBeforeKindSQLiteLedger(SQLiteEventLedger):
+    fail_before_kind = None
+
+    def append(self, kind, material, **kwargs):
+        if kind == self.fail_before_kind:
+            self.fail_before_kind = None
+            raise RuntimeError("simulated process loss before result append")
+        return super().append(kind, material, **kwargs)
+
+
+class GlobalBoundaryGetInterleaveLedger(EventLedger):
+    arm_after_boundary = False
+    inject_on_get = False
+
+    def append_boundary(self):
+        boundary = super().append_boundary()
+        if self.arm_after_boundary:
+            self.arm_after_boundary = False
+            self.inject_on_get = True
+        return boundary
+
+    def get(self, event_identity):
+        event = super().get(event_identity)
+        if self.inject_on_get:
+            self.inject_on_get = False
+            super().append(
+                "test.foreign-global-interleave",
+                {"unknown": []},
+                locality_identity="foreign-global-interleave",
             )
         return event
 
@@ -137,7 +170,7 @@ def test_dispatcher_derives_once_without_full_public_reference_population(monkey
         "references_to_recorded_position_coordinates_of_byte_pair_occurrences",
         lambda *_args, **_kwargs: pytest.fail("full reference population was decoded"),
     )
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="material-fanout"
     )
     result, = _family_results(recorded)
@@ -179,7 +212,7 @@ def test_dispatcher_derives_once_without_full_public_reference_population(monkey
     assert recorded.locality_standing == read_operator_locality_standing(
         ledger, locality_identity="material-fanout"
     )
-    assert record_declared_measurements_from_current_standing(
+    assert record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="material-fanout"
     ).result_occurrences == ()
     d2_assignment = next(
@@ -192,7 +225,7 @@ def test_dispatcher_derives_once_without_full_public_reference_population(monkey
     )
     d2_assignment.material.pop("direct_pair_position_result_reference")
     with pytest.raises(ValueError):
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="material-fanout"
         )
 
@@ -218,7 +251,7 @@ def test_first_malformed_candidate_refuses_without_skipping_or_changing_standing
     boundary = ledger.append_boundary()
 
     with pytest.raises(ValueError, match="malformed addressed-material finding"):
-        _record_declared_measurements_from_carried_standing(
+        _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
             ledger,
             standing,
             locality_identity="candidate-refusal",
@@ -242,7 +275,7 @@ def test_discovery_uses_only_results_carried_by_its_exact_locality_standing():
     local = _record(ledger, exact=b"aba", position=0, locality="local-fanout")
     _direct(ledger, exact=b"cabaca", locality="local-fanout")
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="local-fanout"
     )
     local_sources = {
@@ -262,14 +295,14 @@ def test_discovery_uses_only_results_carried_by_its_exact_locality_standing():
     }
 
 
-def test_declaration_adapters_are_value_neutral():
-    import seed_runtime.standing_measurement_declarations as declarations
+def test_responsibility_order_adapters_are_value_neutral():
+    import seed_runtime.standing_measurement_responsibility_order as responsibility_order
 
     functions = (
-        declarations._discover_d2_from_addressed_material_coordinate,
-        declarations._record_d2_from_addressed_material_coordinate,
-        declarations._discover_shared_position_from_d2_result,
-        declarations._record_shared_position_from_d2_result,
+        responsibility_order._discover_d2_from_addressed_material_coordinate,
+        responsibility_order._record_d2_from_addressed_material_coordinate,
+        responsibility_order._discover_shared_position_from_d2_result,
+        responsibility_order._record_shared_position_from_d2_result,
         d2_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
         shared_module._record_shared_position_measurement_lifecycle_from_carried_d2_result,
     )
@@ -288,8 +321,8 @@ def test_declaration_adapters_are_value_neutral():
     assert '.get("result_content")' not in sources
 
 
-def test_manual_same_subject_d2_is_not_given_declaration_trigger_provenance():
-    import seed_runtime.standing_measurement_declarations as declarations
+def test_manual_same_subject_d2_is_not_given_measurement_order_source_provenance():
+    import seed_runtime.standing_measurement_responsibility_order as responsibility_order
 
     ledger = EventLedger()
     addressed = _record(
@@ -319,13 +352,13 @@ def test_manual_same_subject_d2_is_not_given_declaration_trigger_provenance():
         ],
         locality_standing=standing,
     )
-    assert not declarations._d2_subject_was_emitted_by_addressed_material(
+    assert not responsibility_order._d2_subject_was_emitted_by_addressed_material(
         ledger,
         standing=standing,
         determination_result=manual_d2,
     )
 
-    recorded = _record_declared_measurements_from_carried_standing(
+    recorded = _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
         ledger,
         standing,
         locality_identity="origin-collision",
@@ -339,24 +372,25 @@ def test_manual_same_subject_d2_is_not_given_declaration_trigger_provenance():
     )
 
 
-def test_public_d2_read_refuses_unrelated_declaration_source_corruption():
+def test_public_d2_read_refuses_unrelated_measurement_order_source_corruption():
     ledger = EventLedger()
     _record(ledger, exact=b"aba", position=0, locality="origin-corruption")
     _direct(ledger, exact=b"cabaca", locality="origin-corruption")
-    record_declared_measurements_from_current_standing(
+    record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="origin-corruption"
     )
     assignment = next(
         event
         for event in ledger.list()
         if event.kind == d2_module.RESPONSIBILITY_ASSIGNMENT_KIND
-        and d2_module.STANDING_DECLARATION_TRIGGER_COORDINATE in event.material
+        and d2_module.SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE
+        in event.material
     )
     trigger_identity = assignment.material[
-        d2_module.STANDING_DECLARATION_TRIGGER_COORDINATE
+        d2_module.SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE
     ]["measurement_result_reference"]["recorded_occurrence_identity"]
     ledger.get(trigger_identity).material["unknown"].append(
-        "unrelated declaration source corruption"
+        "unrelated Measurement order source corruption"
     )
 
     with pytest.raises(ValueError):
@@ -368,7 +402,7 @@ def test_public_d2_read_refuses_unrelated_declaration_source_corruption():
 def test_empty_result_is_lawful_and_completed_subject_does_not_rerun():
     ledger = EventLedger()
     _record(ledger, exact=b"a", position=0, locality="empty-fanout")
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="empty-fanout"
     )
     result, = _family_results(recorded)
@@ -379,7 +413,7 @@ def test_empty_result_is_lawful_and_completed_subject_does_not_rerun():
         if event.kind == shared_module.SHARED_POSITION_MEASUREMENT_RESULT_KIND
     )
     assert _family_results(
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="empty-fanout"
         )
     ) == ()
@@ -389,14 +423,14 @@ def test_changed_direct_result_set_is_a_new_bounded_subject_once():
     ledger = EventLedger()
     _record(ledger, exact=b"a", position=0, locality="set-fanout")
     first, = _family_results(
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="set-fanout"
         )
     )
     assert first.material["ordered_source_position_coordinate_findings"] == []
     _direct(ledger, exact=b"cad", locality="set-fanout")
     second, = _family_results(
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="set-fanout"
         )
     )
@@ -405,7 +439,7 @@ def test_changed_direct_result_set_is_a_new_bounded_subject_once():
         "responsibility_assignment_reference"
     ]
     assert _family_results(
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="set-fanout"
         )
     ) == ()
@@ -420,7 +454,7 @@ def test_public_lifecycle_and_restart_reconstruct_exact_result(tmp_path):
     standing, assignment, applicability_act, applicability, act, result = _public_lifecycle(
         ledger, standing, addressed["result"]
     )
-    dispatched = record_declared_measurements_from_current_standing(
+    dispatched = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger, locality_identity="restart-fanout"
     )
     downstream_d2 = tuple(
@@ -469,7 +503,7 @@ def test_public_lifecycle_and_restart_reconstruct_exact_result(tmp_path):
     assert read_operator_locality_standing(
         reopened, locality_identity="restart-fanout"
     ) == standing
-    assert record_declared_measurements_from_current_standing(
+    assert record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         reopened, locality_identity="restart-fanout"
     ).result_occurrences == ()
     reopened.close()
@@ -518,7 +552,7 @@ def test_source_mutation_during_derivation_refuses_without_lifecycle(monkeypatch
         module.AddressedMaterialCoordinateMeasurementError,
         match="changed during derivation|requires intact direct results",
     ):
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="callback-fanout"
         )
     assert not any(
@@ -538,6 +572,259 @@ def test_source_mutation_during_derivation_refuses_without_lifecycle(monkeypatch
         )
 
 
+def test_measurement_order_uses_locality_currentness_after_foreign_append():
+    ledger = EventLedger()
+    _record(ledger, exact=b"aba", position=1, locality="local-current")
+    ledger.append(
+        "test.foreign-locality-event",
+        {"unknown": []},
+        locality_identity="foreign-current",
+    )
+
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+        ledger, locality_identity="local-current"
+    )
+
+    assert recorded.result_occurrences
+    assert all(
+        event.locality_identity == "local-current"
+        for event in recorded.result_occurrences
+    )
+
+
+def test_d2_revalidates_global_boundary_immediately_before_assignment():
+    ledger = GlobalBoundaryGetInterleaveLedger()
+    addressed = _record(
+        ledger, exact=b"aba", position=1, locality="d2-global-boundary"
+    )
+    _direct(ledger, exact=b"cabaca", locality="d2-global-boundary")
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="d2-global-boundary"
+    )
+    standing, *_prefix, material_result = _public_lifecycle(
+        ledger, standing, addressed["result"]
+    )
+    finding = next(
+        finding
+        for finding in material_result.material[
+            "ordered_source_position_coordinate_findings"
+        ]
+        if finding["direct_pair_position_result_reference"][
+            "recorded_occurrence_identity"
+        ]
+        != addressed["direct_result"].identity
+    )
+    before_assignments = tuple(
+        ledger.iter_locality_kind(
+            "d2-global-boundary", d2_module.RESPONSIBILITY_ASSIGNMENT_KIND
+        )
+    )
+    ledger.arm_after_boundary = True
+
+    with pytest.raises(
+        d2_module.AddressedByteOccurrenceReferenceDeterminationError,
+        match="global recording boundary changed before assignment",
+    ):
+        d2_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+            ledger,
+            direct_result_event_identity=finding[
+                "direct_pair_position_result_reference"
+            ]["recorded_occurrence_identity"],
+            addressed_source_byte_position_coordinate_reference=finding[
+                "source_position_coordinate_reference"
+            ],
+            locality_standing=standing,
+            source_reference_for_standing_measurement_responsibility_order={
+                "measurement_result_reference": module.measurement_result_reference(
+                    material_result
+                ),
+                "finding": finding,
+            },
+        )
+
+    assert tuple(
+        ledger.iter_locality_kind(
+            "d2-global-boundary", d2_module.RESPONSIBILITY_ASSIGNMENT_KIND
+        )
+    ) == before_assignments
+
+
+@pytest.mark.parametrize("phase", ("assignment", "applicability", "yield"))
+def test_addressed_material_partial_prefix_continues_after_sqlite_reopen(
+    tmp_path, phase
+):
+    path = tmp_path / f"addressed-{phase}.sqlite"
+    ledger = FailBeforeKindSQLiteLedger(str(path))
+    addressed = _record(
+        ledger, exact=b"aba", position=0, locality="addressed-restart"
+    )
+    _direct(ledger, exact=b"cabaca", locality="addressed-restart")
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="addressed-restart"
+    )
+    assignment = module.record_addressed_material_coordinate_measurement_responsibility_assignment(
+        ledger,
+        addressed_determination_result_event_identity=addressed["result"].identity,
+        locality_standing=standing,
+    )
+    if phase != "assignment":
+        standing = _advance(ledger, standing, assignment)
+        act = module.record_addressed_material_coordinate_measurement_applicability_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=standing,
+        )
+        standing = _advance(ledger, standing, act)
+        if phase == "yield":
+            ledger.fail_before_kind = module.APPLICABILITY_RESULT_KIND
+            with pytest.raises(RuntimeError):
+                module.record_addressed_material_coordinate_measurement_applicability_result(
+                    ledger,
+                    applicability_act_evidence_event_identity=act.identity,
+                )
+        else:
+            module.record_addressed_material_coordinate_measurement_applicability_result(
+                ledger,
+                applicability_act_evidence_event_identity=act.identity,
+            )
+    ledger.append(
+        "test.addressed-restart-foreign",
+        {"unknown": []},
+        locality_identity="addressed-restart-foreign",
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+        reopened, locality_identity="addressed-restart"
+    )
+    assert _family_results(recorded)
+    reopened.close()
+
+
+@pytest.mark.parametrize("phase", ("assignment", "applicability", "yield"))
+def test_d2_partial_prefix_continues_after_sqlite_reopen(tmp_path, phase):
+    path = tmp_path / f"d2-{phase}.sqlite"
+    ledger = FailBeforeKindSQLiteLedger(str(path))
+    addressed = _record(ledger, exact=b"aba", position=1, locality="d2-restart")
+    _direct(ledger, exact=b"cabaca", locality="d2-restart")
+    standing = read_operator_locality_standing(ledger, locality_identity="d2-restart")
+    standing, *_prefix, material_result = _public_lifecycle(
+        ledger, standing, addressed["result"]
+    )
+    finding = next(
+        finding
+        for finding in material_result.material[
+            "ordered_source_position_coordinate_findings"
+        ]
+        if finding["direct_pair_position_result_reference"][
+            "recorded_occurrence_identity"
+        ]
+        != addressed["direct_result"].identity
+    )
+    assignment = d2_module.record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+        ledger,
+        direct_result_event_identity=finding["direct_pair_position_result_reference"][
+            "recorded_occurrence_identity"
+        ],
+        addressed_source_byte_position_coordinate_reference=finding[
+            "source_position_coordinate_reference"
+        ],
+        locality_standing=standing,
+    )
+    if phase != "assignment":
+        standing = _advance(ledger, standing, assignment)
+        act = d2_module.record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=standing,
+        )
+        standing = _advance(ledger, standing, act)
+        if phase == "yield":
+            ledger.fail_before_kind = d2_module.APPLICABILITY_RESULT_KIND
+            with pytest.raises(RuntimeError):
+                d2_module.record_addressed_byte_occurrence_reference_determination_applicability_result(
+                    ledger,
+                    applicability_act_evidence_event_identity=act.identity,
+                )
+        else:
+            d2_module.record_addressed_byte_occurrence_reference_determination_applicability_result(
+                ledger,
+                applicability_act_evidence_event_identity=act.identity,
+            )
+    ledger.append(
+        "test.d2-restart-foreign",
+        {"unknown": []},
+        locality_identity="d2-restart-foreign",
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+        reopened, locality_identity="d2-restart"
+    )
+    assert any(
+        event.kind == d2_module.DETERMINATION_RESULT_KIND
+        for event in recorded.result_occurrences
+    )
+    reopened.close()
+
+
+@pytest.mark.parametrize("phase", ("assignment", "applicability", "yield"))
+def test_shared_partial_prefix_continues_after_sqlite_reopen(tmp_path, phase):
+    path = tmp_path / f"shared-{phase}.sqlite"
+    ledger = FailBeforeKindSQLiteLedger(str(path))
+    addressed = _record(
+        ledger, exact=b"aba", position=1, locality="shared-restart"
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="shared-restart"
+    )
+    assignment = shared_module.record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result(
+        ledger,
+        determination_result_event_identity=addressed["result"].identity,
+        locality_standing=standing,
+    )
+    if phase != "assignment":
+        standing = _advance(ledger, standing, assignment)
+        act = shared_module.record_shared_position_applicability_act_evidence(
+            ledger,
+            assignment_event_identity=assignment.identity,
+            locality_standing=standing,
+        )
+        standing = _advance(ledger, standing, act)
+        if phase == "yield":
+            ledger.fail_before_kind = (
+                shared_module.SHARED_POSITION_APPLICABILITY_RESULT_KIND
+            )
+            with pytest.raises(RuntimeError):
+                shared_module.record_shared_position_applicability_result(
+                    ledger,
+                    applicability_act_evidence_event_identity=act.identity,
+                )
+        else:
+            shared_module.record_shared_position_applicability_result(
+                ledger,
+                applicability_act_evidence_event_identity=act.identity,
+            )
+    ledger.append(
+        "test.shared-restart-foreign",
+        {"unknown": []},
+        locality_identity="shared-restart-foreign",
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    recorded = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
+        reopened, locality_identity="shared-restart"
+    )
+    assert any(
+        event.kind == shared_module.SHARED_POSITION_MEASUREMENT_RESULT_KIND
+        for event in recorded.result_occurrences
+    )
+    reopened.close()
+
+
 def test_assignment_append_mutation_refuses_before_standing_carry():
     ledger = AppendMutationLedger()
     _record(ledger, exact=b"aba", position=0, locality="append-fanout")
@@ -549,7 +836,7 @@ def test_assignment_append_mutation_refuses_before_standing_carry():
         module.AddressedMaterialCoordinateMeasurementError,
         match="changed while it was recorded",
     ):
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="append-fanout"
         )
     assert before == prior
@@ -577,7 +864,7 @@ def test_discovery_refuses_malformed_carried_address_without_key_error():
         ValueError,
         match="direct source|inexact addressed|determination result coordinates",
     ):
-        record_declared_measurements_from_current_standing(
+        record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
             ledger, locality_identity="shape-fanout"
         )
 
@@ -619,18 +906,23 @@ def test_yield_interleave_refuses_result_and_preserves_supplied_standing(
 
 
 FIDELITY_SUBJECTS = {
-    "source_position_coordinates_carrying_addressed_material_measurement": (
+    "measurement_of_source_position_coordinates_carrying_addressed_material": (
         test_dispatcher_derives_once_without_full_public_reference_population,
         test_first_malformed_candidate_refuses_without_skipping_or_changing_standing,
         test_discovery_uses_only_results_carried_by_its_exact_locality_standing,
-        test_declaration_adapters_are_value_neutral,
-        test_manual_same_subject_d2_is_not_given_declaration_trigger_provenance,
-        test_public_d2_read_refuses_unrelated_declaration_source_corruption,
+        test_responsibility_order_adapters_are_value_neutral,
+        test_manual_same_subject_d2_is_not_given_measurement_order_source_provenance,
+        test_public_d2_read_refuses_unrelated_measurement_order_source_corruption,
         test_empty_result_is_lawful_and_completed_subject_does_not_rerun,
         test_changed_direct_result_set_is_a_new_bounded_subject_once,
         test_public_lifecycle_and_restart_reconstruct_exact_result,
         test_corrupted_assignment_refuses_carried_standing_atomically,
         test_source_mutation_during_derivation_refuses_without_lifecycle,
+        test_measurement_order_uses_locality_currentness_after_foreign_append,
+        test_d2_revalidates_global_boundary_immediately_before_assignment,
+        test_addressed_material_partial_prefix_continues_after_sqlite_reopen,
+        test_d2_partial_prefix_continues_after_sqlite_reopen,
+        test_shared_partial_prefix_continues_after_sqlite_reopen,
         test_assignment_append_mutation_refuses_before_standing_carry,
         test_discovery_refuses_malformed_carried_address_without_key_error,
         test_yield_interleave_refuses_result_and_preserves_supplied_standing,

@@ -590,7 +590,7 @@ def test_recurrent_result_batch_refuses_assertion_and_locality_substitution():
         )
 
 
-def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
+def test_recurrent_result_batch_refuses_a_crossed_exact_standing_boundary():
     ledger, _locality, _source, first, second = _fixture()
     assignment = _recurrent_lifecycle_occurrences(ledger, first)["assignment"]
     assignment.material["standing_boundary_identity"] = (
@@ -1304,11 +1304,11 @@ FIDELITY_SUBJECTS = {
         test_two_recurrent_results_share_one_exact_later_standing_read,
         test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing,
         test_recurrent_result_batch_refuses_assertion_and_locality_substitution,
-        test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary,
+        test_recurrent_result_batch_refuses_a_crossed_exact_standing_boundary,
         test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_append,
         test_recurrent_result_batch_and_public_readers_survive_restart,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_exact_yielded_pair_relations_compose_at_one_shared_position,
         test_direct_position_coordinate_assertions_compose_without_recurrence_support,
         test_d2_result_without_exactly_two_references_cannot_assign_shared_position,

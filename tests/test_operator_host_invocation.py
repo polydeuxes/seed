@@ -653,7 +653,7 @@ def test_provider_death_preserves_each_already_supplied_system_occurrence():
     ) == 1
 
 
-def test_provider_declares_exact_egress_order_without_egressing_other_results():
+def test_provider_carries_exact_egress_order_without_egressing_other_results():
     ledger = EventLedger()
     raw_output = BytesIO()
     supplied = (

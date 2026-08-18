@@ -1,6 +1,6 @@
-"""Record declared Measurements whose exact subjects are carried in Standing.
+"""Record Measurements in the Standing Measurement Responsibility order.
 
-The declarations in this module do not assign a new Responsibility.  Each
+The coordinates in this module do not assign a new Responsibility.  Each
 entry names one existing Book-assigned Measurement road.  Discovery chooses
 one exact subject at one current Standing boundary, the family records its own
 assignment, Act, Yield, and result, and Standing is advanced before discovery
@@ -39,8 +39,10 @@ from seed_runtime.material_ingest import read_exact_ingest_result
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND,
     DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
-    STANDING_DECLARATION_TRIGGER_COORDINATE,
+    SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE,
     _determination_result_reference as _addressed_byte_reference_result_reference,
+    _incomplete_determination_assignment_for_subject,
+    _continue_addressed_byte_occurrence_reference_determination_lifecycle,
     _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
 )
 from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
@@ -48,6 +50,8 @@ from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_
     MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND,
     measurement_result_reference as _addressed_material_result_reference,
     _population_references as _addressed_material_population_references,
+    _incomplete_assignment_for_subject as _addressed_material_incomplete_assignment,
+    _continue_addressed_material_coordinate_measurement_lifecycle,
     _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing,
     _subject_is_unmeasured as _addressed_material_subject_is_unmeasured,
 )
@@ -55,6 +59,8 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     D2_RESULT_REFERENCE_COORDINATE,
+    _incomplete_shared_position_assignment_for_determination,
+    _continue_shared_position_measurement_lifecycle,
     _record_shared_position_measurement_lifecycle_from_carried_d2_result,
 )
 from seed_runtime.operator_locality_standing import (
@@ -66,9 +72,10 @@ from seed_runtime.operator_locality_standing import (
 )
 
 
-class StandingMeasurementDeclaration(NamedTuple):
+class StandingMeasurementResponsibilityOrderCoordinate(NamedTuple):
     order: int
     book_clause_identity: str
+    measurement_identity: str
     assignment_kind: str
     result_kind: str
     discover: Callable[[EventLedger, dict[str, Any], str], str | None]
@@ -80,12 +87,17 @@ class StandingMeasurementDeclaration(NamedTuple):
     ]
 
 
-class RecordedStandingMeasurements(NamedTuple):
+class RecordedMeasurementsInStandingMeasurementResponsibilityOrder(NamedTuple):
     locality_standing: dict[str, Any]
     result_occurrences: tuple[Event, ...]
 
 
-class AddressedCoordinateDeclarationSubject(NamedTuple):
+class StandingMeasurementResponsibilityLifecyclePrefix(NamedTuple):
+    subject: Any
+    assignment_event_identity: str
+
+
+class AddressedCoordinateSubjectForStandingMeasurementResponsibilityOrder(NamedTuple):
     direct_result_event_identity: str
     source_position_coordinate_reference: dict[str, Any]
     trigger_result_event_identity: str
@@ -123,17 +135,26 @@ def _require_current_pin(
         or type(standing.get("measurement_occurrences")) is not dict
         or type(standing.get("responsibility_assignment_occurrences")) is not dict
     ):
-        raise ValueError("declared Measurement recording requires exact current Standing")
+        raise ValueError(
+            "recording a Measurement in the Standing Measurement Responsibility order "
+            "requires exact current Standing"
+        )
     boundary = standing.get("through_event_occurrence_identity")
     event = ledger.get(boundary) if type(boundary) is str and boundary else None
+    locality_events = (
+        ledger.list_locality(locality_identity) if event is not None else ()
+    )
     if (
         event is None
         or event.locality_identity != locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
+        or not locality_events
+        or locality_events[-1].identity != event.identity
     ):
-        raise ValueError("declared Measurement recording requires the current append boundary")
+        raise ValueError(
+            "recording a Measurement in the Standing Measurement Responsibility order "
+            "requires the current append boundary"
+        )
 
 
 def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:
@@ -413,15 +434,26 @@ def _discover_addressed_material_coordinate_measurement(
             determination_result=event,
         ):
             continue
+        population = _addressed_material_population_references(
+            ledger,
+            standing,
+            locality_identity=locality_identity,
+        )
+        partial = _addressed_material_incomplete_assignment(
+            ledger,
+            locality_identity=locality_identity,
+            addressed_result_identity=occurrence_identity,
+            population=population,
+        )
+        if partial is not None:
+            return StandingMeasurementResponsibilityLifecyclePrefix(
+                occurrence_identity, partial.identity
+            )
         if _addressed_material_subject_is_unmeasured(
                 ledger,
                 locality_identity=locality_identity,
                 addressed_result_identity=occurrence_identity,
-                population=_addressed_material_population_references(
-                    ledger,
-                    standing,
-                    locality_identity=locality_identity,
-                ),
+                population=population,
             ):
             return occurrence_identity
     return None
@@ -433,6 +465,31 @@ def _record_addressed_material_coordinate_measurement(
     locality_identity: str,
     addressed_result_identity: str,
 ) -> tuple[dict[str, Any], Event]:
+    if isinstance(
+        addressed_result_identity, StandingMeasurementResponsibilityLifecyclePrefix
+    ):
+        return _continue_addressed_material_coordinate_measurement_lifecycle(
+            ledger,
+            responsibility_assignment_event_identity=(
+                addressed_result_identity.assignment_event_identity
+            ),
+            locality_standing=standing,
+        )
+    population = _addressed_material_population_references(
+        ledger, standing, locality_identity=locality_identity
+    )
+    partial = _addressed_material_incomplete_assignment(
+        ledger,
+        locality_identity=locality_identity,
+        addressed_result_identity=addressed_result_identity,
+        population=population,
+    )
+    if partial is not None:
+        return _continue_addressed_material_coordinate_measurement_lifecycle(
+            ledger,
+            responsibility_assignment_event_identity=partial.identity,
+            locality_standing=standing,
+        )
     return _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing(
         ledger,
         addressed_determination_result_event_identity=addressed_result_identity,
@@ -446,11 +503,15 @@ def _record_addressed_material_coordinate_measurement_from_current(
     locality_identity: str,
     addressed_result_identity: str,
 ) -> tuple[dict[str, Any], Event]:
+    if isinstance(
+        addressed_result_identity, StandingMeasurementResponsibilityLifecyclePrefix
+    ):
+        return _record_addressed_material_coordinate_measurement(
+            ledger, standing, locality_identity, addressed_result_identity
+        )
     _require_current_pin(ledger, standing, locality_identity=locality_identity)
-    return _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing(
-        ledger,
-        addressed_determination_result_event_identity=addressed_result_identity,
-        locality_standing=standing,
+    return _record_addressed_material_coordinate_measurement(
+        ledger, standing, locality_identity, addressed_result_identity
     )
 
 
@@ -488,12 +549,14 @@ def _d2_subject_was_emitted_by_addressed_material(
         or ledger.integrity_of(assignment.identity) == CORRUPTED
     ):
         raise ValueError("recorded D.2 assignment provenance is malformed")
-    trigger = assignment.material.get(STANDING_DECLARATION_TRIGGER_COORDINATE)
-    if trigger is None:
+    source_reference_for_standing_measurement_responsibility_order = assignment.material.get(
+        SOURCE_REFERENCE_FOR_STANDING_MEASUREMENT_RESPONSIBILITY_ORDER_COORDINATE
+    )
+    if source_reference_for_standing_measurement_responsibility_order is None:
         return False
     result_reference = (
-        trigger.get("measurement_result_reference")
-        if type(trigger) is dict
+        source_reference_for_standing_measurement_responsibility_order.get("measurement_result_reference")
+        if type(source_reference_for_standing_measurement_responsibility_order) is dict
         else None
     )
     result_identity = (
@@ -503,8 +566,9 @@ def _d2_subject_was_emitted_by_addressed_material(
     )
     result = ledger.get(result_identity)
     if (
-        type(trigger) is not dict
-        or set(trigger) != {"measurement_result_reference", "finding"}
+        type(source_reference_for_standing_measurement_responsibility_order) is not dict
+        or set(source_reference_for_standing_measurement_responsibility_order)
+        != {"measurement_result_reference", "finding"}
         or result is None
         or result.kind != ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND
         or ledger.integrity_of(result.identity) == CORRUPTED
@@ -512,7 +576,9 @@ def _d2_subject_was_emitted_by_addressed_material(
         or standing["measurement_occurrences"].get(result.identity)
         != _addressed_material_result_reference(result)
     ):
-        raise ValueError("recorded D.2 declaration provenance is malformed")
+        raise ValueError(
+            "recorded D.2 Measurement order source provenance is malformed"
+        )
     return True
 
 
@@ -520,7 +586,7 @@ def _d2_subject_is_unassigned(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    subject: AddressedCoordinateDeclarationSubject,
+    subject: AddressedCoordinateSubjectForStandingMeasurementResponsibilityOrder,
 ) -> bool:
     expected = (
         subject.direct_result_event_identity,
@@ -540,7 +606,7 @@ def _d2_subject_is_unassigned(
 
 def _discover_d2_from_addressed_material_coordinate(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
-) -> AddressedCoordinateDeclarationSubject | None:
+) -> AddressedCoordinateSubjectForStandingMeasurementResponsibilityOrder | None:
     for occurrence_identity in standing["measurement_occurrences"]:
         event = ledger.get(occurrence_identity)
         if event is None or event.kind != ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND:
@@ -576,12 +642,22 @@ def _discover_d2_from_addressed_material_coordinate(
                 or type(coordinate) is not dict
             ):
                 raise ValueError("current Standing carries a malformed addressed-material finding")
-            subject = AddressedCoordinateDeclarationSubject(
+            subject = AddressedCoordinateSubjectForStandingMeasurementResponsibilityOrder(
                 direct_identity,
                 deepcopy(coordinate),
                 event.identity,
                 deepcopy(finding),
             )
+            partial = _incomplete_determination_assignment_for_subject(
+                ledger,
+                locality_identity=locality_identity,
+                direct_result_event_identity=direct_identity,
+                addressed_source_byte_position_coordinate_reference=coordinate,
+            )
+            if partial is not None:
+                return StandingMeasurementResponsibilityLifecyclePrefix(
+                    subject, partial.identity
+                )
             if _d2_subject_is_unassigned(
                 ledger,
                 locality_identity=locality_identity,
@@ -595,8 +671,14 @@ def _record_d2_from_addressed_material_coordinate(
     ledger: EventLedger,
     standing: dict[str, Any],
     _locality_identity: str,
-    subject: AddressedCoordinateDeclarationSubject,
+    subject: AddressedCoordinateSubjectForStandingMeasurementResponsibilityOrder,
 ) -> tuple[dict[str, Any], Event]:
+    if isinstance(subject, StandingMeasurementResponsibilityLifecyclePrefix):
+        return _continue_addressed_byte_occurrence_reference_determination_lifecycle(
+            ledger,
+            responsibility_assignment_event_identity=subject.assignment_event_identity,
+            locality_standing=standing,
+        )
     return _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
         ledger,
         direct_result_event_identity=subject.direct_result_event_identity,
@@ -604,7 +686,7 @@ def _record_d2_from_addressed_material_coordinate(
             subject.source_position_coordinate_reference
         ),
         locality_standing=standing,
-        standing_declaration_trigger_reference={
+        source_reference_for_standing_measurement_responsibility_order={
             "measurement_result_reference": _addressed_material_result_reference(
                 ledger.get(subject.trigger_result_event_identity)
             ),
@@ -655,6 +737,15 @@ def _discover_shared_position_from_d2_result(
             raise ValueError("current Standing carries a malformed D.2 result")
         if len(references) != 2:
             continue
+        partial = _incomplete_shared_position_assignment_for_determination(
+            ledger,
+            locality_identity=locality_identity,
+            determination_result_event_identity=event.identity,
+        )
+        if partial is not None:
+            return StandingMeasurementResponsibilityLifecyclePrefix(
+                event.identity, partial.identity
+            )
         if _shared_position_subject_is_unassigned(
             ledger,
             locality_identity=locality_identity,
@@ -670,6 +761,17 @@ def _record_shared_position_from_d2_result(
     _locality_identity: str,
     determination_result_identity: str,
 ) -> tuple[dict[str, Any], Event]:
+    if isinstance(
+        determination_result_identity,
+        StandingMeasurementResponsibilityLifecyclePrefix,
+    ):
+        return _continue_shared_position_measurement_lifecycle(
+            ledger,
+            responsibility_assignment_event_identity=(
+                determination_result_identity.assignment_event_identity
+            ),
+            locality_standing=standing,
+        )
     return _record_shared_position_measurement_lifecycle_from_carried_d2_result(
         ledger,
         determination_result_event_identity=determination_result_identity,
@@ -677,46 +779,51 @@ def _record_shared_position_from_d2_result(
     )
 
 
-STANDING_MEASUREMENT_DECLARATIONS = (
-    StandingMeasurementDeclaration(
+STANDING_MEASUREMENT_RESPONSIBILITY_ORDER = (
+    StandingMeasurementResponsibilityOrderCoordinate(
         0,
         "01.Source.D",
+        "measurement_of_position_coordinates_of_byte_pair_occurrences",
         BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         _discover_direct_measurement,
         _record_direct_measurement,
         _record_direct_measurement_from_current,
     ),
-    StandingMeasurementDeclaration(
+    StandingMeasurementResponsibilityOrderCoordinate(
         1,
         "01.Source.D",
+        "measurement_of_exact_byte_occurrences",
         BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
         BYTE_MEASUREMENT_RECORDED_KIND,
         _discover_byte_measurement,
         _record_byte_measurement,
         _record_byte_measurement_from_current,
     ),
-    StandingMeasurementDeclaration(
+    StandingMeasurementResponsibilityOrderCoordinate(
         2,
         "01.Source.D",
+        "measurement_of_source_position_coordinates_carrying_addressed_material",
         ADDRESSED_MATERIAL_COORDINATE_ASSIGNMENT_KIND,
         ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND,
         _discover_addressed_material_coordinate_measurement,
         _record_addressed_material_coordinate_measurement,
         _record_addressed_material_coordinate_measurement_from_current,
     ),
-    StandingMeasurementDeclaration(
+    StandingMeasurementResponsibilityOrderCoordinate(
         3,
         "01.Source.D.2",
+        "addressed_byte_occurrence_reference_determination",
         ADDRESSED_BYTE_REFERENCE_ASSIGNMENT_KIND,
         ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
         _discover_d2_from_addressed_material_coordinate,
         _record_d2_from_addressed_material_coordinate,
         _record_d2_from_addressed_material_coordinate,
     ),
-    StandingMeasurementDeclaration(
+    StandingMeasurementResponsibilityOrderCoordinate(
         4,
         "01.Source.D",
+        "measurement_of_shared_position_of_byte_pair_occurrences",
         SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
         SHARED_POSITION_MEASUREMENT_RESULT_KIND,
         _discover_shared_position_from_d2_result,
@@ -726,13 +833,13 @@ STANDING_MEASUREMENT_DECLARATIONS = (
 )
 
 
-def _record_declared_measurements_from_carried_standing(
+def _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
     ledger: EventLedger,
     locality_standing: dict[str, Any],
     *,
     locality_identity: str,
-) -> RecordedStandingMeasurements:
-    """Record one lawful declaration per exact Standing boundary until quiet."""
+) -> RecordedMeasurementsInStandingMeasurementResponsibilityOrder:
+    """Record each Responsibility in the order at its exact Standing boundary."""
 
     standing = locality_standing
     results: list[Event] = []
@@ -743,55 +850,92 @@ def _record_declared_measurements_from_carried_standing(
             locality_identity=locality_identity,
         )
         eligible = []
-        for declaration in STANDING_MEASUREMENT_DECLARATIONS:
-            subject = declaration.discover(ledger, standing, locality_identity)
+        for responsibility_coordinate in STANDING_MEASUREMENT_RESPONSIBILITY_ORDER:
+            subject = responsibility_coordinate.discover(
+                ledger, standing, locality_identity
+            )
             if subject is not None:
-                eligible.append((declaration.order, subject, declaration))
+                eligible.append(
+                    (
+                        responsibility_coordinate.order,
+                        subject,
+                        responsibility_coordinate,
+                    )
+                )
         if not eligible:
-            return RecordedStandingMeasurements(standing, tuple(results))
-        _order, subject, declaration = min(eligible, key=lambda item: item[:2])
-        standing, result = declaration.record(
+            return RecordedMeasurementsInStandingMeasurementResponsibilityOrder(standing, tuple(results))
+        _order, subject, responsibility_coordinate = min(
+            eligible,
+            key=lambda item: (
+                0
+                if isinstance(
+                    item[1], StandingMeasurementResponsibilityLifecyclePrefix
+                )
+                else 1,
+                item[0],
+            ),
+        )
+        standing, result = responsibility_coordinate.record(
             ledger,
             standing,
             locality_identity,
             subject,
         )
-        if result.kind != declaration.result_kind:
-            raise ValueError("declared Measurement recorded another result kind")
+        if result.kind != responsibility_coordinate.result_kind:
+            raise ValueError(
+                "a Measurement in the Standing Measurement Responsibility order "
+                "recorded another result kind"
+            )
         results.append(result)
 
 
-def record_declared_measurements_from_current_standing(
+def record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
     ledger: EventLedger,
     *,
     locality_identity: str,
-) -> RecordedStandingMeasurements:
-    """Read one current Locality Standing and record its declared Measurements."""
+) -> RecordedMeasurementsInStandingMeasurementResponsibilityOrder:
+    """Read current Standing and record Measurements in its Responsibility order."""
 
     standing = read_operator_locality_standing(
         ledger,
         locality_identity=locality_identity,
     )
     eligible = []
-    for declaration in STANDING_MEASUREMENT_DECLARATIONS:
-        subject = declaration.discover(ledger, standing, locality_identity)
+    for responsibility_coordinate in STANDING_MEASUREMENT_RESPONSIBILITY_ORDER:
+        subject = responsibility_coordinate.discover(
+            ledger, standing, locality_identity
+        )
         if subject is not None:
-            eligible.append((declaration.order, subject, declaration))
+            eligible.append(
+                (
+                    responsibility_coordinate.order,
+                    subject,
+                    responsibility_coordinate,
+                )
+            )
     if not eligible:
-        return RecordedStandingMeasurements(standing, ())
-    _order, subject, declaration = min(eligible, key=lambda item: item[:2])
-    standing, result = declaration.record_from_current(
+        return RecordedMeasurementsInStandingMeasurementResponsibilityOrder(standing, ())
+    _order, subject, responsibility_coordinate = min(
+        eligible,
+        key=lambda item: (
+            0
+            if isinstance(item[1], StandingMeasurementResponsibilityLifecyclePrefix)
+            else 1,
+            item[0],
+        ),
+    )
+    standing, result = responsibility_coordinate.record_from_current(
         ledger,
         standing,
         locality_identity,
         subject,
     )
-    remaining = _record_declared_measurements_from_carried_standing(
+    remaining = _record_measurements_in_standing_measurement_responsibility_order_from_carried_standing(
         ledger,
         standing,
         locality_identity=locality_identity,
     )
-    return RecordedStandingMeasurements(
+    return RecordedMeasurementsInStandingMeasurementResponsibilityOrder(
         remaining.locality_standing,
         (result, *remaining.result_occurrences),
     )

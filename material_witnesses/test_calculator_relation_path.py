@@ -60,8 +60,8 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.standing_measurement_declarations import (
-    record_declared_measurements_from_current_standing,
+from seed_runtime.standing_measurement_responsibility_order import (
+    record_measurements_in_standing_measurement_responsibility_order_from_current_standing,
 )
 
 
@@ -85,10 +85,10 @@ def _standing(ledger):
     )
 
 
-def _pair_measurement(ledger, declared):
+def _pair_measurement(ledger, standing_measurement_responsibility_order):
     byte_result = next(
         event
-        for event in declared.result_occurrences
+        for event in standing_measurement_responsibility_order.result_occurrences
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
     return record_byte_position_pair_count_layer(
@@ -142,11 +142,11 @@ def _claim_path(ledger):
         source_role="system",
         source_boundary="earlier exact supplied material boundary",
     )
-    earlier_declared = record_declared_measurements_from_current_standing(
+    earlier_standing_measurement_responsibility_order = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity=earlier_source.locality_identity,
     )
-    earlier_pair = _pair_measurement(ledger, earlier_declared)
+    earlier_pair = _pair_measurement(ledger, earlier_standing_measurement_responsibility_order)
     source = ingest_material(
         ledger,
         locality_identity="calculator-claim",
@@ -155,17 +155,17 @@ def _claim_path(ledger):
         source_boundary="exact supplied claim boundary",
         provenance_occurrence_references=(earlier_source.identity,),
     )
-    declared = record_declared_measurements_from_current_standing(
+    standing_measurement_responsibility_order = record_measurements_in_standing_measurement_responsibility_order_from_current_standing(
         ledger,
         locality_identity=source.locality_identity,
     )
-    standing = declared.locality_standing
+    standing = standing_measurement_responsibility_order.locality_standing
     direct_result = next(
         event
-        for event in declared.result_occurrences
+        for event in standing_measurement_responsibility_order.result_occurrences
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
-    claim_pair = _pair_measurement(ledger, declared)
+    claim_pair = _pair_measurement(ledger, standing_measurement_responsibility_order)
     pair_comparison = _pair_comparison(ledger, earlier_pair, claim_pair)
     standing = _standing(ledger)
     coordinate = _source_position_coordinate_reference(

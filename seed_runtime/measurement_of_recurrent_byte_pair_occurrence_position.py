@@ -1,6 +1,6 @@
 """Measure where one yielded recurrent byte-pair subject occurs.
 
-This is a declared Measurement result, not a Candidate, Admission, or Standing
+This is an exact Measurement result, not a Candidate, Admission, or Standing
 movement.  Its inputs remain two distinct occurrence references:
 
 * the recurrence Assertion yielded by an earlier byte-pair Measurement; and
@@ -50,7 +50,7 @@ RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
     "result of exact Measurement of recurrent byte-pair occurrence position"
 )
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "declared Measurement of recurrent byte-pair occurrence position"
+    "exact Measurement of recurrent byte-pair occurrence position"
 )
 RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "Measurement of each exact ordered position for one recurrent byte pair "

@@ -14,7 +14,7 @@ from seed_runtime.operator_material_boundary import (
 )
 
 
-class _DeclaredBytes(BytesIO):
+class _SuppliedEncodingBytes(BytesIO):
     encoding = "a declaration the byte boundary does not consult"
 
 
@@ -25,7 +25,7 @@ def test_binary_boundary_preserves_every_byte_without_text_conversion():
 
 
 def test_stream_encoding_metadata_does_not_change_exact_bytes():
-    material = operator_boundary_material(_DeclaredBytes(b"\xff\n"))
+    material = operator_boundary_material(_SuppliedEncodingBytes(b"\xff\n"))
 
     assert material.exact_bytes == b"\xff\n"
     assert not hasattr(material, "stream_encoding_metadata")

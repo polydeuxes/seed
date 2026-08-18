@@ -906,7 +906,7 @@ FIDELITY_SUBJECTS = {
         test_assignment_act_and_result_survive_separate_restarts,
         test_reopened_public_result_refuses_a_second_yield,
     ),
-    "declared_measurement_result": (
+    "exact_rule_measurement_result": (
         test_a_later_occurrence_does_not_revise_the_bounded_positions,
         test_supplied_reversal_cannot_replace_the_ledger_measurement,
         test_subclass_finding_cannot_replace_the_exact_measurement_type,
