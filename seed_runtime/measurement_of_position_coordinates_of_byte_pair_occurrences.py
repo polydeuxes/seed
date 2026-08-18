@@ -329,7 +329,7 @@ def _require_carried_standing_at_tip(
     source_ingest_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
-    """Validate a call-local Standing already advanced to the append tip."""
+    """Validate a call-local Standing at the latest event in its Locality."""
 
     if type(locality_standing) is not dict:
         raise ValueError(
@@ -363,12 +363,17 @@ def _require_carried_standing_at_tip(
             "byte-pair position-coordinate Measurement requires current Locality Standing"
         )
     boundary_event = ledger.get(boundary)
+    locality_events = (
+        ledger.list_locality(locality_identity)
+        if boundary_event is not None
+        else ()
+    )
     if (
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
         or ledger.integrity_of(boundary) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary)
-        != ledger.append_boundary()
+        or not locality_events
+        or locality_events[-1].identity != boundary
     ):
         raise ValueError(
             "byte-pair position-coordinate Measurement requires current Locality Standing"
@@ -414,6 +419,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             finding.source_ingest_occurrence_identity
         ),
     )
+    global_recording_boundary = ledger.append_boundary()
     identities = {
         "assignment_identity": new_identity(
             "byte_pair_occurrence_position_assignment"
@@ -433,6 +439,10 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     }
     if len(set(identities.values())) != len(identities):
         raise ValueError("byte-pair position-coordinate Measurement identities collapsed")
+    if ledger.append_boundary() != global_recording_boundary:
+        raise ValueError(
+            "byte-pair position-coordinate global recording boundary changed before assignment"
+        )
     return ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
         _assignment_material(

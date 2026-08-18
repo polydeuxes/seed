@@ -281,7 +281,7 @@ def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
     ]
 
 
-def test_carried_declaration_refuses_a_pin_followed_by_another_locality_append():
+def test_carried_declaration_accepts_current_locality_standing_after_another_locality_append():
     ledger = EventLedger()
     ingest_material(
         ledger,
@@ -296,16 +296,48 @@ def test_carried_declaration_refuses_a_pin_followed_by_another_locality_append()
         {"unknown": []},
         locality_identity="another-locality",
     )
-    boundary = ledger.append_boundary()
+    foreign_boundary = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="current append boundary"):
+    recorded = _record_declared_measurements_from_carried_standing(
+        ledger,
+        standing,
+        locality_identity="s",
+    )
+
+    assert recorded.result_occurrences
+    assert ledger.append_boundary() != foreign_boundary
+    assert all(
+        event.locality_identity == "s" for event in recorded.result_occurrences
+    )
+
+
+def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locality():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"pin\n",
+        source_role="exact supplied material",
+        source_boundary="exact pin boundary",
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    later = ledger.append(
+        "test.occurrence",
+        {"unknown": []},
+        locality_identity="s",
+    )
+
+    with pytest.raises(ValueError, match="current Locality Standing"):
         _record_declared_measurements_from_carried_standing(
             ledger,
             standing,
             locality_identity="s",
         )
 
-    assert ledger.append_boundary() == boundary
+    assert (
+        ledger.append_boundary_through_occurrence(later.identity)
+        == ledger.append_boundary()
+    )
 
 
 def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_path):

@@ -278,10 +278,6 @@ def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
         "material_order": "preserved",
-        "standing_not_established": {
-            "subject": "one_composite",
-            "coordinates": ["same_material_in_different_order"],
-        },
         "requires": ["exact_material", "exact_order", "exact_path"],
         "relations": {
             "of": {
@@ -292,14 +288,6 @@ def test_every_grammar_representation_composite_preserves_material_order():
                     "first_subject",
                     "second_subject",
                     "exact_order",
-                ],
-                "standing_not_established": [
-                    {
-                        "first_subject": "same_subjects_in_different_order",
-                        "relation": "establishes",
-                        "second_subject": "one_relation",
-                        "standing": "not_established",
-                    }
                 ],
             }
         },
@@ -2592,10 +2580,6 @@ def _relation_witness_specs() -> dict[str, dict]:
             "from": "Act_occurrence",
             "to": "result",
             "preserves": ["Act_occurrence_identity", "result_identity"],
-            "standing_not_established": {
-                "subject": ["one_result", "one_Yield_relation"],
-                "coordinates": ["same_result_content_in_distinct_Act_occurrences"],
-            },
             "requires": requirements,
         },
         "carried_by": {

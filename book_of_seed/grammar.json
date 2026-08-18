@@ -129,25 +129,13 @@
   },
   "composite": {
     "material_order": "preserved",
-    "standing_not_established": {
-      "subject": "one_composite",
-      "coordinates": ["same_material_in_different_order"]
-    },
     "requires": ["exact_material", "exact_order", "exact_path"],
     "relations": {
       "of": {
         "from": "second_subject",
         "to": "first_subject",
         "coordinate": "of",
-        "requires": ["first_subject", "second_subject", "exact_order"],
-        "standing_not_established": [
-          {
-            "first_subject": "same_subjects_in_different_order",
-            "relation": "establishes",
-            "second_subject": "one_relation",
-            "standing": "not_established"
-          }
-        ]
+        "requires": ["first_subject", "second_subject", "exact_order"]
       }
     }
   },
@@ -183,11 +171,7 @@
       "from": "Act_occurrence",
       "to": "result",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"],
-      "preserves": ["Act_occurrence_identity", "result_identity"],
-      "standing_not_established": {
-        "subject": ["one_result", "one_Yield_relation"],
-        "coordinates": ["same_result_content_in_distinct_Act_occurrences"]
-      }
+      "preserves": ["Act_occurrence_identity", "result_identity"]
     },
     "carried_by": {
       "book_clause": "02.Acts.A",
@@ -1555,10 +1539,6 @@
         "Standing_revision",
         "Stop"
       ],
-      "different_identity": {
-        "when": "asserted_content_is_different",
-        "result": "different_Assertion"
-      },
       "Unknown": {
         "may_carry": "Unknown"
       }

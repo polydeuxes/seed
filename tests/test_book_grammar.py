@@ -150,10 +150,7 @@ def test_witness_yield_relation_preserves_occurrence_and_result_coordinates():
         "Act_occurrence_identity",
         "result_identity",
     ]
-    assert grammar["relations"]["yield"]["standing_not_established"] == {
-        "subject": ["one_result", "one_Yield_relation"],
-        "coordinates": ["same_result_content_in_distinct_Act_occurrences"],
-    }
+    assert "standing_not_established" not in grammar["relations"]["yield"]
 
 
 def _assert_recorded_occurrence_kind_families(grammar):

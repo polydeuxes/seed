@@ -97,14 +97,17 @@ def _require_current_pin(
         raise ValueError("declared Measurement recording requires exact current Standing")
     boundary = standing.get("through_event_occurrence_identity")
     event = ledger.get(boundary) if type(boundary) is str and boundary else None
+    locality_events = (
+        ledger.list_locality(locality_identity) if event is not None else ()
+    )
     if (
         event is None
         or event.locality_identity != locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(event.identity)
-        != ledger.append_boundary()
+        or not locality_events
+        or locality_events[-1].identity != event.identity
     ):
-        raise ValueError("declared Measurement recording requires the current append boundary")
+        raise ValueError("declared Measurement recording requires current Locality Standing")
 
 
 def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:

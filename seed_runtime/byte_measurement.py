@@ -2052,12 +2052,17 @@ def _require_carried_byte_measurement_standing_at_tip(
             "byte Measurement requires exact current Locality Standing"
         )
     event = ledger.get(boundary)
+    locality_events = (
+        ledger.list_locality(recording_locality_identity)
+        if event is not None
+        else ()
+    )
     if (
         event is None
         or event.locality_identity != recording_locality_identity
         or ledger.integrity_of(boundary) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary)
-        != ledger.append_boundary()
+        or not locality_events
+        or locality_events[-1].identity != boundary
     ):
         raise ByteMeasurementError(
             "byte Measurement requires exact current Locality Standing"
@@ -2149,6 +2154,10 @@ def record_byte_measurement_responsibility_assignment(
         recording_locality_identity=recording_locality_identity,
         locality_standing=locality_standing,
     )
+    if ledger.append_boundary() != boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
     return _append_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=localities,
@@ -2180,6 +2189,10 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
             locality_standing=locality_standing,
         )
     )
+    if ledger.append_boundary() != boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
     return _append_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=localities,
