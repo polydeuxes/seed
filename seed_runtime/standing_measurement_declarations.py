@@ -389,14 +389,6 @@ def _discover_addressed_material_coordinate_measurement(
             != _addressed_byte_reference_result_reference(event)
         ):
             raise ValueError("current Standing carries an inexact addressed result")
-        source_reference = event.material.get("direct_pair_position_result_reference")
-        source_identity = (
-            source_reference.get("recorded_occurrence_identity")
-            if type(source_reference) is dict
-            else None
-        )
-        if type(source_identity) is not str or not source_identity:
-            raise ValueError("addressed Measurement result carries no exact direct source")
         if _addressed_material_subject_is_unmeasured(
                 ledger,
                 locality_identity=locality_identity,
@@ -405,7 +397,6 @@ def _discover_addressed_material_coordinate_measurement(
                     ledger,
                     standing,
                     locality_identity=locality_identity,
-                    excluded_result_identity=source_identity,
                 ),
             ):
             return occurrence_identity

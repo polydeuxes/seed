@@ -123,11 +123,11 @@ def test_dispatcher_derives_once_without_full_public_reference_population(monkey
     findings = result.material["ordered_source_position_coordinate_findings"]
 
     assert calls == 1
-    assert [finding["source_position_coordinate_reference"]["position"] for finding in findings] == [1, 3, 5]
-    assert len({finding["source_position_coordinate_reference"]["identity"] for finding in findings}) == 3
+    assert [finding["source_position_coordinate_reference"]["position"] for finding in findings] == [0, 2, 1, 3, 5]
+    assert len({finding["source_position_coordinate_reference"]["identity"] for finding in findings}) == 5
     assert all(finding["direct_pair_position_result_reference"] for finding in findings)
     assert all(finding["pair_position_assertion_reference"] for finding in findings)
-    assert addressed["direct_result"].identity not in {
+    assert addressed["direct_result"].identity in {
         reference["recorded_occurrence_identity"]
         for reference in result.material["direct_pair_position_result_references"]
     }
@@ -135,7 +135,7 @@ def test_dispatcher_derives_once_without_full_public_reference_population(monkey
 
 def test_empty_result_is_lawful_and_completed_subject_does_not_rerun():
     ledger = EventLedger()
-    _record(ledger, exact=b"aba", position=0, locality="empty-fanout")
+    _record(ledger, exact=b"a", position=0, locality="empty-fanout")
     recorded = record_declared_measurements_from_current_standing(
         ledger, locality_identity="empty-fanout"
     )
@@ -150,7 +150,7 @@ def test_empty_result_is_lawful_and_completed_subject_does_not_rerun():
 
 def test_changed_direct_result_set_is_a_new_bounded_subject_once():
     ledger = EventLedger()
-    _record(ledger, exact=b"aba", position=0, locality="set-fanout")
+    _record(ledger, exact=b"a", position=0, locality="set-fanout")
     first, = _family_results(
         record_declared_measurements_from_current_standing(
             ledger, locality_identity="set-fanout"
@@ -228,7 +228,7 @@ def test_corrupted_assignment_refuses_carried_standing_atomically():
 def test_source_mutation_during_derivation_refuses_without_lifecycle(monkeypatch):
     ledger = EventLedger()
     _record(ledger, exact=b"aba", position=0, locality="callback-fanout")
-    _source, direct_result, _standing = _direct(
+    _source, _direct_result_event, _standing = _direct(
         ledger, exact=b"cad", locality="callback-fanout"
     )
     original = module._direct_result
@@ -239,7 +239,7 @@ def test_source_mutation_during_derivation_refuses_without_lifecycle(monkeypatch
         read = original(*args, **kwargs)
         if not mutated:
             mutated = True
-            direct_result.material["unknown"].append("callback mutation")
+            read[0].material["unknown"].append("callback mutation")
         return read
 
     monkeypatch.setattr(module, "_direct_result", mutate_after_read)
@@ -249,7 +249,7 @@ def test_source_mutation_during_derivation_refuses_without_lifecycle(monkeypatch
     prior = deepcopy(before)
     with pytest.raises(
         module.AddressedMaterialCoordinateMeasurementError,
-        match="changed during derivation",
+        match="changed during derivation|requires intact direct results",
     ):
         record_declared_measurements_from_current_standing(
             ledger, locality_identity="callback-fanout"

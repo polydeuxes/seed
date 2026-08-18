@@ -291,7 +291,6 @@ def _population_references(
     standing: dict[str, Any],
     *,
     locality_identity: str,
-    excluded_result_identity: str,
 ) -> tuple[dict[str, str], ...]:
     measurements = standing.get("measurement_occurrences")
     if type(measurements) is not dict:
@@ -301,11 +300,7 @@ def _population_references(
     found = []
     for identity, carried in measurements.items():
         event = ledger.get(identity)
-        if (
-            identity == excluded_result_identity
-            or event is None
-            or event.kind != BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        ):
+        if event is None or event.kind != BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
             continue
         reference = _direct_result_reference(event)
         if carried != reference:
@@ -399,9 +394,6 @@ def _standing_source(
         ledger,
         standing,
         locality_identity=locality,
-        excluded_result_identity=addressed_result.material[
-            "direct_pair_position_result_reference"
-        ]["recorded_occurrence_identity"],
     )
     source_identities = (
         addressed_result.identity,
