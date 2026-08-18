@@ -1672,14 +1672,15 @@ def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represen
 ) -> tuple[
     tuple[
         str,
+        dict[str, Any],
         tuple[
-            tuple[dict[str, Any], dict[str, Any], dict[str, Any]],
+            tuple[dict[str, Any], dict[str, Any]],
             ...,
         ],
     ],
     ...,
 ]:
-    """Expose every cross-role representation path pair without one relation."""
+    """Read one unresolved relation per Candidate and every nested path pair."""
 
     readings = (
         exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
@@ -1692,11 +1693,11 @@ def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represen
     return tuple(
         (
             candidate_identity,
+            deepcopy(relation_coordinate),
             tuple(
                 (
                     deepcopy(first_path),
                     deepcopy(second_path),
-                    deepcopy(relation_coordinate),
                 )
                 for first_path in _exact_representation_paths(first)
                 for second_path in _exact_representation_paths(second)
