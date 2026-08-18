@@ -13,6 +13,7 @@ from compiled_material_invocation import IngestResultReference
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_position_pair_measurement,
+    get_byte_position_pair_measurement_responsibility_assignment,
 )
 from seed_runtime.events import EventLedger
 
@@ -77,7 +78,10 @@ def exact_references_to_recurrent_material_pairs(
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, measurement_occurrence_identity
     )
-    assignment = event.material["responsibility_assignment_evidence"]
+    reference = event.material["responsibility_assignment_reference"]
+    assignment = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger, reference["recorded_occurrence_identity"]
+    ).material
     source_occurrence_identities = tuple(
         reference["ingest_occurrence_identity"]
         for reference in assignment["source_occurrence_references"]

@@ -12,6 +12,8 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
+    get_byte_position_pair_measurement_responsibility_assignment,
+    assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -136,7 +138,7 @@ def test_one_console_call_revalidates_only_the_pair_crossing_a_callback(
     ledger, _earlier_source, _added, earlier, later = _inputs()
     standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
     full_reads = []
-    original = comparison_module._findings_of_recorded_byte_position_pair_measurement
+    original = comparison_module._validated_recorded_byte_position_pair_measurement
 
     def record(*args, **kwargs):
         full_reads.append(args[1])
@@ -144,7 +146,7 @@ def test_one_console_call_revalidates_only_the_pair_crossing_a_callback(
 
     monkeypatch.setattr(
         comparison_module,
-        "_findings_of_recorded_byte_position_pair_measurement",
+        "_validated_recorded_byte_position_pair_measurement",
         record,
     )
     result, standing = (
@@ -625,12 +627,22 @@ def test_stale_pair_measurement_is_not_reused_as_the_current_premise():
     )
     assert len(current_pairs) == 2
     assert current_pairs[0].identity == stale_pair.identity
-    assert current_pairs[1].material["responsibility_assignment_evidence"][
-        "source_occurrence_references"
-    ] == [
-        {"ingest_occurrence_identity": stale_pair.material[
-            "responsibility_assignment_evidence"
-        ]["source_occurrence_references"][0]["ingest_occurrence_identity"]},
+    current_assignment = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger,
+        current_pairs[1].material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    stale_assignment = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger,
+        stale_pair.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    assert current_assignment.material["source_occurrence_references"] == [
+        {"ingest_occurrence_identity": stale_assignment.material[
+            "source_occurrence_references"
+        ][0]["ingest_occurrence_identity"]},
         {"ingest_occurrence_identity": second_corpus_occurrence.identity},
     ]
 
@@ -697,6 +709,70 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
     )
     assert last_representation["source_occurrence_reference"] == comparison_identity
     resumed.close()
+
+
+@pytest.mark.parametrize(
+    ("later_material", "expected_finding_counts"),
+    (
+        (b"bc\n", (0, 2)),
+        (b"b", (0, 0)),
+    ),
+)
+def test_zero_pair_premise_comparison_survives_console_and_reopen(
+    tmp_path, later_material, expected_finding_counts
+):
+    database = tmp_path / ("zero-pair-" + str(len(later_material)) + ".sqlite")
+    ledger = SQLiteEventLedger(str(database))
+    ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"a",
+        source_role="operator",
+        source_boundary="one-byte durable corpus occurrence",
+    )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(later_material),
+        output_stream=StringIO(),
+    )
+    pair_identities = tuple(
+        event.identity
+        for event in ledger.list()
+        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+    )
+    comparison = next(
+        event
+        for event in reversed(ledger.list())
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+    assert tuple(
+        len(
+            assertions_of_recorded_byte_position_pair_measurement(
+                ledger, identity
+            )
+            or ()
+        )
+        for identity in pair_identities
+    ) == expected_finding_counts
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    assert get_recorded_pair_measurement_comparison(
+        reopened, comparison.identity
+    ) == comparison.material
+    pair_count = len(pair_identities)
+    run_persistent_operator_console(
+        ledger=reopened,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b""),
+        output_stream=StringIO(),
+    )
+    assert sum(
+        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+        for event in reopened.list()
+    ) == pair_count
+    reopened.close()
 
 
 def test_carried_compare_result_is_one_structured_representation_source():

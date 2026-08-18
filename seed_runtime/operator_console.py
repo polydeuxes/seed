@@ -9,8 +9,9 @@ from seed_runtime.byte_measurement import (
     _record_byte_measurement_responsibility_assignment_from_carried_standing,
     _record_byte_measurement_responsible_act_evidence_from_carried_standing,
     _record_byte_measurement_result_from_carried_act_evidence,
+    _record_byte_position_pair_count_layer_from_carried_locality_standing,
+    get_byte_position_pair_measurement_responsibility_assignment,
     record_byte_measurement_responsibility_assignment,
-    record_byte_position_pair_count_layer,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
@@ -95,7 +96,6 @@ from seed_runtime.operator_locality_standing import (
     _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
     _carry_byte_pair_occurrence_position_measurement_result_into_standing,
     _carry_operator_material_acquisition_occurrence_into_standing,
-    _carry_recorded_pair_measurement_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
@@ -471,37 +471,13 @@ def _record_pair_measurement(
 ):
     """Record one pair Measurement only after an exact consumer relation exists."""
 
-    prior_through_event_occurrence_identity = standing[
-        "through_event_occurrence_identity"
-    ]
-    pair_measurement = record_byte_position_pair_count_layer(
-        ledger,
-        source_measurement_event_identity=byte_measurement_event_identity,
-        recording_locality_identity=locality_identity,
-    )
-    applicability = ledger.get(
-        pair_measurement.material["input_applicability_event_identity"]
-    )
-    if applicability is None:
-        raise ValueError("recorded pair Measurement carries no Applicability")
-    standing = _advance_over(
-        ledger,
-        standing,
-        (
-            applicability.material["responsible_act_evidence_identity"],
-            applicability.material["evidence_of_yield_relation_identity"],
-            applicability.identity,
-            pair_measurement.material["responsible_act_evidence_identity"],
-            pair_measurement.material["evidence_of_yield_relation_identity"],
-        ),
-        locality_identity=locality_identity,
-    )
-    standing = _carry_recorded_pair_measurement_into_standing(
-        standing,
-        pair_measurement,
-        prior_through_event_occurrence_identity=(
-            prior_through_event_occurrence_identity
-        ),
+    pair_measurement, standing = (
+        _record_byte_position_pair_count_layer_from_carried_locality_standing(
+            ledger,
+            source_measurement_event_identity=byte_measurement_event_identity,
+            recording_locality_identity=locality_identity,
+            locality_standing=standing,
+        )
     )
     return standing, pair_measurement
 
@@ -522,11 +498,23 @@ def _pair_premise_for_existing_material(
     )
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
         event = ledger.get(event_identity)
-        source_occurrence_references = (
-            event.material.get("responsibility_assignment_evidence", {}).get(
-                "source_occurrence_references"
-            )
+        reference = (
+            event.material.get("responsibility_assignment_reference")
             if event is not None
+            else None
+        )
+        try:
+            assignment = get_byte_position_pair_measurement_responsibility_assignment(
+                ledger,
+                reference.get("recorded_occurrence_identity")
+                if type(reference) is dict
+                else None,
+            )
+        except (TypeError, ValueError):
+            assignment = None
+        source_occurrence_references = (
+            assignment.material.get("source_occurrence_references")
+            if assignment is not None
             else None
         )
         if (

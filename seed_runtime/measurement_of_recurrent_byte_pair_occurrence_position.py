@@ -18,7 +18,7 @@ from typing import Any, NamedTuple
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-    _findings_of_recorded_byte_position_pair_measurement,
+    _validated_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -307,13 +307,14 @@ def _references_to_recorded_recurrent_byte_pairs(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ValueError("recurrent pair reference requires one intact pair Measurement")
-    findings = _findings_of_recorded_byte_position_pair_measurement(
-        ledger, event.identity
+    reading = _validated_recorded_byte_position_pair_measurement(
+        ledger, event.identity, findings_only=True
     )
+    findings = reading.results if reading is not None else None
     findings_by_identity = {
         finding.assertion_identity: finding for finding in findings or ()
     }
-    assignment = event.material.get("responsibility_assignment_evidence")
+    assignment = reading.assignment.material if reading is not None else None
     sources = (
         assignment.get("source_occurrence_references")
         if isinstance(assignment, dict)

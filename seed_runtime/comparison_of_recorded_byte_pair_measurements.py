@@ -8,7 +8,8 @@ from typing import Any
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _RecordedBytePairFinding,
-    _findings_of_recorded_byte_position_pair_measurement,
+    _validated_recorded_byte_position_pair_measurement,
+    get_byte_position_pair_measurement_responsibility_assignment,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -104,7 +105,7 @@ def _measurement_reference(event: Event) -> dict[str, str]:
 
 def _measurement_and_findings(
     ledger: EventLedger, event_identity: str
-) -> tuple[Event, tuple[Any, ...]]:
+) -> tuple[Event, tuple[Any, ...], Event]:
     event_identity = _identity(
         event_identity, "comparison requires one exact recorded Measurement result"
     )
@@ -118,18 +119,19 @@ def _measurement_and_findings(
             "comparison requires one intact recorded byte-position-pair Measurement"
         )
     try:
-        findings = _findings_of_recorded_byte_position_pair_measurement(
-            ledger, event.identity
+        reading = _validated_recorded_byte_position_pair_measurement(
+            ledger, event.identity, findings_only=True
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires one intact recorded byte-position-pair Measurement"
         ) from error
-    if type(findings) is not tuple or not findings:
+    findings = reading.results if reading is not None else None
+    if type(findings) is not tuple or reading is None:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires exact recorded pair findings"
         )
-    return event, findings
+    return event, findings, reading.assignment
 
 
 def _findings_from_carried_measurement(
@@ -146,7 +148,7 @@ def _findings_from_carried_measurement(
             "comparison requires one carried pair Measurement"
         )
     assertions = event.material.get("assertions")
-    if type(assertions) is not list or not assertions:
+    if type(assertions) is not list:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires one carried pair Measurement"
         )
@@ -221,8 +223,23 @@ def _findings_from_carried_measurement(
     return tuple(findings)
 
 
-def _source_occurrence_references(event: Event) -> tuple[str, ...]:
-    assignment = event.material.get("responsibility_assignment_evidence")
+def _source_occurrence_references(
+    ledger: EventLedger, event: Event
+) -> tuple[str, ...]:
+    reference = event.material.get("responsibility_assignment_reference")
+    assignment_event = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger,
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
+        else None,
+    )
+    assignment = assignment_event.material
+    return _source_occurrence_references_from_assignment(assignment)
+
+
+def _source_occurrence_references_from_assignment(
+    assignment: dict[str, Any],
+) -> tuple[str, ...]:
     source_material = (
         assignment.get("source_occurrence_references")
         if type(assignment) is dict
@@ -252,10 +269,10 @@ def _comparison_inputs(
     earlier_result_event_identity: str,
     later_result_event_identity: str,
 ) -> dict[str, Any]:
-    earlier, earlier_findings = _measurement_and_findings(
+    earlier, earlier_findings, earlier_assignment = _measurement_and_findings(
         ledger, earlier_result_event_identity
     )
-    later, later_findings = _measurement_and_findings(
+    later, later_findings, later_assignment = _measurement_and_findings(
         ledger, later_result_event_identity
     )
     if earlier.identity == later.identity or earlier.locality_identity != later.locality_identity:
@@ -275,8 +292,12 @@ def _comparison_inputs(
         raise RecordedPairMeasurementComparisonError(
             "later comparison input must follow the earlier input"
         )
-    earlier_sources = _source_occurrence_references(earlier)
-    later_sources = _source_occurrence_references(later)
+    earlier_sources = _source_occurrence_references_from_assignment(
+        earlier_assignment.material
+    )
+    later_sources = _source_occurrence_references_from_assignment(
+        later_assignment.material
+    )
     if len(later_sources) != len(earlier_sources) + 1 or later_sources[:-1] != earlier_sources:
         raise RecordedPairMeasurementComparisonError(
             "later Measurement must extend the earlier exact source sequence once"
@@ -460,7 +481,7 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "comparison requires first and second carried pair Measurements"
         )
-    earlier, earlier_findings = _measurement_and_findings(
+    earlier, earlier_findings, earlier_assignment = _measurement_and_findings(
         ledger, earlier.identity
     )
     carried = locality_standing.get("measurement_occurrences")
@@ -488,8 +509,10 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "later comparison input must follow the earlier input"
         )
-    earlier_sources = _source_occurrence_references(earlier)
-    later_sources = _source_occurrence_references(later)
+    earlier_sources = _source_occurrence_references_from_assignment(
+        earlier_assignment.material
+    )
+    later_sources = _source_occurrence_references(ledger, later)
     if (
         len(later_sources) != len(earlier_sources) + 1
         or later_sources[:-1] != earlier_sources

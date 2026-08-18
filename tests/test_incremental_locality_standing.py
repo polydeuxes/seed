@@ -30,6 +30,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
+    read_operator_locality_standing_through,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
@@ -45,6 +46,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
@@ -418,18 +420,67 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
         ledger, locality_identity="s"
     )
     assert reads == [pair_measurement.identity]
-    with pytest.raises(ValueError, match="follow its carried Act and Yield"):
-        operator_console._carry_recorded_pair_measurement_into_standing(
-            dict(standing),
-            pair_measurement,
-            prior_through_event_occurrence_identity="crossed-boundary",
+    assert not hasattr(
+        operator_console, "_carry_recorded_pair_measurement_into_standing"
+    )
+
+
+def test_corrupted_pair_assignment_refusal_leaves_incremental_standing_unchanged():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"abab",
+        source_role="material witness",
+        source_boundary="exact pair material",
+    )
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=measurement_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
+    )
+    measurement = record_byte_measurement_result(
+        ledger, responsible_act_evidence_event_identity=measurement_act.identity
+    )
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=measurement.identity,
+        recording_locality_identity="s",
+    )
+    assignment = ledger.get(
+        pair.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    prior = read_operator_locality_standing_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=assignment.material[
+            "standing_boundary_identity"
+        ],
+    )
+    unchanged = deepcopy(prior)
+    assignment.material["unknown"] = ["forged-partial-standing"]
+
+    with pytest.raises(ValueError, match="assignment coordinates are not exact"):
+        advance_operator_locality_standing(
+            ledger,
+            [assignment.identity],
+            locality_identity="s",
+            prior=prior,
         )
-    with pytest.raises(ValueError, match="Standing is not exact"):
-        operator_console._carry_recorded_pair_measurement_into_standing(
-            standing,
-            pair_measurement,
-            prior_through_event_occurrence_identity=pair_measurement.identity,
-        )
+
+    assert prior == unchanged
 
 
 def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(

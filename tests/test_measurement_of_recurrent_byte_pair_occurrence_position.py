@@ -581,16 +581,18 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     order_read_count = 0
     boundary_read_count = 0
     pair_result_read = (
-        pair_occurrence_measurement._findings_of_recorded_byte_position_pair_measurement
+        pair_occurrence_measurement._validated_recorded_byte_position_pair_measurement
     )
     source_read = pair_occurrence_measurement._exact_ingest_event
     order_read = ledger.occurrences_in_append_order
     boundary_read = ledger.list_locality
 
-    def witness_pair_result_read(ledger, event_identity):
+    def witness_pair_result_read(ledger, event_identity, *, findings_only):
         nonlocal pair_result_read_count
         pair_result_read_count += 1
-        return pair_result_read(ledger, event_identity)
+        return pair_result_read(
+            ledger, event_identity, findings_only=findings_only
+        )
 
     def witness_source_read(ledger, event_identity):
         nonlocal source_read_count
@@ -611,7 +613,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
 
     monkeypatch.setattr(
         pair_occurrence_measurement,
-        "_findings_of_recorded_byte_position_pair_measurement",
+        "_validated_recorded_byte_position_pair_measurement",
         witness_pair_result_read,
     )
     monkeypatch.setattr(
@@ -621,7 +623,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
         ledger, "occurrences_in_append_order", witness_order_read
     )
     monkeypatch.setattr(ledger, "list_locality", witness_boundary_read)
-    pair_result_read(ledger, pair.identity)
+    pair_result_read(ledger, pair.identity, findings_only=True)
     exact_pair_read_order_count = order_read_count
     exact_pair_read_boundary_count = boundary_read_count
     pair_result_read_count = 0

@@ -9,6 +9,7 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -29,7 +30,7 @@ from seed_runtime.byte_measurement import (
     _validate_moved_byte_assertion,
     _identity,
     _pair_assertion_identity,
-    _pair_input_applicability,
+    get_byte_position_pair_measurement_responsibility_assignment,
     get_recorded_pair_input_applicability,
     get_byte_measurement_responsibility_assignment,
     get_assertion_locality_movement_responsibility_assignment,
@@ -57,6 +58,7 @@ from seed_runtime.operator_locality_standing import (
     _carry_byte_measurement_assignment_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
+    read_operator_locality_standing_through,
 )
 from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
 from seed_runtime.material_ingest import (
@@ -151,6 +153,29 @@ class IntegrityCountingLedger(EventLedger):
         if event_identity in self.corrupted:
             return CORRUPTED
         return super().integrity_of(event_identity)
+
+
+class YieldCallbackLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self.callback_boundary = None
+        self.callback_recorded = False
+
+    def append(self, kind, material, **kwargs):
+        event = super().append(kind, material, **kwargs)
+        if (
+            not self.callback_recorded
+            and self.callback_boundary is not None
+            and kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+            and material.get("occurrence_boundary") == self.callback_boundary
+        ):
+            self.callback_recorded = True
+            super().append(
+                "test.unrelated_callback",
+                {"unknown": ["unrelated append after Yield"]},
+                locality_identity="unrelated",
+            )
+        return event
 
 
 def _ledger(text="猫\n狗\n"):
@@ -343,9 +368,9 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
     )
 
     assert assignment.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-    assert standing["responsibility_assignment_occurrences"] == {
-        assignment.identity: None
-    }
+    assert standing["responsibility_assignment_occurrences"].get(
+        assignment.identity, object()
+    ) is None
     assert "standing" not in assignment.material
     act = record_byte_measurement_responsible_act_evidence(
         ledger,
@@ -1539,7 +1564,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         for name in evidence.material["coordinates_of_carried_result"]
     }
 
-    with pytest.raises(ByteMeasurementError, match="historical input Applicability"):
+    with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
         assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
@@ -1559,33 +1584,329 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
 def test_applicability_identity_is_bound_to_one_exact_downstream_act():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
-    source = next(
-        item
-        for item in assertions_of_recorded_byte_measurement(ledger, source_event.identity)
-        if item.result == "exact_source_material_set"
-    )
-    first = _pair_input_applicability(
+    first_result = record_byte_position_pair_count_layer(
         ledger,
-        source,
-        downstream_act_identity="pair-act-1",
-        applicability_act_identity="applicability-act-1",
-        applicability_act_occurrence_identity="applicability-occurrence-1",
-        measurement_locality_identity="byte-measurement",
+        source_measurement_event_identity=source_event.identity,
+        recording_locality_identity="byte-measurement",
     )
-    second = _pair_input_applicability(
+    second_result = record_byte_position_pair_count_layer(
         ledger,
-        source,
-        downstream_act_identity="pair-act-2",
-        applicability_act_identity="applicability-act-2",
-        applicability_act_occurrence_identity="applicability-occurrence-2",
-        measurement_locality_identity="byte-measurement",
+        source_measurement_event_identity=source_event.identity,
+        recording_locality_identity="byte-measurement",
+    )
+    first = input_applicability_of_recorded_byte_position_pair_measurement(
+        ledger, first_result.identity
+    )
+    second = input_applicability_of_recorded_byte_position_pair_measurement(
+        ledger, second_result.identity
+    )
+    first_assignment = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger,
+        first["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
     assert first["responsibility"]
-    assert first["responsibility"] != first["assigned_by_responsibility"]
-    assert first["downstream_act_identity"] == "pair-act-1"
+    assert first_assignment.kind == (
+        BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    )
+    assert first["responsibility_assignment_reference"]["assignment_identity"] == (
+        first_assignment.material["assignment_identity"]
+    )
+    assert first["downstream_act_identity"] == first_assignment.material[
+        "measurement_act_identity"
+    ]
     assert first["downstream_act_occurrence_identity"] is None
+
+
+def test_pair_assignment_enters_current_standing_before_distinct_acts_and_result():
+    ledger = _ledger("tata\n")
+    source = _byte_source(ledger)
+    result = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    assignment = get_byte_position_pair_measurement_responsibility_assignment(
+        ledger,
+        result.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    applicability = ledger.get(result.material["input_applicability_event_identity"])
+    applicability_act = ledger.get(
+        applicability.material["responsible_act_evidence_identity"]
+    )
+    measurement_act = ledger.get(result.material["responsible_act_evidence_identity"])
+    standing = read_operator_locality_standing_through(
+        ledger,
+        locality_identity="measurement",
+        through_event_occurrence_identity=assignment.identity,
+    )
+
+    assert standing["responsibility_assignment_occurrences"].get(
+        assignment.identity, object()
+    ) is None
+    identities = {
+        assignment.material[key]
+        for key in (
+            "assignment_identity",
+            "assignment_subject_identity",
+            "applicability_act_identity",
+            "applicability_act_occurrence_identity",
+            "applicability_result_identity",
+            "measurement_act_identity",
+            "measurement_act_occurrence_identity",
+            "measurement_result_identity",
+        )
+    }
+    assert len(identities) == 8
+    for event in (assignment, applicability_act, applicability, measurement_act, result):
+        assert "standing" not in event.material
+        assert "responsibility_assignment_evidence" not in event.material
+    assert applicability_act.material["responsibility_assignment_reference"] == (
+        result.material["responsibility_assignment_reference"]
+    )
+    assert measurement_act.material["responsibility_assignment_reference"] == (
+        result.material["responsibility_assignment_reference"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("boundary", "message"),
+    (
+        ("byte_pair_applicability", "Applicability result requires its exact Yield"),
+        ("byte_pair_measurement", "Measurement result requires its exact Yield"),
+    ),
+)
+def test_pair_result_refuses_an_append_between_yield_and_result(boundary, message):
+    ledger = YieldCallbackLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=binary_input("tata\n"),
+        output_stream=StringIO(),
+    )
+    source = _byte_source(ledger)
+    ledger.callback_boundary = boundary
+
+    with pytest.raises(ByteMeasurementError, match=message):
+        record_byte_position_pair_count_layer(
+            ledger,
+            source_measurement_event_identity=source.identity,
+            recording_locality_identity="measurement",
+        )
+
+    assert ledger.callback_recorded is True
+    assert not any(
+        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        for event in ledger.list()
+    )
+
+
+def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts():
+    from seed_runtime import byte_measurement
+    from seed_runtime.operator_locality_standing import (
+        _carry_pair_applicability_act_into_standing,
+        _carry_pair_applicability_result_into_standing,
+        _carry_pair_measurement_act_into_standing,
+        _carry_pair_measurement_assignment_into_standing,
+    )
+
+    ledger = _ledger("tata\n")
+    source_event = _byte_source(ledger)
+    source, scope, content = byte_measurement._prepare_pair_source(
+        ledger,
+        source_measurement_event_identity=source_event.identity,
+        measurement_locality_identity="byte-measurement",
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="byte-measurement"
+    )
+    boundary = byte_measurement._require_carried_pair_measurement_standing_at_tip(
+        ledger,
+        source=source,
+        recording_locality_identity="byte-measurement",
+        locality_standing=standing,
+    )
+    assignment = byte_measurement._append_pair_measurement_responsibility_assignment(
+        ledger,
+        source=source,
+        scope=scope,
+        content=content,
+        recording_locality_identity="byte-measurement",
+        standing_boundary_identity=boundary,
+    )
+    standing = _carry_pair_measurement_assignment_into_standing(
+        ledger,
+        standing,
+        assignment,
+        source,
+        prior_through_event_occurrence_identity=boundary,
+    )
+    forged = deepcopy(assignment)
+    forged.material["measurement_act_identity"] = "forged-measurement-act"
+    event_count = len(ledger.list())
+    with pytest.raises(ByteMeasurementError, match="assignment is not exact"):
+        byte_measurement._record_pair_input_applicability_act_from_carried_assignment(
+            ledger,
+            assignment=forged,
+            source=source,
+            responsibility_assignment_standing=standing,
+        )
+    assert len(ledger.list()) == event_count
+
+    applicability = byte_measurement._pair_input_applicability(
+        ledger,
+        source,
+        assignment=assignment,
+        measurement_locality_identity="byte-measurement",
+    )
+    applicability_act = (
+        byte_measurement._record_pair_input_applicability_act_from_carried_assignment(
+            ledger,
+            assignment=assignment,
+            source=source,
+            responsibility_assignment_standing=standing,
+        )
+    )
+    standing = _carry_pair_applicability_act_into_standing(
+        ledger,
+        standing,
+        applicability_act,
+        assignment=assignment,
+        source=source,
+        prior_through_event_occurrence_identity=assignment.identity,
+    )
+    unchanged = deepcopy(standing)
+    with pytest.raises(ValueError, match="order is not exact"):
+        _carry_pair_applicability_act_into_standing(
+            ledger,
+            standing,
+            applicability_act,
+            assignment=assignment,
+            source=source,
+            prior_through_event_occurrence_identity=applicability_act.identity,
+        )
+    assert standing == unchanged
+
+    applicability_event = (
+        byte_measurement._record_pair_input_applicability_result_from_carried_act(
+            ledger,
+            assignment=assignment,
+            source=source,
+            applicability_act_evidence=applicability_act,
+            applicability_assertion=applicability,
+        )
+    )
+    standing = _carry_pair_applicability_result_into_standing(
+        ledger,
+        standing,
+        applicability_event,
+        assignment=assignment,
+        source=source,
+        applicability_act_evidence=applicability_act,
+        prior_through_event_occurrence_identity=applicability_act.identity,
+    )
+    measurement_act = byte_measurement._record_pair_measurement_act_from_carried_applicability(
+        ledger,
+        assignment=assignment,
+        source=source,
+        applicability_event=applicability_event,
+        locality_standing=standing,
+    )
+    standing = _carry_pair_measurement_act_into_standing(
+        ledger,
+        standing,
+        measurement_act,
+        assignment=assignment,
+        source=source,
+        applicability_event=applicability_event,
+        applicability_act_evidence=applicability_act,
+        prior_through_event_occurrence_identity=applicability_event.identity,
+    )
+    unchanged = deepcopy(standing)
+    with pytest.raises(ValueError, match="order is not exact"):
+        _carry_pair_measurement_act_into_standing(
+            ledger,
+            standing,
+            measurement_act,
+            assignment=assignment,
+            source=source,
+            applicability_event=applicability_event,
+            applicability_act_evidence=applicability_act,
+            prior_through_event_occurrence_identity=measurement_act.identity,
+        )
+    assert standing == unchanged
+
+
+def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument():
+    import inspect
+    from seed_runtime import byte_measurement
+
+    assert "measured" not in inspect.signature(
+        byte_measurement._record_pair_measurement_result_from_carried_act
+    ).parameters
+    ledger = _ledger("abab\n")
+    source = _byte_source(ledger)
+    result = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    counts = {
+        tuple(assertion["assertion_subject"]["representation"]): assertion[
+            "dimensions"
+        ]["content"]["count"]
+        for assertion in result.material["assertions"]
+        if assertion["result"] == "count"
+    }
+    assert counts[(97, 98)] == 2
+
+
+def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypatch):
+    from seed_runtime import byte_measurement
+
+    ledger = _ledger("abab\n")
+    source = _byte_source(ledger)
+    original = byte_measurement._ingested_bytes
+    callback_recorded = False
+
+    def append_during_pair_measurement(ledger, ingest):
+        nonlocal callback_recorded
+        events = ledger.list()
+        tip = events[-1] if events else None
+        if (
+            not callback_recorded
+            and tip is not None
+            and tip.kind
+            == "operator.measurement.byte_position_pair_responsible_act_evidenced"
+        ):
+            callback_recorded = True
+            ledger.append(
+                "test.unrelated_pair_measurement_callback",
+                {"unknown": ["unrelated append during pair Measurement"]},
+                locality_identity="unrelated",
+            )
+        return original(ledger, ingest)
+
+    monkeypatch.setattr(
+        byte_measurement, "_ingested_bytes", append_during_pair_measurement
+    )
+    with pytest.raises(ByteMeasurementError, match="Act at the append tip"):
+        record_byte_position_pair_count_layer(
+            ledger,
+            source_measurement_event_identity=source.identity,
+            recording_locality_identity="measurement",
+        )
+
+    assert callback_recorded is True
+    assert not any(
+        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        for event in ledger.list()
+    )
 
 
 def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
@@ -1596,23 +1917,13 @@ def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
         for item in assertions_of_recorded_byte_measurement(ledger, source_event.identity)
         if item.result == "exact_source_material_set"
     )
-    detached = source.material
-    detached["dimensions"]["standing"] = "reported"
-    detached_source = type(source)(
-        assertion_identity=source.assertion_identity,
-        recorded_occurrence_identity=source.recorded_occurrence_identity,
-        representation=source.representation,
-        result=source.result,
-        _material_json=json.dumps(detached),
-        _support_assertion_refs_json="[]",
-    )
-    applicable = _pair_input_applicability(
+    result = record_byte_position_pair_count_layer(
         ledger,
-        detached_source,
-        downstream_act_identity="pair-act-exact-standing",
-        applicability_act_identity="applicability-act-exact-standing",
-        applicability_act_occurrence_identity="applicability-occurrence-exact-standing",
-        measurement_locality_identity="byte-measurement",
+        source_measurement_event_identity=source_event.identity,
+        recording_locality_identity="byte-measurement",
+    )
+    applicable = input_applicability_of_recorded_byte_position_pair_measurement(
+        ledger, result.identity
     )
 
     assert applicable["dimensions"]["standing"] == "applicable"
@@ -2377,7 +2688,7 @@ def test_pair_applicability_reader_refuses_changed_yield_result_identity():
     )
     evidence.material["result_identity"] = "crossed-applicability-result"
 
-    with pytest.raises(ByteMeasurementError, match="Applicability yield Evidence"):
+    with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
         get_recorded_pair_input_applicability(ledger, applicability.identity)
 
 
@@ -2394,7 +2705,7 @@ def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch)
         raise ByteMeasurementError("detached input Standing")
 
     monkeypatch.setattr(
-        "seed_runtime.byte_measurement._recorded_input_assertion_standing",
+        "seed_runtime.byte_measurement.assertions_of_recorded_byte_measurement",
         refuse_detached_standing,
     )
     with pytest.raises(ByteMeasurementError, match="detached input Standing"):
@@ -2440,6 +2751,8 @@ FIDELITY_SUBJECTS = {
         test_yield_refuses_missing_responsible_act_evidence,
         test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities,
         test_seed_native_responsibility_is_earned_from_preserved_occurrences,
+        test_pair_assignment_enters_current_standing_before_distinct_acts_and_result,
+        test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts,
     ),
     "exact_act_occurrence": (
         test_pair_act_identity_is_not_its_occurrence_identity,
@@ -2451,6 +2764,8 @@ FIDELITY_SUBJECTS = {
         test_yield_resolves_the_exact_act_evidence_after_reopen,
         test_material_appended_after_act_evidence_cannot_enter_its_result,
         test_yield_refuses_a_different_occurrence_kind,
+        test_pair_result_refuses_an_append_between_yield_and_result,
+        test_pair_result_rechecks_measurement_act_tip_after_source_callback,
     ),
     "declared_measurement_result": (
         test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
@@ -2474,6 +2789,7 @@ FIDELITY_SUBJECTS = {
         test_position_pair_measurement_remains_byte_not_character_based,
         test_recorded_pair_results_replay_the_complete_bounded_source_read,
         test_pair_validation_refuses_a_self_consistent_truncated_result_inputs,
+        test_pair_result_is_derived_from_source_without_a_measured_carrier_argument,
         test_pair_validation_does_not_perform_the_pair_measurement_again,
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,

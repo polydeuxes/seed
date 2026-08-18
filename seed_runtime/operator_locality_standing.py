@@ -16,6 +16,11 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RESULT_KIND,
+    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
@@ -30,6 +35,15 @@ from seed_runtime.byte_measurement import (
     _read_assertion_locality_movement_responsibility_assignment,
     _read_assertion_locality_movement_act_evidence,
     _read_byte_measurement_responsibility_assignment,
+    _read_pair_measurement_responsibility_assignment,
+    _read_pair_applicability_act_evidence,
+    _read_recorded_pair_input_applicability,
+    _read_pair_measurement_act_evidence,
+    _require_exact_pair_measurement_assignment_event,
+    _require_exact_pair_applicability_act_event,
+    _require_exact_pair_applicability_result_event,
+    _require_exact_pair_measurement_act_event,
+    _require_exact_pair_measurement_result_event,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
 )
@@ -275,6 +289,7 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -288,6 +303,13 @@ _ASSERTION_LOCALITY_MOVEMENT_KINDS = {
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
+}
+_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
+    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -353,6 +375,7 @@ _SUPPORTED_KINDS = {
     *_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
     *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
+    *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
@@ -861,6 +884,7 @@ def advance_operator_locality_standing(
             or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
+            or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
@@ -875,19 +899,86 @@ def advance_operator_locality_standing(
             continue
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingest event: {event.kind}")
-        event_count += 1
         prior_through_event_occurrence_identity = through_event_occurrence_identity
-        through_event_occurrence_identity = event.identity
-        for key, collected in (
-            ("known_loss", known_loss),
-            ("unknown", unknown),
-            ("conflicts", conflicts),
-        ):
-            for value in event.material.get(key, ()):
-                _record_distinct(collected, value)
-        if _carries_exact_result(ledger, event):
-            exact_result_occurrences[event.identity] = None
+        pair_lifecycle_event = event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
+        if not pair_lifecycle_event:
+            event_count += 1
+            through_event_occurrence_identity = event.identity
+            for key, collected in (
+                ("known_loss", known_loss),
+                ("unknown", unknown),
+                ("conflicts", conflicts),
+            ):
+                for value in event.material.get(key, ()):
+                    _record_distinct(collected, value)
+            if _carries_exact_result(ledger, event):
+                exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+            continue
+        pair_prior_standing = {
+            "locality_identity": locality_identity,
+            "through_event_occurrence_identity": (
+                prior_through_event_occurrence_identity
+            ),
+            "measurement_occurrences": measurement_occurrences,
+            "exact_result_occurrences": exact_result_occurrences,
+            "responsibility_assignment_occurrences": (
+                responsibility_assignment_occurrences
+            ),
+            "applicability_result_occurrences": (
+                applicability_result_occurrences
+            ),
+        }
+        if pair_lifecycle_event:
+            if (
+                event.kind
+                == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            ):
+                _read_pair_measurement_responsibility_assignment(
+                    ledger,
+                    event.identity,
+                    prior_standing=pair_prior_standing,
+                )
+                responsibility_assignment_occurrences[event.identity] = None
+            elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND:
+                _read_pair_applicability_act_evidence(
+                    ledger,
+                    event.identity,
+                    prior_standing=pair_prior_standing,
+                )
+            elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
+                _read_recorded_pair_input_applicability(
+                    ledger,
+                    event.identity,
+                    prior_standing=pair_prior_standing,
+                )
+                applicability_result_occurrences[event.identity] = None
+            elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND:
+                _read_pair_measurement_act_evidence(
+                    ledger,
+                    event.identity,
+                    prior_standing=pair_prior_standing,
+                )
+            else:
+                _findings_of_recorded_byte_position_pair_measurement(
+                    ledger,
+                    event.identity,
+                    prior_standing=pair_prior_standing,
+                )
+                measurement_occurrences[event.identity] = (
+                    _measurement_occurrence_coordinates(event)
+                )
+            event_count += 1
+            through_event_occurrence_identity = event.identity
+            for key, collected in (
+                ("known_loss", known_loss),
+                ("unknown", unknown),
+                ("conflicts", conflicts),
+            ):
+                for value in event.material.get(key, ()):
+                    _record_distinct(collected, value)
+            if _carries_exact_result(ledger, event):
+                exact_result_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
             _read_byte_measurement_responsibility_assignment(
@@ -1200,14 +1291,6 @@ def advance_operator_locality_standing(
                 _measurement_occurrence_coordinates(event)
             )
             continue
-        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
-            _findings_of_recorded_byte_position_pair_measurement(
-                ledger, event.identity
-            )
-            measurement_occurrences[event.identity] = (
-                _measurement_occurrence_coordinates(event)
-            )
-            continue
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
             get_recorded_occurrence_position_measurement(ledger, event.identity)
             measurement_occurrences[event.identity] = (
@@ -1428,6 +1511,7 @@ def _carry_byte_measurement_assignment_into_standing(
         or locality_standing.get("locality_identity") != event.locality_identity
         or locality_standing.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
+        or event.identity == prior_through_event_occurrence_identity
         or ledger.get(event.identity) != event
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
@@ -1868,61 +1952,184 @@ def _carry_occurrence_position_measurement_result_into_standing(
     return locality_standing
 
 
-def _carry_recorded_pair_measurement_into_standing(
+def _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    ledger: EventLedger,
     locality_standing: dict[str, Any],
     event,
     *,
-    prior_through_event_occurrence_identity: str | None,
+    prior_through_event_occurrence_identity: str,
+    destination_coordinate: str | None,
 ) -> dict[str, Any]:
-    """Carry the pair result just recorded by the same console call.
-
-    The console records the Applicability and Measurement occurrences, advances
-    through their exact Evidence of Yield, and invokes this helper before the
-    result Event can cross another caller boundary.  Reopen, replay, and every
-    independently supplied occurrence identity still use
-    :func:`advance_operator_locality_standing` and fully validate the durable
-    result.  This is only the call-local production-to-uptake handoff.
-    """
-
     if (
         type(locality_standing) is not dict
-        or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
-        or locality_standing.get("locality_identity") != event.locality_identity
+        or ledger.get(event.identity) != event
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or event.locality_identity != locality_standing.get("locality_identity")
         or locality_standing.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
+        or ledger.append_boundary_through_occurrence(event.identity)
+        != ledger.append_boundary()
     ):
-        raise ValueError(
-            "recorded pair Measurement must follow its carried Act and Yield"
+        raise ValueError("pair Measurement lifecycle Standing is not exact")
+    try:
+        ledger.occurrences_in_append_order(
+            (prior_through_event_occurrence_identity, event.identity),
+            locality_identity=event.locality_identity,
         )
-    measurements = locality_standing.get("measurement_occurrences")
-    source_reference = event.material.get("source_assertion_reference")
-    source_occurrence_identity = (
-        source_reference.get("recorded_occurrence_identity")
-        if type(source_reference) is dict
+    except ValueError as error:
+        raise ValueError(
+            "pair Measurement lifecycle Standing order is not exact"
+        ) from error
+    destination = (
+        locality_standing[destination_coordinate]
+        if destination_coordinate is not None
         else None
     )
-    if (
-        type(measurements) is not dict
-        or source_occurrence_identity not in measurements
-        or event.identity in measurements
-    ):
-        raise ValueError("recorded pair Measurement Standing is not exact")
     event_count = locality_standing.get("event_count")
-    if type(event_count) is not int or event_count < 0:
-        raise ValueError("recorded pair Measurement Standing count is not exact")
+    if (
+        type(event_count) is not int
+        or event_count < 0
+        or (destination is not None and event.identity in destination)
+    ):
+        raise ValueError("pair Measurement lifecycle Standing is not exact")
     standing_additions = _exact_standing_additions(
         locality_standing,
         event,
-        error_message="recorded pair Measurement Standing is not exact",
+        error_message="pair Measurement lifecycle Standing is not exact",
     )
-    coordinates = _measurement_occurrence_coordinates(event)
-    measurements[event.identity] = coordinates
+    if destination is locality_standing["measurement_occurrences"]:
+        destination[event.identity] = _measurement_occurrence_coordinates(event)
+    elif destination is not None:
+        destination[event.identity] = None
     for key, added in standing_additions.items():
         for value in added:
             _record_distinct(locality_standing[key], value)
     locality_standing["through_event_occurrence_identity"] = event.identity
     locality_standing["event_count"] = event_count + 1
     return locality_standing
+
+
+def _carry_pair_measurement_assignment_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    assignment,
+    source,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_measurement_assignment_event(ledger, assignment, source)
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        assignment,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate="responsibility_assignment_occurrences",
+    )
+
+
+def _carry_pair_applicability_act_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    assignment,
+    source,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_applicability_act_event(
+        ledger, event, assignment=assignment, source=source
+    )
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        event,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate=None,
+    )
+
+
+def _carry_pair_applicability_result_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    assignment,
+    source,
+    applicability_act_evidence,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_applicability_result_event(
+        ledger,
+        event,
+        assignment=assignment,
+        source=source,
+        applicability_act_evidence=applicability_act_evidence,
+    )
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        event,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate="applicability_result_occurrences",
+    )
+
+
+def _carry_pair_measurement_act_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    assignment,
+    source,
+    applicability_event,
+    applicability_act_evidence,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_measurement_act_event(
+        ledger,
+        event,
+        assignment=assignment,
+        source=source,
+        applicability_event=applicability_event,
+        applicability_act_evidence=applicability_act_evidence,
+    )
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        event,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate=None,
+    )
+
+
+def _carry_pair_measurement_result_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    responsible_act_evidence,
+    assignment,
+    source,
+    applicability_event,
+    applicability_act_evidence,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_measurement_result_event(
+        ledger,
+        event,
+        responsible_act_evidence=responsible_act_evidence,
+        assignment=assignment,
+        source=source,
+        applicability_event=applicability_event,
+        applicability_act_evidence=applicability_act_evidence,
+    )
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        event,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate="measurement_occurrences",
+    )
 
 
 def _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
