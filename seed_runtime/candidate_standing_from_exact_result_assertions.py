@@ -1680,7 +1680,7 @@ def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represen
     ],
     ...,
 ]:
-    """Read one unresolved relation per Candidate and every nested path pair."""
+    """Read one unresolved represented_relation coordinate per Candidate and every nested path pair."""
 
     readings = (
         exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
