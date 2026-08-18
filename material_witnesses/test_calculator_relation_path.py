@@ -16,11 +16,7 @@ import pytest
 
 from scripts.operator_host_provider import invoke_operator_host
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    record_addressed_byte_occurrence_reference_determination_act_evidence,
-    record_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
-    record_addressed_byte_occurrence_reference_determination_applicability_result,
-    record_addressed_byte_occurrence_reference_determination_responsibility_assignment,
-    record_addressed_byte_occurrence_reference_determination_result,
+    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
@@ -199,37 +195,12 @@ def _claim_path(ledger):
         position=ADDRESSED_POSITION,
         exact_material=CLAIM[ADDRESSED_POSITION : ADDRESSED_POSITION + 1],
     )
-    determination_assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    standing, determination_result = _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
         locality_standing=standing,
     )
-    standing = _advance(ledger, standing, determination_assignment)
-    determination_applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=determination_assignment.identity,
-        responsibility_assignment_standing=standing,
-    )
-    standing = _advance(ledger, standing, determination_applicability_act)
-    determination_applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
-        ledger,
-        applicability_act_evidence_event_identity=(
-            determination_applicability_act.identity
-        ),
-    )
-    standing = _advance(ledger, standing, determination_applicability)
-    determination_act = record_addressed_byte_occurrence_reference_determination_act_evidence(
-        ledger,
-        applicability_result_event_identity=determination_applicability.identity,
-        applicability_standing=standing,
-    )
-    standing = _advance(ledger, standing, determination_act)
-    determination_result = record_addressed_byte_occurrence_reference_determination_result(
-        ledger,
-        determination_act_evidence_event_identity=determination_act.identity,
-    )
-    standing = _advance(ledger, standing, determination_result)
     shared_assignment = record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_result_event_identity=determination_result.identity,

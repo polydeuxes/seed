@@ -464,11 +464,11 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
-        message="determination assignment source changed before recording",
+        message="determination assignment source is not intact before recording",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment source changed before recording"
+            "determination assignment source is not intact before recording"
         )
     _require_stage_at_append_tip(
         ledger,
@@ -701,18 +701,18 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_e
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
-        message="Applicability Act source changed before recording",
+        message="Applicability Act source is not intact before recording",
     )
     _require_unchanged_stored_event(
         ledger,
         event=assignment,
         kind=RESPONSIBILITY_ASSIGNMENT_KIND,
         material=assignment_material,
-        message="Applicability Act assignment changed before recording",
+        message="Applicability Act assignment is not intact before recording",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability Act source changed before recording"
+            "Applicability Act source is not intact before recording"
         )
     _require_stage_at_append_tip(
         ledger,
@@ -925,6 +925,60 @@ def _require_yield_at_append_tip(ledger: EventLedger, evidence: Event) -> None:
         )
 
 
+def _record_applicability_yield_evidence(
+    ledger: EventLedger,
+    *,
+    act: Event,
+    material: dict[str, Any],
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=APPLICABILITY_ACT,
+        act_occurrence_identity=act.material[
+            "applicability_act_occurrence_identity"
+        ],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
+        result_identity=material["result_identity"],
+        result_content=material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary=(
+            "addressed_byte_occurrence_reference_determination_applicability"
+        ),
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate=(
+            "applicability_act_occurrence_identity"
+        ),
+    )
+
+
+def _record_determination_yield_evidence(
+    ledger: EventLedger,
+    *,
+    act: Event,
+    material: dict[str, Any],
+) -> Event:
+    return _record_evidence_of_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=DETERMINATION_ACT,
+        act_occurrence_identity=act.material[
+            "determination_act_occurrence_identity"
+        ],
+        responsible_act_evidence_identity=act.identity,
+        result_kind=DETERMINATION_YIELD_RESULT_KIND,
+        result_identity=material["result_identity"],
+        result_content=material,
+        responsibility=RESPONSIBILITY,
+        occurrence_boundary="addressed_byte_occurrence_reference_determination",
+        responsible_boundary="this Seed",
+        responsible_act_occurrence_coordinate=(
+            "determination_act_occurrence_identity"
+        ),
+    )
+
+
 def _recorded_applicability_result_material(
     material: dict[str, Any], *, act: Event, evidence: Event
 ) -> dict[str, Any]:
@@ -990,21 +1044,21 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             act_read,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             act_material,
-            "Applicability Act changed before Yield",
+            "Applicability Act is not intact before Yield",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "Applicability assignment changed before Yield",
+            "Applicability assignment is not intact before Yield",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "Applicability source changed before Yield",
+            "Applicability source is not intact before Yield",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1019,23 +1073,10 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     _require_stage_at_append_tip(
         ledger, event=act, message="Applicability Act left the append tip"
     )
-    evidence = _record_evidence_of_yield_relation(
+    evidence = _record_applicability_yield_evidence(
         ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="addressed_byte_occurrence_reference_determination_applicability",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
+        act=act,
+        material=material,
     )
     act_read, assignment_read, source_read, _references_read = (
         _read_applicability_act(ledger, act.identity)
@@ -1046,26 +1087,26 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability stage changed before result recording"
+            "Applicability stage is not intact before result recording"
         )
     for stored, kind, material_read, message in (
         (
             act,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             act_material,
-            "Applicability Act changed before result recording",
+            "Applicability Act is not intact before result recording",
         ),
         (
             assignment,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "Applicability assignment changed before result recording",
+            "Applicability assignment is not intact before result recording",
         ),
         (
             source_result,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "Applicability source changed before result recording",
+            "Applicability source is not intact before result recording",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1269,28 +1310,28 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
             applicability_read,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability changed before Act",
+            "determination Measurement Applicability is not intact before Act",
         ),
         (
             app_act,
             app_act_read,
             APPLICABILITY_ACT_EVIDENCE_KIND,
             app_act_material,
-            "determination Measurement Applicability Act changed before Act",
+            "determination Measurement Applicability Act is not intact before Act",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment changed before Act",
+            "determination Measurement assignment is not intact before Act",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source changed before Act",
+            "determination Measurement source is not intact before Act",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1503,28 +1544,28 @@ def record_addressed_byte_occurrence_reference_determination_result(
             act_read,
             DETERMINATION_ACT_EVIDENCE_KIND,
             act_material,
-            "determination Measurement Act changed before Yield",
+            "determination Measurement Act is not intact before Yield",
         ),
         (
             applicability,
             applicability_read,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability changed before Yield",
+            "determination Measurement Applicability is not intact before Yield",
         ),
         (
             assignment,
             assignment_read,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment changed before Yield",
+            "determination Measurement assignment is not intact before Yield",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source changed before Yield",
+            "determination Measurement source is not intact before Yield",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1541,23 +1582,10 @@ def record_addressed_byte_occurrence_reference_determination_result(
         event=act,
         message="determination Measurement Act left the append tip",
     )
-    evidence = _record_evidence_of_yield_relation(
+    evidence = _record_determination_yield_evidence(
         ledger,
-        locality_identity=act.locality_identity,
-        exact_act=DETERMINATION_ACT,
-        act_occurrence_identity=act.material[
-            "determination_act_occurrence_identity"
-        ],
-        responsible_act_evidence_identity=act.identity,
-        result_kind=DETERMINATION_YIELD_RESULT_KIND,
-        result_identity=material["result_identity"],
-        result_content=material,
-        responsibility=RESPONSIBILITY,
-        occurrence_boundary="addressed_byte_occurrence_reference_determination",
-        responsible_boundary="this Seed",
-        responsible_act_occurrence_coordinate=(
-            "determination_act_occurrence_identity"
-        ),
+        act=act,
+        material=material,
     )
     (
         act_read,
@@ -1573,32 +1601,32 @@ def record_addressed_byte_occurrence_reference_determination_result(
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Measurement stage changed before result recording"
+            "determination Measurement stage is not intact before result recording"
         )
     for stored, kind, material_read, message in (
         (
             act,
             DETERMINATION_ACT_EVIDENCE_KIND,
             act_material,
-            "determination Measurement Act changed before result recording",
+            "determination Measurement Act is not intact before result recording",
         ),
         (
             applicability,
             APPLICABILITY_RESULT_KIND,
             applicability_material,
-            "determination Measurement Applicability changed before result recording",
+            "determination Measurement Applicability is not intact before result recording",
         ),
         (
             assignment,
             RESPONSIBILITY_ASSIGNMENT_KIND,
             assignment_material,
-            "determination Measurement assignment changed before result recording",
+            "determination Measurement assignment is not intact before result recording",
         ),
         (
             source_result,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "determination Measurement source changed before result recording",
+            "determination Measurement source is not intact before result recording",
         ),
     ):
         _require_unchanged_stored_event(
@@ -1680,3 +1708,372 @@ def get_recorded_addressed_byte_occurrence_reference_determination(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     return deepcopy(_read_determination_result(ledger, event_identity)[0].material)
+
+
+def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+    ledger: EventLedger,
+    *,
+    direct_result_event_identity: str,
+    addressed_source_byte_position_coordinate_reference: dict[str, Any],
+    locality_standing: dict[str, Any],
+) -> tuple[dict[str, Any], Event]:
+    """Record one D.2 lifecycle while carrying its exact stage readings."""
+
+    from seed_runtime.operator_locality_standing import (
+        _exact_standing_additions,
+        _record_distinct,
+    )
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("determination lifecycle requires one EventLedger")
+    standing = deepcopy(locality_standing)
+    locality_identity = standing.get("locality_identity")
+    boundary = standing.get("through_event_occurrence_identity")
+    source_result, references = _source(
+        ledger,
+        result_event_identity=_identity(
+            direct_result_event_identity,
+            "determination lifecycle requires one direct result",
+        ),
+        coordinate_reference=(
+            addressed_source_byte_position_coordinate_reference
+        ),
+    )
+    _standing_carries_source(
+        ledger,
+        standing=standing,
+        source_result=source_result,
+        required_boundary_identity=boundary,
+    )
+    _require_stage_at_append_tip(
+        ledger,
+        event=ledger.get(boundary),
+        message="determination assignment Standing left the append tip",
+    )
+    source_material = deepcopy(source_result.material)
+    identities = {
+        name: new_identity(prefix)
+        for name, prefix in (
+            (
+                "assignment_identity",
+                "addressed_byte_occurrence_reference_assignment",
+            ),
+            (
+                "assignment_subject_identity",
+                "addressed_byte_occurrence_reference_assignment_subject",
+            ),
+            (
+                "applicability_act_identity",
+                "addressed_byte_occurrence_reference_applicability_act",
+            ),
+            (
+                "applicability_act_occurrence_identity",
+                "addressed_byte_occurrence_reference_applicability_act_occurrence",
+            ),
+            (
+                "applicability_result_identity",
+                "addressed_byte_occurrence_reference_applicability_result",
+            ),
+            (
+                "determination_act_identity",
+                "addressed_byte_occurrence_reference_determination_measurement_act",
+            ),
+            (
+                "determination_act_occurrence_identity",
+                "addressed_byte_occurrence_reference_determination_measurement_act_occurrence",
+            ),
+            (
+                "determination_result_identity",
+                "addressed_byte_occurrence_reference_determination_measurement_result",
+            ),
+        )
+    }
+    if len(set(identities.values())) != len(identities):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination lifecycle identities collapsed"
+        )
+
+    exact_stage_material: list[tuple[Event, str, dict[str, Any]]] = [
+        (
+            source_result,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+            source_material,
+        )
+    ]
+
+    def require_intact() -> None:
+        for event, kind, material in exact_stage_material:
+            _require_unchanged_stored_event(
+                ledger,
+                event=event,
+                kind=kind,
+                material=material,
+                message="determination carried stage is not intact",
+            )
+
+    def require_prior_at_tip(event: Event) -> None:
+        require_intact()
+        _require_stage_at_append_tip(
+            ledger,
+            event=event,
+            message="determination carried stage left the append tip",
+        )
+
+    def carry(event: Event, *, prior: str) -> None:
+        assignments = standing.get("responsibility_assignment_occurrences")
+        applicability_results = standing.get("applicability_result_occurrences")
+        measurements = standing.get("measurement_occurrences")
+        count = standing.get("event_count")
+        if (
+            type(assignments) is not dict
+            or type(applicability_results) is not dict
+            or type(measurements) is not dict
+            or type(count) is not int
+            or standing.get("through_event_occurrence_identity") != prior
+            or event.locality_identity != locality_identity
+            or ledger.get(event.identity) != event
+            or ledger.integrity_of(event.identity) == CORRUPTED
+            or ledger.append_boundary_through_occurrence(event.identity)
+            != ledger.append_boundary()
+        ):
+            raise AddressedByteOccurrenceReferenceDeterminationError(
+                "produced determination occurrence is not exact"
+            )
+        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
+            lawful = (
+                event.material.get("standing_boundary_identity") == prior
+                and event.identity not in assignments
+            )
+        elif event.kind == APPLICABILITY_ACT_EVIDENCE_KIND:
+            lawful = (
+                event.material["responsibility_assignment_reference"][
+                    "recorded_occurrence_identity"
+                ]
+                == prior
+                and prior in assignments
+            )
+        elif event.kind == APPLICABILITY_RESULT_KIND:
+            lawful = (
+                event.material.get("responsible_act_evidence_identity") == prior
+                and event.material["responsibility_assignment_reference"][
+                    "recorded_occurrence_identity"
+                ]
+                in assignments
+                and event.identity not in applicability_results
+            )
+        elif event.kind == DETERMINATION_ACT_EVIDENCE_KIND:
+            lawful = (
+                event.material["applicability_result_reference"][
+                    "recorded_occurrence_identity"
+                ]
+                == prior
+                and prior in applicability_results
+            )
+        elif event.kind == DETERMINATION_RESULT_KIND:
+            lawful = (
+                event.material.get("responsible_act_evidence_identity") == prior
+                and event.identity not in measurements
+            )
+        else:
+            lawful = False
+        if not lawful:
+            raise AddressedByteOccurrenceReferenceDeterminationError(
+                "produced determination occurrence has false Standing"
+            )
+        additions = _exact_standing_additions(
+            standing,
+            event,
+            error_message="produced determination Standing is not exact",
+        )
+        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
+            assignments[event.identity] = None
+        elif event.kind == APPLICABILITY_RESULT_KIND:
+            applicability_results[event.identity] = None
+        elif event.kind == DETERMINATION_RESULT_KIND:
+            measurements[event.identity] = _determination_result_reference(event)
+        for key, values in additions.items():
+            for value in values:
+                _record_distinct(standing[key], value)
+        standing["through_event_occurrence_identity"] = event.identity
+        standing["event_count"] = count + 1
+
+    assignment_material = _assignment_material(
+        source_result=source_result,
+        coordinate_reference=(
+            addressed_source_byte_position_coordinate_reference
+        ),
+        standing_boundary_identity=boundary,
+        identities=identities,
+    )
+    require_prior_at_tip(ledger.get(boundary))
+    assignment = ledger.append(
+        RESPONSIBILITY_ASSIGNMENT_KIND,
+        _assignment_material(
+            source_result=source_result,
+            coordinate_reference=(
+                addressed_source_byte_position_coordinate_reference
+            ),
+            standing_boundary_identity=boundary,
+            identities=identities,
+        ),
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (
+            assignment,
+            RESPONSIBILITY_ASSIGNMENT_KIND,
+            assignment_material,
+        )
+    )
+    require_intact()
+    carry(assignment, prior=boundary)
+
+    _refuse_existing_act(
+        ledger,
+        assignment=assignment,
+        kind=APPLICABILITY_ACT_EVIDENCE_KIND,
+        occurrence_coordinate="applicability_act_occurrence_identity",
+    )
+    applicability_act_material = _applicability_act_material(
+        assignment=assignment, source_result=source_result
+    )
+    require_prior_at_tip(assignment)
+    applicability_act = ledger.append(
+        APPLICABILITY_ACT_EVIDENCE_KIND,
+        _applicability_act_material(
+            assignment=assignment,
+            source_result=source_result,
+        ),
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (
+            applicability_act,
+            APPLICABILITY_ACT_EVIDENCE_KIND,
+            applicability_act_material,
+        )
+    )
+    require_intact()
+    carry(applicability_act, prior=assignment.identity)
+
+    applicability_material = _applicability_result_material(
+        act=applicability_act,
+        assignment=assignment,
+        source_result=source_result,
+    )
+    _prepare_result_yield(
+        ledger,
+        act=applicability_act,
+        occurrence_coordinate="applicability_act_occurrence_identity",
+        result_event_kind=APPLICABILITY_RESULT_KIND,
+    )
+    require_prior_at_tip(applicability_act)
+    applicability_evidence = _record_applicability_yield_evidence(
+        ledger,
+        act=applicability_act,
+        material=applicability_material,
+    )
+    exact_stage_material.append(
+        (
+            applicability_evidence,
+            RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+            deepcopy(applicability_evidence.material),
+        )
+    )
+    require_intact()
+    _require_yield_at_append_tip(ledger, applicability_evidence)
+    applicability_recorded = _recorded_applicability_result_material(
+        applicability_material,
+        act=applicability_act,
+        evidence=applicability_evidence,
+    )
+    applicability = ledger.append(
+        APPLICABILITY_RESULT_KIND,
+        _recorded_applicability_result_material(
+            applicability_material,
+            act=applicability_act,
+            evidence=applicability_evidence,
+        ),
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (applicability, APPLICABILITY_RESULT_KIND, applicability_recorded)
+    )
+    require_intact()
+    carry(applicability, prior=applicability_act.identity)
+
+    _refuse_existing_act(
+        ledger,
+        assignment=assignment,
+        kind=DETERMINATION_ACT_EVIDENCE_KIND,
+        occurrence_coordinate="determination_act_occurrence_identity",
+    )
+    act_material = _determination_act_material(
+        assignment=assignment,
+        source_result=source_result,
+        applicability_result=applicability,
+    )
+    require_prior_at_tip(applicability)
+    act = ledger.append(
+        DETERMINATION_ACT_EVIDENCE_KIND,
+        _determination_act_material(
+            assignment=assignment,
+            source_result=source_result,
+            applicability_result=applicability,
+        ),
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (act, DETERMINATION_ACT_EVIDENCE_KIND, act_material)
+    )
+    require_intact()
+    carry(act, prior=applicability.identity)
+
+    result_material = _determination_result_material(
+        act=act,
+        applicability=applicability,
+        assignment=assignment,
+        source_result=source_result,
+        references=references,
+    )
+    _prepare_result_yield(
+        ledger,
+        act=act,
+        occurrence_coordinate="determination_act_occurrence_identity",
+        result_event_kind=DETERMINATION_RESULT_KIND,
+    )
+    require_prior_at_tip(act)
+    evidence = _record_determination_yield_evidence(
+        ledger,
+        act=act,
+        material=result_material,
+    )
+    exact_stage_material.append(
+        (
+            evidence,
+            RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+            deepcopy(evidence.material),
+        )
+    )
+    require_intact()
+    _require_yield_at_append_tip(ledger, evidence)
+    result_recorded = _recorded_determination_result_material(
+        result_material,
+        act=act,
+        evidence=evidence,
+    )
+    result = ledger.append(
+        DETERMINATION_RESULT_KIND,
+        _recorded_determination_result_material(
+            result_material,
+            act=act,
+            evidence=evidence,
+        ),
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (result, DETERMINATION_RESULT_KIND, result_recorded)
+    )
+    require_intact()
+    carry(result, prior=act.identity)
+    return standing, result

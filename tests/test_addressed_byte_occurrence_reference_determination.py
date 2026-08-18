@@ -3,6 +3,7 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.addressed_byte_occurrence_reference_determination as determination_module
+import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     APPLICABILITY_BOUNDARY,
     APPLICABILITY_RESULT_KIND,
@@ -418,7 +419,7 @@ def test_call_local_standing_equals_full_replay():
     assert recorded["result"].identity in replayed["measurement_occurrences"]
 
 
-def test_lifecycle_survives_sqlite_restart(tmp_path):
+def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     from seed_runtime.identities import _next_values, new_identity
 
     path = tmp_path / "addressed-byte.sqlite"
@@ -470,6 +471,32 @@ def test_lifecycle_survives_sqlite_restart(tmp_path):
     reopened.close()
 
 
+def test_carried_lifecycle_is_exact_after_sqlite_restart(tmp_path):
+    path = tmp_path / "addressed-byte-carried.sqlite"
+    ledger = SQLiteEventLedger(path)
+    source, direct_result, standing = _direct(ledger, b"abcdef")
+    coordinate = _coordinate(ledger, source, b"abcdef", 3)
+    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+        ledger,
+        direct_result_event_identity=direct_result.identity,
+        addressed_source_byte_position_coordinate_reference=coordinate,
+        locality_standing=standing,
+    )
+    expected = deepcopy(result.material)
+    result_identity = result.identity
+    locality_identity = source.locality_identity
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    assert get_recorded_addressed_byte_occurrence_reference_determination(
+        reopened, result_identity
+    ) == expected
+    assert carried == read_operator_locality_standing(
+        reopened, locality_identity=locality_identity
+    )
+    reopened.close()
+
+
 def test_determination_uses_addressed_kernel_without_full_reference_scan(monkeypatch):
     ledger = EventLedger()
     source, direct_result, standing = _direct(ledger, b"abcdef")
@@ -494,6 +521,69 @@ def test_determination_uses_addressed_kernel_without_full_reference_scan(monkeyp
     )
     assert calls == [direct_result.identity, direct_result.identity]
     assert "ordered_assertion_references" not in assignment.material
+
+
+def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    source, direct_result, standing = _direct(ledger, b"abcdef")
+    coordinate = _coordinate(ledger, source, b"abcdef", 3)
+    supplied_standing = deepcopy(standing)
+    source_calls = []
+    result_calls = []
+    original_source = determination_module._source
+    original_result = direct_position_module._read_result
+
+    def counted_source(*args, **kwargs):
+        source_calls.append(kwargs["result_event_identity"])
+        return original_source(*args, **kwargs)
+
+    def counted_result(*args, **kwargs):
+        result_calls.append(args[1])
+        return original_result(*args, **kwargs)
+
+    monkeypatch.setattr(determination_module, "_source", counted_source)
+    monkeypatch.setattr(direct_position_module, "_read_result", counted_result)
+
+    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+        ledger,
+        direct_result_event_identity=direct_result.identity,
+        addressed_source_byte_position_coordinate_reference=coordinate,
+        locality_standing=standing,
+    )
+
+    assert source_calls == [direct_result.identity]
+    assert result_calls == [direct_result.identity]
+    assert standing == supplied_standing
+    assert result.identity in carried["measurement_occurrences"]
+    assert carried == read_operator_locality_standing(
+        ledger, locality_identity=source.locality_identity
+    )
+
+
+def test_carried_lifecycle_refuses_source_material_not_intact_and_preserves_supplied_standing():
+    ledger = CallbackEventLedger()
+    source, direct_result, standing = _direct(ledger, b"abcdef")
+    coordinate = _coordinate(ledger, source, b"abcdef", 3)
+    supplied_standing = deepcopy(standing)
+    source_material = deepcopy(direct_result.material)
+
+    def make_source_material_not_intact():
+        direct_result.material["unknown"] = ["not intact after assignment"]
+
+    ledger.callback = make_source_material_not_intact
+    with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
+        determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+            ledger,
+            direct_result_event_identity=direct_result.identity,
+            addressed_source_byte_position_coordinate_reference=coordinate,
+            locality_standing=standing,
+        )
+
+    assert standing == supplied_standing
+    direct_result.material.clear()
+    direct_result.material.update(source_material)
 
 
 def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypatch):
@@ -541,7 +631,7 @@ def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypa
     ) == prior
 
 
-def test_act_refuses_retained_assignment_mutation_during_duplicate_iterator():
+def test_act_refuses_retained_assignment_not_intact_during_duplicate_iterator():
     ledger = CallbackEventLedger()
     source, direct_result, standing = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
@@ -621,7 +711,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     ) == prior
 
 
-def test_determination_act_refuses_applicability_mutation_during_iterator():
+def test_determination_act_refuses_applicability_not_intact_during_iterator():
     ledger = CallbackEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
     prior = deepcopy(recorded["standing"])
@@ -699,12 +789,15 @@ FIDELITY_SUBJECTS = {
         test_determination_refuses_wrong_yield_kind_or_boundary,
         test_one_act_cannot_append_a_second_yield_or_result,
         test_call_local_standing_equals_full_replay,
-        test_lifecycle_survives_sqlite_restart,
+        test_lifecycle_is_exact_after_sqlite_restart,
+        test_carried_lifecycle_is_exact_after_sqlite_restart,
         test_determination_uses_addressed_kernel_without_full_reference_scan,
+        test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay,
+        test_carried_lifecycle_refuses_source_material_not_intact_and_preserves_supplied_standing,
         test_assignment_refuses_unrelated_append_during_source_revalidation,
-        test_act_refuses_retained_assignment_mutation_during_duplicate_iterator,
+        test_act_refuses_retained_assignment_not_intact_during_duplicate_iterator,
         test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield,
-        test_determination_act_refuses_applicability_mutation_during_iterator,
+        test_determination_act_refuses_applicability_not_intact_during_iterator,
         test_determination_result_refuses_iterator_append_without_yield,
     )
 }
