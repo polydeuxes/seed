@@ -5,13 +5,10 @@ from __future__ import annotations
 from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    _record_byte_measurement_responsibility_assignment_from_carried_standing,
-    _record_byte_measurement_responsible_act_evidence_from_carried_standing,
-    _record_byte_measurement_result_from_carried_act_evidence,
     _record_byte_position_pair_count_layer_from_carried_locality_standing,
     get_byte_position_pair_measurement_responsibility_assignment,
-    record_byte_measurement_responsibility_assignment,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
@@ -90,11 +87,8 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
-    _carry_byte_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_result_into_standing,
-    _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
-    _carry_byte_pair_occurrence_position_measurement_result_into_standing,
     _carry_operator_material_acquisition_occurrence_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -105,11 +99,9 @@ from seed_runtime.occurrence_position_measurement import (
     _record_occurrence_position_measurement_result_from_carried_act_evidence,
     measure_occurrence_position,
 )
-from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding,
-    _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
-    _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
-    measure_position_coordinates_of_byte_pair_occurrences,
+from seed_runtime.standing_measurement_declarations import (
+    _record_declared_measurements_from_carried_standing,
+    record_declared_measurements_from_current_standing,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -279,44 +271,11 @@ def _record_exact_material_representation_admission_and_applicability(
     return standing, admission, applicability
 
 
-def _record_acquisition_measurements_after_assignment(
-    ledger, standing, measurement_assignment, *, locality_identity
+def _record_occurrence_position_measurement(
+    ledger, standing, *, locality_identity
 ):
-    prior_boundary = standing["through_event_occurrence_identity"]
-    standing = _carry_byte_measurement_assignment_into_standing(
-        ledger,
-        standing,
-        measurement_assignment,
-        prior_through_event_occurrence_identity=prior_boundary,
-    )
-    measurement_act_evidence = (
-        _record_byte_measurement_responsible_act_evidence_from_carried_standing(
-            ledger,
-            responsibility_assignment=measurement_assignment,
-            responsibility_assignment_standing=standing,
-        )
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (measurement_act_evidence.identity,),
-        locality_identity=locality_identity,
-    )
-    measurement = _record_byte_measurement_result_from_carried_act_evidence(
-        ledger,
-        responsible_act_evidence=measurement_act_evidence,
-        responsibility_assignment=measurement_assignment,
-        locality_standing=standing,
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (
-            measurement.material["evidence_of_yield_relation_identity"],
-            measurement.identity,
-        ),
-        locality_identity=locality_identity,
-    )
+    """Record the explicitly triggered position population of this Locality."""
+
     position_finding = measure_occurrence_position(
         ledger,
         source_locality_identity=locality_identity,
@@ -368,98 +327,54 @@ def _record_acquisition_measurements_after_assignment(
         responsibility_assignment=position_measurement_assignment,
         finding=position_finding,
     )
-    return standing, measurement
+    return standing
 
 
-def _record_acquisition_measurements(ledger, standing, *, locality_identity):
-    """Record Measurements from Standing carried at the current append tip."""
-
-    measurement_assignment = (
-        _record_byte_measurement_responsibility_assignment_from_carried_standing(
-            ledger,
-            source_localities=(locality_identity,),
-            recording_locality_identity=locality_identity,
-            locality_standing=standing,
-        )
-    )
-    return _record_acquisition_measurements_after_assignment(
-        ledger,
-        standing,
-        measurement_assignment,
-        locality_identity=locality_identity,
-    )
-
-
-def _record_acquisition_measurements_from_current_standing(
-    ledger, standing, *, locality_identity
+def _record_occurrence_position_after_declared_measurements(
+    ledger, recorded, *, locality_identity
 ):
-    """Record Measurements from exact current Standing outside call-local carry."""
-
-    measurement_assignment = record_byte_measurement_responsibility_assignment(
-        ledger,
-        source_localities=(locality_identity,),
-        recording_locality_identity=locality_identity,
-        locality_standing=standing,
+    byte_measurements = tuple(
+        event
+        for event in recorded.result_occurrences
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
-    return _record_acquisition_measurements_after_assignment(
+    if len(byte_measurements) != 1:
+        raise ValueError("one exact-byte Measurement is required after this pin")
+    standing = _record_occurrence_position_measurement(
+        ledger,
+        recorded.locality_standing,
+        locality_identity=locality_identity,
+    )
+    return standing, byte_measurements[0]
+
+
+def _record_measurements_after_pin(ledger, standing, *, locality_identity):
+    """Exhaust declared Ingest roads, then record the explicit Locality road."""
+
+    recorded = _record_declared_measurements_from_carried_standing(
         ledger,
         standing,
-        measurement_assignment,
+        locality_identity=locality_identity,
+    )
+    return _record_occurrence_position_after_declared_measurements(
+        ledger,
+        recorded,
         locality_identity=locality_identity,
     )
 
 
-def _record_byte_pair_occurrence_position_measurement(
-    ledger,
-    standing,
-    *,
-    source_ingest_occurrence_identity,
-    locality_identity,
-):
-    """Record every byte-pair occurrence of one Ingest result."""
+def _record_measurements_after_current_pin(ledger, *, locality_identity):
+    """Exhaust declarations from independently read current Locality Standing."""
 
-    finding = measure_position_coordinates_of_byte_pair_occurrences(
+    recorded = record_declared_measurements_from_current_standing(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
-    )
-    assignment = _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding(
-        ledger,
-        finding=finding,
-        locality_standing=standing,
-    )
-    standing = _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
-        ledger,
-        standing,
-        assignment,
-        finding,
-        prior_through_event_occurrence_identity=standing[
-            "through_event_occurrence_identity"
-        ],
-    )
-    act = _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment(
-        ledger,
-        responsibility_assignment=assignment,
-        finding=finding,
-        responsibility_assignment_standing=standing,
-    )
-    standing = _advance_over(
-        ledger,
-        standing,
-        (act.identity,),
         locality_identity=locality_identity,
     )
-    result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence(
+    return _record_occurrence_position_after_declared_measurements(
         ledger,
-        responsible_act_evidence=act,
-        responsibility_assignment=assignment,
-        finding=finding,
+        recorded,
+        locality_identity=locality_identity,
     )
-    standing = _carry_byte_pair_occurrence_position_measurement_result_into_standing(
-        standing,
-        result,
-        prior_through_event_occurrence_identity=act.identity,
-    )
-    return standing, result
 
 
 def _record_pair_measurement(
@@ -530,9 +445,8 @@ def _pair_premise_for_existing_material(
             == current_source_occurrence_references
         ):
             return standing, event
-    standing, byte_measurement = _record_acquisition_measurements_from_current_standing(
+    standing, byte_measurement = _record_measurements_after_current_pin(
         ledger,
-        standing,
         locality_identity=locality_identity,
     )
     return _record_pair_measurement(
@@ -758,17 +672,7 @@ def run_persistent_operator_console(
                     (command_occurrence["evidence_event_identity"],),
                     locality_identity=locality_identity,
                 )
-                locality_standing, _byte_pair_occurrence_position_measurement = (
-                    _record_byte_pair_occurrence_position_measurement(
-                        ledger,
-                        locality_standing,
-                        source_ingest_occurrence_identity=command_occurrence[
-                            "evidence_event_identity"
-                        ],
-                        locality_identity=locality_identity,
-                    )
-                )
-                locality_standing, _byte_measurement = _record_acquisition_measurements(
+                locality_standing, _byte_measurement = _record_measurements_after_pin(
                     ledger,
                     locality_standing,
                     locality_identity=locality_identity,
@@ -880,17 +784,7 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=system_locality_identity,
                 )
-                system_standing, _supplied_pair_position_measurement = (
-                    _record_byte_pair_occurrence_position_measurement(
-                        ledger,
-                        system_standing,
-                        source_ingest_occurrence_identity=(
-                            supplied_occurrence.identity
-                        ),
-                        locality_identity=system_locality_identity,
-                    )
-                )
-                system_standing, byte_measurement = _record_acquisition_measurements(
+                system_standing, byte_measurement = _record_measurements_after_pin(
                     ledger,
                     system_standing,
                     locality_identity=system_locality_identity,
@@ -1310,17 +1204,7 @@ def run_persistent_operator_console(
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
             )
-            locality_standing, _byte_pair_occurrence_position_measurement = (
-                _record_byte_pair_occurrence_position_measurement(
-                    ledger,
-                    locality_standing,
-                    source_ingest_occurrence_identity=ingest_occurrence[
-                        "evidence_event_identity"
-                    ],
-                    locality_identity=locality_identity,
-                )
-            )
-            locality_standing, byte_measurement = _record_acquisition_measurements(
+            locality_standing, byte_measurement = _record_measurements_after_pin(
                 ledger,
                 locality_standing,
                 locality_identity=locality_identity,

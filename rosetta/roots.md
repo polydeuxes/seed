@@ -193,6 +193,19 @@ addition Act occurrence
 A connective composite receives no Act, relation, Evidence, Authority, or
 Standing by identity.
 
+### Increment
+
+`Increment` is a composite relation only: one exact earlier count, one exact
+later count, and exact Evidence that the later count carries one additional
+exact counted occurrence within the same Scope and boundary. The word alone
+establishes no later count relation or count by identity.
+
+### Counted
+
+`Counted` is an auxiliary composite only: one exact occurrence reference in
+one exact count finding with Evidence, Scope, and limits. The word alone
+establishes no change of occurrence or identity.
+
 `Grammar distinctions` are bounded discriminators:
 
 ```text

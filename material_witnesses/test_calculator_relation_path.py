@@ -31,9 +31,6 @@ from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_m
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _source_position_coordinate_reference,
-    record_byte_pair_occurrence_position_measurement_act_evidence,
-    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
-    record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
@@ -48,6 +45,9 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
+)
+from seed_runtime.standing_measurement_declarations import (
+    record_declared_measurements_from_current_standing,
 )
 
 
@@ -72,26 +72,16 @@ def _claim_path(ledger):
         source_role="exact supplied material",
         source_boundary="exact supplied claim boundary",
     )
-    standing = read_operator_locality_standing(
-        ledger, locality_identity=source.locality_identity
-    )
-    direct_assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+    declared = record_declared_measurements_from_current_standing(
         ledger,
-        source_ingest_occurrence_identity=source.identity,
-        locality_standing=standing,
+        locality_identity=source.locality_identity,
     )
-    standing = _advance(ledger, standing, direct_assignment)
-    direct_act = record_byte_pair_occurrence_position_measurement_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=direct_assignment.identity,
-        responsibility_assignment_standing=standing,
+    standing = declared.locality_standing
+    direct_result = next(
+        event
+        for event in declared.result_occurrences
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
-    standing = _advance(ledger, standing, direct_act)
-    direct_result = record_byte_pair_occurrence_position_measurement_result(
-        ledger,
-        responsible_act_evidence_event_identity=direct_act.identity,
-    )
-    standing = _advance(ledger, standing, direct_result)
     coordinate = _source_position_coordinate_reference(
         source_ingest_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,

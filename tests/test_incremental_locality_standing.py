@@ -43,10 +43,16 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
+)
+from seed_runtime.standing_measurement_declarations import (
+    _record_declared_measurements_from_carried_standing,
+    record_declared_measurements_from_current_standing,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
@@ -189,6 +195,154 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
         event.identity in standing["measurement_occurrences"]
         for event in results
     )
+
+
+def test_one_current_standing_pin_records_each_declared_ingest_measurement_once():
+    ledger = EventLedger()
+    first = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"first\n",
+        source_role="exact supplied material",
+        source_boundary="first exact boundary",
+    )
+    second = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"second\n",
+        source_role="exact supplied material",
+        source_boundary="second exact boundary",
+    )
+
+    recorded = record_declared_measurements_from_current_standing(
+        ledger,
+        locality_identity="s",
+    )
+
+    assert tuple(event.kind for event in recorded.result_occurrences) == (
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        BYTE_MEASUREMENT_RECORDED_KIND,
+    )
+    assert tuple(
+        event.material["source_ingest_occurrence_identity"]
+        for event in recorded.result_occurrences[:2]
+    ) == (first.identity, second.identity)
+    assert recorded.locality_standing == read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
+
+    boundary = ledger.append_boundary()
+    again = record_declared_measurements_from_current_standing(
+        ledger,
+        locality_identity="s",
+    )
+    assert again.result_occurrences == ()
+    assert ledger.append_boundary() == boundary
+
+
+def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
+    ledger = EventLedger()
+    source = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        {
+            "dimensions": {
+                "identity": "preserved material",
+                "authority": "unestablished",
+            },
+            "source_role": "operator",
+            "unknown": [],
+        },
+        exact_material=b"preserved material",
+        locality_identity="s",
+    )
+
+    recorded = record_declared_measurements_from_current_standing(
+        ledger,
+        locality_identity="s",
+    )
+
+    assert tuple(event.kind for event in recorded.result_occurrences) == (
+        BYTE_MEASUREMENT_RECORDED_KIND,
+    )
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
+    assignment = next(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    )
+    assert assignment.material["source_occurrence_references"] == [
+        {"ingest_occurrence_identity": source.identity}
+    ]
+
+
+def test_carried_declaration_refuses_a_pin_followed_by_another_locality_append():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"pin\n",
+        source_role="exact supplied material",
+        source_boundary="exact pin boundary",
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    ledger.append(
+        "test.occurrence",
+        {"unknown": []},
+        locality_identity="another-locality",
+    )
+    boundary = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="current append boundary"):
+        _record_declared_measurements_from_carried_standing(
+            ledger,
+            standing,
+            locality_identity="s",
+        )
+
+    assert ledger.append_boundary() == boundary
+
+
+def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_path):
+    path = str(tmp_path / "standing-declarations.sqlite")
+    ledger = SQLiteEventLedger(path)
+    try:
+        ingest_material(
+            ledger,
+            locality_identity="s",
+            exact_bytes=b"2+2=5\n",
+            source_role="exact supplied material",
+            source_boundary="exact claim boundary",
+        )
+        first = record_declared_measurements_from_current_standing(
+            ledger,
+            locality_identity="s",
+        )
+        assert tuple(event.kind for event in first.result_occurrences) == (
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+            BYTE_MEASUREMENT_RECORDED_KIND,
+        )
+        boundary = ledger.append_boundary()
+    finally:
+        ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        second = record_declared_measurements_from_current_standing(
+            reopened,
+            locality_identity="s",
+        )
+        assert second.result_occurrences == ()
+        assert reopened.append_boundary() == boundary
+        assert second.locality_standing == read_operator_locality_standing(
+            reopened, locality_identity="s"
+        )
+    finally:
+        reopened.close()
 
 
 def _advance(events, prior=None, *, ledger=None):

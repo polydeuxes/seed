@@ -38,9 +38,11 @@ Where current Standing in one Locality carries exact recorded position Assertion
 
 Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment cannot identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
 
+At one exact current Standing boundary, this Seed may record one declared Responsibility assignment in declared order when that Responsibility is already assigned to this Seed, current Standing carries the exact subject and every required coordinate, and no exact assignment or result for that subject is recorded. Subject presence establishes no assignment, Applicability, or Act. After each recorded occurrence, current Standing must carry that occurrence before recording another declared Responsibility assignment.
+
 ### 01.Source.D.1 — Counts preserve occurrence identity
 
-Each counted occurrence is distinguished by exact occurrence identity. Repeated reference to one occurrence cannot create or increment another occurrence. Counting references is a different declared Measurement.
+Each exact occurrence reference in a count finding preserves exact occurrence identity. Repeated reference to one occurrence cannot create another occurrence or establish another occurrence reference in that count finding. Counting references is a different declared Measurement.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference determination
 

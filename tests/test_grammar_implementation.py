@@ -5644,6 +5644,107 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
     }
 
 
+def test_standing_measurement_declarations_match_the_curated_runtime_order():
+    from seed_runtime.standing_measurement_declarations import (
+        STANDING_MEASUREMENT_DECLARATIONS,
+    )
+
+    declared = _clause("01.Source.D")["standing_emission_declarations"]
+
+    assert tuple(
+        (
+            coordinate["order"],
+            coordinate["book_clause"],
+            coordinate["measurement"]["identity"],
+        )
+        for coordinate in declared
+    ) == tuple(
+        (
+            declaration.order,
+            declaration.book_clause_identity,
+            measurement,
+        )
+        for declaration, measurement in zip(
+            STANDING_MEASUREMENT_DECLARATIONS,
+            (
+                "measurement_of_position_coordinates_of_byte_pair_occurrences",
+                "measurement_of_exact_byte_occurrences",
+            ),
+            strict=True,
+        )
+    )
+    assert _clause("01.Source.D")["declared_measurements"][
+        "measurement_of_exact_byte_occurrences"
+    ] == {
+        "measurement": {
+            "subject": {
+                "first_subject": "exact_byte_occurrences",
+                "relation": "of",
+                "second_subject": "exact_Ingest_source_set",
+            },
+            "findings": ["count", "recurrence"],
+        },
+        "input_subject": "exact_Ingest_source_set",
+        "bounded_by": ["source_localities", "completeness_boundary"],
+        "standing_not_established": ["represented_relation"],
+    }
+
+
+def test_each_establishment_names_its_finding_and_responsible_occurrence():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    assert _clause("02.Acts.A")["established_coordinate_finding_pair"] == {
+        "first_subject": "exact_Act_occurrence",
+        "relation": "establishes",
+        "second_subject": "finding",
+        "finding": "exact_result_coordinate",
+        "responsible_occurrence_reference": "exact_Act_occurrence",
+        "evidence_reference": {
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": ["Act_occurrence", "Yield_relation"],
+        },
+        "result_boundary": "exact_result_boundary",
+    }
+
+    def structured_relations(value):
+        if isinstance(value, dict):
+            if value.get("relation") in {"establish", "establishes"}:
+                yield value
+            for carried in value.values():
+                yield from structured_relations(carried)
+        elif isinstance(value, list):
+            for carried in value:
+                yield from structured_relations(carried)
+
+    for relation in structured_relations(grammar):
+        if relation.get("standing") == "not_established":
+            continue
+        assert {
+            "finding",
+            "responsible_occurrence_reference",
+            "evidence_reference",
+            "result_boundary",
+        } <= set(relation)
+
+    clause = _clause("01.Source.D")
+    assert clause["recorded_occurrence_kind"] == ["event_occurrence"]
+    assert "assertions" in clause["responsibility"]["coordinates"]
+    for declared in clause["declared_measurements"].values():
+        measurement = declared["measurement"]
+        finding_coordinates = tuple(
+            coordinate
+            for key in ("finding", "findings")
+            for coordinate in (
+                [measurement[key]]
+                if key in measurement and isinstance(measurement[key], str)
+                else measurement.get(key, [])
+            )
+        )
+        assert finding_coordinates
+        assert all(type(coordinate) is str and coordinate for coordinate in finding_coordinates)
+        assert declared.get("standing_not_established")
+
+
 def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
     assert _clause("01.Source.D")["result_carries"] == {
         "first_subject": "result",
@@ -6622,6 +6723,8 @@ FIDELITY_SUBJECTS = {
     ),
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
+        test_standing_measurement_declarations_match_the_curated_runtime_order,
+        test_each_establishment_names_its_finding_and_responsible_occurrence,
         test_shared_position_measurement_decomposes_material_non_establishment,
         test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,
     ),

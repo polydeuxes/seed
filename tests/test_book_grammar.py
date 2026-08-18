@@ -95,6 +95,54 @@ def test_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
+def test_source_measurement_declarations_require_one_current_standing_pin():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    source = grammar["clause_coordinates"]["01.Source.D"]
+
+    assert source["standing_emission_declarations"] == [
+        {
+            "order": 0,
+            "book_clause": "01.Source.D",
+            "measurement": {
+                "identity": (
+                    "measurement_of_position_coordinates_of_byte_pair_occurrences"
+                ),
+                "first_subject": "position_coordinates",
+                "relation": "of",
+                "second_subject": "byte_pair_occurrences",
+            },
+            "subject": "exact_Ingest_result",
+            "requires": ["current_Standing", "exact_subject"],
+            "standing_not_established": [
+                "Responsibility_assignment_by_subject_presence",
+                "Applicability_by_subject_presence",
+                "Act_by_subject_presence",
+            ],
+        },
+        {
+            "order": 1,
+            "book_clause": "01.Source.D",
+            "measurement": {
+                "identity": "measurement_of_exact_byte_occurrences",
+                "first_subject": "exact_byte_occurrences",
+                "relation": "of",
+                "second_subject": "exact_Ingest_source_set",
+            },
+            "subject": "exact_Ingest_source_set",
+            "requires": ["current_Standing", "exact_subject"],
+            "standing_not_established": [
+                "Responsibility_assignment_by_subject_presence",
+                "Applicability_by_subject_presence",
+                "Act_by_subject_presence",
+            ],
+        },
+    ]
+    assert (
+        "At one exact current Standing boundary, this Seed may record one "
+        "declared Responsibility assignment in declared order"
+    ) in _active_book()
+
+
 def test_witness_yield_relation_preserves_occurrence_and_result_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -668,6 +716,7 @@ FIDELITY_SUBJECTS = {
     ),
     "standing_responsibility_path": (
         test_witness_readable_grammar_traverses_responsibility_from_standing,
+        test_source_measurement_declarations_require_one_current_standing_pin,
     ),
     "public_export_standing_distinction": (
         test_public_export_standing_not_established_standing,

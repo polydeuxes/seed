@@ -802,7 +802,56 @@
         ]
       },
       "findings": ["count", "recurrence", "position", "ordered_relation_path"],
+      "standing_emission_declarations": [
+        {
+          "order": 0,
+          "book_clause": "01.Source.D",
+          "measurement": {
+            "identity": "measurement_of_position_coordinates_of_byte_pair_occurrences",
+            "first_subject": "position_coordinates",
+            "relation": "of",
+            "second_subject": "byte_pair_occurrences"
+          },
+          "subject": "exact_Ingest_result",
+          "requires": ["current_Standing", "exact_subject"],
+          "standing_not_established": [
+            "Responsibility_assignment_by_subject_presence",
+            "Applicability_by_subject_presence",
+            "Act_by_subject_presence"
+          ]
+        },
+        {
+          "order": 1,
+          "book_clause": "01.Source.D",
+          "measurement": {
+            "identity": "measurement_of_exact_byte_occurrences",
+            "first_subject": "exact_byte_occurrences",
+            "relation": "of",
+            "second_subject": "exact_Ingest_source_set"
+          },
+          "subject": "exact_Ingest_source_set",
+          "requires": ["current_Standing", "exact_subject"],
+          "standing_not_established": [
+            "Responsibility_assignment_by_subject_presence",
+            "Applicability_by_subject_presence",
+            "Act_by_subject_presence"
+          ]
+        }
+      ],
       "declared_measurements": {
+        "measurement_of_exact_byte_occurrences": {
+          "measurement": {
+            "subject": {
+              "first_subject": "exact_byte_occurrences",
+              "relation": "of",
+              "second_subject": "exact_Ingest_source_set"
+            },
+            "findings": ["count", "recurrence"]
+          },
+          "input_subject": "exact_Ingest_source_set",
+          "bounded_by": ["source_localities", "completeness_boundary"],
+          "standing_not_established": ["represented_relation"]
+        },
         "measurement_of_position_coordinates_of_byte_pair_occurrences": {
           "measurement": {
             "subject": {
@@ -1058,13 +1107,13 @@
       ]
     },
     "01.Source.D.1": {
-      "subject": "counted_occurrence",
+      "subject": "exact_occurrence_reference_in_count_finding",
       "book_material_reference": "01.Source.D.1",
       "grammar": "established",
       "recorded_occurrence_kind": [],
       "coordinates": [
         "exact_occurrence_identity",
-        "counted_occurrence"
+        "exact_occurrence_reference"
       ],
       "repeated_reference_to_one_occurrence": {
         "standing_not_established": [
@@ -1076,8 +1125,8 @@
           },
           {
             "first_subject": "repeated_reference_to_one_occurrence",
-            "relation": "increment",
-            "second_subject": "another_occurrence",
+            "relation": "establishes",
+            "second_subject": "another_occurrence_reference_in_count_finding",
             "standing": "not_established"
           }
         ]
@@ -2004,6 +2053,19 @@
         "effects_beyond_output_boundary_remain_Unknown"
       ],
       "occurrence_coordinates": ["timestamp"],
+      "established_coordinate_finding_pair": {
+        "first_subject": "exact_Act_occurrence",
+        "relation": "establishes",
+        "second_subject": "finding",
+        "finding": "exact_result_coordinate",
+        "responsible_occurrence_reference": "exact_Act_occurrence",
+        "evidence_reference": {
+          "first_subject": "Evidence",
+          "relation": "of",
+          "second_subject": ["Act_occurrence", "Yield_relation"]
+        },
+        "result_boundary": "exact_result_boundary"
+      },
       "Evidence_of_Yield_relation": {
         "first_subject": "Evidence",
         "relation": "of",

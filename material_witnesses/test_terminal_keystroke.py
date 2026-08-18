@@ -33,6 +33,9 @@ from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_m
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
 )
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation import (
@@ -403,6 +406,11 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         for event in system_events
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
     )
+    direct_position_measurements = tuple(
+        event
+        for event in system_events
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
     emissions = tuple(
         event
         for event in system_events
@@ -452,6 +460,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         for position in range(len(EXACT_MATERIAL))
     )
     assert len(measurements) == len(ingests) == 5
+    assert len(direct_position_measurements) == len(ingests) == 5
     assert len(pair_measurements) == len(EXACT_MATERIAL) * 2 == 4
     assert len(position_measurements) == len(ingests) == 5
     for position, measurement in enumerate(measurements):
@@ -565,6 +574,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         *(measurement.identity for measurement in measurements),
         *(measurement.identity for measurement in pair_measurements),
         *(measurement.identity for measurement in position_measurements),
+        *(measurement.identity for measurement in direct_position_measurements),
     }
     assert set(standing["comparison_result_occurrences"]) == {
         comparison.identity for comparison in comparisons

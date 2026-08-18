@@ -87,8 +87,8 @@ def test_one_repeated_reference_relation_is_collected_once(tmp_path):
             },
             {
                 "first_subject": "repeated_reference_to_one_occurrence",
-                "relation": "increment",
-                "second_subject": "another_occurrence",
+                "relation": "establishes",
+                "second_subject": "another_occurrence_reference_in_count_finding",
                 "standing": "not_established",
             },
         ]
