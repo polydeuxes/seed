@@ -444,7 +444,9 @@ This Seed may inspect this Witness.
 
 The omission is material because `Seed`, `a Seed`, and `this Seed` do not carry
 the same reference shape. The correction does not assume that the exact phrase
-supplies Standing or Authority merely because it is active Book material.
+supplies Standing or Authority merely because it is active Book material. It
+also does not classify `may` before recovering the relation carried by the
+whole maintenance unit.
 
 ### 11.1 What `this Seed` denotes
 
@@ -511,7 +513,36 @@ movement, or relation-discovery Responsibility.
 
 **Bounded addressed subject of Fidelity; no movement assignment.**
 
-### 11.3 What the inspection sentence carries
+### 11.3 Decomposition of `may`
+
+Active Book material uses `may` across materially different relations:
+
+- a Representation `may carry` a coordinate;
+- material `may participate` only after exact Act-local requirements;
+- an Act `may occur only` under exact current Standing;
+- this Seed `may record` an assignment only when that Responsibility is
+  already assigned and its exact subject is carried;
+- this Seed `may determine` one family-local Applicability result under that
+  clause's exact coordinates; and
+- this Seed `may inspect` this Witness.
+
+In the first five cases, the surrounding coordinates carry the actual work:
+what is carried, which input-to-Act relation is applicable, which Standing is
+required, which Responsibility is already assigned, or which determination is
+family-local. `May` supplies none of those coordinates by itself.
+
+The inspection sentence lacks an equivalent decomposition. Therefore `may`
+cannot safely be read as Authority, Authorization, Applicability, assignment,
+Act occurrence, capability, or a proposed Act. It also cannot be removed in
+thought while pretending that `inspect` is already an exact Act: the relation
+between the addressed Seed and Witness remains unresolved.
+
+#### Disposition
+
+**Composite modal word; the exact relation it carries in the inspection
+sentence is unresolved.**
+
+### 11.4 The three-sentence maintenance unit
 
 The active maintenance rule says:
 
@@ -522,10 +553,59 @@ Any result emitted by this Seed requires Evidence of that inspection
 and is bounded by it.
 ```
 
-The sentence supplies more than generic operator purpose. It addresses one
-exact Seed and one exact Witness and permits an inspection relation between
-them. It also constrains an emitted result to Evidence of that inspection and
-its boundary.
+The unit supplies more than generic operator purpose. Its second sentence
+addresses one exact Seed and one exact Witness. Its third sentence explicitly
+connects any result emitted by this Seed to required Evidence of `that
+inspection` and bounds the result by it.
+
+The first sentence may look like the Responsibility branch of the same unit:
+
+```text
+Responsibility:       maintain constitutional grammar
+responsible boundary: this Seed
+available Act:        inspect this Witness
+result boundary:      result emitted by this Seed
+Evidence condition:   Evidence of that inspection
+```
+
+That is a plausible decomposition to test, not an established relation.
+Physical adjacency and typography do not connect the subject of one sentence
+to the omitted subject of another.
+
+#### `Maintain the constitutional grammar`
+
+The imperative names an addressed object: constitutional grammar. It does not
+state its subject, responsible boundary, exact Responsibility, exact Act,
+Authority, Scope, occurrence, or Standing. The heading calls the paragraph a
+maintenance rule, but a heading cannot instantiate those coordinates.
+
+The next sentence's `this Seed` may be the omitted subject of `Maintain` in
+ordinary reading. Active material carries no explicit relation establishing
+that connection. The subject of `Maintain` therefore remains unresolved.
+
+#### `This Seed may inspect this Witness`
+
+This sentence supplies the exact addressed Seed and Witness. `May` does not
+establish the relation under which inspection occurs, and `inspect` has not
+been decomposed into an exact constitutional Act or relation.
+
+#### The emitted-result sentence
+
+The third sentence carries the unit's strongest exact relation:
+
+```text
+result emitted by this Seed
+    requires Evidence of that inspection
+    and is bounded by that inspection
+```
+
+This establishes a requirement on such an emitted result. It does not supply
+the inspection occurrence, Authority for inspection, Evidence that inspection
+occurred, an Evidence-of-Yield relation, or a result occurrence.
+
+The required Evidence is therefore a vacant coordinate until an exact
+inspection occurrence and its Evidence exist. A result cannot use the
+requirement itself as that Evidence.
 
 It does not provide the complete physiology required to read an instantiated
 Responsibility:
@@ -534,7 +614,7 @@ Responsibility:
 | --- | --- |
 | responsible boundary | `this Seed` is addressed |
 | bounded subject | `this Witness` is addressed |
-| relation or ordinary act word | `inspect` is present |
+| relation or ordinary act word | `may inspect` is present but unresolved |
 | Responsibility assignment Assertion | not carried |
 | exact constitutional Act | not decomposed |
 | Act occurrence | not carried |
@@ -549,7 +629,7 @@ The Evidence required for a later emitted result is occurrence-result support.
 It does not by itself establish Authority to perform the inspection or another
 Act.
 
-The safest positive reading is therefore narrow:
+The exact positive reading is therefore narrow:
 
 ```text
 this Seed
@@ -560,16 +640,149 @@ and any emitted result claiming that inspection
 must be evidenced and bounded by it
 ```
 
-The content of `inspect` as constitutional physiology is unresolved. It
+The relation carried by `may` and the content of `inspect` as constitutional
+physiology are unresolved. They
 cannot be silently expanded into Measurement, Compare, Locality reading,
 Representation, movement, or a family containing all of them.
 
 #### Disposition
 
-**Exact bounded permission language with incomplete Responsibility
-physiology; constitutional Act and Authority unresolved.**
+**Responsibility-shaped ordered unit with unestablished joints; subject of
+`Maintain`, inspection Act or relation, assignment, Authority, and Standing
+unresolved.**
 
-### 11.4 Chronology of `inspect`
+### 11.5 Fan-out, distinctions, and comparisons
+
+Operator testimony records the chronology of a useful pressure:
+
+```text
+developer chooses less than the complete bounded population
+-> developer interpretation enters through the omitted cases
+
+complete bounded population
+-> exact distinctions
+-> exact comparisons
+```
+
+That testimony does not authorize unbounded execution. Current repository
+structure nevertheless carries one exact bounded form of the pressure.
+
+#### Deterministic-test population
+
+The implementation-function measurement pytest hook reads the declared
+Fidelity subjects before tests run. Every collected test must resolve to
+exactly one declared Fidelity subject. The hook records each test occurrence
+with those exact subject coordinates. A missing, duplicated, or ambiguous
+subject refuses collection.
+
+This is a complete fan-out only with respect to one already-bounded
+population:
+
+```text
+every test collected for this pytest occurrence
+```
+
+It is not every callable, every material occurrence, every Responsibility, or
+every Act that could be imagined. Test collection supplies the boundary; it
+does not establish constitutional completeness outside that boundary.
+
+#### Exact distinctions
+
+Witness grammar carries three top-level distinctions:
+
+```text
+content
+locality
+occurrence
+```
+
+It also carries exact requirements and adversarial findings for each represented
+relation family. Earlier grammar called the top-level coordinates
+`discriminators`; that noun was withdrawn in favor of the distinctions
+themselves. The distinction does the work. No universal discriminator subject
+or Act is established.
+
+#### Exact comparisons
+
+`01.Source.C` carries one bounded Fidelity comparison:
+
+```text
+this Witness
++ deterministic tests
++ this Grammar
+-> this Fidelity
+```
+
+Other Compare roads remain family-local and retain their own Responsibility,
+subjects, Applicability, Participation, Act occurrence, Evidence, Authority,
+Scope, result, and Standing. Their recurrence does not establish one universal
+comparator.
+
+#### Honest coordinate siren
+
+Every collected test currently resolves to one declared Fidelity subject. A
+newer siren then asks each declared subject for one explicit coordinate in
+witness grammar. It intentionally reports the unresolved population rather
+than deriving the coordinate from test spelling or making the suite green by
+inference.
+
+That structure is material to inspection:
+
+```text
+test occurrence
+-> exact Fidelity subject
+-> explicit witness-grammar coordinate or an honest unresolved finding
+```
+
+It prevents a developer-selected subset from masquerading as the complete
+Fidelity boundary while preserving Unknown where the exact coordinate has not
+been connected.
+
+#### Candidate decomposition of inspection
+
+The closest currently evidenced decomposition of the maintenance-unit word
+`inspect` is therefore:
+
+```text
+this Witness
+-> every collected deterministic test under its exact Fidelity subject
+-> bounded distinction findings
+-> bounded comparison with this Grammar
+-> this Fidelity addressed to this Seed
+```
+
+This is a candidate because the coordinates align. Active material does not
+carry an exact relation saying:
+
+```text
+maintenance-unit inspection
+=
+01.Source.C Fidelity comparison
+```
+
+Nor does the Fidelity road establish correction Authority. A passing test
+cannot certify this Seed beyond that test's boundary, and an unresolved
+subject-to-grammar coordinate remains exposed rather than filled.
+
+The candidate therefore narrows `inspect` without resolving it. It establishes
+no generic fan-out dispatcher, no selection of all repository work, no
+movement Authority, and no relation-discovery Authority.
+
+#### Relation to coherent Locality
+
+Fidelity can compare its exact Witness and Grammar subjects through its exact
+test boundary. That does not establish that an Assertion needed by another
+Act must enter a shared Locality, or that movement is part of Fidelity. No
+active relation connects the two-movement table to this bounded test fan-out.
+
+#### Disposition
+
+**Strongest current candidate for inspection physiology: complete bounded
+Fidelity-test fan-out into exact distinctions and comparison. Exact relation
+from the maintenance unit to that road: Unknown. Relation to Assertion
+Locality movement: Unknown.**
+
+### 11.6 Chronology of the maintenance unit
 
 The first Book skeleton used inspection as maintenance direction:
 
@@ -592,9 +805,11 @@ Let this Seed inspect this Witness and emit only bounded results supported by
 that inspection's Evidence.
 ```
 
-A later wording pass decomposed `let` into the current permission and result
+A later wording pass replaced `let` with the current `may` sentence and result
 constraint. Neither change added an exact inspection Responsibility, Act
-occurrence, Authority, Yield, result boundary, or Standing.
+occurrence, Authority, Yield, result boundary, or Standing. The chronology
+does not recover the omitted subject of `Maintain` or connect that imperative
+to the inspection sentence.
 
 Earlier inquiry and examination districts attempted to elaborate selection,
 applicability, examination work, probe requests, and findings. Those runtime
@@ -612,7 +827,7 @@ coordinates.
 **Maintenance lineage and unresolved decomposition; no historical movement
 Authority.**
 
-### 11.5 The Seed-native Measurement pattern
+### 11.7 The Seed-native Measurement pattern
 
 `01.Source.D` establishes a distinct assignment shape:
 
@@ -647,9 +862,9 @@ this Seed
 **Valid evidence that exact Seed-relative assignment is possible; no
 cross-family assignment.**
 
-### 11.6 What Standing this Seed currently possesses
+### 11.8 What Standing this Seed currently possesses
 
-The root reference `this_Seed` supplies no Standing. The maintenance permission
+The root reference `this_Seed` supplies no Standing. The maintenance unit
 supplies no recorded assignment occurrence or Standing whose subject is that
 assignment. Fidelity supplies only test-bounded findings and no correction
 Authority.
@@ -680,12 +895,12 @@ Assertion Locality movement Responsibility was found.
 **Specific family-local assignment Standing exists; general inspection or
 movement assignment Standing is unestablished.**
 
-### 11.7 Inspection versus coherent-Locality movement
+### 11.9 Inspection versus coherent-Locality movement
 
 The two relations have different known coordinates:
 
 ```text
-inspection permission
+maintenance-unit inspection
     first subject:  this Seed
     addressed:      this Witness
     exact Act:      unresolved
@@ -702,7 +917,7 @@ Assertion Locality movement
 
 No active relation says that an Assertion relevant to inspection may be moved,
 that coherent Locality construction prepares an inspection Act, or that the
-inspection permission assigns the movement Responsibility.
+maintenance unit assigns the movement Responsibility.
 
 Even if movement later proves required to perform one exact inspection, the
 requirement would not establish Authority. The exact inspection Responsibility
@@ -714,18 +929,22 @@ material carries neither crossing.
 
 **Relation between inspection and coherent-Locality movement: Unknown.**
 
-### 11.8 Corrected vacancy result
+### 11.10 Corrected vacancy result
 
 The original report's vacancy conclusion remains, but its elimination record
 is corrected:
 
 ```text
-generic Seed language                    insufficient
+generic Seed wording                     insufficient
 operator purpose                         no Seed Authority
 this_Seed root                           exact address, no Standing
 this Seed's bounded Fidelity             no Authority beyond test
-this Seed may inspect this Witness        real active permission language
+Maintain constitutional grammar          subject and Responsibility unresolved
+this Seed may inspect this Witness        exact endpoints; may relation unresolved
+emitted result requires Evidence          exact result constraint
 inspection physiology                    unresolved
+bounded Fidelity test fan-out             strongest candidate decomposition
+maintenance inspection -> Fidelity        no established relation
 inspection -> Locality movement           no established relation
 Seed-native Measurement pattern           family-local, not movement
 specific this-Seed assignments             remain exact and family-local
@@ -735,7 +954,8 @@ generic Assertion movement Authority       unresolved
 
 The missing crossing is now narrower:
 
-> Does an exact Responsibility assignment establish inspection by this Seed,
+> Does the maintenance unit carry an exact Responsibility assignment for this
+> Seed and an exact inspection Act or relation,
 > and does a separately evidenced relation make one exact Assertion Locality
 > movement part of that exact inspection without importing source Authority or
 > later relation-discovery purpose?
@@ -753,10 +973,12 @@ the vacancy.
 
 It does not establish a collective subject from two Assertions in one
 Locality. It does not establish Compare, equality, meaning, or a
-relation-discovery responsibility. It does not establish that `inspect` is a
-constitutional kind, exact Act, movement, Measurement, Compare, Locality read,
-or Representation. It does not establish that `this Seed` has Authority by
-being exactly addressed.
+relation-discovery responsibility. It does not establish that `may` carries
+Authority, Authorization, Applicability, assignment, or Act occurrence. It
+does not establish that `inspect` is a constitutional kind, exact Act,
+movement, Measurement, Compare, Locality read, or Representation. It does not
+establish that `Maintain` is an exact Responsibility or that `this Seed` has
+Authority by being exactly addressed.
 
 The bounded result is only:
 
@@ -773,7 +995,11 @@ Seed movement assignment and Authority     unresolved
 later relation-discovery assignment        separate and unresolved
 this_Seed                                  exact addressed subject
 this Seed's Fidelity                       bounded to each test
-this Seed may inspect this Witness          exact active permission language
+Maintain constitutional grammar            subject and Responsibility unresolved
+this Seed may inspect this Witness          exact endpoints; may relation unresolved
+emitted result requires Evidence            exact result constraint
 inspection physiology                     unresolved
+bounded Fidelity test fan-out             strongest candidate decomposition
+maintenance inspection -> Fidelity        Unknown
 inspection relation to movement           Unknown
 ```
