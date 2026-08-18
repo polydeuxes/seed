@@ -84,11 +84,11 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    get_shared_position_responsibility_assignment,
-    get_shared_position_applicability_act_evidence,
-    get_recorded_shared_position_applicability,
-    get_shared_position_measurement_act_evidence,
-    get_recorded_shared_position_measurement,
+    _read_assignment as _read_shared_position_assignment,
+    _read_applicability_act as _read_shared_position_applicability_act,
+    _read_applicability_result as _read_shared_position_applicability_result,
+    _read_measurement_act as _read_shared_position_measurement_act,
+    _read_measurement_result as _read_shared_position_measurement_result,
 )
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND,
@@ -101,6 +101,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _read_applicability_result as _read_addressed_byte_reference_applicability_result,
     _read_determination_act as _read_addressed_byte_reference_determination_act,
     _read_determination_result as _read_addressed_byte_reference_determination_result,
+    _determination_result_reference as _addressed_byte_reference_determination_coordinates,
 )
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
@@ -564,24 +565,6 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
     }
 
 
-def _addressed_byte_reference_determination_coordinates(event) -> dict[str, str]:
-    """Carry the exact D.2 determination stage identities."""
-
-    return {
-        "recorded_occurrence_identity": event.identity,
-        "result_identity": event.material["result_identity"],
-        "act_occurrence_identity": event.material[
-            "determination_act_occurrence_identity"
-        ],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
-        ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
-        ],
-    }
-
-
 def _carries_exact_result(ledger: EventLedger, event) -> bool:
     """Whether this exact occurrence's intact Yield carries raw result bytes."""
 
@@ -601,6 +584,27 @@ def _carries_exact_result(ledger: EventLedger, event) -> bool:
         ),
     )
     return all(requirements.values())
+
+
+def _shared_position_assignment_reading(
+    ledger: EventLedger,
+    event,
+    *,
+    prior_standing: dict[str, Any],
+):
+    assignment_identity = event.identity
+    if event.kind != SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+        reference = event.material.get("responsibility_assignment_reference")
+        assignment_identity = (
+            reference.get("recorded_occurrence_identity")
+            if type(reference) is dict
+            else None
+        )
+    return _read_shared_position_assignment(
+        ledger,
+        assignment_identity,
+        prior_standing=prior_standing,
+    )
 
 
 def read_operator_locality_standing(
@@ -1370,23 +1374,48 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
-            get_shared_position_responsibility_assignment(
-                ledger, event.identity
+            _shared_position_assignment_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND:
-            get_shared_position_applicability_act_evidence(
-                ledger, event.identity
+            assignment_reading = _shared_position_assignment_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            _read_shared_position_applicability_act(
+                ledger,
+                event.identity,
+                assignment_reading=assignment_reading,
             )
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            get_recorded_shared_position_applicability(ledger, event.identity)
+            assignment_reading = _shared_position_assignment_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            _read_shared_position_applicability_result(
+                ledger,
+                event.identity,
+                assignment_reading=assignment_reading,
+            )
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND:
-            get_shared_position_measurement_act_evidence(
-                ledger, event.identity
+            assignment_reading = _shared_position_assignment_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            _read_shared_position_measurement_act(
+                ledger,
+                event.identity,
+                assignment_reading=assignment_reading,
             )
             continue
         if (
@@ -1640,7 +1669,16 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
-            get_recorded_shared_position_measurement(ledger, event.identity)
+            assignment_reading = _shared_position_assignment_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            _read_shared_position_measurement_result(
+                ledger,
+                event.identity,
+                assignment_reading=assignment_reading,
+            )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

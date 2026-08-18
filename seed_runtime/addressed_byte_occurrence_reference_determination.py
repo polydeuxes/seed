@@ -120,6 +120,24 @@ def _direct_result_reference(event: Event) -> dict[str, str]:
     }
 
 
+def _determination_result_reference(event: Event) -> dict[str, str]:
+    """Carry the exact identities of one validated D.2 Measurement result."""
+
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material[
+            "determination_act_occurrence_identity"
+        ],
+        "responsible_act_evidence_identity": event.material[
+            "responsible_act_evidence_identity"
+        ],
+        "evidence_of_yield_relation_identity": event.material[
+            "evidence_of_yield_relation_identity"
+        ],
+    }
+
+
 def _assignment_reference(event: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,

@@ -16,6 +16,10 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
+from seed_runtime.addressed_byte_occurrence_reference_determination import (
+    _determination_result_reference,
+    _read_determination_result,
+)
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
@@ -66,6 +70,9 @@ APPLICABILITY_RESULT_KIND = "shared pair-position input Applicability result"
 MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
 APPLICABILITY_BOUNDARY = "shared_pair_position_applicability"
 MEASUREMENT_BOUNDARY = "shared_pair_position_measurement"
+D2_RESULT_REFERENCE_COORDINATE = (
+    "addressed_byte_occurrence_reference_determination_result_reference"
+)
 
 EVENT_KIND_RESPONSIBILITIES = {
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND: "01.Source.D",
@@ -515,8 +522,9 @@ def _assignment_material(
     inputs: SharedPairPositionInputs,
     standing_boundary_identity: str,
     identities: dict[str, str],
+    determination_result_reference: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    return {
+    material = {
         "assignment_identity": identities["assignment_identity"],
         "assignment_subject_identity": identities[
             "assignment_subject_identity"
@@ -573,6 +581,11 @@ def _assignment_material(
         ],
         "unknown": ["what this ordered relation path represents remains Unknown"],
     }
+    if determination_result_reference is not None:
+        material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
+            determination_result_reference
+        )
+    return material
 
 
 _IDENTITY_COORDINATES = (
@@ -591,40 +604,8 @@ _IDENTITY_COORDINATES = (
 )
 
 
-def record_shared_position_responsibility_assignment(
-    ledger: EventLedger,
-    *,
-    first_result_occurrence_identity: str,
-    first_assertion_identity: str,
-    second_result_occurrence_identity: str,
-    second_assertion_identity: str,
-    locality_standing: dict[str, Any],
-) -> Event:
-    """Assign the next elevator from first and second yielded position Assertions."""
-
-    inputs = _inputs(
-        ledger,
-        first_result_occurrence_identity=first_result_occurrence_identity,
-        first_assertion_identity=first_assertion_identity,
-        second_result_occurrence_identity=second_result_occurrence_identity,
-        second_assertion_identity=second_assertion_identity,
-    )
-    required = tuple(
-        dict.fromkeys(
-            (
-                inputs.first.recorded_occurrence_identity,
-                inputs.second.recorded_occurrence_identity,
-            )
-        )
-    )
-    boundary = _require_standing(
-        ledger,
-        inputs=inputs,
-        locality_standing=locality_standing,
-        carried_coordinate="measurement_occurrences",
-        required_occurrences=required,
-    )
-    identities = {
+def _new_assignment_identities() -> dict[str, str]:
+    return {
         "assignment_identity": new_identity("shared_pair_position_assignment_identity"),
         "assignment_subject_identity": new_identity(
             "shared_pair_position_assignment_subject_identity"
@@ -660,6 +641,23 @@ def record_shared_position_responsibility_assignment(
             "shared_pair_position_second_participation_relation_identity"
         ),
     }
+
+
+def _record_shared_position_assignment(
+    ledger: EventLedger,
+    *,
+    inputs: SharedPairPositionInputs,
+    locality_standing: dict[str, Any],
+    required_occurrences: tuple[str, ...],
+) -> Event:
+    boundary = _require_standing(
+        ledger,
+        inputs=inputs,
+        locality_standing=locality_standing,
+        carried_coordinate="measurement_occurrences",
+        required_occurrences=required_occurrences,
+    )
+    identities = _new_assignment_identities()
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError("shared-position lifecycle identities collapsed")
     return ledger.append(
@@ -673,8 +671,196 @@ def record_shared_position_responsibility_assignment(
     )
 
 
+def _d2_result_inputs(
+    ledger: EventLedger,
+    *,
+    result_event_identity: str,
+    prior_standing: dict[str, Any],
+) -> tuple[Event, SharedPairPositionInputs]:
+    try:
+        result, _act, _applicability, _assignment, _source, references = (
+            _read_determination_result(
+                ledger,
+                result_event_identity,
+                prior_standing=prior_standing,
+            )
+        )
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "shared-position assignment requires one exact D.2 determination result"
+        ) from error
+    if len(references) != 2:
+        raise SharedPairPositionError(
+            "shared-position assignment requires exactly two ordered D.2 Assertion references"
+        )
+    try:
+        inputs = _validated_inputs(references[0], references[1])
+    except (TypeError, ValueError) as error:
+        raise SharedPairPositionError(
+            "shared-position assignment requires exactly two ordered D.2 Assertion references"
+        ) from error
+    return result, inputs
+
+
+def _require_exact_d2_result_standing(
+    ledger: EventLedger,
+    *,
+    result: Event,
+    inputs: SharedPairPositionInputs,
+    locality_standing: dict[str, Any],
+) -> str:
+    measurements = (
+        locality_standing.get("measurement_occurrences")
+        if type(locality_standing) is dict
+        else None
+    )
+    if (
+        type(measurements) is not dict
+        or measurements.get(result.identity)
+        != _determination_result_reference(result)
+    ):
+        raise SharedPairPositionError(
+            "current Standing carries no exact D.2 determination result"
+        )
+    return _require_standing(
+        ledger,
+        inputs=inputs,
+        locality_standing=locality_standing,
+        carried_coordinate="measurement_occurrences",
+        required_occurrences=(result.identity,),
+    )
+
+
+def record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result(
+    ledger: EventLedger,
+    *,
+    determination_result_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> Event:
+    """Assign from the two ordered Assertions carried by one current D.2 result."""
+
+    result_identity = _identity(
+        determination_result_event_identity,
+        "shared-position assignment requires one exact D.2 determination result",
+    )
+    result, inputs = _d2_result_inputs(
+        ledger,
+        result_event_identity=result_identity,
+        prior_standing=locality_standing,
+    )
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    current = read_operator_locality_standing(
+        ledger, locality_identity=result.locality_identity
+    )
+    if locality_standing != current:
+        raise SharedPairPositionError(
+            "shared-position assignment requires exact current Standing"
+        )
+    result, inputs = _d2_result_inputs(
+        ledger,
+        result_event_identity=result_identity,
+        prior_standing=current,
+    )
+    result_material = deepcopy(result.material)
+    current_snapshot = deepcopy(current)
+    boundary = _require_exact_d2_result_standing(
+        ledger,
+        result=result,
+        inputs=inputs,
+        locality_standing=current,
+    )
+    identities = _new_assignment_identities()
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError("shared-position lifecycle identities collapsed")
+
+    result_read, inputs_read = _d2_result_inputs(
+        ledger,
+        result_event_identity=result_identity,
+        prior_standing=current,
+    )
+    boundary_event = ledger.get(boundary)
+    if (
+        result_read != result
+        or result.material != result_material
+        or inputs_read != inputs
+        or current != current_snapshot
+        or locality_standing != current_snapshot
+        or current_snapshot.get("through_event_occurrence_identity") != boundary
+        or boundary_event is None
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+        or current_snapshot.get("measurement_occurrences", {}).get(result.identity)
+        != _determination_result_reference(result)
+    ):
+        raise SharedPairPositionError(
+            "D.2 determination result or current Standing changed before assignment"
+        )
+    return ledger.append(
+        SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+        _assignment_material(
+            inputs=inputs,
+            standing_boundary_identity=boundary,
+            identities=identities,
+            determination_result_reference=(
+                _determination_result_reference(result)
+            ),
+        ),
+        locality_identity=result.locality_identity,
+    )
+
+
+def record_shared_position_responsibility_assignment(
+    ledger: EventLedger,
+    *,
+    first_result_occurrence_identity: str,
+    first_assertion_identity: str,
+    second_result_occurrence_identity: str,
+    second_assertion_identity: str,
+    locality_standing: dict[str, Any],
+) -> Event:
+    """Assign from recurrent yielded position Assertions only."""
+
+    for identity in (
+        first_result_occurrence_identity,
+        second_result_occurrence_identity,
+    ):
+        result = ledger.get(identity) if type(identity) is str else None
+        if result is not None and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+            raise SharedPairPositionError(
+                "direct pair-position Assertions require one D.2 determination result"
+            )
+    inputs = _inputs(
+        ledger,
+        first_result_occurrence_identity=first_result_occurrence_identity,
+        first_assertion_identity=first_assertion_identity,
+        second_result_occurrence_identity=second_result_occurrence_identity,
+        second_assertion_identity=second_assertion_identity,
+    )
+    required = tuple(
+        dict.fromkeys(
+            (
+                inputs.first.recorded_occurrence_identity,
+                inputs.second.recorded_occurrence_identity,
+            )
+        )
+    )
+    return _record_shared_position_assignment(
+        ledger,
+        inputs=inputs,
+        locality_standing=locality_standing,
+        required_occurrences=required,
+    )
+
+
 def _read_assignment(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, SharedPairPositionInputs]:
     event = ledger.get(_identity(event_identity, "shared-position requires one assignment"))
     if (
@@ -688,11 +874,57 @@ def _read_assignment(
     second = event.material.get("second_position_assertion")
     if type(first) is not dict or type(second) is not dict:
         raise SharedPairPositionError("shared-position assignment carries no exact inputs")
-    inputs = _inputs_from_assignment_material(
-        ledger,
-        first=first,
-        second=second,
-    )
+    boundary = event.material.get("standing_boundary_identity")
+    provenance_present = D2_RESULT_REFERENCE_COORDINATE in event.material
+    determination_result = None
+    determination_reference = None
+    if provenance_present:
+        determination_reference = event.material.get(
+            D2_RESULT_REFERENCE_COORDINATE
+        )
+        determination_identity = (
+            determination_reference.get("recorded_occurrence_identity")
+            if type(determination_reference) is dict
+            else None
+        )
+        if prior_standing is None:
+            from seed_runtime.operator_locality_standing import (
+                read_operator_locality_standing_through,
+            )
+
+            try:
+                prior_standing = read_operator_locality_standing_through(
+                    ledger,
+                    locality_identity=event.locality_identity,
+                    through_event_occurrence_identity=boundary,
+                )
+            except (TypeError, ValueError) as error:
+                raise SharedPairPositionError(
+                    "shared-position assignment has no exact D.2 Standing"
+                ) from error
+        determination_result, inputs = _d2_result_inputs(
+            ledger,
+            result_event_identity=determination_identity,
+            prior_standing=prior_standing,
+        )
+        _require_exact_d2_result_standing(
+            ledger,
+            result=determination_result,
+            inputs=inputs,
+            locality_standing=prior_standing,
+        )
+        if determination_reference != _determination_result_reference(
+            determination_result
+        ):
+            raise SharedPairPositionError(
+                "shared-position assignment carries no exact D.2 provenance"
+            )
+    else:
+        inputs = _inputs_from_assignment_material(
+            ledger,
+            first=first,
+            second=second,
+        )
     identities = {
         coordinate: event.material.get(coordinate)
         for coordinate in _IDENTITY_COORDINATES
@@ -702,7 +934,6 @@ def _read_assignment(
         or len(set(identities.values())) != len(identities)
     ):
         raise SharedPairPositionError("shared-position assignment identities are not exact")
-    boundary = event.material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     if (
         boundary_event is None
@@ -714,6 +945,7 @@ def _read_assignment(
         inputs=inputs,
         standing_boundary_identity=boundary,
         identities=identities,
+        determination_result_reference=determination_reference,
     )
     if event.locality_identity != inputs.first.locality_identity or event.material != expected:
         raise SharedPairPositionError("shared-position assignment coordinates are not exact")
@@ -722,6 +954,11 @@ def _read_assignment(
             (
                 inputs.first.recorded_occurrence_identity,
                 inputs.second.recorded_occurrence_identity,
+                *(
+                    (determination_result.identity,)
+                    if determination_result is not None
+                    else ()
+                ),
                 boundary,
                 event.identity,
             )
@@ -1233,7 +1470,10 @@ def record_shared_position_measurement_act_evidence(
 
 
 def _read_measurement_act(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
 ) -> tuple[Event, Event, Event, SharedPairPositionInputs]:
     event = ledger.get(_identity(event_identity, "shared-position requires Act Evidence"))
     if (
@@ -1247,9 +1487,16 @@ def _read_measurement_act(
     applicability_reference = event.material.get("applicability_result_reference")
     if type(assignment_reference) is not dict or type(applicability_reference) is not dict:
         raise SharedPairPositionError("Measurement Act carries no exact inputs")
-    assignment, inputs = _read_assignment(
-        ledger, assignment_reference.get("recorded_occurrence_identity")
-    )
+    if assignment_reading is None:
+        assignment_reading = _read_assignment(
+            ledger, assignment_reference.get("recorded_occurrence_identity")
+        )
+    assignment, inputs = assignment_reading
+    if (
+        assignment_reference.get("recorded_occurrence_identity")
+        != assignment.identity
+    ):
+        raise SharedPairPositionError("Measurement Act carries no exact inputs")
     applicability_identity = applicability_reference.get("recorded_occurrence_identity")
     (
         applicability,
@@ -1522,9 +1769,12 @@ def _recorded_measurement_result_material(
     }
 
 
-def get_recorded_shared_position_measurement(
-    ledger: EventLedger, event_identity: str
-) -> dict[str, Any]:
+def _read_measurement_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+) -> tuple[Event, dict[str, Any]]:
     event = ledger.get(_identity(event_identity, "shared-position requires one result"))
     if (
         event is None
@@ -1535,7 +1785,9 @@ def get_recorded_shared_position_measurement(
         raise SharedPairPositionError("shared-position Measurement result is corrupted")
     act_identity = event.material.get("responsible_act_evidence_identity")
     act, assignment, applicability, inputs = _read_measurement_act(
-        ledger, act_identity
+        ledger,
+        act_identity,
+        assignment_reading=assignment_reading,
     )
     expected = _measurement_result_material(
         act=act,
@@ -1557,4 +1809,11 @@ def get_recorded_shared_position_measurement(
         occurrence_boundary=MEASUREMENT_BOUNDARY,
         result_kind=MEASUREMENT_RESULT_KIND,
     )
+    return event, carried
+
+
+def get_recorded_shared_position_measurement(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    _event, carried = _read_measurement_result(ledger, event_identity)
     return json.loads(json.dumps(carried))
