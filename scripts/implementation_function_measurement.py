@@ -42,7 +42,7 @@ _enclosing_measurement_coordinates: list[
     tuple[dict[str, list[int]], int, int]
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
-_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, str]]()
+_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, object]]()
 _active_sql_invocations = threading.local()
 
 
@@ -566,7 +566,7 @@ def pytest_sessionstart(session: object) -> None:
     begin()
 
 
-def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
+def _fidelity_test_subjects() -> dict[str, dict[str, object]]:
     grammar = json.loads(
         (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
     )
@@ -582,7 +582,7 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
     test_subjects = fidelity["test_subjects"]
     if type(test_subjects) is not list or not test_subjects:
         raise TypeError("exact Fidelity test subjects are required")
-    declared: dict[str, dict[str, str]] = {}
+    declared: dict[str, dict[str, object]] = {}
     for coordinates in test_subjects:
         if type(coordinates) is not dict:
             raise TypeError("exact Fidelity test subject coordinates are required")
@@ -591,11 +591,51 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
             raise TypeError("one exact Fidelity test subject is required")
         if subject in declared:
             raise ValueError("Fidelity test subject entered the grammar twice")
-        if any(
-            type(name) is not str or type(value) is not str
-            for name, value in coordinates.items()
-        ):
-            raise TypeError("exact Fidelity test subject coordinates are required")
+        for name, value in coordinates.items():
+            if type(name) is not str:
+                raise TypeError("exact Fidelity test subject coordinates are required")
+            if name != "witness_grammar_coordinate_reference":
+                if type(value) is not str:
+                    raise TypeError(
+                        "exact Fidelity test subject coordinates are required"
+                    )
+                continue
+            if (
+                type(value) is not dict
+                or tuple(value) != (
+                    "first_subject",
+                    "relation",
+                    "second_subject",
+                    "coordinate",
+                )
+                or value["first_subject"] != subject
+                or value["relation"] != "witness_for"
+                or value["second_subject"] != "this_Grammar"
+                or type(value["coordinate"]) is not list
+                or not value["coordinate"]
+                or any(
+                    not (
+                        (type(part) is str and part)
+                        or (
+                            type(part) is dict
+                            and tuple(part) == (
+                                "identity",
+                                "first_subject",
+                                "relation",
+                                "second_subject",
+                            )
+                            and all(
+                                type(coordinate) is str and coordinate
+                                for coordinate in part.values()
+                            )
+                        )
+                    )
+                    for part in value["coordinate"]
+                )
+            ):
+                raise TypeError(
+                    "one exact witness grammar coordinate reference is required"
+                )
         declared[subject] = {
             **coordinates,
             "witness_for": relation["second_subject"],
@@ -615,8 +655,8 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
 def _pytest_subject(
     module: object,
     function_under_test: object,
-    declared: dict[str, dict[str, str]],
-) -> dict[str, str]:
+    declared: dict[str, dict[str, object]],
+) -> dict[str, object]:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
     if uniform is not None and families is not None:

@@ -3762,6 +3762,40 @@ def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order
         raise AssertionError("inverted Fidelity Representation order escaped")
 
 
+def test_each_fidelity_test_subject_names_one_exact_witness_grammar_coordinate():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    test_subjects = grammar["clause_coordinates"]["01.Source.C"]["test_subjects"]
+    missing = []
+
+    for test_subject in test_subjects:
+        reference = test_subject.get("witness_grammar_coordinate_reference")
+        if reference is None:
+            missing.append(test_subject["subject"])
+            continue
+        assert reference == {
+            "first_subject": test_subject["subject"],
+            "relation": "witness_for",
+            "second_subject": "this_Grammar",
+            "coordinate": reference["coordinate"],
+        }
+        coordinate = reference["coordinate"]
+        assert type(coordinate) is list
+        assert len(coordinate) >= 3
+        assert coordinate[0] == "clause_coordinates"
+        clause_identity = coordinate[1]
+        clause = grammar["clause_coordinates"][clause_identity]
+        assert clause["book_material_reference"] == clause_identity
+
+        carried = grammar
+        for part in coordinate:
+            carried = carried[
+                part["identity"] if type(part) is dict else part
+            ]
+        assert carried is not None
+
+    assert missing == []
+
+
 def test_every_relation_has_exact_fidelity_findings():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     findings = _relation_fidelity_findings()
@@ -6840,5 +6874,6 @@ FIDELITY_SUBJECTS = {
     "bounded_fidelity_comparison": (
         test_fidelity_is_bounded_witness_grammar_comparison_for_this_seed,
         test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order,
+        test_each_fidelity_test_subject_names_one_exact_witness_grammar_coordinate,
     ),
 }

@@ -435,7 +435,24 @@
         {"subject": "applicability_responsibility"},
         {"subject": "witness_clause_grammar_recorded_occurrence_kind"},
         {"subject": "active_book_scope"},
-        {"subject": "yield_result_occurrence_evidence"},
+        {
+          "subject": "yield_result_occurrence_evidence",
+          "witness_grammar_coordinate_reference": {
+            "first_subject": "yield_result_occurrence_evidence",
+            "relation": "witness_for",
+            "second_subject": "this_Grammar",
+            "coordinate": [
+              "clause_coordinates",
+              "02.Acts.A",
+              {
+                "identity": "Evidence_of_Yield_relation",
+                "first_subject": "Evidence",
+                "relation": "of",
+                "second_subject": "Yield_relation"
+              }
+            ]
+          }
+        },
         {"subject": "representation_exact_evidence_references"},
         {"subject": "exact_act_occurrence"},
         {"subject": "input_act_relation_occurrence"},
@@ -462,7 +479,19 @@
         {"subject": "representation_source_act_locality_distinction"},
         {"subject": "yield_relation_identity"},
         {"subject": "material_measurement_witness"},
-        {"subject": "declared_measurement_result"},
+        {
+          "subject": "declared_measurement_result",
+          "witness_grammar_coordinate_reference": {
+            "first_subject": "declared_measurement_result",
+            "relation": "witness_for",
+            "second_subject": "this_Grammar",
+            "coordinate": [
+              "clause_coordinates",
+              "01.Source.D",
+              "result_carries"
+            ]
+          }
+        },
         {"subject": "measurement_result_distinctions"},
         {"subject": "declared_Measurement_result"},
         {"subject": "read_write_difference_count"},
@@ -515,7 +544,19 @@
         {"subject": "emission_relation_instantiation"},
         {"subject": "successful_emission_relation"},
         {"subject": "emission_candidate_Admission_to_operator_Locality"},
-        {"subject": "applicability_determination"},
+        {
+          "subject": "applicability_determination",
+          "witness_grammar_coordinate_reference": {
+            "first_subject": "applicability_determination",
+            "relation": "witness_for",
+            "second_subject": "this_Grammar",
+            "coordinate": [
+              "clause_coordinates",
+              "01.Standing.E.1",
+              "Applicability_findings"
+            ]
+          }
+        },
         {"subject": "input_role_participation_distinction"},
         {"subject": "candidate_participation_distinction"},
         {"subject": "candidate_role_distinction"},
@@ -589,7 +630,19 @@
         {"subject": "emission_locality_distinction"},
         {"subject": "exact_emission_boundary"},
         {"subject": "material_ingest_representation_distinction"},
-        {"subject": "representation_source_coordinates"},
+        {
+          "subject": "representation_source_coordinates",
+          "witness_grammar_coordinate_reference": {
+            "first_subject": "representation_source_coordinates",
+            "relation": "witness_for",
+            "second_subject": "this_Grammar",
+            "coordinate": [
+              "clause_coordinates",
+              "01.Source.A",
+              "subject"
+            ]
+          }
+        },
         {"subject": "exact_Representation_occurrence"},
         {"subject": "durable_ledger_boundary"},
         {"subject": "event_occurrence"},
