@@ -88,6 +88,11 @@ def test_witness_discriminates_content_locality_and_occurrence():
         "locality",
         "occurrence",
     ]
+    assert grammar["witness"]["distinct_from"] == [
+        ["content", "locality"],
+        ["content", "occurrence"],
+        ["locality", "occurrence"],
+    ]
 
 
 def test_witness_yield_relation_preserves_occurrence_and_result_identity():
@@ -369,6 +374,15 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
         "Applicability_by_agreement",
         "Applicability_by_availability",
     ]
+    assert clause["Applicability_findings"] == [
+        "applicable",
+        "inapplicable",
+        "conflicting",
+        "Unknown",
+    ]
+    assert clause["emission_input_Applicability_occurrence"][
+        "each_other_Applicability_finding"
+    ] == {"requires": "separate_evidenced_determination"}
 
 
 def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():

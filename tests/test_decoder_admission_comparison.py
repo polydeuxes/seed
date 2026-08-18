@@ -99,7 +99,7 @@ FIDELITY_SUBJECTS = {
     "admission_preservation_relation": (
         test_an_admission_preserves_itself_and_the_one_without_distinctions,
     ),
-    "material_function_admission_equivalence": (
+    "material_function_same_Admission": (
         test_many_decoder_functions_reach_the_same_admission,
     ),
     "material_function_admission_distinction": (

@@ -183,7 +183,7 @@ FIDELITY_SUBJECTS = {
     "rosetta_admission_clause_distinction": (
         test_rosetta_admission_does_not_establish_a_clause,
     ),
-    "rosetta_word_admission": (
+    "rosetta_words_admission": (
         test_rosetta_prose_has_lexical_admission,
         test_rosetta_admission_detects_an_unadmitted_word_without_naming_it,
     ),

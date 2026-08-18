@@ -350,6 +350,12 @@ def test_every_grammar_representation_composite_preserves_material_order():
 
 def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    assert grammar["clauses"]["01.Standing.B"]["standing_not_established"][1] == {
+        "first_subject": "material_with_same_name",
+        "relation": "identifies",
+        "second_subject": "same_subject",
+        "standing": "not_established",
+    }
     mutations = (
         grammar["clauses"]["01.Standing.B"]["standing_not_established"][3],
         grammar["clauses"]["01.Source.C"]["test_subjects"][77],
@@ -3563,7 +3569,7 @@ def test_witness_discriminates_content_locality_and_occurrence():
     assert first.identity != repeated.identity
 
     assert grammar["distinctions"] == ["content", "locality", "occurrence"]
-    assert grammar["non_equivalence"] == [
+    assert grammar["distinct_from"] == [
         ["content", "locality"],
         ["content", "occurrence"],
         ["locality", "occurrence"],
@@ -4941,7 +4947,7 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
         }, boundary
 
 
-def test_unrelated_yield_occurrences_do_not_share_result_identity():
+def test_different_yield_occurrences_do_not_share_result_identity():
     factories = {
         "representation_candidate": _representation_candidate_yield_witness,
         "representation_admission": _representation_admission_yield_witness,
@@ -6339,8 +6345,8 @@ FIDELITY_SUBJECTS = {
     "yield_relation_exact_evidence_result": (
         test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result,
     ),
-    "unrelated_yield_result_identity": (
-        test_unrelated_yield_occurrences_do_not_share_result_identity,
+    "different_yield_result_identity": (
+        test_different_yield_occurrences_do_not_share_result_identity,
     ),
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,

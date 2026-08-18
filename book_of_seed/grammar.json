@@ -299,7 +299,7 @@
       "evidence_not_intact": "missing",
       "occurrence_of_different_relation": "exact"
     },
-    "non_equivalence": [
+    "distinct_from": [
       ["content", "locality"],
       ["content", "occurrence"],
       ["locality", "occurrence"]
@@ -467,7 +467,7 @@
         {"subject": "yield_subject_presence_relation_distinction"},
         {"subject": "yield_relation_result_identity"},
         {"subject": "yield_relation_exact_evidence_result"},
-        {"subject": "unrelated_yield_result_identity"},
+        {"subject": "different_yield_result_identity"},
         {"subject": "relation_witness_evidence"},
         {"subject": "representation_yield_participation_distinction"},
         {"subject": "locality_relation_occurrence_evidence"},
@@ -516,9 +516,9 @@
         {"subject": "single_byte_admission_result"},
         {"subject": "event_record_relation_admission"},
         {"subject": "witness_relation_declarations"},
-        {"subject": "event_record_coordinate_word_admission"},
-        {"subject": "seed_event_material_word_admission"},
-        {"subject": "event_material_word_admission"},
+        {"subject": "event_record_coordinate_words_admission"},
+        {"subject": "seed_event_material_words_admission"},
+        {"subject": "event_material_words_admission"},
         {"subject": "material_admission_witness"},
         {"subject": "relation_required_coordinates"},
         {"subject": "relation_occurrence_boundary"},
@@ -550,7 +550,7 @@
         {"subject": "relation_fidelity_findings"},
         {"subject": "relation_occurrence_fidelity_findings"},
         {"subject": "admission_preservation_relation"},
-        {"subject": "material_function_admission_equivalence"},
+        {"subject": "material_function_same_Admission"},
         {"subject": "material_function_admission_distinction"},
         {"subject": "admission_preservation_boundary"},
         {"subject": "prior_admission_identity"},
@@ -568,7 +568,7 @@
           "material_reference": "this_Rosetta"
         },
         {
-          "subject": "rosetta_word_admission",
+          "subject": "rosetta_words_admission",
           "material_reference": "this_Rosetta"
         },
         {"subject": "later_reference_relation_distinction"},
@@ -584,7 +584,7 @@
           "subject": "rosetta_composite_support_relation_distinction",
           "material_reference": "this_Rosetta"
         },
-        {"subject": "clause_coordinate_word_admission"},
+        {"subject": "clause_coordinate_words_admission"},
         {
           "subject": "book_rosetta_composite_admission_distinction",
           "first_material_reference": "this_Book",
@@ -657,7 +657,7 @@
         {"subject": "compiled_function_invocation_witness"},
         {"subject": "ledger_identity"},
         {"subject": "event_record_witness_grammar_words"},
-        {"subject": "supplied_material_seed_word_distinction"},
+        {"subject": "supplied_material_seed_words_distinction"},
         {"subject": "grammar_recorded_occurrence_kind_distinction"},
         {
           "subject": "this_book_material_acquisition_witness",
@@ -1207,7 +1207,12 @@
       ],
       "standing_not_established": [
         "Standing",
-        "equivalence_by_name",
+        {
+          "first_subject": "material_with_same_name",
+          "relation": "identifies",
+          "second_subject": "same_subject",
+          "standing": "not_established"
+        },
         "mandatory_grammar",
         {
           "identity": "Authority_supports_exact_Act",
@@ -1502,7 +1507,7 @@
         "Unknown",
         "negative_Authority"
       ],
-      "standings": ["applicable", "inapplicable", "conflicting", "Unknown"],
+      "Applicability_findings": ["applicable", "inapplicable", "conflicting", "Unknown"],
       "standing_not_established": [
         "Applicability_by_usefulness",
         "Applicability_by_agreement",
@@ -1567,7 +1572,9 @@
           "same_emission_Act_occurrence",
           "same_emission_result_boundary"
         ],
-        "other_Standings": "separate_evidenced_determination",
+        "each_other_Applicability_finding": {
+          "requires": "separate_evidenced_determination"
+        },
         "standing_not_established": [
           "Participation",
           "emission_result",

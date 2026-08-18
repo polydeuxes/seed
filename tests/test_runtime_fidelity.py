@@ -1284,21 +1284,21 @@ FIDELITY_SUBJECTS = {
     "unresolved_event_material_visibility": (
         test_unresolved_event_material_expansion_remains_visible,
     ),
-    "event_record_coordinate_word_admission": (
+    "event_record_coordinate_words_admission": (
         test_runtime_record_words_have_constitutional_admission,
     ),
-    "seed_event_material_word_admission": (
+    "seed_event_material_words_admission": (
         test_seed_authored_event_material_values_have_lexical_admission,
     ),
     "event_record_witness_grammar_words": (
         test_runtime_record_words_are_witness_grammar_words,
     ),
-    "event_material_word_admission": (
+    "event_material_words_admission": (
         test_authored_value_admission_catches_an_unadmitted_word_without_naming_it,
         test_authored_value_admission_crosses_a_local_material_function,
         test_authored_value_admission_binds_local_material_function_arguments,
     ),
-    "supplied_material_seed_word_distinction": (
+    "supplied_material_seed_words_distinction": (
         test_opaque_supplied_material_is_not_seed_authored_language,
     ),
     "coordinate_reference_distinction": (

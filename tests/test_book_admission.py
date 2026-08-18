@@ -210,7 +210,7 @@ FIDELITY_SUBJECTS = {
         test_rosetta_admits_composite_support_relation_terms,
         test_failure_is_book_material_and_performative_forms_are_rosetta_composites,
     ),
-    "clause_coordinate_word_admission": (
+    "clause_coordinate_words_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,
     ),
     "book_rosetta_composite_admission_distinction": (
