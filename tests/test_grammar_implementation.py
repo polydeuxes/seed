@@ -3553,7 +3553,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "supporting_measurements",
         ],
         "standing_not_established": [
-            "global_certification",
+            "Standing_beyond_test_boundary",
             "correction_Authority",
         ],
     }

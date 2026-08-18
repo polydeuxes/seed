@@ -708,7 +708,7 @@
         "supporting_measurements"
       ],
       "standing_not_established": [
-        "global_certification",
+        "Standing_beyond_test_boundary",
         "correction_Authority"
       ]
     },
