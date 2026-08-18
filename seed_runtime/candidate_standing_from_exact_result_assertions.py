@@ -1665,6 +1665,47 @@ def exact_source_assertion_materials_with_every_ordered_pair_candidate_represent
     )
 
 
+def exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[
+        str,
+        tuple[
+            tuple[dict[str, Any], dict[str, Any], dict[str, Any]],
+            ...,
+        ],
+    ],
+    ...,
+]:
+    """Expose every cross-role representation path pair without one relation."""
+
+    readings = (
+        exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+            ledger,
+            candidate_standing_result_event_identity=(
+                candidate_standing_result_event_identity
+            ),
+        )
+    )
+    return tuple(
+        (
+            candidate_identity,
+            tuple(
+                (
+                    deepcopy(first_path),
+                    deepcopy(second_path),
+                    deepcopy(relation_coordinate),
+                )
+                for first_path in _exact_representation_paths(first)
+                for second_path in _exact_representation_paths(second)
+            ),
+        )
+        for candidate_identity, first, second, relation_coordinate in readings
+    )
+
+
 def boundaries_of_recorded_candidate_standing(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, EventLedgerBoundary]:

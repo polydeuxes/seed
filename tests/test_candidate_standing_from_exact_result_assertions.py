@@ -11,6 +11,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_ordered_pair_candidate,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
+    exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate,
     exact_representation_paths_from_every_ordered_pair_candidate,
     exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
@@ -490,6 +491,78 @@ def test_every_ordered_pair_candidate_exposes_every_nested_representation_path()
     assert ledger.append_boundary() == boundary_before_read
 
 
+def test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    separate_paths = exact_representation_paths_from_every_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+    boundary_before_read = ledger.append_boundary()
+
+    paired_paths = exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+
+    assert tuple(candidate for candidate, _pairs in paired_paths) == tuple(
+        candidate for candidate, _first, _second in separate_paths
+    )
+    for (
+        _candidate,
+        first_paths,
+        second_paths,
+    ), (
+        _same_candidate,
+        pairs,
+    ) in zip(separate_paths, paired_paths):
+        assert len(pairs) == len(first_paths) * len(second_paths)
+        assert tuple((first, second) for first, second, _relation in pairs) == tuple(
+            (first, second)
+            for first in first_paths
+            for second in second_paths
+        )
+        assert all(
+            set(first) == {"path", "material"}
+            and set(second) == {"path", "material"}
+            and relation["coordinate"] == "represented_relation"
+            and relation["material"] == "Unknown"
+            for first, second, relation in pairs
+        )
+    assert ledger.append_boundary() == boundary_before_read
+
+
+def test_every_cross_role_representation_path_pair_replays_after_sqlite_restart(
+    tmp_path,
+):
+    database = str(tmp_path / "candidate-representation-path-pairs.sqlite")
+    ledger = SQLiteEventLedger(database)
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    expected = exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+    boundary = ledger.append_boundary()
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    assert exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+    ) == expected
+    assert reopened.append_boundary() == boundary
+
+
 def test_every_ordered_pair_candidate_exposes_only_explicit_source_coordinates():
     import json
 
@@ -942,6 +1015,8 @@ FIDELITY_SUBJECTS = {
     ),
     "candidate_source_representation_path_order": (
         test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
+        test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair,
+        test_every_cross_role_representation_path_pair_replays_after_sqlite_restart,
     ),
     "one_source_candidate_standing_responsibility_coordinates": (
         test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
