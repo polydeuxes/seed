@@ -1369,9 +1369,8 @@ def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
 
 
 @pytest.mark.parametrize(
-    "retained_input",
+    "provenance_coordinate",
     (
-        "shared_assignment",
         "result",
         "source",
         "pair",
@@ -1380,8 +1379,8 @@ def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
         "recurrent_yield",
     ),
 )
-def test_operator_replay_requires_each_shared_input_occurrence_intact(
-    monkeypatch, retained_input
+def test_operator_replay_requires_each_shared_input_provenance_occurrence_intact(
+    monkeypatch, provenance_coordinate
 ):
     ledger, locality, _source, first, second = _fixture()
     _record_path(ledger, locality, first, second)
@@ -1403,16 +1402,43 @@ def test_operator_replay_requires_each_shared_input_occurrence_intact(
                 "recurrent_act": recurrent["act"].identity,
                 "recurrent_yield": recurrent["evidence_of_yield"].identity,
             }
-            target = (
-                reading.input_occurrences[0]
-                if retained_input == "shared_assignment"
-                else next(
-                    occurrence
-                    for occurrence in reading.input_occurrences
-                    if occurrence.event.identity == identities[retained_input]
-                )
+            target = next(
+                occurrence
+                for occurrence in reading.input_provenance_occurrences
+                if occurrence.event.identity == identities[provenance_coordinate]
             )
             target.event.material["changed_between_shared_replay_phases"] = True
+            changed = True
+        return original(ledger, reading, event)
+
+    monkeypatch.setattr(
+        operator_standing_module,
+        "_advance_shared_position_replay_reading",
+        change_before_applicability,
+    )
+
+    with pytest.raises(SharedPairPositionError, match="intact"):
+        _standing(ledger, locality)
+    assert changed is True
+
+
+def test_operator_replay_requires_its_shared_assignment_occurrence_intact(
+    monkeypatch,
+):
+    ledger, locality, _source, first, second = _fixture()
+    _record_path(ledger, locality, first, second)
+    original = operator_standing_module._advance_shared_position_replay_reading
+    changed = False
+
+    def change_before_applicability(ledger, reading, event):
+        nonlocal changed
+        if (
+            not changed
+            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
+        ):
+            reading.assignment_occurrence.event.material[
+                "changed_between_shared_replay_phases"
+            ] = True
             changed = True
         return original(ledger, reading, event)
 
@@ -1625,7 +1651,8 @@ FIDELITY_SUBJECTS = {
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
         test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle,
-        test_operator_replay_requires_each_shared_input_occurrence_intact,
+        test_operator_replay_requires_each_shared_input_provenance_occurrence_intact,
+        test_operator_replay_requires_its_shared_assignment_occurrence_intact,
         test_operator_replay_requires_each_shared_phase_occurrence_intact,
         test_operator_replay_refuses_a_substituted_shared_assignment,
         test_operator_shared_replay_starts_fresh_after_exception,

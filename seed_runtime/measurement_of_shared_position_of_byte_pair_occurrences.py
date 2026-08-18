@@ -137,7 +137,8 @@ class _SharedPositionReplayOccurrence:
 @dataclass
 class _SharedPositionReplayReading:
     assignment_reading: tuple[Event, SharedPairPositionInputs]
-    input_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    assignment_occurrence: _SharedPositionReplayOccurrence
+    input_provenance_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
     applicability_act_occurrence: _SharedPositionReplayOccurrence | None = None
     applicability_result_occurrence: _SharedPositionReplayOccurrence | None = None
     measurement_act_occurrence: _SharedPositionReplayOccurrence | None = None
@@ -1907,7 +1908,7 @@ def _shared_position_replay_occurrence(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError(
-            "shared-position replay input occurrence is absent or corrupted"
+            "shared-position replay occurrence is absent or corrupted"
         )
     return _SharedPositionReplayOccurrence(
         event=event,
@@ -1989,12 +1990,11 @@ def _recurrent_input_lifecycle_occurrences(
     return assignment, act, evidence_of_yield
 
 
-def _shared_position_replay_input_occurrences(
+def _shared_position_replay_input_provenance_occurrences(
     ledger: EventLedger,
-    assignment: Event,
     inputs: SharedPairPositionInputs,
 ) -> tuple[_SharedPositionReplayOccurrence, ...]:
-    """Retain the exact occurrences directly carried by both input readings."""
+    """Retain the exact provenance of both derived input references."""
 
     identities: list[str] = []
     recurrent_lifecycle_events: list[Event] = []
@@ -2023,18 +2023,12 @@ def _shared_position_replay_input_occurrences(
                 _recurrent_input_lifecycle_occurrences(ledger, result)
             )
 
-    occurrences = [
-        _shared_position_replay_occurrence(
-            ledger,
-            assignment,
-            expected_material=deepcopy(assignment.material),
-        )
-    ]
+    occurrences = []
     for event_identity in dict.fromkeys(identities):
         event = ledger.get(event_identity)
         if event is None:
             raise SharedPairPositionError(
-                "shared-position replay input occurrence is absent"
+                "shared-position replay input provenance is absent"
             )
         occurrences.append(_shared_position_replay_occurrence(ledger, event))
     entered = {occurrence.event.identity for occurrence in occurrences}
@@ -2056,8 +2050,15 @@ def _shared_position_replay_reading(
         )
     reading = _SharedPositionReplayReading(
         assignment_reading=assignment_reading,
-        input_occurrences=_shared_position_replay_input_occurrences(
-            ledger, assignment, inputs
+        assignment_occurrence=_shared_position_replay_occurrence(
+            ledger,
+            assignment,
+            expected_material=deepcopy(assignment.material),
+        ),
+        input_provenance_occurrences=(
+            _shared_position_replay_input_provenance_occurrences(
+                ledger, inputs
+            )
         ),
     )
     _require_exact_shared_position_replay_reading(ledger, reading)
@@ -2072,14 +2073,15 @@ def _require_exact_shared_position_replay_reading(
     if (
         type(assignment) is not Event
         or type(inputs) is not SharedPairPositionInputs
-        or not reading.input_occurrences
-        or reading.input_occurrences[0].event is not assignment
+        or reading.assignment_occurrence.event is not assignment
+        or not reading.input_provenance_occurrences
     ):
         raise SharedPairPositionError(
             "shared-position replay assignment reading was substituted"
         )
     for occurrence in (
-        *reading.input_occurrences,
+        reading.assignment_occurrence,
+        *reading.input_provenance_occurrences,
         reading.applicability_act_occurrence,
         reading.applicability_result_occurrence,
         reading.measurement_act_occurrence,
@@ -2168,7 +2170,7 @@ def _advance_shared_position_replay_reading(
     ordered = tuple(
         occurrence.event.identity
         for occurrence in (
-            reading.input_occurrences[0],
+            reading.assignment_occurrence,
             reading.applicability_act_occurrence,
             reading.applicability_result_occurrence,
             reading.measurement_act_occurrence,
