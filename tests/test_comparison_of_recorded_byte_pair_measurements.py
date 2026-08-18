@@ -827,6 +827,7 @@ FIDELITY_SUBJECTS = {
         test_preexisting_material_is_a_premise_for_later_operator_turns,
         test_stale_pair_measurement_is_not_reused_as_the_current_premise,
         test_operator_pair_premise_and_compare_survive_reopen,
+        test_zero_pair_premise_comparison_survives_console_and_reopen,
         test_carried_compare_result_is_one_structured_representation_source,
         test_compare_result_absent_from_standing_is_refused_as_representation_source,
     ),
