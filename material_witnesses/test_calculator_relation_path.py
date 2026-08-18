@@ -40,6 +40,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
+    exact_source_assertion_materials_from_ordered_pair_candidate,
     get_recorded_candidate_standing,
     record_one_source_and_ordered_pair_candidate_standings,
 )
@@ -407,8 +408,36 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         (path_finding["identity"], calculator_position.assertion_identity),
         (calculator_position.assertion_identity, path_finding["identity"]),
     }
+    crossing_candidate = next(
+        candidate
+        for candidate in standing["candidate_assertions"]
+        if (
+            candidate["assertion_subject"][
+                "first_source_assertion_reference"
+            ]["assertion_identity"],
+            candidate["assertion_subject"][
+                "second_source_assertion_reference"
+            ]["assertion_identity"],
+        )
+        == (path_finding["identity"], calculator_position.assertion_identity)
+    )
+    boundary_before_read = ledger.append_boundary()
+    exact_path_finding, exact_calculator_position = (
+        exact_source_assertion_materials_from_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+            candidate_assertion_identity=(
+                crossing_candidate["dimensions"]["identity"]
+            ),
+        )
+    )
 
     assert exact_orders <= set(source_orders)
+    assert exact_path_finding["identity"] == path_finding["identity"]
+    assert exact_calculator_position["dimensions"]["identity"] == (
+        calculator_position.assertion_identity
+    )
+    assert ledger.append_boundary() == boundary_before_read
     assert all(
         candidate["represented_relation"] == "Unknown"
         for candidate in standing["candidate_assertions"]

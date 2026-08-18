@@ -1257,9 +1257,126 @@ def _read_candidate_result(
 def get_recorded_candidate_standing(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    """Replay B, R, and G before returning the exact Candidate Standing."""
+    """Replay its exact sources and owed Candidates before returning Standing."""
 
     return deepcopy(_read_candidate_result(ledger, event_identity)[0].material)
+
+
+def _exact_source_assertion_material(
+    ledger: EventLedger, reference: dict[str, Any]
+) -> dict[str, Any]:
+    if type(reference) is not dict:
+        raise ValueError("Candidate requires one exact source Assertion reference")
+    event = ledger.get(reference.get("recorded_result_occurrence_identity"))
+    if (
+        event is None
+        or event.kind != reference.get("recorded_result_occurrence_kind")
+        or event.locality_identity != reference.get("source_locality_identity")
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise ValueError("Candidate source Assertion occurrence is not intact")
+
+    coordinate = reference.get("assertion_coordinate")
+    assertion: dict[str, Any]
+    if coordinate == "result":
+        assertion = event.material
+        assertion_identity = event.material.get("result_identity")
+        source_coordinates = _source_coordinates(event, None)
+    elif type(coordinate) is str and coordinate.startswith("assertions/"):
+        assertions = event.material.get("assertions")
+        try:
+            position = int(coordinate.removeprefix("assertions/"))
+            assertion = assertions[position]
+        except (TypeError, ValueError, IndexError) as error:
+            raise ValueError(
+                "Candidate source Assertion coordinate is not exact"
+            ) from error
+        assertion_identity = _assertion_identity(
+            assertion, "Candidate source Assertion requires one exact identity"
+        )
+        source_coordinates = _source_coordinates(event, assertion)
+    elif coordinate == "assertions":
+        assertion = event.material.get("assertions")
+        assertion_identity = _assertion_identity(
+            assertion, "Candidate source Assertion requires one exact identity"
+        )
+        source_coordinates = _source_coordinates(event, assertion)
+    elif type(coordinate) is str and coordinate.startswith("position_assertions/"):
+        assertion = _recorded_position_assertion_coordinates_for_locality_movement(
+            ledger,
+            result_event_identity=event.identity,
+            assertion_identity=reference.get("assertion_identity"),
+        )
+        assertion_identity = _assertion_identity(
+            assertion, "Candidate source Assertion requires one exact identity"
+        )
+        source_coordinates = _source_coordinates(event, assertion)
+    elif coordinate == "finding":
+        assertion = event.material.get("finding")
+        assertion_identity = _assertion_identity(
+            assertion, "Candidate source Assertion requires one exact identity"
+        )
+        source_coordinates = _source_coordinates(event, assertion)
+    elif type(coordinate) is str and coordinate.startswith("candidate_assertions/"):
+        candidates = event.material.get("candidate_assertions")
+        try:
+            position = int(coordinate.removeprefix("candidate_assertions/"))
+            assertion = candidates[position]
+        except (TypeError, ValueError, IndexError) as error:
+            raise ValueError(
+                "Candidate source Assertion coordinate is not exact"
+            ) from error
+        assertion_identity = _assertion_identity(
+            assertion, "Candidate source Assertion requires one exact identity"
+        )
+        source_coordinates = _source_coordinates(event, assertion)
+    else:
+        raise ValueError("Candidate source Assertion coordinate is not exact")
+
+    if (
+        assertion_identity != reference.get("assertion_identity")
+        or source_coordinates != reference.get("source_assertion_coordinates")
+    ):
+        raise ValueError("Candidate source Assertion coordinates are not exact")
+    return deepcopy(assertion)
+
+
+def exact_source_assertion_materials_from_ordered_pair_candidate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+    candidate_assertion_identity: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read both exact lower Assertions without moving or relating them."""
+
+    result, _act, _applicability, _assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    matches = tuple(
+        candidate
+        for candidate in result.material["candidate_assertions"]
+        if _assertion_identity(
+            candidate, "ordered-pair Candidate requires one exact identity"
+        )
+        == candidate_assertion_identity
+    )
+    if len(matches) != 1:
+        raise ValueError("ordered-pair Candidate identity is not exact")
+    subject = matches[0].get("assertion_subject")
+    if type(subject) is not dict or set(subject) != {
+        "first_source_assertion_reference",
+        "second_source_assertion_reference",
+    }:
+        raise ValueError("Candidate is not one exact ordered source Assertion pair")
+    return (
+        _exact_source_assertion_material(
+            ledger, subject["first_source_assertion_reference"]
+        ),
+        _exact_source_assertion_material(
+            ledger, subject["second_source_assertion_reference"]
+        ),
+    )
 
 
 def boundaries_of_recorded_candidate_standing(

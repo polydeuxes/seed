@@ -9,6 +9,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ORDERED_PAIR_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     boundaries_of_recorded_candidate_standing,
+    exact_source_assertion_materials_from_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
@@ -308,6 +309,67 @@ def test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs():
     )
 
 
+def test_ordered_pair_candidate_reads_both_exact_lower_assertions_without_an_append(
+    tmp_path,
+):
+    database = str(tmp_path / "ordered-pair-source-material.sqlite")
+    ledger = SQLiteEventLedger(database)
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+    candidate = standing["candidate_assertions"][0]
+    candidate_identity = candidate["dimensions"]["identity"]
+    first_reference = candidate["assertion_subject"][
+        "first_source_assertion_reference"
+    ]
+    second_reference = candidate["assertion_subject"][
+        "second_source_assertion_reference"
+    ]
+    boundary_before_read = ledger.append_boundary()
+
+    first, second = exact_source_assertion_materials_from_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+        candidate_assertion_identity=candidate_identity,
+    )
+
+    assert first["result_identity"] == first_reference["assertion_identity"]
+    assert second["dimensions"]["identity"] == second_reference["assertion_identity"]
+    assert ledger.append_boundary() == boundary_before_read
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    assert exact_source_assertion_materials_from_ordered_pair_candidate(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+        candidate_assertion_identity=candidate_identity,
+    ) == (first, second)
+
+
+def test_ordered_pair_source_material_read_refuses_one_source_candidate():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity="one-source-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+
+    with pytest.raises(ValueError, match="not one exact ordered"):
+        exact_source_assertion_materials_from_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+            candidate_assertion_identity=(
+                standing["candidate_assertions"][0]["dimensions"]["identity"]
+            ),
+        )
+
+
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -537,6 +599,8 @@ FIDELITY_SUBJECTS = {
     "complete_candidate_standing_coordinate_order": (
         test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion,
         test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs,
+        test_ordered_pair_candidate_reads_both_exact_lower_assertions_without_an_append,
+        test_ordered_pair_source_material_read_refuses_one_source_candidate,
         test_both_exact_candidate_responsibilities_use_one_source_boundary,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_exact_source_and_act,
