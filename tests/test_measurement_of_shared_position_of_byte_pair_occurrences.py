@@ -1248,7 +1248,7 @@ def test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers(
     assert all(prior is not None for prior in calls)
 
 
-def test_incremental_standing_matches_replay_for_the_whole_new_elevator():
+def test_carried_standing_matches_replay_for_the_whole_new_elevator():
     ledger, locality, _source, first, second = _fixture()
     prior = _standing(ledger, locality)
     prior_count = len(ledger.list_locality(locality))
@@ -1257,14 +1257,14 @@ def test_incremental_standing_matches_replay_for_the_whole_new_elevator():
         event.identity for event in ledger.list_locality(locality)[prior_count:]
     )
 
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         later,
         locality_identity=locality,
         prior=prior,
     )
 
-    assert incremental == _standing(ledger, locality)
+    assert carried == _standing(ledger, locality)
 
 
 def test_structured_path_can_be_addressed_but_is_not_raw_emission_material():
@@ -1317,7 +1317,7 @@ FIDELITY_SUBJECTS = {
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
         test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
-        test_incremental_standing_matches_replay_for_the_whole_new_elevator,
+        test_carried_standing_matches_replay_for_the_whole_new_elevator,
     ),
     "representation_source_coordinates": (
         test_structured_path_can_be_addressed_but_is_not_raw_emission_material,

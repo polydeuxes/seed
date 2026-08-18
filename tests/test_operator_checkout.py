@@ -168,7 +168,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity=destination,
@@ -177,7 +177,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     replayed = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
-    assert incremental == replayed
+    assert carried == replayed
     assert replayed["recorded_standing_boundary_locality_relations"] == {
         result.identity: None
     }

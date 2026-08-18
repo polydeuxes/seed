@@ -141,7 +141,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity="source",
@@ -150,7 +150,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     replayed = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    assert incremental == replayed
+    assert carried == replayed
     assert replayed["recorded_standing_boundary_references"] == {
         result.identity: None
     }

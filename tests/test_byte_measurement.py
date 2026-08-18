@@ -2388,7 +2388,7 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
         _validate_moved_byte_assertion(ledger, movement.identity)
 
 
-def test_movement_incremental_standing_equals_replay_and_same_locality_is_noop():
+def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     ledger = _ledger("ta\n")
     source_result, source = _movement_source(ledger)
     prior = read_operator_locality_standing(
@@ -2403,24 +2403,24 @@ def test_movement_incremental_standing_equals_replay_and_same_locality_is_noop()
         ),
         destination_locality_standing=deepcopy(prior),
     )
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (assignment.identity,),
         locality_identity="movement",
         prior=prior,
     )
-    assert incremental == read_operator_locality_standing(
+    assert carried == read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
     act = record_assertion_locality_movement_responsible_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=incremental,
+        responsibility_assignment_standing=carried,
     )
     movement = record_assertion_locality_movement_result(
         ledger, responsible_act_evidence_event_identity=act.identity
     )
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (
             act.identity,
@@ -2428,9 +2428,9 @@ def test_movement_incremental_standing_equals_replay_and_same_locality_is_noop()
             movement.identity,
         ),
         locality_identity="movement",
-        prior=incremental,
+        prior=carried,
     )
-    assert incremental == read_operator_locality_standing(
+    assert carried == read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
 
@@ -2878,7 +2878,7 @@ FIDELITY_SUBJECTS = {
         test_movement_assignment_and_lifecycle_survive_sqlite_restarts,
         test_movement_assignment_reader_refuses_corrupted_source_carrier,
         test_movement_reader_refuses_crossed_yield_boundary_or_result_kind,
-        test_movement_incremental_standing_equals_replay_and_same_locality_is_noop,
+        test_movement_carried_standing_equals_replay_and_same_locality_is_noop,
         test_bounded_movement_batch_carries_each_assignment_before_its_act,
         test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation,
         test_movement_batch_carry_phases_refuse_corruption_without_partial_standing,

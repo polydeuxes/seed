@@ -205,7 +205,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         "intact_evidence": True,
     }
 
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity=destination,
@@ -214,7 +214,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     replayed = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
-    assert incremental == replayed
+    assert carried == replayed
     assert replayed["recorded_relation_Standing"] == {result.identity: None}
     assert replayed["responsibility_assignment_occurrences"] == {
         assignment.identity: None

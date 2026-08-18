@@ -677,13 +677,13 @@ def test_same_call_result_carry_equals_full_standing_replay():
         responsible_act_evidence_event_identity=act.identity,
     )
 
-    incremental = _carry_byte_pair_occurrence_position_measurement_result_into_standing(
+    carried = _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         before_result,
         result,
         prior_through_event_occurrence_identity=act.identity,
     )
 
-    assert incremental == _standing(ledger, locality)
+    assert carried == _standing(ledger, locality)
 
 
 def test_refused_same_call_result_does_not_change_prior_standing():

@@ -646,7 +646,7 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
     )
 
 
-def test_corrupted_pair_assignment_refusal_leaves_incremental_standing_unchanged():
+def test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged():
     ledger = EventLedger()
     ingest_material(
         ledger,
@@ -959,7 +959,7 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         (b"/locality existing\n", False, True),
     ),
 )
-def test_each_console_road_leaves_incremental_standing_matching_replay(
+def test_each_console_road_leaves_carried_standing_matching_replay(
     monkeypatch, material, raw, existing_locality
 ):
     from seed_runtime import operator_console
@@ -1003,8 +1003,8 @@ def test_each_console_road_leaves_incremental_standing_matching_replay(
     )
 
     assert observed
-    for locality_identity, incremental in observed.items():
-        assert incremental == read_operator_locality_standing(
+    for locality_identity, carried in observed.items():
+        assert carried == read_operator_locality_standing(
             ledger, locality_identity=locality_identity
         )
 

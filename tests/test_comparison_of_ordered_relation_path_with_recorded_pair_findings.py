@@ -520,7 +520,7 @@ def test_relation_of_relations_survives_sqlite_restart(tmp_path):
     reopened.close()
 
 
-def test_incremental_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings():
+def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     prior = _standing(ledger)
     prior_count = len(ledger.list_locality(LOCALITY))
@@ -528,10 +528,10 @@ def test_incremental_standing_equals_replay_for_comparison_of_ordered_relation_p
     later = tuple(
         event.identity for event in ledger.list_locality(LOCALITY)[prior_count:]
     )
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger, later, locality_identity=LOCALITY, prior=prior
     )
-    assert incremental == _standing(ledger)
+    assert carried == _standing(ledger)
 
 
 def test_relation_of_relations_is_addressable_but_has_no_raw_material():
@@ -570,7 +570,7 @@ FIDELITY_SUBJECTS = {
     ),
     "declared_measurement_result": (
         test_relation_of_relations_survives_sqlite_restart,
-        test_incremental_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+        test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
     "representation_source_coordinates": (
         test_relation_of_relations_is_addressable_but_has_no_raw_material,

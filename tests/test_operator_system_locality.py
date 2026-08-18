@@ -286,12 +286,12 @@ def test_invocation_locality_act_requires_assignment_standing_in_destination():
             )
 
 
-def test_incremental_system_standing_equals_full_replay():
+def test_carried_system_standing_equals_full_replay():
     ledger = EventLedger()
     command = _command(ledger)
     _assignment, act, relation = _relation(ledger, command)
     locality = relation.locality_identity
-    incremental = advance_operator_locality_standing(
+    carried = advance_operator_locality_standing(
         ledger,
         (
             _assignment.identity,
@@ -301,7 +301,7 @@ def test_incremental_system_standing_equals_full_replay():
         ),
         locality_identity=locality,
     )
-    assert incremental == read_operator_locality_standing(
+    assert carried == read_operator_locality_standing(
         ledger, locality_identity=locality
     )
 
