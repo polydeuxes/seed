@@ -1629,7 +1629,7 @@ def represented_relation_coordinates_from_every_ordered_pair_candidate(
     return tuple(coordinates)
 
 
-def exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,
     candidate_standing_result_event_identity: str,
@@ -1665,7 +1665,7 @@ def exact_source_assertion_materials_with_every_ordered_pair_candidate_represent
     )
 
 
-def exact_representation_path_pairs_with_every_ordered_pair_candidate_represented_relation_coordinate(
+def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,
     candidate_standing_result_event_identity: str,
@@ -1682,7 +1682,7 @@ def exact_representation_path_pairs_with_every_ordered_pair_candidate_represente
     """Expose every cross-role representation path pair without one relation."""
 
     readings = (
-        exact_source_assertion_materials_with_every_ordered_pair_candidate_represented_relation_coordinate(
+        exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
             ledger,
             candidate_standing_result_event_identity=(
                 candidate_standing_result_event_identity
