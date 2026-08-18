@@ -376,7 +376,7 @@ def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
 
     assert grammar["clauses"]["01.Standing.E.1"]["responsibility"] == {
         "default": "exact_Act_Responsibility",
-        "override": "assigned_responsible_occurrence",
+        "assignment": "assigned_responsible_occurrence",
     }
 
 

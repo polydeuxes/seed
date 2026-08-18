@@ -1480,7 +1480,7 @@
       ],
       "responsibility": {
         "default": "exact_Act_Responsibility",
-        "override": "assigned_responsible_occurrence"
+        "assignment": "assigned_responsible_occurrence"
       },
       "must_precede": ["participation"],
       "coordinates": [
