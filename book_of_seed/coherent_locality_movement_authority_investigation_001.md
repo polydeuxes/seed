@@ -431,7 +431,318 @@ movement:
 
 This is a constitutional vacancy, not a missing decoder or adapter.
 
-## 11. What this report does not establish
+## 11. Addendum: `this Seed` and inspection
+
+This addendum was performed at repository tip `7c785dab`. It corrects an
+omission in the original investigation: the Authority-source elimination
+tested operator purpose and generic Seed language without separately
+cross-examining the active maintenance rule:
+
+```text
+This Seed may inspect this Witness.
+```
+
+The omission is material because `Seed`, `a Seed`, and `this Seed` do not carry
+the same reference shape. The correction does not assume that the exact phrase
+supplies Standing or Authority merely because it is active Book material.
+
+### 11.1 What `this Seed` denotes
+
+Witness grammar carries one root reference:
+
+```json
+{
+  "reference": "this_Seed",
+  "coordinate": "seed_subject"
+}
+```
+
+This is an exact opaque address for the Seed subject addressed by this witness
+grammar. It distinguishes that addressed subject from generic language about
+`a Seed` or the Seed kind.
+
+The root reference does not carry an Assertion that constitutionally
+identifies the subject, an occurrence establishing that relation, Evidence,
+Authority, Scope, or Standing. The Identity investigation already found that
+machine root addressability cannot establish a constitutional Identity
+relation.
+
+The active Book also uses `this Seed` as the responsible boundary of several
+exactly assigned Responsibilities. In each lawful case, that phrase is one
+coordinate inside a larger assignment. It does not make every Responsibility
+borne by the same boundary available to every Act.
+
+#### Disposition
+
+**Exact addressed Seed subject; no universal Standing or Authority by the
+reference alone.**
+
+### 11.2 Fidelity does not supply Seed Standing beyond its test
+
+`01.Source.C` establishes Fidelity as bounded comparison of:
+
+```text
+this Seed's Witness
+with
+its witness grammar
+through deterministic tests
+```
+
+Witness grammar represents the comparison with:
+
+```text
+first subject:      this Witness
+relation:           comparison
+second subject:     this Grammar
+addressed subject:  this Seed
+result:             this Fidelity
+```
+
+The addressed Seed is not a compared input and the tests are not the subject
+of the comparison. Each test has its own exact distinction as subject. The
+active clause says a passing test cannot certify this Seed beyond that test's
+boundary or establish correction Authority.
+
+Therefore Fidelity may carry a bounded finding addressed to this Seed. It
+does not establish a general Assertion that this Seed bears inspection,
+movement, or relation-discovery Responsibility.
+
+#### Disposition
+
+**Bounded addressed subject of Fidelity; no movement assignment.**
+
+### 11.3 What the inspection sentence carries
+
+The active maintenance rule says:
+
+```text
+Maintain the constitutional grammar.
+This Seed may inspect this Witness.
+Any result emitted by this Seed requires Evidence of that inspection
+and is bounded by it.
+```
+
+The sentence supplies more than generic operator purpose. It addresses one
+exact Seed and one exact Witness and permits an inspection relation between
+them. It also constrains an emitted result to Evidence of that inspection and
+its boundary.
+
+It does not provide the complete physiology required to read an instantiated
+Responsibility:
+
+| Coordinate | Recovered from the maintenance rule |
+| --- | --- |
+| responsible boundary | `this Seed` is addressed |
+| bounded subject | `this Witness` is addressed |
+| relation or ordinary act word | `inspect` is present |
+| Responsibility assignment Assertion | not carried |
+| exact constitutional Act | not decomposed |
+| Act occurrence | not carried |
+| Authority for inspection | not carried |
+| Evidence authorizing inspection | not carried |
+| Scope beyond the addressed Witness | not carried |
+| Yield relation | not carried |
+| result occurrence | only a constraint on any emitted result |
+| Standing whose subject is the assignment | not carried |
+
+The Evidence required for a later emitted result is occurrence-result support.
+It does not by itself establish Authority to perform the inspection or another
+Act.
+
+The safest positive reading is therefore narrow:
+
+```text
+this Seed
+may inspect
+this Witness
+
+and any emitted result claiming that inspection
+must be evidenced and bounded by it
+```
+
+The content of `inspect` as constitutional physiology is unresolved. It
+cannot be silently expanded into Measurement, Compare, Locality reading,
+Representation, movement, or a family containing all of them.
+
+#### Disposition
+
+**Exact bounded permission language with incomplete Responsibility
+physiology; constitutional Act and Authority unresolved.**
+
+### 11.4 Chronology of `inspect`
+
+The first Book skeleton used inspection as maintenance direction:
+
+```text
+Seed must inspect the repository to recover current producers, consumers,
+fields, topology, discrepancies, and residue.
+```
+
+The maintenance rule originally said:
+
+```text
+Let Seed recover and project the current implementation.
+```
+
+When `implementation` was replaced by exact witness coordinates, that sentence
+became:
+
+```text
+Let this Seed inspect this Witness and emit only bounded results supported by
+that inspection's Evidence.
+```
+
+A later wording pass decomposed `let` into the current permission and result
+constraint. Neither change added an exact inspection Responsibility, Act
+occurrence, Authority, Yield, result boundary, or Standing.
+
+Earlier inquiry and examination districts attempted to elaborate selection,
+applicability, examination work, probe requests, and findings. Those runtime
+roads and active clauses were later deleted or relocated after topology audits
+found no responsible bounded selection occurrence, request-forming occurrence,
+or operational consumer. That chronology is testimony against treating
+`inspect` as a recovered umbrella Act.
+
+It does not prove inspection is unreal. It proves that historical
+implementation-shaped examination machinery cannot fill the present
+coordinates.
+
+#### Disposition
+
+**Maintenance lineage and unresolved decomposition; no historical movement
+Authority.**
+
+### 11.5 The Seed-native Measurement pattern
+
+`01.Source.D` establishes a distinct assignment shape:
+
+```text
+a Seed
++ Seed-native declared Measurement occurrence
++ exact material related to that Seed by exact Locality Evidence
+-> that Seed bears the Measurement Responsibility
+```
+
+This proves that not every Responsibility needs a sentence shaped as a
+universal Book assignment to `this Seed`. An exact Seed, exact material, exact
+Locality Evidence, and exact family-native Act may together occupy a bounded
+assignment road.
+
+It does not generalize from Measurement to movement. The clause explicitly
+names Measurement, its rule, and its result. The assignment also says it does
+not transfer the resulting Assertion's Standing-coordinate Responsibility.
+
+No parallel active clause was found for:
+
+```text
+this Seed
++ this Witness inspection
++ one exact source Assertion
++ one exact destination Locality
+-> this Seed bears Assertion Locality movement Responsibility
+```
+
+#### Disposition
+
+**Valid evidence that exact Seed-relative assignment is possible; no
+cross-family assignment.**
+
+### 11.6 What Standing this Seed currently possesses
+
+The root reference `this_Seed` supplies no Standing. The maintenance permission
+supplies no recorded assignment occurrence or Standing whose subject is that
+assignment. Fidelity supplies only test-bounded findings and no correction
+Authority.
+
+Current active clauses and runtime occurrences may establish specific
+Locality Standing in which `this Seed` is the responsible boundary of an exact
+assigned Measurement, Compare, Representation, recording, continuation, or
+invocation Act. Those assignments remain family-local. The repeated string
+`this Seed` does not merge their Responsibilities or Authorities.
+
+One particularly exact subject exists for `06.Locality.B`:
+
+```text
+this Seed bears Standing Locality continuation Responsibility
+```
+
+Its assignment is bounded to one intact addressed Representation and one
+exact prior Standing boundary made available at one new Locality. The clause
+expressly establishes no copying, global Standing, other Locality relation, or
+continuation from another continuation. It does not carry either Assertion
+required by the coherent table.
+
+No current Standing whose subject is an Assertion that this Seed bears generic
+Assertion Locality movement Responsibility was found.
+
+#### Disposition
+
+**Specific family-local assignment Standing exists; general inspection or
+movement assignment Standing is unestablished.**
+
+### 11.7 Inspection versus coherent-Locality movement
+
+The two relations have different known coordinates:
+
+```text
+inspection permission
+    first subject:  this Seed
+    addressed:      this Witness
+    exact Act:      unresolved
+    Authority:      unresolved
+
+Assertion Locality movement
+    source:         one exact Assertion
+    destination:    one exact Locality
+    relation:       new locality relation
+    exact movement: described by 03.Movement.A and 06.Locality.A
+    assignment:     unresolved for this Seed
+    Authority:      unresolved
+```
+
+No active relation says that an Assertion relevant to inspection may be moved,
+that coherent Locality construction prepares an inspection Act, or that the
+inspection permission assigns the movement Responsibility.
+
+Even if movement later proves required to perform one exact inspection, the
+requirement would not establish Authority. The exact inspection Responsibility
+would need to assign or support the movement under its own explicit relation,
+or movement would require a separately assigned Responsibility. Current
+material carries neither crossing.
+
+#### Disposition
+
+**Relation between inspection and coherent-Locality movement: Unknown.**
+
+### 11.8 Corrected vacancy result
+
+The original report's vacancy conclusion remains, but its elimination record
+is corrected:
+
+```text
+generic Seed language                    insufficient
+operator purpose                         no Seed Authority
+this_Seed root                           exact address, no Standing
+this Seed's bounded Fidelity             no Authority beyond test
+this Seed may inspect this Witness        real active permission language
+inspection physiology                    unresolved
+inspection -> Locality movement           no established relation
+Seed-native Measurement pattern           family-local, not movement
+specific this-Seed assignments             remain exact and family-local
+generic Assertion movement assignment      unresolved
+generic Assertion movement Authority       unresolved
+```
+
+The missing crossing is now narrower:
+
+> Does an exact Responsibility assignment establish inspection by this Seed,
+> and does a separately evidenced relation make one exact Assertion Locality
+> movement part of that exact inspection without importing source Authority or
+> later relation-discovery purpose?
+
+Current active material answers neither part.
+
+## 12. What this report does not establish
 
 This report establishes no new Responsibility, Authority, assignment,
 Applicability, Participation, Act, movement occurrence, locality relation,
@@ -442,7 +753,10 @@ the vacancy.
 
 It does not establish a collective subject from two Assertions in one
 Locality. It does not establish Compare, equality, meaning, or a
-relation-discovery responsibility.
+relation-discovery responsibility. It does not establish that `inspect` is a
+constitutional kind, exact Act, movement, Measurement, Compare, Locality read,
+or Representation. It does not establish that `this Seed` has Authority by
+being exactly addressed.
 
 The bounded result is only:
 
@@ -457,4 +771,9 @@ grammar/runtime/test agreement             Fidelity, not Authority
 two movements into one Locality            correct structural target
 Seed movement assignment and Authority     unresolved
 later relation-discovery assignment        separate and unresolved
+this_Seed                                  exact addressed subject
+this Seed's Fidelity                       bounded to each test
+this Seed may inspect this Witness          exact active permission language
+inspection physiology                     unresolved
+inspection relation to movement           Unknown
 ```
