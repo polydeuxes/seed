@@ -282,7 +282,7 @@
     "relations": {
       "locality_relation": ["first_subject", "second_subject"]
     },
-    "relation_audit": {
+    "relation_witness_coordinates": {
       "endpoint_presence_establishes_relation": false,
       "families": {
         "candidate_participation": ["exact_relation", "occurrence_witness"],

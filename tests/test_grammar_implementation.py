@@ -2546,7 +2546,7 @@ def _relation_witness_specs() -> dict[str, dict]:
 
 def _assert_relation_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
     assert set(specs) == set(grammar["relations"])
-    relation_families = grammar["witness"]["relation_audit"][
+    relation_families = grammar["witness"]["relation_witness_coordinates"][
         "families"
     ]
     for relation, declared in grammar["relations"].items():
@@ -4547,7 +4547,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert bundle["applicability"]["input_assertion_reference"]
     assert bundle["applicability"]["downstream_act_identity"]
     assert bundle["applicability"]["applicability_act_occurrence_identity"]
-    assert grammar["relation_audit"] == {
+    assert grammar["relation_witness_coordinates"] == {
         "endpoint_presence_establishes_relation": False,
         "families": {
             "candidate_participation": ["exact_relation", "occurrence_witness"],
