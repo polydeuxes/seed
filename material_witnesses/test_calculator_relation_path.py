@@ -41,6 +41,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
+    exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
     record_one_source_and_ordered_pair_candidate_standings,
 )
@@ -433,6 +434,17 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         for reading in every_exact_ordered_pair
         if reading[0] == crossing_candidate["dimensions"]["identity"]
     )
+    every_exact_source_coordinate = (
+        exact_source_assertion_coordinates_from_every_ordered_pair_candidate(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
+    _, path_source_coordinates, calculator_source_coordinates = next(
+        reading
+        for reading in every_exact_source_coordinate
+        if reading[0] == crossing_candidate["dimensions"]["identity"]
+    )
 
     assert exact_orders <= set(source_orders)
     assert exact_path_finding["identity"] == path_finding["identity"]
@@ -441,6 +453,23 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     )
     assert ledger.append_boundary() == boundary_before_read
     assert len(every_exact_ordered_pair) == len(standing["candidate_assertions"])
+    assert len(every_exact_source_coordinate) == len(
+        standing["candidate_assertions"]
+    )
+    assert tuple(
+        coordinate["coordinate"] for coordinate in path_source_coordinates
+    ) == tuple(
+        coordinate["coordinate"] for coordinate in calculator_source_coordinates
+    ) == (
+        "source_Assertion_reference",
+        "source_Locality",
+        "source_Standing_boundary",
+        "Evidence",
+        "Authority",
+        "Scope",
+        "limits",
+        "Unknown",
+    )
     assert all(
         candidate["represented_relation"] == "Unknown"
         for candidate in standing["candidate_assertions"]

@@ -85,6 +85,16 @@ _SOURCE_STANDING_COORDINATES = (
     "comparison_result_occurrences",
     "candidate_result_occurrences",
 )
+_SOURCE_ASSERTION_COORDINATES = (
+    "source_Assertion_reference",
+    "source_Locality",
+    "source_Standing_boundary",
+    "Evidence",
+    "Authority",
+    "Scope",
+    "limits",
+    "Unknown",
+)
 
 
 def _identity(value: Any, message: str) -> str:
@@ -1466,6 +1476,98 @@ def exact_representation_paths_from_every_ordered_pair_candidate(
             )
         )
     )
+
+
+def _exact_source_assertion_coordinates(
+    reference: dict[str, Any],
+) -> tuple[dict[str, Any], ...]:
+    carried = reference.get("source_assertion_coordinates")
+    if type(carried) is not dict or set(carried) != {
+        "Evidence",
+        "Authority",
+        "Scope",
+        "limits",
+        "Unknown",
+    }:
+        raise ValueError("Candidate source Assertion coordinates are not exact")
+    materials = {
+        "source_Assertion_reference": deepcopy(reference),
+        "source_Locality": reference.get("source_locality_identity"),
+        "source_Standing_boundary": reference.get(
+            "source_standing_through_event_occurrence_identity"
+        ),
+        **deepcopy(carried),
+    }
+    if (
+        type(materials["source_Locality"]) is not str
+        or not materials["source_Locality"]
+        or type(materials["source_Standing_boundary"]) is not str
+        or not materials["source_Standing_boundary"]
+    ):
+        raise ValueError("Candidate source Assertion coordinates are not exact")
+    return tuple(
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "source_Assertion_coordinates",
+                "coordinates",
+                position,
+            ],
+            "coordinate": coordinate,
+            "material": materials[coordinate],
+        }
+        for position, coordinate in enumerate(_SOURCE_ASSERTION_COORDINATES)
+    )
+
+
+def exact_source_assertion_coordinates_from_every_ordered_pair_candidate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[
+        str,
+        tuple[dict[str, Any], ...],
+        tuple[dict[str, Any], ...],
+    ],
+    ...,
+]:
+    """Read only the source coordinates explicitly carried by Book grammar."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    coordinates = []
+    for candidate in result.material["candidate_assertions"]:
+        subject = candidate.get("assertion_subject")
+        if type(subject) is not dict or set(subject) != {
+            "first_source_assertion_reference",
+            "second_source_assertion_reference",
+        }:
+            raise ValueError(
+                "Candidate is not one exact ordered source Assertion pair"
+            )
+        coordinates.append(
+            (
+                _assertion_identity(
+                    candidate,
+                    "ordered-pair Candidate requires one exact identity",
+                ),
+                _exact_source_assertion_coordinates(
+                    subject["first_source_assertion_reference"]
+                ),
+                _exact_source_assertion_coordinates(
+                    subject["second_source_assertion_reference"]
+                ),
+            )
+        )
+    return tuple(coordinates)
 
 
 def boundaries_of_recorded_candidate_standing(

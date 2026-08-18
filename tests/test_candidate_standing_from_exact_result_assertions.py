@@ -12,6 +12,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     exact_source_assertion_materials_from_ordered_pair_candidate,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_representation_paths_from_every_ordered_pair_candidate,
+    exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
@@ -487,6 +488,41 @@ def test_every_ordered_pair_candidate_exposes_every_nested_representation_path()
     assert ledger.append_boundary() == boundary_before_read
 
 
+def test_every_ordered_pair_candidate_exposes_only_explicit_source_coordinates():
+    import json
+
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    boundary_before_read = ledger.append_boundary()
+    readings = exact_source_assertion_coordinates_from_every_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+        grammar = json.load(source)
+    expected_coordinates = grammar["clause_coordinates"][BOOK_CLAUSE][
+        "source_Assertion_coordinates"
+    ]["coordinates"]
+
+    assert readings
+    for _candidate_identity, first, second in readings:
+        for coordinates in (first, second):
+            assert [
+                coordinate["coordinate"] for coordinate in coordinates
+            ] == expected_coordinates
+            for coordinate in coordinates:
+                carried = grammar
+                for part in coordinate["grammar_coordinate_reference"]:
+                    carried = carried[part]
+                assert carried == coordinate["coordinate"]
+    assert ledger.append_boundary() == boundary_before_read
+
+
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -712,6 +748,7 @@ FIDELITY_SUBJECTS = {
         test_later_source_boundary_carries_prior_candidate_result_assertions,
         test_source_and_candidate_result_boundaries_and_localities_stay_distinct,
         test_replay_requires_each_source_result_occurrence_intact,
+        test_every_ordered_pair_candidate_exposes_only_explicit_source_coordinates,
     ),
     "complete_candidate_standing_coordinate_order": (
         test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion,
