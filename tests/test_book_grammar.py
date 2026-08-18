@@ -136,6 +136,28 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "Act_by_subject_presence",
             ],
         },
+        {
+            "order": 2,
+            "book_clause": "01.Source.D",
+            "measurement": {
+                "identity": "source_position_coordinates_carrying_addressed_material_measurement",
+                "first_subject": "source_position_coordinate_references",
+                "relation": "carrying",
+                "second_subject": "addressed_coordinate_exact_one_byte_material",
+            },
+            "subject": {
+                "addressed_reference": "one_exact_addressed_byte_occurrence_reference_determination_result",
+                "collection": "ordered_current_intact_direct_pair_position_result_set",
+                "completeness_boundary": "current_Standing_boundary",
+            },
+            "requires": ["current_Standing", "exact_subject"],
+            "standing_not_established": [
+                "Responsibility_assignment_by_subject_presence",
+                "Applicability_by_subject_presence",
+                "Act_by_subject_presence",
+                "addressed_byte_occurrence_reference_determination_by_result_presence",
+            ],
+        },
     ]
     assert (
         "At one exact current Standing boundary, this Seed may record one "

@@ -24,13 +24,9 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     recorded_distinction_pins_from_current_standing,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -129,30 +125,12 @@ def _pair_comparison(ledger, earlier, later):
     )
 
 
-def _path_comparison(ledger, path, pair_comparison):
-    assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+def _path_comparison(ledger, path, pair_comparison, standing):
+    return _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
         ledger,
-        path_result_event_identity=path.identity,
-        comparison_result_event_identity=pair_comparison.identity,
-        locality_standing=_standing(ledger),
-    )
-    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        locality_standing=_standing(ledger),
-    )
-    applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
-        ledger,
-        responsible_act_evidence_event_identity=applicability_act.identity,
-    )
-    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        applicability_result_event_identity=applicability.identity,
-        locality_standing=_standing(ledger),
-    )
-    return record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        path_result=path,
+        recorded_pair_comparison_result=pair_comparison,
+        locality_standing=standing,
     )
 
 
@@ -258,8 +236,9 @@ def _claim_path(ledger):
         measurement_act_evidence_event_identity=shared_act.identity,
     )
     standing = _advance(ledger, standing, shared_result)
-    path_comparison = _path_comparison(ledger, shared_result, pair_comparison)
-    standing = _standing(ledger)
+    path_comparison, standing = _path_comparison(
+        ledger, shared_result, pair_comparison, standing
+    )
     return source, shared_result, path_comparison, standing
 
 

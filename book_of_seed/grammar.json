@@ -527,6 +527,9 @@
         {"subject": "read_write_difference_count"},
         {"subject": "recurrent_byte_pair_occurrence_position_measurement"},
         {"subject": "addressed_byte_occurrence_reference_determination"},
+        {
+          "subject": "source_position_coordinates_carrying_addressed_material_measurement"
+        },
         {"subject": "measurement_result_coordinates"},
         {"subject": "byte_measurement_relation"},
         {"subject": "position_support"},
@@ -801,7 +804,13 @@
           "assertions"
         ]
       },
-      "findings": ["count", "recurrence", "position", "ordered_relation_path"],
+      "findings": [
+        "count",
+        "recurrence",
+        "position",
+        "ordered_relation_path",
+        "declared_rule_result"
+      ],
       "standing_emission_declarations": [
         {
           "order": 0,
@@ -835,6 +844,28 @@
             "Responsibility_assignment_by_subject_presence",
             "Applicability_by_subject_presence",
             "Act_by_subject_presence"
+          ]
+        },
+        {
+          "order": 2,
+          "book_clause": "01.Source.D",
+          "measurement": {
+            "identity": "source_position_coordinates_carrying_addressed_material_measurement",
+            "first_subject": "source_position_coordinate_references",
+            "relation": "carrying",
+            "second_subject": "addressed_coordinate_exact_one_byte_material"
+          },
+          "subject": {
+            "addressed_reference": "one_exact_addressed_byte_occurrence_reference_determination_result",
+            "collection": "ordered_current_intact_direct_pair_position_result_set",
+            "completeness_boundary": "current_Standing_boundary"
+          },
+          "requires": ["current_Standing", "exact_subject"],
+          "standing_not_established": [
+            "Responsibility_assignment_by_subject_presence",
+            "Applicability_by_subject_presence",
+            "Act_by_subject_presence",
+            "addressed_byte_occurrence_reference_determination_by_result_presence"
           ]
         }
       ],
@@ -1094,6 +1125,59 @@
             "represented_relation",
             "relation_from_pair_counts",
             "relation_from_source_material"
+          ]
+        },
+        "source_position_coordinates_carrying_addressed_material_measurement": {
+          "measurement": {
+            "subject": {
+              "first_subject": "source_position_coordinate_references",
+              "relation": "carrying",
+              "second_subject": "addressed_coordinate_exact_one_byte_material"
+            },
+            "finding": "declared_rule_result"
+          },
+          "witness": {
+            "input_references": [
+              "addressed_byte_occurrence_reference_determination_result_reference",
+              "ordered_current_intact_direct_pair_position_result_references"
+            ],
+            "Applicability_Act_occurrence": "exact",
+            "Applicability_Evidence_of_Yield_relation": {
+              "first_subject": "Applicability_Evidence",
+              "relation": "of",
+              "second_subject": "Applicability_Yield_relation"
+            },
+            "Applicability_result_occurrence": "recorded",
+            "Measurement_Act_occurrence": "exact",
+            "Measurement_Evidence_of_Yield_relation": {
+              "first_subject": "Measurement_Evidence",
+              "relation": "of",
+              "second_subject": "Measurement_Yield_relation"
+            },
+            "Measurement_result_occurrence": "recorded",
+            "result_coordinates": [
+              "carried_direct_pair_position_result_reference",
+              "pair_position_Assertion_reference",
+              "source_position_coordinate_reference",
+              "coordinate_role",
+              "completeness_boundary"
+            ],
+            "determination": "every_distinct_source_position_coordinate_reference_carrying_the_addressed_coordinate_exact_one_byte_material",
+            "order": "direct_result_order_and_source_coordinate_order",
+            "duplicate_reference_rule": "same_exact_source_position_coordinate_identity_carries_one_finding",
+            "lawful_no_finding_result": []
+          },
+          "input_subject": {
+            "addressed_reference": "one_exact_addressed_byte_occurrence_reference_determination_result",
+            "collection": "ordered_current_intact_direct_pair_position_result_set"
+          },
+          "bounded_by": ["Locality", "current_Standing_boundary"],
+          "standing_not_established": [
+            "same_occurrence_identity_in_different_source_occurrences",
+            "represented_relation",
+            "recurrence",
+            "shared_position_relation",
+            "downstream_Applicability"
           ]
         }
       },

@@ -35,6 +35,17 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
 )
 from seed_runtime.material_ingest import read_exact_ingest_result
+from seed_runtime.addressed_byte_occurrence_reference_determination import (
+    DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
+    _determination_result_reference as _addressed_byte_reference_result_reference,
+)
+from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
+    RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_MATERIAL_COORDINATE_ASSIGNMENT_KIND,
+    MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND,
+    _population_references as _addressed_material_population_references,
+    _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing,
+    _subject_is_unmeasured as _addressed_material_subject_is_unmeasured,
+)
 from seed_runtime.operator_locality_standing import (
     _carry_byte_measurement_assignment_into_standing,
     _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
@@ -363,6 +374,71 @@ def _record_byte_measurement_from_current(
     )
 
 
+def _discover_addressed_material_coordinate_measurement(
+    ledger: EventLedger, standing: dict[str, Any], locality_identity: str
+) -> str | None:
+    measurements = standing["measurement_occurrences"]
+    for occurrence_identity in measurements:
+        event = ledger.get(occurrence_identity)
+        if event is None or event.kind != ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND:
+            continue
+        if (
+            ledger.integrity_of(event.identity) == CORRUPTED
+            or event.exact_material is not None
+            or measurements[occurrence_identity]
+            != _addressed_byte_reference_result_reference(event)
+        ):
+            raise ValueError("current Standing carries an inexact addressed result")
+        source_reference = event.material.get("direct_pair_position_result_reference")
+        source_identity = (
+            source_reference.get("recorded_occurrence_identity")
+            if type(source_reference) is dict
+            else None
+        )
+        if type(source_identity) is not str or not source_identity:
+            raise ValueError("addressed Measurement result carries no exact direct source")
+        if _addressed_material_subject_is_unmeasured(
+                ledger,
+                locality_identity=locality_identity,
+                addressed_result_identity=occurrence_identity,
+                population=_addressed_material_population_references(
+                    ledger,
+                    standing,
+                    locality_identity=locality_identity,
+                    excluded_result_identity=source_identity,
+                ),
+            ):
+            return occurrence_identity
+    return None
+
+
+def _record_addressed_material_coordinate_measurement(
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    locality_identity: str,
+    addressed_result_identity: str,
+) -> tuple[dict[str, Any], Event]:
+    return _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing(
+        ledger,
+        addressed_determination_result_event_identity=addressed_result_identity,
+        locality_standing=standing,
+    )
+
+
+def _record_addressed_material_coordinate_measurement_from_current(
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    locality_identity: str,
+    addressed_result_identity: str,
+) -> tuple[dict[str, Any], Event]:
+    _require_current_pin(ledger, standing, locality_identity=locality_identity)
+    return _record_addressed_material_coordinate_measurement_lifecycle_from_carried_standing(
+        ledger,
+        addressed_determination_result_event_identity=addressed_result_identity,
+        locality_standing=standing,
+    )
+
+
 STANDING_MEASUREMENT_DECLARATIONS = (
     StandingMeasurementDeclaration(
         0,
@@ -381,6 +457,15 @@ STANDING_MEASUREMENT_DECLARATIONS = (
         _discover_byte_measurement,
         _record_byte_measurement,
         _record_byte_measurement_from_current,
+    ),
+    StandingMeasurementDeclaration(
+        2,
+        "01.Source.D",
+        ADDRESSED_MATERIAL_COORDINATE_ASSIGNMENT_KIND,
+        ADDRESSED_MATERIAL_COORDINATE_RESULT_KIND,
+        _discover_addressed_material_coordinate_measurement,
+        _record_addressed_material_coordinate_measurement,
+        _record_addressed_material_coordinate_measurement_from_current,
     ),
 )
 

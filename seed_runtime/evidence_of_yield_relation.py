@@ -48,6 +48,8 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "recorded_standing_boundary_locality_relation",
         "shared_pair_position_applicability",
         "shared_pair_position_measurement",
+        "source_position_coordinates_carrying_addressed_material_applicability",
+        "source_position_coordinates_carrying_addressed_material_measurement",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         "standing_boundary_reference",

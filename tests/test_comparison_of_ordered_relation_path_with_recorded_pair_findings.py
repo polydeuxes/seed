@@ -30,6 +30,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_responsibility_assignment,
     record_recorded_pair_measurement_comparison_result,
 )
+from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
@@ -572,6 +573,206 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache(
     assert calls == [expected_call] * 4
 
 
+def test_carried_higher_lifecycle_validates_inputs_once_and_matches_replay(
+    monkeypatch,
+):
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    standing = _standing(ledger)
+    prior_count = len(ledger.list_locality(LOCALITY))
+    original = comparison_module._inputs
+    calls = []
+
+    def record_inputs_call(ledger, **identities):
+        calls.append(dict(identities))
+        return original(ledger, **identities)
+
+    monkeypatch.setattr(comparison_module, "_inputs", record_inputs_call)
+    result, carried = comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+        ledger,
+        path_result=path,
+        recorded_pair_comparison_result=comparison,
+        locality_standing=standing,
+    )
+
+    assert calls == [
+        {
+            "path_result_event_identity": path.identity,
+            "comparison_result_event_identity": comparison.identity,
+        }
+    ]
+    replayed = _standing(ledger)
+    assert carried == replayed
+    assert len(calls) == 6
+    kinds = [
+        event.kind for event in ledger.list_locality(LOCALITY)[prior_count:]
+    ]
+    assert kinds == [
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+        recorded_pair_comparison_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+        recorded_pair_comparison_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    ]
+
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, result.identity
+    )
+    assert len(calls) == 7
+
+
+def test_carried_higher_lifecycle_refuses_input_mutation_after_assignment(
+    monkeypatch,
+):
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    standing = _standing(ledger)
+    prior_boundary = standing["through_event_occurrence_identity"]
+    prior_event_count = standing["event_count"]
+    original_append = ledger.append
+    mutated = False
+
+    def append(kind, material=None, **coordinates):
+        nonlocal mutated
+        event = original_append(kind, material, **coordinates)
+        if (
+            not mutated
+            and kind
+            == comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND
+        ):
+            comparison.material["comparison_rule"] = "changed after assignment"
+            mutated = True
+        return event
+
+    monkeypatch.setattr(ledger, "append", append)
+    with pytest.raises(ValueError, match="carried inputs are not exact"):
+        comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+            ledger,
+            path_result=path,
+            recorded_pair_comparison_result=comparison,
+            locality_standing=standing,
+        )
+    assert not any(
+        event.kind
+        == comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND
+        for event in ledger.list_locality(LOCALITY)
+    )
+    assert standing["through_event_occurrence_identity"] == prior_boundary
+    assert standing["event_count"] == prior_event_count
+
+
+def test_carried_higher_lifecycle_refuses_an_interleaved_append(monkeypatch):
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    standing = _standing(ledger)
+    original_append = ledger.append
+    interleaved = False
+
+    def append(kind, material=None, **coordinates):
+        nonlocal interleaved
+        event = original_append(kind, material, **coordinates)
+        if (
+            not interleaved
+            and kind
+            == comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND
+        ):
+            original_append(
+                "test.unrelated.interleaved",
+                {"unknown": [], "conflicts": [], "known_loss": []},
+                locality_identity="another-locality",
+            )
+            interleaved = True
+        return event
+
+    monkeypatch.setattr(ledger, "append", append)
+    with pytest.raises(ValueError, match="current tip"):
+        comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+            ledger,
+            path_result=path,
+            recorded_pair_comparison_result=comparison,
+            locality_standing=standing,
+        )
+
+
+@pytest.mark.parametrize(
+    "target_result_kind",
+    (
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+        comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    ),
+)
+def test_carried_higher_lifecycle_rechecks_tip_after_duplicate_refusal(
+    monkeypatch, target_result_kind
+):
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    standing = _standing(ledger)
+    original_refuse = comparison_module._refuse_result
+    original_append = ledger.append
+    interleaved = False
+
+    def refuse(ledger, act, result_kind):
+        nonlocal interleaved
+        original_refuse(ledger, act, result_kind)
+        if not interleaved and result_kind == target_result_kind:
+            original_append(
+                "test.unrelated.after-duplicate-refusal",
+                {"unknown": [], "conflicts": [], "known_loss": []},
+                locality_identity="another-locality",
+            )
+            interleaved = True
+
+    monkeypatch.setattr(comparison_module, "_refuse_result", refuse)
+    with pytest.raises(ValueError, match="current tip"):
+        comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+            ledger,
+            path_result=path,
+            recorded_pair_comparison_result=comparison,
+            locality_standing=standing,
+        )
+    assert interleaved
+
+
+def test_carried_higher_lifecycle_refuses_a_substituted_exact_object():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    standing = _standing(ledger)
+    substituted = Event(
+        identity=comparison.identity,
+        kind=comparison.kind,
+        timestamp=comparison.timestamp,
+        material={**comparison.material, "comparison_rule": "substituted"},
+        locality_identity=comparison.locality_identity,
+    )
+
+    with pytest.raises(ValueError, match="input objects were substituted"):
+        comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+            ledger,
+            path_result=path,
+            recorded_pair_comparison_result=substituted,
+            locality_standing=standing,
+        )
+
+
+def test_carried_higher_lifecycle_result_survives_sqlite_restart(tmp_path):
+    ledger_path = tmp_path / "carried-ordered-path-comparison.sqlite"
+    ledger = SQLiteEventLedger(str(ledger_path))
+    ledger, _earlier_source, _added, comparison, path = _inputs(ledger=ledger)
+    result, carried = comparison_module._record_comparison_of_ordered_relation_path_with_recorded_pair_findings_from_carried_results(
+        ledger,
+        path_result=path,
+        recorded_pair_comparison_result=comparison,
+        locality_standing=_standing(ledger),
+    )
+    assert carried == _standing(ledger)
+    result_identity = result.identity
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(ledger_path))
+    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        reopened, result_identity
+    )
+    assert reading["finding"]["relation_findings"]
+    reopened.close()
+
+
 def test_ordered_path_and_recorded_findings_survive_sqlite_restart(tmp_path):
     database = tmp_path / "ordered-relation-path-pair-finding-comparison.sqlite"
     ledger = SQLiteEventLedger(str(database))
@@ -636,6 +837,8 @@ FIDELITY_SUBJECTS = {
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
+        test_carried_higher_lifecycle_refuses_input_mutation_after_assignment,
+        test_carried_higher_lifecycle_refuses_a_substituted_exact_object,
     ),
     "yield_result_occurrence_evidence": (
         test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice,
@@ -644,10 +847,14 @@ FIDELITY_SUBJECTS = {
         test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
         test_corrupted_higher_compare_yield_is_refused,
         test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache,
+        test_carried_higher_lifecycle_refuses_an_interleaved_append,
+        test_carried_higher_lifecycle_rechecks_tip_after_duplicate_refusal,
     ),
     "declared_measurement_result": (
         test_ordered_path_and_recorded_findings_survive_sqlite_restart,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+        test_carried_higher_lifecycle_validates_inputs_once_and_matches_replay,
+        test_carried_higher_lifecycle_result_survives_sqlite_restart,
     ),
     "representation_source_coordinates": (
         test_ordered_path_and_recorded_findings_are_addressable_without_exact_material,

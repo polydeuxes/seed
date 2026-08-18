@@ -103,6 +103,19 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _read_determination_result as _read_addressed_byte_reference_determination_result,
     _determination_result_reference as _addressed_byte_reference_determination_coordinates,
 )
+from seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material import (
+    RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_MATERIAL_COORDINATE_RESPONSIBILITY_ASSIGNMENT_KIND,
+    APPLICABILITY_ACT_EVIDENCE_KIND as ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    APPLICABILITY_RESULT_KIND as ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_RESULT_KIND,
+    MEASUREMENT_ACT_EVIDENCE_KIND as ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_ACT_EVIDENCE_KIND,
+    MEASUREMENT_RESULT_KIND as ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_RESULT_KIND,
+    _read_assignment as _read_addressed_material_coordinate_assignment,
+    _read_applicability_act as _read_addressed_material_coordinate_applicability_act,
+    _read_applicability_result as _read_addressed_material_coordinate_applicability_result,
+    _read_measurement_act as _read_addressed_material_coordinate_measurement_act,
+    _read_measurement_result as _read_addressed_material_coordinate_measurement_result,
+    measurement_result_reference as _addressed_material_coordinate_measurement_coordinates,
+)
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -481,6 +494,13 @@ _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND,
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
 }
+_ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS = {
+    ADDRESSED_MATERIAL_COORDINATE_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_RESULT_KIND,
+    ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_ACT_EVIDENCE_KIND,
+    ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_RESULT_KIND,
+}
 _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -505,6 +525,7 @@ _SUPPORTED_KINDS = {
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
+    *_ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -1037,14 +1058,18 @@ def advance_operator_locality_standing(
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
+            or event.kind in _ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingest event: {event.kind}")
         prior_through_event_occurrence_identity = through_event_occurrence_identity
-        pair_lifecycle_event = event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
-        if not pair_lifecycle_event:
+        deferred_lifecycle_event = (
+            event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
+            or event.kind in _ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS
+        )
+        if not deferred_lifecycle_event:
             event_count += 1
             through_event_occurrence_identity = event.identity
             for key, collected in (
@@ -1072,7 +1097,7 @@ def advance_operator_locality_standing(
                 applicability_result_occurrences
             ),
         }
-        if pair_lifecycle_event:
+        if event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS:
             if (
                 event.kind
                 == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -1343,6 +1368,57 @@ def advance_operator_locality_standing(
                 applicability_result_occurrences
             ),
         }
+        if event.kind in _ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS:
+            carried = {
+                "scope": scope,
+                "locality_identity": locality_identity,
+                "through_event_occurrence_identity": (
+                    prior_through_event_occurrence_identity
+                ),
+                "event_count": event_count,
+                "ingest_occurrences": ingest_occurrences,
+                "measurement_occurrences": measurement_occurrences,
+                "exact_result_occurrences": exact_result_occurrences,
+                "representations": representations,
+                "recorded_relation_Standing": recorded_relation_Standing,
+                "recorded_standing_boundary_references": (
+                    recorded_standing_boundary_references
+                ),
+                "recorded_standing_boundary_locality_relations": (
+                    recorded_standing_boundary_locality_relations
+                ),
+                "operator_invocation_locality_relations": (
+                    operator_invocation_locality_relations
+                ),
+                "responsibility_assignment_occurrences": (
+                    responsibility_assignment_occurrences
+                ),
+                "operator_material_acquire_act_occurrences": (
+                    operator_material_acquire_act_occurrences
+                ),
+                "candidate_result_occurrences": candidate_result_occurrences,
+                "admission_result_occurrences": admission_result_occurrences,
+                "applicability_result_occurrences": (
+                    applicability_result_occurrences
+                ),
+                "comparison_result_occurrences": comparison_result_occurrences,
+                "known_loss": known_loss,
+                "unknown": unknown,
+                "conflicts": conflicts,
+            }
+            _carry_addressed_material_coordinate_measurement_occurrence_into_standing(
+                ledger,
+                carried,
+                event,
+                prior_through_event_occurrence_identity=(
+                    prior_through_event_occurrence_identity
+                ),
+            )
+            through_event_occurrence_identity = carried[
+                "through_event_occurrence_identity"
+            ]
+            event_count = carried["event_count"]
+            continue
         if event.kind == ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND:
             _read_addressed_byte_reference_assignment(
                 ledger,
@@ -2803,6 +2879,252 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND:
         applicability[event.identity] = None
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
+        comparisons[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_addressed_material_coordinate_measurement_occurrence_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Validate, then carry one addressed-material Measurement occurrence."""
+
+    if (
+        type(locality_standing) is not dict
+        or event.kind not in _ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_KINDS
+        or ledger.get(event.identity) != event
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or event.locality_identity != locality_standing.get("locality_identity")
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+        or event.identity == prior_through_event_occurrence_identity
+    ):
+        raise ValueError("addressed-material Measurement Standing is not exact")
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    applicability = locality_standing.get("applicability_result_occurrences")
+    measurements = locality_standing.get("measurement_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or type(applicability) is not dict
+        or type(measurements) is not dict
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("addressed-material Measurement Standing is not exact")
+    if event.kind == ADDRESSED_MATERIAL_COORDINATE_RESPONSIBILITY_ASSIGNMENT_KIND:
+        _read_addressed_material_coordinate_assignment(
+            ledger, event.identity, prior_standing=locality_standing
+        )
+        if (
+            event.material.get("standing_boundary_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in assignments
+        ):
+            raise ValueError("addressed-material assignment Standing is not exact")
+    elif event.kind == ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_ACT_EVIDENCE_KIND:
+        _read_addressed_material_coordinate_applicability_act(
+            ledger, event.identity, prior_standing=locality_standing
+        )
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in assignments
+        ):
+            raise ValueError("addressed-material Applicability Act Standing is not exact")
+    elif event.kind == ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_RESULT_KIND:
+        _read_addressed_material_coordinate_applicability_result(
+            ledger, event.identity, prior_standing=locality_standing
+        )
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in applicability
+        ):
+            raise ValueError("addressed-material Applicability Standing is not exact")
+    elif event.kind == ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_ACT_EVIDENCE_KIND:
+        _read_addressed_material_coordinate_measurement_act(
+            ledger, event.identity, prior_standing=locality_standing
+        )
+        assignment = event.material.get("responsibility_assignment_reference")
+        applicability_reference = event.material.get("applicability_result_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or type(applicability_reference) is not dict
+            or applicability_reference.get("recorded_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in applicability
+        ):
+            raise ValueError("addressed-material Measurement Act Standing is not exact")
+    else:
+        _read_addressed_material_coordinate_measurement_result(
+            ledger, event.identity, prior_standing=locality_standing
+        )
+        assignment = event.material.get("responsibility_assignment_reference")
+        applicability_reference = event.material.get("applicability_result_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or type(applicability_reference) is not dict
+            or applicability_reference.get("recorded_occurrence_identity")
+            not in applicability
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in measurements
+        ):
+            raise ValueError("addressed-material Measurement result Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="addressed-material Measurement Standing is not exact",
+    )
+    if event.kind == ADDRESSED_MATERIAL_COORDINATE_RESPONSIBILITY_ASSIGNMENT_KIND:
+        assignments[event.identity] = None
+    elif event.kind == ADDRESSED_MATERIAL_COORDINATE_APPLICABILITY_RESULT_KIND:
+        applicability[event.identity] = None
+    elif event.kind == ADDRESSED_MATERIAL_COORDINATE_MEASUREMENT_RESULT_KIND:
+        measurements[event.identity] = (
+            _addressed_material_coordinate_measurement_coordinates(event)
+        )
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
+
+
+def _carry_ordered_relation_path_pair_findings_comparison_occurrence_into_standing(
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry one exact 04.Compare.B occurrence produced in this call."""
+
+    if (
+        type(locality_standing) is not dict
+        or event.kind
+        not in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+    ):
+        raise ValueError("ordered relation-path comparison Standing is not exact")
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    applicability = locality_standing.get("applicability_result_occurrences")
+    comparisons = locality_standing.get("comparison_result_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or type(applicability) is not dict
+        or type(comparisons) is not dict
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("ordered relation-path comparison Standing is not exact")
+    if (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND
+    ):
+        measurements = locality_standing.get("measurement_occurrences")
+        path = event.material.get("path_result_reference")
+        comparison = event.material.get("comparison_result_reference")
+        if (
+            type(measurements) is not dict
+            or type(path) is not dict
+            or type(comparison) is not dict
+            or path.get("recorded_occurrence_identity") not in measurements
+            or comparison.get("recorded_occurrence_identity") not in comparisons
+            or event.material.get("standing_boundary_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in assignments
+        ):
+            raise ValueError("ordered relation-path comparison assignment is not exact")
+    elif (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND
+    ):
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in assignments
+        ):
+            raise ValueError("ordered relation-path Applicability Act is not exact")
+    elif (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
+    ):
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.material.get("applicability") != "applicable"
+            or event.identity in applicability
+        ):
+            raise ValueError("ordered relation-path Applicability is not exact")
+    elif (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND
+    ):
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("applicability_result_event_identity")
+            != prior_through_event_occurrence_identity
+            or prior_through_event_occurrence_identity not in applicability
+        ):
+            raise ValueError("ordered relation-path Compare Act is not exact")
+    else:
+        assignment = event.material.get("responsibility_assignment_reference")
+        if (
+            type(assignment) is not dict
+            or assignment.get("recorded_occurrence_identity") not in assignments
+            or event.material.get("responsible_act_evidence_identity")
+            != prior_through_event_occurrence_identity
+            or event.material.get("applicability_result_event_identity")
+            not in applicability
+            or event.identity in comparisons
+        ):
+            raise ValueError("ordered relation-path comparison result is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="ordered relation-path comparison Standing is not exact",
+    )
+    if (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND
+    ):
+        assignments[event.identity] = None
+    elif (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
+    ):
+        applicability[event.identity] = None
+    elif (
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    ):
         comparisons[event.identity] = None
     for key, added in standing_additions.items():
         for value in added:

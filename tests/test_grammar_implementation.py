@@ -936,6 +936,64 @@ def _addressed_byte_occurrence_reference_determination_yield_witness() -> dict:
     ]
 
 
+def _addressed_material_coordinate_measurement_yield_witnesses() -> dict[str, dict]:
+    import seed_runtime.measurement_of_source_position_coordinates_carrying_addressed_material as material_measurement
+    from seed_runtime.standing_measurement_declarations import (
+        record_declared_measurements_from_current_standing,
+    )
+    from tests.test_addressed_byte_occurrence_reference_determination import (
+        _direct,
+        _record,
+    )
+
+    ledger = _IntegrityAdversaryLedger()
+    _record(ledger, exact=b"aba", position=0, locality="addressed-material-yield")
+    _direct(ledger, exact=b"cad", locality="addressed-material-yield")
+    recorded = record_declared_measurements_from_current_standing(
+        ledger, locality_identity="addressed-material-yield"
+    )
+    result = next(
+        event
+        for event in recorded.result_occurrences
+        if event.kind == material_measurement.MEASUREMENT_RESULT_KIND
+    )
+    applicability = next(
+        event
+        for event in ledger.list()
+        if event.kind == material_measurement.APPLICABILITY_RESULT_KIND
+    )
+    applicability_bundle = _yield_bundle(ledger, applicability)
+    applicability_bundle["recorded_result_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    applicability_bundle["act_evidence_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    measurement_bundle = _yield_bundle(ledger, result)
+    measurement_bundle["recorded_result_occurrence_coordinate"] = (
+        "measurement_act_occurrence_identity"
+    )
+    measurement_bundle["act_evidence_occurrence_coordinate"] = (
+        "measurement_act_occurrence_identity"
+    )
+    return {
+        "source_position_coordinates_carrying_addressed_material_applicability": applicability_bundle,
+        "source_position_coordinates_carrying_addressed_material_measurement": measurement_bundle,
+    }
+
+
+def _addressed_material_coordinate_applicability_yield_witness() -> dict:
+    return _addressed_material_coordinate_measurement_yield_witnesses()[
+        "source_position_coordinates_carrying_addressed_material_applicability"
+    ]
+
+
+def _addressed_material_coordinate_measurement_yield_witness() -> dict:
+    return _addressed_material_coordinate_measurement_yield_witnesses()[
+        "source_position_coordinates_carrying_addressed_material_measurement"
+    ]
+
+
 def _representation_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
@@ -2341,6 +2399,12 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "addressed_byte_occurrence_reference_determination": (
             _addressed_byte_occurrence_reference_determination_yield_witness
         ),
+        "source_position_coordinates_carrying_addressed_material_applicability": (
+            _addressed_material_coordinate_applicability_yield_witness
+        ),
+        "source_position_coordinates_carrying_addressed_material_measurement": (
+            _addressed_material_coordinate_measurement_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -3713,8 +3777,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 223
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 223
+    assert len(test_subjects) == 224
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 224
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -5099,6 +5163,12 @@ def test_different_yield_occurrences_do_not_share_result_identity():
         "addressed_byte_occurrence_reference_determination": (
             _addressed_byte_occurrence_reference_determination_yield_witness
         ),
+        "source_position_coordinates_carrying_addressed_material_applicability": (
+            _addressed_material_coordinate_applicability_yield_witness
+        ),
+        "source_position_coordinates_carrying_addressed_material_measurement": (
+            _addressed_material_coordinate_measurement_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -5135,11 +5205,14 @@ def test_different_yield_occurrences_do_not_share_result_identity():
                 "shared_pair_position_applicability",
                 "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
                 "addressed_byte_occurrence_reference_determination_applicability",
+                "source_position_coordinates_carrying_addressed_material_applicability",
             }
             else "movement_act_occurrence_identity"
             if boundary == "assertion_locality_movement"
             else "determination_act_occurrence_identity"
             if boundary == "addressed_byte_occurrence_reference_determination"
+            else "measurement_act_occurrence_identity"
+            if boundary == "source_position_coordinates_carrying_addressed_material_measurement"
             else "act_occurrence_identity"
         )
         assert first["event"].material[occurrence_coordinate] != second[
@@ -5621,6 +5694,7 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
         "recurrence",
         "position",
         "ordered_relation_path",
+        "declared_rule_result",
     ]
     for bundle in (byte, pair, position, pair_occurrence):
         witness = _measurement_result_witness(bundle)
@@ -5669,6 +5743,7 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
             (
                 "measurement_of_position_coordinates_of_byte_pair_occurrences",
                 "measurement_of_exact_byte_occurrences",
+                "source_position_coordinates_carrying_addressed_material_measurement",
             ),
             strict=True,
         )
