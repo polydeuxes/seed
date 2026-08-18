@@ -19,7 +19,7 @@ from material_witnesses.pixel_ladder import (
 from material_witnesses.visual_ladder import rungs
 
 
-def test_raw_pixel_specimens_preserve_exact_channel_positions(tmp_path):
+def test_pixel_specimens_preserve_exact_channel_positions(tmp_path):
     pixels = pixel_ladder(tmp_path, [0, 128, 255])
     channels = channel_ladder(tmp_path, 255)
 

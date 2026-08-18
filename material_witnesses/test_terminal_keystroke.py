@@ -289,7 +289,7 @@ def test_seed_measures_source_and_result_pair_findings_independently(
     }
 
 
-def test_one_exact_witness_result_crosses_the_raw_operator_emission_road(
+def test_one_exact_witness_result_crosses_the_operator_emission_road(
     terminal_witness_observation,
 ):
     ledger, _, _, _, result_ingests = terminal_witness_observation

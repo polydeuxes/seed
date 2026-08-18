@@ -4,7 +4,7 @@
 The harness knows how it constructed each specimen. Seed receives only the
 material. Nothing here names what a difference between two specimens means.
 
-**Raw channel bytes, no container and no encoder.** PNG is lossless, which
+**Exact channel bytes, no container and no encoder.** PNG is lossless, which
 escapes the H.264 problem of two frames differing only by compression, but it
 is still an encoding: the bytes are compressed PNG, not the values. A specimen
 here is exactly its channel bytes.
