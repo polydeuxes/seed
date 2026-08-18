@@ -25,6 +25,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+    recorded_distinction_pins_from_current_standing,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
@@ -268,6 +269,9 @@ def calculator_relation_witness():
         pytest.skip("fixed calculator invocation is unavailable")
     ledger = EventLedger()
     claim_source, path_result, path_comparison, claim_standing = _claim_path(ledger)
+    distinction_pins = recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity="calculator-claim"
+    )
     raw_output = BytesIO()
     run_persistent_operator_console(
         ledger=ledger,
@@ -300,6 +304,7 @@ def calculator_relation_witness():
         "claim_source": claim_source,
         "path_result": path_result,
         "path_comparison": path_comparison,
+        "distinction_pins": distinction_pins,
         "claim_standing": claim_standing,
         "system_locality": system_locality,
         "stdout": stdout,
@@ -346,7 +351,7 @@ def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
         ["findings_of_later_result"],
     ]
     assert reading["finding"]["unknown"] == [
-        "what this relation of relations represents remains Unknown"
+        "what the relation of the ordered path and recorded comparison findings represents remains Unknown"
     ]
     assert reading["unknown"] == [
         "what the relation of path and comparison findings represents remains Unknown"
@@ -354,6 +359,16 @@ def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
     assert witness["path_comparison"].identity in witness["claim_standing"][
         "comparison_result_occurrences"
     ]
+
+    pins = witness["distinction_pins"]
+    assert tuple(
+        (pin.pair_subject, pin.recorded_finding_reference["finding_category"])
+        for pin in pins
+    ) == (
+        (b"2=", "conflicting_findings"),
+        (b"2=", "findings_of_later_result"),
+        (b"=5", "findings_of_later_result"),
+    )
 
 
 def test_calculator_result_preserves_its_own_occurrence_and_provenance(

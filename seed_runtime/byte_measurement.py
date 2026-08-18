@@ -2,7 +2,7 @@
 
 This is the first acquisition boundary that does not receive its measured
 subjects from a caller.  The subjects are the literal byte values carried by
-the exact raw material linked from every ingest occurrence in the declared
+the exact material linked from every ingest occurrence in the declared
 Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate

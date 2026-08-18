@@ -566,7 +566,7 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
 
 
 def _carries_exact_result(ledger: EventLedger, event) -> bool:
-    """Whether this exact occurrence's intact Yield carries raw result bytes."""
+    """Whether this exact occurrence's intact Yield carries exact result bytes."""
 
     if (
         type(event.exact_material) is not bytes

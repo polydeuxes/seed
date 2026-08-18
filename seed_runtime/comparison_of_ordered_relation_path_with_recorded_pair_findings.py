@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 import json
-from typing import Any
+from typing import Any, NamedTuple
 
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -1077,7 +1077,9 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             "comparison findings remain at recorded Standing",
             "the relation establishes no source relation or recurrence",
         ],
-        "unknown": ["what this relation of relations represents remains Unknown"],
+        "unknown": [
+            "what the relation of the ordered path and recorded comparison findings represents remains Unknown"
+        ],
     }
 
 
@@ -1204,3 +1206,159 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
         result_name=COMPARE_RESULT_KIND,
     )
     return deepcopy(event.material)
+
+
+class RecordedDistinctionPin(NamedTuple):
+    locality_identity: str
+    standing_boundary_identity: str
+    comparison_result_occurrence_identity: str
+    ordered_relation_path_assertion_reference: dict[str, str]
+    path_role: str
+    path_position_assertion_reference: dict[str, str]
+    pair_subject: bytes
+    recorded_finding_reference: dict[str, Any]
+
+
+def recorded_distinction_pins_from_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> tuple[RecordedDistinctionPin, ...]:
+    """Read every exact finding-reference branch from carried results."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("recorded distinction pins require an EventLedger")
+    if type(locality_identity) is not str or not locality_identity:
+        raise ValueError("recorded distinction pins require one exact Locality")
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    boundary = standing.get("through_event_occurrence_identity")
+    comparisons = standing.get("comparison_result_occurrences")
+    if type(comparisons) is not dict:
+        raise ValueError("recorded distinction pins require exact current Standing")
+    sources = tuple(
+        event
+        for occurrence_identity in comparisons
+        if (
+            (event := ledger.get(occurrence_identity)) is not None
+            and event.kind
+            == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        )
+    )
+    if not sources:
+        return ()
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    if (
+        boundary_event is None
+        or boundary_event.locality_identity != locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+    ):
+        raise ValueError("recorded distinction pins require exact current Standing")
+    pins = []
+    for event in sources:
+        occurrence_identity = event.identity
+        coordinates = comparisons[occurrence_identity]
+        if coordinates is not None:
+            raise ValueError("recorded distinction pin source Standing is not exact")
+        reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+            ledger, occurrence_identity
+        )
+        finding = reading.get("finding")
+        subject = finding.get("subject") if type(finding) is dict else None
+        path_reference = (
+            subject.get("ordered_relation_path_assertion_reference")
+            if type(subject) is dict
+            else None
+        )
+        roles = finding.get("relation_findings") if type(finding) is dict else None
+        comparison_reference = (
+            subject.get("recorded_pair_comparison_result_reference")
+            if type(subject) is dict
+            else None
+        )
+        if (
+            type(path_reference) is not dict
+            or type(comparison_reference) is not dict
+            or type(comparison_reference.get("recorded_occurrence_identity"))
+            is not str
+            or type(roles) is not list
+        ):
+            raise ValueError("recorded distinction pin source result is not exact")
+        for role in roles:
+            role_identity = role.get("role") if type(role) is dict else None
+            position_reference = (
+                role.get("path_position_assertion_reference")
+                if type(role) is dict
+                else None
+            )
+            pair_subject = role.get("pair_subject") if type(role) is dict else None
+            references = (
+                role.get("comparison_finding_references")
+                if type(role) is dict
+                else None
+            )
+            if (
+                role_identity
+                not in {"first_path_relation", "second_path_relation"}
+                or type(position_reference) is not dict
+                or type(pair_subject) is not list
+                or len(pair_subject) != 2
+                or not all(
+                    type(value) is int and 0 <= value <= 255
+                    for value in pair_subject
+                )
+                or type(references) is not list
+            ):
+                raise ValueError("recorded distinction pin coordinates are not exact")
+            for reference in references:
+                if (
+                    type(reference) is not dict
+                    or set(reference)
+                    != {
+                        "recorded_comparison_occurrence_identity",
+                        "finding_category",
+                        "finding_position",
+                        "subject",
+                    }
+                    or reference.get("recorded_comparison_occurrence_identity")
+                    != comparison_reference["recorded_occurrence_identity"]
+                    or reference.get("finding_category")
+                    not in {
+                        "same_content_findings",
+                        "conflicting_findings",
+                        "findings_of_earlier_result",
+                        "findings_of_later_result",
+                        "unknown_findings",
+                    }
+                    or type(reference.get("finding_position")) is not int
+                    or reference["finding_position"] < 0
+                    or type(reference.get("subject")) is not dict
+                    or reference["subject"].get("representation")
+                    != pair_subject
+                ):
+                    raise ValueError("recorded distinction pin reference is not exact")
+                pins.append(
+                    RecordedDistinctionPin(
+                        locality_identity,
+                        boundary,
+                        occurrence_identity,
+                        deepcopy(path_reference),
+                        role_identity,
+                        deepcopy(position_reference),
+                        bytes(pair_subject),
+                        deepcopy(reference),
+                    )
+                )
+    if (
+        ledger.get(boundary_event.identity) != boundary_event
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+    ):
+        raise ValueError("recorded distinction pins require one unchanged current Standing pin")
+    return tuple(pins)

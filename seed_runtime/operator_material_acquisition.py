@@ -1,4 +1,4 @@
-"""One exact operator-material boundary occurrence and its raw result."""
+"""One exact operator-material boundary occurrence and its exact result."""
 
 from __future__ import annotations
 
@@ -700,7 +700,7 @@ def _record_operator_material_acquire_result(
 def get_recorded_operator_material_acquire(
     ledger: EventLedger, result_event_identity: str
 ) -> dict[str, Any]:
-    """Read one raw boundary result through its exact Act and Yield."""
+    """Read one exact boundary result through its exact Act and Yield."""
 
     _require_identity(
         result_event_identity,

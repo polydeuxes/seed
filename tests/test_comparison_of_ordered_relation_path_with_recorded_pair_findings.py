@@ -15,6 +15,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
+    recorded_distinction_pins_from_current_standing,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
@@ -317,6 +318,73 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
     assert result.exact_material is None
 
 
+def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    _assignment, _applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
+    boundary = ledger.append_boundary()
+    standing_boundary = _standing(ledger)["through_event_occurrence_identity"]
+
+    pins = recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+
+    assert ledger.append_boundary() == boundary
+    assert all(
+        pin.comparison_result_occurrence_identity == result.identity for pin in pins
+    )
+    assert all(pin.standing_boundary_identity == standing_boundary for pin in pins)
+    assert tuple(pin.path_role for pin in pins) == (
+        "first_path_relation",
+        "first_path_relation",
+        "second_path_relation",
+        "second_path_relation",
+    )
+    assert tuple(pin.pair_subject for pin in pins) == (
+        b"ab",
+        b"ab",
+        b"bc",
+        b"bc",
+    )
+    assert tuple(
+        pin.recorded_finding_reference["finding_category"] for pin in pins
+    ) == (
+        "same_content_findings",
+        "conflicting_findings",
+        "same_content_findings",
+        "conflicting_findings",
+    )
+    pins[0].recorded_finding_reference["finding_category"] = "changed copy"
+    assert recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )[0].recorded_finding_reference["finding_category"] == "same_content_findings"
+
+
+def test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence():
+    ledger, _earlier_source, _added, _comparison, _path = _inputs()
+    boundary = ledger.append_boundary()
+
+    assert recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    ) == ()
+    assert ledger.append_boundary() == boundary
+
+
+def test_distinction_fanout_refuses_a_standing_pin_followed_by_another_append():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    _record_comparison(ledger, comparison, path)
+    ledger.append("test.occurrence", {"unknown": []}, locality_identity="other")
+    boundary = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="exact current Standing"):
+        recorded_distinction_pins_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+
+    assert ledger.append_boundary() == boundary
+
+
 def test_another_source_occurrence_is_inapplicable_and_cannot_participate():
     ledger, _earlier_source, _added, comparison, path = _inputs(
         path_source_is_added=False
@@ -501,7 +569,7 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache(
     assert calls == [expected_call] * 4
 
 
-def test_relation_of_relations_survives_sqlite_restart(tmp_path):
+def test_ordered_path_and_recorded_findings_survive_sqlite_restart(tmp_path):
     database = tmp_path / "ordered-relation-path-pair-finding-comparison.sqlite"
     ledger = SQLiteEventLedger(str(database))
     ledger, _earlier_source, _added, comparison, path = _inputs(ledger=ledger)
@@ -517,6 +585,9 @@ def test_relation_of_relations_survives_sqlite_restart(tmp_path):
     )
     assert reading["finding"]["relation_findings"]
     assert result_identity in _standing(reopened)["comparison_result_occurrences"]
+    assert recorded_distinction_pins_from_current_standing(
+        reopened, locality_identity=LOCALITY
+    )
     reopened.close()
 
 
@@ -534,7 +605,7 @@ def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_
     assert carried == _standing(ledger)
 
 
-def test_relation_of_relations_is_addressable_but_has_no_raw_material():
+def test_ordered_path_and_recorded_findings_are_addressable_without_exact_material():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
         ledger, comparison, path
@@ -558,6 +629,9 @@ FIDELITY_SUBJECTS = {
     ),
     "relation_required_coordinates": (
         test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
+        test_current_standing_fans_one_comparison_into_exact_distinction_pins,
+        test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
+        test_distinction_fanout_refuses_a_standing_pin_followed_by_another_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
     ),
     "yield_result_occurrence_evidence": (
@@ -569,10 +643,10 @@ FIDELITY_SUBJECTS = {
         test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache,
     ),
     "declared_measurement_result": (
-        test_relation_of_relations_survives_sqlite_restart,
+        test_ordered_path_and_recorded_findings_survive_sqlite_restart,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
     "representation_source_coordinates": (
-        test_relation_of_relations_is_addressable_but_has_no_raw_material,
+        test_ordered_path_and_recorded_findings_are_addressable_without_exact_material,
     ),
 }
