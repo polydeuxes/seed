@@ -278,14 +278,10 @@ def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
         "material_order": "preserved",
-        "standing_not_established": [
-            {
-                "first_subject": "same_material_in_different_order",
-                "relation": "identifies",
-                "second_subject": "one_composite",
-                "standing": "not_established",
-            }
-        ],
+        "standing_not_established": {
+            "subject": "one_composite",
+            "coordinates": ["same_material_in_different_order"],
+        },
         "requires": ["exact_material", "exact_order", "exact_path"],
         "relations": {
             "of": {
@@ -363,10 +359,8 @@ def test_every_grammar_representation_composite_preserves_material_order():
 def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["clause_coordinates"]["01.Standing.B"]["standing_not_established"][1] == {
-        "first_subject": "material_with_same_name",
-        "relation": "identifies",
-        "second_subject": "same_subject",
-        "standing": "not_established",
+        "subject": "same_subject",
+        "coordinates": ["material_with_same_name"],
     }
     relation_subject = next(
         coordinates
@@ -1620,7 +1614,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
         "locality": EXACT if applicability.get("measurement_locality") else MISSING,
         "Authority": EXACT if applicability["dimensions"].get("authority") else MISSING,
-        # The relation subjects already identify the exact input role and the
+        # The relation subjects already carry the exact input role and the
         # exact addressed-Act role; no extra participant noun is supplied.
         "participants_and_roles": EXACT if input_relation and act_relation else MISSING,
         "provenance": (
@@ -2598,20 +2592,10 @@ def _relation_witness_specs() -> dict[str, dict]:
             "from": "Act_occurrence",
             "to": "result",
             "preserves": ["Act_occurrence_identity", "result_identity"],
-            "standing_not_established": [
-                {
-                    "first_subject": "same_result_content_in_distinct_Act_occurrences",
-                    "relation": "identifies",
-                    "second_subject": "one_result",
-                    "standing": "not_established",
-                },
-                {
-                    "first_subject": "same_result_content_in_distinct_Act_occurrences",
-                    "relation": "identifies",
-                    "second_subject": "one_Yield_relation",
-                    "standing": "not_established",
-                },
-            ],
+            "standing_not_established": {
+                "subject": ["one_result", "one_Yield_relation"],
+                "coordinates": ["same_result_content_in_distinct_Act_occurrences"],
+            },
             "requires": requirements,
         },
         "carried_by": {
@@ -5724,7 +5708,7 @@ def test_each_declared_measurement_names_its_finding_and_responsible_occurrence(
         assert declared.get("standing_not_established")
 
 
-def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
+def test_measurement_result_pronoun_is_an_exact_machine_reference():
     assert _clause("01.Source.D")["result_carries"] == {
         "first_subject": "result",
         "relation": "carries",
@@ -5732,9 +5716,8 @@ def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
         "bounded_by": ["declared_rule", "declared_boundary"],
     }
     assert _clause("01.Source.D")["it_reference"] == {
-        "first_subject": "it",
-        "relation": "identifies",
-        "second_subject": "result",
+        "reference": "it",
+        "coordinate": "result",
     }
 
 
@@ -5782,15 +5765,15 @@ def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
         ],
     }
     assert clause["determination"] == {
-        "addressed_coordinate_relation_occurrences": [
+        "addressed_coordinate_reference_occurrences": [
             {
                 "first_subject": "first_position_coordinate_reference",
-                "relation": "identifies",
+                "relation": "of",
                 "second_subject": "addressed_byte_occurrence",
             },
             {
                 "first_subject": "second_position_coordinate_reference",
-                "relation": "identifies",
+                "relation": "of",
                 "second_subject": "addressed_byte_occurrence",
             },
         ],
@@ -5798,7 +5781,20 @@ def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
         "standing_not_established": "each_pair_position_Assertion_reference_with_no_addressed_coordinate",
         "order": "source_occurrence_order",
         "lawful_no_reference_result": {
-            "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+            "when": {
+                "standing_not_established": [
+                    {
+                        "first_subject": "first_position_coordinate_reference",
+                        "relation": "of",
+                        "second_subject": "addressed_byte_occurrence",
+                    },
+                    {
+                        "first_subject": "second_position_coordinate_reference",
+                        "relation": "of",
+                        "second_subject": "addressed_byte_occurrence",
+                    },
+                ]
+            },
             "carried_pair_position_Assertion_references": [],
         },
     }
@@ -6707,8 +6703,8 @@ FIDELITY_SUBJECTS = {
         test_shared_position_measurement_decomposes_material_non_establishment,
         test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,
     ),
-    "it_result_relation": (
-        test_measurement_result_pronoun_reference_does_not_compress_the_relation,
+    "it_result_reference": (
+        test_measurement_result_pronoun_is_an_exact_machine_reference,
     ),
     "recurrent_byte_pair_occurrence_position_measurement": (
         test_pair_occurrence_measurement_is_structured_in_the_grammar_representation,

@@ -3,52 +3,31 @@
   "root_references": [
     {
       "reference": "this_Witness",
-      "coordinate": "witness",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "Witness"
+      "coordinate": "witness"
     },
     {
       "reference": "this_book_material_acquisition_witness",
-      "coordinate": "book_material_acquisition_witness_subject",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "book_material_acquisition_witness"
+      "coordinate": "book_material_acquisition_witness_subject"
     },
     {
       "reference": "this_Grammar",
-      "coordinate": "witness_grammar",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "Grammar"
+      "coordinate": "witness_grammar"
     },
     {
       "reference": "this_Book",
-      "coordinate": "book_material",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "Book"
+      "coordinate": "book_material"
     },
     {
       "reference": "this_Seed",
-      "coordinate": "seed_subject",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "Seed"
+      "coordinate": "seed_subject"
     },
     {
       "reference": "this_separate_admission_material",
-      "coordinate": "separate_admission_material_reference",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "separate_admission_material"
+      "coordinate": "separate_admission_material_reference"
     },
     {
       "reference": "this_Fidelity",
-      "coordinate": "bounded_Fidelity_finding",
-      "first_subject": "this",
-      "relation": "identifies",
-      "second_subject": "Fidelity"
+      "coordinate": "bounded_Fidelity_finding"
     }
   ],
   "witness_grammar": {
@@ -58,15 +37,7 @@
       "first_subject": "this_Grammar",
       "relation": "represents",
       "second_subject": "this_Book"
-    },
-    "standing_not_established": [
-      {
-        "first_subject": "this_Grammar",
-        "relation": "identifies",
-        "second_subject": "this_Book",
-        "standing": "not_established"
-      }
-    ]
+    }
   },
   "completeness": {
     "required_coordinates": [
@@ -158,14 +129,10 @@
   },
   "composite": {
     "material_order": "preserved",
-    "standing_not_established": [
-      {
-        "first_subject": "same_material_in_different_order",
-        "relation": "identifies",
-        "second_subject": "one_composite",
-        "standing": "not_established"
-      }
-    ],
+    "standing_not_established": {
+      "subject": "one_composite",
+      "coordinates": ["same_material_in_different_order"]
+    },
     "requires": ["exact_material", "exact_order", "exact_path"],
     "relations": {
       "of": {
@@ -217,20 +184,10 @@
       "to": "result",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"],
       "preserves": ["Act_occurrence_identity", "result_identity"],
-      "standing_not_established": [
-        {
-          "first_subject": "same_result_content_in_distinct_Act_occurrences",
-          "relation": "identifies",
-          "second_subject": "one_result",
-          "standing": "not_established"
-        },
-        {
-          "first_subject": "same_result_content_in_distinct_Act_occurrences",
-          "relation": "identifies",
-          "second_subject": "one_Yield_relation",
-          "standing": "not_established"
-        }
-      ]
+      "standing_not_established": {
+        "subject": ["one_result", "one_Yield_relation"],
+        "coordinates": ["same_result_content_in_distinct_Act_occurrences"]
+      }
     },
     "carried_by": {
       "book_clause": "02.Acts.A",
@@ -557,7 +514,7 @@
         {"subject": "measurement_occurrence_boundary"},
         {"subject": "function_reference_measurement_distinction"},
         {"subject": "reference_pair_measurement"},
-        {"subject": "it_result_relation"},
+        {"subject": "it_result_reference"},
         {"subject": "representation_result_relation"},
         {"subject": "admission_result_relation"},
         {"subject": "single_byte_admission_result"},
@@ -785,9 +742,8 @@
         "bounded_by": ["declared_rule", "declared_boundary"]
       },
       "it_reference": {
-        "first_subject": "it",
-        "relation": "identifies",
-        "second_subject": "result"
+        "reference": "it",
+        "coordinate": "result"
       },
       "responsibility": {
         "kind": "Measurement_result_boundary",
@@ -1048,7 +1004,7 @@
                   "Assertion": "first",
                   "coordinate": "second_position_coordinate_reference"
                 },
-                "relation": "identifies",
+                "relation": "of",
                 "second_subject": "one_exact_byte_occurrence"
               },
               {
@@ -1056,7 +1012,7 @@
                   "Assertion": "second",
                   "coordinate": "first_position_coordinate_reference"
                 },
-                "relation": "identifies",
+                "relation": "of",
                 "second_subject": "one_exact_byte_occurrence"
               }
             ],
@@ -1190,23 +1146,23 @@
             "position",
             "exact_byte_material"
           ],
-          "addressed_coordinate_relation": {
+          "addressed_coordinate_reference": {
             "first_subject": "addressed_source_byte_position_coordinate_reference",
-            "relation": "identifies",
+            "relation": "of",
             "second_subject": "exact_source_byte_occurrence"
           }
         }
       },
       "determination": {
-        "addressed_coordinate_relation_occurrences": [
+        "addressed_coordinate_reference_occurrences": [
           {
             "first_subject": "first_position_coordinate_reference",
-            "relation": "identifies",
+            "relation": "of",
             "second_subject": "addressed_byte_occurrence"
           },
           {
             "first_subject": "second_position_coordinate_reference",
-            "relation": "identifies",
+            "relation": "of",
             "second_subject": "addressed_byte_occurrence"
           }
         ],
@@ -1214,7 +1170,20 @@
         "standing_not_established": "each_pair_position_Assertion_reference_with_no_addressed_coordinate",
         "order": "source_occurrence_order",
         "lawful_no_reference_result": {
-          "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+          "when": {
+            "standing_not_established": [
+              {
+                "first_subject": "first_position_coordinate_reference",
+                "relation": "of",
+                "second_subject": "addressed_byte_occurrence"
+              },
+              {
+                "first_subject": "second_position_coordinate_reference",
+                "relation": "of",
+                "second_subject": "addressed_byte_occurrence"
+              }
+            ]
+          },
           "carried_pair_position_Assertion_references": []
         }
       },
@@ -1339,7 +1308,7 @@
       "recorded_occurrence_kind": [],
       "assertion": {
         "first_subject": "X",
-        "relation": "represents_or_identifies",
+        "relation": "exact_relation",
         "second_subject": "Y"
       },
       "preserves": [
@@ -1496,10 +1465,8 @@
       "standing_not_established": [
         "Standing",
         {
-          "first_subject": "material_with_same_name",
-          "relation": "identifies",
-          "second_subject": "same_subject",
-          "standing": "not_established"
+          "subject": "same_subject",
+          "coordinates": ["material_with_same_name"]
         },
         "mandatory_grammar",
         {
@@ -2302,16 +2269,19 @@
           "same_Locality",
           "current_Standing_carrying_each_result",
           {
-            "first_subject": {
-              "first_subject": "source_occurrence",
-              "relation": "of",
-              "second_subject": "ordered_relation_path"
-            },
-            "relation": "identifies",
-            "second_subject": {
-              "first_subject": "added_occurrence",
-              "relation": "of",
-              "second_subject": "recorded_comparison"
+            "exact_source_occurrence_reference": {
+              "carried_by": [
+                {
+                  "first_subject": "source_occurrence",
+                  "relation": "of",
+                  "second_subject": "ordered_relation_path"
+                },
+                {
+                  "first_subject": "added_occurrence",
+                  "relation": "of",
+                  "second_subject": "recorded_comparison"
+                }
+              ]
             }
           },
           {

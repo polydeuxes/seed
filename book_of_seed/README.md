@@ -7,7 +7,7 @@ It is not a roadmap, witness reference, generated topology, or substitute for re
 ## Resolution
 
 - A **Chapter** has one bounded subject: a concept, Responsibility, distinction, or relation.
-- `[UNRESOLVED]` identifies a distinction for which the current repository safely supports no constitutional resolution.
+- `[UNRESOLVED]` carries a distinction for which the current repository safely supports no constitutional resolution.
 - Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
@@ -39,23 +39,23 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
 6. Recurrence, headings, witness shape, or completion without a responsible occurrence and Evidence supply neither a branch value nor its identity.
 
-### Required identifying branches
+### Required branches
 
 #### Responsible boundary
 
-Identifies the exact boundary bearing the responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned Standing boundary.
+Carries the exact boundary bearing the responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned Standing boundary.
 
 #### Subject or material addressed
 
-Identifies the Responsibility's bounded subject. Responsible-boundary identity supplies no subject identity.
+Carries the Responsibility's bounded subject. Responsible-boundary identity supplies no subject identity.
 
 #### Exact responsible act
 
-Identifies the exact constitutional act assigned to the responsibility. Responsibility identity by itself establishes no act occurrence.
+Carries the exact constitutional act assigned to the responsibility. Responsibility identity by itself establishes no act occurrence.
 
 #### Authority
 
-Identifies the exact Authority under which the responsible boundary may bear and perform the exact act.
+Carries the exact Authority under which the responsible boundary may bear and perform the exact act.
 
 ```text
 Authority
@@ -70,7 +70,7 @@ The Authority coordinate may be positively established, conflicting, responsibly
 
 #### Evidence
 
-Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation asserted. Evidence by identity establishes no Authority, support relation, occurrence, or Standing.
+Carries the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation asserted. Evidence by identity establishes no Authority, support relation, occurrence, or Standing.
 
 #### Scope and locality
 
@@ -82,11 +82,11 @@ These branches are required where material participates in the exact Responsibil
 
 #### Input source
 
-Identifies where the exact input material came from. Source by itself establishes no provenance.
+Carries the exact input material source. Source by itself establishes no provenance.
 
 #### Provenance
 
-Identifies the source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
+Carries the source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
 ### Support-relation branches
 
@@ -100,7 +100,7 @@ These branches apply where the exact act occurs, including an act occurrence wit
 
 #### Act occurrence
 
-Identifies the responsible occurrence at which the exact act happens. An act occurrence with failure remains an act occurrence. A later responsibility finding that the proposed act did not occur establishes no act occurrence.
+Carries the responsible occurrence at which the exact act happens. An act occurrence with failure remains an act occurrence. A later responsibility finding that the proposed act did not occur establishes no act occurrence.
 
 ```text
 act
@@ -109,7 +109,7 @@ act
 
 #### Absence-of-act-occurrence finding
 
-Identifies the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and established support relations.
+Carries the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and established support relations.
 
 ```text
 absence-of-act-occurrence finding
@@ -124,7 +124,7 @@ absence finding
 
 #### Occurrence or non-occurrence evidence
 
-Identifies the evidence supporting the exact act-occurrence Assertion, act-occurrence-with-failure Assertion, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
+Carries the evidence supporting the exact act-occurrence Assertion, act-occurrence-with-failure Assertion, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
 
 ### Result branches
 
@@ -132,7 +132,7 @@ These branches apply where the exact Act occurrence establishes or preserves a r
 
 #### Occurrence-result Evidence
 
-Identifies the Evidence that the exact Act occurrence established or preserved the exact result. Result existence and the same shape do not establish that relation.
+Carries the Evidence that the exact Act occurrence established or preserved the exact result. Result existence and the same shape do not establish that relation.
 
 ```text
 same-shaped result
@@ -144,7 +144,7 @@ Act occurrence
 
 #### Result
 
-Identifies the exact result established or preserved by the Act occurrence.
+Carries the exact result established or preserved by the Act occurrence.
 
 ```text
 result
@@ -157,11 +157,11 @@ These branches apply where Standing is established for a result, relation, Asser
 
 #### Standing responsible boundary
 
-Identifies the responsible boundary that establishes the Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
+Carries the responsible boundary that establishes the Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
 
 #### Standing occurrence
 
-Identifies the exact occurrence that establishes the standing.
+Carries the exact occurrence that establishes the standing.
 
 ```text
 Act occurrence
@@ -170,11 +170,11 @@ Act occurrence
 
 #### Standing-occurrence evidence
 
-Identifies the Evidence supporting the Standing occurrence. Representation existence, a representation Act, recording, or visibility establishes no Standing by identity.
+Carries the Evidence supporting the Standing occurrence. Representation existence, a representation Act, recording, or visibility establishes no Standing by identity.
 
 #### Standing
 
-Identifies the exact standing established for the exact result, relation, assertion, input-to-act relation, or other bounded subject.
+Carries the exact standing established for the exact result, relation, assertion, input-to-act relation, or other bounded subject.
 
 Where the subject is a result, this is result standing.
 
@@ -197,15 +197,15 @@ Each branch occurs where the exact responsibility instantiates it. Some may prec
 
 #### Preservation record
 
-Identifies any separately retained representation or record preserving an Act, Standing occurrence, support relation, result, or other occurrence. A preservation record cannot prove the preserved occurrence by identity.
+Carries any separately retained representation or record preserving an Act, Standing occurrence, support relation, result, or other occurrence. A preservation record cannot prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 
-Identifies any separately established Authorization input by the exact downstream act. It remains distinct from the responsibility's general Authority coordinate.
+Carries any separately established Authorization input by the exact downstream act. It remains distinct from the responsibility's general Authority coordinate.
 
 #### Applicability and admission standing
 
-Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, participation, and input support remain distinct.
+Carries any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, participation, and input support remain distinct.
 
 #### Lawful Stopping
 

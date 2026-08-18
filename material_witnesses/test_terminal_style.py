@@ -2,7 +2,7 @@
 
 One isolated tmux server renders each exact source at one fixed geometry.  The
 plain cell capture and style-preserving capture remain external testimony.  No
-Seed Measurement identifies presentation controls or forms new styled output.
+Seed Measurement establishes presentation controls or forms new styled output.
 """
 
 from __future__ import annotations

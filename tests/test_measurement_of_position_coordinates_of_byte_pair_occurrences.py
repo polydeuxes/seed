@@ -454,7 +454,7 @@ def test_addressed_source_position_refuses_a_changed_coordinate(change):
         )
 
 
-def test_equal_byte_material_at_another_position_does_not_identify_the_address():
+def test_equal_byte_material_at_another_position_does_not_supply_the_address():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger, b"aaa")
     references = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
@@ -772,7 +772,7 @@ FIDELITY_SUBJECTS = {
         test_exact_addressed_source_position_reads_only_its_carried_pair_references,
         test_addressed_source_position_preserves_exact_boundaries,
         test_addressed_source_position_refuses_a_changed_coordinate,
-        test_equal_byte_material_at_another_position_does_not_identify_the_address,
+        test_equal_byte_material_at_another_position_does_not_supply_the_address,
         test_addressed_source_position_from_another_exact_result_is_refused,
         test_result_carries_only_its_declared_measurement_coordinates,
     ),

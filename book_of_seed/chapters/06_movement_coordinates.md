@@ -6,7 +6,7 @@ The exact coordinates of bounded movement.
 
 ## Bounded resolution
 
-A movement Assertion identifies its subject, source coordinates, destination
+A movement Assertion carries its subject, source coordinates, destination
 coordinates, exact Act, occurrence, Evidence, Authority, Scope, limits,
 Unknown, and Standing.
 

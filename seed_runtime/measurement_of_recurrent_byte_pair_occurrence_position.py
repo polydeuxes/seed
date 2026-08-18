@@ -377,7 +377,7 @@ def _references_to_recorded_recurrent_byte_pairs(
             or count.representation != recurrence.representation
         ):
             raise ValueError(
-                "the recurrent pair count support identifies a different Assertion"
+                "the recurrent pair count support carries another exact Assertion reference"
             )
         reference = ReferenceToRecordedRecurrentBytePair(
             recorded_occurrence_identity=event.identity,

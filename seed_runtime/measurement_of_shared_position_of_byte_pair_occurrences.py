@@ -53,7 +53,7 @@ BOOK_CLAUSE = "01.Source.D"
 MEASUREMENT_RULE = (
     "second position-coordinate reference of first exact recorded pair occurrence "
     "Assertion and first position-coordinate reference of second exact recorded pair "
-    "occurrence Assertion identifies one exact byte occurrence"
+    "occurrence Assertion, each of one exact byte occurrence"
 )
 RESPONSIBILITY = (
     "determine Applicability and Yield one ordered path where exact pair occurrence "

@@ -143,27 +143,17 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
     ) in _active_book()
 
 
-def test_witness_yield_relation_preserves_occurrence_and_result_identity():
+def test_witness_yield_relation_preserves_occurrence_and_result_coordinates():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["relations"]["yield"]["preserves"] == [
         "Act_occurrence_identity",
         "result_identity",
     ]
-    assert grammar["relations"]["yield"]["standing_not_established"] == [
-        {
-            "first_subject": "same_result_content_in_distinct_Act_occurrences",
-            "relation": "identifies",
-            "second_subject": "one_result",
-            "standing": "not_established",
-        },
-        {
-            "first_subject": "same_result_content_in_distinct_Act_occurrences",
-            "relation": "identifies",
-            "second_subject": "one_Yield_relation",
-            "standing": "not_established",
-        },
-    ]
+    assert grammar["relations"]["yield"]["standing_not_established"] == {
+        "subject": ["one_result", "one_Yield_relation"],
+        "coordinates": ["same_result_content_in_distinct_Act_occurrences"],
+    }
 
 
 def _assert_recorded_occurrence_kind_families(grammar):
@@ -233,9 +223,8 @@ def test_this_occurs_only_as_exact_witness_roots():
         for coordinates in grammar["root_references"]
     }
     assert all(
-        coordinates["first_subject"] == "this"
-        and coordinates["relation"] == "identifies"
-        and coordinates["second_subject"]
+        set(coordinates) == {"reference", "coordinate"}
+        and coordinates["coordinate"]
         for coordinates in roots.values()
     )
 
@@ -303,56 +292,35 @@ def test_witness_root_references_remain_distinct_and_in_declared_order():
         {
             "reference": "this_Witness",
             "coordinate": "witness",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "Witness",
         },
         {
             "reference": "this_book_material_acquisition_witness",
             "coordinate": "book_material_acquisition_witness_subject",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "book_material_acquisition_witness",
         },
         {
             "reference": "this_Grammar",
             "coordinate": "witness_grammar",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "Grammar",
         },
         {
             "reference": "this_Book",
             "coordinate": "book_material",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "Book",
         },
         {
             "reference": "this_Seed",
             "coordinate": "seed_subject",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "Seed",
         },
         {
             "reference": "this_separate_admission_material",
             "coordinate": "separate_admission_material_reference",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "separate_admission_material",
         },
         {
             "reference": "this_Fidelity",
             "coordinate": "bounded_Fidelity_finding",
-            "first_subject": "this",
-            "relation": "identifies",
-            "second_subject": "Fidelity",
         },
     ]
 
 
-def test_witness_grammar_represents_the_book_without_identity_equality():
+def test_witness_grammar_represents_the_book_from_its_exact_reference():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["witness_grammar"] == {
@@ -363,14 +331,13 @@ def test_witness_grammar_represents_the_book_without_identity_equality():
             "relation": "represents",
             "second_subject": "this_Book",
         },
-        "standing_not_established": [
-            {
-                "first_subject": "this_Grammar",
-                "relation": "identifies",
-                "second_subject": "this_Book",
-                "standing": "not_established",
-            }
-        ],
+    }
+    source_relation = grammar["clause_coordinates"]["01.Source.F"]
+    assert source_relation["recorded_occurrence_kind"] == []
+    assert source_relation["assertion"] == {
+        "first_subject": "X",
+        "relation": "exact_relation",
+        "second_subject": "Y",
     }
 
 
@@ -719,7 +686,20 @@ def test_addressed_byte_occurrence_reference_determination_is_constitutional():
     ]
     assert clause["determination"]["order"] == "source_occurrence_order"
     assert clause["determination"]["lawful_no_reference_result"] == {
-        "when": "no_first_or_second_position_coordinate_reference_identifies_the_addressed_byte_occurrence",
+        "when": {
+            "standing_not_established": [
+                {
+                    "first_subject": "first_position_coordinate_reference",
+                    "relation": "of",
+                    "second_subject": "addressed_byte_occurrence",
+                },
+                {
+                    "first_subject": "second_position_coordinate_reference",
+                    "relation": "of",
+                    "second_subject": "addressed_byte_occurrence",
+                },
+            ]
+        },
         "carried_pair_position_Assertion_references": [],
     }
     assert "every exact pair-occurrence position Assertion reference" in material
@@ -747,7 +727,7 @@ FIDELITY_SUBJECTS = {
         test_recorded_occurrence_kind_families_refuse_wrong_shape_or_crossing,
     ),
     "yield_relation_identity": (
-        test_witness_yield_relation_preserves_occurrence_and_result_identity,
+        test_witness_yield_relation_preserves_occurrence_and_result_coordinates,
     ),
     "relation_book_clause_reference": (
         test_witness_relations_name_one_book_clause,
@@ -770,7 +750,7 @@ FIDELITY_SUBJECTS = {
         test_witness_root_references_remain_distinct_and_in_declared_order,
     ),
     "witness_grammar_represents_book": (
-        test_witness_grammar_represents_the_book_without_identity_equality,
+        test_witness_grammar_represents_the_book_from_its_exact_reference,
     ),
     "witness_grammar_completeness": (
         test_witness_completeness_separates_grammar_from_live_crossing,
