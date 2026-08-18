@@ -10,6 +10,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_ordered_pair_candidate,
+    exact_source_assertion_materials_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing_applicability,
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
@@ -370,6 +371,63 @@ def test_ordered_pair_source_material_read_refuses_one_source_candidate():
         )
 
 
+def test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read(
+    monkeypatch,
+):
+    import seed_runtime.candidate_standing_from_exact_result_assertions as candidate_runtime
+
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=ledger.append_boundary(),
+    )
+    standing = get_recorded_candidate_standing(ledger, result.identity)
+    exact_read = candidate_runtime._read_candidate_result
+    result_reads = 0
+
+    def counted_read(*args, **coordinates):
+        nonlocal result_reads
+        result_reads += 1
+        return exact_read(*args, **coordinates)
+
+    monkeypatch.setattr(candidate_runtime, "_read_candidate_result", counted_read)
+    boundary_before_read = ledger.append_boundary()
+    readings = exact_source_assertion_materials_from_every_ordered_pair_candidate(
+        ledger,
+        candidate_standing_result_event_identity=result.identity,
+    )
+
+    assert result_reads == 1
+    assert tuple(reading[0] for reading in readings) == tuple(
+        candidate["dimensions"]["identity"]
+        for candidate in standing["candidate_assertions"]
+    )
+    assert tuple(
+        (
+            first["result_identity"]
+            if "result_identity" in first
+            else first["dimensions"]["identity"],
+            second["result_identity"]
+            if "result_identity" in second
+            else second["dimensions"]["identity"],
+        )
+        for _candidate_identity, first, second in readings
+    ) == tuple(
+        (
+            candidate["assertion_subject"][
+                "first_source_assertion_reference"
+            ]["assertion_identity"],
+            candidate["assertion_subject"][
+                "second_source_assertion_reference"
+            ]["assertion_identity"],
+        )
+        for candidate in standing["candidate_assertions"]
+    )
+    assert ledger.append_boundary() == boundary_before_read
+
+
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -601,6 +659,7 @@ FIDELITY_SUBJECTS = {
         test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs,
         test_ordered_pair_candidate_reads_both_exact_lower_assertions_without_an_append,
         test_ordered_pair_source_material_read_refuses_one_source_candidate,
+        test_every_ordered_pair_candidate_reads_both_sources_after_one_result_read,
         test_both_exact_candidate_responsibilities_use_one_source_boundary,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_exact_source_and_act,

@@ -1363,7 +1363,15 @@ def exact_source_assertion_materials_from_ordered_pair_candidate(
     )
     if len(matches) != 1:
         raise ValueError("ordered-pair Candidate identity is not exact")
-    subject = matches[0].get("assertion_subject")
+    return _exact_source_assertion_materials_from_ordered_pair_candidate(
+        ledger, matches[0]
+    )
+
+
+def _exact_source_assertion_materials_from_ordered_pair_candidate(
+    ledger: EventLedger, candidate: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    subject = candidate.get("assertion_subject")
     if type(subject) is not dict or set(subject) != {
         "first_source_assertion_reference",
         "second_source_assertion_reference",
@@ -1376,6 +1384,34 @@ def exact_source_assertion_materials_from_ordered_pair_candidate(
         _exact_source_assertion_material(
             ledger, subject["second_source_assertion_reference"]
         ),
+    )
+
+
+def exact_source_assertion_materials_from_every_ordered_pair_candidate(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[tuple[str, dict[str, Any], dict[str, Any]], ...]:
+    """Read every ordered Candidate and both exact lower Assertions in order."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    return tuple(
+        (
+            _assertion_identity(
+                candidate, "ordered-pair Candidate requires one exact identity"
+            ),
+            *_exact_source_assertion_materials_from_ordered_pair_candidate(
+                ledger, candidate
+            ),
+        )
+        for candidate in result.material["candidate_assertions"]
     )
 
 
