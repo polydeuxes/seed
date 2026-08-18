@@ -13,8 +13,6 @@ stored as caller-supplied signs or grammatical meanings.
 from __future__ import annotations
 
 import hashlib
-from contextvars import ContextVar
-from functools import wraps
 from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
@@ -98,70 +96,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: "01.Source.D",
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: "02.Acts.A",
 }
-
-
-_OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
-    dict[str, Any] | None
-] = ContextVar(
-    "recurrent_pair_position_operator_standing_validation_context",
-    default=None,
-)
-
-
-def _operator_standing_replay_validation(function):
-    """Bound replay-only validation context, including across nested reads."""
-
-    @wraps(function)
-    def bounded(*args, **kwargs):
-        token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
-        try:
-            return function(*args, **kwargs)
-        finally:
-            _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)
-
-    return bounded
-
-
-def _set_operator_standing_validation_context(
-    ledger: EventLedger,
-    *,
-    locality_identity: str,
-    through_event_occurrence_identity: str | None,
-    measurement_occurrences: dict[str, Any],
-    ingest_occurrences: list[dict[str, Any]],
-    responsibility_assignment_occurrences: dict[str, None],
-) -> None:
-    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
-        {
-            "ledger": ledger,
-            "locality_identity": locality_identity,
-            "through_event_occurrence_identity": (
-                through_event_occurrence_identity
-            ),
-            "measurement_occurrences": measurement_occurrences,
-            "ingest_occurrences": ingest_occurrences,
-            "responsibility_assignment_occurrences": (
-                responsibility_assignment_occurrences
-            ),
-        }
-    )
-
-
-def _operator_standing_validation_context(
-    ledger: EventLedger, *, locality_identity: str
-) -> dict[str, Any] | None:
-    context = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
-    if (
-        type(context) is not dict
-        or context.get("ledger") is not ledger
-        or context.get("locality_identity") != locality_identity
-    ):
-        return None
-    return {
-        key: value
-        for key, value in context.items()
-        if key != "ledger"
-    }
 
 
 def _exact_measurement_occurrence_standing_coordinates(
@@ -851,6 +785,10 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     standing_boundary_identity = material["standing_boundary_identity"]
     ambient_replay_carrier = False
     if prior_standing is None:
+        from seed_runtime.operator_locality_standing import (
+            _operator_standing_validation_context,
+        )
+
         prior_standing = _operator_standing_validation_context(
             ledger, locality_identity=assignment.locality_identity
         )
@@ -874,6 +812,8 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         "through_event_occurrence_identity"
     )
     if ambient_replay_carrier:
+        # The ambient carrier crosses nested readers. Bind its addressed
+        # entries to the intact events rather than trusting shaped membership.
         pair_occurrence_identity = (
             finding.pair_reference.recorded_occurrence_identity
         )

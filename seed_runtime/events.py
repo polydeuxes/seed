@@ -534,6 +534,7 @@ class SQLiteEventLedger(EventLedger):
         "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_occurrence",
         "byte_position_pair_measurement_result", "byte_measurement_act",
+        "byte_measurement_assignment", "byte_measurement_assignment_subject",
         "byte_measurement_occurrence", "byte_measurement_result",
         "byte_pair_applicability_act", "byte_pair_applicability_occurrence",
         "byte_pair_applicability_result",

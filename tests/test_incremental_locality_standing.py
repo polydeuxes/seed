@@ -42,6 +42,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
 )
@@ -372,10 +373,20 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
         source_role="material witness",
         source_boundary="exact pair material",
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("s",),
         recording_locality_identity="s",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=measurement_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
     )
     measurement = record_byte_measurement_result(
         ledger,
@@ -438,10 +449,20 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
         source_role="material witness",
         source_boundary="exact pair material",
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("s",),
         recording_locality_identity="s",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=measurement_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
     )
     measurement = record_byte_measurement_result(
         ledger,
@@ -535,10 +556,20 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         source_role="material witness",
         source_boundary="exact pair material",
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("s",),
         recording_locality_identity="s",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=measurement_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="s"
+        ),
     )
     measurement = record_byte_measurement_result(
         ledger,

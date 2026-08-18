@@ -10,6 +10,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     ByteMeasurementError,
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -39,10 +40,20 @@ class DictSubclass(dict):
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
     )
     return record_byte_measurement_result(
         ledger,

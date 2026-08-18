@@ -11,6 +11,7 @@ from tests.representation_admission import admit_representation
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY,
     BYTE_MEASUREMENT_RULE,
@@ -27,6 +28,7 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
     get_recorded_pair_input_applicability,
+    record_byte_measurement_responsibility_assignment,
     record_byte_position_pair_count_layer,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -182,10 +184,20 @@ from seed_runtime.evidence_of_yield_relation import (
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
     )
     return record_byte_measurement_result(
         ledger,
@@ -2551,7 +2563,16 @@ def _assert_relation_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     event = bundle["event"]
     act_evidence = bundle["act_evidence"]
-    assignment = event.material["responsibility_assignment_evidence"]
+    byte_assignment = (
+        _byte_measurement_assignment_from_reference(bundle)
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+        else None
+    )
+    assignment = (
+        event.material.get("responsibility_assignment_reference")
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+        else event.material["responsibility_assignment_evidence"]
+    )
     joined = (
         act_evidence is not None
         and event.material["downstream_act_identity"]
@@ -2563,7 +2584,11 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
         and event.material["responsible_boundary"]
         == act_evidence.material["responsible_boundary"]
         and assignment
-        == act_evidence.material.get("responsibility_assignment_evidence")
+        == act_evidence.material.get(
+            "responsibility_assignment_reference"
+            if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+            else "responsibility_assignment_evidence"
+        )
     )
     assignment_standing = bool(
         joined
@@ -2589,13 +2614,56 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
         "Scope": (
             EXACT
             if event.locality_identity is not None
-            and assignment.get("completeness_boundary")
+            and (
+                byte_assignment.material.get("completeness_boundary_identity")
+                if byte_assignment is not None
+                else assignment.get("completeness_boundary")
+            )
             else MISSING
         ),
         "limits": (
             EXACT if event.material["dimensions"].get("authority") else MISSING
         ),
     }
+
+
+def _byte_measurement_assignment_from_reference(bundle: dict):
+    reference = bundle["event"].material.get(
+        "responsibility_assignment_reference"
+    )
+    if type(reference) is not dict:
+        return None
+    assignment = bundle["ledger"].get(
+        reference.get("recorded_occurrence_identity")
+    )
+    if assignment is None:
+        return None
+    try:
+        standing = read_operator_locality_standing_through(
+            bundle["ledger"],
+            locality_identity=assignment.locality_identity,
+            through_event_occurrence_identity=assignment.identity,
+        )
+    except (TypeError, ValueError):
+        return None
+    if (
+        assignment.kind
+        != BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        or reference
+        != {
+            "recorded_occurrence_identity": assignment.identity,
+            "assignment_identity": assignment.material["assignment_identity"],
+            "assignment_subject_identity": assignment.material[
+                "assignment_subject_identity"
+            ],
+        }
+        or standing.get("responsibility_assignment_occurrences", {}).get(
+            assignment.identity, object()
+        )
+        is not None
+    ):
+        return None
+    return assignment
 
 
 def _occurrence_position_assignment_reference_is_exact(bundle: dict) -> bool:
@@ -2678,6 +2746,8 @@ def _pair_occurrence_assignment_reference_is_exact(bundle: dict) -> bool:
 def _responsibility_assignment_standing_is_exact(bundle: dict) -> bool:
     event = bundle["event"]
     assignment = event.material.get("responsibility_assignment_evidence")
+    if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
+        return _byte_measurement_assignment_from_reference(bundle) is not None
     if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
         return _occurrence_position_assignment_reference_is_exact(bundle)
     if (
@@ -2742,6 +2812,8 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         allowed_results,
         source_reference_coordinate,
     ) = expected
+    byte_assignment = None
+    byte_assignment_occurrence = None
     pair_occurrence_assignment = None
     if (
         event.kind
@@ -2751,6 +2823,13 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         pair_occurrence_assignment = _pair_occurrence_assignment_from_reference(
             bundle
         )
+    elif event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
+        assignment = material.get("responsibility_assignment_reference")
+        if type(assignment) is dict:
+            byte_assignment_occurrence = bundle["ledger"].get(
+                assignment.get("recorded_occurrence_identity")
+            )
+        byte_assignment = _byte_measurement_assignment_from_reference(bundle)
     else:
         assignment = material.get("responsibility_assignment_evidence")
     localities = material.get("source_localities")
@@ -2844,11 +2923,12 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         "determination",
     }
     if event.kind not in {
+        BYTE_MEASUREMENT_RECORDED_KIND,
         OCCURRENCE_POSITION_RECORDED_KIND,
         RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     }:
         expected_assignment_coordinates.add("standing")
-    if pair_occurrence_assignment is not None:
+    if byte_assignment is not None or pair_occurrence_assignment is not None:
         assignment_is_exact = bool(
             isinstance(assignment, dict)
             and set(assignment)
@@ -2927,11 +3007,12 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             and boundary["identity"]
             and isinstance(assignment, dict)
             and (
-                pair_occurrence_assignment.material.get(
-                    "completeness_boundary_identity"
-                )
+                (
+                    byte_assignment_occurrence or pair_occurrence_assignment
+                ).material.get("completeness_boundary_identity")
                 == boundary["identity"]
-                if pair_occurrence_assignment is not None
+                if byte_assignment_occurrence is not None
+                or pair_occurrence_assignment is not None
                 else assignment.get("completeness_boundary")
                 == boundary["identity"]
             )
@@ -5544,6 +5625,9 @@ def test_byte_pair_occurrence_position_measurement_is_structured_in_grammar():
 
 def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
     assert {
+        BYTE_EVENT_KIND_RESPONSIBILITIES[
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ],
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
         POSITION_EVENT_KIND_RESPONSIBILITIES[
@@ -5721,14 +5805,14 @@ def test_measurement_result_adversaries_change_the_declared_coordinate_only():
             "responsible_boundary", "a different boundary"
         ),
         "responsibility_assignment_evidence": lambda material: material[
-            "responsibility_assignment_evidence"
-        ].__setitem__("standing", "unestablished"),
+            "responsibility_assignment_reference"
+        ].__setitem__("assignment_identity", "a different assignment"),
         "measurement_rule": lambda material: material.__setitem__(
             "measurement_rule", BYTE_PAIR_MEASUREMENT_RULE
         ),
         "completeness_boundary": lambda material: material[
-            "responsibility_assignment_evidence"
-        ].__setitem__("completeness_boundary", "a different boundary"),
+            "completeness_boundary"
+        ].__setitem__("identity", "a different boundary"),
         "assertions": lambda material: material["assertions"][0][
             "assertion_subject"
         ].__setitem__("measurement_rule", BYTE_PAIR_MEASUREMENT_RULE),
@@ -5762,13 +5846,15 @@ def test_act_and_occurrence_identities_do_not_establish_their_relation():
 
 def test_responsibility_coordinates_do_not_establish_assignment_standing():
     bundle = _byte_measurement_witness()
-    assignment = dict(
-        bundle["event"].material["responsibility_assignment_evidence"]
+    assignment_reference = dict(
+        bundle["event"].material["responsibility_assignment_reference"]
     )
-    assignment.pop("standing")
-    bundle["event"].material["responsibility_assignment_evidence"] = assignment
-    bundle["act_evidence"].material["responsibility_assignment_evidence"] = dict(
-        assignment
+    assignment_reference["recorded_occurrence_identity"] = "same-shaped-missing"
+    bundle["event"].material["responsibility_assignment_reference"] = (
+        assignment_reference
+    )
+    bundle["act_evidence"].material["responsibility_assignment_reference"] = dict(
+        assignment_reference
     )
 
     witness = _act_occurrence_witness(bundle)
@@ -5786,19 +5872,25 @@ def test_occurrence_position_assignment_standing_refuses_a_corrupted_prior_carri
         source_role="test source",
         source_boundary="test boundary",
     )
-    prior_act = record_byte_measurement_responsible_act_evidence(
+    prior_result = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    prior_result = record_byte_measurement_result(
+    second_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
-        responsible_act_evidence_event_identity=prior_act.identity,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
     )
     record_byte_measurement_responsible_act_evidence(
         ledger,
-        source_localities=("source",),
-        recording_locality_identity="measurement",
+        responsibility_assignment_event_identity=second_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
     )
     finding = measure_occurrence_position(
         ledger, source_locality_identity="source"

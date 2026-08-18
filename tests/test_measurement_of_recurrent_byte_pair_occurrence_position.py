@@ -8,6 +8,7 @@ from tests.representation_admission import admit_representation
 
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -19,9 +20,6 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    _operator_standing_replay_validation,
-    _operator_standing_validation_context,
-    _set_operator_standing_validation_context,
     get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
@@ -32,6 +30,9 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.operator_locality_standing import (
+    _operator_standing_replay_validation,
+    _operator_standing_validation_context,
+    _set_operator_standing_validation_context,
     read_operator_locality_standing,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -62,10 +63,20 @@ def _fixture(
         source_role="premise material",
         source_boundary="exact premise boundary",
     )
-    byte_act = record_byte_measurement_responsible_act_evidence(
+    byte_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    byte_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=byte_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
     byte = record_byte_measurement_result(
         ledger,
@@ -192,9 +203,7 @@ def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_id
     assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger, assignment.identity
     ) == assignment
-    assert standing["responsibility_assignment_occurrences"] == {
-        assignment.identity: None
-    }
+    assert standing["responsibility_assignment_occurrences"][assignment.identity] is None
     assert "standing" not in assignment.material
 
     act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -392,7 +401,10 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
             through_event_occurrence_identity=pair.identity,
             measurement_occurrences=standing["measurement_occurrences"],
             ingest_occurrences=standing["ingest_occurrences"],
-            responsibility_assignment_occurrences={assignment.identity: None},
+            responsibility_assignment_occurrences={
+                **standing["responsibility_assignment_occurrences"],
+                assignment.identity: None,
+            },
         )
         return get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger, assignment.identity
@@ -427,7 +439,9 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
             ],
             measurement_occurrences=measurements,
             ingest_occurrences=ingests,
-            responsibility_assignment_occurrences={},
+            responsibility_assignment_occurrences=standing[
+                "responsibility_assignment_occurrences"
+            ],
         )
         return get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger, assignment.identity
@@ -630,6 +644,13 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
         ledger, "occurrences_in_append_order", witness_order_read
     )
     monkeypatch.setattr(ledger, "list_locality", witness_boundary_read)
+    pair_result_read(ledger, pair.identity)
+    exact_pair_read_order_count = order_read_count
+    exact_pair_read_boundary_count = boundary_read_count
+    pair_result_read_count = 0
+    source_read_count = 0
+    order_read_count = 0
+    boundary_read_count = 0
     measured = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
@@ -642,8 +663,8 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     assert measured == expected
     assert pair_result_read_count == 1
     assert source_read_count == 1
-    assert order_read_count == 1
-    assert boundary_read_count == 1
+    assert order_read_count == exact_pair_read_order_count + 1
+    assert boundary_read_count == exact_pair_read_boundary_count + 1
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
         for finding in measured

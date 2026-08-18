@@ -8,6 +8,7 @@ import pytest
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position_module
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -70,10 +71,20 @@ def _fixture(*, current: bytes = b"abc", ledger=None):
         source_role="premise material",
         source_boundary="exact premise boundary",
     )
-    byte_act = record_byte_measurement_responsible_act_evidence(
+    byte_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    byte_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=byte_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
     byte_result = record_byte_measurement_result(
         ledger,

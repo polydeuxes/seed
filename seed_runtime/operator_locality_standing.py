@@ -4,16 +4,20 @@ from __future__ import annotations
 
 
 from bisect import bisect_left
+from contextvars import ContextVar
 from copy import deepcopy
+from functools import wraps
 from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _findings_of_recorded_byte_position_pair_measurement,
+    _read_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -35,8 +39,6 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    _operator_standing_replay_validation,
-    _set_operator_standing_validation_context,
     _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
@@ -159,6 +161,70 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
 )
 
+
+_OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
+    dict[str, Any] | None
+] = ContextVar(
+    "operator_standing_replay_validation_context",
+    default=None,
+)
+
+
+def _operator_standing_replay_validation(function):
+    """Bound exact replay-only Standing context, including nested reads."""
+
+    @wraps(function)
+    def bounded(*args, **kwargs):
+        token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)
+
+    return bounded
+
+
+def _set_operator_standing_validation_context(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    through_event_occurrence_identity: str | None,
+    measurement_occurrences: dict[str, Any],
+    ingest_occurrences: list[dict[str, Any]],
+    responsibility_assignment_occurrences: dict[str, None],
+) -> None:
+    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+        {
+            "ledger": ledger,
+            "locality_identity": locality_identity,
+            "through_event_occurrence_identity": (
+                through_event_occurrence_identity
+            ),
+            "measurement_occurrences": measurement_occurrences,
+            "ingest_occurrences": ingest_occurrences,
+            "responsibility_assignment_occurrences": (
+                responsibility_assignment_occurrences
+            ),
+        }
+    )
+
+
+def _operator_standing_validation_context(
+    ledger: EventLedger, *, locality_identity: str
+) -> dict[str, Any] | None:
+    context = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
+    if (
+        type(context) is not dict
+        or context.get("ledger") is not ledger
+        or context.get("locality_identity") != locality_identity
+    ):
+        return None
+    return {
+        key: value
+        for key, value in context.items()
+        if key != "ledger"
+    }
+
 _SUBJECT_BY_KIND = {
     MATERIAL_INGEST_OCCURRED_KIND: "ingest_occurrence",
 }
@@ -169,6 +235,7 @@ _MEASUREMENT_ACT_EVIDENCE_KINDS = {
     BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
 }
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
@@ -756,6 +823,22 @@ def advance_operator_locality_standing(
             exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
             continue
+        if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
+            _read_byte_measurement_responsibility_assignment(
+                ledger,
+                event.identity,
+                prior_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "responsibility_assignment_occurrences": (
+                        responsibility_assignment_occurrences
+                    ),
+                },
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
         if (
             event.kind
             == OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -1217,6 +1300,51 @@ def advance_operator_locality_standing(
         "unknown": unknown,
         "conflicts": conflicts,
     }
+
+
+def _carry_byte_measurement_assignment_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    event,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    """Carry the exact-byte assignment produced beside this Standing."""
+
+    if (
+        type(locality_standing) is not dict
+        or locality_standing.get("locality_identity") != event.locality_identity
+        or locality_standing.get("through_event_occurrence_identity")
+        != prior_through_event_occurrence_identity
+        or ledger.get(event.identity) != event
+        or ledger.append_boundary_through_occurrence(event.identity)
+        != ledger.append_boundary()
+    ):
+        raise ValueError("byte Measurement assignment must follow carried Standing")
+    _read_byte_measurement_responsibility_assignment(
+        ledger, event.identity, prior_standing=locality_standing
+    )
+    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    event_count = locality_standing.get("event_count")
+    if (
+        type(assignments) is not dict
+        or event.identity in assignments
+        or type(event_count) is not int
+        or event_count < 0
+    ):
+        raise ValueError("byte Measurement assignment Standing is not exact")
+    standing_additions = _exact_standing_additions(
+        locality_standing,
+        event,
+        error_message="byte Measurement assignment Standing is not exact",
+    )
+    assignments[event.identity] = None
+    for key, added in standing_additions.items():
+        for value in added:
+            _record_distinct(locality_standing[key], value)
+    locality_standing["through_event_occurrence_identity"] = event.identity
+    locality_standing["event_count"] = event_count + 1
+    return locality_standing
 
 
 def _carry_occurrence_position_measurement_assignment_into_standing(

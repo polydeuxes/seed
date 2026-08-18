@@ -20,6 +20,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -214,10 +215,20 @@ def test_seed_measures_source_and_result_pair_findings_independently(
                 source_role="material witness",
                 source_boundary=f"terminal pair occurrence {position}",
             )
-        byte_act = record_byte_measurement_responsible_act_evidence(
+        byte_assignment = record_byte_measurement_responsibility_assignment(
             ledger,
             source_localities=(locality_identity,),
             recording_locality_identity=locality_identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality_identity
+            ),
+        )
+        byte_act = record_byte_measurement_responsible_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=byte_assignment.identity,
+            responsibility_assignment_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality_identity
+            ),
         )
         byte_result = record_byte_measurement_result(
             ledger,

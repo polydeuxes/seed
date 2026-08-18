@@ -14,12 +14,14 @@ from compiled_format_invocation import (
     moved_exact_byte_material_references,
 )
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
 def measured_book_material():
@@ -37,10 +39,20 @@ def measured_book_material():
             source_role="fixture material",
             source_boundary=str(path.relative_to(SCRIPT_DIRECTORY.parent)),
         )
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("book-material",),
         recording_locality_identity="book-byte-measurement",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="book-byte-measurement"
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="book-byte-measurement"
+        ),
     )
     byte_occurrence = record_byte_measurement_result(
         ledger,

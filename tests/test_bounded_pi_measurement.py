@@ -6,12 +6,14 @@ from io import StringIO
 
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
+    record_byte_measurement_responsibility_assignment,
     record_byte_position_pair_count_layer,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
 FIDELITY_SUBJECT = "material_measurement_witness"
@@ -20,10 +22,20 @@ FIDELITY_SUBJECT = "material_measurement_witness"
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
     )
     return record_byte_measurement_result(
         ledger,

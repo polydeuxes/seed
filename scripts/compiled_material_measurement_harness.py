@@ -10,11 +10,13 @@ sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 from compiled_format_invocation import (
     admission_result_added_position_occurrences,
@@ -46,10 +48,20 @@ def measured_material():
         source_role="fixture material",
         source_boundary="fixture-0",
     )
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("compiled-material-source",),
         recording_locality_identity="compiled-material-measurement",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="compiled-material-measurement"
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="compiled-material-measurement"
+        ),
     )
     occurrence = record_byte_measurement_result(
         ledger,

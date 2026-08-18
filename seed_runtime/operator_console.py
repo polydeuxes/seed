@@ -6,8 +6,10 @@ from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    record_byte_measurement_responsible_act_evidence,
-    record_byte_measurement_result,
+    _record_byte_measurement_responsibility_assignment_from_carried_standing,
+    _record_byte_measurement_responsible_act_evidence_from_carried_standing,
+    _record_byte_measurement_result_from_carried_act_evidence,
+    record_byte_measurement_responsibility_assignment,
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -87,6 +89,7 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
+    _carry_byte_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_result_into_standing,
     _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
@@ -276,13 +279,22 @@ def _record_exact_material_representation_admission_and_applicability(
     return standing, admission, applicability
 
 
-def _record_acquisition_measurements(ledger, standing, *, locality_identity):
-    """Record acquisition Measurements needed before any later relation is known."""
-
-    measurement_act_evidence = record_byte_measurement_responsible_act_evidence(
+def _record_acquisition_measurements_after_assignment(
+    ledger, standing, measurement_assignment, *, locality_identity
+):
+    prior_boundary = standing["through_event_occurrence_identity"]
+    standing = _carry_byte_measurement_assignment_into_standing(
         ledger,
-        source_localities=(locality_identity,),
-        recording_locality_identity=locality_identity,
+        standing,
+        measurement_assignment,
+        prior_through_event_occurrence_identity=prior_boundary,
+    )
+    measurement_act_evidence = (
+        _record_byte_measurement_responsible_act_evidence_from_carried_standing(
+            ledger,
+            responsibility_assignment=measurement_assignment,
+            responsibility_assignment_standing=standing,
+        )
     )
     standing = _advance_over(
         ledger,
@@ -290,9 +302,11 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         (measurement_act_evidence.identity,),
         locality_identity=locality_identity,
     )
-    measurement = record_byte_measurement_result(
+    measurement = _record_byte_measurement_result_from_carried_act_evidence(
         ledger,
-        responsible_act_evidence_event_identity=measurement_act_evidence.identity,
+        responsible_act_evidence=measurement_act_evidence,
+        responsibility_assignment=measurement_assignment,
+        locality_standing=standing,
     )
     standing = _advance_over(
         ledger,
@@ -355,6 +369,44 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         finding=position_finding,
     )
     return standing, measurement
+
+
+def _record_acquisition_measurements(ledger, standing, *, locality_identity):
+    """Record Measurements from Standing carried at the current append tip."""
+
+    measurement_assignment = (
+        _record_byte_measurement_responsibility_assignment_from_carried_standing(
+            ledger,
+            source_localities=(locality_identity,),
+            recording_locality_identity=locality_identity,
+            locality_standing=standing,
+        )
+    )
+    return _record_acquisition_measurements_after_assignment(
+        ledger,
+        standing,
+        measurement_assignment,
+        locality_identity=locality_identity,
+    )
+
+
+def _record_acquisition_measurements_from_current_standing(
+    ledger, standing, *, locality_identity
+):
+    """Record Measurements from exact current Standing outside call-local carry."""
+
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
+        ledger,
+        source_localities=(locality_identity,),
+        recording_locality_identity=locality_identity,
+        locality_standing=standing,
+    )
+    return _record_acquisition_measurements_after_assignment(
+        ledger,
+        standing,
+        measurement_assignment,
+        locality_identity=locality_identity,
+    )
 
 
 def _record_byte_pair_occurrence_position_measurement(
@@ -490,7 +542,7 @@ def _pair_premise_for_existing_material(
             == current_source_occurrence_references
         ):
             return standing, event
-    standing, byte_measurement = _record_acquisition_measurements(
+    standing, byte_measurement = _record_acquisition_measurements_from_current_standing(
         ledger,
         standing,
         locality_identity=locality_identity,

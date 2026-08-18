@@ -7,6 +7,8 @@ from tests.representation_admission import admit_representation
 FIDELITY_SUBJECT = "exact_Representation_occurrence"
 
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -44,6 +46,7 @@ _INGEST_KINDS = (
     "material.ingest.occurred",
 )
 _BYTE_MEASUREMENT_KINDS = (
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     "operator.measurement.byte_responsible_act_evidenced",
     "operator.evidence_of_yield_relation_recorded",
     "operator.measurement.byte_counts_recorded",
@@ -123,10 +126,20 @@ def _byte_measurement(ledger, *, locality="s"):
         source_role="operator",
         source_boundary="fixture boundary",
     )
-    responsible_act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    responsible_act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
     )
     return record_byte_measurement_result(
         ledger,

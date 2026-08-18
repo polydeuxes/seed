@@ -8,6 +8,7 @@ from tests.binary_input import binary_input
 import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -48,10 +49,20 @@ LOCALITY = "recorded-pair-comparison-locality"
 
 
 def _pair_measurement(ledger):
-    act = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        ),
+    )
+    act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        ),
     )
     byte_result = record_byte_measurement_result(
         ledger, responsible_act_evidence_event_identity=act.identity
@@ -409,7 +420,7 @@ def test_measurement_availability_without_standing_cannot_supply_compare():
     standing["measurement_occurrences"].pop(earlier.identity)
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="both exact Measurement results",
+        match="each exact Measurement result in current Standing",
     ):
         record_recorded_pair_measurement_comparison_responsibility_assignment(
             ledger,

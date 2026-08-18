@@ -7,6 +7,7 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -295,10 +296,20 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         source_role="fixture material",
         source_boundary="sixteen supplied books",
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=measurement_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
     )
     measurement = record_byte_measurement_result(
         ledger,

@@ -11,19 +11,31 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=recording_locality_identity
+        ),
     )
     return record_byte_measurement_result(
         ledger,
@@ -475,9 +487,11 @@ def test_book_measurements_retain_every_exact_file_occurrence(
     acquired_book_relations,
 ):
     ingests, _, byte_measurement, pair_measurement, *_ = acquired_book_relations
-    source_references = byte_measurement.material[
-        "responsibility_assignment_evidence"
-    ]["source_occurrence_references"]
+    source_references = next(
+        assertion["dimensions"]["content"]["source_material"]
+        for assertion in byte_measurement.material["assertions"]
+        if assertion["result"] == "exact_source_material_set"
+    )
 
     assert tuple(
         reference["ingest_occurrence_identity"] for reference in source_references
