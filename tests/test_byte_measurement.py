@@ -22,7 +22,10 @@ from seed_runtime.byte_measurement import (
     RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
+    _record_assertion_locality_movement_act_from_carried_standing,
+    _record_assertion_locality_movement_result_from_carried_act,
     _record_byte_measurement_result_from_carried_act_evidence,
+    _record_movement_assignment_from_carried_standings,
     _validate_moved_byte_assertion,
     _identity,
     _pair_assertion_identity,
@@ -48,6 +51,9 @@ from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
+    _carry_assertion_locality_movement_act_into_standing,
+    _carry_assertion_locality_movement_assignment_into_standing,
+    _carry_assertion_locality_movement_result_into_standing,
     _carry_byte_measurement_assignment_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -176,6 +182,115 @@ def _movement_source(ledger):
         if assertion.result == "exact_source_material_set"
     )
     return result, source
+
+
+def _movement_carry_phase(ledger, phase):
+    source_result, source = _movement_source(ledger)
+    source_event = ledger.get(source.recorded_occurrence_identity)
+    source_standing = read_operator_locality_standing(
+        ledger, locality_identity=source_result.locality_identity
+    )
+    destination_standing = read_operator_locality_standing(
+        ledger, locality_identity="movement-carry"
+    )
+    assignment = _record_movement_assignment_from_carried_standings(
+        ledger,
+        source=source,
+        source_event=source_event,
+        source_standing=source_standing,
+        destination_locality="movement-carry",
+        destination_standing=destination_standing,
+    )
+    state = {
+        "phase": phase,
+        "source_result": source_result,
+        "source": source,
+        "source_event": source_event,
+        "source_standing": source_standing,
+        "destination_standing": destination_standing,
+        "assignment": assignment,
+        "event": assignment,
+    }
+    if phase == "assignment":
+        return state
+    destination_standing = (
+        _carry_assertion_locality_movement_assignment_into_standing(
+            ledger,
+            destination_standing,
+            assignment,
+            source=source,
+            source_event=source_event,
+            source_standing=source_standing,
+        )
+    )
+    act = _record_assertion_locality_movement_act_from_carried_standing(
+        ledger,
+        assignment=assignment,
+        destination_standing=destination_standing,
+    )
+    state.update(
+        destination_standing=destination_standing,
+        act=act,
+        event=act,
+    )
+    if phase == "act":
+        return state
+    destination_standing = _carry_assertion_locality_movement_act_into_standing(
+        ledger,
+        destination_standing,
+        act,
+        responsibility_assignment=assignment,
+    )
+    movement = _record_assertion_locality_movement_result_from_carried_act(
+        ledger,
+        act=act,
+        assignment=assignment,
+    )
+    state.update(
+        destination_standing=destination_standing,
+        movement=movement,
+        event=movement,
+    )
+    return state
+
+
+def _carry_movement_phase(
+    ledger,
+    state,
+    *,
+    source=None,
+    responsibility_assignment=None,
+):
+    source = state["source"] if source is None else source
+    responsibility_assignment = (
+        state["assignment"]
+        if responsibility_assignment is None
+        else responsibility_assignment
+    )
+    if state["phase"] == "assignment":
+        return _carry_assertion_locality_movement_assignment_into_standing(
+            ledger,
+            state["destination_standing"],
+            state["assignment"],
+            source=source,
+            source_event=state["source_event"],
+            source_standing=state["source_standing"],
+        )
+    if state["phase"] == "act":
+        return _carry_assertion_locality_movement_act_into_standing(
+            ledger,
+            state["destination_standing"],
+            state["act"],
+            responsibility_assignment=responsibility_assignment,
+        )
+    return _carry_assertion_locality_movement_result_into_standing(
+        ledger,
+        state["destination_standing"],
+        state["movement"],
+        responsible_act_evidence=state["act"],
+        responsibility_assignment=responsibility_assignment,
+        source=source,
+    )
 
 
 def test_responsible_act_evidence_is_observable_before_yield_and_result():
@@ -2008,6 +2123,153 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
     )
 
 
+@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
+def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
+    phase,
+):
+    ledger = _ledger("ta\n")
+    state = _movement_carry_phase(ledger, phase)
+    before = deepcopy(state["destination_standing"])
+    ingest_material(
+        ledger,
+        locality_identity="movement-carry",
+        exact_bytes=b"later",
+        source_role="test source",
+        source_boundary="after carried movement phase",
+    )
+
+    with pytest.raises(ValueError, match="Standing is not exact"):
+        _carry_movement_phase(ledger, state)
+
+    assert state["destination_standing"] == before
+
+
+@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
+def test_movement_batch_carry_phases_refuse_corruption_without_partial_standing(
+    phase,
+):
+    ledger = _ledger("ta\n")
+    state = _movement_carry_phase(ledger, phase)
+    before = deepcopy(state["destination_standing"])
+    state["event"].material["unknown"] = ["changed after append"]
+
+    with pytest.raises(ValueError, match="Standing is not exact"):
+        _carry_movement_phase(ledger, state)
+
+    assert state["destination_standing"] == before
+
+
+@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
+def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
+    ledger = _ledger("ta\n")
+    state = _movement_carry_phase(ledger, phase)
+    before = deepcopy(state["destination_standing"])
+    if phase in ("assignment", "result"):
+        substitute_source = next(
+            assertion
+            for assertion in assertions_of_recorded_byte_measurement(
+                ledger, state["source_result"].identity
+            )
+            if assertion.assertion_identity != state["source"].assertion_identity
+        )
+        call = lambda: _carry_movement_phase(
+            ledger, state, source=substitute_source
+        )
+    else:
+        substitute_assignment = deepcopy(state["assignment"])
+        substitute_assignment.material["assignment_identity"] = (
+            "substituted-assignment"
+        )
+        call = lambda: _carry_movement_phase(
+            ledger,
+            state,
+            responsibility_assignment=substitute_assignment,
+        )
+
+    with pytest.raises(ValueError, match="Standing is not exact"):
+        call()
+
+    assert state["destination_standing"] == before
+
+
+def test_movement_batch_exact_carry_equals_public_replay():
+    ledger = _ledger("ta\n")
+    state = _movement_carry_phase(ledger, "result")
+
+    carried, exact = _carry_movement_phase(ledger, state)
+
+    assert carried == read_operator_locality_standing(
+        ledger, locality_identity="movement-carry"
+    )
+    assert exact == _validate_moved_byte_assertion(
+        ledger, state["movement"].identity
+    )
+
+
+def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
+    tmp_path, monkeypatch
+):
+    import seed_runtime.byte_measurement as byte_measurement_module
+    import seed_runtime.operator_locality_standing as standing_module
+
+    path = tmp_path / "movement-batch-carry.sqlite"
+    ledger = SQLiteEventLedger(path)
+    ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"ta",
+        source_role="test source",
+        source_boundary="durable source",
+    )
+    source_result = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="source-measurement",
+    )
+    sources = tuple(
+        assertion
+        for assertion in assertions_of_recorded_byte_measurement(
+            ledger, source_result.identity
+        )
+        if assertion.result == "count"
+    )
+
+    def refuse_public_movement_read(*_args, **_kwargs):
+        raise AssertionError("same-call movement re-entered a public reader")
+
+    reader_names = (
+        "_read_assertion_locality_movement_responsibility_assignment",
+        "_read_assertion_locality_movement_act_evidence",
+        "_validate_moved_byte_assertion",
+    )
+    for module in (byte_measurement_module, standing_module):
+        for name in reader_names:
+            monkeypatch.setattr(module, name, refuse_public_movement_read)
+
+    moved = move_recorded_byte_assertions_to_locality(
+        ledger,
+        sources=sources,
+        destination_locality="movement-batch",
+    )
+    movement_identities = tuple(
+        assertion.locality_movement_event_identity for assertion in moved
+    )
+    ledger.close()
+    monkeypatch.undo()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        assert tuple(
+            _validate_moved_byte_assertion(reopened, identity)
+            for identity in movement_identities
+        ) == moved
+        assert read_operator_locality_standing(
+            reopened, locality_identity="movement-batch"
+        )["through_event_occurrence_identity"] == movement_identities[-1]
+    finally:
+        reopened.close()
+
+
 def test_pair_act_identity_is_not_its_occurrence_identity():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
@@ -2242,6 +2504,11 @@ FIDELITY_SUBJECTS = {
         test_movement_reader_refuses_crossed_yield_boundary_or_result_kind,
         test_movement_incremental_standing_equals_replay_and_same_locality_is_noop,
         test_bounded_movement_batch_carries_each_assignment_before_its_act,
+        test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation,
+        test_movement_batch_carry_phases_refuse_corruption_without_partial_standing,
+        test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs,
+        test_movement_batch_exact_carry_equals_public_replay,
+        test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly,
     ),
     "representation_source_coordinates": (
         test_pair_validation_requires_one_exact_ordered_representation,

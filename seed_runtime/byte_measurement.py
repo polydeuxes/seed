@@ -1477,7 +1477,9 @@ def move_recorded_byte_assertions_to_locality(
             "bounded Assertion movement requires each exact source Assertion"
         )
     from seed_runtime.operator_locality_standing import (
-        advance_operator_locality_standing,
+        _carry_assertion_locality_movement_act_into_standing,
+        _carry_assertion_locality_movement_assignment_into_standing,
+        _carry_assertion_locality_movement_result_into_standing,
         read_operator_locality_standing,
     )
 
@@ -1505,44 +1507,73 @@ def move_recorded_byte_assertions_to_locality(
             destination_locality=destination_locality,
             destination_standing=destination_standing,
         )
-        destination_standing = advance_operator_locality_standing(
-            ledger,
-            (assignment.identity,),
-            locality_identity=destination_locality,
-            prior=destination_standing,
+        destination_standing = (
+            _carry_assertion_locality_movement_assignment_into_standing(
+                ledger,
+                destination_standing,
+                assignment,
+                source=source,
+                source_event=source_event,
+                source_standing=source_standing,
+            )
         )
         act = _record_assertion_locality_movement_act_from_carried_standing(
             ledger,
             assignment=assignment,
             destination_standing=destination_standing,
         )
-        destination_standing = advance_operator_locality_standing(
+        destination_standing = _carry_assertion_locality_movement_act_into_standing(
             ledger,
-            (act.identity,),
-            locality_identity=destination_locality,
-            prior=destination_standing,
+            destination_standing,
+            act,
+            responsibility_assignment=assignment,
         )
         movement = _record_assertion_locality_movement_result_from_carried_act(
             ledger, act=act, assignment=assignment
         )
-        destination_standing = advance_operator_locality_standing(
-            ledger,
-            (
-                movement.material["evidence_of_yield_relation_identity"],
-                movement.identity,
-            ),
-            locality_identity=destination_locality,
-            prior=destination_standing,
+        destination_standing, exact = (
+            _carry_assertion_locality_movement_result_into_standing(
+                ledger,
+                destination_standing,
+                movement,
+                responsible_act_evidence=act,
+                responsibility_assignment=assignment,
+                source=source,
+            )
         )
-        exact = _validate_moved_byte_assertion(
-            ledger,
-            movement.identity,
-            prior_destination_standing=destination_standing,
-        )
-        if exact is None:
-            raise ByteMeasurementError("Assertion locality movement is absent")
         moved.append(exact)
     return tuple(moved)
+
+
+def _moved_byte_assertion_from_carried_source(
+    *,
+    movement: Event,
+    responsibility_assignment: Event,
+    source: RecordedByteAssertion,
+) -> RecordedByteAssertion:
+    """Construct the moved view only from one exact validated lifecycle."""
+
+    if (
+        movement.material.get("responsibility_assignment_reference")
+        != _movement_assignment_reference(responsibility_assignment)
+        or responsibility_assignment.material.get("source_assertion_reference")
+        != source.reference
+        or movement.material.get("source_assertion_reference") != source.reference
+    ):
+        raise ByteMeasurementError(
+            "Assertion locality movement carries no exact source"
+        )
+    return RecordedByteAssertion(
+        assertion_identity=source.assertion_identity,
+        recorded_occurrence_identity=source.recorded_occurrence_identity,
+        representation=source.representation,
+        result=source.result,
+        _material_json=_canonical(source.material),
+        _support_assertion_refs_json=_canonical(
+            list(source.support_assertion_references)
+        ),
+        locality_movement_event_identity=movement.identity,
+    )
 
 
 def _validate_moved_byte_assertion(
@@ -1602,14 +1633,10 @@ def _validate_moved_byte_assertion(
     }
     if movement.material != expected:
         raise ByteMeasurementError("Assertion locality movement is not exact")
-    return RecordedByteAssertion(
-        assertion_identity=source.assertion_identity,
-        recorded_occurrence_identity=source.recorded_occurrence_identity,
-        representation=source.representation,
-        result=source.result,
-        _material_json=_canonical(source.material),
-        _support_assertion_refs_json=_canonical(list(source.support_assertion_references)),
-        locality_movement_event_identity=movement.identity,
+    return _moved_byte_assertion_from_carried_source(
+        movement=movement,
+        responsibility_assignment=assignment,
+        source=source,
     )
 
 
