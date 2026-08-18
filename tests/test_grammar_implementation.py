@@ -13,6 +13,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY,
     BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_INPUT_ROLE,
@@ -3235,6 +3236,41 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
     )
     source_material = source.material if source is not None else {}
     source_dimensions = source_material.get("dimensions", {})
+    assignment_reference = movement.material.get(
+        "responsibility_assignment_reference"
+    )
+    assignment = (
+        ledger.get(assignment_reference.get("recorded_occurrence_identity"))
+        if type(assignment_reference) is dict
+        else None
+    )
+    try:
+        assignment_standing = read_operator_locality_standing_through(
+            ledger,
+            locality_identity=movement.locality_identity,
+            through_event_occurrence_identity=(
+                assignment.identity if assignment is not None else None
+            ),
+        )
+    except (TypeError, ValueError):
+        assignment_standing = {}
+    exact_assignment_standing = bool(
+        assignment is not None
+        and assignment.kind
+        == ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        and assignment_reference
+        == {
+            "recorded_occurrence_identity": assignment.identity,
+            "assignment_identity": assignment.material["assignment_identity"],
+            "assignment_subject_identity": assignment.material[
+                "assignment_subject_identity"
+            ],
+        }
+        and assignment_standing.get(
+            "responsibility_assignment_occurrences", {}
+        ).get(assignment.identity, object())
+        is None
+    )
     preserved = movement.material.get("preserved_coordinates")
     exact_preserved = preserved == [
         "Evidence",
@@ -3318,9 +3354,11 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         "Authority": (
             EXACT
             if exact_preserved
-            and movement.material.get("authority") == "unestablished"
+            and movement.material.get("authority")
+            == source_dimensions.get("authority")
             and act_evidence is not None
-            and act_evidence.material.get("authority") == "unestablished"
+            and act_evidence.material.get("authority")
+            == source_dimensions.get("authority")
             and "authority" in source_dimensions
             else MISSING
         ),
@@ -3349,6 +3387,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
             EXACT
             if exact_preserved
             and exact_source
+            and exact_assignment_standing
             and _byte_measurement_result_has_exact_standing(ledger, source_event)
             else MISSING
         ),
@@ -5146,6 +5185,9 @@ def test_assertion_movement_result_names_and_witnesses_its_witness_clause():
 
     assert BYTE_EVENT_KIND_RESPONSIBILITIES[
         bundle["movement"].kind
+    ] == "03.Movement.A"
+    assert BYTE_EVENT_KIND_RESPONSIBILITIES[
+        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
     ] == "03.Movement.A"
     assert set(witness) == set(clause["responsibility"]["coordinates"])
     assert set(witness.values()) == {EXACT}

@@ -330,49 +330,30 @@ def test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier():
         )
 
 
-def test_replay_validation_context_nests_and_clears_after_failure():
-    ledger, locality, pair, _recurrence, _source, _finding = _fixture()
+def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
+    ledger, locality, _pair, _recurrence, _source, _finding = _fixture()
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
 
     @_operator_standing_replay_validation
     def outer():
-        _set_operator_standing_validation_context(
-            ledger,
-            locality_identity=locality,
-            through_event_occurrence_identity=standing[
-                "through_event_occurrence_identity"
-            ],
-            measurement_occurrences=standing["measurement_occurrences"],
-            ingest_occurrences=standing["ingest_occurrences"],
-            responsibility_assignment_occurrences=standing[
-                "responsibility_assignment_occurrences"
-            ],
-        )
-        outer_context = _operator_standing_validation_context(
-            ledger, locality_identity=locality
-        )
-        assert outer_context is not None
-
-        @_operator_standing_replay_validation
-        def nested():
+        with pytest.raises(ValueError, match="exact accumulators"):
             _set_operator_standing_validation_context(
                 ledger,
-                locality_identity="different-locality",
-                through_event_occurrence_identity=pair.identity,
-                measurement_occurrences={},
-                ingest_occurrences=[],
-                responsibility_assignment_occurrences={},
+                locality_identity=locality,
+                through_event_occurrence_identity=standing[
+                    "through_event_occurrence_identity"
+                ],
+                measurement_occurrences=standing["measurement_occurrences"],
+                ingest_occurrences=standing["ingest_occurrences"],
+                responsibility_assignment_occurrences=standing[
+                    "responsibility_assignment_occurrences"
+                ],
             )
-            assert _operator_standing_validation_context(
-                ledger, locality_identity=locality
-            ) is None
-
-        nested()
         assert _operator_standing_validation_context(
             ledger, locality_identity=locality
-        ) == outer_context
+        ) is None
         raise RuntimeError("exercise replay-context cleanup")
 
     with pytest.raises(RuntimeError, match="cleanup"):
@@ -410,7 +391,7 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
             ledger, assignment.identity
         )
 
-    with pytest.raises(ValueError, match="order is false"):
+    with pytest.raises(ValueError, match="exact accumulators"):
         read_from_false_earlier_context()
 
 
@@ -447,12 +428,8 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
             ledger, assignment.identity
         )
 
-    exact_measurements = deepcopy(standing["measurement_occurrences"])
-    exact_ingests = deepcopy(standing["ingest_occurrences"])
-    assert read_from_context(exact_measurements, exact_ingests) == assignment
-
-    measurements = deepcopy(exact_measurements)
-    ingests = deepcopy(exact_ingests)
+    measurements = deepcopy(standing["measurement_occurrences"])
+    ingests = deepcopy(standing["ingest_occurrences"])
     coordinate = (
         measurements[pair.identity]
         if forged_coordinate == "measurement"
@@ -474,7 +451,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
     else:
         coordinate[key] += "-forged"
 
-    with pytest.raises(ValueError, match="no exact prior Standing"):
+    with pytest.raises(ValueError, match="exact accumulators"):
         read_from_context(measurements, ingests)
 
 
@@ -1032,7 +1009,7 @@ FIDELITY_SUBJECTS = {
         test_shaped_standing_without_the_exact_assignment_cannot_authorize_the_act,
         test_corrupted_assignment_occurrence_cannot_authorize_the_act,
         test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier,
-        test_replay_validation_context_nests_and_clears_after_failure,
+        test_replay_validation_context_refuses_unbound_accumulators_and_clears,
         test_replay_context_before_the_recorded_assignment_boundary_is_refused,
         test_replay_context_refuses_forged_exact_boundary_input_coordinates,
         test_assignment_act_and_result_survive_distinct_durable_restarts,

@@ -17,7 +17,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
-    move_recorded_byte_assertion_to_locality,
+    move_recorded_byte_assertions_to_locality,
 )
 from seed_runtime.events import EventLedger
 
@@ -373,15 +373,16 @@ def moved_exact_byte_material_references(
     assertions = assertions_of_recorded_byte_measurement(
         ledger, measurement_occurrence_identity
     )
+    sources = tuple(
+        assertion
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
+    )
+    moved_sources = move_recorded_byte_assertions_to_locality(
+        ledger, sources=sources, destination_locality=destination_locality
+    )
     found = []
-    for assertion in assertions or ():
-        if assertion.result != "count" or assertion.representation is None:
-            continue
-        moved = move_recorded_byte_assertion_to_locality(
-            ledger,
-            source=assertion,
-            destination_locality=destination_locality,
-        )
+    for moved in moved_sources:
         movement_identity = moved.locality_movement_event_identity
         if event.locality_identity == destination_locality:
             if movement_identity is not None:

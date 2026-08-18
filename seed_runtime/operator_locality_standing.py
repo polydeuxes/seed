@@ -16,8 +16,14 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_KIND,
     _findings_of_recorded_byte_position_pair_measurement,
+    _read_assertion_locality_movement_responsibility_assignment,
+    _read_assertion_locality_movement_act_evidence,
     _read_byte_measurement_responsibility_assignment,
+    _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -168,6 +174,9 @@ _OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
     "operator_standing_replay_validation_context",
     default=None,
 )
+_OPERATOR_STANDING_EXACT_ACCUMULATORS: ContextVar[
+    tuple[Any, Any, Any, Any, Any] | None
+] = ContextVar("operator_standing_exact_accumulators", default=None)
 
 
 def _operator_standing_replay_validation(function):
@@ -176,9 +185,11 @@ def _operator_standing_replay_validation(function):
     @wraps(function)
     def bounded(*args, **kwargs):
         token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
+        exact_token = _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(None)
         try:
             return function(*args, **kwargs)
         finally:
+            _OPERATOR_STANDING_EXACT_ACCUMULATORS.reset(exact_token)
             _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)
 
     return bounded
@@ -193,6 +204,23 @@ def _set_operator_standing_validation_context(
     ingest_occurrences: list[dict[str, Any]],
     responsibility_assignment_occurrences: dict[str, None],
 ) -> None:
+    bound = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
+    exact = _OPERATOR_STANDING_EXACT_ACCUMULATORS.get()
+    if (
+        type(bound) is not dict
+        or bound.get("ledger") is not ledger
+        or bound.get("locality_identity") != locality_identity
+        or type(exact) is not tuple
+        or len(exact) != 5
+        or exact[0] is not ledger
+        or exact[1] != locality_identity
+        or exact[2] is not measurement_occurrences
+        or exact[3] is not ingest_occurrences
+        or exact[4] is not responsibility_assignment_occurrences
+    ):
+        raise ValueError(
+            "operator Standing replay context requires its exact accumulators"
+        )
     _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
         {
             "ledger": ledger,
@@ -239,6 +267,7 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -247,6 +276,11 @@ _MEASUREMENT_RECORDED_KINDS = {
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+}
+_ASSERTION_LOCALITY_MOVEMENT_KINDS = {
+    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -311,6 +345,7 @@ _SUPPORTED_KINDS = {
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
     *_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
+    *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
@@ -404,7 +439,7 @@ def _carries_exact_result(ledger: EventLedger, event) -> bool:
 def read_operator_locality_standing(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
-    """Project bounded Locality-local Standing by replaying the whole Locality.
+    """Read bounded Locality-local Standing by replaying the whole Locality.
 
     Equivalent to advancing from no prior Standing over every recorded event.
     `#2376` established that advancing from a prior Standing over only the
@@ -646,7 +681,7 @@ def advance_operator_locality_standing(
 
     **The advance has as input `prior`.** Its accumulators are taken over rather
     than copied, and the returned Standing shares them. A caller that needs the
-    earlier Standing to stay as it was must project it again; there is no
+    earlier Standing to stay as it was must read it again; there is no
     snapshot here.
 
     That is not defensive weakness, it is the point. Standing grows with the
@@ -773,6 +808,29 @@ def advance_operator_locality_standing(
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
+    if replay_started_from_empty:
+        _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(
+            (
+                ledger,
+                locality_identity,
+                measurement_occurrences,
+                ingest_occurrences,
+                responsibility_assignment_occurrences,
+            )
+        )
+        _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+            {
+                "ledger": ledger,
+                "locality_identity": locality_identity,
+                "through_event_occurrence_identity": None,
+                "measurement_occurrences": measurement_occurrences,
+                "ingest_occurrences": ingest_occurrences,
+                "responsibility_assignment_occurrences": (
+                    responsibility_assignment_occurrences
+                ),
+            }
+        )
+
     for event in events:
         if event.locality_identity != locality_identity:
             continue
@@ -795,6 +853,7 @@ def advance_operator_locality_standing(
             or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
             or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
+            or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
@@ -838,6 +897,52 @@ def advance_operator_locality_standing(
                 },
             )
             responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
+            == ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        ):
+            _read_assertion_locality_movement_responsibility_assignment(
+                ledger,
+                event.identity,
+                prior_destination_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                },
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND:
+            _read_assertion_locality_movement_act_evidence(
+                ledger,
+                event.identity,
+                prior_destination_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "responsibility_assignment_occurrences": (
+                        responsibility_assignment_occurrences
+                    ),
+                },
+            )
+            continue
+        if event.kind == ASSERTION_LOCALITY_MOVEMENT_KIND:
+            _validate_moved_byte_assertion(
+                ledger,
+                event.identity,
+                prior_destination_standing={
+                    "locality_identity": locality_identity,
+                    "through_event_occurrence_identity": (
+                        prior_through_event_occurrence_identity
+                    ),
+                    "responsibility_assignment_occurrences": (
+                        responsibility_assignment_occurrences
+                    ),
+                },
+            )
             continue
         if (
             event.kind
