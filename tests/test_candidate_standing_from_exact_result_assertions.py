@@ -14,6 +14,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     get_recorded_candidate_standing,
     record_complete_candidate_standing,
     record_complete_ordered_pair_candidate_standing,
+    record_one_source_and_ordered_pair_candidate_standings,
     source_assertion_references_for_candidate_standing,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -251,6 +252,41 @@ def test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs():
     )
 
 
+def test_both_exact_candidate_responsibilities_use_one_source_boundary():
+    ledger = EventLedger()
+    _source(ledger, exact_bytes=b"a")
+    source_boundary = ledger.append_boundary()
+
+    one_source_result, ordered_pair_result = (
+        record_one_source_and_ordered_pair_candidate_standings(
+            ledger,
+            one_source_recording_locality_identity="one-source-candidates",
+            ordered_pair_recording_locality_identity="ordered-pair-candidates",
+            source_append_boundary=source_boundary,
+        )
+    )
+    one_source = get_recorded_candidate_standing(
+        ledger, one_source_result.identity
+    )
+    ordered_pair = get_recorded_candidate_standing(
+        ledger, ordered_pair_result.identity
+    )
+
+    assert one_source["responsibility"] == ONE_SOURCE_CANDIDATE_RESPONSIBILITY
+    assert ordered_pair["responsibility"] == (
+        ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    )
+    assert one_source["source_ledger_boundary_identity"] == source_boundary.identity
+    assert ordered_pair["source_ledger_boundary_identity"] == source_boundary.identity
+    assert one_source_result.locality_identity == "one-source-candidates"
+    assert ordered_pair_result.locality_identity == "ordered-pair-candidates"
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for standing in (one_source, ordered_pair)
+        for candidate in standing["candidate_assertions"]
+    )
+
+
 def test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
@@ -421,6 +457,7 @@ FIDELITY_SUBJECTS = {
     "complete_candidate_standing_coordinate_order": (
         test_complete_candidate_standing_owes_one_neutral_row_per_source_assertion,
         test_ordered_pair_candidate_standing_owes_both_orders_without_self_pairs,
+        test_both_exact_candidate_responsibilities_use_one_source_boundary,
         test_ordered_pair_candidate_standing_refuses_one_omitted_owed_candidate,
         test_replay_refuses_rows_different_from_the_exact_source_and_act,
         test_empty_source_surface_records_one_complete_empty_candidate_standing,

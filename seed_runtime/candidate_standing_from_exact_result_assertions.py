@@ -1330,3 +1330,26 @@ def record_complete_ordered_pair_candidate_standing(
         ledger,
         responsible_act_evidence_event_identity=act.identity,
     )
+
+
+def record_one_source_and_ordered_pair_candidate_standings(
+    ledger: EventLedger,
+    *,
+    one_source_recording_locality_identity: str,
+    ordered_pair_recording_locality_identity: str,
+    source_append_boundary: EventLedgerBoundary | None = None,
+) -> tuple[Event, Event]:
+    """Record both exact Candidate Responsibilities through one frozen boundary."""
+
+    boundary = source_append_boundary or ledger.append_boundary()
+    one_source_result = record_complete_candidate_standing(
+        ledger,
+        recording_locality_identity=one_source_recording_locality_identity,
+        source_append_boundary=boundary,
+    )
+    ordered_pair_result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity=ordered_pair_recording_locality_identity,
+        source_append_boundary=boundary,
+    )
+    return one_source_result, ordered_pair_result

@@ -41,8 +41,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     get_recorded_candidate_standing,
-    record_complete_candidate_standing,
-    record_complete_ordered_pair_candidate_standing,
+    record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -278,19 +277,16 @@ def calculator_relation_witness():
         and event.material["source_ingest_occurrence_identity"] == stdout.identity
     )
     candidate_source_boundary = ledger.append_boundary()
-    candidate_standing_result = record_complete_candidate_standing(
+    (
+        candidate_standing_result,
+        ordered_pair_candidate_standing_result,
+    ) = record_one_source_and_ordered_pair_candidate_standings(
         ledger,
-        recording_locality_identity="calculator-candidate-standing",
+        one_source_recording_locality_identity="calculator-candidate-standing",
+        ordered_pair_recording_locality_identity=(
+            "calculator-ordered-pair-candidate-standing"
+        ),
         source_append_boundary=candidate_source_boundary,
-    )
-    ordered_pair_candidate_standing_result = (
-        record_complete_ordered_pair_candidate_standing(
-            ledger,
-            recording_locality_identity=(
-                "calculator-ordered-pair-candidate-standing"
-            ),
-            source_append_boundary=candidate_source_boundary,
-        )
     )
     return {
         "ledger": ledger,
