@@ -1,12 +1,14 @@
-"""Carry one calculator result beside one exact uninterpreted relation path.
+"""Carry one calculator result beside one exact path through distinctions.
 
-The external result is invocation testimony.  The path around byte ``0x3d``
-and the calculator result each enter Seed through their own exact lifecycle;
-no current Responsibility compares them or establishes arithmetic meaning.
+The path around byte ``0x3d`` meets exact findings from an earlier-to-claim
+pair comparison while its represented relation remains Unknown.  The external
+result enters through its own invocation lifecycle; no current Responsibility
+compares it with the path finding or establishes arithmetic meaning.
 """
 
 from __future__ import annotations
 
+import json
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -22,9 +24,24 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+    record_recorded_pair_measurement_comparison_act_evidence,
+    record_recorded_pair_measurement_comparison_applicability_act_evidence,
+    record_recorded_pair_measurement_comparison_applicability_result,
+    record_recorded_pair_measurement_comparison_responsibility_assignment,
+    record_recorded_pair_measurement_comparison_result,
+)
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
@@ -52,6 +69,7 @@ from seed_runtime.standing_measurement_declarations import (
 
 
 CLAIM = b"2+2=5\n"
+EARLIER_MATERIAL = b"2+2=\n"
 ADDRESSED_POSITION = 3
 
 
@@ -64,13 +82,99 @@ def _advance(ledger, standing, *events):
     )
 
 
+def _standing(ledger):
+    return read_operator_locality_standing(
+        ledger, locality_identity="calculator-claim"
+    )
+
+
+def _pair_measurement(ledger, declared):
+    byte_result = next(
+        event
+        for event in declared.result_occurrences
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+    )
+    return record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=byte_result.identity,
+        recording_locality_identity="calculator-claim",
+    )
+
+
+def _pair_comparison(ledger, earlier, later):
+    assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        earlier_result_event_identity=earlier.identity,
+        later_result_event_identity=later.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability_act = record_recorded_pair_measurement_comparison_applicability_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability = record_recorded_pair_measurement_comparison_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    act = record_recorded_pair_measurement_comparison_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=_standing(ledger),
+    )
+    return record_recorded_pair_measurement_comparison_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+
+
+def _path_comparison(ledger, path, pair_comparison):
+    assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+        ledger,
+        path_result_event_identity=path.identity,
+        comparison_result_event_identity=pair_comparison.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=_standing(ledger),
+    )
+    return record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+
+
 def _claim_path(ledger):
+    earlier_source = ingest_material(
+        ledger,
+        locality_identity="calculator-claim",
+        exact_bytes=EARLIER_MATERIAL,
+        source_role="system",
+        source_boundary="earlier exact supplied material boundary",
+    )
+    earlier_declared = record_declared_measurements_from_current_standing(
+        ledger,
+        locality_identity=earlier_source.locality_identity,
+    )
+    earlier_pair = _pair_measurement(ledger, earlier_declared)
     source = ingest_material(
         ledger,
         locality_identity="calculator-claim",
         exact_bytes=CLAIM,
-        source_role="exact supplied material",
+        source_role="system",
         source_boundary="exact supplied claim boundary",
+        provenance_occurrence_references=(earlier_source.identity,),
     )
     declared = record_declared_measurements_from_current_standing(
         ledger,
@@ -82,6 +186,9 @@ def _claim_path(ledger):
         for event in declared.result_occurrences
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
+    claim_pair = _pair_measurement(ledger, declared)
+    pair_comparison = _pair_comparison(ledger, earlier_pair, claim_pair)
+    standing = _standing(ledger)
     coordinate = _source_position_coordinate_reference(
         source_ingest_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
@@ -150,7 +257,9 @@ def _claim_path(ledger):
         measurement_act_evidence_event_identity=shared_act.identity,
     )
     standing = _advance(ledger, standing, shared_result)
-    return source, shared_result, standing
+    path_comparison = _path_comparison(ledger, shared_result, pair_comparison)
+    standing = _standing(ledger)
+    return source, shared_result, path_comparison, standing
 
 
 @pytest.fixture(scope="module")
@@ -158,7 +267,7 @@ def calculator_relation_witness():
     if not Path("/usr/bin/gnome-calculator").is_file():
         pytest.skip("fixed calculator invocation is unavailable")
     ledger = EventLedger()
-    claim_source, path_result, claim_standing = _claim_path(ledger)
+    claim_source, path_result, path_comparison, claim_standing = _claim_path(ledger)
     raw_output = BytesIO()
     run_persistent_operator_console(
         ledger=ledger,
@@ -190,6 +299,7 @@ def calculator_relation_witness():
         "ledger": ledger,
         "claim_source": claim_source,
         "path_result": path_result,
+        "path_comparison": path_comparison,
         "claim_standing": claim_standing,
         "system_locality": system_locality,
         "stdout": stdout,
@@ -218,6 +328,34 @@ def test_claim_preserves_one_uninterpreted_path(calculator_relation_witness):
     ]
 
 
+def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
+    calculator_relation_witness,
+):
+    witness = calculator_relation_witness
+    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        witness["ledger"], witness["path_comparison"].identity
+    )
+    roles = reading["finding"]["relation_findings"]
+
+    assert [role["pair_subject"] for role in roles] == [[0x32, 0x3D], [0x3D, 0x35]]
+    assert [
+        [reference["finding_category"] for reference in role["comparison_finding_references"]]
+        for role in roles
+    ] == [
+        ["conflicting_findings", "findings_of_later_result"],
+        ["findings_of_later_result"],
+    ]
+    assert reading["finding"]["unknown"] == [
+        "what this relation of relations represents remains Unknown"
+    ]
+    assert reading["unknown"] == [
+        "what the relation of path and comparison findings represents remains Unknown"
+    ]
+    assert witness["path_comparison"].identity in witness["claim_standing"][
+        "comparison_result_occurrences"
+    ]
+
+
 def test_calculator_result_preserves_its_own_occurrence_and_provenance(
     calculator_relation_witness,
 ):
@@ -241,13 +379,36 @@ def test_calculator_result_preserves_its_own_occurrence_and_provenance(
     assert b"4\n" in witness["raw_output"]
 
 
-def test_no_current_act_compares_claim_path_with_calculator_result(
+def test_no_current_act_compares_recorded_distinction_with_calculator_result(
     calculator_relation_witness,
 ):
-    kinds = tuple(event.kind for event in calculator_relation_witness["ledger"].list())
+    witness = calculator_relation_witness
+    higher_results = tuple(
+        event
+        for event in witness["ledger"].list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
 
-    assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
-    assert (
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
-        not in kinds
+    assert len(higher_results) == 1
+    assert higher_results[0].locality_identity == "calculator-claim"
+    reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        witness["ledger"], higher_results[0].identity
+    )
+    assignment = witness["ledger"].get(
+        reading["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    assert assignment.material["path_source_occurrence_identity"] == witness[
+        "claim_source"
+    ].identity
+    assert assignment.material["comparison_added_occurrence_identity"] == witness[
+        "claim_source"
+    ].identity
+    assert witness["stdout"].identity not in json.dumps(reading, sort_keys=True)
+    assert all(
+        event.locality_identity != witness["system_locality"]
+        for event in witness["ledger"].list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
