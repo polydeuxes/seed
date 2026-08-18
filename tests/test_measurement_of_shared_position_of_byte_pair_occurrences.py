@@ -1369,18 +1369,24 @@ def test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle(
 
 
 @pytest.mark.parametrize(
-    "provenance_coordinate",
+    ("reading_coordinate", "input_coordinate"),
     (
-        "result",
-        "source",
-        "pair",
-        "recurrent_assignment",
-        "recurrent_act",
-        "recurrent_yield",
+        ("input_result_occurrences", "result"),
+        ("source_occurrences", "source"),
+        ("pair_measurement_result_occurrences", "pair"),
+        (
+            "input_responsibility_assignment_occurrences",
+            "recurrent_assignment",
+        ),
+        ("input_act_evidence_occurrences", "recurrent_act"),
+        (
+            "input_evidence_of_yield_relation_occurrences",
+            "recurrent_yield",
+        ),
     ),
 )
-def test_operator_replay_requires_each_shared_input_provenance_occurrence_intact(
-    monkeypatch, provenance_coordinate
+def test_operator_replay_requires_each_exact_upstream_occurrence_intact(
+    monkeypatch, reading_coordinate, input_coordinate
 ):
     ledger, locality, _source, first, second = _fixture()
     _record_path(ledger, locality, first, second)
@@ -1404,8 +1410,8 @@ def test_operator_replay_requires_each_shared_input_provenance_occurrence_intact
             }
             target = next(
                 occurrence
-                for occurrence in reading.input_provenance_occurrences
-                if occurrence.event.identity == identities[provenance_coordinate]
+                for occurrence in getattr(reading, reading_coordinate)
+                if occurrence.event.identity == identities[input_coordinate]
             )
             target.event.material["changed_between_shared_replay_phases"] = True
             changed = True
@@ -1651,7 +1657,7 @@ FIDELITY_SUBJECTS = {
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
         test_operator_replay_reads_one_shared_assignment_per_complete_lifecycle,
-        test_operator_replay_requires_each_shared_input_provenance_occurrence_intact,
+        test_operator_replay_requires_each_exact_upstream_occurrence_intact,
         test_operator_replay_requires_its_shared_assignment_occurrence_intact,
         test_operator_replay_requires_each_shared_phase_occurrence_intact,
         test_operator_replay_refuses_a_substituted_shared_assignment,

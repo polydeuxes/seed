@@ -138,7 +138,16 @@ class _SharedPositionReplayOccurrence:
 class _SharedPositionReplayReading:
     assignment_reading: tuple[Event, SharedPairPositionInputs]
     assignment_occurrence: _SharedPositionReplayOccurrence
-    input_provenance_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    input_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    source_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    pair_measurement_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    input_responsibility_assignment_occurrences: tuple[
+        _SharedPositionReplayOccurrence, ...
+    ]
+    input_act_evidence_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
+    input_evidence_of_yield_relation_occurrences: tuple[
+        _SharedPositionReplayOccurrence, ...
+    ]
     applicability_act_occurrence: _SharedPositionReplayOccurrence | None = None
     applicability_result_occurrence: _SharedPositionReplayOccurrence | None = None
     measurement_act_occurrence: _SharedPositionReplayOccurrence | None = None
@@ -1990,26 +1999,33 @@ def _recurrent_input_lifecycle_occurrences(
     return assignment, act, evidence_of_yield
 
 
-def _shared_position_replay_input_provenance_occurrences(
+def _shared_position_replay_occurrence_coordinates(
     ledger: EventLedger,
     inputs: SharedPairPositionInputs,
-) -> tuple[_SharedPositionReplayOccurrence, ...]:
-    """Retain the exact provenance of both derived input references."""
+) -> tuple[
+    tuple[_SharedPositionReplayOccurrence, ...],
+    tuple[_SharedPositionReplayOccurrence, ...],
+    tuple[_SharedPositionReplayOccurrence, ...],
+    tuple[_SharedPositionReplayOccurrence, ...],
+    tuple[_SharedPositionReplayOccurrence, ...],
+    tuple[_SharedPositionReplayOccurrence, ...],
+]:
+    """Read each exact occurrence coordinate required by both inputs."""
 
-    identities: list[str] = []
-    recurrent_lifecycle_events: list[Event] = []
+    result_identities: list[str] = []
+    source_identities: list[str] = []
+    pair_result_identities: list[str] = []
+    responsibility_assignments: list[Event] = []
+    act_evidence_occurrences: list[Event] = []
+    evidence_of_yield_relations: list[Event] = []
     for reference in inputs:
-        identities.extend(
-            (
-                reference.recorded_occurrence_identity,
-                reference.source_ingest_occurrence_identity,
-            )
-        )
+        result_identities.append(reference.recorded_occurrence_identity)
+        source_identities.append(reference.source_ingest_occurrence_identity)
         pair_result_identity = getattr(
             reference, "pair_measurement_occurrence_identity", None
         )
         if type(pair_result_identity) is str and pair_result_identity:
-            identities.append(pair_result_identity)
+            pair_result_identities.append(pair_result_identity)
         if (
             type(reference)
             is ReferenceToRecordedRecurrentBytePairOccurrencePosition
@@ -2019,24 +2035,44 @@ def _shared_position_replay_input_provenance_occurrences(
                 raise SharedPairPositionError(
                     "shared-position replay recurrent input result is absent"
                 )
-            recurrent_lifecycle_events.extend(
+            responsibility_assignment, act_evidence, evidence_of_yield = (
                 _recurrent_input_lifecycle_occurrences(ledger, result)
             )
+            responsibility_assignments.append(responsibility_assignment)
+            act_evidence_occurrences.append(act_evidence)
+            evidence_of_yield_relations.append(evidence_of_yield)
 
-    occurrences = []
-    for event_identity in dict.fromkeys(identities):
-        event = ledger.get(event_identity)
-        if event is None:
+    def occurrences_at_identities(
+        identities: list[str],
+    ) -> tuple[_SharedPositionReplayOccurrence, ...]:
+        events = tuple(ledger.get(identity) for identity in dict.fromkeys(identities))
+        if any(event is None for event in events):
             raise SharedPairPositionError(
-                "shared-position replay input provenance is absent"
+                "shared-position replay requires each exact input occurrence"
             )
-        occurrences.append(_shared_position_replay_occurrence(ledger, event))
-    entered = {occurrence.event.identity for occurrence in occurrences}
-    for event in recurrent_lifecycle_events:
-        if event.identity not in entered:
-            occurrences.append(_shared_position_replay_occurrence(ledger, event))
-            entered.add(event.identity)
-    return tuple(occurrences)
+        return tuple(
+            _shared_position_replay_occurrence(ledger, event)
+            for event in events
+        )
+
+    def occurrences_for_events(
+        events: list[Event],
+    ) -> tuple[_SharedPositionReplayOccurrence, ...]:
+        return tuple(
+            _shared_position_replay_occurrence(ledger, event)
+            for event in {
+                event.identity: event for event in events
+            }.values()
+        )
+
+    return (
+        occurrences_at_identities(result_identities),
+        occurrences_at_identities(source_identities),
+        occurrences_at_identities(pair_result_identities),
+        occurrences_for_events(responsibility_assignments),
+        occurrences_for_events(act_evidence_occurrences),
+        occurrences_for_events(evidence_of_yield_relations),
+    )
 
 
 def _shared_position_replay_reading(
@@ -2048,6 +2084,14 @@ def _shared_position_replay_reading(
         raise SharedPairPositionError(
             "shared-position replay requires one exact assignment reading"
         )
+    (
+        input_results,
+        sources,
+        pair_measurement_results,
+        input_responsibility_assignments,
+        input_act_evidence,
+        input_evidence_of_yield_relations,
+    ) = _shared_position_replay_occurrence_coordinates(ledger, inputs)
     reading = _SharedPositionReplayReading(
         assignment_reading=assignment_reading,
         assignment_occurrence=_shared_position_replay_occurrence(
@@ -2055,10 +2099,15 @@ def _shared_position_replay_reading(
             assignment,
             expected_material=deepcopy(assignment.material),
         ),
-        input_provenance_occurrences=(
-            _shared_position_replay_input_provenance_occurrences(
-                ledger, inputs
-            )
+        input_result_occurrences=input_results,
+        source_occurrences=sources,
+        pair_measurement_result_occurrences=pair_measurement_results,
+        input_responsibility_assignment_occurrences=(
+            input_responsibility_assignments
+        ),
+        input_act_evidence_occurrences=input_act_evidence,
+        input_evidence_of_yield_relation_occurrences=(
+            input_evidence_of_yield_relations
         ),
     )
     _require_exact_shared_position_replay_reading(ledger, reading)
@@ -2074,14 +2123,20 @@ def _require_exact_shared_position_replay_reading(
         type(assignment) is not Event
         or type(inputs) is not SharedPairPositionInputs
         or reading.assignment_occurrence.event is not assignment
-        or not reading.input_provenance_occurrences
+        or not reading.input_result_occurrences
+        or not reading.source_occurrences
     ):
         raise SharedPairPositionError(
             "shared-position replay assignment reading was substituted"
         )
     for occurrence in (
         reading.assignment_occurrence,
-        *reading.input_provenance_occurrences,
+        *reading.input_result_occurrences,
+        *reading.source_occurrences,
+        *reading.pair_measurement_result_occurrences,
+        *reading.input_responsibility_assignment_occurrences,
+        *reading.input_act_evidence_occurrences,
+        *reading.input_evidence_of_yield_relation_occurrences,
         reading.applicability_act_occurrence,
         reading.applicability_result_occurrence,
         reading.measurement_act_occurrence,
