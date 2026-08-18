@@ -371,17 +371,20 @@ def test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence(
     assert ledger.append_boundary() == boundary
 
 
-def test_distinction_fanout_refuses_a_standing_pin_followed_by_another_append():
+def test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append():
     ledger, _earlier_source, _added, comparison, path = _inputs()
-    _record_comparison(ledger, comparison, path)
+    _assignment, _applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
     ledger.append("test.occurrence", {"unknown": []}, locality_identity="other")
     boundary = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="exact current Standing"):
-        recorded_distinction_pins_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        )
+    pins = recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
 
+    assert pins
+    assert all(pin.comparison_result_occurrence_identity == result.identity for pin in pins)
     assert ledger.append_boundary() == boundary
 
 
@@ -631,7 +634,7 @@ FIDELITY_SUBJECTS = {
         test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
-        test_distinction_fanout_refuses_a_standing_pin_followed_by_another_append,
+        test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
     ),
     "yield_result_occurrence_evidence": (

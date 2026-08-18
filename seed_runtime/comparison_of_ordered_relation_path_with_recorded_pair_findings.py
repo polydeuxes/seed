@@ -1251,12 +1251,13 @@ def recorded_distinction_pins_from_current_standing(
     if not sources:
         return ()
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    locality_occurrences = ledger.list_locality(locality_identity)
     if (
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary_event.identity)
-        != ledger.append_boundary()
+        or not locality_occurrences
+        or locality_occurrences[-1] != boundary_event
     ):
         raise ValueError("recorded distinction pins require exact current Standing")
     pins = []
@@ -1357,8 +1358,8 @@ def recorded_distinction_pins_from_current_standing(
     if (
         ledger.get(boundary_event.identity) != boundary_event
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary_event.identity)
-        != ledger.append_boundary()
+        or not (current_locality_occurrences := ledger.list_locality(locality_identity))
+        or current_locality_occurrences[-1] != boundary_event
     ):
         raise ValueError("recorded distinction pins require one unchanged current Standing pin")
     return tuple(pins)

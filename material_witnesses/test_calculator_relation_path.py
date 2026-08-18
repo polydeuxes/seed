@@ -269,9 +269,6 @@ def calculator_relation_witness():
         pytest.skip("fixed calculator invocation is unavailable")
     ledger = EventLedger()
     claim_source, path_result, path_comparison, claim_standing = _claim_path(ledger)
-    distinction_pins = recorded_distinction_pins_from_current_standing(
-        ledger, locality_identity="calculator-claim"
-    )
     raw_output = BytesIO()
     run_persistent_operator_console(
         ledger=ledger,
@@ -304,7 +301,6 @@ def calculator_relation_witness():
         "claim_source": claim_source,
         "path_result": path_result,
         "path_comparison": path_comparison,
-        "distinction_pins": distinction_pins,
         "claim_standing": claim_standing,
         "system_locality": system_locality,
         "stdout": stdout,
@@ -360,7 +356,9 @@ def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
         "comparison_result_occurrences"
     ]
 
-    pins = witness["distinction_pins"]
+    pins = recorded_distinction_pins_from_current_standing(
+        witness["ledger"], locality_identity="calculator-claim"
+    )
     assert tuple(
         (pin.pair_subject, pin.recorded_finding_reference["finding_category"])
         for pin in pins
