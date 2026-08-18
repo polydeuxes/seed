@@ -908,14 +908,12 @@ def _read_occurrence_position_measurement_act_evidence(
     return act_evidence, assignment, finding
 
 
-def _record_occurrence_position_measurement_result(
+def _refuse_existing_occurrence_position_measurement_result(
     ledger: EventLedger,
     *,
     act_evidence: Event,
-    assignment: Event,
-    finding: OccurrencePositionFinding,
-) -> Event:
-    act_occurrence_identity = assignment.material["act_occurrence_identity"]
+    act_occurrence_identity: str,
+) -> None:
     for prior_yield in ledger.iter_locality_kind(
         act_evidence.locality_identity,
         RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
@@ -946,6 +944,16 @@ def _record_occurrence_position_measurement_result(
             raise ValueError(
                 "the occurrence position Measurement Act already carries a result"
             )
+
+
+def _record_occurrence_position_measurement_result(
+    ledger: EventLedger,
+    *,
+    act_evidence: Event,
+    assignment: Event,
+    finding: OccurrencePositionFinding,
+) -> Event:
+    act_occurrence_identity = assignment.material["act_occurrence_identity"]
 
     assertions = _position_assertions(finding)
     result_material = _occurrence_position_result_material(
@@ -1004,6 +1012,11 @@ def record_occurrence_position_measurement_result(
         _read_occurrence_position_measurement_act_evidence(
             ledger, responsible_act_evidence_event_identity
         )
+    )
+    _refuse_existing_occurrence_position_measurement_result(
+        ledger,
+        act_evidence=act_evidence,
+        act_occurrence_identity=assignment.material["act_occurrence_identity"],
     )
     return _record_occurrence_position_measurement_result(
         ledger,

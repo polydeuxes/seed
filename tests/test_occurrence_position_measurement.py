@@ -564,6 +564,42 @@ def test_one_measurement_act_cannot_yield_two_results():
     assert ledger.append_boundary() == before
 
 
+def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch):
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    assignment, act_evidence = _record_act(ledger, finding, locality="a")
+
+    def history_scan_is_not_available(*_args, **_kwargs):
+        raise AssertionError(
+            "same-call result scanned prior Yield or result occurrences"
+        )
+
+    monkeypatch.setattr(ledger, "iter_locality_kind", history_scan_is_not_available)
+    recorded = (
+        position_measurement._record_occurrence_position_measurement_result_from_carried_act_evidence(
+            ledger,
+            responsible_act_evidence=act_evidence,
+            responsibility_assignment=assignment,
+            finding=finding,
+        )
+    )
+    assert recorded.kind == OCCURRENCE_POSITION_RECORDED_KIND
+
+    with pytest.raises(ValueError, match="exact intact Act Evidence"):
+        (
+            position_measurement._record_occurrence_position_measurement_result_from_carried_act_evidence(
+                ledger,
+                responsible_act_evidence=act_evidence,
+                responsibility_assignment=assignment,
+                finding=finding,
+            )
+        )
+
+
 def test_position_finding_establishes_no_stronger_relation():
     _ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
 
@@ -819,6 +855,32 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
         ledger.close()
 
 
+def test_reopened_public_result_refuses_a_second_yield(tmp_path):
+    path = tmp_path / "occurrence-position-duplicate.sqlite"
+    ledger = SQLiteEventLedger(path)
+    ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
+    finding = measure_occurrence_position(ledger, source_locality_identity="a")
+    _assignment, act_evidence = _record_act(ledger, finding)
+    record_occurrence_position_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    act_identity = act_evidence.identity
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        before = reopened.append_boundary()
+        with pytest.raises(ValueError, match="already carries a Yield"):
+            record_occurrence_position_measurement_result(
+                reopened,
+                responsible_act_evidence_event_identity=act_identity,
+            )
+        assert reopened.append_boundary() == before
+    finally:
+        reopened.close()
+
+
 FIDELITY_SUBJECTS = {
     "assertion_standing_coordinates": (
         test_result_carries_one_ordered_assertion_per_exact_position,
@@ -838,9 +900,11 @@ FIDELITY_SUBJECTS = {
         test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relation,
         test_result_refuses_substituted_assignment_without_appending_yield,
         test_one_measurement_act_cannot_yield_two_results,
+        test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
         test_corrupted_input_act_or_evidence_of_yield_relation_is_refused,
         test_durable_locality_positions_read_through_their_exact_yield,
         test_assignment_act_and_result_survive_separate_restarts,
+        test_reopened_public_result_refuses_a_second_yield,
     ),
     "declared_measurement_result": (
         test_a_later_occurrence_does_not_revise_the_bounded_positions,

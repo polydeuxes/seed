@@ -184,6 +184,52 @@ def test_one_assignment_records_one_act_and_one_result():
         )
 
 
+def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch):
+    ledger = EventLedger()
+    source = _source(ledger)
+    locality = source.locality_identity
+    finding = measure_position_coordinates_of_byte_pair_occurrences(
+        ledger,
+        source_ingest_occurrence_identity=source.identity,
+    )
+    assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        source_ingest_occurrence_identity=source.identity,
+        locality_standing=_standing(ledger, locality),
+    )
+    act = record_byte_pair_occurrence_position_measurement_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=_standing(ledger, locality),
+    )
+
+    def history_scan_is_not_available(*_args, **_kwargs):
+        raise AssertionError(
+            "same-call result scanned prior Yield or result occurrences"
+        )
+
+    monkeypatch.setattr(ledger, "iter_locality_kind", history_scan_is_not_available)
+    result = (
+        direct_position_module._record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence(
+            ledger,
+            responsible_act_evidence=act,
+            responsibility_assignment=assignment,
+            finding=finding,
+        )
+    )
+    assert result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+
+    with pytest.raises(ValueError, match="intact Act Evidence"):
+        (
+            direct_position_module._record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence(
+                ledger,
+                responsible_act_evidence=act,
+                responsibility_assignment=assignment,
+                finding=finding,
+            )
+        )
+
+
 def test_result_refuses_changed_assertion_coordinates():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger)
@@ -429,6 +475,26 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
         ledger.close()
 
 
+def test_reopened_public_result_refuses_a_second_yield(tmp_path):
+    path = tmp_path / "position-occurrence-position-duplicate.sqlite"
+    ledger = SQLiteEventLedger(path)
+    _source_event, _assignment, act, _result = _record(ledger)
+    act_identity = act.identity
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        before = reopened.append_boundary()
+        with pytest.raises(ValueError, match="already carries a Yield"):
+            record_byte_pair_occurrence_position_measurement_result(
+                reopened,
+                responsible_act_evidence_event_identity=act_identity,
+            )
+        assert reopened.append_boundary() == before
+    finally:
+        reopened.close()
+
+
 def test_same_call_result_carry_equals_full_standing_replay():
     ledger = EventLedger()
     source = _source(ledger)
@@ -523,7 +589,9 @@ FIDELITY_SUBJECTS = {
         test_assignment_act_yield_and_result_enter_current_standing,
         test_act_requires_current_standing_that_carries_exact_assignment,
         test_one_assignment_records_one_act_and_one_result,
+        test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
         test_assignment_act_and_result_survive_separate_restarts,
+        test_reopened_public_result_refuses_a_second_yield,
         test_same_call_result_carry_equals_full_standing_replay,
         test_refused_same_call_result_does_not_change_prior_standing,
         test_private_same_call_recorders_require_exact_carried_tip_membership,

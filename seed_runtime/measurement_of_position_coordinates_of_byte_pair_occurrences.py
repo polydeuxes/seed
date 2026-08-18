@@ -1047,13 +1047,12 @@ def _result_material(
     }
 
 
-def _record_byte_pair_occurrence_position_measurement_result(
+def _refuse_existing_byte_pair_occurrence_position_measurement_result(
     ledger: EventLedger,
     *,
     act: Event,
-    assignment: Event,
-    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
-) -> Event:
+    act_occurrence_identity: str,
+) -> None:
     for prior_yield in ledger.iter_locality_kind(
         act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     ):
@@ -1064,10 +1063,12 @@ def _record_byte_pair_occurrence_position_measurement_result(
             or (
                 type(dimensions) is dict
                 and dimensions.get("act_occurrence_identity")
-                == assignment.material["act_occurrence_identity"]
+                == act_occurrence_identity
             )
         ):
-            raise ValueError("byte-pair position-coordinate Act already carries a Yield")
+            raise ValueError(
+                "byte-pair position-coordinate Act already carries a Yield"
+            )
     for prior_result in ledger.iter_locality_kind(
         act.locality_identity, BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     ):
@@ -1075,9 +1076,20 @@ def _record_byte_pair_occurrence_position_measurement_result(
             prior_result.material.get("responsible_act_evidence_identity")
             == act.identity
             or prior_result.material.get("act_occurrence_identity")
-            == assignment.material["act_occurrence_identity"]
+            == act_occurrence_identity
         ):
-            raise ValueError("byte-pair position-coordinate Act already carries a result")
+            raise ValueError(
+                "byte-pair position-coordinate Act already carries a result"
+            )
+
+
+def _record_byte_pair_occurrence_position_measurement_result(
+    ledger: EventLedger,
+    *,
+    act: Event,
+    assignment: Event,
+    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
+) -> Event:
     result = _result_material(finding, assignment)
     evidence = _record_evidence_of_yield_relation(
         ledger,
@@ -1127,6 +1139,11 @@ def record_byte_pair_occurrence_position_measurement_result(
 ) -> Event:
     act, assignment, finding = _read_act(
         ledger, responsible_act_evidence_event_identity
+    )
+    _refuse_existing_byte_pair_occurrence_position_measurement_result(
+        ledger,
+        act=act,
+        act_occurrence_identity=assignment.material["act_occurrence_identity"],
     )
     return _record_byte_pair_occurrence_position_measurement_result(
         ledger,
