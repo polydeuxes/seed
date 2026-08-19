@@ -1,4 +1,4 @@
-# Operator invocation prefix Applicability investigation 001
+# Operator invocation prefix assignment-subject investigation 001
 
 ## Question
 
@@ -15,8 +15,8 @@ operator material starts with byte `!`
 != operator material begins a constitutional invocation
 
 runtime branch
-!= Applicability finding
-!= Responsibility assignment Evidence
+!= recorded occurrence finding
+!= support for a Responsibility assignment subject
 ```
 
 `Prefix classification` is investigation language for the external runtime
@@ -137,8 +137,8 @@ b"pytest\n"  refused as assignment subject
 ```
 
 The difference is established by compiled predicate behavior. No recorded
-Measurement, Applicability result, Admission, or relation occurrence carries
-that classification.
+Measurement finding, support relation, or Standing for the assignment subject
+carries that classification.
 
 ```text
 reader accepts subject under external predicate
@@ -287,9 +287,11 @@ is not the first unresolved crossing. The earlier boundary is:
 ```text
 exact operator material result
 ↓
-exact finding that this material is the subject of `06.Locality.D`
+exact finding concerning this material and the `06.Locality.D` subject
 ↓
-current Standing supporting the Responsibility assignment
+exact support relation and current Standing for that assignment subject
+↓
+Responsibility assignment
 ```
 
 Current runtime substitutes a Python prefix predicate for that finding.
@@ -331,7 +333,7 @@ exact material
 ↓
 occurrence / predicate finding                         not established
 ↓
-Applicability to an exact Responsibility subject      not established
+support relation for the exact assignment subject     not established
 ↓
 Locality physiology                                    established once assigned
 ↓

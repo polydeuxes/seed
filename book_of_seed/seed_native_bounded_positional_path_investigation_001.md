@@ -1,10 +1,11 @@
-# Seed-native bounded material occurrence investigation 001
+# Seed-native bounded positional path investigation 001
 
 ## Question
 
 Can the current exact byte-position and ordered-path physiology orient a
-Seed-native recovery of larger bounded material occurrences without importing
-developer tokenization, `word`, delimiter, predicate, or meaning?
+Seed-native recovery of larger bounded positional paths without importing
+developer tokenization, `word`, delimiter, predicate, or meaning, and what
+separate relation is required before any such path carries material?
 
 This investigation refines
 `witness_material_word_occurrence_measurement_boundary_investigation_001.md`.
@@ -13,19 +14,20 @@ tests.
 
 ```text
 developer tokenization
-!= bounded material occurrence recovery
+!= bounded positional path recovery
 
-bounded material occurrence
+bounded positional path
+!= material carried by that path
 != word
 != predicate
 != represented relation
 ```
 
 `Tokenization` is report-local Rosetta orientation for this investigation. It
-describes the externally recognizable outcome of recovering bounded recurring
-material occurrences. It is not admitted here as a Book or Rosetta word and
-does not name a current Seed Responsibility, Act, result kind, Assertion kind,
-or Standing.
+describes one externally recognizable outcome if bounded positional paths and
+the material they carry are both later established. It is not admitted here as
+a Book or Rosetta word and does not name a current Seed Responsibility, Act,
+result kind, Assertion kind, or Standing.
 
 ## Material inspected
 
@@ -60,15 +62,18 @@ no current Act establishes:
 That disposition remains exact. It does not establish that a Seed-native road
 requires a conventional tokenizer or a constitutional `word` kind.
 
-The stronger question is lower-level:
+The stronger question is lower-level and has two independent branches:
 
 ```text
-Can exact lower material occurrences become
-one larger exact bounded material occurrence
-without semantic selection?
+Can exact lower position Assertions establish
+one larger exact bounded positional path?
+
+What exact relation, if any, establishes
+material carried by that path?
 ```
 
-This question precedes wordhood, grammatical role, and meaning.
+Neither branch follows from the other by identity. Both precede wordhood,
+grammatical role, and meaning.
 
 ## 2. Current position Assertions already preserve the lower surface
 
@@ -132,8 +137,9 @@ one ordered path carrying the shared 0x3D occurrence reference
 This path does not say `=` or equality. It proves only the exact positional
 composition established by the Measurement rule.
 
-That is already one Seed-native bounded material composition beneath a word
-concept.
+That is already one exact Seed-native positional composition beneath a word
+concept. Active Book explicitly says the result establishes no material of the
+input pair occurrences, so it is not a three-byte material occurrence.
 
 ## 4. The current path road is addressed, not exhaustive
 
@@ -240,10 +246,10 @@ Candidate(path, pair) exists
 No current non-recursive Candidate consumer assigns the roles required for
 that Act.
 
-## 7. A Seed-native occurrence road has a bounded shape
+## 7. A future occurrence road contains two distinct crossings
 
-The recovered material suggests a narrower future physiology than ordinary
-tokenization:
+The recovered material suggests a narrower future orientation than ordinary
+tokenization. The following two crossings remain independently unresolved:
 
 ```text
 exact source material S through boundary B
@@ -253,14 +259,17 @@ exact count or boundary of M
 ↓
 every contiguous source-position path of that exact boundary
 ↓
-Compare each path's exact material with M
+exact Act and result establishing material carried by each exact path
+↓
+Compare each established path-material result with M
 ↓
 bounded matching occurrence findings
 ```
 
 Only the exact lower coordinates are constitutional candidates here. The
 labels `contiguous`, `path material`, `matching`, and `occurrence` still require
-their own exact relations in any implementation.
+their own exact relations in any realization. This orientation does not assert
+that the current path carries the bytes occupying its referenced positions.
 
 This shape avoids these assumptions:
 
@@ -289,6 +298,8 @@ path-extension input roles
 Applicability and Participation for every proposed extension
 one path result carrying all exact lower positions without duplication
 one completeness boundary for every required path
+one Responsibility and Act establishing material carried by one exact path
+one result preserving that material and every exact source-position relation
 one Compare Responsibility over path material and M
 one occurrence result
 Standing for that result
@@ -326,9 +337,9 @@ represented relation
 The same boundary holds for `bears`, `of`, `and`, `=`, and every other admitted
 or externally interesting spelling.
 
-Bounded material occurrence recovery is therefore upstream of relation
-recovery. It cannot prefill the relation each occurrence later participates
-in.
+If bounded material occurrence recovery is later established, it remains
+upstream of relation recovery. It cannot prefill the relation each occurrence
+later participates in.
 
 ## 10. Current disposition
 
@@ -342,6 +353,7 @@ every ordered Candidate pair through exact boundary     established where produc
 complete shared-position path production                not established
 recursive path extension                                not established
 Candidate Applicability to path extension               not established
+material carried by one ordered positional path         not established
 independently Seed-bounded admitted spelling material   not established
 Compare of every bounded path with spelling material    not established
 bounded larger-material occurrence finding              not established
@@ -352,24 +364,27 @@ meaning                                                  Unknown
 
 ## Conclusion
 
-The current wall is not evidence for restoring a tokenizer. It exposes a
-smaller recursive construction:
+The current wall is not evidence for restoring a tokenizer. It exposes two
+smaller constructions:
 
 ```text
-exact lower material occurrences
+exact lower position Assertions
 ↓ exact positional composition
-larger bounded material occurrences
-↓ later Compare
-recurring exact material
-↓ later relation recovery
-grammar
+larger bounded positional paths
+
+beside
+
+exact positional path
+↓ separately established path-to-material relation
+bounded material result
 ```
 
 Seed already carries the first nontrivial positional composition for one
 addressed three-position path. The missing next slice is the Responsibility
 that forms every exact positional extension required through one frozen
-boundary without an addressed-position selector.
+boundary without an addressed-position selector. A second independent slice
+must establish what exact material, if any, one completed path carries.
 
 That Responsibility is not established by the current shared-position Act,
 Candidate production, or the usefulness of tokenization. The report therefore
-retains the topology as evidence and leaves the assignment uninstantiated.
+retains both vacancies as evidence and leaves their assignments uninstantiated.
