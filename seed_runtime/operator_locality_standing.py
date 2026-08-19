@@ -961,6 +961,9 @@ def advance_operator_locality_standing(
     operator_invocation_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
     operator_material_acquire_act_occurrences: dict[str, None] = {}
+    operator_material_locality_relation_occurrences: dict[
+        str, dict[str, Any]
+    ] = {}
     candidate_result_occurrences: dict[str, None] = {}
     admission_result_occurrences: dict[str, None] = {}
     applicability_result_occurrences: dict[str, None] = {}
@@ -1043,6 +1046,13 @@ def advance_operator_locality_standing(
         if type(operator_material_acquire_act_occurrences) is not dict:
             raise ValueError(
                 "prior Locality Standing requires exact operator material acquire Act occurrences"
+            )
+        operator_material_locality_relation_occurrences = prior[
+            "operator_material_locality_relation_occurrences"
+        ]
+        if type(operator_material_locality_relation_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact operator material Locality relation occurrences"
             )
         candidate_result_occurrences = prior["candidate_result_occurrences"]
         if type(candidate_result_occurrences) is not dict:
@@ -1413,7 +1423,15 @@ def advance_operator_locality_standing(
             operator_material_acquire_act_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
-            get_recorded_operator_material_acquire(ledger, event.identity)
+            material = get_recorded_operator_material_acquire(
+                ledger, event.identity
+            )
+            operator_material_locality_relation_occurrences[event.identity] = {
+                "locality_relation": deepcopy(material["locality_relation"]),
+                "locality_evidence_identity": material[
+                    "locality_evidence_identity"
+                ],
+            }
             continue
         if (
             event.kind
@@ -2116,6 +2134,9 @@ def advance_operator_locality_standing(
         ),
         "operator_material_acquire_act_occurrences": (
             operator_material_acquire_act_occurrences
+        ),
+        "operator_material_locality_relation_occurrences": (
+            operator_material_locality_relation_occurrences
         ),
         "candidate_result_occurrences": candidate_result_occurrences,
         "admission_result_occurrences": admission_result_occurrences,
@@ -2915,11 +2936,15 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         raise ValueError("operator material acquisition Standing is not exact")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     acts = locality_standing.get("operator_material_acquire_act_occurrences")
+    locality_relations = locality_standing.get(
+        "operator_material_locality_relation_occurrences"
+    )
     exact_results = locality_standing.get("exact_result_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
         or type(acts) is not dict
+        or type(locality_relations) is not dict
         or type(exact_results) is not dict
         or type(event_count) is not int
         or event_count < 0
@@ -2961,6 +2986,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
             is not str
             or type(event.exact_material) is not bytes
             or event.identity in exact_results
+            or event.identity in locality_relations
         ):
             raise ValueError("operator material acquisition result is not exact")
     standing_additions = _exact_standing_additions(
@@ -2974,6 +3000,12 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         acts[event.identity] = None
     else:
         exact_results[event.identity] = None
+        locality_relations[event.identity] = {
+            "locality_relation": deepcopy(event.material["locality_relation"]),
+            "locality_evidence_identity": event.material[
+                "locality_evidence_identity"
+            ],
+        }
     for key, added in standing_additions.items():
         for value in added:
             _record_distinct(locality_standing[key], value)

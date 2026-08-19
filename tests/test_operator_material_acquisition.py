@@ -192,6 +192,12 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
         act_evidence.identity: None
     }
     assert replayed["exact_result_occurrences"][result.identity] is None
+    assert replayed["operator_material_locality_relation_occurrences"] == {
+        result.identity: {
+            "locality_relation": deepcopy(recorded["locality_relation"]),
+            "locality_evidence_identity": result.identity,
+        }
+    }
 
 
 def test_empty_boundary_leaves_assignment_and_act_without_result_or_yield():
@@ -663,6 +669,31 @@ def test_prior_acquire_act_carrier_must_remain_an_identity_dictionary():
     broken["operator_material_acquire_act_occurrences"] = []
 
     with pytest.raises(ValueError, match="acquire Act occurrences"):
+        advance_operator_locality_standing(
+            ledger,
+            (),
+            locality_identity="source",
+            prior=broken,
+        )
+
+
+def test_prior_acquire_locality_relations_must_remain_an_identity_dictionary():
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+    act = _act(ledger, _assignment(ledger, standing, representation))
+    result = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    prior = read_operator_locality_standing(ledger, locality_identity="source")
+    assert result.identity in prior[
+        "operator_material_locality_relation_occurrences"
+    ]
+    broken = deepcopy(prior)
+    broken["operator_material_locality_relation_occurrences"] = []
+
+    with pytest.raises(ValueError, match="material Locality relation occurrences"):
         advance_operator_locality_standing(
             ledger,
             (),
