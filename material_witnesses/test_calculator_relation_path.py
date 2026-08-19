@@ -474,10 +474,8 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert assignment_reference["material"] == (
-        standing["responsibility_assignment_reference"]
-    )
-    assert "represented_relation" not in assignment_reference["material"]
+    assert assignment_reference == standing["responsibility_assignment_reference"]
+    assert "represented_relation" not in assignment_reference
     assert tuple(
         coordinate["coordinate"] for coordinate in path_source_coordinates
     ) == tuple(

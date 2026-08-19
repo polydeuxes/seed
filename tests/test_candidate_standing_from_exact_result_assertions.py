@@ -938,16 +938,12 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     assert relations_beside_participations == exposed
     assert relations_beside_applicability == exposed
     assert relations_beside_assignment == exposed
-    assert assignment_reference == {
-        "grammar_coordinate_reference": [
-            "clause_coordinates",
-            BOOK_CLAUSE,
-            "ordered_pair_candidate_responsibility",
-        ],
-        "coordinate": "Responsibility_assignment_reference",
-        "material": standing["responsibility_assignment_reference"],
+    assert assignment_reference == standing["responsibility_assignment_reference"]
+    assert set(assignment_reference) == {
+        "recorded_occurrence_identity",
+        "assignment_subject_identity",
     }
-    assert "represented_relation" not in assignment_reference["material"]
+    assert "represented_relation" not in assignment_reference
     assert applicability_result_occurrence == {
         "grammar_coordinate_reference": [
             "clause_coordinates",
@@ -1094,7 +1090,7 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             )
         )
         assert assignment_relations == cardinality_relations
-        assert cardinality_assignment["material"] == (
+        assert cardinality_assignment == (
             get_recorded_candidate_standing(
                 cardinality_ledger, cardinality_result.identity
             )["responsibility_assignment_reference"]

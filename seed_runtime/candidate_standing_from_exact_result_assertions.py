@@ -1837,17 +1837,7 @@ def ordered_candidate_responsibility_assignment_reference_beside_represented_rel
     ):
         raise ValueError("Candidate Standing is not the exact ordered-pair result")
     return (
-        {
-            "grammar_coordinate_reference": [
-                "clause_coordinates",
-                BOOK_CLAUSE,
-                "ordered_pair_candidate_responsibility",
-            ],
-            "coordinate": "Responsibility_assignment_reference",
-            "material": deepcopy(
-                result.material["responsibility_assignment_reference"]
-            ),
-        },
+        deepcopy(result.material["responsibility_assignment_reference"]),
         _represented_relation_coordinates_from_ordered_pair_candidates(
             result, assignment
         ),
