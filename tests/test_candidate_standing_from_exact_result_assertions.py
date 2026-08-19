@@ -41,6 +41,10 @@ from tests.test_operator_locality_standing import _record_byte_measurement
 from tests.test_measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _record as _record_byte_pair_position_measurement,
 )
+from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
+    _fixture as _shared_position_fixture,
+    _record_path as _record_shared_position_path,
+)
 
 
 def _source(ledger, *, locality="source", exact_bytes=b"ab"):
@@ -128,6 +132,73 @@ def test_exact_source_assertion_coordinates_expose_every_result_assertion_in_eve
         position_ledger,
         candidate_standing_result_event_identity=position_candidates.identity,
     )
+
+
+def test_positional_path_assertion_enters_every_required_ordered_candidate_without_material():
+    ledger, locality, _source, first, second = _shared_position_fixture()
+    _assignment, _applicability_act, _applicability, _measurement_act, path_result = (
+        _record_shared_position_path(ledger, locality, first, second)
+    )
+    source_boundary = ledger.append_boundary()
+    source_references = source_assertion_references_for_candidate_standing(
+        ledger, source_append_boundary=source_boundary
+    )
+    path_references = tuple(
+        reference
+        for reference in source_references
+        if reference["recorded_result_occurrence_identity"] == path_result.identity
+        and reference["assertion_coordinate"] == "assertions/0"
+    )
+    assert len(path_references) == 1
+    path_reference = path_references[0]
+
+    candidate_result = record_complete_ordered_pair_candidate_standing(
+        ledger,
+        recording_locality_identity="positional-path-candidates",
+        source_append_boundary=source_boundary,
+    )
+    candidate_standing = get_recorded_candidate_standing(
+        ledger, candidate_result.identity
+    )
+    candidate_pairs = tuple(
+        (
+            candidate["assertion_subject"]["first_source_assertion_reference"],
+            candidate["assertion_subject"]["second_source_assertion_reference"],
+        )
+        for candidate in candidate_standing["candidate_assertions"]
+        if path_reference
+        in (
+            candidate["assertion_subject"]["first_source_assertion_reference"],
+            candidate["assertion_subject"]["second_source_assertion_reference"],
+        )
+    )
+    expected_pairs = tuple(
+        (first_reference, second_reference)
+        for first_position, first_reference in enumerate(source_references)
+        for second_position, second_reference in enumerate(source_references)
+        if first_position != second_position
+        and path_reference in (first_reference, second_reference)
+    )
+
+    assert candidate_pairs == expected_pairs
+    assert len(candidate_pairs) == 2 * (len(source_references) - 1)
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in candidate_standing["candidate_assertions"]
+        if path_reference
+        in (
+            candidate["assertion_subject"]["first_source_assertion_reference"],
+            candidate["assertion_subject"]["second_source_assertion_reference"],
+        )
+    )
+    path = path_result.material["assertions"][0]
+    assert "exact_pair" not in path
+    assert "exact_material" not in path
+    assert path_reference["source_locality_identity"] == locality
+    assert candidate_result.locality_identity == "positional-path-candidates"
+    assert candidate_result.locality_identity != path_reference[
+        "source_locality_identity"
+    ]
 
 
 def test_source_boundary_excludes_every_later_result_assertion():
@@ -1736,6 +1807,7 @@ def test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility()
 FIDELITY_SUBJECTS = {
     "complete_candidate_standing_source_coordinates": (
         test_exact_source_assertion_coordinates_expose_every_result_assertion_in_event_order,
+        test_positional_path_assertion_enters_every_required_ordered_candidate_without_material,
         test_source_boundary_excludes_every_later_result_assertion,
         test_later_source_boundary_carries_prior_candidate_result_assertions,
         test_source_and_candidate_result_boundaries_and_localities_stay_distinct,
