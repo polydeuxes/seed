@@ -115,7 +115,7 @@ Reliance       Assertion that an exact input supports an exact result
 Continuum      earlier Standing + later occurrence + Compare of preserved coordinates
 Closure        bounded Fidelity claim across the exact admitted coordinates
 Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
-Exposure       availability at an exact Locality, or an emitted Representation; resolve the exact Act
+Exposure       exact address / reference resolution + intact occurrence / boundary validation + returned exact coordinates, or availability at an exact Locality, or an emitted Representation; no carrying, uptake, Participation, occurrence, or Standing by identity; resolve the exact Act, occurrence, and relation
 Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
 Replay         exact recorded Locality occurrences in recorded order + Standing read from no prior Standing; a recorded Act does not occur
 Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, Standing, or relation
