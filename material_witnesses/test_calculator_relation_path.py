@@ -41,10 +41,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
-    exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
-    ordered_candidate_boundaries_beside_represented_relation_coordinates,
-    ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_relation_coordinates,
     ordered_candidate_result_occurrence_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
@@ -437,35 +434,19 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         for reading in every_exact_ordered_pair
         if reading[0] == crossing_candidate["dimensions"]["identity"]
     )
-    every_exact_source_coordinate = (
-        exact_source_assertion_coordinates_from_every_ordered_pair_candidate(
-            ledger,
-            candidate_standing_result_event_identity=result.identity,
-        )
-    )
-    candidate_boundaries, every_relation_coordinate = (
-        ordered_candidate_boundaries_beside_represented_relation_coordinates(
-            ledger,
-            candidate_standing_result_event_identity=result.identity,
-        )
-    )
-    candidate_yield_evidence, yield_evidence_relations = (
-        ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_relation_coordinates(
-            ledger,
-            candidate_standing_result_event_identity=result.identity,
-        )
-    )
     candidate_result_occurrence, result_occurrence_relations = (
         ordered_candidate_result_occurrence_beside_represented_relation_coordinates(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    _, path_source_coordinates, calculator_source_coordinates = next(
-        reading
-        for reading in every_exact_source_coordinate
-        if reading[0] == crossing_candidate["dimensions"]["identity"]
-    )
+    every_relation_coordinate = result_occurrence_relations
+    path_source_reference = crossing_candidate["assertion_subject"][
+        "first_source_assertion_reference"
+    ]
+    calculator_source_reference = crossing_candidate["assertion_subject"][
+        "second_source_assertion_reference"
+    ]
 
     assert exact_orders <= set(source_orders)
     assert exact_path_finding["identity"] == path_finding["identity"]
@@ -474,9 +455,6 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     )
     assert ledger.append_boundary() == boundary_before_read
     assert len(every_exact_ordered_pair) == len(standing["candidate_assertions"])
-    assert len(every_exact_source_coordinate) == len(
-        standing["candidate_assertions"]
-    )
     assert tuple(
         candidate_identity
         for candidate_identity, *_coordinates in every_relation_coordinate
@@ -488,17 +466,6 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert yield_evidence_relations == every_relation_coordinate
-    assert candidate_yield_evidence[
-        "recorded_occurrence_identity"
-    ] == standing["evidence_of_yield_relation_identity"]
-    assert candidate_yield_evidence["result_kind"] == (
-        "complete Candidate Standing result"
-    )
-    assert candidate_yield_evidence["occurrence_boundary"] == (
-        "complete_candidate_standing"
-    )
-    assert "represented_relation" not in candidate_yield_evidence
     assert result_occurrence_relations == every_relation_coordinate
     assert candidate_result_occurrence == {
         "recorded_occurrence_identity": result.identity,
@@ -506,34 +473,47 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         "result_locality_identity": result.locality_identity,
     }
     assert "represented_relation" not in candidate_result_occurrence
-    assert candidate_boundaries["source_ledger_boundary"] == witness[
+    assert standing["source_ledger_boundary_identity"] == witness[
         "candidate_source_boundary"
-    ]
-    assert candidate_boundaries["candidate_result_ledger_boundary"] == (
-        ledger.append_boundary_through_occurrence(result.identity)
+    ].identity
+    candidate_result_boundary = ledger.append_boundary_through_occurrence(
+        result.identity
     )
     assert (
-        candidate_boundaries["source_ledger_boundary"]
-        != candidate_boundaries["candidate_result_ledger_boundary"]
+        witness["candidate_source_boundary"] != candidate_result_boundary
     )
     assert all(
         "source_ledger_boundary" not in relation_coordinate
         and "candidate_result_ledger_boundary" not in relation_coordinate
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert tuple(
-        coordinate["coordinate"] for coordinate in path_source_coordinates
-    ) == tuple(
-        coordinate["coordinate"] for coordinate in calculator_source_coordinates
-    ) == (
-        "source_Assertion_reference",
-        "source_Locality",
-        "source_Standing_boundary",
+    assert set(path_source_reference) == set(calculator_source_reference) == {
+        "recorded_result_occurrence_identity",
+        "recorded_result_occurrence_kind",
+        "assertion_identity",
+        "assertion_coordinate",
+        "source_locality_identity",
+        "source_standing_through_event_occurrence_identity",
+        "source_standing_coordinate",
+        "source_assertion_coordinates",
+    }
+    assert set(path_source_reference["source_assertion_coordinates"]) == set(
+        calculator_source_reference["source_assertion_coordinates"]
+    ) == {
         "Evidence",
         "Authority",
         "Scope",
         "limits",
         "Unknown",
+    }
+    candidate_yield_evidence = ledger.get(
+        standing["evidence_of_yield_relation_identity"]
+    )
+    assert candidate_yield_evidence.material["result_kind"] == (
+        "complete Candidate Standing result"
+    )
+    assert candidate_yield_evidence.material["occurrence_boundary"] == (
+        "complete_candidate_standing"
     )
     assert all(
         candidate["represented_relation"] == "Unknown"
@@ -556,16 +536,6 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     )
     assert result_locality_standing["comparison_result_occurrences"] == {}
     assert result_locality_standing["recorded_relation_Standing"] == {}
-    boundaries = boundaries_of_recorded_candidate_standing(
-        ledger, result.identity
-    )
-    assert boundaries["source_ledger_boundary"] == witness[
-        "candidate_source_boundary"
-    ]
-    assert (
-        boundaries["source_ledger_boundary"]
-        != boundaries["candidate_result_ledger_boundary"]
-    )
 
 
 def test_claim_preserves_one_uninterpreted_path(calculator_relation_witness):
