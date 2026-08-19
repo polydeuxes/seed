@@ -1608,14 +1608,11 @@ def represented_relation_coordinates_from_every_ordered_pair_candidate(
         != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
     ):
         raise ValueError("Candidate Standing is not the exact ordered-pair result")
-    return _represented_relation_coordinates_from_ordered_pair_candidates(
-        result, assignment
-    )
+    return _represented_relation_coordinates_from_ordered_pair_candidates(result)
 
 
 def _represented_relation_coordinates_from_ordered_pair_candidates(
     result: Event,
-    assignment: Event,
 ) -> tuple[
     tuple[
         str,
@@ -1707,9 +1704,7 @@ def ordered_candidate_act_occurrence_beside_represented_relation_coordinates(
             "coordinate": "act_occurrence",
             "material": act_occurrence_identity,
         },
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1761,9 +1756,7 @@ def ordered_candidate_source_participation_coordinates_beside_represented_relati
     )
     return (
         participations,
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1815,9 +1808,7 @@ def ordered_candidate_source_applicability_coordinates_beside_represented_relati
             "material": applicability.identity,
         },
         applicability_findings,
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1849,9 +1840,7 @@ def ordered_candidate_responsibility_assignment_reference_beside_represented_rel
         raise ValueError("Candidate Standing is not the exact ordered-pair result")
     return (
         deepcopy(result.material["responsibility_assignment_reference"]),
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1890,9 +1879,7 @@ def ordered_candidate_boundaries_beside_represented_relation_coordinates(
                 ledger.append_boundary_through_occurrence(result.identity)
             ),
         },
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1934,9 +1921,7 @@ def ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_r
             "result_kind": evidence.material["result_kind"],
             "occurrence_boundary": evidence.material["occurrence_boundary"],
         },
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -1972,9 +1957,7 @@ def ordered_candidate_result_occurrence_beside_represented_relation_coordinates(
             "result_identity": result.material["result_identity"],
             "result_locality_identity": result.locality_identity,
         },
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 
@@ -2022,9 +2005,74 @@ def ordered_candidate_yield_relation_beside_represented_relation_coordinates(
                 ],
             },
         },
-        _represented_relation_coordinates_from_ordered_pair_candidates(
-            result, assignment
-        ),
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
+    )
+
+
+def ordered_candidate_locality_standing_through_result_occurrence_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read Locality Standing through the Candidate result.
+
+    Return it beside every ordered Candidate represented_relation coordinate.
+    """
+
+    result = _event(
+        ledger,
+        candidate_standing_result_event_identity,
+        kind=CANDIDATE_STANDING_RESULT_KIND,
+        message="Candidate Standing requires one exact complete result",
+    )
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing_through,
+    )
+
+    locality_standing = read_operator_locality_standing_through(
+        ledger,
+        locality_identity=result.locality_identity,
+        through_event_occurrence_identity=result.identity,
+    )
+    result = _event(
+        ledger,
+        candidate_standing_result_event_identity,
+        kind=CANDIDATE_STANDING_RESULT_KIND,
+        message="Candidate Standing requires one exact complete result",
+    )
+    candidate_result_occurrences = locality_standing.get(
+        "candidate_result_occurrences"
+    )
+    if (
+        result.material.get("responsibility")
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+        or type(candidate_result_occurrences) is not dict
+        or result.identity not in candidate_result_occurrences
+        or candidate_result_occurrences[result.identity] is not None
+    ):
+        raise ValueError(
+            "Candidate result is not carried by its exact Locality Standing"
+        )
+    return (
+        {
+            "locality_identity": locality_standing["locality_identity"],
+            "through_event_occurrence_identity": locality_standing[
+                "through_event_occurrence_identity"
+            ],
+            "candidate_result_occurrences": tuple(candidate_result_occurrences),
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(result),
     )
 
 

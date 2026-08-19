@@ -42,7 +42,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
-    ordered_candidate_yield_relation_beside_represented_relation_coordinates,
+    ordered_candidate_locality_standing_through_result_occurrence_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
@@ -434,13 +434,13 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         for reading in every_exact_ordered_pair
         if reading[0] == crossing_candidate["dimensions"]["identity"]
     )
-    candidate_yield_relation, yield_relation_vacancies = (
-        ordered_candidate_yield_relation_beside_represented_relation_coordinates(
+    candidate_locality_standing, standing_vacancies = (
+        ordered_candidate_locality_standing_through_result_occurrence_beside_represented_relation_coordinates(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    every_relation_coordinate = yield_relation_vacancies
+    every_relation_coordinate = standing_vacancies
     path_source_reference = crossing_candidate["assertion_subject"][
         "first_source_assertion_reference"
     ]
@@ -466,22 +466,14 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert yield_relation_vacancies == every_relation_coordinate
-    assert candidate_yield_relation["first_subject"] == {
-        "coordinate": "Act_occurrence_identity",
-        "material": standing["act_occurrence_identity"],
+    assert standing_vacancies == every_relation_coordinate
+    assert candidate_locality_standing == {
+        "locality_identity": result.locality_identity,
+        "through_event_occurrence_identity": result.identity,
+        "candidate_result_occurrences": (result.identity,),
     }
-    assert candidate_yield_relation["relation"] == "Yield"
-    assert candidate_yield_relation["second_subject"] == {
-        "coordinate": "result_identity",
-        "material": standing["result_identity"],
-    }
-    assert candidate_yield_relation["evidence_occurrence_reference"] == {
-        "recorded_occurrence_identity": standing[
-            "evidence_of_yield_relation_identity"
-        ],
-    }
-    assert "represented_relation" not in candidate_yield_relation
+    assert "standing_occurrence" not in candidate_locality_standing
+    assert "represented_relation" not in candidate_locality_standing
     assert standing["source_ledger_boundary_identity"] == witness[
         "candidate_source_boundary"
     ].identity
