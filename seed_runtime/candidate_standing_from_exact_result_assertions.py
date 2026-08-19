@@ -2089,18 +2089,23 @@ def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represen
             ),
         )
     )
+
+    def path_pairs(
+        first: dict[str, Any], second: dict[str, Any]
+    ) -> tuple[tuple[dict[str, Any], dict[str, Any]], ...]:
+        first_paths = _exact_representation_paths(first)
+        second_paths = _exact_representation_paths(second)
+        return tuple(
+            (first_path, second_path)
+            for first_path in first_paths
+            for second_path in second_paths
+        )
+
     return tuple(
         (
             candidate_identity,
-            deepcopy(relation_coordinate),
-            tuple(
-                (
-                    deepcopy(first_path),
-                    deepcopy(second_path),
-                )
-                for first_path in _exact_representation_paths(first)
-                for second_path in _exact_representation_paths(second)
-            ),
+            relation_coordinate,
+            path_pairs(first, second),
         )
         for candidate_identity, first, second, relation_coordinate in readings
     )
