@@ -62,11 +62,10 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing_through,
 )
 from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingest_material,
-    iter_exact_ingest_results,
+from seed_runtime.material_acquisition import (
+    iter_exact_material_acquisition_results,
 )
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 
 
 def _record_byte_measurement(
@@ -937,7 +936,7 @@ def test_each_replay_validates_each_exact_ingest_and_reads_independently():
     assert all(after > before for after, before in zip(after_read, after_result))
 
     ledger.corrupted.add(ingests[0].identity)
-    with pytest.raises(ByteMeasurementError, match="not an intact Ingest"):
+    with pytest.raises(ByteMeasurementError, match="without intact physiology"):
         assertions_of_recorded_byte_measurement(ledger, result.identity)
 
 
@@ -1265,11 +1264,11 @@ def test_a_missing_declared_locality_is_refused():
         )
 
 
-def test_ingest_must_match_its_exact_byte_coordinates():
+def test_acquisition_result_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
-    ingest = next(iter_exact_ingest_results(ledger, "source"))
+    ingest = next(iter_exact_material_acquisition_results(ledger, "source"))
     object.__setattr__(ingest, "exact_material", None)
-    with pytest.raises(ByteMeasurementError, match="carries no exact bytes"):
+    with pytest.raises(ByteMeasurementError, match="without intact physiology"):
         measure_byte_counts(
             ledger, source_localities=("source",)
         )
@@ -2839,7 +2838,7 @@ FIDELITY_SUBJECTS = {
         test_recording_occurrence_evidence_is_validated_exactly,
         test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement,
         test_a_missing_declared_locality_is_refused,
-        test_ingest_must_match_its_exact_byte_coordinates,
+        test_acquisition_result_must_match_its_exact_byte_coordinates,
         test_repeated_locality_coordinate_does_not_repeat_one_ingest,
         test_every_overlapping_byte_position_pair_is_measured,
         test_byte_position_pair_results_follow_first_observed_pair_positions,

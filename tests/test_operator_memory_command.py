@@ -9,7 +9,7 @@ FIDELITY_SUBJECT = (
 )
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import is_exact_ingest_result
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.operator_command import (
     AddressedOperatorCommand,
     OperatorCommandFrame,
@@ -94,9 +94,12 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     assert recorded["source_standing_reference"][
         "source_standing_through_event_occurrence_identity"
     ] == addressed.material["locality_standing_through_event_occurrence_identity"]
-    ingests = [
-        event for event in ledger.list() if is_exact_ingest_result(event)
-    ]
+    ingests = []
+    for event in ledger.list():
+        try:
+            ingests.append(read_exact_material_acquisition_result(ledger, event.identity))
+        except (TypeError, ValueError):
+            pass
     assert [event.locality_identity for event in ingests] == [
         "source",
         "source",
@@ -155,6 +158,6 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
             "source_standing_through_event_occurrence_identity"
         ],
     } <= source_identities
-    assert not [
-        event for event in destination if is_exact_ingest_result(event)
-    ]
+    for event in destination:
+        with pytest.raises(ValueError):
+            read_exact_material_acquisition_result(ledger, event.identity)

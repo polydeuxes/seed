@@ -5,7 +5,8 @@ import pytest
 FIDELITY_SUBJECT = "locality_relation_coordinates"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material, ingested_material_bytes
+from seed_runtime.material_acquisition import acquired_material_bytes
+from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -120,7 +121,7 @@ def test_system_material_occurs_only_in_the_related_locality():
     )
 
     assert supplied.locality_identity == relation.locality_identity
-    assert ingested_material_bytes(supplied) == b"one selected log line\n"
+    assert acquired_material_bytes(supplied) == b"one selected log line\n"
     assert supplied.material["provenance_occurrence_references"] == [
         command.identity,
         relation.identity,

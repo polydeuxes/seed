@@ -7,10 +7,8 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 )
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingested_material_bytes,
-)
+from seed_runtime.material_acquisition import acquired_material_bytes
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 
 
 FIDELITY_SUBJECT = "material_measurement_witness"
@@ -35,7 +33,7 @@ def test_book_ingest_and_measurement_references_keep_their_exact_lineage():
         if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
     )
 
-    assert tuple(ingested_material_bytes(ingest) for ingest in ingests) == tuple(
+    assert tuple(acquired_material_bytes(ingest) for ingest in ingests) == tuple(
         path.read_bytes() for path in paths
     )
     assert tuple(ingest.material["source_boundary"] for ingest in ingests) == tuple(

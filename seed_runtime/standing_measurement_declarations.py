@@ -35,7 +35,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     measure_position_coordinates_of_byte_pair_occurrences,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
 )
-from seed_runtime.material_ingest import read_exact_ingest_result
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.operator_locality_standing import (
     _carry_byte_measurement_assignment_into_standing,
     _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,

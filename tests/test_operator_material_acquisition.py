@@ -9,10 +9,12 @@ FIDELITY_SUBJECT = "operator_material_acquisition_witness"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    read_exact_ingest_result,
+from seed_runtime.material_acquisition import (
+    MaterialAcquisitionError,
+    iter_exact_material_acquisition_results,
+    read_exact_material_acquisition_result,
 )
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
@@ -304,7 +306,7 @@ def test_console_records_one_fresh_occurrence_per_read_including_final_empty_rea
     ]
 
 
-def test_ordinary_operator_material_is_the_exact_ingest_measurement_source():
+def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -335,7 +337,7 @@ def test_ordinary_operator_material_is_the_exact_ingest_measurement_source():
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
     assert ingests == []
-    assert read_exact_ingest_result(ledger, acquired[0].identity) == acquired[0]
+    assert read_exact_material_acquisition_result(ledger, acquired[0].identity) == acquired[0]
     assert acquired[0].exact_material == b"Hello\n"
     assert acquired[0].material["provenance_occurrence_references"] == []
     position_results = [
@@ -355,6 +357,56 @@ def test_ordinary_operator_material_is_the_exact_ingest_measurement_source():
     assert byte_results[0].material["assertions"][0]["dimensions"]["content"][
         "source_material"
     ] == [{"ingest_occurrence_identity": acquired[0].identity}]
+
+
+def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
+    ledger = EventLedger()
+    claimed = ledger.append(
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        {
+            "source_role": "operator",
+            "unknown": ["represented_relation", "source_relation"],
+        },
+        exact_material=b"claimed O1",
+        locality_identity="source",
+    )
+
+    with pytest.raises(MaterialAcquisitionError, match="intact physiology"):
+        read_exact_material_acquisition_result(ledger, claimed.identity)
+
+
+def test_exact_acquisition_families_merge_only_their_append_order():
+    ledger = EventLedger()
+    first = ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"first supplied material",
+        source_role="system",
+        source_boundary="first boundary",
+    )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="source",
+        input_stream=BytesIO(b"operator material\n"),
+        output_stream=StringIO(),
+    )
+    operator = next(
+        event
+        for event in ledger.list_locality("source")
+        if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    )
+    last = ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"last supplied material",
+        source_role="system",
+        source_boundary="last boundary",
+    )
+
+    assert [
+        event.identity
+        for event in iter_exact_material_acquisition_results(ledger, "source")
+    ] == [first.identity, operator.identity, last.identity]
 
 
 def test_equal_raw_results_keep_distinct_occurrences_and_scopes():

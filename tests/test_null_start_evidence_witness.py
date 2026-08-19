@@ -8,9 +8,9 @@ import json
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import (
-    ingested_material_bytes,
-    is_exact_ingest_result,
+from seed_runtime.material_acquisition import (
+    acquired_material_bytes,
+    iter_exact_material_acquisition_results,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
@@ -57,28 +57,24 @@ def ledger() -> EventLedger:
     return result
 
 
-def _ingests(ledger: EventLedger):
-    return [
-        event
-        for event in ledger.list_locality("s")
-        if is_exact_ingest_result(event)
-    ]
+def _acquisition_results(ledger: EventLedger):
+    return list(iter_exact_material_acquisition_results(ledger, "s"))
 
 
-def test_one_ingest_occurs_for_each_delivered_line(ledger):
-    ingests = _ingests(ledger)
+def test_one_acquisition_result_occurs_for_each_delivered_line(ledger):
+    ingests = _acquisition_results(ledger)
 
     assert len(ingests) == 2 + len(E3.split("\n"))
 
 
 def test_each_ingest_carries_the_operator_role(ledger):
-    ingests = _ingests(ledger)
+    ingests = _acquisition_results(ledger)
 
     assert all(event.material["source_role"] == "operator" for event in ingests)
 
 
 def test_each_ingest_preserves_exact_bytes(ledger):
-    exact = [ingested_material_bytes(event) for event in _ingests(ledger)]
+    exact = [acquired_material_bytes(event) for event in _acquisition_results(ledger)]
 
     assert exact[0] == (E1 + "\n").encode()
     assert exact[1] == (E2 + "\n").encode()
@@ -86,7 +82,7 @@ def test_each_ingest_preserves_exact_bytes(ledger):
 
 
 def test_each_ingest_binds_its_exact_act_and_evidence_of_yield_relation(ledger):
-    for ingest in _ingests(ledger):
+    for ingest in _acquisition_results(ledger):
         assert all(
             read_requirements_of_yield_relation(
                 ledger,
@@ -100,7 +96,7 @@ def test_each_ingest_binds_its_exact_act_and_evidence_of_yield_relation(ledger):
 
 
 def test_ingest_does_not_assert_a_represented_relation(ledger):
-    for ingest in _ingests(ledger):
+    for ingest in _acquisition_results(ledger):
         assert "represented_material" not in ingest.material
         assert ingest.material["unknown"] == [
             "represented_relation",
@@ -121,18 +117,14 @@ def test_ingest_evidence_is_inspectable(ledger):
 
 
 def test_ingest_exact_material_is_inspectable(ledger):
-    ingests = [
-        event
-        for event in ledger.list()
-        if is_exact_ingest_result(event)
-    ]
+    ingests = _acquisition_results(ledger)
 
     assert all(type(event.exact_material) is bytes for event in ingests)
 
 
 FIDELITY_SUBJECTS = {
     "operator_material_ingest_occurrence": (
-        test_one_ingest_occurs_for_each_delivered_line,
+        test_one_acquisition_result_occurs_for_each_delivered_line,
     ),
     "operator_material_ingest_role": (test_each_ingest_carries_the_operator_role,),
     "material_ingest_exact_material": (test_each_ingest_preserves_exact_bytes,),

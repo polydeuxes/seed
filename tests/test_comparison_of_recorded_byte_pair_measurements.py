@@ -76,7 +76,7 @@ def _pair_measurement(ledger):
     )
 
 
-def _inputs():
+def _inputs(*, later_cites_earlier=True):
     ledger = EventLedger()
     earlier_source = ingest_material(
         ledger,
@@ -92,7 +92,9 @@ def _inputs():
         exact_bytes=b"abac",
         source_role="system",
         source_boundary="later supplied occurrence",
-        provenance_occurrence_references=(earlier_source.identity,),
+        provenance_occurrence_references=(
+            (earlier_source.identity,) if later_cites_earlier else ()
+        ),
     )
     later = _pair_measurement(ledger)
     return ledger, earlier_source, added, earlier, later
@@ -390,8 +392,9 @@ def test_same_content_finding_labels_do_not_hide_changed_content():
 
 
 def test_missing_provenance_cannot_supply_the_compare_rung():
-    ledger, _source, added, earlier, later = _inputs()
-    added.material["provenance_occurrence_references"] = []
+    ledger, _source, _added, earlier, later = _inputs(
+        later_cites_earlier=False
+    )
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
         match="supplied occurrence with exact provenance",

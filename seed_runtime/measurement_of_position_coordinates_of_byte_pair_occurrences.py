@@ -24,9 +24,9 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import (
-    ingested_material_bytes,
-    read_exact_ingest_result,
+from seed_runtime.material_acquisition import (
+    acquired_material_bytes,
+    read_exact_material_acquisition_result,
 )
 
 
@@ -243,7 +243,7 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
             # Preserved legacy material is not an exact result of the Ingest
             # Act/Yield physiology required by this assignment subject.
             continue
-        source = read_exact_ingest_result(ledger, source_identity)
+        source = read_exact_material_acquisition_result(ledger, source_identity)
         material = source.material
         exact_coordinates = {
             key: material.get(key)
@@ -282,7 +282,7 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
                 ],
                 source_role=exact_coordinates["source_role"],
                 source_boundary=exact_coordinates["source_boundary"],
-                exact_material=ingested_material_bytes(source),
+                exact_material=acquired_material_bytes(source),
                 known_loss=_exact_string_list(
                     material.get("known_loss"), coordinate="known_loss"
                 ),
@@ -348,13 +348,13 @@ def _measure_through(
     source_ingest_occurrence_identity: str,
     boundary: EventLedgerBoundary,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    source = read_exact_ingest_result(ledger, source_ingest_occurrence_identity)
+    source = read_exact_material_acquisition_result(ledger, source_ingest_occurrence_identity)
     exact_boundary = ledger.append_boundary_through_occurrence(source.identity)
     if type(boundary) is not EventLedgerBoundary or boundary != exact_boundary:
         raise ValueError(
             "byte-pair position-coordinate Measurement requires the exact source boundary"
         )
-    exact = ingested_material_bytes(source)
+    exact = acquired_material_bytes(source)
     finding = FindingOfPositionCoordinatesOfBytePairOccurrences(
         source_ingest_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,

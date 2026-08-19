@@ -7,11 +7,8 @@ from typing import Callable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingest_material,
-    read_exact_ingest_result,
-)
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.operator_system_locality import (
     get_recorded_operator_system_locality,
 )
@@ -103,7 +100,7 @@ def ingest_supplied_invocation_occurrence(
     ):
         raise ValueError("exact operator occurrence required")
     try:
-        read_exact_ingest_result(ledger, command_occurrence.identity)
+        read_exact_material_acquisition_result(ledger, command_occurrence.identity)
     except (TypeError, ValueError) as error:
         raise ValueError("exact operator occurrence required") from error
     prior_occurrences = tuple(

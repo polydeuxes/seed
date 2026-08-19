@@ -29,12 +29,12 @@ from seed_runtime.evidence_of_yield_relation import (
     _record_evidence_of_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    MaterialIngestError,
-    ingested_material_bytes,
-    iter_exact_ingest_results,
+from seed_runtime.material_acquisition import (
+    MaterialAcquisitionError,
+    acquired_material_bytes,
+    iter_exact_material_acquisition_results,
 )
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 
 
 INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
@@ -734,9 +734,27 @@ def _ingested_bytes(ledger: EventLedger, occurrence) -> bytes:
             f"{occurrence.identity} is not an intact Ingest occurrence"
         )
     try:
-        return ingested_material_bytes(occurrence)
-    except MaterialIngestError as exc:
+        return acquired_material_bytes(occurrence)
+    except MaterialAcquisitionError as exc:
         raise ByteMeasurementError(str(exc)) from exc
+
+
+def _exact_material_acquisition_results(
+    ledger: EventLedger,
+    locality_identity: str,
+    *,
+    through: EventLedgerBoundary,
+):
+    try:
+        yield from iter_exact_material_acquisition_results(
+            ledger,
+            locality_identity,
+            through=through,
+        )
+    except MaterialAcquisitionError as exc:
+        raise ByteMeasurementError(
+            "source carries a material-acquisition result without intact physiology"
+        ) from exc
 
 
 def measure_byte_counts(
@@ -781,7 +799,7 @@ def _measure_byte_counts_through(
     carrying = [0] * 256
     totals = [0] * 256
     for locality in localities:
-        for ingest in iter_exact_ingest_results(
+        for ingest in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
             exact = _ingested_bytes(ledger, ingest)
@@ -2083,7 +2101,7 @@ def _measure_byte_position_pair_counts_through(
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
     for locality in localities:
-        for ingest in iter_exact_ingest_results(
+        for ingest in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
             if ledger.integrity_of(ingest.identity) == CORRUPTED:
@@ -2264,7 +2282,7 @@ def _byte_measurement_source_material(
     source_material = []
     seen_material = set()
     for locality in localities:
-        for ingest in iter_exact_ingest_results(
+        for ingest in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
             _ingested_bytes(ledger, ingest)

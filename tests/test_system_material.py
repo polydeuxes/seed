@@ -8,11 +8,16 @@ FIDELITY_SUBJECT = "exact_material_preservation_witness"
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
+from seed_runtime.material_acquisition import (
+    MaterialAcquisitionError,
+    _append_exact_material_result_occurrence,
+    acquired_material_bytes,
+    read_exact_material_acquisition_result,
+)
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     MaterialIngestError,
     ingest_material,
-    ingested_material_bytes,
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND, read_requirements_of_yield_relation
@@ -43,7 +48,7 @@ def test_system_material_preserves_exact_raw_bytes():
 
     assert occurred.kind == MATERIAL_INGEST_OCCURRED_KIND
     assert occurred.locality_identity == "locality_000001"
-    assert ingested_material_bytes(occurred) == exact
+    assert acquired_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
     assert set(occurred.material["dimensions"]) == {
         "identity",
@@ -201,7 +206,7 @@ def test_operator_and_system_material_use_one_ingest_act_with_distinct_source_ro
     assert operator_ingest is not None
     assert operator_ingest.kind == system_ingest.kind == MATERIAL_INGEST_OCCURRED_KIND
     assert set(operator_ingest.material) == set(system_ingest.material)
-    assert ingested_material_bytes(operator_ingest) == ingested_material_bytes(
+    assert acquired_material_bytes(operator_ingest) == acquired_material_bytes(
         system_ingest
     ) == exact
     assert operator_ingest.material["source_role"] == "operator"
@@ -226,7 +231,7 @@ def test_equal_operator_and_system_bytes_keep_distinct_occurrences_results_and_e
     )
 
     assert operator_ingest is not None
-    assert ingested_material_bytes(operator_ingest) == ingested_material_bytes(
+    assert acquired_material_bytes(operator_ingest) == acquired_material_bytes(
         system_ingest
     )
     assert _ingest_identities(operator_ingest).isdisjoint(
@@ -378,7 +383,7 @@ def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
     first = _preserve(ledger, b"same exact material")
     second = _preserve(ledger, b"same exact material")
 
-    assert ingested_material_bytes(first) == ingested_material_bytes(second)
+    assert acquired_material_bytes(first) == acquired_material_bytes(second)
     assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
     assert first.material["result_identity"] != second.material["result_identity"]
     assert first.material["evidence_of_yield_relation_identity"] != second.material["evidence_of_yield_relation_identity"]
@@ -407,7 +412,40 @@ def test_system_material_requires_only_material_boundary_and_locality():
 def test_empty_system_material_is_exact_material():
     occurred = _preserve(EventLedger(), b"")
 
-    assert ingested_material_bytes(occurred) == b""
+    assert acquired_material_bytes(occurred) == b""
+
+
+def test_generic_material_result_read_refuses_a_changed_source_coordinate():
+    ledger = EventLedger()
+    occurred = _preserve(ledger, b"exact")
+    occurred.material["source_boundary"] = "different boundary"
+
+    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
+        read_exact_material_acquisition_result(ledger, occurred.identity)
+
+
+def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
+    ledger = EventLedger()
+    act = ledger.append("unrelated.act", locality_identity="s")
+    yielded = ledger.append("unrelated.yield", locality_identity="s")
+    before = ledger.append_boundary()
+
+    with pytest.raises(MaterialAcquisitionError, match="prior intact Act and Yield"):
+        _append_exact_material_result_occurrence(
+            ledger,
+            result_event=Event(
+                identity=ledger.allocate_event_identity(),
+                kind=MATERIAL_INGEST_OCCURRED_KIND,
+                material={
+                    "responsible_act_evidence_identity": act.identity,
+                    "evidence_of_yield_relation_identity": yielded.identity,
+                },
+                exact_material=b"not admitted",
+                locality_identity="s",
+            ),
+        )
+
+    assert ledger.append_boundary() == before
 
 
 @pytest.mark.parametrize("material", ["bytes", bytearray(b"x"), memoryview(b"x"), None, 1])
@@ -428,11 +466,11 @@ def test_system_material_requires_exact_locality(locality):
         _preserve(EventLedger(), locality_identity=locality)
 
 
-def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
-    with pytest.raises(MaterialIngestError, match="only Ingest occurrences"):
-        ingested_material_bytes(Event(identity="evt_x", kind="something.else", material={}))
-    with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
-        ingested_material_bytes(
+def test_acquired_material_bytes_refuses_wrong_or_corrupt_occurrences():
+    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
+        acquired_material_bytes(Event(identity="evt_x", kind="something.else", material={}))
+    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
+        acquired_material_bytes(
             Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND)
         )
     corrupt = Event(
@@ -441,8 +479,8 @@ def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
         exact_material=b"material",
     )
     object.__setattr__(corrupt, "exact_material", "material")
-    with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
-        ingested_material_bytes(corrupt)
+    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
+        acquired_material_bytes(corrupt)
 
 
 def test_system_material_identity_is_reserved_across_reopen(tmp_path):

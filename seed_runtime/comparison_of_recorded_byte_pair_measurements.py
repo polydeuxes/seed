@@ -19,7 +19,7 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import is_exact_ingest_result
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.operator_system_locality import (
     OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
     get_recorded_operator_system_locality,
@@ -346,6 +346,13 @@ def _comparison_inputs(
         if added is not None
         else None
     )
+    try:
+        if added is not None:
+            read_exact_material_acquisition_result(ledger, added.identity)
+    except (TypeError, ValueError) as error:
+        raise RecordedPairMeasurementComparisonError(
+            "later Measurement requires one exact acquisition result"
+        ) from error
     cited_prior = tuple(
         reference
         for reference in earlier_sources
@@ -353,7 +360,6 @@ def _comparison_inputs(
     )
     if (
         added is None
-        or not is_exact_ingest_result(added)
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
         or type(provenance) is not list
@@ -546,6 +552,13 @@ def _comparison_inputs_from_carried_measurements(
         if added is not None
         else None
     )
+    try:
+        if added is not None:
+            read_exact_material_acquisition_result(ledger, added.identity)
+    except (TypeError, ValueError) as error:
+        raise RecordedPairMeasurementComparisonError(
+            "later Measurement requires one exact acquisition result"
+        ) from error
     cited_prior = tuple(
         reference
         for reference in earlier_sources
@@ -553,7 +566,6 @@ def _comparison_inputs_from_carried_measurements(
     )
     if (
         added is None
-        or not is_exact_ingest_result(added)
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
         or type(provenance) is not list

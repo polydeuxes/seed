@@ -8,7 +8,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import read_exact_ingest_result
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     _record_evidence_of_yield_relation,
@@ -68,7 +68,7 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
             "invocation Locality requires one intact operator material occurrence"
         )
     try:
-        read_exact_ingest_result(ledger, event.identity)
+        read_exact_material_acquisition_result(ledger, event.identity)
     except (TypeError, ValueError) as error:
         raise OperatorSystemLocalityError(
             "invocation Locality requires one intact operator material occurrence"

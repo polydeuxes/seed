@@ -8,7 +8,10 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWN
+from seed_runtime.material_acquisition import (
+    MATERIAL_RESULT_UNKNOWN,
+    _append_exact_material_result_occurrence,
+)
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import (
     REPRESENTATION_RECORDED_KIND,
@@ -19,7 +22,6 @@ from seed_runtime.evidence_of_yield_relation import (
     _record_evidence_of_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.material_ingest import record_exact_ingest_result
 
 
 OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
@@ -736,17 +738,21 @@ def _record_operator_material_acquire_result(
         responsible_boundary="this Seed",
         result_exact_material=boundary_material.exact_bytes,
     )
-    return record_exact_ingest_result(
+    return _append_exact_material_result_occurrence(
         ledger,
         result_event=Event(
             identity=recorded_result_event_identity,
             kind=OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-            material=_recorded_result_material(result_material),
+            material=_recorded_result_material(
+                result_material,
+                responsible_act_evidence_identity=act_evidence.identity,
+                evidence_of_yield_relation_identity=(
+                    evidence_of_yield_relation.identity
+                ),
+            ),
             exact_material=boundary_material.exact_bytes,
             locality_identity=act_evidence.locality_identity,
         ),
-        responsible_act_evidence_identity=act_evidence.identity,
-        evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
     )
 
 

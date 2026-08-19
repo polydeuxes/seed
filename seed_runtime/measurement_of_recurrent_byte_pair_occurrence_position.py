@@ -23,9 +23,9 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import (
-    ingested_material_bytes,
-    read_exact_ingest_result,
+from seed_runtime.material_acquisition import (
+    acquired_material_bytes,
+    read_exact_material_acquisition_result,
 )
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
@@ -126,7 +126,7 @@ def _exact_measurement_occurrence_standing_coordinates(
 def _exact_ingest_occurrence_standing_coordinates(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    event = read_exact_ingest_result(ledger, event_identity)
+    event = read_exact_material_acquisition_result(ledger, event_identity)
     dimensions = event.material["dimensions"]
     occurrence = {
         "subject_reference": dimensions["identity"],
@@ -395,7 +395,7 @@ def _references_to_recorded_recurrent_byte_pairs(
 
 def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
     try:
-        return read_exact_ingest_result(ledger, event_identity)
+        return read_exact_material_acquisition_result(ledger, event_identity)
     except (TypeError, ValueError) as error:
         raise ValueError(
             "pair occurrence Measurement requires one intact Ingest result"
@@ -435,7 +435,7 @@ def _measurement_source_position_coordinates(
         or source.identity not in bounded_identities
     ):
         raise ValueError("pair occurrence source falls outside its exact boundary")
-    exact = ingested_material_bytes(source)
+    exact = acquired_material_bytes(source)
     position_coordinates = [[] for _ in range(256)]
     for position, value in enumerate(exact):
         position_coordinates[value].append(position)

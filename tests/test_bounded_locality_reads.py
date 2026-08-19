@@ -11,12 +11,12 @@ import pytest
 FIDELITY_SUBJECT = "bounded_locality_read"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingested_material_bytes,
-    is_exact_ingest_result,
-    iter_exact_ingest_results,
+from seed_runtime.material_acquisition import (
+    acquired_material_bytes,
+    iter_exact_material_acquisition_results,
+    read_exact_material_acquisition_result,
 )
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -34,12 +34,20 @@ def _all_locality_occurrences(ledger, *, locality_identity):
         event
         for event in ledger.list()
         if event.locality_identity == locality_identity
-        and is_exact_ingest_result(event)
+        and _is_readable_acquisition_result(ledger, event)
     ]
 
 
-def _ingest_occurrences(ledger, *, locality_identity):
-    return list(iter_exact_ingest_results(ledger, locality_identity))
+def _acquisition_results(ledger, *, locality_identity):
+    return list(iter_exact_material_acquisition_results(ledger, locality_identity))
+
+
+def _is_readable_acquisition_result(ledger, event):
+    try:
+        read_exact_material_acquisition_result(ledger, event.identity)
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def _fill(ledger):
@@ -72,7 +80,7 @@ def durable_ledger(tmp_path):
 
 @pytest.mark.parametrize("locality_identity", sorted(BODIES))
 def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_identity):
-    bounded = _ingest_occurrences(
+    bounded = _acquisition_results(
         memory_ledger, locality_identity=locality_identity
     )
     whole = _all_locality_occurrences(
@@ -85,7 +93,7 @@ def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_identit
 
 @pytest.mark.parametrize("locality_identity", sorted(BODIES))
 def test_the_occurrences_are_identical_durably(durable_ledger, locality_identity):
-    bounded = _ingest_occurrences(
+    bounded = _acquisition_results(
         durable_ledger, locality_identity=locality_identity
     )
     whole = _all_locality_occurrences(
@@ -99,8 +107,8 @@ def test_the_occurrences_are_identical_durably(durable_ledger, locality_identity
 def test_each_body_still_gets_only_its_own_material(durable_ledger):
     held = {
         locality_identity: [
-            ingested_material_bytes(event)
-            for event in _ingest_occurrences(
+            acquired_material_bytes(event)
+            for event in _acquisition_results(
                 durable_ledger, locality_identity=locality_identity
             )
         ]
@@ -114,7 +122,7 @@ def test_each_body_still_gets_only_its_own_material(durable_ledger):
 
 def test_an_unrecorded_locality_reads_empty(durable_ledger):
     assert (
-        _ingest_occurrences(
+        _acquisition_results(
             durable_ledger, locality_identity="never-recorded"
         )
         == []
@@ -136,6 +144,48 @@ def test_one_kind_is_streamed_from_only_one_locality(request, ledger_name):
     assert {event.kind for event in events} == {
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     }
+
+
+@pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
+def test_acquisition_family_read_does_not_use_the_whole_locality_read(
+    request, ledger_name, monkeypatch
+):
+    ledger = request.getfixturevalue(ledger_name)
+
+    def whole_locality_read_is_not_a_family_boundary(*_args, **_kwargs):
+        raise AssertionError("whole Locality read entered acquisition family")
+
+    monkeypatch.setattr(
+        ledger,
+        "list_locality",
+        whole_locality_read_is_not_a_family_boundary,
+    )
+
+    assert _acquisition_results(ledger, locality_identity="s1")
+
+
+@pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
+def test_unrelated_locality_occurrence_does_not_enter_acquisition_read(
+    request, ledger_name
+):
+    ledger = request.getfixturevalue(ledger_name)
+    before = [
+        event.identity
+        for event in _acquisition_results(ledger, locality_identity="s1")
+    ]
+
+    unrelated = ledger.append(
+        "unrelated.malformed",
+        {"claimed_source_role": "operator"},
+        locality_identity="s1",
+    )
+
+    after = [
+        event.identity
+        for event in _acquisition_results(ledger, locality_identity="s1")
+    ]
+    assert after == before
+    assert unrelated.identity not in after
 
 
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))

@@ -10,10 +10,8 @@ from tests.representation_admission import admit_representation
 FIDELITY_SUBJECT = "one_exact_recorded_Standing_boundary_reference"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingested_material_bytes,
-)
+from seed_runtime.material_acquisition import acquired_material_bytes
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
     record_standing_boundary_reference_responsibility_assignment,
@@ -53,7 +51,7 @@ def _run(material: bytes) -> EventLedger:
 
 def _ingested_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     return [
-        ingested_material_bytes(ledger.get(occurrence["evidence_event_identity"]))
+        acquired_material_bytes(ledger.get(occurrence["evidence_event_identity"]))
         for occurrence in standing["ingest_occurrences"]
     ]
 
