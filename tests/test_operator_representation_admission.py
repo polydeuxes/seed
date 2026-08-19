@@ -12,6 +12,7 @@ from seed_runtime.operator_egress import (
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation import (
+    EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
     emit_operator_representation_material,
     record_operator_representation,
 )
@@ -120,6 +121,61 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
     assert standing["admission_result_occurrences"] == {
         admission_event.identity: None
     }
+
+
+def test_exact_material_emission_does_not_promote_statement_to_seed_truth():
+    ledger = EventLedger()
+    statement_material = b"2+2=5"
+    source = ingest_material(
+        ledger,
+        locality_identity="seed-locality",
+        exact_bytes=statement_material,
+        source_role="supplied statement material",
+        source_boundary="supplied statement occurrence",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="seed-locality",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="seed-locality"
+        ),
+        source_occurrence_reference=source.identity,
+    )
+    output = BytesIO()
+    admission, applicability, standing, boundary = admit_representation(
+        ledger,
+        representation,
+        boundary_identity="statement-material-boundary",
+        output_stream=output,
+    )
+    emitted = emit_operator_representation_material(
+        ledger,
+        representation=representation,
+        admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
+    )
+
+    emission = ledger.get(emitted["emitted_event_identity"])
+    assert output.getvalue() == statement_material
+    assert source.material["unknown"] == [
+        "represented_relation",
+        "source_relation",
+    ]
+    assert representation["representation_rule"] == (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    )
+    assert emission.exact_material == statement_material
+    assert emission.material["destination_operator_boundary_identity"] == (
+        "statement-material-boundary"
+    )
+    assert "represented_relation" not in representation
+    assert "source_relation" not in representation
+    assert "truth" not in representation
+    assert "represented_relation" not in emission.material
+    assert "source_relation" not in emission.material
+    assert "truth" not in emission.material
 
 
 def test_admission_refuses_an_undeclared_representation_and_boundary_rule_pair():
