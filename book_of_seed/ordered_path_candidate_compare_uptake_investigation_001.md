@@ -276,8 +276,8 @@ comparison-result order second. It excludes exactly a subject whose
 Responsibility assignment is already recorded. It does not filter by the
 later Applicability finding.
 
-Commits `b2963448` and `3344f465` subsequently instantiate the first two
-occurrence boundaries after that read:
+Commits `b2963448`, `3344f465`, `a096d2bd`, and `0a63a173` subsequently
+instantiate each occurrence boundary after that read:
 
 ```text
 complete unassigned 04.Compare.B subject read             established
@@ -286,15 +286,19 @@ serial Responsibility assignment occurrence per subject  established
 ↓
 separate Applicability result per assignment               established
 ↓
-Participation only where Applicability is established      current frontier
+Participation only where Applicability is established      established
 ↓
-Compare result                                             later boundary
+Compare Act Evidence occurrence                            established
+↓
+separate Evidence of Yield and Compare result              established
 ```
 
 The subject read supplies no occurrence by identity. Assignment supplies no
 Applicability by identity. Applicability supplies no Participation or Compare
-by identity. Candidate production supplies no part of this exact road by
-identity.
+by identity. Participation supplies no Compare result by identity. The Compare
+Act Evidence occurrence supplies no result without the separately recorded
+Evidence of Yield and result occurrence. Candidate production supplies no part
+of this exact road by identity.
 
 ## 8. Disposition
 
@@ -314,8 +318,10 @@ Candidate completeness establishes Compare assignment         not established
 complete unassigned assignment-subject surface                 established
 Responsibility assignment occurrence for each read subject     established separately
 Applicability result for each assignment                        established separately
-Participation for each applicable result                        not yet recorded exhaustively
-Compare result for each participating subject                   not yet recorded exhaustively
+Participation for each applicable result                        established separately
+Compare Act Evidence for each participating subject             established separately
+Evidence of Yield for each Compare Act occurrence               established separately
+Compare result for each Compare Act occurrence                  established separately
 
 04.Compare.B establishes path material                         no
 04.Compare.B establishes represented relation                  no
@@ -337,9 +343,11 @@ serial exact Responsibility assignment occurrences             established
         ↓
 Applicability                                                   established
         ↓
-Participation                                                   current frontier
+Participation                                                   established
         ↓
-Compare result                                                  later boundary
+Compare Act Evidence                                            established
+        ↓
+Evidence of Yield + Compare result                              established
 ```
 
 Candidate production independently makes the path impossible to omit from its
@@ -347,6 +355,7 @@ bounded source-pair field. It neither discovers nor assigns the exact
 `04.Compare.B` subject. Current Standing and the Book clause now provide that
 complete subject read directly.
 
-Recording and advancing each remaining Participation and Compare-result
-boundary remains separate from recursive path formation and path-to-material
-recovery. No one supplies another by identity.
+The lower `04.Compare.B` lifecycle is now recorded through its result. It
+remains separate from recursive path formation and path-to-material recovery.
+It establishes neither Candidate represented relation nor exact material
+carried by the path. No one supplies another by identity.
