@@ -25,6 +25,18 @@ def _rosetta_words(material: str) -> set[str]:
     return set(re.findall(r"[A-Za-z]+", scanned))
 
 
+def _rosetta_proper_words() -> dict[str, list[tuple[str, int]]]:
+    found: dict[str, list[tuple[str, int]]] = {}
+    for path in sorted(ROSETTA.glob("*.md")):
+        relative = path.relative_to(ROOT).as_posix()
+        for number, line in enumerate(
+            path.read_text(encoding="utf-8").split("\n"), start=1
+        ):
+            for word in _rosetta_words(line):
+                found.setdefault(word, []).append((relative, number))
+    return found
+
+
 def _unadmitted_rosetta_words(material: str) -> set[str]:
     return _rosetta_words(material) - _rosetta_admission()
 
@@ -146,18 +158,28 @@ def test_rosetta_missing_implementation_reference_is_detected():
         raise AssertionError("a missing Rosetta implementation reference escaped")
 
 
-def test_rosetta_prose_has_lexical_admission():
-    violations = {
-        path.relative_to(ROOT).as_posix(): _unadmitted_rosetta_words(
-            path.read_text(encoding="utf-8")
-        )
-        for path in sorted(ROSETTA.glob("*.md"))
+def test_rosetta_proper_is_within_rosetta_admission():
+    unadmitted = {
+        word: places
+        for word, places in _rosetta_proper_words().items()
+        if word not in _rosetta_admission()
     }
-    violations = {path: words for path, words in violations.items() if words}
+    report = "\n".join(
+        f"  {word} -- {places[0][0]}:{places[0][1]}"
+        + (f" and {len(places) - 1} more" if len(places) > 1 else "")
+        for word, places in sorted(unadmitted.items())
+    )
+    assert not unadmitted, (
+        "\nRosetta proper carries words absent from Rosetta admission:\n"
+        + report
+    )
 
-    assert violations == {}, "\n" + "\n".join(
-        f"{path}: {', '.join(sorted(words))}"
-        for path, words in violations.items()
+
+def test_rosetta_admission_carries_no_unused_words():
+    unused = sorted(_rosetta_admission() - set(_rosetta_proper_words()))
+    assert not unused, (
+        "\nRosetta admission carries words absent from Rosetta proper: "
+        + ", ".join(unused)
     )
 
 
@@ -184,7 +206,8 @@ FIDELITY_SUBJECTS = {
         test_rosetta_admission_does_not_establish_a_clause,
     ),
     "separate_admission_material_words_admission": (
-        test_rosetta_prose_has_lexical_admission,
+        test_rosetta_proper_is_within_rosetta_admission,
+        test_rosetta_admission_carries_no_unused_words,
         test_rosetta_admission_detects_an_unadmitted_word_without_naming_it,
     ),
 }
