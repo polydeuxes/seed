@@ -1,28 +1,44 @@
-# Ingest-result / this-Seed Locality Evidence investigation 001
+# 01.Source.D Locality first-subject investigation 001
+
+## Amendment boundary
+
+The earlier title and filename compressed `exact material` and `exact Ingest
+result` into one slash-subject. This amendment removes that compression. It
+does not select either coordinate as the first subject of the unresolved
+Locality relation.
 
 ## Question
 
-Does the active repository already record and recover the exact Locality
-relation required before `01.Source.D` says this Seed bears one declared
-Measurement Responsibility over exact material?
+What is the exact first subject of the Locality relation required before
+`01.Source.D` says this Seed bears one declared Measurement Responsibility
+over exact material?
 
 The exact pressure is:
 
 ```text
-exact Ingest material/result
-+ exact Locality Evidence relating that material to this Seed
+exact Ingest result I
+--carries--> exact material M
+
+I != M
+
+exact first subject X
++ exact Locality Evidence relating X to this Seed
 + one Seed-native declared Measurement
 ↓
 this Seed bears the Measurement Responsibility
 ```
 
+Whether `X` is `M`, `I`, or another exact bounded subject is unresolved. The
+active prose names exact material. Current Witness Grammar and runtime
+occurrences do not recover the exact first-subject coordinate of that relation.
+
 This investigation does not ask whether an Ingest event and a Measurement
 event share one runtime locality label. Active `06.Locality.A` refuses that
 substitution.
 
-`Locality Evidence`, `related to this Seed`, and `bears the Measurement
-Responsibility` remain three distinct coordinates. This report establishes no
-identity among them.
+`I carries M`, `Locality Evidence`, `related to this Seed`, and `bears the
+Measurement Responsibility` remain distinct coordinates. This report
+establishes no identity among them.
 
 ## Active material inspected
 
@@ -98,8 +114,10 @@ its result. They are not Locality Evidence by identity.
 Disposition:
 
 ```text
-exact Ingest Act/Yield/result physiology        recorded and replayable
-exact Locality relation to this Seed            not recorded there
+exact Ingest Act/Yield/result physiology          recorded and replayable
+exact material carried by exact Ingest result     recorded and replayable
+first subject of required Locality relation       not recorded there
+exact required Locality relation to this Seed     not recorded there
 ```
 
 ## 2. A runtime locality label is not Locality Evidence
@@ -165,16 +183,19 @@ bounded Locality replay
 The same refusal applies here:
 
 ```text
-bounded Locality replay contains exact Ingest result
-!= exact Ingest-result / this-Seed Locality relation
+bounded Locality replay contains exact Ingest result I
++ I carries exact material M
+!= first subject of the required Locality relation established
+!= exact required Locality relation to this Seed
 ```
 
 Disposition: precise replay testimony, not the missing relation occurrence.
 
 ## 4. Existing concrete Locality roads have different exact subjects
 
-The repository records several exact Locality relation families. None has the
-subject pair required by this investigation.
+The repository records several exact Locality relation families. None
+establishes which exact subject occupies the first position required by this
+investigation.
 
 ### 4.1 Assertion movement
 
@@ -190,8 +211,8 @@ has not undergone that movement by identity.
 Representation and emission record distinct locality-evidence occurrences for
 their exact addressed material, Acts, attempts, results, and destinations.
 
-Those relations do not retroactively become the source Ingest result's
-Locality relation to this Seed.
+Those relations do not retroactively establish `I`, `M`, or another subject as
+the first subject of the Locality relation required by `01.Source.D`.
 
 ### 4.3 Standing Locality continuation
 
@@ -213,14 +234,16 @@ This family establishes a new Locality and one direct relation from the
 operator Locality to it for one exact operator material occurrence beginning an
 invocation.
 
-Its relation does not establish that every supplied or Ingested result in the
-new Locality is related to this Seed by the relation required in `01.Source.D`.
+Its relation does not establish that supplied material, an Ingest result
+carrying that material, or another exact bounded subject is related to this
+Seed by the relation required in `01.Source.D`.
 
 Disposition for all five roads:
 
 ```text
-exact Locality relation physiology exists       yes
-required Ingest-result / this-Seed relation      not supplied by identity
+exact Locality relation physiology exists         yes
+required first subject                             not supplied by identity
+required 01.Source.D Locality relation             not supplied by identity
 ```
 
 ## 5. The family-local source read is therefore below assignment physiology
@@ -293,8 +316,8 @@ second call refuses and appends nothing
 The membership test does not establish:
 
 ```text
-S --locality--> this Seed
-S --subject_of--> Responsibility R
+exact first subject X --locality--> this Seed
+exact assignment subject --subject_of--> Responsibility R
 assignment Evidence
 assignment Standing
 ```
@@ -309,14 +332,16 @@ unestablished.
 
 ## 7. Source Evidence is not assignment Evidence
 
-The composite source read carries:
+The composite Ingest-result read carries:
 
 ```text
 responsible Ingest Act Evidence identity
 Ingest Evidence-of-Yield relation identity
 ```
 
-Those exact references establish the source as an intact Ingest result.
+Those exact references establish `I` as an intact Ingest result carrying `M`.
+They establish neither `I` nor `M` as the first subject of the required
+Locality relation.
 
 They do not establish:
 
@@ -330,7 +355,8 @@ positive assignment Standing
 Putting both coordinate families in one Python return object would not join
 them. The current return object carries only the source family.
 
-Disposition: source Evidence intact; assignment Evidence absent.
+Disposition: exact Ingest Evidence intact; Locality first subject unresolved;
+assignment Evidence absent.
 
 ## 8. Exact current boundary B remains useful and distinct
 
@@ -376,7 +402,8 @@ constitutional edge.
 | Event `locality_identity` | shared runtime label only |
 | `dimensions.scope_locality` | represented scope label only |
 | Ingest responsible Act Evidence | Evidence for Ingest Act occurrence |
-| Ingest Evidence of Yield | relation from Ingest occurrence to its result |
+| Ingest Evidence of Yield | relation from Ingest occurrence to result `I` |
+| `I` carries exact material `M` | exact carried-material relation, not the required Locality relation |
 | presence in bounded Locality replay | validated co-presence through B |
 | Assertion movement Locality | exact different subject family |
 | Representation/emission Locality | exact different subject family |
@@ -386,7 +413,8 @@ constitutional edge.
 | family-local Python function identity | host orientation only |
 | membership in unassigned-source projection | runtime refusal boundary only |
 
-No inspected coordinate supplies the required relation.
+No inspected coordinate establishes the required first subject or supplies the
+required relation.
 
 ## 10. Current exact topology
 
@@ -395,7 +423,9 @@ exact Ingest Act occurrence
 ↓
 Evidence of Yield
 ↓
-exact Ingest result
+exact Ingest result I
+↓ carries
+exact material M
 ↓
 bounded Locality replay through B
 ↓
@@ -403,12 +433,13 @@ exact unassigned-source read
 
 ────────────────────────────────────────
 
-exact Locality relation to this Seed       unestablished
-Locality-relation occurrence               unestablished
-Locality Evidence                          unestablished
-exact assignment-subject relation          unestablished
-assignment Evidence                        unestablished
-positive assignment Standing               unestablished
+first subject of required Locality relation   unresolved
+exact Locality relation to this Seed          unestablished
+Locality-relation occurrence                  unestablished
+Locality Evidence                             unestablished
+exact assignment-subject relation             unestablished
+assignment Evidence                           unestablished
+positive assignment Standing                  unestablished
 ```
 
 The runtime can still record and replay the later assignment lifecycle. That
@@ -420,9 +451,14 @@ are recovered.
 The next investigation belongs before assignment Standing:
 
 ```text
-What exact Responsibility and Act occurrence, if any,
-establish the Locality relation between
-one exact Ingest material/result and this Seed?
+What is the exact first subject of the Locality relation
+required by 01.Source.D?
+
+Is it the exact material M,
+the Ingest result I carrying M,
+or another exact bounded subject?
+
+Current Standing: unresolved.
 ```
 
 The answer is not supplied by choosing an existing Locality family whose
@@ -437,18 +473,20 @@ whether another exact Responsibility owns it, remains unresolved.
 ## Disposition
 
 ```text
-exact Ingest source physiology                         recorded/replayable
+exact Ingest occurrence/result physiology              recorded/replayable
+exact result `I` carries exact material `M`             recorded/replayable
 exact frozen read through B                            recorded/replayable
 family-local unassigned-source projection              implemented testimony
 duplicate/malformed source refusal                     implemented testimony
 
 event locality label = Locality relation               refused
 bounded replay = positive Standing                     refused
-source Evidence = assignment Evidence                  refused
-source membership = assignment-subject relation        refused
+Ingest Evidence = Locality or assignment Evidence      refused
+result-reference membership = assignment-subject relation refused
 existing different Locality road reused by identity    refused
 
-required Ingest-result / this-Seed Locality relation    unestablished
+first subject of required Locality relation             unresolved
+required 01.Source.D Locality relation                  unestablished
 relation occurrence / Evidence                         unestablished
 assignment-subject relation                            unestablished
 positive assignment Standing                           unestablished
