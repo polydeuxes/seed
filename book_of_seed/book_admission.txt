@@ -328,7 +328,6 @@ revised
 revision
 role
 roles
-root
 route
 rule
 same

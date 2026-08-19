@@ -7,7 +7,7 @@ The boundary between preserving Events or recorded output and later participatio
 Which bounded Responsibility takes up recorded material, and what Standing, if any, does its responsible occurrence establish?
 
 ## Bounded resolution
-A recording boundary creates an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing only within its Scope and exact recording occurrence. A later exact Act resolves that record reference, validates the coordinates it needs, and makes the same preserved Assertion available at its Locality only through its own exact input boundary. Those steps establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording carry separate exact Act or occurrence references.
+A recording boundary creates an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing only within its Scope and exact recording occurrence. A later exact Act resolves that record reference, validates the coordinates it needs, and makes the same preserved Assertion available at its Locality only through its own exact input boundary. Those steps establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material establish no preservation by this Seed. Measurement, a Standing-bearing occurrence, emission, and recording carry separate exact Act or occurrence references.
 
 
 ## Boundaries for recorded-revision witnesses
@@ -16,7 +16,7 @@ A recording boundary creates an exact representation of Events carrying source c
 A recording occurrence establishes that a retrievable record exists and preserves an Assertion carrying source coordinates only within its declared Scope. A later exact Act considers that Assertion only through its own Applicability occurrence. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
 
 ### 05.Recording.C — Preservation and discard of measurements
-Seed preserves no measurement merely by existence. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording preserves an Assertion carrying source coordinates or already established Standing only through its exact preservation occurrence. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
+No measurement is preserved by this Seed merely by existence. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording preserves an Assertion carrying source coordinates or already established Standing only through its exact preservation occurrence. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
 
 ### 05.Recording.D — Exact Standing boundary reference
 Within one current Locality Standing and one intact addressed Representation, active Book assigns this Seed a Responsibility bounded to recording that Representation and its exact Standing boundary as one durable bounded reference in the same Locality. The assignment preserves its own subject, the exact recording Act and occurrence, result identity, source Locality, addressed Representation occurrence, exact Standing boundary, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
@@ -41,9 +41,9 @@ The recorded result carries exact assignment, recording-Act, Act-occurrence, Yie
 - comparison occurrence != recorded comparison
 - non-rebuildable != preservation-required
 - act occurrence status != measurement
-- operator material != Seed preservation
-- operator omission != authority for Seed to forget
-- Seed preservation != obligation to make every sample available beyond its boundary
+- operator material != preservation by this Seed
+- operator omission != authority for this Seed to forget
+- preservation by this Seed != obligation to make every sample available beyond its boundary
 - act occurrence != recording occurrence
 - record exists != recorded Assertion Standing established by identity
 - record exists != recorded standing lawfully established

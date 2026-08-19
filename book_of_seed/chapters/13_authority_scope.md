@@ -1,7 +1,7 @@
 # Authority Scope
 
 ## Constitutional subject
-The binding, Scope, and non-transferability of authority across Seed's boundaries.
+The binding, Scope, and non-transferability of authority across this Seed's boundaries.
 
 ## Core distinction
 What establishes Authority for a bounded result or Act, and what preserves its exact Scope in transit?
@@ -22,7 +22,7 @@ Support for a subject's Participation in an exact Act by an established support 
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
-Analysis by Seed of source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown requires bounded repository authority. Without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop, that competence != jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication.
+Analysis by this Seed of source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown requires bounded repository authority. Without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop, that competence != jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication.
 
 ## Important distinctions
 - operator request != unbounded authority

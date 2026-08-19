@@ -1,6 +1,6 @@
-# Book of Seed
+# This Book
 
-The Book of Seed preserves the durable constitutional grammar needed to read Seed. It names bounded concepts and keeps important non-equivalences visible.
+This Book preserves the durable constitutional grammar needed to read this Seed. It names bounded concepts and keeps important non-equivalences visible.
 
 It is not a roadmap, witness reference, generated topology, or substitute for repository inspection. Existing witnesses and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
 
@@ -8,7 +8,7 @@ It is not a roadmap, witness reference, generated topology, or substitute for re
 
 - A **Chapter** has one bounded subject: a concept, Responsibility, distinction, or relation.
 - `[UNRESOLVED]` carries a distinction for which the current repository safely supports no constitutional resolution.
-- Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
+- this Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
 
@@ -17,7 +17,7 @@ same clause coordinates. Neither Representation is the Book by identity.
 
 ## Standing
 
-Standing is the Book's root. Current Standing whose subject is the Assertion that the exact responsible boundary bears an exact Responsibility is required for Seed to read that Responsibility assignment. Standing cannot create or perform the Responsibility by identity. Standing != Responsibility.
+Current Standing whose subject is the Assertion that the exact responsible boundary bears an exact Responsibility is required for this Seed to read that Responsibility assignment. Standing cannot create or perform the Responsibility by identity. Standing != Responsibility.
 
 ```text
 Standing
@@ -242,7 +242,7 @@ same occurrence != same Assertion
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> This Seed, inspect, and this Witness retain their exact positions. What inspect establishes: Unknown. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
+> this Seed, inspect, and this Witness retain their exact positions. What inspect establishes: Unknown. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
 
 Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new Representation of the same grammar do not require revision.
 

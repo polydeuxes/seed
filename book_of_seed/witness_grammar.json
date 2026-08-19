@@ -1,6 +1,6 @@
 {
   "book_material_reference": "this_Book",
-  "root_references": [
+  "source_references": [
     {
       "reference": "this_Witness",
       "coordinate": "witness"
@@ -284,7 +284,6 @@
     }
   },
   "standing": {
-    "root": "Standing",
     "path": [
       "Standing",
       "Responsibility",
@@ -1004,8 +1003,8 @@
           "subject": "separate_admission_material_book_reference",
           "material_reference": "this_separate_admission_material"
         },
-        {"subject": "witness_root_reference"},
-        {"subject": "witness_root_reference_order"},
+        {"subject": "witness_source_reference"},
+        {"subject": "witness_source_reference_order"},
         {"subject": "witness_grammar_represents_book"},
         {"subject": "witness_grammar_completeness"},
         {"subject": "clause_grammar_recorded_occurrence_kind_distinction"},
@@ -1076,6 +1075,7 @@
       },
       "responsibility": {
         "kind": "Measurement_result_boundary",
+        "responsible_boundary": "this_Seed",
         "coordinates": [
           "responsibility",
           "responsible_boundary",

@@ -60,7 +60,6 @@ def test_witness_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert grammar["standing"] == {
-        "root": "Standing",
         "path": [
             "Standing",
             "Responsibility",
@@ -506,7 +505,13 @@ def test_witness_discriminates_content_locality_and_occurrence():
 def test_source_measurement_declarations_require_one_current_standing_pin():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     source = grammar["clause_coordinates"]["01.Source.D"]
+    seed_subject = next(
+        reference["reference"]
+        for reference in grammar["source_references"]
+        if reference["coordinate"] == "seed_subject"
+    )
 
+    assert source["responsibility"]["responsible_boundary"] == seed_subject
     assert source["standing_emission_declarations"] == [
         {
             "order": 0,
@@ -621,16 +626,16 @@ def test_witness_relations_name_one_book_clause():
     _assert_relation_clauses(grammar, _active_book())
 
 
-def test_this_occurs_only_as_exact_witness_roots():
+def test_this_occurs_only_as_exact_witness_sources():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    roots = {
+    sources = {
         coordinates["reference"]: coordinates
-        for coordinates in grammar["root_references"]
+        for coordinates in grammar["source_references"]
     }
     assert all(
         set(coordinates) == {"reference", "coordinate"}
         and coordinates["coordinate"]
-        for coordinates in roots.values()
+        for coordinates in sources.values()
     )
 
     unresolved = []
@@ -645,12 +650,12 @@ def test_this_occurs_only_as_exact_witness_roots():
         elif (
             isinstance(value, str)
             and value.startswith("this_")
-            and value not in roots
+            and value not in sources
         ):
             if not (
                 isinstance(parent, dict)
                 and value in {parent.get("identity"), parent.get("subject")}
-                and parent.get("first_subject") in roots
+                and parent.get("first_subject") in sources
                 and parent.get("relation")
                 and parent.get("second_subject")
             ):
@@ -690,10 +695,10 @@ def test_witness_clauses_address_their_exact_book_material():
     ) == tuple((identity, identity) for identity in grammar["clause_coordinates"])
 
 
-def test_witness_root_references_remain_distinct_and_in_declared_order():
+def test_witness_source_references_remain_distinct_and_in_declared_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["root_references"] == [
+    assert grammar["source_references"] == [
         {
             "reference": "this_Witness",
             "coordinate": "witness",
@@ -1179,9 +1184,11 @@ FIDELITY_SUBJECTS = {
     "content_locality_occurrence_distinction": (
         test_witness_discriminates_content_locality_and_occurrence,
     ),
-    "witness_root_reference": (test_this_occurs_only_as_exact_witness_roots,),
-    "witness_root_reference_order": (
-        test_witness_root_references_remain_distinct_and_in_declared_order,
+    "witness_source_reference": (
+        test_this_occurs_only_as_exact_witness_sources,
+    ),
+    "witness_source_reference_order": (
+        test_witness_source_references_remain_distinct_and_in_declared_order,
     ),
     "witness_grammar_represents_book": (
         test_witness_grammar_represents_the_book_from_its_exact_reference,

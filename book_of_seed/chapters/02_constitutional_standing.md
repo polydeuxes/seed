@@ -11,7 +11,7 @@ Where a preserved representation or record carries an Assertion made by another 
 
 Preserved material establishes no support relation to an Assertion it carries. Standing carried by this Seed requires the exact support relation from its Evidence, Authority, Scope, and preserved limits to the Assertion.
 
-Current Standing whose subject is the exact Assertion that its responsible boundary bears a Responsibility is required for Seed to read that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing whose subject is an assignment cannot create, perform, or become the Responsibility.
+Current Standing whose subject is the exact Assertion that its responsible boundary bears a Responsibility is required for this Seed to read that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing whose subject is an assignment cannot create, perform, or become the Responsibility.
 
 
 ## Preserved material
@@ -71,7 +71,7 @@ One bounded responsible occurrence determines Applicability for inputs, excludes
 Result Standing requires its exact subject, Standing responsible boundary, Standing occurrence, Standing-occurrence Evidence, and Standing. The result Act responsible boundary establishes no Standing responsible boundary by identity. The result Act occurrence establishes no Standing occurrence by identity. Evidence and Authority supporting the result establish no result Standing by identity. Yield, result existence, and Locality availability establish no result Standing by identity. Lawfully supported Standing persists without later participation, but persistence supplies neither another Act, Responsibility, result boundary, nor occurrence. Applicability supplies neither a result, another Assertion, nor Authority.
 
 ### 01.Standing.F — Dimensional characterization
-Seed commonly orients exact constitutional subjects and relations through approximately eight recurring macro-dimensional families:
+Exact orientation by this Seed commonly carries constitutional subjects and relations through approximately eight recurring macro-dimensional families:
 
 1. subject / identity
 2. assertion / content

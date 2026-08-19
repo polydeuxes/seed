@@ -2,7 +2,7 @@
 
 ## Constitutional subject
 
-The locality of exact content and the boundary between supplied material and Seed Standing.
+The locality of exact content and the boundary between supplied material and Standing carried by this Seed.
 
 ## Bounded resolution
 
@@ -36,7 +36,7 @@ A declared byte Measurement counts each exact byte occurrence in the exact Inges
 
 Determining Applicability to one declared shared position Measurement requires current Standing in one Locality carrying exact recorded position Assertions. Participation of exact pair occurrence Assertions requires one exact source occurrence, Locality, and completeness boundary. The second position-coordinate reference of the first Assertion and the first position-coordinate reference of the second Assertion establish one ordered relation path only with both references of one exact byte occurrence. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, the exact shared position-coordinate reference, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no other relation, material of the input pair occurrences, or represented relation.
 
-Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment establishes no occurrence, recording of the Measurement occurrence, or transfer of the resulting Assertion's Standing-coordinate Responsibility.
+Where this Seed performs a Seed-native declared Measurement over exact material related to this Seed by exact Locality Evidence, this Seed bears the Measurement Responsibility. The assignment establishes no occurrence, recording of the Measurement occurrence, or transfer of the resulting Assertion's Standing-coordinate Responsibility.
 
 Recording one declared Responsibility assignment in declared order requires one exact current Standing boundary, that Responsibility already assigned to this Seed, current Standing carrying the exact subject and every required coordinate, and no exact assignment or result recorded for that subject. Subject presence establishes no assignment, Applicability, or Act. After each recorded occurrence, current Standing must carry that occurrence before recording another declared Responsibility assignment.
 
@@ -82,7 +82,7 @@ When the boundary supplies no material, this Seed establishes no material result
 
 ## Important distinctions
 
-- supplied material != Seed representation
+- supplied material != representation by this Seed
 - preserved source coordinates != applicable input
 - material != Evidence
 - carried relation Assertion != established relation
