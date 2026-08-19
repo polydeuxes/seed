@@ -2282,3 +2282,48 @@ def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
             "shared-position result carries no exact path and input coordinates"
         )
     return deepcopy(assertions[0]), deepcopy(first), deepcopy(second)
+
+
+def ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
+    ledger: EventLedger, event_identity: str
+) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
+    """Read three exact source-position coordinates beside one path Assertion.
+
+    The positions retain the order of the two exact input roles. Returning the
+    positions beside the path establishes no position or material carried by
+    the path.
+    """
+
+    path, first, second = (
+        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+            ledger, event_identity
+        )
+    )
+    first_position = first.get("first_position_coordinate_reference")
+    first_shared = first.get("second_position_coordinate_reference")
+    second_shared = second.get("first_position_coordinate_reference")
+    last_position = second.get("second_position_coordinate_reference")
+    path_shared = path.get("dimensions", {}).get("content", {}).get(
+        "shared_position_coordinate_reference"
+    )
+    if (
+        any(
+            type(coordinate) is not dict
+            for coordinate in (
+                first_position,
+                first_shared,
+                second_shared,
+                last_position,
+                path_shared,
+            )
+        )
+        or first_shared != second_shared
+        or path_shared != first_shared
+    ):
+        raise SharedPairPositionError(
+            "shared-position result carries no exact ordered source positions"
+        )
+    return deepcopy(path), tuple(
+        deepcopy(coordinate)
+        for coordinate in (first_position, first_shared, last_position)
+    )

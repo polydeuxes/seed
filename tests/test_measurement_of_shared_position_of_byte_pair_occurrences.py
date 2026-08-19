@@ -53,6 +53,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     get_shared_position_measurement_act_evidence,
     get_recorded_shared_position_measurement,
     ordered_relation_path_assertion_beside_input_position_assertion_coordinates,
+    ordered_source_position_coordinates_beside_ordered_relation_path_assertion,
     record_shared_position_applicability_act_evidence,
     record_shared_position_applicability_result,
     record_shared_position_measurement_act_evidence,
@@ -488,6 +489,70 @@ def test_ordered_path_and_input_position_assertion_coordinates_replay_after_rest
     try:
         assert (
             ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+                reopened, result_identity
+            )
+            == expected
+        )
+    finally:
+        reopened.close()
+
+
+def test_ordered_source_positions_remain_beside_the_path_assertion():
+    ledger, locality, _source, first, second = _fixture()
+    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    boundary_before_read = ledger.append_boundary()
+
+    path, positions = (
+        ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
+            ledger, result.identity
+        )
+    )
+
+    assert positions == (
+        _position_coordinate_reference(first, "first"),
+        _position_coordinate_reference(first, "second"),
+        _position_coordinate_reference(second, "second"),
+    )
+    assert tuple(coordinate["position"] for coordinate in positions) == (
+        first.first_position,
+        first.second_position,
+        second.second_position,
+    )
+    assert tuple(coordinate["exact_material"] for coordinate in positions) == (
+        list(first.exact_pair[:1]),
+        list(first.exact_pair[1:]),
+        list(second.exact_pair[1:]),
+    )
+    assert "ordered_source_position_coordinates" not in path
+    assert set(path["dimensions"]["content"]) == {
+        "shared_position_coordinate_reference",
+        "source_ingest_occurrence_identity",
+        "completeness_boundary_identity",
+    }
+    assert ledger.append_boundary() == boundary_before_read
+
+
+def test_ordered_source_positions_beside_path_replay_after_restart(tmp_path):
+    database = tmp_path / "shared-position-ordered-source-positions.sqlite"
+    ledger = SQLiteEventLedger(str(database))
+    ledger, locality, _source, first, second = _fixture(ledger=ledger)
+    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    result_identity = result.identity
+    expected = (
+        ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
+            ledger, result_identity
+        )
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    try:
+        assert (
+            ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
                 reopened, result_identity
             )
             == expected
@@ -1742,4 +1807,6 @@ FIDELITY_SUBJECTS = {
 WITNESS_MATERIAL_TESTS = (
     test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
     test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart,
+    test_ordered_source_positions_remain_beside_the_path_assertion,
+    test_ordered_source_positions_beside_path_replay_after_restart,
 )
