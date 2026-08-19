@@ -701,6 +701,53 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
     assert ledger.append_boundary() == boundary_after
 
 
+def test_complete_compare_lifecycle_advances_each_carried_read(monkeypatch):
+    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
+    ledger, _second_source, _second_added, _second_comparison, _second_path = (
+        _inputs(ledger=ledger)
+    )
+    import seed_runtime.operator_locality_standing as standing_module
+
+    read = standing_module.read_operator_locality_standing
+    reads = 0
+
+    def counted_read(*args, **kwargs):
+        nonlocal reads
+        reads += 1
+        return read(*args, **kwargs)
+
+    monkeypatch.setattr(
+        standing_module, "read_operator_locality_standing", counted_read
+    )
+
+    assignments = record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    applicability = record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    acts = record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    results = record_ordered_path_pair_finding_compare_results_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+
+    assert reads == 4
+    assert assignments.locality_standing["through_event_occurrence_identity"] == (
+        assignments.assignment_occurrences[-1].identity
+    )
+    assert applicability.locality_standing["through_event_occurrence_identity"] == (
+        applicability.applicability_result_occurrences[-1].identity
+    )
+    assert acts.locality_standing["through_event_occurrence_identity"] == (
+        acts.compare_act_evidence_occurrences[-1].identity
+    )
+    assert results.locality_standing == read(
+        ledger, locality_identity=LOCALITY
+    )
+
+
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
@@ -1116,7 +1163,7 @@ def test_corrupted_higher_compare_yield_is_refused():
         )
 
 
-def test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache(
+def test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained_read(
     monkeypatch,
 ):
     ledger, _earlier_source, _added, comparison, path = _inputs()
@@ -1255,7 +1302,7 @@ FIDELITY_SUBJECTS = {
         test_higher_input_preserves_the_validated_comparison_assignment,
         test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
         test_corrupted_higher_compare_yield_is_refused,
-        test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache,
+        test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained_read,
     ),
     "declared_measurement_result": (
         test_ordered_path_and_recorded_findings_survive_sqlite_restart,

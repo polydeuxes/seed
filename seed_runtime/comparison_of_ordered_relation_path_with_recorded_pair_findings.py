@@ -116,6 +116,27 @@ def _identity(value: Any, message: str) -> str:
     return value
 
 
+def _advance_carried_locality_standing(
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    event_identities: tuple[str, ...],
+    *,
+    locality_identity: str,
+) -> dict[str, Any]:
+    """Advance the exact read over occurrences this family just recorded."""
+
+    from seed_runtime.operator_locality_standing import (
+        advance_operator_locality_standing,
+    )
+
+    return advance_operator_locality_standing(
+        ledger,
+        event_identities,
+        locality_identity=locality_identity,
+        prior=standing,
+    )
+
+
 def _event(
     ledger: EventLedger,
     identity: Any,
@@ -328,27 +349,12 @@ def _inputs(
     }
 
 
-def unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
-    ledger: EventLedger, *, locality_identity: str
+def _unassigned_ordered_path_pair_finding_compare_subjects_from_standing(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    standing: dict[str, Any],
 ) -> tuple[OrderedPathPairFindingCompareAssignmentSubject, ...]:
-    """Read every unassigned exact 04.Compare.B subject in current Standing.
-
-    The read records no assignment, Applicability, Participation, Compare, or
-    result occurrence.
-    """
-
-    if not isinstance(ledger, EventLedger):
-        raise TypeError("ordered-path Compare subjects require one EventLedger")
-    if type(locality_identity) is not str or not locality_identity:
-        raise ValueError("ordered-path Compare subjects require one exact Locality")
-
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
-    )
-
-    standing = read_operator_locality_standing(
-        ledger, locality_identity=locality_identity
-    )
     measurement_occurrences = standing.get("measurement_occurrences")
     comparison_occurrences = standing.get("comparison_result_occurrences")
     if (
@@ -412,6 +418,33 @@ def unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
     return tuple(subjects)
 
 
+def unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> tuple[OrderedPathPairFindingCompareAssignmentSubject, ...]:
+    """Read every unassigned exact 04.Compare.B subject in current Standing.
+
+    The read records no assignment, Applicability, Participation, Compare, or
+    result occurrence.
+    """
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("ordered-path Compare subjects require one EventLedger")
+    if type(locality_identity) is not str or not locality_identity:
+        raise ValueError("ordered-path Compare subjects require one exact Locality")
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    return _unassigned_ordered_path_pair_finding_compare_subjects_from_standing(
+        ledger,
+        locality_identity=locality_identity,
+        standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+
+
 def record_ordered_path_pair_finding_compare_assignments_from_current_standing(
     ledger: EventLedger, *, locality_identity: str
 ) -> RecordedOrderedPathPairFindingCompareAssignments:
@@ -421,34 +454,35 @@ def record_ordered_path_pair_finding_compare_assignments_from_current_standing(
         read_operator_locality_standing,
     )
 
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    subjects = _unassigned_ordered_path_pair_finding_compare_subjects_from_standing(
+        ledger,
+        locality_identity=locality_identity,
+        standing=standing,
+    )
     assignments: list[Event] = []
-    while True:
-        subjects = (
-            unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
-                ledger, locality_identity=locality_identity
-            )
+    for subject in subjects:
+        assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+            ledger,
+            path_result_event_identity=subject.path_result_event_identity,
+            comparison_result_event_identity=(
+                subject.comparison_result_event_identity
+            ),
+            locality_standing=standing,
         )
-        if not subjects:
-            return RecordedOrderedPathPairFindingCompareAssignments(
-                locality_standing=read_operator_locality_standing(
-                    ledger, locality_identity=locality_identity
-                ),
-                assignment_occurrences=tuple(assignments),
-            )
-        subject = subjects[0]
-        standing = read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
+        assignments.append(assignment)
+        standing = _advance_carried_locality_standing(
+            ledger,
+            standing,
+            (assignment.identity,),
+            locality_identity=locality_identity,
         )
-        assignments.append(
-            record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
-                ledger,
-                path_result_event_identity=subject.path_result_event_identity,
-                comparison_result_event_identity=(
-                    subject.comparison_result_event_identity
-                ),
-                locality_standing=standing,
-            )
-        )
+    return RecordedOrderedPathPairFindingCompareAssignments(
+        locality_standing=standing,
+        assignment_occurrences=tuple(assignments),
+    )
 
 
 def record_ordered_path_pair_finding_compare_applicability_from_current_standing(
@@ -514,26 +548,36 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             continue
         act = acts_by_assignment.get(assignment.identity)
         if act is None:
-            standing = read_operator_locality_standing(
-                ledger, locality_identity=locality_identity
-            )
             act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
                 ledger,
                 responsibility_assignment_event_identity=assignment.identity,
                 locality_standing=standing,
             )
             acts_by_assignment[assignment.identity] = act
+            standing = _advance_carried_locality_standing(
+                ledger,
+                standing,
+                (act.identity,),
+                locality_identity=locality_identity,
+            )
         result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
             ledger,
             responsible_act_evidence_event_identity=act.identity,
         )
         results_by_assignment[assignment.identity] = result
         recorded.append(result)
+        standing = _advance_carried_locality_standing(
+            ledger,
+            standing,
+            (
+                result.material["evidence_of_yield_relation_identity"],
+                result.identity,
+            ),
+            locality_identity=locality_identity,
+        )
 
     return RecordedOrderedPathPairFindingCompareApplicability(
-        locality_standing=read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
-        ),
+        locality_standing=standing,
         applicability_result_occurrences=tuple(recorded),
     )
 
@@ -592,9 +636,6 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
             continue
         if applicability.identity in acts_by_applicability:
             continue
-        standing = read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
-        )
         act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
@@ -603,11 +644,15 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
         )
         acts_by_applicability[applicability.identity] = act
         recorded.append(act)
+        standing = _advance_carried_locality_standing(
+            ledger,
+            standing,
+            (act.identity,),
+            locality_identity=locality_identity,
+        )
 
     return RecordedOrderedPathPairFindingCompareActEvidence(
-        locality_standing=read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
-        ),
+        locality_standing=standing,
         compare_act_evidence_occurrences=tuple(recorded),
     )
 
@@ -663,8 +708,14 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
         )
         results_by_act[act.identity] = result
         recorded.append(result)
-        standing = read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
+        standing = _advance_carried_locality_standing(
+            ledger,
+            standing,
+            (
+                result.material["evidence_of_yield_relation_identity"],
+                result.identity,
+            ),
+            locality_identity=locality_identity,
         )
 
     return RecordedOrderedPathPairFindingCompareResults(
