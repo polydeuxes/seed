@@ -339,6 +339,69 @@ def test_declared_book_word_source_and_relation_coordinates_resolve():
                 }
             ]
         },
+        "represents": {
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": ["witness_grammar"],
+                    "relation_coordinate_reference": [
+                        "witness_grammar",
+                        "represented_relation",
+                    ],
+                }
+            ]
+        },
+        "carries": {
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Source.D",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Source.D",
+                        "result_carries",
+                    ],
+                },
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Standing.E.1",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Standing.E.1",
+                        "Assertion_coordinates",
+                    ],
+                },
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "04.Compare.B",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "04.Compare.B",
+                        "comparison_rule",
+                    ],
+                },
+            ]
+        },
+        "supports": {
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "06.Locality.D",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "06.Locality.D",
+                        "authority",
+                    ],
+                }
+            ]
+        },
     }
     _assert_word_coordinates_resolve(grammar)
 
