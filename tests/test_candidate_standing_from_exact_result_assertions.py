@@ -582,7 +582,7 @@ def test_every_ordered_pair_candidate_exposes_only_explicit_source_coordinates()
         ledger,
         candidate_standing_result_event_identity=result.identity,
     )
-    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+    with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
         grammar = json.load(source)
     expected_coordinates = grammar["clause_coordinates"][BOOK_CLAUSE][
         "source_Assertion_coordinates"
@@ -621,7 +621,7 @@ def test_every_ordered_pair_candidate_exposes_its_unresolved_represented_relatio
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+    with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
         grammar = json.load(source)
 
     assert tuple(reading[0] for reading in readings) == tuple(
@@ -781,7 +781,7 @@ def test_represented_relation_coordinate_reader_refuses_filled_relation_material
 def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinates():
     import json
 
-    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+    with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
         responsibility = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
             "ordered_pair_candidate_responsibility"
         ]
@@ -978,10 +978,10 @@ def test_complete_candidate_standing_replays_after_sqlite_restart(
     )
 
 
-def test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility():
+def test_witness_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility():
     import json
 
-    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+    with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
         clause = json.load(source)["clause_coordinates"][BOOK_CLAUSE]
 
     assert clause["source_Assertion_coordinates"] == {
@@ -1027,10 +1027,10 @@ def test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_so
     }
 
 
-def test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility():
+def test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility():
     import json
 
-    with open("book_of_seed/grammar.json", encoding="utf-8") as source:
+    with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
         coordinate = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
             "ordered_pair_candidate_responsibility"
         ]
@@ -1078,10 +1078,10 @@ FIDELITY_SUBJECTS = {
         test_complete_candidate_standing_replays_after_sqlite_restart,
     ),
     "one_source_candidate_standing_responsibility_coordinates": (
-        test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
+        test_witness_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
     ),
     "ordered_pair_candidate_standing_responsibility_coordinates": (
-        test_machine_grammar_names_the_exact_ordered_pair_candidate_responsibility,
+        test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility,
     ),
     "ordered_pair_candidate_represented_relation_coordinate": (
         test_every_ordered_pair_candidate_exposes_its_unresolved_represented_relation_coordinate,

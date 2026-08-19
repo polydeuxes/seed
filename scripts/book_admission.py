@@ -48,6 +48,8 @@ def book_admission() -> set[str]:
 def witness_grammar_words() -> set[str]:
     return {
         word
-        for line in (BOOK / "grammar.json").read_text(encoding="utf-8").split("\n")
+        for line in (BOOK / "witness_grammar.json")
+        .read_text(encoding="utf-8")
+        .split("\n")
         for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
     }

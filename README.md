@@ -20,7 +20,7 @@ Evidence. Neither silently substitutes for the other.
 ## Repository layout
 
 - `book_of_seed/chapters/` — active Book chapters.
-- `book_of_seed/grammar.json` — machine-readable grammar coordinates checked by
+- `book_of_seed/witness_grammar.json` — Witness Grammar coordinates checked by
   tests.
 - `rosetta/` — translation and vocabulary retirement records.
 - `seed_runtime/` — live Python runtime.

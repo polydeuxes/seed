@@ -36,11 +36,15 @@ def test_book_proper_scope_excludes_rosetta():
     files = {path.relative_to(ROOT).as_posix() for path in book_proper_files()}
     assert any(path.startswith("book_of_seed/chapters/") for path in files)
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
-    assert "book_of_seed/grammar.json" not in files
+    assert "book_of_seed/witness_grammar.json" not in files
+    assert (BOOK / "witness_grammar.json").is_file()
+    assert not (BOOK / "grammar.json").exists()
 
 
 def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
-    grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
+    grammar = json.loads(
+        (BOOK / "witness_grammar.json").read_text(encoding="utf-8")
+    )
     declared_references = {
         (reference["reference"], reference["coordinate"])
         for reference in grammar["root_references"]
@@ -85,6 +89,14 @@ def test_book_has_its_own_admission_and_points_to_rosetta():
         in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
     )
     assert set(_admission_entries(BOOK_ADMISSION)) < set(
+        _admission_entries(ROSETTA_ADMISSION)
+    )
+    assert not {
+        word
+        for word in book_admission()
+        if word.startswith("implement") or word.startswith("machine")
+    }
+    assert {"implementation", "machine"} <= set(
         _admission_entries(ROSETTA_ADMISSION)
     )
 
@@ -193,7 +205,9 @@ def test_book_admission_carries_no_unused_words():
 
 def test_witness_grammar_words_in_book_admission():
     assert witness_grammar_words() <= book_admission()
-    grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
+    grammar = json.loads(
+        (BOOK / "witness_grammar.json").read_text(encoding="utf-8")
+    )
 
     def contains_host_boolean(value: object) -> bool:
         if type(value) is bool:

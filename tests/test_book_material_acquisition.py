@@ -105,7 +105,9 @@ FIDELITY_SUBJECT = THIS_BOOK_MATERIAL_ACQUISITION_WITNESS
 
 def test_book_material_acquisition_witness_has_one_admitted_subject():
     grammar = json.loads(
-        (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
+        (ROOT / "book_of_seed" / "witness_grammar.json").read_text(
+            encoding="utf-8"
+        )
     )
     subject_words = set(
         re.findall(

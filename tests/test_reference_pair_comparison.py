@@ -71,9 +71,10 @@ def test_one_repeated_reference_relation_is_collected_once(tmp_path):
         ("source_reference", events[0].identity)
     ]
     grammar = json.loads(
-        (Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json").read_text(
-            encoding="utf-8"
-        )
+        (
+            Path(__file__).resolve().parents[1]
+            / "book_of_seed/witness_grammar.json"
+        ).read_text(encoding="utf-8")
     )
     assert grammar["clause_coordinates"]["01.Source.D.1"][
         "repeated_reference_to_one_occurrence"

@@ -281,7 +281,7 @@ Responsibility. Its presence in `06.Locality.B` does not flow into
 
 ### Witness grammar
 
-`grammar.json` gives `03.Movement.A` an Authority coordinate and maps movement
+`witness_grammar.json` gives `03.Movement.A` an Authority coordinate and maps movement
 event kinds to that clause. That witnesses the required shape. It cannot
 instantiate the Authority value or make the Book assign the Responsibility.
 

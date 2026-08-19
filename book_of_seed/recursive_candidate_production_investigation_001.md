@@ -6,7 +6,7 @@ Investigation only.
 
 This report amends the conclusion of
 `complete_bounded_assertion_formation_investigation_001.md`. It changes no
-active Book material, machine grammar, Rosetta material, runtime, admission,
+active Book material, Witness Grammar, Rosetta material, runtime, admission,
 or test.
 
 The operator and curator supplied a recurring orientation:
@@ -52,7 +52,7 @@ This investigation used:
 
 - active Book clauses `01.Source.E`, `01.Standing.E`, `01.Standing.E.1`, and
   the active Representation emission road;
-- current machine grammar only as a represented witness;
+- current Witness Grammar only as a represented witness;
 - `scripts/material_admission.py` and its tests as implementation testimony;
 - the history that introduced complete material Admission and ordered
   Admission-result comparison;

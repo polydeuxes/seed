@@ -568,7 +568,9 @@ def pytest_sessionstart(session: object) -> None:
 
 def _fidelity_test_subjects() -> dict[str, dict[str, object]]:
     grammar = json.loads(
-        (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
+        (ROOT / "book_of_seed" / "witness_grammar.json").read_text(
+            encoding="utf-8"
+        )
     )
     fidelity = grammar["clause_coordinates"]["01.Source.C"]
     relation = fidelity["test_subject_relation"]

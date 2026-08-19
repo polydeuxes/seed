@@ -4,7 +4,7 @@
 
 Investigation only.
 
-This report changes no active Book material, machine grammar, Rosetta
+This report changes no active Book material, Witness Grammar, Rosetta
 material, runtime, admission, or test.
 
 Amended after review: the first version correctly separated the producing
@@ -48,7 +48,7 @@ This investigation used:
 - active clauses `01.Source.A`, `01.Source.E.1`, `02.Acts.A`, and
   `05.Source.A`;
 - the active representation material in chapter 14;
-- current machine grammar only as a represented witness;
+- current Witness Grammar only as a represented witness;
 - `operator_representation.py`,
   `candidate_standing_from_exact_result_assertions.py`, and Locality Standing
   replay as implementation testimony;
@@ -56,7 +56,7 @@ This investigation used:
 - an elimination test over their exact Acts, source boundaries, results, and
   preserved coordinates.
 
-Book material, machine grammar, runtime, tests, and history are independent
+Book material, Witness Grammar, runtime, tests, and history are independent
 testimony. Agreement among them does not make two Act families one Act.
 
 ## 1. C is a boundary, not a Representation

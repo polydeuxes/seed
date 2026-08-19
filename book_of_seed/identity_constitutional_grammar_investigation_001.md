@@ -6,7 +6,7 @@ runtime, Rosetta entry, admission list, or test.
 ## Independence and scope
 
 This investigation was performed at repository tip `2dfa3bb7`. Active Book
-material supplies constitutional warrant. Machine grammar, runtime, tests, and
+material supplies constitutional warrant. Witness Grammar, runtime, tests, and
 history are examined independently as Fidelity or chronology testimony; none
 supplies Authority to another.
 
@@ -257,7 +257,7 @@ Unknown, not supplied by Identity.**
 ### Location and current claim
 
 `02.Acts.A` says Yield preserves exact Act-occurrence identity and result
-identity. Machine grammar and tests require those exact names.
+identity. Witness Grammar and tests require those exact names.
 
 ### Actual distinction
 
@@ -342,7 +342,7 @@ meaning nor equality.
 
 ### Location and current claim
 
-Each `grammar.json.root_references` entry now has:
+Each `witness_grammar.json.root_references` entry now has:
 
 ```text
 this --identifies--> Witness / Grammar / Book / Seed / ...
@@ -402,7 +402,7 @@ co-presence, or grammar shape.
 
 ## 11. Tests that seal the current conflation
 
-The following tests preserve current machine grammar exactly:
+The following tests preserve current Witness Grammar exactly:
 
 - `tests/test_book_grammar.py::test_witness_yield_relation_preserves_occurrence_and_result_identity`;
 - `test_this_occurs_only_as_exact_witness_roots`;

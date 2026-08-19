@@ -31,7 +31,7 @@ from scripts.book_admission import (
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "seed_runtime"
-GRAMMAR = ROOT / "book_of_seed" / "grammar.json"
+GRAMMAR = ROOT / "book_of_seed" / "witness_grammar.json"
 
 
 def _runtime_trees():

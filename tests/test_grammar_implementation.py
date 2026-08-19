@@ -211,7 +211,7 @@ def _record_byte_measurement(
     )
 
 
-GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
+GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/witness_grammar.json"
 RUNTIME = Path(__file__).resolve().parents[1] / "seed_runtime"
 
 EXACT = "exact"
@@ -6605,7 +6605,8 @@ def test_no_new_site_compounds_scope_with_locality():
 #
 # A dedicated Evidence event species is not what establishes a relation: Evidence
 # may be the event occurrence itself, a responsible Act evidence occurrence,
-# or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
+# or a dedicated one. witness_grammar.json requires exact_relation,
+# occurrence_witness,
 # and intact_evidence, and names no species for them.
 RELATION_EVIDENCE = {
     "_locality_requirements": (
@@ -6702,7 +6703,7 @@ def test_every_live_relation_witness_names_its_relation_and_its_evidence():
 
 
 def test_each_relation_has_a_live_witness():
-    """Each relation grammar.json declares has a live witness."""
+    """Each relation Witness Grammar declares has a live witness."""
 
     relations = json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     witnessed = {relation for relation, _ in RELATION_EVIDENCE.values()}

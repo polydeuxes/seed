@@ -4,11 +4,11 @@
 
 Investigation only.
 
-This report changes no active Book material, machine grammar, Rosetta
+This report changes no active Book material, Witness Grammar, Rosetta
 material, runtime, admission, or test.
 
 Amended after review: `Representation Standing` is explanatory shorthand in
-this report, not an exact named active-Book or machine-grammar coordinate. The
+this report, not an exact named active-Book or Witness Grammar coordinate. The
 first version correctly required an exact supported Assertion, but then
 prematurely supplied its relation as `this result is a Representation`. The
 word `is` does not recover that relation. The exact relation position itself
@@ -56,13 +56,13 @@ This investigation used:
 - active `01.Source.A`, `01.Standing.A-C`, `02.Acts.A`, `05.Source.A`, and the
   recording and Representation chapters;
 - active Evidence, Authority, Scope, and source-coordinate boundaries;
-- current machine grammar only as a represented witness;
+- current Witness Grammar only as a represented witness;
 - current Locality Standing readers and exact result readers as implementation
   testimony;
 - chronology of the current Representation and Candidate roads;
 - vacancy, elimination, and cross-family tests.
 
-Book material, machine grammar, runtime, tests, history, and this report are
+Book material, Witness Grammar, runtime, tests, history, and this report are
 independent testimony. No one obtains Authority over another through
 agreement.
 
@@ -235,7 +235,7 @@ also respond with a Representation carrying material and an unmet-requirement
 Assertion.
 
 These uses preserve the separation between exact producer and represented
-result. They do not share one exact machine-readable result rule with the
+result. They do not share one exact Witness Grammar result rule with the
 operator Representation road.
 
 Disposition: **active uses recover several family-local Representation
@@ -257,7 +257,7 @@ version named the bounded claim as:
 Representation Standing of this exact result
 ```
 
-That phrase is useful orientation, but active Book and machine grammar do not
+That phrase is useful orientation, but active Book and Witness Grammar do not
 name `Representation Standing` as one exact coordinate. It compresses at
 least:
 
