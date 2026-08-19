@@ -298,6 +298,47 @@ def test_declared_book_word_source_and_relation_coordinates_resolve():
                 }
             ]
         },
+        "bears": {
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Standing.D.2",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Standing.D.2",
+                        "Applicability_considered_with_respect_to",
+                    ],
+                },
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "06.Locality.B",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "06.Locality.B",
+                        "subject",
+                    ],
+                },
+            ]
+        },
+        "comparison": {
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Source.C",
+                    ],
+                    "relation_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Source.C",
+                        "comparison",
+                    ],
+                }
+            ]
+        },
     }
     _assert_word_coordinates_resolve(grammar)
 
