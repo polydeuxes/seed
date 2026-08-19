@@ -1978,6 +1978,56 @@ def ordered_candidate_result_occurrence_beside_represented_relation_coordinates(
     )
 
 
+def ordered_candidate_yield_relation_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read one exact Candidate Yield beside unresolved relation coordinates."""
+
+    result, act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    return (
+        {
+            "grammar_coordinate_reference": ["relations", "yield"],
+            "first_subject": {
+                "coordinate": "Act_occurrence_identity",
+                "material": act.material["act_occurrence_identity"],
+            },
+            "relation": "Yield",
+            "second_subject": {
+                "coordinate": "result_identity",
+                "material": result.material["result_identity"],
+            },
+            "evidence_occurrence_reference": {
+                "recorded_occurrence_identity": result.material[
+                    "evidence_of_yield_relation_identity"
+                ],
+            },
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
 def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,
