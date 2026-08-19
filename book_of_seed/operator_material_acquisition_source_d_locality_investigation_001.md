@@ -17,8 +17,8 @@ O2 = one later exact nonempty operator-boundary occurrence
 Those names establish no chronology beyond the exact recorded occurrence
 order, no response relation, no movement, and no Standing by identity.
 
-The first subject of the required Locality relation remains independently
-unresolved:
+Active `01.Source.D` directly names exact material as the first subject of the
+required relation and `this Seed` as the subject to which it is related:
 
 ```text
 operator-material acquisition result I
@@ -26,11 +26,14 @@ operator-material acquisition result I
 
 I != M
 
-required Locality first subject X
-?= I
-?= M
-?= another exact bounded subject
+required relation shape:
+M --locality--> this_Seed
 ```
+
+This direct grammatical reading establishes neither the Locality relation nor
+its occurrence and Evidence. The exact bounded reference by which M occupies
+that first-subject position also remains absent from the current relation
+record, because there is no current relation record.
 
 ## Active material inspected
 
@@ -171,10 +174,9 @@ Unknown
 It does not carry one structured Locality Assertion containing:
 
 ```text
-first exact bounded subject X
+first exact bounded subject = exact material M
 relation = locality
 second exact bounded subject = this_Seed
-participants and roles
 Locality relation occurrence identity
 Locality Evidence identity
 ```
@@ -195,11 +197,11 @@ runtime locality label L
 != Locality relation
 
 I carries M
-!= I or M occupies the first Locality-subject role
+!= Locality relation occurrence or Evidence for M and this_Seed
 ```
 
-Whether the O1 record is the intended carrier remains unresolved. The required
-relation is not currently recorded there.
+Whether the O1 record carries the relation occurrence remains unresolved. The
+required relation is not currently recorded there.
 
 ## 5. The bare `Locality` coordinate in `01.Source.G` does not complete it
 
@@ -209,11 +211,15 @@ lists `Locality` among that Responsibility's coordinates.
 The coordinate list does not independently name:
 
 ```text
-Locality first subject
-Locality second subject
-participants and roles
 relation occurrence
 Locality Evidence
+```
+
+Active `01.Source.D`, read directly, supplies the relation subjects:
+
+```text
+first subject  = exact material M
+second subject = this_Seed
 ```
 
 Active `06.Locality.A` explicitly refuses subject identity, co-presence,
@@ -245,7 +251,7 @@ addressed Representation occurrence reference
 ```
 
 It does not retain the Representation's Locality Evidence as the Locality
-Evidence of `I`, `M`, or another first subject to this Seed.
+Evidence of material M to this Seed.
 
 Even if that evidence reference were copied, the subjects of the
 Representation Locality relation would remain distinct. Reference availability
@@ -307,8 +313,8 @@ does not make arbitrary ledger mutation a constitutional occurrence.
 | acquisition assignment subject | exact acquisition-assignment subject, not required Locality first subject by identity |
 | acquisition Act occurrence | exact Act occurrence, not relation occurrence by identity |
 | acquisition Act Evidence | exact Act Evidence, not Locality Evidence by identity |
-| result `I` | exact result carrying material, first Locality role unresolved |
-| material `M` | exact carried material, first Locality role unresolved |
+| result `I` | exact result carrying material, not the first subject named by `01.Source.D` |
+| material `M` | exact carried material and directly named first Locality subject; relation occurrence and Evidence absent |
 | runtime locality identity | exact replay address, not relation |
 | current bounded Locality replay reference | exact source boundary reference, not relation |
 | addressed Representation Locality Evidence | exact different relation family |
@@ -325,8 +331,9 @@ O1 responsible boundary = this Seed                         recorded/replayable
 separate Locality event required by identity                not established
 each additional relation carried by O1                      separately established coordinates required
 
-required Locality first subject X                           unresolved
-X --locality--> this_Seed                                   unestablished
+required first subject = exact material M                  direct Book reading
+required second subject = this_Seed                        direct Book reading
+M --locality--> this_Seed                                  unestablished
 Locality relation occurrence                                unestablished
 Locality Evidence                                           unestablished
 ```
@@ -334,9 +341,9 @@ Locality Evidence                                           unestablished
 ## Next bounded question
 
 Do the active history and exact `01.Source.G` Responsibility establish that O1
-was intended to carry the missing Locality relation? If so, recover its exact
-first subject, second-subject role, relation occurrence, Evidence, Authority,
-Scope, limits, and Unknown inside that same bounded road.
+carries the missing Locality relation occurrence? Recover its exact material
+subject reference, relation occurrence, Evidence, Authority, Scope, limits,
+and Unknown inside that same bounded road.
 
 Do not add a second Locality lifecycle merely because the current O1 record is
 missing those coordinates. Do not add fields to O1 until the exact relation

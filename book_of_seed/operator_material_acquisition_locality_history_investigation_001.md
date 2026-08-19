@@ -121,9 +121,8 @@ different event locality and required exact Yield physiology.
 It did not record:
 
 ```text
-Locality first subject
-Locality second subject
-participants and roles
+exact bounded material reference in the Locality first-subject position
+this_Seed in the Locality second-subject position
 Locality relation occurrence
 Locality Evidence
 ```
@@ -133,7 +132,7 @@ Consequently:
 ```text
 all acquisition occurrences addressed through L
 !=
-X --locality--> this_Seed
+M --locality--> this_Seed
 ```
 
 The implementation preserved a bounded address surface. It did not represent
@@ -207,7 +206,33 @@ Locality subjects or Evidence.
 This limits the current historical witness to repository state and commit
 history. Absence from the retained capture establishes no author intention.
 
-## 7. Historical disposition
+## 7. History does not erase the direct active reading
+
+History does not identify the subjects carried by the bare `Locality`
+coordinate. Active `01.Source.D` now states the subject relation directly:
+
+```text
+exact material M
+--locality-->
+this_Seed
+```
+
+This is the grammatical relation shape under investigation, not a relation
+inferred from event adjacency. The direct reading settles the subject
+positions for curation. It does not create the relation occurrence, Evidence,
+or Standing in runtime.
+
+The acquisition result `I` remains distinct:
+
+```text
+I --carries--> M
+
+I != M
+```
+
+The Book names M, not I, as the first Locality subject.
+
+## 8. Historical disposition
 
 ```text
 01.Source.G and O1 introduced together                    established
@@ -216,9 +241,10 @@ complete 06.Locality.A skeleton already available         established
 O1 runtime locality address and occurrence order          recorded/replayable
 O1 exact acquisition Act / Yield / result                  recorded/replayable
 
+first subject = exact material M                           direct Book reading
+second subject = this_Seed                                 direct Book reading
 01.Source.G Locality instantiated as 06.Locality.A         not established
-exact first Locality subject                               unresolved
-exact second-subject role of this_Seed                     unestablished
+exact bounded M reference carried by that relation         unestablished
 Locality relation occurrence                               unestablished
 Locality Evidence                                          unestablished
 historical author intention for the bare coordinate        not established
@@ -243,8 +269,8 @@ BUT:
 Use the existing `06.Locality.A` skeleton. Do not create another relation
 grammar or another acquisition lifecycle.
 
-Determine the exact first subject required by the active `01.Source.D`
-position without identifying material `M`, acquisition result `I`, or another
-bounded subject by convenience. Then ask whether O1 already carries the exact
-occurrence and Evidence for that relation. Until those coordinates are
-established, the bare historical `Locality` member remains undecomposed.
+The active Book names exact material M as the first subject and `this Seed` as
+the second subject. Determine whether O1 carries the exact bounded reference
+for M, the Locality relation occurrence, and its Evidence. Until those
+coordinates are established, the bare historical `Locality` member remains
+undecomposed.
