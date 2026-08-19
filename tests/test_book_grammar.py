@@ -230,19 +230,23 @@ def _resolve_grammar_coordinate(grammar, reference):
 
 def _assert_word_coordinates_resolve(grammar):
     for word, coordinates in grammar["words"].items():
-        assert set(coordinates) == {
-            "grammar_coordinate_references",
-            "relation_coordinate_references",
-        }
+        assert set(coordinates) == {"coordinates"}
         assert word in _book_admission_words()
-        for coordinate_population in coordinates.values():
-            assert type(coordinate_population) is list
-            assert coordinate_population
-            assert len({tuple(reference) for reference in coordinate_population}) == len(
-                coordinate_population
-            )
-            for reference in coordinate_population:
+        exact_coordinates = coordinates["coordinates"]
+        assert type(exact_coordinates) is list
+        assert exact_coordinates
+        coordinate_pairs = []
+        for exact_coordinate in exact_coordinates:
+            assert set(exact_coordinate) == {
+                "grammar_coordinate_reference",
+                "relation_coordinate_reference",
+            }
+            coordinate_pair = []
+            for reference in exact_coordinate.values():
                 assert _resolve_grammar_coordinate(grammar, reference)
+                coordinate_pair.append(tuple(reference))
+            coordinate_pairs.append(tuple(coordinate_pair))
+        assert len(set(coordinate_pairs)) == len(coordinate_pairs)
 
 
 def test_declared_book_word_source_and_relation_coordinates_resolve():
@@ -250,28 +254,49 @@ def test_declared_book_word_source_and_relation_coordinates_resolve():
 
     assert grammar["words"] == {
         "of": {
-            "grammar_coordinate_references": [["composite"]],
-            "relation_coordinate_references": [
-                ["composite", "relations", "of"]
-            ],
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": ["composite"],
+                    "relation_coordinate_reference": [
+                        "composite",
+                        "relations",
+                        "of",
+                    ],
+                }
+            ]
         },
         "participation": {
-            "grammar_coordinate_references": [
-                ["clause_coordinates", "01.Standing.E.1"]
-            ],
-            "relation_coordinate_references": [["relations", "participation"]],
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "01.Standing.E.1",
+                    ],
+                    "relation_coordinate_reference": ["relations", "participation"],
+                }
+            ]
         },
         "yield": {
-            "grammar_coordinate_references": [
-                ["clause_coordinates", "02.Acts.A"]
-            ],
-            "relation_coordinate_references": [["relations", "yield"]],
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "02.Acts.A",
+                    ],
+                    "relation_coordinate_reference": ["relations", "yield"],
+                }
+            ]
         },
         "locality": {
-            "grammar_coordinate_references": [
-                ["clause_coordinates", "06.Locality.A"]
-            ],
-            "relation_coordinate_references": [["relations", "locality"]],
+            "coordinates": [
+                {
+                    "grammar_coordinate_reference": [
+                        "clause_coordinates",
+                        "06.Locality.A",
+                    ],
+                    "relation_coordinate_reference": ["relations", "locality"],
+                }
+            ]
         },
     }
     _assert_word_coordinates_resolve(grammar)
@@ -280,11 +305,13 @@ def test_declared_book_word_source_and_relation_coordinates_resolve():
 def test_book_word_coordinate_siren_refuses_a_missing_source_or_relation():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     for coordinate in (
-        "grammar_coordinate_references",
-        "relation_coordinate_references",
+        "grammar_coordinate_reference",
+        "relation_coordinate_reference",
     ):
         changed = json.loads(json.dumps(grammar))
-        changed["words"]["of"][coordinate] = [["missing_coordinate"]]
+        changed["words"]["of"]["coordinates"][0][coordinate] = [
+            "missing_coordinate"
+        ]
         try:
             _assert_word_coordinates_resolve(changed)
         except AssertionError:
