@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/witness_grammar.json"
 CHAPTERS = ROOT / "book_of_seed/chapters"
 BOOK_README = ROOT / "book_of_seed/README.md"
+BOOK_ADMISSION = ROOT / "book_of_seed/book_admission.txt"
 
 
 def _active_book() -> str:
@@ -203,6 +204,102 @@ def test_book_responsibility_and_witness_grammar_share_exact_coordinates():
         for _, coordinate in group_coordinates
     ]
     assert len(coordinates) == len(set(coordinates))
+
+
+def _book_admission_words():
+    words = []
+    for line in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines():
+        material = line.strip()
+        if not material or material.startswith("#"):
+            continue
+        assert " " not in material
+        words.append(material)
+    assert len(words) == len(set(words))
+    return tuple(words)
+
+
+def _resolve_grammar_coordinate(grammar, reference):
+    coordinate = grammar
+    for exact_key in reference:
+        assert type(exact_key) is str
+        assert type(coordinate) is dict
+        assert exact_key in coordinate
+        coordinate = coordinate[exact_key]
+    return coordinate
+
+
+def _assert_word_coordinates_resolve(grammar):
+    for word, coordinates in grammar["words"].items():
+        assert set(coordinates) == {
+            "grammar_coordinate_reference",
+            "relation_coordinate_reference",
+        }
+        assert word in _book_admission_words()
+        assert _resolve_grammar_coordinate(
+            grammar, coordinates["grammar_coordinate_reference"]
+        )
+        assert _resolve_grammar_coordinate(
+            grammar, coordinates["relation_coordinate_reference"]
+        )
+
+
+def test_declared_book_word_source_and_relation_coordinates_resolve():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["words"] == {
+        "of": {
+            "grammar_coordinate_reference": ["composite"],
+            "relation_coordinate_reference": ["composite", "relations", "of"],
+        },
+        "participation": {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                "01.Standing.E.1",
+            ],
+            "relation_coordinate_reference": ["relations", "participation"],
+        },
+        "yield": {
+            "grammar_coordinate_reference": ["clause_coordinates", "02.Acts.A"],
+            "relation_coordinate_reference": ["relations", "yield"],
+        },
+        "locality": {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                "06.Locality.A",
+            ],
+            "relation_coordinate_reference": ["relations", "locality"],
+        },
+    }
+    _assert_word_coordinates_resolve(grammar)
+
+
+def test_book_word_coordinate_siren_refuses_a_missing_source_or_relation():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    for coordinate in (
+        "grammar_coordinate_reference",
+        "relation_coordinate_reference",
+    ):
+        changed = json.loads(json.dumps(grammar))
+        changed["words"]["of"][coordinate] = ["missing_coordinate"]
+        try:
+            _assert_word_coordinates_resolve(changed)
+        except AssertionError:
+            continue
+        raise AssertionError(f"missing {coordinate} escaped")
+
+
+def test_every_admitted_book_word_has_explicit_source_and_relation_coordinates():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    admitted = set(_book_admission_words())
+    declared = set(grammar["words"])
+
+    unexpected = sorted(declared - admitted)
+    missing = sorted(admitted - declared)
+    assert unexpected == []
+    assert missing == [], (
+        "\nBook words without explicit Witness Grammar source and relation "
+        "coordinates:\n  " + "\n  ".join(missing)
+    )
 
 
 def test_witness_discriminates_content_locality_and_occurrence():
@@ -860,6 +957,11 @@ FIDELITY_SUBJECTS = {
     ),
     "book_responsibility_witness_grammar_coordinate_distinction": (
         test_book_responsibility_and_witness_grammar_share_exact_coordinates,
+    ),
+    "book_words_source_relation_coordinates": (
+        test_declared_book_word_source_and_relation_coordinates_resolve,
+        test_book_word_coordinate_siren_refuses_a_missing_source_or_relation,
+        test_every_admitted_book_word_has_explicit_source_and_relation_coordinates,
     ),
     "public_export_standing_distinction": (
         test_public_export_standing_not_established_standing,

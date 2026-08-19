@@ -139,6 +139,24 @@
       }
     }
   },
+  "words": {
+    "of": {
+      "grammar_coordinate_reference": ["composite"],
+      "relation_coordinate_reference": ["composite", "relations", "of"]
+    },
+    "participation": {
+      "grammar_coordinate_reference": ["clause_coordinates", "01.Standing.E.1"],
+      "relation_coordinate_reference": ["relations", "participation"]
+    },
+    "yield": {
+      "grammar_coordinate_reference": ["clause_coordinates", "02.Acts.A"],
+      "relation_coordinate_reference": ["relations", "yield"]
+    },
+    "locality": {
+      "grammar_coordinate_reference": ["clause_coordinates", "06.Locality.A"],
+      "relation_coordinate_reference": ["relations", "locality"]
+    }
+  },
   "standing": {
     "root": "Standing",
     "path": [
@@ -519,6 +537,10 @@
         {
           "subject": "book_responsibility_witness_grammar_coordinate_distinction",
           "grammar_coordinate_reference": ["responsibility"]
+        },
+        {
+          "subject": "book_words_source_relation_coordinates",
+          "grammar_coordinate_reference": ["words"]
         },
         {"subject": "public_export_standing_distinction"},
         {"subject": "assertion_support_relation_standing_boundary"},
