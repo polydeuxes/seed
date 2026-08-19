@@ -115,7 +115,7 @@ Book language.
 The exact Witness Grammar at this investigation boundary has SHA-256:
 
 ```text
-a23a00745ff34e8bb3eaba849ec09c8a001aa56428609bc32e12ceeb5e67b06b
+e4ca00f2b0a032a0f6d0785d2f72105c3481ef14abd8af815b1453bbc77bb659
 ```
 
 Structural JSON traversal, without testing a spelling pattern, finds 166 exact
@@ -180,14 +180,19 @@ exact structural agreement
 ```
 
 Commit `2b353491` adds the first explicit `words` surface to Witness Grammar.
-Each declared word requires two independently resolving pointers:
+Commits `a405e812` and `77ce27c6` then expose multiplicity without losing the
+pairing between one grammatical position and its relation position. Each word
+now carries one ordered `coordinates` population. Every member preserves these
+two exact references together:
 
 ```text
 grammar_coordinate_reference
 relation_coordinate_reference
 ```
 
-Only four exact words are currently declared:
+Commit `c85d7f38` records two additional words only where Witness Grammar
+already contains exact positive relation objects. Six exact words are now
+declared in seven coordinate pairs:
 
 | word | grammar coordinate | relation coordinate |
 |---|---|---|
@@ -195,11 +200,29 @@ Only four exact words are currently declared:
 | `participation` | `clause_coordinates → 01.Standing.E.1` | `relations → participation` |
 | `yield` | `clause_coordinates → 02.Acts.A` | `relations → yield` |
 | `locality` | `clause_coordinates → 06.Locality.A` | `relations → locality` |
+| `bears` | `clause_coordinates → 01.Standing.D.2` | `clause_coordinates → 01.Standing.D.2 → Applicability_considered_with_respect_to` |
+| `bears` | `clause_coordinates → 06.Locality.B` | `clause_coordinates → 06.Locality.B → subject` |
+| `comparison` | `clause_coordinates → 01.Source.C` | `clause_coordinates → 01.Source.C → comparison` |
 
-The siren refuses a missing or unresolved pointer. It also compares the exact
-394-word admission surface with the four declared words and currently reports
-390 words without explicit source and relation coordinates. That failure is
-retained. No placeholder pointers were added to quiet it.
+The siren refuses an empty coordinate population, a repeated coordinate pair,
+or a missing or unresolved reference. It also compares the exact 394-word
+admission surface with the six declared words and currently reports 388 words
+without explicit source and relation coordinates. That failure is retained.
+No placeholder references were added to quiet it.
+
+```text
+one word with several exact coordinate pairs
+!= one universal relation for that word
+
+some exact word positions recorded
+!= every occurrence of that word accounted for
+```
+
+The coordinate population preserves what is already explicit. It does not
+claim that the current population is exhaustive for a word. In particular,
+the third `bears` occurrence inside the `01.Source.C` test-subject sequence is
+not silently represented by either of the two independently addressable
+`bears` coordinate pairs.
 
 ## Complete Responsibility interrogation of Surface A
 
@@ -304,7 +327,7 @@ word survivors above.
 occurrences in Surface B. That mismatch itself proves that a relation family
 cannot be enumerated from local relation strings.
 
-The three synced families survive only at their exact responsible occurrences.
+The synced families survive only at their exact responsible occurrences.
 Their names do not establish another occurrence with the same relation.
 
 #### 2. Exact local relation physiology
