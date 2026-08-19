@@ -11,6 +11,9 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
+from seed_runtime.candidate_standing_from_exact_result_assertions import (
+    source_assertion_references_for_candidate_standing,
+)
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     OrderedPathPairFindingCompareAssignmentSubject,
@@ -804,6 +807,70 @@ def test_every_current_compare_result_exposes_every_exact_finding_reference_bran
     assert ledger.append_boundary() == boundary
 
 
+def test_every_current_compare_result_and_finding_enter_later_candidate_source_read():
+    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
+    ledger, _second_source, _second_added, _second_comparison, _second_path = (
+        _inputs(ledger=ledger)
+    )
+    record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    results = record_ordered_path_pair_finding_compare_results_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    ).compare_result_occurrences
+    boundary = ledger.append_boundary()
+
+    references = source_assertion_references_for_candidate_standing(
+        ledger, source_append_boundary=boundary
+    )
+    result_identities = {result.identity for result in results}
+    comparison_references = tuple(
+        reference
+        for reference in references
+        if reference["recorded_result_occurrence_identity"] in result_identities
+    )
+
+    assert len(results) == 2
+    assert tuple(
+        (
+            reference["recorded_result_occurrence_identity"],
+            reference["assertion_coordinate"],
+        )
+        for reference in comparison_references
+    ) == tuple(
+        (result.identity, coordinate)
+        for result in results
+        for coordinate in ("result", "finding")
+    )
+    assert tuple(
+        reference["assertion_identity"] for reference in comparison_references
+    ) == tuple(
+        identity
+        for result in results
+        for identity in (
+            result.material["result_identity"],
+            result.material["finding"]["identity"],
+        )
+    )
+    assert all(
+        reference["source_standing_coordinate"]
+        == "comparison_result_occurrences"
+        for reference in comparison_references
+    )
+    assert all(
+        reference["source_standing_through_event_occurrence_identity"]
+        == results[-1].identity
+        for reference in comparison_references
+    )
+    assert ledger.append_boundary() == boundary
+
+
 def test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence():
     ledger, _earlier_source, _added, _comparison, _path = _inputs()
     boundary = ledger.append_boundary()
@@ -1084,6 +1151,7 @@ FIDELITY_SUBJECTS = {
         test_every_current_compare_act_records_one_separate_yield_and_result,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
+        test_every_current_compare_result_and_finding_enter_later_candidate_source_read,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
