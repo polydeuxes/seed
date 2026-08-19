@@ -78,7 +78,7 @@ Profiling located repeated bounded Locality reconstruction:
 ```
 
 The pressure did not come from material acquisition. It came from a completed
-family lifecycle repeatedly asking for current Standing from the beginning
+Compare lifecycle repeatedly asking for current Standing from the beginning
 after recording an exact occurrence whose identity it already held.
 
 ## Existing lawful integration
@@ -87,22 +87,22 @@ after recording an exact occurrence whose identity it already held.
 
 ```text
 one exact prior bounded Locality read
-+ exact identities recorded by one family
++ exact identities recorded by one Responsibility
 ↓
 one later bounded Locality read
 ```
 
-It does not infer an omitted occurrence. The responsible family supplies the
+It does not infer an omitted occurrence. The exact Compare road supplies the
 exact identities it just recorded, and the ordinary replay refusals validate
 those occurrences against the carried input.
 
 The operator console already uses this road. The higher ordered-path Compare
-family did not.
+Responsibility did not.
 
-## Integrated family lifecycle
+## Integrated Compare lifecycle
 
 The higher Compare lifecycle now performs one complete current read at the
-entry to each public family stage:
+entry to each public Compare stage:
 
 ```text
 Responsibility assignments
@@ -209,8 +209,8 @@ the next exact question.
 JSON as operator-material decoder                         refused description
 JSON as current durable occurrence representation         observed
 one reconstruction after restart                          currently required
-reconstruction after every known serial family occurrence not required
-family-local exact read advancement                        integrated
+reconstruction after every known serial Compare occurrence not required
+exact read advancement inside Compare Responsibility       integrated
 new Standing or relation from advancement                  none
 remaining restart reconstruction pressure                  open
 ```

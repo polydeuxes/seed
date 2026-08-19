@@ -65,7 +65,7 @@ is `bears`:
 The external word-coordinate map records only the latter two exact homes. It
 deliberately leaves the `01.Source.C` test-subject occurrence unhomed.
 
-Witness Grammar's root relation families are:
+Witness Grammar's root relation coordinates are:
 
 ```text
 participation
@@ -74,7 +74,7 @@ carried_by
 locality
 ```
 
-There is no root `bears` relation family. Runtime event material records no
+There is no root `bears` relation coordinate. Runtime event material records no
 `bears` relation occurrence. No exact universal responsible boundary, Act,
 occurrence, Evidence, Authority, Scope, result, or Standing exists for Bear.
 
@@ -82,7 +82,7 @@ Therefore:
 
 ```text
 admitted spelling
-!= constitutional relation family
+!= constitutional relation grammar
 
 three local relation-shaped objects
 != one universal relation
@@ -110,7 +110,7 @@ one exact local bears assignment
 ```
 
 That campaign established external addressability only. It did not establish
-Bear as a relation family and did not classify the active prose occurrences.
+Bear as shared relation grammar and did not classify the active prose occurrences.
 
 Thus the repository formally admitted the spelling and recorded two homes,
 but never completed its decomposition.
@@ -121,11 +121,11 @@ Several active occurrences use `bears` where the exact surrounding grammar is
 already Responsibility assignment.
 
 `Assignment` here is not promoted as one universal kind or relation. The exact
-subject in this investigation is a family-local **Responsibility assignment**.
+subject in this investigation is one bounded **Responsibility assignment**.
 Active grammar already distinguishes it from the Responsibility, exact Act,
 Act occurrence, result, and Standing, and requires its own bounded coordinates
-and occurrence. Another assignment family does not acquire this physiology by
-shared spelling.
+and occurrence. Another Responsibility assignment does not acquire these
+coordinates by shared spelling.
 
 ### Book root
 
@@ -456,7 +456,7 @@ carry its own complete physiology and cannot inherit the word's prior uses.
 ```text
 `bears` lexical admission                         present
 `bearing` active lexical admission                absent
-universal Bear relation family                    absent
+universal Bear relation grammar                   absent
 universal Bear Responsibility / Act / occurrence absent
 
 Responsibility-assignment uses                    decompress to assignment

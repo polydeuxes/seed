@@ -123,7 +123,7 @@ def _advance_carried_locality_standing(
     *,
     locality_identity: str,
 ) -> dict[str, Any]:
-    """Advance the exact read over occurrences this family just recorded."""
+    """Advance the exact read over occurrences this Compare Responsibility recorded."""
 
     from seed_runtime.operator_locality_standing import (
         advance_operator_locality_standing,

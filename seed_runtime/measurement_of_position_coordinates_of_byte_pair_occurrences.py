@@ -81,10 +81,10 @@ class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
 
 
 class UnassignedPositionCoordinateMeasurementAcquisitionReading(NamedTuple):
-    """Exact material acquisition coordinates read before this family's assignment record.
+    """Exact material acquisition coordinates read before this Measurement assignment.
 
-    This family-local runtime projection preserves exact source coordinates
-    beside the absence of this family's assignment or result through B.  It
+    This bounded runtime read preserves exact source coordinates beside the
+    absence of this Measurement Responsibility's assignment or result through B. It
     establishes no Locality relation, required assignment subject or
     coordinates, Responsibility assignment, Applicability, Act, or Standing.
     """
@@ -304,7 +304,7 @@ def read_unassigned_position_coordinate_measurement_acquisition_results_through(
     locality_identity: str,
     through_event_occurrence_identity: str,
 ) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
-    """Read exact unassigned material acquisition results for this family through B.
+    """Read exact unassigned material acquisition results for this Measurement through B.
 
     The non-recording projection establishes neither an exact Locality
     relation nor that any returned source is a subject of this Measurement's

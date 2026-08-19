@@ -57,7 +57,7 @@ exact material result O2
 ```
 
 There is no earlier Witness material-acquisition Responsibility-assignment
-occurrence in this family.
+occurrence in this exact acquisition road.
 
 The Act Evidence contains a `responsibility` string and names `this Seed` as
 the responsible boundary. Those coordinates represent the asserted
@@ -121,7 +121,7 @@ for this assignment.
 
 The active Book root requires current Standing whose subject is the exact
 Responsibility assignment before this Seed reads that Responsibility. The
-current Witness family has no such prior occurrence.
+current Witness acquisition road has no such prior occurrence.
 
 ## 3. Invocation Locality does not fill the assignment
 
@@ -206,7 +206,7 @@ relation_occurrence_identity
 locality_evidence_identity
 ```
 
-The operator O1 family demonstrates that one acquisition result occurrence
+The operator O1 road demonstrates that one acquisition result occurrence
 can also carry that exact Locality relation when its complete responsible
 physiology warrants it. That implementation cannot be copied here because
 the upstream Witness acquisition assignment remains absent.
@@ -228,7 +228,7 @@ occurrence that makes it this Seed's relation is still missing.
 
 ## 5. The current Measurement crossing
 
-The position-coordinate family-local source reader is exact about its present
+The position-coordinate Measurement source reader is exact about its present
 boundary. It reads yielded acquisition results from bounded Locality replay
 and explicitly establishes no:
 
@@ -242,7 +242,7 @@ Standing
 ```
 
 The public assignment recorder then checks that the requested occurrence is a
-member of this family-local result population. Its own comment preserves that
+member of this bounded result population. Its own comment preserves that
 membership establishes neither the missing Locality relation nor the subject
 and coordinates required for the assignment. After that check, it records the
 `01.Source.D` Responsibility assignment.
