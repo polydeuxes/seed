@@ -505,7 +505,7 @@ def test_changed_result_coordinates_are_refused(coordinate):
 
 
 @pytest.mark.parametrize(
-    ("coordinate", "changed"),
+    ("coordinate", "changed", "expected_requirements"),
     (
         (
             "first_subject",
@@ -513,13 +513,46 @@ def test_changed_result_coordinates_are_refused(coordinate):
                 "recorded_occurrence_identity": "another occurrence",
                 "coordinate": "exact_material",
             },
+            {
+                "exact_relation": False,
+                "occurrence_witness": True,
+                "intact_evidence": True,
+            },
         ),
-        ("relation", "another relation"),
-        ("second_subject", "another bounded subject"),
-        ("relation_occurrence_identity", "another occurrence"),
+        (
+            "relation",
+            "another relation",
+            {
+                "exact_relation": False,
+                "occurrence_witness": True,
+                "intact_evidence": True,
+            },
+        ),
+        (
+            "second_subject",
+            "another bounded subject",
+            {
+                "exact_relation": False,
+                "occurrence_witness": True,
+                "intact_evidence": True,
+            },
+        ),
+        (
+            "relation_occurrence_identity",
+            "another occurrence",
+            {
+                "exact_relation": True,
+                "occurrence_witness": False,
+                "intact_evidence": True,
+            },
+        ),
     ),
 )
-def test_locality_relation_refuses_each_changed_coordinate(coordinate, changed):
+def test_locality_relation_refuses_each_changed_coordinate(
+    coordinate,
+    changed,
+    expected_requirements,
+):
     ledger = EventLedger()
     standing, representation = _context(ledger)
     act = _act(ledger, _assignment(ledger, standing, representation))
@@ -535,7 +568,7 @@ def test_locality_relation_refuses_each_changed_coordinate(coordinate, changed):
         recorded_result_event_identity=result.identity,
     )
 
-    assert not all(requirements.values())
+    assert requirements == expected_requirements
     with pytest.raises(OperatorMaterialAcquireError):
         get_recorded_operator_material_acquire(ledger, result.identity)
 
@@ -557,7 +590,7 @@ def test_locality_relation_refuses_a_different_or_corrupted_evidence_occurrence(
         ledger,
         recorded_result_event_identity=result.identity,
     ) == {
-        "exact_relation": False,
+        "exact_relation": True,
         "occurrence_witness": True,
         "intact_evidence": False,
     }

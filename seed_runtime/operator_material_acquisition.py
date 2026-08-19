@@ -760,7 +760,6 @@ def read_operator_material_acquire_locality_relation_requirements(
             and relation.get("first_subject") == exact_material_subject
             and relation.get("relation") == "locality"
             and relation.get("second_subject") == "this Seed"
-            and evidence_is_result_occurrence
             and type(result.exact_material) is bytes
             and bool(result.exact_material)
         ),
