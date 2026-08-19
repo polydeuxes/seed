@@ -2,9 +2,9 @@
 
 ## Question
 
-The current recursive road establishes exact results, findings, Candidates,
-source lineage, Applicability, Participation, Acts, Yield Evidence, and bounded
-Locality replay. It then reaches the Book root again:
+The current recursive road records and exactly replays results, findings,
+Candidates, source lineage, Applicability, Participation, Acts, Yield Evidence,
+and bounded Locality accumulators. It then reaches the Book root again:
 
 ```text
 Standing
@@ -183,9 +183,9 @@ the assignment Assertion.
 The corrected disposition is:
 
 ```text
-exact family-local Responsibility assignment occurrence      established
-assignment occurrence available in exact Locality replay     established
-assignment subject and coordinates                            established where recorded
+exact family-local Responsibility assignment occurrence      recorded
+assignment occurrence available in exact Locality replay     replayable
+assignment subject and coordinates                            recorded where present
 
 assignment Standing responsible boundary                     not established generically
 assignment Standing occurrence                               not established generically
@@ -196,9 +196,9 @@ exact assignment Standing                                    not established gen
 This does not invalidate each family-local occurrence. It removes the stronger
 claim that replay availability alone completes its constitutional Standing.
 
-## 4. Current results establish most of the approach to Standing
+## 4. Current runtime records most of the approach to Standing
 
-The active implemented families now establish exact chains such as:
+The active runtime records and exactly replays chains such as:
 
 ```text
 Responsibility assignment occurrence
@@ -214,12 +214,12 @@ Evidence of Yield relation
 exact result Assertion
 ```
 
-Candidate and Compare replay validates those chains against original inputs,
+Candidate and Compare replay validates those records against original inputs,
 frozen boundaries, exact rules, result coordinates, Evidence, Authority,
 Scope, limits, and Unknown.
 
-The result is therefore not arbitrary material. Seed can exactly support these
-narrow claims:
+The result is therefore not arbitrary material. The runtime supplies exact
+testimony for these narrow occurrence descriptions:
 
 ```text
 this exact Act occurrence occurred                         where evidenced
@@ -234,7 +234,7 @@ this exact result is available in this Locality
 through this boundary                                      where replayed
 ```
 
-None of those claims alone is:
+None of those recorded and replayed coordinates alone establishes:
 
 ```text
 this exact result has Standing
@@ -355,7 +355,7 @@ support edge.
 The current Candidate road now takes exact Compare result and finding
 Assertions through both complete Candidate-production Acts.
 
-This establishes:
+The runtime records:
 
 ```text
 source Applicability to Candidate Act
@@ -366,7 +366,7 @@ Candidate source lineage
 represented relation: Unknown
 ```
 
-It does not establish:
+Those records do not establish:
 
 ```text
 source Assertion Standing
@@ -406,8 +406,8 @@ replace the missing support and Standing occurrences.
 
 ## 9. What this Seed can currently say without overstatement
 
-At an exact Locality and ledger boundary, the strongest general form currently
-supported is:
+At an exact Locality and ledger boundary, the strongest general runtime
+testimony is:
 
 ```text
 I can replay these exact intact occurrences through this boundary.
@@ -426,12 +426,12 @@ Standing for the represented result remains unestablished.
 This is poorer than the runtime label `current Standing` suggests, but it is
 not empty. It is exact occurrence and relation testimony with bounded Unknown.
 
-## 10. How this Seed can justify one exact Standing
+## 10. The proposed bridge exposes support-Standing recursion
 
 The smallest lawful target is one exact result Assertion, not the whole ledger
 and not this Seed globally.
 
-For one result `A`, the bridge requires:
+For one result `A`, the proposed bridge requires:
 
 ```text
 1. Resolve A as one exact result or relation Assertion.
@@ -443,20 +443,25 @@ For one result `A`, the bridge requires:
 3. Establish one exact support-relation Assertion S
    from those coordinates to A.
 
-4. Establish the exact Standing responsible boundary for A.
+4. Establish positive Standing for S through its own exact
+   responsible boundary, occurrence, Standing-occurrence Evidence,
+   and support physiology.
 
-5. Record one exact Standing occurrence distinct from
+5. Establish the exact Standing responsible boundary for A.
+
+6. Record one exact Standing occurrence distinct from
    the result Act occurrence unless exact identity is independently established.
 
-6. Record exact Standing-occurrence Evidence.
+7. Record exact Standing-occurrence Evidence.
 
-7. Record the exact Standing of A under those bounds.
+8. Record the exact Standing of A under those bounds.
 
-8. Carry that Standing forward without revising the earlier result,
+9. Carry that Standing forward without revising the earlier result,
    Yield, Unknown, or unsupported coordinates.
 ```
 
-The completed chain is inspectable and replayable:
+The required topology therefore contains an unresolved prerequisite rather
+than a completed chain:
 
 ```text
 exact source occurrences
@@ -469,23 +474,32 @@ exact support coordinates
 ↓ responsible support occurrence
 support Assertion S
 
-A + S
+S
+↓ exact Standing responsible boundary for S
+↓ exact Standing occurrence for S
+↓ Standing-occurrence Evidence for S
+Standing(S)                                      unresolved
+
+A + Standing(S)
 ↓ exact Standing responsible boundary
 ↓ exact Standing occurrence
 ↓ Standing-occurrence Evidence
-Standing(A)
+Standing(A)                                      unresolved
 ```
 
-Seed's warrant is this exact chain, not confidence, usefulness, returned
-behavior, naming, recurrence, or agreement with the developer. The diagram
-states the required topology; current runtime does not yet instantiate its
-support-Standing recursion completely.
+A future warrant would require this exact chain, not confidence, usefulness,
+returned behavior, naming, recurrence, or agreement with the developer. The
+diagram states the pressure; it does not establish either `Standing(S)` or
+`Standing(A)`. If `Standing(S)` requires another support Assertion, the same
+question recurs. Current law states that absence of prior Standing does not
+prevent a responsible occurrence from supporting first poor Standing, but the
+families inspected here do not instantiate that first positive occurrence.
 
 ## 11. The first implementation target remains unresolved
 
 The complete Candidate result is a strong controlled witness because its
 production Responsibility, Act, inputs, completeness boundary, Yield Evidence,
-result, replay, limits, and Unknown are already exact.
+result, replay, limits, and Unknown are recorded and exactly replayable.
 
 That makes it a good subject for locating the missing branches. It does not
 select the answer to these questions:
@@ -513,10 +527,14 @@ Standing remains unestablished.
 this_Seed exact address                                  established
 this_Seed address supplies Standing                      no
 
-exact family-local assignments and results               established where recorded
-exact Act occurrences                                    established where evidenced
-exact Yield relations                                    established where evidenced
-bounded Locality replay                                   established
+exact family-local assignment and result records         recorded and replayable
+exact Act occurrence records                              recorded and replayable
+exact Yield relation records                              recorded and replayable
+bounded Locality replay                                   available
+
+assignment Standing required before Responsibility read  established by root grammar
+assignment Standing for these runtime roads               not established generically
+constitutional reading of those Responsibilities          not established generically
 
 Locality replay = constitutional Standing                no
 assignment occurrence = assignment Standing              no by identity
@@ -528,6 +546,7 @@ Assertion Standing-coordinate preservation Responsibility established by D.1
 prior Standing population required for first Standing    no
 
 exact support-relation Assertion                         not established generically
+positive Standing for that support Assertion             not established generically
 Standing responsible boundary                            not established generically
 Standing occurrence                                      not established generically
 Standing-occurrence Evidence                             not established generically
@@ -546,22 +565,30 @@ more Candidates
 → better Standing
 ```
 
-It is:
+Its current pressure is:
 
 ```text
 exact result Assertion
 → exact support-relation Assertion
+→ positive Standing for that support Assertion
 → exact Standing responsible boundary
 → exact Standing occurrence
 → exact Standing-occurrence Evidence
 → bounded Standing for that exact subject
 ```
 
+The third position is not currently bridged. Its own support and positive
+Standing physiology recur rather than disappearing because the support
+Assertion was named.
+
 `This Seed's Standing` can denote only those separately established
 subject-bound Standing Assertions carried at one exact Locality and boundary.
 Their co-presence creates neither a global self-description nor a collective
 Standing subject by identity.
 
-Current runtime has strong exact result and replay physiology on the first side
-of that bridge. The support and positive Standing occurrences on the second
-side remain the constitutional gap.
+Current runtime has strong exact occurrence and replay testimony on the first
+side of that bridge. Until assignment Standing is positively established, that
+testimony does not establish Seed's constitutional reading of the recorded
+Responsibilities or the downstream constitutional Standing of their results.
+The first support-Standing occurrence and the later positive Standing
+occurrences remain the constitutional gap.
