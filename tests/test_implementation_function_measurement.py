@@ -201,33 +201,33 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
     nonfunction_family = SimpleNamespace(
         FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": ("first",)}
     )
-    witness_material = SimpleNamespace(
+    witness_material_tests = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESS_MATERIAL=(second,),
+        WITNESS_MATERIAL_TESTS=(second,),
     )
-    crossed_witness_material = SimpleNamespace(
+    crossed_witness_material_test = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESS_MATERIAL=(first,),
+        WITNESS_MATERIAL_TESTS=(first,),
     )
-    repeated_witness_material = SimpleNamespace(
+    repeated_witness_material_test = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESS_MATERIAL=(second, second),
+        WITNESS_MATERIAL_TESTS=(second, second),
     )
-    witness_material_list = SimpleNamespace(
+    witness_material_test_list = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESS_MATERIAL=[second],
+        WITNESS_MATERIAL_TESTS=[second],
     )
-    uniform_witness_material = SimpleNamespace(
+    uniform_witness_material_test = SimpleNamespace(
         FIDELITY_SUBJECT="this_book_material_acquisition_witness",
-        WITNESS_MATERIAL=(second,),
+        WITNESS_MATERIAL_TESTS=(second,),
     )
 
     declared = measured._fidelity_test_subjects()
@@ -255,22 +255,22 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
     with pytest.raises(TypeError, match="exact Fidelity subject functions"):
         measured._pytest_subject(nonfunction_family, first, declared)
     assert measured._pytest_subject(
-        witness_material, second, declared
+        witness_material_tests, second, declared
     ) is None
     with pytest.raises(
         ValueError,
-        match="crossed Fidelity and Witness Material",
+        match="crossed Fidelity and Witness Material tests",
     ):
-        measured._pytest_subject(crossed_witness_material, first, declared)
-    with pytest.raises(ValueError, match="entered Witness Material twice"):
-        measured._pytest_subject(repeated_witness_material, second, declared)
-    with pytest.raises(TypeError, match="exact Witness Material functions"):
-        measured._pytest_subject(witness_material_list, second, declared)
+        measured._pytest_subject(crossed_witness_material_test, first, declared)
+    with pytest.raises(ValueError, match="entered Witness Material tests twice"):
+        measured._pytest_subject(repeated_witness_material_test, second, declared)
+    with pytest.raises(TypeError, match="exact Witness Material test functions"):
+        measured._pytest_subject(witness_material_test_list, second, declared)
     with pytest.raises(
         ValueError,
-        match="uniform Fidelity subject crossed Witness Material",
+        match="uniform Fidelity subject crossed Witness Material tests",
     ):
-        measured._pytest_subject(uniform_witness_material, second, declared)
+        measured._pytest_subject(uniform_witness_material_test, second, declared)
 
 
 def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
@@ -292,16 +292,17 @@ def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
     assert valid.stash == invalid.stash == {}
 
 
-def test_witness_material_pytest_occurrence_is_not_measured_as_fidelity():
-    function = test_witness_material_pytest_occurrence_is_not_measured_as_fidelity
+def test_witness_material_occurrence_has_no_fidelity_uptake():
+    function = test_witness_material_occurrence_has_no_fidelity_uptake
     item = SimpleNamespace(
+        nodeid="tests/material.py::test_one_witness_material_occurrence",
         module=SimpleNamespace(
             FIDELITY_SUBJECTS={
                 "this_book_material_acquisition_witness": (
                     test_pytest_subject_collection_is_complete_before_any_test_occurrence,
                 ),
             },
-            WITNESS_MATERIAL=(function,),
+            WITNESS_MATERIAL_TESTS=(function,),
         ),
         function=function,
         stash={},
@@ -309,12 +310,52 @@ def test_witness_material_pytest_occurrence_is_not_measured_as_fidelity():
     measured.pytest_collection_modifyitems(None, None, [item])
     assert item.stash[measured._PYTEST_SUBJECT_COORDINATES] is None
 
-    occurrence_count = len(measured._pytest_occurrences)
-    protocol = measured.pytest_runtest_protocol(item, None)
-    next(protocol)
-    with pytest.raises(StopIteration):
+    measured.begin()
+    try:
+        fidelity_occurrence_count = len(measured._pytest_occurrences)
+        material_occurrence_count = len(measured._witness_material_occurrences)
+        protocol = measured.pytest_runtest_protocol(item, None)
         next(protocol)
-    assert len(measured._pytest_occurrences) == occurrence_count
+        measured._identity(ROOT, 9, "inside-witness-material-occurrence")
+        with pytest.raises(StopIteration):
+            next(protocol)
+    finally:
+        result = measured.finish()
+
+    assert len(measured._pytest_occurrences) == fidelity_occurrence_count
+    assert len(measured._witness_material_occurrences) == (
+        material_occurrence_count + 1
+    )
+    occurrence = result["witness_material"][-1]
+    assert occurrence["pytest_identity"] == item.nodeid
+    assert not {
+        "subject",
+        "witness_for",
+        "distinct_from",
+    } & set(occurrence)
+    identity = next(
+        identity
+        for identity in occurrence["python"]
+        if identity.endswith(":_identity")
+    )
+    assert occurrence["python"][identity]["occurrence_count"] == 1
+
+    catalog, observation = measured._output_materials(result)
+    output_occurrence = observation["witness_material"][-1]
+    assert output_occurrence["pytest_identity"] == item.nodeid
+    assert not {
+        "subject",
+        "witness_for",
+        "distinct_from",
+    } & set(output_occurrence)
+    output_coordinate = next(
+        coordinate
+        for coordinate in output_occurrence["python"]
+        if catalog["python"][
+            coordinate["implementation_function_position"]
+        ].endswith(":_identity")
+    )
+    assert output_coordinate["occurrence_count"] == 1
 
 
 def test_stable_catalog_is_separate_from_sparse_observation():
@@ -437,7 +478,7 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
         }
         uniform = []
         families = []
-        witness_material = []
+        witness_material_tests = []
         for node in tree.body:
             if not isinstance(node, ast.Assign):
                 continue
@@ -450,14 +491,14 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
                 uniform.append(node.value)
             if "FIDELITY_SUBJECTS" in assigned:
                 families.append(node.value)
-            if "WITNESS_MATERIAL" in assigned:
-                witness_material.append(node.value)
+            if "WITNESS_MATERIAL_TESTS" in assigned:
+                witness_material_tests.append(node.value)
 
         assert len(uniform) + len(families) == 1, path
-        assert len(witness_material) <= 1, path
+        assert len(witness_material_tests) <= 1, path
         witness_material_functions: list[str] = []
-        if witness_material:
-            witness_material_collection = witness_material[0]
+        if witness_material_tests:
+            witness_material_collection = witness_material_tests[0]
             assert isinstance(witness_material_collection, ast.Tuple)
             witness_material_functions.extend(
                 element.id
@@ -536,7 +577,7 @@ FIDELITY_SUBJECTS = {
     ),
     "fidelity_witness_occurrence": (
         test_one_pytest_occurrence_keeps_its_exact_witness_measurement,
-        test_witness_material_pytest_occurrence_is_not_measured_as_fidelity,
+        test_witness_material_occurrence_has_no_fidelity_uptake,
     ),
     "fidelity_witness_subject": (
         test_pytest_subject_refuses_missing_crossed_or_unadmitted_families,

@@ -1097,7 +1097,7 @@ FIDELITY_SUBJECTS = {
 }
 
 
-WITNESS_MATERIAL = (
+WITNESS_MATERIAL_TESTS = (
     test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
     test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate,
     test_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate_replays_after_sqlite_restart,

@@ -42,6 +42,7 @@ _enclosing_measurement_coordinates: list[
     tuple[dict[str, list[int]], int, int]
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
+_witness_material_occurrences: list[dict[str, object]] = []
 _PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, object] | None]()
 _active_sql_invocations = threading.local()
 
@@ -396,6 +397,7 @@ def measurement() -> dict[str, object]:
             "sql_invocation_occurrences": tuple(_sql_invocation_occurrences),
             "sql_statement_invocations": tuple(_sql_statement_invocations),
             "pytest": tuple(_pytest_occurrences),
+            "witness_material": tuple(_witness_material_occurrences),
         }
     )
     return found
@@ -481,6 +483,25 @@ def _output_materials(
             }
             for occurrence in found["pytest"]
         ),
+        "witness_material": tuple(
+            {
+                **{
+                    name: value
+                    for name, value in occurrence.items()
+                    if name != "python"
+                },
+                "python": tuple(
+                    {
+                        "implementation_function_position": python_positions[
+                            identity
+                        ],
+                        **coordinates,
+                    }
+                    for identity, coordinates in occurrence["python"].items()
+                ),
+            }
+            for occurrence in found["witness_material"]
+        ),
     }
     return catalog, observation
 
@@ -517,6 +538,7 @@ def begin() -> None:
     _active_sql_invocations.positions = []
     _enclosing_measurement_coordinates.clear()
     _pytest_occurrences.clear()
+    _witness_material_occurrences.clear()
     sqlite3.connect = _connect
     _profiler = cProfile.Profile()
     _profiler.enable()
@@ -651,18 +673,18 @@ def _pytest_subject(
 ) -> dict[str, object] | None:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
-    witness_material = getattr(module, "WITNESS_MATERIAL", ())
-    if type(witness_material) is not tuple:
-        raise TypeError("exact Witness Material functions are required")
-    if any(not callable(function) for function in witness_material):
-        raise TypeError("exact Witness Material functions are required")
-    if len(set(witness_material)) != len(witness_material):
-        raise ValueError("test function entered Witness Material twice")
-    is_witness_material = function_under_test in witness_material
+    witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
+    if type(witness_material_tests) is not tuple:
+        raise TypeError("exact Witness Material test functions are required")
+    if any(not callable(function) for function in witness_material_tests):
+        raise TypeError("exact Witness Material test functions are required")
+    if len(set(witness_material_tests)) != len(witness_material_tests):
+        raise ValueError("test function entered Witness Material tests twice")
+    produces_witness_material = function_under_test in witness_material_tests
     if uniform is not None and families is not None:
         raise ValueError("test module carries two Fidelity subject boundaries")
-    if uniform is not None and witness_material:
-        raise ValueError("uniform Fidelity subject crossed Witness Material")
+    if uniform is not None and witness_material_tests:
+        raise ValueError("uniform Fidelity subject crossed Witness Material tests")
     if uniform is not None:
         if type(uniform) is not str:
             raise TypeError("one exact test subject reference is required")
@@ -687,10 +709,10 @@ def _pytest_subject(
                 entered_functions.add(function)
                 if function is function_under_test:
                     matches.append(family_subject)
-        if is_witness_material:
+        if produces_witness_material:
             if matches:
                 raise ValueError(
-                    "test function crossed Fidelity and Witness Material"
+                    "test function crossed Fidelity and Witness Material tests"
                 )
             return None
         if len(matches) != 1:
@@ -719,10 +741,12 @@ def pytest_collection_modifyitems(
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
     subject_coordinates = item.stash[_PYTEST_SUBJECT_COORDINATES]
-    if subject_coordinates is None:
-        yield
-        return
-    occurrence_position = len(_pytest_occurrences)
+    occurrences = (
+        _witness_material_occurrences
+        if subject_coordinates is None
+        else _pytest_occurrences
+    )
+    occurrence_position = len(occurrences)
     begin()
     (
         _,
@@ -734,11 +758,11 @@ def pytest_runtest_protocol(item: object, nextitem: object):
     finally:
         found = _finish_observed()
     found.pop("sql")
-    _pytest_occurrences.append(
+    occurrences.append(
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
-            **subject_coordinates,
+            **({} if subject_coordinates is None else subject_coordinates),
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

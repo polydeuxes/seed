@@ -216,12 +216,13 @@ The first report boundary found that the Fidelity subject
 correctly rejected that state; a Fidelity subject may not use an absent
 reference to represent unresolved constitutional debt.
 
-The follow-up removes that subject from witness grammar and records the three
-path-projection test functions explicitly as `WITNESS_MATERIAL`. The
-measurement hook runs those pytest functions without recording them as
-Fidelity occurrences. Structural collection coverage requires every pytest
-function to occur exactly once in either one Fidelity subject or
-`WITNESS_MATERIAL` and rejects overlap, repetition, or an undeclared function.
+The follow-up removes that subject from Witness Grammar and records the three
+path-projection test functions explicitly as `WITNESS_MATERIAL_TESTS`. The
+measurement hook records their test occurrences and observed coordinates as
+Witness Material without recording them as Fidelity occurrences. Structural
+collection coverage requires every pytest function to occur exactly once in
+either one Fidelity subject or `WITNESS_MATERIAL_TESTS` and rejects overlap,
+repetition, or an undeclared function.
 
 The existing tests establish that the implementation projection is ordered,
 exactly reproducible, and read-only. Fidelity to that implementation behavior
@@ -316,9 +317,10 @@ No current active clause supplies that physiology.
 ## 8. Answer
 
 The current path-pair helper is retained as a deterministic, non-mutating read
-projection over exact already-recovered material. Its tests are explicit
-Witness Material: they record that no serialized path pairing is hidden by a
-developer-selected read without becoming Fidelity subjects or this Witness.
+projection over exact already-recovered material. Its exact test occurrences
+produce Witness Material that records whether serialized path pairing is
+hidden by a developer-selected read. That material carries no Fidelity subject,
+`witness_for`, or `this_Witness` coordinate.
 
 It is not currently a Candidate Act result, Candidate completeness debt,
 Measurement, Compare, Representation result, or established relation surface.
@@ -326,7 +328,7 @@ Measurement, Compare, Representation result, or established relation surface.
 The smallest exact disposition is:
 
 ```text
-retain as non-mutating Witness Material
+retain exact test occurrences as non-mutating Witness Material
 preserve one represented_relation coordinate per Candidate
 do not give path pairs grammar-coordinate Standing
 do not make a later Responsibility depend on path-pair completeness
