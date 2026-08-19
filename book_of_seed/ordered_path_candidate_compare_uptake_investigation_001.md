@@ -31,6 +31,31 @@ tests.
 Book material is primary orientation. Witness Grammar, runtime, and tests are
 testimony.
 
+## Amendment after `f5eac6c6`
+
+Later implementation testimony supersedes this report's original proposed
+Candidate-to-Compare frontier.
+
+Active `04.Compare.B` itself supplies the exact assignment-subject shape from
+current Standing:
+
+```text
+every exact ordered path result
+×
+every exact recorded pair-finding comparison result
+in one current Locality Standing
+```
+
+`unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing`
+now reads that complete unassigned surface without recording an assignment,
+Applicability, Participation, Compare, or result occurrence.
+
+Therefore Candidate remains beside this exact assignment road. Candidate
+uptake is not required for `04.Compare.B` assignment-subject discovery. The
+findings below that distinguish Candidate source roles from Compare input
+roles remain exact; the original conclusion proposing Candidate as the missing
+bridge does not.
+
 ## 1. The path already has one exact non-recursive consumer
 
 Active `04.Compare.B` establishes this family-local physiology:
@@ -230,7 +255,7 @@ ordered path
 It supplies distinctions about recorded findings, not a three-byte or larger
 material occurrence.
 
-## 7. The remaining assignment frontier
+## 7. The assignment-subject surface comes directly from current Standing
 
 The repository now establishes both surfaces independently:
 
@@ -240,26 +265,31 @@ complete ordered Candidate field
 including every path/source pairing required by E.1
 
 SURFACE B
-one exact family-local Compare
-for an addressed path result and pair-comparison result
+current Standing
++ Book 04.Compare.B
+↓
+every exact path-result × comparison-result assignment subject
 ```
 
-The missing crossing is not another generic Compare kind. It is the exact
-responsible occurrence, if any, that establishes which Candidate-carried
-source coordinates bear the two exact `04.Compare.B` input relations.
+The complete subject read preserves path-result order first and
+comparison-result order second. It excludes exactly a subject whose
+Responsibility assignment is already recorded. It does not filter by the
+later Applicability finding.
 
-One future orientation under investigation is exhaustive assignment formation
-over every exact Candidate whose lower sources satisfy the `04.Compare.B`
-input species and Locality boundary. Current Book does not assign:
+Thus the current forward frontier is:
 
 ```text
-Candidate-to-04.Compare.B Applicability traversal
-complete 04.Compare.B assignment production
-Candidate source-role translation
-Candidate Participation in 04.Compare.B
+complete unassigned 04.Compare.B subject read
+↓
+serial Responsibility assignment occurrence for each exact subject
+↓
+Applicability for each assigned subject
+↓
+Participation and Compare only where that Applicability is established
 ```
 
-The existence of every Candidate does not establish those occurrences.
+The read supplies no occurrence by identity. Candidate production supplies no
+part of this exact road by identity.
 
 ## 8. Disposition
 
@@ -276,7 +306,8 @@ exact recorded comparison-result participation                established where 
 Candidate Assertion participates in 04.Compare.B              not established
 Candidate source roles become Compare input roles              not established
 Candidate completeness establishes Compare assignment         not established
-exact occurrence addressing path and comparison result         not established by this road
+complete unassigned assignment-subject surface                 established
+Responsibility assignment occurrence for each read subject     not established by the read
 
 04.Compare.B establishes path material                         no
 04.Compare.B establishes represented relation                  no
@@ -285,14 +316,16 @@ recursive positional path formation                            not established
 
 ## Conclusion
 
-The play exists, but the audition field does not currently cast it.
+The play names its own cast from current Standing. The audition field is
+separate.
 
 ```text
-complete Candidate field
+current Standing
++ Book 04.Compare.B
         ↓
-        ?
+complete unassigned assignment-subject read
         ↓
-exact 04.Compare.B assignment
+serial exact Responsibility assignment occurrences
         ↓
 Applicability
         ↓
@@ -301,11 +334,11 @@ Participation
 Compare
 ```
 
-Candidate production makes the path impossible to omit from the bounded
-source-pair field. It does not assign either Candidate source role to the
-existing Compare roles. The current Compare remains exact after its two input
-results are directly addressed, while the responsible crossing from complete
-Candidate field to that assignment remains unestablished.
+Candidate production independently makes the path impossible to omit from its
+bounded source-pair field. It neither discovers nor assigns the exact
+`04.Compare.B` subject. Current Standing and the Book clause now provide that
+complete subject read directly.
 
-That vacancy is independent of recursive path formation and path-to-material
-recovery. No one supplies another by identity.
+Recording and advancing each exact assignment lifecycle remains separate from
+recursive path formation and path-to-material recovery. No one supplies
+another by identity.
