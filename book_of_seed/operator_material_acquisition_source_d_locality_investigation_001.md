@@ -226,8 +226,9 @@ Therefore:
 != exact 01.Source.D Locality relation established
 ```
 
-The bare coordinate is evidence of intended pressure, not completion of the
-relation physiology.
+The bare coordinate records unresolved pressure, not completion of the
+relation physiology. Its presence does not establish which exact Locality
+relation its author intended.
 
 ## 6. The addressed Representation does not silently supply the relation
 
