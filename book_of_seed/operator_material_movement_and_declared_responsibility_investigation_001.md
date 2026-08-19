@@ -650,9 +650,10 @@ operator material does not tell Seed what to think
 
 operator material supplies one exact new occurrence
 
-the Book contains the spring force
+the Book declares the spring force
 
-the narrow Measurement declaration loop already releases part of it
+the current runtime releases a bounded part through the narrow Measurement
+declaration loop
 
 the complete bounded release and its positive Standing remain unresolved
 ```

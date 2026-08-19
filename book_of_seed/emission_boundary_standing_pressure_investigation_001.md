@@ -432,7 +432,7 @@ exact material
 ↓
 bounded preservation
 ↓
-exact-material emission                         established
+exact-material emission occurrence              recorded and exactly witnessed
 
 beside
 
