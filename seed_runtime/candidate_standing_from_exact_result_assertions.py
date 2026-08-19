@@ -288,18 +288,22 @@ def _references_carried_by_result(
                 ledger, event.identity
             )
         ):
+            position_assertion = (
+                _recorded_position_assertion_coordinates_for_locality_movement(
+                    ledger,
+                    result_event_identity=event.identity,
+                    assertion_identity=reference.assertion_identity,
+                )
+            )
             references.append(
                 _source_assertion_reference(
                     event,
                     standing_coordinate=standing_coordinate,
                     assertion_coordinate=f"position_assertions/{position}",
                     assertion_identity=reference.assertion_identity,
-                    source_assertion_coordinates=(
-                        _recorded_position_assertion_coordinates_for_locality_movement(
-                            ledger,
-                            result_event_identity=event.identity,
-                            assertion_identity=reference.assertion_identity,
-                        )
+                    source_assertion_coordinates=_source_coordinates(
+                        event,
+                        position_assertion,
                     ),
                     source_standing_through_event_occurrence_identity=(
                         source_standing_through_event_occurrence_identity
@@ -1593,6 +1597,23 @@ def represented_relation_coordinates_from_every_ordered_pair_candidate(
         != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
     ):
         raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    return _represented_relation_coordinates_from_ordered_pair_candidates(
+        result, assignment
+    )
+
+
+def _represented_relation_coordinates_from_ordered_pair_candidates(
+    result: Event,
+    assignment: Event,
+) -> tuple[
+    tuple[
+        str,
+        dict[str, Any],
+        dict[str, Any],
+        dict[str, Any],
+    ],
+    ...,
+]:
     coordinates = []
     for candidate in result.material["candidate_assertions"]:
         subject = candidate.get("assertion_subject")
@@ -1627,6 +1648,58 @@ def represented_relation_coordinates_from_every_ordered_pair_candidate(
             )
         )
     return tuple(coordinates)
+
+
+def candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read one Candidate Act occurrence beside every represented_relation coordinate."""
+
+    result, act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    act_occurrence_identity = act.material.get("act_occurrence_identity")
+    if (
+        type(act_occurrence_identity) is not str
+        or not act_occurrence_identity
+        or result.material.get("act_occurrence_identity")
+        != act_occurrence_identity
+    ):
+        raise ValueError("Candidate Act occurrence coordinate is not exact")
+    return (
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "source_Participation",
+                "act_occurrence",
+            ],
+            "coordinate": "act_occurrence",
+            "material": act_occurrence_identity,
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
 
 
 def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(

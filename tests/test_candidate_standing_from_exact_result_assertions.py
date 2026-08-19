@@ -4,6 +4,7 @@ import pytest
 
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     BOOK_CLAUSE,
+    candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates,
     ONE_SOURCE_CANDIDATE_ACT,
     ONE_SOURCE_CANDIDATE_RESPONSIBILITY,
     ORDERED_PAIR_CANDIDATE_ACT,
@@ -29,6 +30,9 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from tests.test_operator_locality_standing import _record_byte_measurement
+from tests.test_measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    _record as _record_byte_pair_position_measurement,
+)
 
 
 def _source(ledger, *, locality="source", exact_bytes=b"ab"):
@@ -78,6 +82,44 @@ def test_exact_source_assertion_coordinates_expose_every_result_assertion_in_eve
         "assertions/1",
     )
     assert tuple(references) == first_references + second_references
+
+    position_ledger = EventLedger()
+    _source_event, _assignment, _act, position_result = (
+        _record_byte_pair_position_measurement(
+            position_ledger,
+            exact=b"ab",
+            locality="position-source",
+        )
+    )
+    position_references = source_assertion_references_for_candidate_standing(
+        position_ledger,
+        source_append_boundary=position_ledger.append_boundary(),
+    )
+    carried_positions = tuple(
+        reference
+        for reference in position_references
+        if reference["recorded_result_occurrence_identity"]
+        == position_result.identity
+        and reference["assertion_coordinate"].startswith("position_assertions/")
+    )
+
+    assert len(carried_positions) == 1
+    assert set(carried_positions[0]["source_assertion_coordinates"]) == {
+        "Evidence",
+        "Authority",
+        "Scope",
+        "limits",
+        "Unknown",
+    }
+    position_candidates = record_complete_ordered_pair_candidate_standing(
+        position_ledger,
+        recording_locality_identity="position-candidates",
+        source_append_boundary=position_ledger.append_boundary(),
+    )
+    exact_source_assertion_materials_from_every_ordered_pair_candidate(
+        position_ledger,
+        candidate_standing_result_event_identity=position_candidates.identity,
+    )
 
 
 def test_source_boundary_excludes_every_later_result_assertion():
@@ -667,6 +709,12 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
         ledger,
         candidate_standing_result_event_identity=result.identity,
     )
+    expected_act_and_relations = (
+        candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
     boundary = ledger.append_boundary()
     ledger.close()
 
@@ -675,6 +723,10 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
         reopened,
         candidate_standing_result_event_identity=result.identity,
     ) == expected
+    assert candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+    ) == expected_act_and_relations
     assert reopened.append_boundary() == boundary
 
 
@@ -807,10 +859,33 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
         ledger,
         candidate_standing_result_event_identity=result.identity,
     )
+    act_occurrence, relations_beside_act = (
+        candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
 
     assert tuple(candidate for candidate, *_coordinates in exposed) == tuple(
         candidate["dimensions"]["identity"]
         for candidate in standing["candidate_assertions"]
+    )
+    assert act_occurrence == {
+        "grammar_coordinate_reference": [
+            "clause_coordinates",
+            BOOK_CLAUSE,
+            "ordered_pair_candidate_responsibility",
+            "source_Participation",
+            "act_occurrence",
+        ],
+        "coordinate": "act_occurrence",
+        "material": standing["act_occurrence_identity"],
+    }
+    assert relations_beside_act == exposed
+    assert all(
+        relation_coordinate["coordinate"] == "represented_relation"
+        and "act_occurrence" not in relation_coordinate
+        for *_sources, relation_coordinate in relations_beside_act
     )
     assert tuple(
         (candidate_identity, relation)
@@ -836,6 +911,14 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             "coordinate": "represented_relation",
             "material": "Unknown",
         }
+
+    act_evidence = ledger.get(standing["responsible_act_evidence_identity"])
+    act_evidence.material["act_occurrence_identity"] = "changed_after_read"
+    with pytest.raises(ValueError, match="Act Evidence is not exact"):
+        candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
 
 
 def test_both_exact_candidate_responsibilities_use_one_source_boundary():
@@ -1043,6 +1126,18 @@ def test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility()
         "first_subject": "ordered_pair",
         "relation": "of",
         "second_subject": "distinct_exact_source_Assertions",
+    }
+    assert coordinate["source_input_relation"] == {
+        "first_subject": "exact_source_Assertion",
+        "relation": "input_to",
+        "second_subject": ORDERED_PAIR_CANDIDATE_ACT.replace(" ", "_"),
+        "role": "input",
+    }
+    assert coordinate["source_Participation"] == {
+        "subject_reference": "exact_source_Assertion",
+        "role": "input",
+        "act": ORDERED_PAIR_CANDIDATE_ACT.replace(" ", "_"),
+        "act_occurrence": "exact_Candidate_Act_occurrence",
     }
     assert coordinate["candidate_source_roles"] == [
         "first_source_Assertion",

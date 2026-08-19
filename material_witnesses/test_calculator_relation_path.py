@@ -40,6 +40,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
+    candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
@@ -440,6 +441,12 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    act_occurrence, every_relation_coordinate = (
+        candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
     _, path_source_coordinates, calculator_source_coordinates = next(
         reading
         for reading in every_exact_source_coordinate
@@ -455,6 +462,18 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     assert len(every_exact_ordered_pair) == len(standing["candidate_assertions"])
     assert len(every_exact_source_coordinate) == len(
         standing["candidate_assertions"]
+    )
+    assert act_occurrence["material"] == standing["act_occurrence_identity"]
+    assert tuple(
+        candidate_identity
+        for candidate_identity, *_coordinates in every_relation_coordinate
+    ) == tuple(
+        candidate["dimensions"]["identity"]
+        for candidate in standing["candidate_assertions"]
+    )
+    assert all(
+        relation_coordinate["material"] == "Unknown"
+        for *_sources, relation_coordinate in every_relation_coordinate
     )
     assert tuple(
         coordinate["coordinate"] for coordinate in path_source_coordinates
