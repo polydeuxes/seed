@@ -39,6 +39,7 @@ from seed_runtime.operator_material_acquisition import (
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
@@ -240,6 +241,47 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
     )
     assert again.result_occurrences == ()
     assert ledger.append_boundary() == boundary
+
+
+def test_current_standing_exposes_assignments_only_after_each_family_records_them():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"Hello, how are you\n",
+        source_role="exact supplied material",
+        source_boundary="operator material occurrence",
+    )
+    before = read_operator_locality_standing(ledger, locality_identity="s")
+    before_boundary = ledger.append_boundary()
+
+    assert before["responsibility_assignment_occurrences"] == {}
+
+    recorded = record_declared_measurements_from_current_standing(
+        ledger,
+        locality_identity="s",
+    )
+    assignments = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        in {
+            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        }
+    )
+
+    assert ledger.append_boundary() != before_boundary
+    assert tuple(event.kind for event in assignments) == (
+        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    )
+    assert tuple(
+        recorded.locality_standing["responsibility_assignment_occurrences"]
+    ) == tuple(event.identity for event in assignments)
+    assert recorded.locality_standing == read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
 
 
 def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
