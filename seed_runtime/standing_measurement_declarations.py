@@ -1,18 +1,19 @@
 """Record declared Measurements whose exact subjects are carried in Standing.
 
 The declarations in this module do not assign a new Responsibility.  Each
-entry names one existing Book-assigned Measurement road.  Discovery chooses
-one exact subject at one current Standing boundary, the family records its own
+entry names one existing Book-assigned Measurement road.  Each road recovers
+its own exact subject at one current Standing boundary, records its own
 assignment, Act, Yield, and result, and Standing is advanced before discovery
 continues.
 
 Ledger writes remain serial and deterministic.  A later implementation may
-compute pure discovery findings concurrently, but no two family occurrences
+compute pure discovery findings concurrently, but no two Measurement occurrences
 may be appended from one stale Standing boundary.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Callable, NamedTuple
 
 from seed_runtime.byte_measurement import (
@@ -45,17 +46,36 @@ from seed_runtime.operator_locality_standing import (
 )
 
 
+@dataclass(frozen=True)
+class PositionCoordinateMeasurementSubject:
+    source_material_acquisition_occurrence_identity: str
+
+
+@dataclass(frozen=True)
+class ExactByteOccurrenceMeasurementSubject:
+    source_material_acquisition_occurrence_identities: tuple[str, ...]
+
+
+DeclaredMeasurementSubject = (
+    PositionCoordinateMeasurementSubject | ExactByteOccurrenceMeasurementSubject
+)
+
+
 class StandingMeasurementDeclaration(NamedTuple):
     order: int
     book_clause_identity: str
     assignment_kind: str
     result_kind: str
-    discover: Callable[[EventLedger, dict[str, Any], str], str | None]
+    discover: Callable[
+        [EventLedger, dict[str, Any], str], DeclaredMeasurementSubject | None
+    ]
     record: Callable[
-        [EventLedger, dict[str, Any], str, str], tuple[dict[str, Any], Event]
+        [EventLedger, dict[str, Any], str, DeclaredMeasurementSubject],
+        tuple[dict[str, Any], Event],
     ]
     record_from_current: Callable[
-        [EventLedger, dict[str, Any], str, str], tuple[dict[str, Any], Event]
+        [EventLedger, dict[str, Any], str, DeclaredMeasurementSubject],
+        tuple[dict[str, Any], Event],
     ]
 
 
@@ -119,20 +139,26 @@ def _material_acquisition_identities(standing: dict[str, Any]) -> tuple[str, ...
             or type(occurrence.get("result_occurrence_identity")) is not str
             or not occurrence["result_occurrence_identity"]
         ):
-            raise ValueError("current Standing carries a malformed material acquisition occurrence")
+            raise ValueError(
+                "current Standing carries a malformed material acquisition occurrence"
+            )
         identities.append(occurrence["result_occurrence_identity"])
     return tuple(identities)
 
 
 def _discover_direct_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
-) -> str | None:
+) -> PositionCoordinateMeasurementSubject | None:
     sources = _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
         ledger,
         standing,
         locality_identity=locality_identity,
     )
-    return sources[0].source_material_acquisition_occurrence_identity if sources else None
+    if not sources:
+        return None
+    return PositionCoordinateMeasurementSubject(
+        sources[0].source_material_acquisition_occurrence_identity
+    )
 
 
 def _complete_direct_measurement(
@@ -180,11 +206,15 @@ def _record_direct_measurement(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    source_material_acquisition_occurrence_identity: str,
+    subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
+    if type(subject) is not PositionCoordinateMeasurementSubject:
+        raise ValueError("position-coordinate Measurement requires its exact subject")
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_acquisition_occurrence_identity=(
+            subject.source_material_acquisition_occurrence_identity
+        ),
     )
     if finding.source_locality_identity != locality_identity:
         raise ValueError("direct Measurement subject belongs to another Locality")
@@ -202,17 +232,23 @@ def _record_direct_measurement_from_current(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    source_material_acquisition_occurrence_identity: str,
+    subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
+    if type(subject) is not PositionCoordinateMeasurementSubject:
+        raise ValueError("position-coordinate Measurement requires its exact subject")
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_acquisition_occurrence_identity=(
+            subject.source_material_acquisition_occurrence_identity
+        ),
     )
     if finding.source_locality_identity != locality_identity:
         raise ValueError("direct Measurement subject belongs to another Locality")
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_acquisition_occurrence_identity=(
+            subject.source_material_acquisition_occurrence_identity
+        ),
         locality_standing=standing,
     )
     return _complete_direct_measurement(
@@ -249,13 +285,26 @@ def _byte_assignment_source_sets(
 
 def _discover_byte_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
-) -> str | None:
+) -> ExactByteOccurrenceMeasurementSubject | None:
     current_sources = _material_acquisition_identities(standing)
     if not current_sources:
         return None
     if current_sources in _byte_assignment_source_sets(ledger, locality_identity):
         return None
-    return current_sources[-1]
+    return ExactByteOccurrenceMeasurementSubject(current_sources)
+
+
+def _require_exact_byte_occurrence_measurement_subject(
+    standing: dict[str, Any], subject: DeclaredMeasurementSubject
+) -> tuple[str, ...]:
+    if type(subject) is not ExactByteOccurrenceMeasurementSubject:
+        raise ValueError("exact-byte Measurement requires its exact subject")
+    current_sources = _material_acquisition_identities(standing)
+    if subject.source_material_acquisition_occurrence_identities != current_sources:
+        raise ValueError(
+            "exact-byte Measurement subject differs from the current acquisition-result set"
+        )
+    return current_sources
 
 
 def _complete_byte_measurement(
@@ -304,8 +353,9 @@ def _record_byte_measurement(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    _subject_identity: str,
+    subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
+    _require_exact_byte_occurrence_measurement_subject(standing, subject)
     assignment = _record_byte_measurement_responsibility_assignment_from_carried_standing(
         ledger,
         source_localities=(locality_identity,),
@@ -321,8 +371,9 @@ def _record_byte_measurement_from_current(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    _subject_identity: str,
+    subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
+    _require_exact_byte_occurrence_measurement_subject(standing, subject)
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality_identity,),

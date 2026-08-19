@@ -55,6 +55,12 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.standing_measurement_declarations import (
+    ExactByteOccurrenceMeasurementSubject,
+    PositionCoordinateMeasurementSubject,
+    _discover_byte_measurement,
+    _discover_direct_measurement,
+    _record_byte_measurement,
+    _record_direct_measurement,
     _record_declared_measurements_from_carried_standing,
     record_declared_measurements_from_current_standing,
 )
@@ -220,6 +226,68 @@ def test_one_current_standing_pin_records_each_declared_material_acquisition_mea
         locality_identity="s",
     )
     assert again.result_occurrences == ()
+    assert ledger.append_boundary() == boundary
+
+
+def test_declared_measurements_preserve_their_distinct_exact_subject_shapes():
+    ledger = EventLedger()
+    first = record_witness_material_acquisition(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"first\n",
+        source_boundary="first exact boundary",
+    )
+    second = record_witness_material_acquisition(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"second\n",
+        source_boundary="second exact boundary",
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+
+    position_subject = _discover_direct_measurement(ledger, standing, "s")
+    byte_subject = _discover_byte_measurement(ledger, standing, "s")
+
+    assert position_subject == PositionCoordinateMeasurementSubject(first.identity)
+    assert byte_subject == ExactByteOccurrenceMeasurementSubject(
+        (first.identity, second.identity)
+    )
+    boundary = ledger.append_boundary()
+    with pytest.raises(
+        ValueError, match="exact-byte Measurement requires its exact subject"
+    ):
+        _record_byte_measurement(ledger, standing, "s", position_subject)
+    with pytest.raises(
+        ValueError, match="position-coordinate Measurement requires its exact subject"
+    ):
+        _record_direct_measurement(ledger, standing, "s", byte_subject)
+    assert ledger.append_boundary() == boundary
+
+
+def test_exact_byte_measurement_refuses_an_incomplete_acquisition_result_set():
+    ledger = EventLedger()
+    first = record_witness_material_acquisition(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"first\n",
+        source_boundary="first exact boundary",
+    )
+    record_witness_material_acquisition(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"second\n",
+        source_boundary="second exact boundary",
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity="s")
+    incomplete = ExactByteOccurrenceMeasurementSubject((first.identity,))
+    boundary = ledger.append_boundary()
+
+    with pytest.raises(
+        ValueError,
+        match="differs from the current acquisition-result set",
+    ):
+        _record_byte_measurement(ledger, standing, "s", incomplete)
+
     assert ledger.append_boundary() == boundary
 
 
