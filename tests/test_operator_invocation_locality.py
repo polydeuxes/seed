@@ -6,56 +6,56 @@ FIDELITY_SUBJECT = "locality_relation_coordinates"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import acquired_material_bytes
-from seed_runtime.material_ingest import ingest_material
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_system_locality import (
-    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OperatorSystemLocalityError,
-    get_operator_system_locality_act_evidence,
-    get_operator_system_locality_responsibility_assignment,
-    get_recorded_operator_system_locality,
-    operator_system_locality_occurrence_references,
-    record_operator_system_locality_act_evidence,
-    record_operator_system_locality_responsibility_assignment,
-    record_operator_system_locality_result,
+from seed_runtime.operator_invocation_locality import (
+    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OperatorInvocationLocalityError,
+    get_operator_invocation_locality_act_evidence,
+    get_operator_invocation_locality_responsibility_assignment,
+    get_recorded_operator_invocation_locality,
+    operator_invocation_locality_occurrence_references,
+    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_result,
 )
 from seed_runtime.supplied_invocation_material import (
-    SuppliedSystemMaterialOccurrence,
-    ingest_supplied_invocation_occurrence,
+    SuppliedWitnessMaterialOccurrence,
+    acquire_supplied_witness_material_occurrence,
 )
 
 
 def _command(ledger, *, exact=b"!pytest\n", locality="operator"):
-    return ingest_material(
+    return record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=exact,
-        source_role="operator",
-        source_boundary="operator boundary",
+        exact=exact,
     )
 
 
 def _relation(ledger, command):
-    assignment = record_operator_system_locality_responsibility_assignment(
+    assignment = record_operator_invocation_locality_responsibility_assignment(
         ledger,
         operator_material_occurrence_reference=command.identity,
         operator_locality_standing=read_operator_locality_standing(
             ledger, locality_identity=command.locality_identity
         ),
     )
-    act = record_operator_system_locality_act_evidence(
+    act = record_operator_invocation_locality_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
             ledger, locality_identity=assignment.locality_identity
         ),
     )
-    result = record_operator_system_locality_result(
+    result = record_operator_invocation_locality_result(
         ledger,
         responsible_act_evidence_event_identity=act.identity,
     )
@@ -66,16 +66,16 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
     ledger = EventLedger()
     command = _command(ledger)
     assignment, act, result = _relation(ledger, command)
-    recorded = get_recorded_operator_system_locality(ledger, result.identity)
+    recorded = get_recorded_operator_invocation_locality(ledger, result.identity)
 
     assert assignment.kind == (
-        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     )
     assert assignment.locality_identity == recorded[
         "destination_locality_identity"
     ]
-    assert act.kind == OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND
-    assert result.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    assert act.kind == OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND
+    assert result.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     assert act.locality_identity == result.locality_identity
     assert act.locality_identity == assignment.locality_identity
     assert act.locality_identity != "operator"
@@ -96,7 +96,7 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
         "the relation carries no operator Standing into the destination Locality",
         "the relation establishes no enclosure or hierarchy",
     ]
-    assert operator_system_locality_occurrence_references(
+    assert operator_invocation_locality_occurrence_references(
         ledger, result.identity
     ) == (
         act.identity,
@@ -105,15 +105,15 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
     )
 
 
-def test_system_material_occurs_only_in_the_related_locality():
+def test_witness_material_occurs_only_in_the_related_locality():
     ledger = EventLedger()
     command = _command(ledger)
     assignment, _act, relation = _relation(ledger, command)
-    supplied = ingest_supplied_invocation_occurrence(
+    supplied = acquire_supplied_witness_material_occurrence(
         ledger,
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
-        supplied=SuppliedSystemMaterialOccurrence(
+        supplied=SuppliedWitnessMaterialOccurrence(
             b"one selected log line\n",
             "invocation output occurrence 0",
             False,
@@ -129,12 +129,12 @@ def test_system_material_occurs_only_in_the_related_locality():
     operator_standing = read_operator_locality_standing(
         ledger, locality_identity="operator"
     )
-    system_standing = read_operator_locality_standing(
+    witness_standing = read_operator_locality_standing(
         ledger, locality_identity=relation.locality_identity
     )
     assert [
         occurrence["evidence_event_identity"]
-        for occurrence in operator_standing["ingest_occurrences"]
+        for occurrence in operator_standing["material_acquisition_result_occurrences"]
     ] == [command.identity]
     assert operator_standing["operator_invocation_locality_relations"] == {}
     assert assignment.identity not in operator_standing[
@@ -142,12 +142,12 @@ def test_system_material_occurs_only_in_the_related_locality():
     ]
     assert [
         occurrence["evidence_event_identity"]
-        for occurrence in system_standing["ingest_occurrences"]
+        for occurrence in witness_standing["material_acquisition_result_occurrences"]
     ] == [supplied.identity]
-    assert system_standing["operator_invocation_locality_relations"] == {
+    assert witness_standing["operator_invocation_locality_relations"] == {
         relation.identity: None
     }
-    assert system_standing["responsibility_assignment_occurrences"] == {
+    assert witness_standing["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
 
@@ -157,8 +157,8 @@ def test_each_operator_occurrence_establishes_distinct_relation_identities():
     first = _relation(ledger, _command(ledger))[2]
     second = _relation(ledger, _command(ledger))[2]
 
-    first_recorded = get_recorded_operator_system_locality(ledger, first.identity)
-    second_recorded = get_recorded_operator_system_locality(
+    first_recorded = get_recorded_operator_invocation_locality(ledger, first.identity)
+    second_recorded = get_recorded_operator_invocation_locality(
         ledger, second.identity
     )
     coordinates = (
@@ -178,8 +178,8 @@ def test_one_operator_occurrence_cannot_assign_two_invocation_localities():
     ledger = EventLedger()
     command = _command(ledger)
     _relation(ledger, command)
-    with pytest.raises(OperatorSystemLocalityError, match="already carries"):
-        record_operator_system_locality_responsibility_assignment(
+    with pytest.raises(OperatorInvocationLocalityError, match="already carries"):
+        record_operator_invocation_locality_responsibility_assignment(
             ledger,
             operator_material_occurrence_reference=command.identity,
             operator_locality_standing=read_operator_locality_standing(
@@ -194,16 +194,16 @@ def test_assignment_requires_a_carried_exact_operator_invocation():
     empty_standing = read_operator_locality_standing(
         ledger, locality_identity="other"
     )
-    with pytest.raises(OperatorSystemLocalityError, match="material Standing"):
-        record_operator_system_locality_responsibility_assignment(
+    with pytest.raises(OperatorInvocationLocalityError, match="material Standing"):
+        record_operator_invocation_locality_responsibility_assignment(
             ledger,
             operator_material_occurrence_reference=command.identity,
             operator_locality_standing=empty_standing,
         )
 
     not_invocation = _command(ledger, exact=b"pytest\n")
-    with pytest.raises(OperatorSystemLocalityError, match="material occurrence"):
-        record_operator_system_locality_responsibility_assignment(
+    with pytest.raises(OperatorInvocationLocalityError, match="material occurrence"):
+        record_operator_invocation_locality_responsibility_assignment(
             ledger,
             operator_material_occurrence_reference=not_invocation.identity,
             operator_locality_standing=read_operator_locality_standing(
@@ -212,28 +212,28 @@ def test_assignment_requires_a_carried_exact_operator_invocation():
         )
 
 
-def test_one_system_locality_act_cannot_yield_twice():
+def test_one_invocation_locality_act_cannot_yield_twice():
     ledger = EventLedger()
     command = _command(ledger)
-    assignment = record_operator_system_locality_responsibility_assignment(
+    assignment = record_operator_invocation_locality_responsibility_assignment(
         ledger,
         operator_material_occurrence_reference=command.identity,
         operator_locality_standing=read_operator_locality_standing(
             ledger, locality_identity="operator"
         ),
     )
-    act = record_operator_system_locality_act_evidence(
+    act = record_operator_invocation_locality_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
             ledger, locality_identity=assignment.locality_identity
         ),
     )
-    record_operator_system_locality_result(
+    record_operator_invocation_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
     )
-    with pytest.raises(OperatorSystemLocalityError, match="already carries a Yield"):
-        record_operator_system_locality_result(
+    with pytest.raises(OperatorInvocationLocalityError, match="already carries a Yield"):
+        record_operator_invocation_locality_result(
             ledger, responsible_act_evidence_event_identity=act.identity
         )
 
@@ -248,20 +248,20 @@ def test_corrupted_assignment_act_and_result_are_refused_independently():
         event.material["unknown"] = ["crossed"]
         reader, identity = {
             "assignment": (
-                get_operator_system_locality_responsibility_assignment,
+                get_operator_invocation_locality_responsibility_assignment,
                 assignment.identity,
             ),
-            "act": (get_operator_system_locality_act_evidence, act.identity),
-            "result": (get_recorded_operator_system_locality, result.identity),
+            "act": (get_operator_invocation_locality_act_evidence, act.identity),
+            "result": (get_recorded_operator_invocation_locality, result.identity),
         }[coordinate]
-        with pytest.raises(OperatorSystemLocalityError):
+        with pytest.raises(OperatorInvocationLocalityError):
             reader(ledger, identity)
 
 
 def test_invocation_locality_act_requires_assignment_standing_in_destination():
     ledger = EventLedger()
     command = _command(ledger)
-    assignment = record_operator_system_locality_responsibility_assignment(
+    assignment = record_operator_invocation_locality_responsibility_assignment(
         ledger,
         operator_material_occurrence_reference=command.identity,
         operator_locality_standing=read_operator_locality_standing(
@@ -279,15 +279,15 @@ def test_invocation_locality_act_requires_assignment_standing_in_destination():
         read_operator_locality_standing(ledger, locality_identity="operator"),
         destination_standing_without_assignment,
     ):
-        with pytest.raises(OperatorSystemLocalityError, match="carried assignment"):
-            record_operator_system_locality_act_evidence(
+        with pytest.raises(OperatorInvocationLocalityError, match="carried assignment"):
+            record_operator_invocation_locality_act_evidence(
                 ledger,
                 responsibility_assignment_event_identity=assignment.identity,
                 responsibility_assignment_standing=standing,
             )
 
 
-def test_carried_system_standing_equals_full_replay():
+def test_carried_witness_standing_equals_full_replay():
     ledger = EventLedger()
     command = _command(ledger)
     _assignment, act, relation = _relation(ledger, command)
@@ -318,7 +318,7 @@ def test_invocation_locality_relation_reopens_with_exact_standing(tmp_path):
 
     reopened = SQLiteEventLedger(database)
     try:
-        recorded = get_recorded_operator_system_locality(
+        recorded = get_recorded_operator_invocation_locality(
             reopened, relation_identity
         )
         standing = read_operator_locality_standing(

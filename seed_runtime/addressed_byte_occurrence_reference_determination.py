@@ -214,8 +214,8 @@ def _scope(
 ) -> dict[str, str]:
     return {
         "locality_identity": source_result.locality_identity,
-        "source_ingest_occurrence_identity": coordinate_reference[
-            "source_ingest_occurrence_identity"
+        "source_material_acquisition_occurrence_identity": coordinate_reference[
+            "source_material_acquisition_occurrence_identity"
         ],
         "completeness_boundary_identity": coordinate_reference[
             "completeness_boundary_identity"
@@ -813,8 +813,8 @@ def _applicability_finding(
                 "determination_result_identity"
             ],
         },
-        "source_ingest_occurrence_identity": coordinate[
-            "source_ingest_occurrence_identity"
+        "source_material_acquisition_occurrence_identity": coordinate[
+            "source_material_acquisition_occurrence_identity"
         ],
         "locality_identity": coordinate["locality_identity"],
         "completeness_boundary_identity": coordinate[

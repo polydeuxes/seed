@@ -10,7 +10,7 @@ import pytest
 FIDELITY_SUBJECT = "supplied_material_invocation_witness"
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,11 +18,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     material_locality_admission_occurrences,
     reference_occurrences_across,
 )
-from material_fixture_books import MATERIAL_WINDOWS, supplied_book_material  # noqa: E402
+from book_material_test_witness import MATERIAL_WINDOWS, supplied_book_material  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -49,18 +49,17 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
     if executable is None:
         pytest.skip("compiled implementation function is unavailable")
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="supplied-material",
             exact_bytes=material,
-            source_role="fixture material",
             source_boundary="fixture",
         )
         for material in supplied_material_in_order
     )
     references = tuple(
-        ingest_result_reference(ledger, event.identity) for event in ingests
+        material_acquisition_result_reference(ledger, event.identity) for event in acquisition_results
     )
     occurrences = reference_occurrences_across(
         references,
@@ -74,11 +73,11 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
         time_limit_second_count=31.0,
     )[0]
 
-    assert {event.locality_identity for event in ingests} == {"supplied-material"}
+    assert {event.locality_identity for event in acquisition_results} == {"supplied-material"}
     assert {reference.locality_identity for reference in references} == {
         "supplied-material"
     }
-    assert len({event.identity for event in ingests}) == len(ingests)
+    assert len({event.identity for event in acquisition_results}) == len(acquisition_results)
     assert len({reference.result_identity for reference in references}) == len(
         references
     )

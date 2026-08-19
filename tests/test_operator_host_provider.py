@@ -12,7 +12,7 @@ FIDELITY_SUBJECT = "supplied_function_invocation"
 
 from scripts import operator_host_provider
 from seed_runtime.supplied_invocation_material import (
-    SuppliedSystemMaterialOccurrence,
+    SuppliedWitnessMaterialOccurrence,
 )
 
 
@@ -137,14 +137,14 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
             b"--solve=2+2",
         )
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"exact output material",
                 "invocation output occurrence 0",
                 True,
             )
         )
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"exact error material",
                 "invocation error occurrence 0",
                 True,
@@ -157,17 +157,17 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
     supplied = _invoke(b"!calculator 2+2\n")
 
     assert supplied == (
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             b"exact output material",
             "invocation output occurrence 0",
             True,
         ),
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             b"exact error material",
             "invocation error occurrence 0",
             True,
         ),
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             b"",
             "invocation completion",
             False,
@@ -394,14 +394,14 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
 ):
     def bounded(*args, supply, **kwargs):
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"partial out",
                 "invocation output occurrence 0",
                 True,
             )
         )
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"partial error",
                 "invocation error occurrence 0",
                 True,

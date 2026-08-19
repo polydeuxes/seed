@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,11 +26,11 @@ from compiled_material_invocation import (  # noqa: E402
     admit_invocation_return_occurrences,
     compare_added_material_invocations,
     compare_added_material_return_invocations,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     material_locality_admission_occurrences,
     reference_occurrences_across,
 )
-from material_fixture_measurement import measured_one_byte_material  # noqa: E402
+from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
 from material_admission import admission_occurrence  # noqa: E402
 
 
@@ -222,17 +222,16 @@ def test_one_byte_material_crosses_the_return_code_boundary(material_invocations
 def test_each_returned_material_enters_a_fresh_locality(material_invocations):
     ledger, _, occurrences = material_invocations
     events = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity=f"compiled-material-result-{position}",
             exact_bytes=occurrence.stdout_bytes,
-            source_role="fixture material",
             source_boundary=f"fixture-result-{position}",
         )
         for position, occurrence in enumerate(occurrences)
     )
     references = tuple(
-        ingest_result_reference(ledger, event.identity) for event in events
+        material_acquisition_result_reference(ledger, event.identity) for event in events
     )
 
     assert len({event.locality_identity for event in events}) == len(events)

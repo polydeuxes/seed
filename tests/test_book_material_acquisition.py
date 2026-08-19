@@ -9,7 +9,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
@@ -89,7 +89,7 @@ from compiled_format_invocation import (  # noqa: E402
     recurring_position_materials,
     moved_exact_byte_material_references,
 )
-from compiled_material_invocation import ingest_result_reference  # noqa: E402
+from compiled_material_invocation import material_acquisition_result_reference  # noqa: E402
 from material_admission import compare_admission_result_pairs  # noqa: E402
 from scripts.book_admission import (  # noqa: E402
     book_admission,
@@ -142,20 +142,19 @@ def acquired_book_material():
         for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="book-material-acquisition",
             exact_bytes=path.read_bytes(),
-            source_role="fixture material",
             source_boundary=str(path.relative_to(ROOT)),
         )
         for path in paths
     )
     completeness_boundary = ledger.append_boundary()
     references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
-        for occurrence in ingests
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in acquisition_results
     )
     invocation_rows = compiled_reference_invocations(
         references,
@@ -169,7 +168,7 @@ def acquired_book_material():
     return (
         ledger,
         paths,
-        ingests,
+        acquisition_results,
         completeness_boundary,
         references,
         invocation_rows,
@@ -179,7 +178,7 @@ def acquired_book_material():
 
 @pytest.fixture(scope="module")
 def acquired_book_relations(acquired_book_material):
-    ledger, _, ingests, _, _, _, book_admission = acquired_book_material
+    ledger, _, acquisition_results, _, _, _, book_admission = acquired_book_material
     byte_measurement = _record_byte_measurement(
         ledger,
         source_localities=("book-material-acquisition",),
@@ -246,7 +245,7 @@ def acquired_book_relations(acquired_book_material):
         boundary_identity="book-acquired-addition-admission",
     )
     return (
-        ingests,
+        acquisition_results,
         book_admission,
         byte_measurement,
         pair_measurement,
@@ -339,20 +338,19 @@ def later_book_material_acquisition(acquired_book_material):
     ledger, paths, _, earlier_boundary, earlier_references, _, earlier_admission = (
         acquired_book_material
     )
-    later_ingests = tuple(
-        ingest_material(
+    later_acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="book-material-acquisition-later",
             exact_bytes=path.read_bytes(),
-            source_role="fixture material",
             source_boundary=str(path.relative_to(ROOT)),
         )
         for path in paths
     )
     later_boundary = ledger.append_boundary()
     later_references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
-        for occurrence in later_ingests
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in later_acquisition_results
     )
     later_invocation_rows = compiled_reference_invocations(
         later_references,
@@ -369,7 +367,7 @@ def later_book_material_acquisition(acquired_book_material):
         earlier_boundary,
         earlier_references,
         earlier_admission,
-        later_ingests,
+        later_acquisition_results,
         later_boundary,
         later_references,
         later_invocation_rows,
@@ -377,16 +375,16 @@ def later_book_material_acquisition(acquired_book_material):
     )
 
 
-def test_every_current_book_file_has_one_exact_ingest_result(
+def test_every_current_book_file_has_one_exact_material_acquisition_result(
     acquired_book_material,
 ):
-    ledger, paths, ingests, boundary, references, _, _ = acquired_book_material
-    bounded_ingests = tuple(
+    ledger, paths, acquisition_results, boundary, references, _, _ = acquired_book_material
+    bounded_acquisition_results = tuple(
         occurrence
         for occurrence in ledger.list_locality(
             "book-material-acquisition", through=boundary
         )
-        if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     )
 
     assert paths == tuple(
@@ -394,9 +392,9 @@ def test_every_current_book_file_has_one_exact_ingest_result(
         for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
-    assert bounded_ingests == ingests
+    assert bounded_acquisition_results == acquisition_results
     assert tuple(reference.recorded_occurrence_identity for reference in references) == tuple(
-        occurrence.identity for occurrence in ingests
+        occurrence.identity for occurrence in acquisition_results
     )
     assert tuple(reference.exact_material for reference in references) == tuple(
         path.read_bytes() for path in paths
@@ -409,12 +407,12 @@ def test_every_current_book_file_has_one_exact_ingest_result(
         reference.locality_identity == "book-material-acquisition"
         for reference in references
     )
-    assert tuple(occurrence.material["source_boundary"] for occurrence in ingests) == tuple(
+    assert tuple(occurrence.material["source_boundary"] for occurrence in acquisition_results) == tuple(
         str(path.relative_to(ROOT)) for path in paths
     )
     assert all(
         occurrence.material["dimensions"]["authority"] == "unestablished"
-        for occurrence in ingests
+        for occurrence in acquisition_results
     )
 
 
@@ -488,7 +486,7 @@ def test_book_admission_refuses_an_incomplete_reordered_or_repeated_function_row
 def test_book_measurements_retain_every_exact_file_occurrence(
     acquired_book_relations,
 ):
-    ingests, _, byte_measurement, pair_measurement, *_ = acquired_book_relations
+    acquisition_results, _, byte_measurement, pair_measurement, *_ = acquired_book_relations
     source_references = next(
         assertion["dimensions"]["content"]["source_material"]
         for assertion in byte_measurement.material["assertions"]
@@ -496,8 +494,8 @@ def test_book_measurements_retain_every_exact_file_occurrence(
     )
 
     assert tuple(
-        reference["ingest_occurrence_identity"] for reference in source_references
-    ) == tuple(occurrence.identity for occurrence in ingests)
+        reference["material_acquisition_occurrence_identity"] for reference in source_references
+    ) == tuple(occurrence.identity for occurrence in acquisition_results)
     assert byte_measurement.material["source_localities"] == [
         "book-material-acquisition"
     ]
@@ -822,14 +820,13 @@ def test_book_and_supplied_material_have_later_position_recurrence(
     supplied_material = b"".join(
         supplied_path.read_bytes().splitlines(keepends=True)[:300]
     )
-    supplied_ingest = ingest_material(
+    supplied_acquisition_result = record_witness_material_acquisition(
         ledger,
         locality_identity="supplied-position-material",
         exact_bytes=supplied_material,
-        source_role="fixture material",
         source_boundary="corpus/english_grimm_fairy_tales.txt:first-300-lines",
     )
-    supplied_reference = ingest_result_reference(ledger, supplied_ingest.identity)
+    supplied_reference = material_acquisition_result_reference(ledger, supplied_acquisition_result.identity)
 
     book_recurring = tuple(
         found
@@ -872,7 +869,7 @@ def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
         earlier_boundary,
         earlier_references,
         earlier_admission,
-        later_ingests,
+        later_acquisition_results,
         later_boundary,
         later_references,
         later_invocation_rows,
@@ -897,11 +894,11 @@ def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
         for occurrence in ledger.list_locality(
             "book-material-acquisition-later", through=later_boundary
         )
-        if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
-    ) == later_ingests
+        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+    ) == later_acquisition_results
     assert all(
         occurrence not in ledger.list(through=earlier_boundary)
-        for occurrence in later_ingests
+        for occurrence in later_acquisition_results
     )
     assert tuple(
         tuple(occurrence.returned for occurrence in row)
@@ -927,24 +924,23 @@ def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
 def test_later_material_does_not_enter_the_book_completeness_boundary(
     acquired_book_material,
 ):
-    ledger, _, ingests, boundary, _, _, _ = acquired_book_material
-    later = ingest_material(
+    ledger, _, acquisition_results, boundary, _, _, _ = acquired_book_material
+    later = record_witness_material_acquisition(
         ledger,
         locality_identity="book-material-acquisition",
         exact_bytes=b"later material",
-        source_role="fixture material",
         source_boundary="later",
     )
 
-    bounded_ingests = tuple(
+    bounded_acquisition_results = tuple(
         occurrence
         for occurrence in ledger.list_locality(
             "book-material-acquisition", through=boundary
         )
-        if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     )
-    assert bounded_ingests == ingests
-    assert later not in bounded_ingests
+    assert bounded_acquisition_results == acquisition_results
+    assert later not in bounded_acquisition_results
 
 
 def test_book_admission_recomputes_from_its_exact_invocation_results(

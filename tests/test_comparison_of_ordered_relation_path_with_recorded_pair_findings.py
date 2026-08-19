@@ -42,7 +42,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
     record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -141,7 +141,7 @@ def _record_path(ledger, pair_measurement, source):
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
         recurrence_assertion_identities=(recurrence[(97, 98)], recurrence[(98, 99)]),
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
         through=ledger.append_boundary(),
     )
@@ -205,19 +205,17 @@ def _record_path(ledger, pair_measurement, source):
 def _inputs(*, ledger=None, path_source_is_added=True):
     if ledger is None:
         ledger = EventLedger()
-    earlier_source = ingest_material(
+    earlier_source = record_witness_material_acquisition(
         ledger,
         locality_identity=LOCALITY,
         exact_bytes=b"abcabc",
-        source_role="system",
         source_boundary="earlier exact occurrence",
     )
     earlier = _pair_measurement(ledger)
-    added = ingest_material(
+    added = record_witness_material_acquisition(
         ledger,
         locality_identity=LOCALITY,
         exact_bytes=b"abc",
-        source_role="system",
         source_boundary="added exact occurrence",
         provenance_occurrence_references=(earlier_source.identity,),
     )
@@ -225,11 +223,10 @@ def _inputs(*, ledger=None, path_source_is_added=True):
     comparison = _record_pair_comparison(ledger, earlier, later)
     path_source = added
     if not path_source_is_added:
-        path_source = ingest_material(
+        path_source = record_witness_material_acquisition(
             ledger,
             locality_identity=LOCALITY,
             exact_bytes=b"abc",
-            source_role="system",
             source_boundary="unrelated exact occurrence",
             provenance_occurrence_references=(earlier_source.identity,),
         )

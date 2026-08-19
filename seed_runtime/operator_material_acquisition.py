@@ -367,7 +367,7 @@ def _recorded_result_material(
         "standing": result_material["standing"],
         "limits": result_material["limits"],
         "unknown": result_material["unknown"],
-        "source_role": "operator",
+        "source_role": "this operator",
         "provenance_occurrence_references": [],
         "dimensions": {
             "identity": result_material["result_identity"],
@@ -385,7 +385,7 @@ def _recorded_result_material(
                 ]
             ),
             "occurrence_preservation": (
-                "exact operator material Ingest occurrence recorded"
+                "exact operator material material acquisition occurrence recorded"
             ),
         },
     }

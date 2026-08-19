@@ -8,7 +8,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 )
 from seed_runtime.material_acquisition import acquired_material_bytes
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 
 
 FIDELITY_SUBJECT = "material_measurement_witness"
@@ -20,26 +20,26 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from book_material_measurement import measured_book_material  # noqa: E402
 
 
-def test_book_ingest_and_measurement_references_keep_their_exact_lineage():
+def test_book_material_acquisition_and_measurement_references_keep_their_exact_lineage():
     ledger, pair_references, byte_references = measured_book_material()
     paths = tuple(
         path
         for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
-    ingests = tuple(
+    acquisition_results = tuple(
         occurrence
         for occurrence in ledger.list()
-        if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     )
 
-    assert tuple(acquired_material_bytes(ingest) for ingest in ingests) == tuple(
+    assert tuple(acquired_material_bytes(acquisition_result) for acquisition_result in acquisition_results) == tuple(
         path.read_bytes() for path in paths
     )
-    assert tuple(ingest.material["source_boundary"] for ingest in ingests) == tuple(
+    assert tuple(acquisition_result.material["source_boundary"] for acquisition_result in acquisition_results) == tuple(
         str(path.relative_to(ROOT)) for path in paths
     )
-    assert {ingest.locality_identity for ingest in ingests} == {"book-material"}
+    assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
 
     byte_occurrence_identities = {
         reference.recorded_occurrence_identity for reference in byte_references

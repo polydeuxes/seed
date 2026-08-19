@@ -8,6 +8,9 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 from tests.representation_admission import admit_representation
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -56,7 +59,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     record_complete_candidate_standing,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     EVENT_KIND_RESPONSIBILITIES as PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
@@ -135,14 +138,14 @@ from seed_runtime.operator_material_acquisition import (
     record_operator_material_acquire_result,
     read_operator_material_acquire_locality_relation_requirements,
 )
-from seed_runtime.operator_system_locality import (
-    EVENT_KIND_RESPONSIBILITIES as SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES,
-    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    record_operator_system_locality_responsibility_assignment,
-    record_operator_system_locality_act_evidence,
-    record_operator_system_locality_result,
+from seed_runtime.operator_invocation_locality import (
+    EVENT_KIND_RESPONSIBILITIES as INVOCATION_LOCALITY_EVENT_KIND_RESPONSIBILITIES,
+    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_result,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_standing_continuation import (
@@ -529,11 +532,10 @@ def _assertion_locality_movement_yield_witness() -> dict:
 
 def _emission_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="emission",
         exact_bytes=b"emission",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
     representation = record_operator_representation(
@@ -576,11 +578,10 @@ def _failed_boundary_yield_witness() -> dict:
             return len(value) - 1
 
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="failed-emission",
         exact_bytes=b"failed-emission",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
     representation = record_operator_representation(
@@ -612,11 +613,10 @@ def _failed_boundary_yield_witness() -> dict:
 
 def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="repeated-emission-attempt",
         exact_bytes=b"repeated-emission-attempt",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
     representation = record_operator_representation(
@@ -697,11 +697,10 @@ def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
 
 def _representation_candidate_admission_yield_witnesses() -> dict[str, dict]:
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="representation-admission",
         exact_bytes=b"representation-admission",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
     representation = record_operator_representation(
@@ -781,11 +780,10 @@ def _complete_candidate_standing_yield_witness() -> dict:
 def _recorded_pair_measurement_comparison_yield_witnesses() -> dict[str, dict]:
     ledger = _IntegrityAdversaryLedger()
     locality_identity = "recorded-pair-comparison-yield"
-    earlier_source = ingest_material(
+    earlier_source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"abab",
-        source_role="system",
         source_boundary="earlier supplied occurrence",
     )
     earlier_measurement = _record_byte_measurement(
@@ -798,11 +796,10 @@ def _recorded_pair_measurement_comparison_yield_witnesses() -> dict[str, dict]:
         source_measurement_event_identity=earlier_measurement.identity,
         recording_locality_identity=locality_identity,
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"abac",
-        source_role="system",
         source_boundary="later supplied occurrence",
         provenance_occurrence_references=(earlier_source.identity,),
     )
@@ -972,11 +969,10 @@ def _representation_witness() -> dict:
 
 def _sourced_representation_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="representation-source",
         exact_bytes=b"source material",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
     representation = record_operator_representation(
@@ -1056,16 +1052,15 @@ def _occurrence_position_yield_witness() -> dict:
 def _byte_pair_occurrence_position_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality = "byte-pair-occurrence-position"
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abc",
-        source_role="exact material",
         source_boundary="exact material boundary",
     )
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         locality_standing=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
@@ -1087,11 +1082,10 @@ def _byte_pair_occurrence_position_yield_witness() -> dict:
 def _pair_occurrence_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality = "pair-occurrence"
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abxxab",
-        source_role="premise material",
         source_boundary="exact premise boundary",
     )
     byte = _record_byte_measurement(
@@ -1112,18 +1106,17 @@ def _pair_occurrence_yield_witness() -> dict:
         if assertion.result == "recurrence"
         and assertion.representation == (ord("a"), ord("b"))
     )
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"ba---ab",
-        source_role="later material",
         source_boundary="exact later boundary",
     )
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identity=recurrence.assertion_identity,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
     )
     assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -1150,11 +1143,10 @@ def _pair_occurrence_yield_witness() -> dict:
 def _shared_position_yield_witnesses() -> dict[str, dict]:
     ledger = _IntegrityAdversaryLedger()
     locality = "shared-position"
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abxxabbcxxbc",
-        source_role="premise material",
         source_boundary="exact premise boundary",
     )
     byte = _record_byte_measurement(
@@ -1176,11 +1168,10 @@ def _shared_position_yield_witnesses() -> dict[str, dict]:
         and assertion.representation
         in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
     }
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abc",
-        source_role="later material",
         source_boundary="exact later boundary",
     )
     findings = measure_positions_for_recurrent_byte_pair_assertions(
@@ -1190,7 +1181,7 @@ def _shared_position_yield_witnesses() -> dict[str, dict]:
             recurrences[(ord("a"), ord("b"))],
             recurrences[(ord("b"), ord("c"))],
         ),
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=8,
         through=ledger.append_boundary(),
     )
@@ -1456,31 +1447,29 @@ def _standing_boundary_reference_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _operator_system_locality_yield_witness() -> dict:
+def _operator_invocation_locality_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality_identity = "operator-invocation-locality"
-    command = ingest_material(
+    command = record_operator_material_occurrence(
         ledger,
         locality_identity=locality_identity,
-        exact_bytes=b"!pytest\n",
-        source_role="operator",
-        source_boundary="operator boundary",
+        exact=b"!pytest\n",
     )
-    assignment = record_operator_system_locality_responsibility_assignment(
+    assignment = record_operator_invocation_locality_responsibility_assignment(
         ledger,
         operator_material_occurrence_reference=command.identity,
         operator_locality_standing=read_operator_locality_standing(
             ledger, locality_identity=locality_identity
         ),
     )
-    act = record_operator_system_locality_act_evidence(
+    act = record_operator_invocation_locality_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
             ledger, locality_identity=assignment.locality_identity
         ),
     )
-    event = record_operator_system_locality_result(
+    event = record_operator_invocation_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
     )
     return _yield_bundle(ledger, event)
@@ -1569,13 +1558,12 @@ def _yield_bundle(ledger, event) -> dict:
     }
 
 
-def _material_ingest_yield_witness() -> dict:
+def _witness_material_acquisition_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
-    event = ingest_material(
+    event = record_witness_material_acquisition(
         ledger,
-        locality_identity="material-ingest-yield",
+        locality_identity="material-acquisition_result-yield",
         exact_bytes=b"\x00\xffmaterial\n",
-        source_role="system",
         source_boundary="supplied byte boundary",
     )
     return _yield_bundle(ledger, event)
@@ -2423,10 +2411,10 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
             _addressed_byte_occurrence_reference_determination_yield_witness
         ),
         "failed_boundary": _failed_boundary_yield_witness,
-        "material_ingest": _material_ingest_yield_witness,
+        "witness_material_acquisition": _witness_material_acquisition_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "operator_invocation_locality_relation": (
-            _operator_system_locality_yield_witness
+            _operator_invocation_locality_yield_witness
         ),
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "recorded_standing_boundary_locality_relation": (
@@ -2986,14 +2974,14 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             BYTE_MEASUREMENT_RULE,
             True,
             {"exact_source_material_set", "count", "recurrence"},
-            "ingest_occurrence_identity",
+            "material_acquisition_occurrence_identity",
         ),
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND: (
             BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             BYTE_PAIR_MEASUREMENT_RULE,
             False,
             {"count", "recurrence"},
-            "ingest_occurrence_identity",
+            "material_acquisition_occurrence_identity",
         ),
         OCCURRENCE_POSITION_RECORDED_KIND: (
             OCCURRENCE_POSITION_RESPONSIBILITY,
@@ -3109,9 +3097,9 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
                 )
                 == material.get("pair_assertion_reference")
                 and item.get("assertion_subject", {}).get(
-                    "source_ingest_occurrence_identity"
+                    "source_material_acquisition_occurrence_identity"
                 )
-                == material.get("source_ingest_occurrence_identity")
+                == material.get("source_material_acquisition_occurrence_identity")
                 for item in assertions
             )
         )
@@ -5204,10 +5192,10 @@ def test_different_yield_occurrences_do_not_share_result_identity():
             _addressed_byte_occurrence_reference_determination_yield_witness
         ),
         "failed_boundary": _failed_boundary_yield_witness,
-        "material_ingest": _material_ingest_yield_witness,
+        "witness_material_acquisition": _witness_material_acquisition_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "operator_invocation_locality_relation": (
-            _operator_system_locality_yield_witness
+            _operator_invocation_locality_yield_witness
         ),
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "recorded_standing_boundary_locality_relation": (
@@ -5359,18 +5347,16 @@ def test_exact_material_admission_establishes_one_rule_relation():
 
 def test_representation_source_and_standing_boundary_remain_distinct_coordinates():
     ledger = _IntegrityAdversaryLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="representation-source",
         exact_bytes=b"source material",
-        source_role="operator",
         source_boundary="exact source boundary",
     )
-    later = ingest_material(
+    later = record_witness_material_acquisition(
         ledger,
         locality_identity="representation-source",
         exact_bytes=b"later material",
-        source_role="operator",
         source_boundary="later source boundary",
     )
     representation = record_operator_representation(
@@ -5682,15 +5668,15 @@ def test_recorded_boundary_locality_stages_keep_distinct_clause_coordinates():
     ] == "06.Locality.A"
 
 
-def test_operator_system_locality_stages_keep_distinct_witness_clauses():
-    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
-        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+def test_operator_invocation_locality_stages_keep_distinct_witness_clauses():
+    assert INVOCATION_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     ] == "06.Locality.D"
-    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
-        OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND
+    assert INVOCATION_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND
     ] == "02.Acts.A"
-    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
-        OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    assert INVOCATION_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     ] == "06.Locality.A"
 
 
@@ -5852,11 +5838,11 @@ def test_standing_measurement_declarations_match_the_curated_runtime_order():
             "subject": {
                 "first_subject": "exact_byte_occurrences",
                 "relation": "of",
-                "second_subject": "exact_Ingest_source_set",
+                "second_subject": "exact_material_acquisition_result_set",
             },
             "findings": ["count", "recurrence"],
         },
-        "input_subject": "exact_Ingest_source_set",
+        "input_subject": "exact_material_acquisition_result_set",
         "bounded_by": ["source_localities", "completeness_boundary"],
         "standing_not_established": ["represented_relation"],
     }
@@ -6108,7 +6094,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             },
             "input_references": [
                 "pair_assertion_reference",
-                "source_ingest_occurrence_identity",
+                "source_material_acquisition_occurrence_identity",
             ],
             "result_coordinates": [
                 "dimensions",
@@ -6135,7 +6121,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
                 "second_subject": "Yield_relation",
             },
         },
-        "input_material": "later_exact_Ingest_result",
+        "input_material": "later_exact_material_acquisition_result",
         "findings": ["first_position", "second_position"],
         "order_and_position_difference_read_from": [
             "first_position",
@@ -6156,7 +6142,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
 
 
     assert material["pair_assertion_reference"]
-    assert material["source_ingest_occurrence_identity"]
+    assert material["source_material_acquisition_occurrence_identity"]
     assert material["occurrence_limit"]
     assert all(
         set(assertion["dimensions"]["content"])
@@ -6262,7 +6248,7 @@ def test_byte_pair_occurrence_position_measurement_is_structured_in_grammar():
         act_material["participation"]["subject_reference"]
     )
     assert declared["witness"]["input_relation"] == {
-        "first_subject": "exact_Ingest_result",
+        "first_subject": "exact_material_acquisition_result",
         "relation": "input_to",
         "second_subject": "exact_Act",
     }
@@ -6522,11 +6508,10 @@ def test_responsibility_coordinates_do_not_establish_assignment_standing():
 
 def test_occurrence_position_assignment_standing_refuses_a_corrupted_prior_carrier():
     ledger = _IntegrityAdversaryLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"ab",
-        source_role="test source",
         source_boundary="test boundary",
     )
     prior_result = _record_byte_measurement(
@@ -7007,7 +6992,7 @@ FIDELITY_SUBJECTS = {
         test_recorded_boundary_locality_stages_keep_distinct_clause_coordinates,
     ),
     "Responsibility_assignment_of_operator_invocation_Locality_relation": (
-        test_operator_system_locality_stages_keep_distinct_witness_clauses,
+        test_operator_invocation_locality_stages_keep_distinct_witness_clauses,
     ),
     "operator_material_acquisition_responsibility_clause_coordinates": (
         test_operator_material_acquire_stages_keep_distinct_clause_coordinates,

@@ -33,7 +33,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     source_assertion_references_for_candidate_standing,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
@@ -48,11 +48,10 @@ from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
 
 
 def _source(ledger, *, locality="source", exact_bytes=b"ab"):
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=exact_bytes,
-        source_role="exact supplied material",
         source_boundary="candidate source boundary",
     )
     return _record_byte_measurement(
@@ -806,11 +805,10 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"unrelated",
-        source_role="unrelated source",
         source_boundary="unrelated boundary",
     )
     expected_boundaries_and_relations = (
@@ -843,11 +841,10 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=result.locality_identity,
         exact_bytes=b"later local material",
-        source_role="later local source",
         source_boundary="later local boundary",
     )
     assert expected_boundaries_and_relations[0][

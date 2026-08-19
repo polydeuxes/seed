@@ -23,7 +23,7 @@ from compiled_parser_invocation import (  # noqa: E402
     compiled_parser_invocation,
     one_byte_substitutions,
 )
-from material_fixture_measurement import measured_one_byte_material  # noqa: E402
+from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
 
 
 def test_equal_material_keeps_distinct_invocation_occurrences():

@@ -1,4 +1,4 @@
-"""Operator Ingest, slash commands, Representation, and emission."""
+"""Operator material acquisition, slash commands, Representation, and emission."""
 
 from __future__ import annotations
 
@@ -75,10 +75,10 @@ from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_responsible_act_evidence,
     record_standing_locality_continuation_result,
 )
-from seed_runtime.operator_system_locality import (
-    record_operator_system_locality_responsibility_assignment,
-    record_operator_system_locality_act_evidence,
-    record_operator_system_locality_result,
+from seed_runtime.operator_invocation_locality import (
+    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_result,
 )
 from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_responsibility_assignment,
@@ -104,8 +104,8 @@ from seed_runtime.standing_measurement_declarations import (
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
-    SuppliedSystemMaterialOccurrence,
-    ingest_supplied_invocation_occurrence,
+    SuppliedWitnessMaterialOccurrence,
+    acquire_supplied_witness_material_occurrence,
 )
 
 
@@ -348,7 +348,7 @@ def _record_occurrence_position_after_declared_measurements(
 
 
 def _record_measurements_after_pin(ledger, standing, *, locality_identity):
-    """Exhaust declared Ingest roads, then record the explicit Locality road."""
+    """Exhaust declared material acquisition roads, then record the explicit Locality road."""
 
     recorded = _record_declared_measurements_from_carried_standing(
         ledger,
@@ -402,13 +402,13 @@ def _pair_premise_for_existing_material(
     *,
     locality_identity,
 ):
-    """Address the latest pair premise, or record one for existing Ingests."""
+    """Address the latest pair premise, or record one for existing material-acquisition results."""
 
-    if not standing["ingest_occurrences"]:
+    if not standing["material_acquisition_result_occurrences"]:
         return standing, None
     current_source_occurrence_references = tuple(
         occurrence["evidence_event_identity"]
-        for occurrence in standing["ingest_occurrences"]
+        for occurrence in standing["material_acquisition_result_occurrences"]
     )
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
         event = ledger.get(event_identity)
@@ -437,7 +437,7 @@ def _pair_premise_for_existing_material(
             and event.locality_identity == locality_identity
             and type(source_occurrence_references) is list
             and tuple(
-                reference.get("ingest_occurrence_identity")
+                reference.get("material_acquisition_occurrence_identity")
                 for reference in source_occurrence_references
                 if type(reference) is dict
             )
@@ -527,7 +527,7 @@ def run_persistent_operator_console(
     raw_output_stream: BinaryIO | None = None,
     operator_invocation_provider: OperatorInvocationProvider | None = None,
 ) -> None:
-    """Repeat exact-byte Ingest and slash-command occurrences."""
+    """Repeat exact-byte material acquisition and slash-command occurrences."""
     if operator_invocation_provider is not None and raw_output_stream is None:
         raise ValueError("exact output boundary required")
     operator_egress_boundary_identity = (
@@ -669,7 +669,7 @@ def run_persistent_operator_console(
                     command_representation["representation_event_identity"],
                 )["exact_material"]
                 relation_assignment = (
-                    record_operator_system_locality_responsibility_assignment(
+                    record_operator_invocation_locality_responsibility_assignment(
                         ledger,
                         operator_material_occurrence_reference=(
                             command_occurrence_reference
@@ -685,39 +685,39 @@ def run_persistent_operator_console(
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
                 )
-                system_locality_identity = relation_assignment.material[
+                invocation_locality_identity = relation_assignment.material[
                     "destination_locality_identity"
                 ]
-                system_standing = read_operator_locality_standing(
-                    ledger, locality_identity=system_locality_identity
+                witness_standing = read_operator_locality_standing(
+                    ledger, locality_identity=invocation_locality_identity
                 )
-                relation_act = record_operator_system_locality_act_evidence(
+                relation_act = record_operator_invocation_locality_act_evidence(
                     ledger,
                     responsibility_assignment_event_identity=(
                         relation_assignment.identity
                     ),
-                    responsibility_assignment_standing=system_standing,
+                    responsibility_assignment_standing=witness_standing,
                 )
-                system_standing = _advance_over(
+                witness_standing = _advance_over(
                     ledger,
-                    system_standing,
+                    witness_standing,
                     (relation_act.identity,),
-                    locality_identity=system_locality_identity,
+                    locality_identity=invocation_locality_identity,
                 )
-                relation_result = record_operator_system_locality_result(
+                relation_result = record_operator_invocation_locality_result(
                     ledger,
                     responsible_act_evidence_event_identity=relation_act.identity,
                 )
-                system_standing = _advance_over(
+                witness_standing = _advance_over(
                     ledger,
-                    system_standing,
+                    witness_standing,
                     (
                         relation_result.material[
                             "evidence_of_yield_relation_identity"
                         ],
                         relation_result.identity,
                     ),
-                    locality_identity=system_locality_identity,
+                    locality_identity=invocation_locality_identity,
                 )
             supplied_boundaries: set[str] = set()
             supplied_occurrence_count = 0
@@ -726,20 +726,20 @@ def run_persistent_operator_console(
             pair_measurement_by_byte_measurement: dict[str, Event] = {}
             provider_boundary = ledger.append_boundary()
 
-            def acquire_system_material(supplied) -> None:
-                nonlocal system_standing
+            def acquire_witness_material(supplied) -> None:
+                nonlocal witness_standing
                 nonlocal supplied_occurrence_count
                 nonlocal provider_boundary
                 if ledger.append_boundary() != provider_boundary:
                     raise ValueError(
                         "provider appended an occurrence outside supplied material"
                     )
-                if type(supplied) is not SuppliedSystemMaterialOccurrence:
+                if type(supplied) is not SuppliedWitnessMaterialOccurrence:
                     raise TypeError("exact supplied material required")
                 if supplied.source_boundary in supplied_boundaries:
                     raise ValueError("distinct source boundary required")
                 supplied_boundaries.add(supplied.source_boundary)
-                supplied_occurrence = ingest_supplied_invocation_occurrence(
+                supplied_occurrence = acquire_supplied_witness_material_occurrence(
                     ledger,
                     operator_invocation_locality_result_event_identity=(
                         relation_result.identity
@@ -752,16 +752,16 @@ def run_persistent_operator_console(
                 )
                 supplied_occurrence_references.append(supplied_occurrence.identity)
                 supplied_occurrence_count += 1
-                system_standing = _advance_over(
+                witness_standing = _advance_over(
                     ledger,
-                    system_standing,
+                    witness_standing,
                     (supplied_occurrence.identity,),
-                    locality_identity=system_locality_identity,
+                    locality_identity=invocation_locality_identity,
                 )
-                system_standing, byte_measurement = _record_measurements_after_pin(
+                witness_standing, byte_measurement = _record_measurements_after_pin(
                     ledger,
-                    system_standing,
-                    locality_identity=system_locality_identity,
+                    witness_standing,
+                    locality_identity=invocation_locality_identity,
                 )
                 byte_measurement_by_supplied_occurrence[
                     supplied_occurrence.identity
@@ -778,42 +778,42 @@ def run_persistent_operator_console(
                         )
                     )
                     if earlier_pair_measurement is None:
-                        system_standing, earlier_pair = _record_pair_measurement(
+                        witness_standing, earlier_pair = _record_pair_measurement(
                             ledger,
-                            system_standing,
+                            witness_standing,
                             byte_measurement_event_identity=earlier_byte_measurement,
-                            locality_identity=system_locality_identity,
+                            locality_identity=invocation_locality_identity,
                         )
                         earlier_pair_measurement = earlier_pair
                         pair_measurement_by_byte_measurement[
                             earlier_byte_measurement
                         ] = earlier_pair_measurement
-                    system_standing, later_pair = _record_pair_measurement(
+                    witness_standing, later_pair = _record_pair_measurement(
                         ledger,
-                        system_standing,
+                        witness_standing,
                         byte_measurement_event_identity=byte_measurement.identity,
-                        locality_identity=system_locality_identity,
+                        locality_identity=invocation_locality_identity,
                     )
                     pair_measurement_by_byte_measurement[
                         byte_measurement.identity
                     ] = later_pair
-                    system_standing, comparison = (
+                    witness_standing, comparison = (
                         _record_pair_measurement_comparison(
                             ledger,
-                            system_standing,
+                            witness_standing,
                             earlier_pair_measurement=earlier_pair_measurement,
                             later_pair_measurement=later_pair,
-                            locality_identity=system_locality_identity,
+                            locality_identity=invocation_locality_identity,
                         )
                     )
                     comparison_representation = record_operator_representation(
                         ledger,
-                        locality_identity=system_locality_identity,
-                        locality_standing=system_standing,
+                        locality_identity=invocation_locality_identity,
+                        locality_standing=witness_standing,
                         source_occurrence_reference=comparison.identity,
                     )
-                    system_standing = _advance_over_representation(
-                        ledger, system_standing, comparison_representation
+                    witness_standing = _advance_over_representation(
+                        ledger, witness_standing, comparison_representation
                     )
                     destination_operator_boundary = operator_emission_boundary(
                         raw_output_stream,
@@ -821,9 +821,9 @@ def run_persistent_operator_console(
                         locality_identity=operator_locality_identity,
                         boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
                     )
-                    system_standing, _candidate = _record_representation_candidate(
+                    witness_standing, _candidate = _record_representation_candidate(
                         ledger,
-                        system_standing,
+                        witness_standing,
                         comparison_representation,
                         destination_operator_boundary=(
                             destination_operator_boundary
@@ -832,17 +832,17 @@ def run_persistent_operator_console(
                 if not supplied.egress:
                     provider_boundary = ledger.append_boundary()
                     return
-                system_representation = record_operator_representation(
+                witness_representation = record_operator_representation(
                     ledger,
-                    locality_identity=system_locality_identity,
-                    locality_standing=system_standing,
+                    locality_identity=invocation_locality_identity,
+                    locality_standing=witness_standing,
                     source_occurrence_reference=supplied_occurrence.identity,
                 )
                 base_reference_count = len(
-                    system_representation["recorded_occurrence_references"]
+                    witness_representation["recorded_occurrence_references"]
                 )
-                system_standing = _advance_over_representation(
-                    ledger, system_standing, system_representation
+                witness_standing = _advance_over_representation(
+                    ledger, witness_standing, witness_representation
                 )
                 destination_operator_boundary = operator_emission_boundary(
                     raw_output_stream,
@@ -850,11 +850,11 @@ def run_persistent_operator_console(
                     locality_identity=operator_locality_identity,
                     boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
                 )
-                system_standing, admission, applicability = (
+                witness_standing, admission, applicability = (
                     _record_exact_material_representation_admission_and_applicability(
                         ledger,
-                        system_standing,
-                        system_representation,
+                        witness_standing,
+                        witness_representation,
                         destination_operator_boundary=(
                             destination_operator_boundary
                         ),
@@ -873,24 +873,24 @@ def run_persistent_operator_console(
                 try:
                     emit_operator_representation_material(
                         ledger,
-                        representation=system_representation,
+                        representation=witness_representation,
                         admission_result_event_identity=admission.identity,
                         applicability_result_event_identity=(
                             applicability.identity
                         ),
-                        locality_standing=system_standing,
+                        locality_standing=witness_standing,
                         output_boundary=destination_operator_boundary,
                     )
                 finally:
-                    emission_references = system_representation[
+                    emission_references = witness_representation[
                         "recorded_occurrence_references"
                     ][base_reference_count:]
                     if emission_references:
-                        system_standing = _advance_over_representation(
+                        witness_standing = _advance_over_representation(
                             ledger,
-                            system_standing,
+                            witness_standing,
                             {
-                                "locality_identity": system_locality_identity,
+                                "locality_identity": invocation_locality_identity,
                                 "recorded_occurrence_references": (
                                     emission_references
                                 ),
@@ -900,7 +900,7 @@ def run_persistent_operator_console(
 
             provider_result = operator_invocation_provider(
                 command_material,
-                acquire_system_material,
+                acquire_witness_material,
             )
             if ledger.append_boundary() != provider_boundary:
                 raise ValueError(
@@ -909,13 +909,13 @@ def run_persistent_operator_console(
             if provider_result is not None or not supplied_occurrence_count:
                 raise TypeError("exact supplied material required")
             with ledger.batched():
-                system_representation = record_operator_representation(
+                witness_representation = record_operator_representation(
                     ledger,
-                    locality_identity=system_locality_identity,
-                    locality_standing=system_standing,
+                    locality_identity=invocation_locality_identity,
+                    locality_standing=witness_standing,
                 )
-                system_standing = _advance_over_representation(
-                    ledger, system_standing, system_representation
+                witness_standing = _advance_over_representation(
+                    ledger, witness_standing, witness_representation
                 )
             continue
         if is_slash_command(boundary_material):

@@ -24,7 +24,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
     record_byte_pair_occurrence_position_measurement_act_evidence,
@@ -60,17 +60,16 @@ def _advance(ledger, standing, *events):
 
 
 def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=exact,
-        source_role="exact supplied material",
         source_boundary="exact supplied material boundary",
     )
     standing = read_operator_locality_standing(ledger, locality_identity=locality)
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, assignment)
@@ -89,7 +88,7 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
 
 def _coordinate(ledger, source, exact, position):
     return _source_position_coordinate_reference(
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary_identity=(
             ledger.append_boundary_through_occurrence(source.identity).identity
@@ -178,7 +177,7 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "first_subject",
         "relation",
         "second_subject",
-        "source_ingest_occurrence_identity",
+        "source_material_acquisition_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
         "responsibility_assignment_reference",
@@ -245,11 +244,10 @@ def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically
     )
     coordinate = _coordinate(ledger, first_source, b"ab", 0)
     stale = deepcopy(first_standing)
-    extra = ingest_material(
+    extra = record_witness_material_acquisition(
         ledger,
         locality_identity="addressed-byte",
         exact_bytes=b"later",
-        source_role="exact supplied material",
         source_boundary="exact supplied material boundary",
     )
     current = read_operator_locality_standing(

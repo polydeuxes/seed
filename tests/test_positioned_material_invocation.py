@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,20 +21,19 @@ from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     admit_invocation_occurrences,
     admit_invocation_return_occurrences,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 
 
 def _source(ledger, locality_identity, material):
-    event = ingest_material(
+    event = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=material,
-        source_role="fixture material",
         source_boundary=locality_identity,
     )
-    return ingest_result_reference(ledger, event.identity)
+    return material_acquisition_result_reference(ledger, event.identity)
 
 
 def test_equal_material_at_different_positions_keeps_each_occurrence():

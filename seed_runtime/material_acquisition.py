@@ -134,15 +134,15 @@ def iter_exact_material_acquisition_results(
 ):
     """Yield exact acquisition results without a Locality-wide read."""
 
-    from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+    from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     from seed_runtime.operator_material_acquisition import (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     )
 
-    generic = iter(
+    witness = iter(
         ledger.iter_locality_kind_identities(
             locality_identity,
-            MATERIAL_INGEST_OCCURRED_KIND,
+            WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
             through=through,
         )
     )
@@ -154,25 +154,25 @@ def iter_exact_material_acquisition_results(
         )
     )
     absent = object()
-    generic_identity = next(generic, absent)
+    witness_identity = next(witness, absent)
     operator_identity = next(operator, absent)
-    while generic_identity is not absent or operator_identity is not absent:
-        if generic_identity is absent:
+    while witness_identity is not absent or operator_identity is not absent:
+        if witness_identity is absent:
             selected = operator_identity
             operator_identity = next(operator, absent)
         elif operator_identity is absent:
-            selected = generic_identity
-            generic_identity = next(generic, absent)
+            selected = witness_identity
+            witness_identity = next(witness, absent)
         else:
             try:
                 ledger.occurrences_in_append_order(
-                    (generic_identity, operator_identity),
+                    (witness_identity, operator_identity),
                     locality_identity=locality_identity,
                 )
             except ValueError:
                 try:
                     ledger.occurrences_in_append_order(
-                        (operator_identity, generic_identity),
+                        (operator_identity, witness_identity),
                         locality_identity=locality_identity,
                     )
                 except ValueError as error:
@@ -182,8 +182,8 @@ def iter_exact_material_acquisition_results(
                 selected = operator_identity
                 operator_identity = next(operator, absent)
             else:
-                selected = generic_identity
-                generic_identity = next(generic, absent)
+                selected = witness_identity
+                witness_identity = next(witness, absent)
         yield read_exact_material_acquisition_result(ledger, selected)
 
 
@@ -204,13 +204,13 @@ def read_exact_material_acquisition_result(
             "exact material-acquisition result is absent or corrupted"
         )
 
-    from seed_runtime.material_ingest import (
-        MATERIAL_INGEST_OCCURRED_KIND,
-        _read_generic_material_ingest_result,
+    from seed_runtime.witness_material_acquisition import (
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+        _read_witness_material_acquisition_result,
     )
 
-    if event.kind == MATERIAL_INGEST_OCCURRED_KIND:
-        return _read_generic_material_ingest_result(ledger, event)
+    if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND:
+        return _read_witness_material_acquisition_result(ledger, event)
 
     from seed_runtime.operator_material_acquisition import (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,

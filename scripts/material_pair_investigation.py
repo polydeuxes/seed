@@ -9,7 +9,7 @@ from compiled_format_invocation import (
     ExactPositionMaterialReference,
     ExactPositionPairMaterialReference,
 )
-from compiled_material_invocation import IngestResultReference
+from compiled_material_invocation import MaterialAcquisitionResultReference
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_position_pair_measurement,
@@ -83,7 +83,7 @@ def exact_references_to_recurrent_material_pairs(
         ledger, reference["recorded_occurrence_identity"]
     ).material
     source_occurrence_identities = tuple(
-        reference["ingest_occurrence_identity"]
+        reference["material_acquisition_result_occurrence_identity"]
         for reference in assignment["source_occurrence_references"]
     )
     completeness_boundary_identity = event.material["completeness_boundary"][
@@ -359,7 +359,7 @@ class ExactCompareOccurrenceOfMaterialPair:
     @property
     def matching_support_occurrence_identities(
         self,
-    ) -> tuple[tuple[IngestResultReference, int, int], ...]:
+    ) -> tuple[tuple[MaterialAcquisitionResultReference, int, int], ...]:
         current_relation = (
             self.current_occurrence_of_material_pair.direction,
             self.current_occurrence_of_material_pair.displacement,
@@ -376,7 +376,7 @@ class ExactCompareOccurrenceOfMaterialPair:
 
 def exact_subjects_of_recurrent_adjacent_material_pairs(
     source_references: tuple[
-        IngestResultReference, ...
+        MaterialAcquisitionResultReference, ...
     ],
     pair_references: tuple[ExactReferenceToRecurrentMaterialPair, ...],
 ) -> tuple[ExactSubjectOfRecurrentMaterialPair, ...]:
@@ -386,7 +386,7 @@ def exact_subjects_of_recurrent_adjacent_material_pairs(
         type(source_references) is not tuple
         or not source_references
         or any(
-            type(reference) is not IngestResultReference
+            type(reference) is not MaterialAcquisitionResultReference
             for reference in source_references
         )
     ):
@@ -446,13 +446,13 @@ def exact_subjects_of_recurrent_adjacent_material_pairs(
 
 def exact_occurrences_of_material_pair(
     subject_of_recurrent_material_pair: ExactSubjectOfRecurrentMaterialPair,
-    source_reference: IngestResultReference,
+    source_reference: MaterialAcquisitionResultReference,
 ) -> tuple[ExactOccurrenceOfMaterialPair, ...]:
     """Enumerate every ordered occurrence of one evidenced pair in one source."""
 
     if type(subject_of_recurrent_material_pair) is not ExactSubjectOfRecurrentMaterialPair:
         raise TypeError("pair occurrences require one exact subject")
-    if type(source_reference) is not IngestResultReference:
+    if type(source_reference) is not MaterialAcquisitionResultReference:
         raise TypeError("pair occurrences require one exact source reference")
     exact = source_reference.exact_material
     if (

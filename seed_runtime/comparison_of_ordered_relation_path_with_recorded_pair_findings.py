@@ -197,7 +197,7 @@ def _path_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any]:
         raise ValueError("comparison of ordered relation path with recorded pair findings requires exact pair subjects")
     content = assertion.get("dimensions", {}).get("content")
     source = (
-        content.get("source_ingest_occurrence_identity")
+        content.get("source_material_acquisition_occurrence_identity")
         if type(content) is dict
         else None
     )

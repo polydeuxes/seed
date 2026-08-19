@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import MaterialImplementationFunction  # noqa: E402
 from compiled_material_measurement_harness import measure  # noqa: E402
-from material_fixture_measurement import measured_one_byte_material  # noqa: E402
+from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
 
 
 def test_harness_preserves_exact_and_return_admissions_separately():

@@ -11,7 +11,7 @@ import subprocess
 import time
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 from material_admission import (
@@ -66,7 +66,7 @@ class MaterialImplementationFunction:
 
 
 @dataclass(frozen=True, slots=True)
-class IngestResultReference:
+class MaterialAcquisitionResultReference:
     recorded_occurrence_identity: str
     locality_identity: str
     act_occurrence_identity: str
@@ -86,9 +86,9 @@ class IngestResultReference:
             type(coordinate) is not str or not coordinate
             for coordinate in coordinates
         ):
-            raise TypeError("Ingest result requires exact occurrence coordinates")
+            raise TypeError("material acquisition result requires exact occurrence coordinates")
         if type(self.exact_material) is not bytes:
-            raise TypeError("Ingest result requires exact material")
+            raise TypeError("material acquisition result requires exact material")
 
 
 @dataclass(frozen=True, slots=True)
@@ -847,14 +847,20 @@ MATERIAL_IMPLEMENTATION_FUNCTIONS = (
 )
 
 
-def ingest_result_reference(
+def material_acquisition_result_reference(
     ledger: EventLedger, recorded_occurrence_identity: str
-) -> IngestResultReference:
+) -> MaterialAcquisitionResultReference:
     if not isinstance(ledger, EventLedger):
-        raise TypeError("Ingest result reference requires one EventLedger")
-    event = ledger.get(recorded_occurrence_identity)
-    if event is None or event.kind != MATERIAL_INGEST_OCCURRED_KIND:
-        raise ValueError("Ingest result reference requires one Ingest occurrence")
+        raise TypeError("material acquisition result reference requires one EventLedger")
+    try:
+        event = read_exact_material_acquisition_result(
+            ledger, recorded_occurrence_identity
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "material acquisition result reference requires one exact "
+            "material-acquisition occurrence"
+        ) from error
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
@@ -864,8 +870,8 @@ def ingest_result_reference(
         ),
     )
     if not all(requirements.values()):
-        raise ValueError("Ingest result reference requires its exact Evidence of Yield relation")
-    return IngestResultReference(
+        raise ValueError("material acquisition result reference requires its exact Evidence of Yield relation")
+    return MaterialAcquisitionResultReference(
         recorded_occurrence_identity=event.identity,
         locality_identity=event.locality_identity,
         act_occurrence_identity=event.material["act_occurrence_identity"],

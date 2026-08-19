@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from compiled_material_invocation import IngestResultReference  # noqa: E402
+from compiled_material_invocation import MaterialAcquisitionResultReference  # noqa: E402
 from material_pair_investigation import (  # noqa: E402
     ExactCompareOccurrenceOfMaterialPair,
     ExactOccurrenceOfMaterialPair,
@@ -25,7 +25,7 @@ from material_pair_investigation import (  # noqa: E402
 
 
 def _source(identity: str, exact: bytes, *, locality: str = "pair-locality"):
-    return IngestResultReference(
+    return MaterialAcquisitionResultReference(
         recorded_occurrence_identity=f"{identity}-recorded",
         locality_identity=locality,
         act_occurrence_identity=f"{identity}-act",

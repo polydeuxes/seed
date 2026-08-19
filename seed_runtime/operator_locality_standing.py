@@ -1,4 +1,4 @@
-"""Deterministic Locality Standing read over preserved ingest events."""
+"""Deterministic Locality Standing read over preserved acquisition_result events."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any, Iterable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -146,13 +146,13 @@ from seed_runtime.operator_material_acquisition import (
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
 )
-from seed_runtime.operator_system_locality import (
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
-    get_operator_system_locality_responsibility_assignment,
-    get_operator_system_locality_act_evidence,
-    get_recorded_operator_system_locality,
+from seed_runtime.operator_invocation_locality import (
+    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
+    get_operator_invocation_locality_responsibility_assignment,
+    get_operator_invocation_locality_act_evidence,
+    get_recorded_operator_invocation_locality,
 )
 from seed_runtime.operator_representation_admission import (
     REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -358,7 +358,7 @@ def _set_operator_standing_validation_context(
     locality_identity: str,
     through_event_occurrence_identity: str | None,
     measurement_occurrences: dict[str, Any],
-    ingest_occurrences: list[dict[str, Any]],
+    material_acquisition_result_occurrences: list[dict[str, Any]],
     responsibility_assignment_occurrences: dict[str, None],
 ) -> None:
     bound = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
@@ -372,7 +372,7 @@ def _set_operator_standing_validation_context(
         or exact[0] is not ledger
         or exact[1] != locality_identity
         or exact[2] is not measurement_occurrences
-        or exact[3] is not ingest_occurrences
+        or exact[3] is not material_acquisition_result_occurrences
         or exact[4] is not responsibility_assignment_occurrences
     ):
         raise ValueError(
@@ -386,7 +386,7 @@ def _set_operator_standing_validation_context(
                 through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
-            "ingest_occurrences": ingest_occurrences,
+            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
             "responsibility_assignment_occurrences": (
                 responsibility_assignment_occurrences
             ),
@@ -411,7 +411,7 @@ def _operator_standing_validation_context(
     }
 
 _SUBJECT_BY_KIND = {
-    MATERIAL_INGEST_OCCURRED_KIND: "ingest_occurrence",
+    WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND: "material_acquisition_result_occurrence",
 }
 _MEASUREMENT_ACT_EVIDENCE_KINDS = {
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
@@ -467,10 +467,10 @@ _OPERATOR_MATERIAL_ACQUIRE_KINDS = {
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 }
-_OPERATOR_SYSTEM_LOCALITY_KINDS = {
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+_OPERATOR_INVOCATION_LOCALITY_KINDS = {
+    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
 }
 _REPRESENTATION_CANDIDATE_ADMISSION_KINDS = {
     REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -530,7 +530,7 @@ _SUPPORTED_KINDS = {
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
-    *_OPERATOR_SYSTEM_LOCALITY_KINDS,
+    *_OPERATOR_INVOCATION_LOCALITY_KINDS,
     *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
@@ -942,7 +942,7 @@ def advance_operator_locality_standing(
     from the ledger and is not itself recorded: it returns only standings,
     limits, and Unknown the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    No Yield is established for represented relation candidates here; each preserved ingest keeps
+    No Yield is established for represented relation candidates here; each preserved acquisition_result keeps
     the authority its own event recorded.
     """
     events = ledger.occurrences_in_append_order(
@@ -950,7 +950,7 @@ def advance_operator_locality_standing(
         locality_identity=locality_identity,
     )
     scope = f"locality:{locality_identity}"
-    ingest_occurrences: list[dict[str, Any]] = []
+    material_acquisition_result_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, None] = {}
@@ -992,7 +992,7 @@ def advance_operator_locality_standing(
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
         # see the shared-accumulator note above.
-        ingest_occurrences = prior["ingest_occurrences"]
+        material_acquisition_result_occurrences = prior["material_acquisition_result_occurrences"]
         measurement_occurrences = prior["measurement_occurrences"]
         if type(measurement_occurrences) is not dict:
             raise ValueError(
@@ -1088,7 +1088,7 @@ def advance_operator_locality_standing(
                 ledger,
                 locality_identity,
                 measurement_occurrences,
-                ingest_occurrences,
+                material_acquisition_result_occurrences,
                 responsibility_assignment_occurrences,
             )
         )
@@ -1098,7 +1098,7 @@ def advance_operator_locality_standing(
                 "locality_identity": locality_identity,
                 "through_event_occurrence_identity": None,
                 "measurement_occurrences": measurement_occurrences,
-                "ingest_occurrences": ingest_occurrences,
+                "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
                 "responsibility_assignment_occurrences": (
                     responsibility_assignment_occurrences
                 ),
@@ -1116,13 +1116,13 @@ def advance_operator_locality_standing(
                     through_event_occurrence_identity
                 ),
                 measurement_occurrences=measurement_occurrences,
-                ingest_occurrences=ingest_occurrences,
+                material_acquisition_result_occurrences=material_acquisition_result_occurrences,
                 responsibility_assignment_occurrences=(
                     responsibility_assignment_occurrences
                 ),
             )
         if not (
-            event.kind == MATERIAL_INGEST_OCCURRED_KIND
+            event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
             or event.kind.startswith("operator.representation.")
             or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
             or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
@@ -1133,7 +1133,7 @@ def advance_operator_locality_standing(
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
-            or event.kind in _OPERATOR_SYSTEM_LOCALITY_KINDS
+            or event.kind in _OPERATOR_INVOCATION_LOCALITY_KINDS
             or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
@@ -1144,7 +1144,7 @@ def advance_operator_locality_standing(
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
-            raise ValueError(f"unsupported operator-ingest event: {event.kind}")
+            raise ValueError(f"unsupported operator-acquisition_result event: {event.kind}")
         prior_through_event_occurrence_identity = through_event_occurrence_identity
         pair_lifecycle_event = event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
         if not pair_lifecycle_event:
@@ -1370,7 +1370,7 @@ def advance_operator_locality_standing(
                         prior_through_event_occurrence_identity
                     ),
                     "measurement_occurrences": measurement_occurrences,
-                    "ingest_occurrences": ingest_occurrences,
+                    "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
                 },
             )
             responsibility_assignment_occurrences[event.identity] = None
@@ -1434,18 +1434,18 @@ def advance_operator_locality_standing(
             }
         if (
             event.kind
-            == OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
         ):
-            get_operator_system_locality_responsibility_assignment(
+            get_operator_invocation_locality_responsibility_assignment(
                 ledger, event.identity
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND:
-            get_operator_system_locality_act_evidence(ledger, event.identity)
+        if event.kind == OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND:
+            get_operator_invocation_locality_act_evidence(ledger, event.identity)
             continue
-        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND:
-            get_recorded_operator_system_locality(ledger, event.identity)
+        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND:
+            get_recorded_operator_invocation_locality(ledger, event.identity)
             operator_invocation_locality_relations[event.identity] = None
             continue
         if event.kind in {
@@ -1500,7 +1500,7 @@ def advance_operator_locality_standing(
                 prior_through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
-            "ingest_occurrences": ingest_occurrences,
+            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
             "responsibility_assignment_occurrences": (
                 responsibility_assignment_occurrences
             ),
@@ -1900,7 +1900,7 @@ def advance_operator_locality_standing(
                         prior_through_event_occurrence_identity
                     ),
                     "measurement_occurrences": measurement_occurrences,
-                    "ingest_occurrences": ingest_occurrences,
+                    "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
                     "responsibility_assignment_occurrences": (
                         responsibility_assignment_occurrences
                     ),
@@ -2087,9 +2087,9 @@ def advance_operator_locality_standing(
                 )
             representations[representation_reference]["boundary_failure_event_identity"] = event.identity
             continue
-        ingest_reference = event.material["dimensions"]["identity"]
+        material_acquisition_reference = event.material["dimensions"]["identity"]
         occurrence = {
-            "subject_reference": ingest_reference,
+            "subject_reference": material_acquisition_reference,
             "standing": "preserved",
             "authority": event.material["dimensions"]["authority"],
             "evidence_event_identity": event.identity,
@@ -2099,13 +2099,13 @@ def advance_operator_locality_standing(
             occurrence["represented_material"] = event.material[
                 "represented_material"
             ]
-        ingest_occurrences.append(occurrence)
+        material_acquisition_result_occurrences.append(occurrence)
 
     return {
         "locality_identity": locality_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "event_count": event_count,
-        "ingest_occurrences": ingest_occurrences,
+        "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
         "measurement_occurrences": measurement_occurrences,
         "assertion_locality_movement_occurrences": (
             assertion_locality_movement_occurrences
@@ -2878,14 +2878,14 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         )
     measurements = locality_standing.get("measurement_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
-    ingests = locality_standing.get("ingest_occurrences")
+    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignment = event.material.get("responsibility_assignment_reference")
-    source_identity = event.material.get("source_ingest_occurrence_identity")
+    source_identity = event.material.get("source_material_acquisition_occurrence_identity")
     event_count = locality_standing.get("event_count")
     if (
         type(measurements) is not dict
         or type(assignments) is not dict
-        or type(ingests) is not list
+        or type(acquisition_results) is not list
         or type(assignment) is not dict
         or assignment.get("recorded_occurrence_identity") not in assignments
         or event.material.get("responsible_act_evidence_identity")
@@ -2893,7 +2893,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         or not any(
             type(occurrence) is dict
             and occurrence.get("evidence_event_identity") == source_identity
-            for occurrence in ingests
+            for occurrence in acquisition_results
         )
         or type(event.material.get("evidence_of_yield_relation_identity"))
         is not str
@@ -2938,14 +2938,14 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
     locality_relations = locality_standing.get(
         "operator_material_locality_relation_occurrences"
     )
-    ingest_occurrences = locality_standing.get("ingest_occurrences")
+    material_acquisition_result_occurrences = locality_standing.get("material_acquisition_result_occurrences")
     exact_results = locality_standing.get("exact_result_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
         or type(acts) is not dict
         or type(locality_relations) is not dict
-        or type(ingest_occurrences) is not list
+        or type(material_acquisition_result_occurrences) is not list
         or type(exact_results) is not dict
         or type(event_count) is not int
         or event_count < 0
@@ -3007,7 +3007,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
                 "locality_evidence_identity"
             ],
         }
-        ingest_occurrences.append(
+        material_acquisition_result_occurrences.append(
             {
                 "subject_reference": event.material["dimensions"]["identity"],
                 "standing": "preserved",

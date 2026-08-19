@@ -31,7 +31,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
-    _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay,
+    _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
 )
@@ -91,7 +91,7 @@ def _require_current_pin(
         or not locality_identity
         or type(standing) is not dict
         or standing.get("locality_identity") != locality_identity
-        or type(standing.get("ingest_occurrences")) is not list
+        or type(standing.get("material_acquisition_result_occurrences")) is not list
         or type(standing.get("measurement_occurrences")) is not dict
         or type(standing.get("responsibility_assignment_occurrences")) is not dict
     ):
@@ -111,15 +111,15 @@ def _require_current_pin(
         raise ValueError("declared Measurement recording requires current Locality Standing")
 
 
-def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:
+def _material_acquisition_identities(standing: dict[str, Any]) -> tuple[str, ...]:
     identities = []
-    for occurrence in standing["ingest_occurrences"]:
+    for occurrence in standing["material_acquisition_result_occurrences"]:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("evidence_event_identity")) is not str
             or not occurrence["evidence_event_identity"]
         ):
-            raise ValueError("current Standing carries a malformed Ingest occurrence")
+            raise ValueError("current Standing carries a malformed material acquisition occurrence")
         identities.append(occurrence["evidence_event_identity"])
     return tuple(identities)
 
@@ -127,12 +127,12 @@ def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:
 def _discover_direct_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
 ) -> str | None:
-    sources = _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
+    sources = _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
         ledger,
         standing,
         locality_identity=locality_identity,
     )
-    return sources[0].source_ingest_occurrence_identity if sources else None
+    return sources[0].source_material_acquisition_occurrence_identity if sources else None
 
 
 def _complete_direct_measurement(
@@ -180,11 +180,11 @@ def _record_direct_measurement(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
 ) -> tuple[dict[str, Any], Event]:
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
     )
     if finding.source_locality_identity != locality_identity:
         raise ValueError("direct Measurement subject belongs to another Locality")
@@ -202,17 +202,17 @@ def _record_direct_measurement_from_current(
     ledger: EventLedger,
     standing: dict[str, Any],
     locality_identity: str,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
 ) -> tuple[dict[str, Any], Event]:
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
     )
     if finding.source_locality_identity != locality_identity:
         raise ValueError("direct Measurement subject belongs to another Locality")
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         locality_standing=standing,
     )
     return _complete_direct_measurement(
@@ -237,12 +237,12 @@ def _byte_assignment_source_sets(
         for reference in references:
             if (
                 type(reference) is not dict
-                or set(reference) != {"ingest_occurrence_identity"}
-                or type(reference["ingest_occurrence_identity"]) is not str
-                or not reference["ingest_occurrence_identity"]
+                or set(reference) != {"material_acquisition_occurrence_identity"}
+                or type(reference["material_acquisition_occurrence_identity"]) is not str
+                or not reference["material_acquisition_occurrence_identity"]
             ):
                 raise ValueError("recorded byte Measurement source is malformed")
-            identities.append(reference["ingest_occurrence_identity"])
+            identities.append(reference["material_acquisition_occurrence_identity"])
         source_sets.add(tuple(identities))
     return source_sets
 
@@ -250,7 +250,7 @@ def _byte_assignment_source_sets(
 def _discover_byte_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
 ) -> str | None:
-    current_sources = _ingest_identities(standing)
+    current_sources = _material_acquisition_identities(standing)
     if not current_sources:
         return None
     if current_sources in _byte_assignment_source_sets(ledger, locality_identity):

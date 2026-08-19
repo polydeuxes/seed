@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +39,7 @@ from compiled_format_invocation import (  # noqa: E402
     removed_position_result_admission_occurrence,
 )
 from compiled_material_invocation import (  # noqa: E402
-    IngestResultReference,
+    MaterialAcquisitionResultReference,
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     MaterialAdmissionOccurrence,
     MaterialAddedCompareOccurrence,
@@ -51,7 +51,7 @@ from compiled_material_invocation import (  # noqa: E402
     admit_invocation_rows,
     compare_added_material_invocations,
     compare_removed_material_invocations,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 from material_admission import compare_admission_result_pairs  # noqa: E402
@@ -66,8 +66,8 @@ COMPILED_FUNCTION_AVAILABLE = COMPILED_EXECUTABLE.is_file() and COMPILED_MATERIA
 
 def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatch):
     references = tuple(
-        IngestResultReference(
-            recorded_occurrence_identity=f"one-reading-ingest-{position}",
+        MaterialAcquisitionResultReference(
+            recorded_occurrence_identity=f"one-reading-acquisition_result-{position}",
             locality_identity="one-reading-locality",
             act_occurrence_identity=f"one-reading-act-{position}",
             result_identity=f"one-reading-result-{position}",
@@ -440,22 +440,20 @@ def small_boundary_material():
     book = (ROOT / "book_of_seed" / "README.md").read_bytes()
     start = book.index(b"Seed")
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="small-boundary-material",
         exact_bytes=book[start : start + 4],
-        source_role="fixture material",
         source_boundary="fixture-0",
     )
-    added = ingest_material(
+    added = record_witness_material_acquisition(
         ledger,
         locality_identity="small-boundary-material",
         exact_bytes=b" ",
-        source_role="fixture material",
         source_boundary="fixture-1",
     )
-    source_reference = ingest_result_reference(ledger, source.identity)
-    added_reference = ingest_result_reference(ledger, added.identity)
+    source_reference = material_acquisition_result_reference(ledger, source.identity)
+    added_reference = material_acquisition_result_reference(ledger, added.identity)
     additions = added_position_occurrences(
         (source_reference,),
         (added_reference,),
@@ -751,21 +749,20 @@ def test_each_returned_material_can_enter_a_fresh_locality(
 ):
     ledger = small_boundary_material[0]
     invocations = small_boundary_material[6][0]
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity=f"small-boundary-result-{position}",
             exact_bytes=invocation.stdout_bytes,
-            source_role="fixture material",
             source_boundary=f"fixture-result-{position}",
         )
         for position, invocation in enumerate(invocations)
     )
     references = tuple(
-        ingest_result_reference(ledger, event.identity) for event in ingests
+        material_acquisition_result_reference(ledger, event.identity) for event in acquisition_results
     )
 
-    assert len({event.locality_identity for event in ingests}) == len(ingests)
+    assert len({event.locality_identity for event in acquisition_results}) == len(acquisition_results)
     assert tuple(reference.exact_material for reference in references) == tuple(
         invocation.stdout_bytes for invocation in invocations
     )

@@ -16,40 +16,40 @@ from seed_runtime.evidence_of_yield_relation import (
 )
 
 
-OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
+OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.invocation_locality_responsibility_assignment_recorded"
 )
-OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND = (
+OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND = (
     "operator.invocation_locality_act_evidenced"
 )
-OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND = "operator.invocation_locality_recorded"
-OPERATOR_SYSTEM_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
-OPERATOR_SYSTEM_LOCALITY_ACT = (
+OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND = "operator.invocation_locality_recorded"
+OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
+OPERATOR_INVOCATION_LOCALITY_ACT = (
     "Establish one direct operator invocation Locality relation"
 )
-OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY = (
+OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY = (
     "preserve one operator invocation Locality relation from one operator Locality"
 )
-OPERATOR_SYSTEM_LOCALITY_RESULT_KIND = (
+OPERATOR_INVOCATION_LOCALITY_RESULT_KIND = (
     "operator invocation Locality relation result"
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
-    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
         "06.Locality.D"
     ),
-    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND: "02.Acts.A",
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND: "06.Locality.A",
+    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND: "06.Locality.A",
 }
 
 
-class OperatorSystemLocalityError(ValueError):
+class OperatorInvocationLocalityError(ValueError):
     """One operator invocation Locality boundary is absent or incoherent."""
 
 
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
-        raise OperatorSystemLocalityError(message)
+        raise OperatorInvocationLocalityError(message)
     return value
 
 
@@ -59,18 +59,18 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     )
     if (
         event is None
-        or event.material.get("source_role") != "operator"
+        or event.material.get("source_role") != "this operator"
         or type(event.exact_material) is not bytes
         or not event.exact_material.startswith(b"!")
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality requires one intact operator material occurrence"
         )
     try:
         read_exact_material_acquisition_result(ledger, event.identity)
     except (TypeError, ValueError) as error:
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality requires one intact operator material occurrence"
         ) from error
     requirements = read_requirements_of_yield_relation(
@@ -84,7 +84,7 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
         ),
     )
     if not all(requirements.values()):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "operator command occurrence carries no exact Yield"
         )
     return event
@@ -106,10 +106,10 @@ def _assignment_material(
     return {
         "assignment_identity": assignment_identity,
         "assignment_subject_identity": assignment_subject_identity,
-        "book_clause_identity": OPERATOR_SYSTEM_LOCALITY_BOOK_CLAUSE,
+        "book_clause_identity": OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE,
         "responsible_boundary": "this Seed",
-        "responsibility": OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY,
-        "exact_act": OPERATOR_SYSTEM_LOCALITY_ACT,
+        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
+        "exact_act": OPERATOR_INVOCATION_LOCALITY_ACT,
         "operator_invocation_locality_act_identity": (
             operator_invocation_locality_act_identity
         ),
@@ -140,7 +140,7 @@ def _assignment_material(
     }
 
 
-def record_operator_system_locality_responsibility_assignment(
+def record_operator_invocation_locality_responsibility_assignment(
     ledger: EventLedger,
     *,
     operator_material_occurrence_reference: str,
@@ -167,17 +167,17 @@ def record_operator_system_locality_responsibility_assignment(
         or type(boundary_identity) is not str
         or not boundary_identity
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality assignment requires exact operator material Standing"
         )
     for assignment in ledger.list_events():
         if (
             assignment.kind
-            == OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
             and assignment.material.get("operator_material_occurrence_reference")
             == command.identity
         ):
-            raise OperatorSystemLocalityError(
+            raise OperatorInvocationLocalityError(
                 "operator material occurrence already carries an invocation Locality assignment"
             )
     identities = {
@@ -201,9 +201,9 @@ def record_operator_system_locality_responsibility_assignment(
         "scope_identity": new_identity("operator_invocation_locality_scope"),
     }
     if len(set(identities.values())) != len(identities):
-        raise OperatorSystemLocalityError("invocation Locality identities are compressed")
+        raise OperatorInvocationLocalityError("invocation Locality identities are compressed")
     return ledger.append(
-        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
         _assignment_material(
             command=command,
             standing_boundary_identity=boundary_identity,
@@ -213,7 +213,7 @@ def record_operator_system_locality_responsibility_assignment(
     )
 
 
-def get_operator_system_locality_responsibility_assignment(
+def get_operator_invocation_locality_responsibility_assignment(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     event = ledger.get(
@@ -222,11 +222,11 @@ def get_operator_system_locality_responsibility_assignment(
     if (
         event is None
         or event.kind
-        != OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality assignment is absent or corrupted"
         )
     material = event.material
@@ -249,7 +249,7 @@ def get_operator_system_locality_responsibility_assignment(
         any(type(value) is not str or not value for value in (*identities, scope_identity))
         or len(set((*identities, scope_identity))) != len((*identities, scope_identity))
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality assignment identities are not exact"
         )
     exact_assignment_material = _assignment_material(
@@ -275,7 +275,7 @@ def get_operator_system_locality_responsibility_assignment(
         or boundary.locality_identity != command.locality_identity
         or ledger.integrity_of(boundary.identity) == CORRUPTED
     ):
-        raise OperatorSystemLocalityError("invocation Locality assignment is not exact")
+        raise OperatorInvocationLocalityError("invocation Locality assignment is not exact")
     ordered = (
         (command.identity,)
         if command.identity == boundary.identity
@@ -286,7 +286,7 @@ def get_operator_system_locality_responsibility_assignment(
             ordered, locality_identity=command.locality_identity
         )
     except (TypeError, ValueError) as error:
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality assignment does not follow material Standing"
         ) from error
     return event
@@ -300,8 +300,8 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         ],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "result_boundary_identity": material["result_boundary_identity"],
-        "act": OPERATOR_SYSTEM_LOCALITY_ACT,
-        "responsibility": OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY,
+        "act": OPERATOR_INVOCATION_LOCALITY_ACT,
+        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_event_identity": assignment.identity,
         "assignment_identity": material["assignment_identity"],
@@ -321,13 +321,13 @@ def _act_material(assignment: Event) -> dict[str, Any]:
     }
 
 
-def record_operator_system_locality_act_evidence(
+def record_operator_invocation_locality_act_evidence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
-    assignment = get_operator_system_locality_responsibility_assignment(
+    assignment = get_operator_invocation_locality_responsibility_assignment(
         ledger, responsibility_assignment_event_identity
     )
     carried = (
@@ -343,17 +343,17 @@ def record_operator_system_locality_act_evidence(
         or responsibility_assignment_standing.get("locality_identity")
         != assignment.locality_identity
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality Act requires its carried assignment"
         )
     return ledger.append(
-        OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
+        OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
         _act_material(assignment),
         locality_identity=assignment.material["destination_locality_identity"],
     )
 
 
-def get_operator_system_locality_act_evidence(
+def get_operator_invocation_locality_act_evidence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     event = ledger.get(
@@ -361,14 +361,14 @@ def get_operator_system_locality_act_evidence(
     )
     if (
         event is None
-        or event.kind != OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND
+        or event.kind != OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality Act Evidence is absent or corrupted"
         )
-    assignment = get_operator_system_locality_responsibility_assignment(
+    assignment = get_operator_invocation_locality_responsibility_assignment(
         ledger, event.material.get("responsibility_assignment_event_identity")
     )
     if (
@@ -376,14 +376,14 @@ def get_operator_system_locality_act_evidence(
         or event.locality_identity
         != assignment.material.get("destination_locality_identity")
     ):
-        raise OperatorSystemLocalityError("invocation Locality Act Evidence is not exact")
+        raise OperatorInvocationLocalityError("invocation Locality Act Evidence is not exact")
     try:
         ledger.occurrences_in_append_order(
             (assignment.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality Act requires its prior assignment"
         ) from error
     return event
@@ -402,8 +402,8 @@ def _result_material(act: Event) -> dict[str, Any]:
             "operator_invocation_locality_act_identity"
         ],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "exact_act": OPERATOR_SYSTEM_LOCALITY_ACT,
-        "responsibility": OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY,
+        "exact_act": OPERATOR_INVOCATION_LOCALITY_ACT,
+        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_event_identity": material[
             "responsibility_assignment_event_identity"
@@ -435,7 +435,7 @@ def _refuse_second_yield(ledger: EventLedger, act: Event) -> None:
         act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     ):
         if evidence.material.get("responsible_act_evidence_identity") == act.identity:
-            raise OperatorSystemLocalityError(
+            raise OperatorInvocationLocalityError(
                 "invocation Locality Act already carries a Yield"
             )
 
@@ -483,10 +483,10 @@ def _recorded_result_material(
     }
 
 
-def record_operator_system_locality_result(
+def record_operator_invocation_locality_result(
     ledger: EventLedger, *, responsible_act_evidence_event_identity: str
 ) -> Event:
-    act = get_operator_system_locality_act_evidence(
+    act = get_operator_invocation_locality_act_evidence(
         ledger, responsible_act_evidence_event_identity
     )
     _refuse_second_yield(ledger, act)
@@ -494,18 +494,18 @@ def record_operator_system_locality_result(
     evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
-        exact_act=OPERATOR_SYSTEM_LOCALITY_ACT,
+        exact_act=OPERATOR_INVOCATION_LOCALITY_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
         responsible_act_evidence_identity=act.identity,
-        result_kind=OPERATOR_SYSTEM_LOCALITY_RESULT_KIND,
+        result_kind=OPERATOR_INVOCATION_LOCALITY_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY,
+        responsibility=OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         occurrence_boundary="operator_invocation_locality_relation",
         responsible_boundary="this Seed",
     )
     return ledger.append(
-        OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+        OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
             result,
             responsible_act_evidence_identity=act.identity,
@@ -515,7 +515,7 @@ def record_operator_system_locality_result(
     )
 
 
-def get_recorded_operator_system_locality(
+def get_recorded_operator_invocation_locality(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event = ledger.get(
@@ -523,14 +523,14 @@ def get_recorded_operator_system_locality(
     )
     if (
         event is None
-        or event.kind != OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+        or event.kind != OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OperatorSystemLocalityError(
+        raise OperatorInvocationLocalityError(
             "invocation Locality result is absent or corrupted"
         )
-    act = get_operator_system_locality_act_evidence(
+    act = get_operator_invocation_locality_act_evidence(
         ledger, event.material.get("responsible_act_evidence_identity")
     )
     result = _result_material(act)
@@ -545,7 +545,7 @@ def get_recorded_operator_system_locality(
         event.locality_identity != act.locality_identity
         or event.material != exact_result_material
     ):
-        raise OperatorSystemLocalityError("invocation Locality result is not exact")
+        raise OperatorInvocationLocalityError("invocation Locality result is not exact")
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
@@ -555,15 +555,15 @@ def get_recorded_operator_system_locality(
         responsible_act_evidence_event_identity=act.identity,
     )
     if not all(requirements.values()):
-        raise OperatorSystemLocalityError("invocation Locality result carries no exact Yield")
+        raise OperatorInvocationLocalityError("invocation Locality result carries no exact Yield")
     return deepcopy(event.material)
 
 
-def operator_system_locality_occurrence_references(
+def operator_invocation_locality_occurrence_references(
     ledger: EventLedger, event_identity: str
 ) -> tuple[str, str, str]:
     event = ledger.get(event_identity)
-    result = get_recorded_operator_system_locality(ledger, event_identity)
+    result = get_recorded_operator_invocation_locality(ledger, event_identity)
     identities = (
         result["responsible_act_evidence_identity"],
         result["evidence_of_yield_relation_identity"],

@@ -1,8 +1,8 @@
-"""Measure exact bytes across complete bounded ingest occurrences.
+"""Measure exact bytes across complete bounded acquisition_result occurrences.
 
 This is the first acquisition boundary that does not receive its measured
 subjects from a caller.  The subjects are the literal byte values carried by
-the exact material linked from every ingest occurrence in the declared
+the exact material linked from every acquisition_result occurrence in the declared
 Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
@@ -34,10 +34,10 @@ from seed_runtime.material_acquisition import (
     acquired_material_bytes,
     iter_exact_material_acquisition_results,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 
 
-INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
+ACQUISITION_OCCURRED_KIND = WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
@@ -140,11 +140,11 @@ ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
     "preserve its identity, Standing, and carried limits"
 )
 BYTE_MEASUREMENT_RULE = (
-    "each exact byte in exact recorded Ingest material with the same exact byte "
+    "each exact byte in exact recorded material acquisition material with the same exact byte "
     "material"
 )
 BYTE_PAIR_MEASUREMENT_RULE = (
-    "each exact byte-pair occurrence in source order within one exact recorded Ingest "
+    "each exact byte-pair occurrence in source order within one exact recorded material acquisition "
     "material occurrence with the same exact pair material and source order"
 )
 MEASUREMENT_EVIDENCE_SCOPE = (
@@ -728,10 +728,10 @@ def _pair_input_applicability_from_exact_source(
     }
 
 
-def _ingested_bytes(ledger: EventLedger, occurrence) -> bytes:
+def _acquired_bytes(ledger: EventLedger, occurrence) -> bytes:
     if ledger.integrity_of(occurrence.identity) == CORRUPTED:
         raise ByteMeasurementError(
-            f"{occurrence.identity} is not an intact Ingest occurrence"
+            f"{occurrence.identity} is not an intact material acquisition occurrence"
         )
     try:
         return acquired_material_bytes(occurrence)
@@ -799,22 +799,22 @@ def _measure_byte_counts_through(
     carrying = [0] * 256
     totals = [0] * 256
     for locality in localities:
-        for ingest in _exact_material_acquisition_results(
+        for acquisition_result in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
-            exact = _ingested_bytes(ledger, ingest)
-            if ingest.identity in seen_material:
+            exact = _acquired_bytes(ledger, acquisition_result)
+            if acquisition_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one Ingest occurrence cannot enter a byte Measurement twice"
+                    "one material acquisition occurrence cannot enter a byte Measurement twice"
                 )
-            seen_material.add(ingest.identity)
-            source_material.append({"ingest_occurrence_identity": ingest.identity})
+            seen_material.add(acquisition_result.identity)
+            source_material.append({"material_acquisition_occurrence_identity": acquisition_result.identity})
             for value, count in Counter(exact).items():
                 carrying[value] += 1
                 totals[value] += count
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "declared source Localities contain no acquisition_result through the Measurement boundary"
         )
     counts = tuple(
         MeasuredByteCount(
@@ -2101,20 +2101,20 @@ def _measure_byte_position_pair_counts_through(
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
     for locality in localities:
-        for ingest in _exact_material_acquisition_results(
+        for acquisition_result in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
-            if ledger.integrity_of(ingest.identity) == CORRUPTED:
+            if ledger.integrity_of(acquisition_result.identity) == CORRUPTED:
                 raise ByteMeasurementError(
-                    "corrupted ingest cannot participate in byte-position-pair Measurement"
+                    "corrupted acquisition_result cannot participate in byte-position-pair Measurement"
                 )
-            exact = _ingested_bytes(ledger, ingest)
-            if ingest.identity in seen_material:
+            exact = _acquired_bytes(ledger, acquisition_result)
+            if acquisition_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one Ingest occurrence cannot enter a pair Measurement twice"
+                    "one material acquisition occurrence cannot enter a pair Measurement twice"
                 )
-            seen_material.add(ingest.identity)
-            source_material.append({"ingest_occurrence_identity": ingest.identity})
+            seen_material.add(acquisition_result.identity)
+            source_material.append({"material_acquisition_occurrence_identity": acquisition_result.identity})
             seen: set[bytes] = set()
             for index in range(len(exact) - 1):
                 pair = exact[index : index + 2]
@@ -2124,7 +2124,7 @@ def _measure_byte_position_pair_counts_through(
                 carrying[pair] = carrying.get(pair, 0) + 1
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "declared source Localities contain no acquisition_result through the Measurement boundary"
         )
     counts = tuple(
         MeasuredBytePairCount(
@@ -2170,7 +2170,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "identity": source_identity,
                 "content": source_content,
                 "source_provenance": (
-                    "complete declared Ingest through one boundary"
+                    "complete declared material acquisition through one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
                 "authority": "unestablished",
@@ -2183,7 +2183,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_scope": scope,
             "input_support": {
                 "occurrence_references": [
-                    item["ingest_occurrence_identity"]
+                    item["material_acquisition_occurrence_identity"]
                     for item in measured.source_material
                 ],
                 "local_assertion_references": [],
@@ -2282,21 +2282,21 @@ def _byte_measurement_source_material(
     source_material = []
     seen_material = set()
     for locality in localities:
-        for ingest in _exact_material_acquisition_results(
+        for acquisition_result in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
-            _ingested_bytes(ledger, ingest)
-            if ingest.identity in seen_material:
+            _acquired_bytes(ledger, acquisition_result)
+            if acquisition_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one Ingest occurrence cannot enter a byte Measurement twice"
+                    "one material acquisition occurrence cannot enter a byte Measurement twice"
                 )
-            seen_material.add(ingest.identity)
+            seen_material.add(acquisition_result.identity)
             source_material.append(
-                {"ingest_occurrence_identity": ingest.identity}
+                {"material_acquisition_occurrence_identity": acquisition_result.identity}
             )
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no ingest through the Measurement boundary"
+            "declared source Localities contain no acquisition_result through the Measurement boundary"
         )
     return tuple(source_material)
 
@@ -2347,7 +2347,7 @@ def _byte_measurement_assignment_material(
         "authority": "unestablished",
         "limits": [
             "assignment is bounded to the exact declared source Localities, "
-            "Ingest occurrences, and completeness boundary"
+            "material acquisition occurrences, and completeness boundary"
         ],
         "unknown": ["what the exact source material represents: Unknown"],
     }
@@ -2923,7 +2923,7 @@ def _record_byte_measurement_result_from_exact_inputs(
                 "content": (
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
-                "source_provenance": "complete declared Ingest through one boundary",
+                "source_provenance": "complete declared material acquisition through one boundary",
                 "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
@@ -3101,7 +3101,7 @@ def _assertions_of_recorded_byte_measurement(
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
             "source_provenance": (
-                "complete declared Ingest through one boundary"
+                "complete declared material acquisition through one boundary"
             ),
             "authority": "unestablished",
             "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,

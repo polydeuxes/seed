@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
@@ -26,56 +26,55 @@ from compiled_format_invocation import (  # noqa: E402
     admit_compiled_invocation_rows,
     compiled_reference_invocations,
 )
-from compiled_material_invocation import ingest_result_reference  # noqa: E402
-from material_fixture_story import (  # noqa: E402
-    STORY_MATERIAL_COUNT,
-    supplied_story_material,
+from compiled_material_invocation import material_acquisition_result_reference  # noqa: E402
+from source_attributed_witness_material import (  # noqa: E402
+    SOURCE_ATTRIBUTED_WITNESS_MATERIAL_COUNT,
+    supplied_source_attributed_witness_material,
 )
 
 
 @pytest.fixture(scope="module")
-def acquired_story_material():
+def acquired_source_attributed_witness_material():
     try:
-        exact_material = supplied_story_material(ROOT)
+        exact_material = supplied_source_attributed_witness_material(ROOT)
     except FileNotFoundError as error:
         pytest.skip(str(error))
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
-            locality_identity="supplied-story-material",
+            locality_identity="source-attributed-witness-material",
             exact_bytes=material,
-            source_role="fixture material",
-            source_boundary=f"fixture-{position}",
+            source_boundary=f"source-attributed Witness Material occurrence {position}",
         )
         for position, material in enumerate(exact_material)
     )
     boundary = ledger.append_boundary()
     references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
-        for occurrence in ingests
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in acquisition_results
     )
     invocation_rows = compiled_reference_invocations(
         references,
-        boundary_identity="supplied-story-material-invocation",
+        boundary_identity="source-attributed-witness-material-invocation",
         implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
     )
     admission = admit_compiled_invocation_rows(
         invocation_rows,
-        boundary_identity="supplied-story-material-admission",
+        boundary_identity="source-attributed-witness-material-admission",
     )
     positions = measure_occurrence_position(
         ledger,
-        source_locality_identity="supplied-story-material",
+        source_locality_identity="source-attributed-witness-material",
         through=boundary,
     )
     position_assignment = (
         record_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            recording_locality_identity="supplied-story-material",
+            recording_locality_identity="source-attributed-witness-material",
             finding=positions,
             locality_standing=read_operator_locality_standing(
-                ledger, locality_identity="supplied-story-material"
+                ledger, locality_identity="source-attributed-witness-material"
             ),
         )
     )
@@ -84,7 +83,7 @@ def acquired_story_material():
             ledger,
             responsibility_assignment_event_identity=position_assignment.identity,
             responsibility_assignment_standing=read_operator_locality_standing(
-                ledger, locality_identity="supplied-story-material"
+                ledger, locality_identity="source-attributed-witness-material"
             ),
         )
     )
@@ -95,7 +94,7 @@ def acquired_story_material():
     return (
         exact_material,
         ledger,
-        ingests,
+        acquisition_results,
         boundary,
         references,
         invocation_rows,
@@ -105,15 +104,15 @@ def acquired_story_material():
     )
 
 
-def test_each_story_material_has_one_exact_ordered_ingest_occurrence(
-    acquired_story_material,
+def test_each_source_attributed_witness_material_has_one_exact_ordered_material_acquisition_result_occurrence(
+    acquired_source_attributed_witness_material,
 ):
-    exact_material, ledger, ingests, boundary, references, _, _, _, _ = (
-        acquired_story_material
+    exact_material, ledger, acquisition_results, boundary, references, _, _, _, _ = (
+        acquired_source_attributed_witness_material
     )
 
-    assert len(exact_material) == len(ingests) == len(references) == (
-        STORY_MATERIAL_COUNT
+    assert len(exact_material) == len(acquisition_results) == len(references) == (
+        SOURCE_ATTRIBUTED_WITNESS_MATERIAL_COUNT
     )
     assert tuple(reference.exact_material for reference in references) == exact_material
     assert len({reference.recorded_occurrence_identity for reference in references}) == len(
@@ -125,18 +124,18 @@ def test_each_story_material_has_one_exact_ordered_ingest_occurrence(
     assert len({reference.result_identity for reference in references}) == len(references)
     assert tuple(
         ledger.occurrences_in_append_order(
-            tuple(occurrence.identity for occurrence in ingests),
-            locality_identity="supplied-story-material",
+            tuple(occurrence.identity for occurrence in acquisition_results),
+            locality_identity="source-attributed-witness-material",
         )
-    ) == ingests
-    assert tuple(ledger.list(through=boundary))[-1] == ingests[-1]
+    ) == acquisition_results
+    assert tuple(ledger.list(through=boundary))[-1] == acquisition_results[-1]
 
 
-def test_each_compiled_function_receives_the_same_story_occurrence_order(
-    acquired_story_material,
+def test_each_compiled_function_receives_the_same_source_attributed_witness_occurrence_order(
+    acquired_source_attributed_witness_material,
 ):
     _, _, _, _, references, invocation_rows, _, _, _ = (
-        acquired_story_material
+        acquired_source_attributed_witness_material
     )
 
     assert len(invocation_rows) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
@@ -151,11 +150,11 @@ def test_each_compiled_function_receives_the_same_story_occurrence_order(
     )
 
 
-def test_story_invocation_results_enter_one_complete_admission(
-    acquired_story_material,
+def test_source_attributed_witness_invocation_results_enter_one_complete_admission(
+    acquired_source_attributed_witness_material,
 ):
     _, _, _, _, references, invocation_rows, admission, _, _ = (
-        acquired_story_material
+        acquired_source_attributed_witness_material
     )
 
     assert admission.source_material == references
@@ -172,18 +171,18 @@ def test_story_invocation_results_enter_one_complete_admission(
 
 
 def test_each_invocation_position_matches_the_measured_occurrence_position(
-    acquired_story_material,
+    acquired_source_attributed_witness_material,
 ):
-    _, ledger, ingests, _, _, invocation_rows, _, positions, recorded = (
-        acquired_story_material
+    _, ledger, acquisition_results, _, _, invocation_rows, _, positions, recorded = (
+        acquired_source_attributed_witness_material
     )
 
     positions_by_identity = dict(positions.occurrences)
-    ingest_positions = tuple(
-        positions_by_identity[ingest.identity]
-        for ingest in ingests
+    material_acquisition_positions = tuple(
+        positions_by_identity[acquisition_result.identity]
+        for acquisition_result in acquisition_results
     )
-    assert ingest_positions == tuple(sorted(ingest_positions))
+    assert material_acquisition_positions == tuple(sorted(material_acquisition_positions))
     assert get_recorded_occurrence_position_measurement(
         ledger,
         recorded.identity,
@@ -195,15 +194,15 @@ def test_each_invocation_position_matches_the_measured_occurrence_position(
             ]
             for occurrence in row
         )
-        == ingest_positions
+        == material_acquisition_positions
         for row in invocation_rows
     )
 
 
-def test_story_occurrence_order_refuses_one_reordered_compiled_function(
-    acquired_story_material,
+def test_source_attributed_witness_occurrence_order_refuses_one_reordered_compiled_function(
+    acquired_source_attributed_witness_material,
 ):
-    invocation_rows = acquired_story_material[5]
+    invocation_rows = acquired_source_attributed_witness_material[5]
     reordered = (
         invocation_rows[0][1],
         invocation_rows[0][0],
@@ -213,15 +212,15 @@ def test_story_occurrence_order_refuses_one_reordered_compiled_function(
     with pytest.raises(ValueError, match="same exact material"):
         admit_compiled_invocation_rows(
             (reordered, *invocation_rows[1:]),
-            boundary_identity="reordered-story-material-admission",
+            boundary_identity="reordered-source-attributed-witness-material-admission",
         )
 
 
-def test_story_admission_refuses_one_changed_invocation_result(
-    acquired_story_material,
+def test_source_attributed_witness_admission_refuses_one_changed_invocation_result(
+    acquired_source_attributed_witness_material,
 ):
-    invocation_rows = acquired_story_material[5]
-    admission = acquired_story_material[6]
+    invocation_rows = acquired_source_attributed_witness_material[5]
+    admission = acquired_source_attributed_witness_material[6]
     changed = replace(
         invocation_rows[0][0],
         returned=not invocation_rows[0][0].returned,
@@ -239,15 +238,15 @@ def test_story_admission_refuses_one_changed_invocation_result(
 
 FIDELITY_SUBJECTS = {
     "exact_act_occurrence": (
-        test_each_compiled_function_receives_the_same_story_occurrence_order,
+        test_each_compiled_function_receives_the_same_source_attributed_witness_occurrence_order,
     ),
     "content_locality_occurrence_distinction": (
-        test_each_story_material_has_one_exact_ordered_ingest_occurrence,
+        test_each_source_attributed_witness_material_has_one_exact_ordered_material_acquisition_result_occurrence,
     ),
     "input_act_relation_occurrence": (
-        test_story_invocation_results_enter_one_complete_admission,
-        test_story_occurrence_order_refuses_one_reordered_compiled_function,
-        test_story_admission_refuses_one_changed_invocation_result,
+        test_source_attributed_witness_invocation_results_enter_one_complete_admission,
+        test_source_attributed_witness_occurrence_order_refuses_one_reordered_compiled_function,
+        test_source_attributed_witness_admission_refuses_one_changed_invocation_result,
     ),
     "relation_required_coordinates": (
         test_each_invocation_position_matches_the_measured_occurrence_position,

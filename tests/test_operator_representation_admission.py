@@ -5,7 +5,7 @@ import pytest
 FIDELITY_SUBJECT = "emission_candidate_Admission_to_operator_Locality"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_egress import (
     EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     operator_emission_boundary,
@@ -45,11 +45,10 @@ class IntegrityAdversaryLedger(EventLedger):
 
 
 def _exact_representation(ledger, exact=b"hello"):
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="seed-locality",
         exact_bytes=exact,
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     return record_operator_representation(
@@ -126,11 +125,10 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
 def test_exact_material_emission_does_not_promote_statement_to_seed_truth():
     ledger = EventLedger()
     statement_material = b"2+2=5"
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="seed-locality",
         exact_bytes=statement_material,
-        source_role="supplied statement material",
         source_boundary="supplied statement occurrence",
     )
     representation = record_operator_representation(

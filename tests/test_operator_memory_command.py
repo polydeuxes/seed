@@ -94,18 +94,20 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     assert recorded["source_standing_reference"][
         "source_standing_through_event_occurrence_identity"
     ] == addressed.material["locality_standing_through_event_occurrence_identity"]
-    ingests = []
+    acquisition_results = []
     for event in ledger.list():
         try:
-            ingests.append(read_exact_material_acquisition_result(ledger, event.identity))
+            acquisition_results.append(
+                read_exact_material_acquisition_result(ledger, event.identity)
+            )
         except (TypeError, ValueError):
             pass
-    assert [event.locality_identity for event in ingests] == [
+    assert [event.locality_identity for event in acquisition_results] == [
         "source",
         "source",
         result.locality_identity,
     ]
-    assert [event.exact_material for event in ingests] == [
+    assert [event.exact_material for event in acquisition_results] == [
         b"before\n",
         b"/memory\n",
         b"after\n",

@@ -11,7 +11,7 @@ FIDELITY_SUBJECT = "one_exact_recorded_Standing_boundary_reference"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import acquired_material_bytes
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
     record_standing_boundary_reference_responsibility_assignment,
@@ -49,10 +49,10 @@ def _run(material: bytes) -> EventLedger:
     return ledger
 
 
-def _ingested_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
+def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     return [
         acquired_material_bytes(ledger.get(occurrence["evidence_event_identity"]))
-        for occurrence in standing["ingest_occurrences"]
+        for occurrence in standing["material_acquisition_result_occurrences"]
     ]
 
 
@@ -74,11 +74,11 @@ def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
     assert point["standing"]["through_event_occurrence_identity"] == point[
         "source_standing_reference"
     ]["source_standing_through_event_occurrence_identity"]
-    assert _ingested_materials(ledger, point["standing"]) == [
+    assert _acquired_materials(ledger, point["standing"]) == [
         b"book material\n",
         b"/checkpoint\n",
     ]
-    assert _ingested_materials(ledger, current) == [
+    assert _acquired_materials(ledger, current) == [
         b"book material\n",
         b"/checkpoint\n",
         b"later source material\n",
@@ -105,11 +105,11 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
     )
 
     assert point["standing"]["locality_identity"] == "source"
-    assert _ingested_materials(ledger, point["standing"]) == [
+    assert _acquired_materials(ledger, point["standing"]) == [
         b"book material\n",
         b"/memory\n",
     ]
-    assert _ingested_materials(ledger, destination_standing) == [
+    assert _acquired_materials(ledger, destination_standing) == [
         b"destination material\n"
     ]
     assert point["standing"]["recorded_relation_Standing"] == {}
@@ -136,7 +136,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
     )
 
     assert point["standing"]["locality_identity"] == "source"
-    assert _ingested_materials(ledger, point["standing"]) == [
+    assert _acquired_materials(ledger, point["standing"]) == [
         b"book material\n",
         b"/checkpoint\n",
     ]
@@ -265,7 +265,7 @@ def test_unrelated_occurrences_do_not_change_the_recorded_read():
     assert not [
         event
         for event in ledger.list_locality("other")
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     ]
 
 
@@ -293,11 +293,11 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
             locality_identity="source",
             recorded_occurrence_identity=checkpoint_identity,
         )
-        assert _ingested_materials(reopened, point["standing"]) == [
+        assert _acquired_materials(reopened, point["standing"]) == [
             b"book material\n",
             b"/checkpoint\n",
         ]
-        source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+        source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
             "evidence_event_identity"
         ]
         representation = record_operator_representation(
@@ -335,7 +335,7 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         locality_identity="source",
         recorded_occurrence_identity=checkpoint.identity,
     )
-    source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+    source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
         "evidence_event_identity"
     ]
     representation = record_operator_representation(
@@ -380,7 +380,7 @@ def test_memory_availability_does_not_move_source_material_into_the_destination(
         locality_identity=continuation.locality_identity,
         recorded_occurrence_identity=continuation.identity,
     )
-    source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+    source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
         "evidence_event_identity"
     ]
 

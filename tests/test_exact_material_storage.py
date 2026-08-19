@@ -12,15 +12,14 @@ from seed_runtime.events import (
     LedgerIntegrityError,
     SQLiteEventLedger,
 )
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
-def _ingest(ledger, exact_material: bytes, position: int):
-    return ingest_material(
+def _acquire(ledger, exact_material: bytes, position: int):
+    return record_witness_material_acquisition(
         ledger,
         locality_identity="material-storage",
         exact_bytes=exact_material,
-        source_role="system",
         source_boundary=f"boundary-{position}",
     )
 
@@ -31,8 +30,8 @@ def test_equal_material_has_one_physical_reference_and_distinct_occurrences(tmp_
     second_material = bytes(bytearray(b"tatatata"))
     assert first_material == second_material and first_material is not second_material
 
-    first = _ingest(ledger, first_material, 0)
-    second = _ingest(ledger, second_material, 1)
+    first = _acquire(ledger, first_material, 0)
+    second = _acquire(ledger, second_material, 1)
     exact_occurrences = (
         ledger.get(first.material["evidence_of_yield_relation_identity"]),
         ledger.get(first.identity),

@@ -25,7 +25,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
     record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -84,17 +84,16 @@ def _direct_d2(
     exact: bytes = b"2+2=5\n",
     position: int = 1,
 ):
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=exact,
-        source_role="exact material",
         source_boundary="exact material boundary",
     )
     direct_assignment = (
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             locality_standing=_standing(ledger, locality),
         )
     )
@@ -108,7 +107,7 @@ def _direct_d2(
         responsible_act_evidence_event_identity=direct_act.identity,
     )
     coordinate = _source_position_coordinate_reference(
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=locality,
         completeness_boundary_identity=(
             ledger.append_boundary_through_occurrence(source.identity).identity
@@ -151,11 +150,10 @@ def _fixture(
 ):
     if ledger is None:
         ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abxxabbcxxbc",
-        source_role="premise material",
         source_boundary="exact premise boundary",
     )
     byte_assignment = record_byte_measurement_responsibility_assignment(
@@ -195,11 +193,10 @@ def _fixture(
         (ord("a"), ord("b")),
         (ord("b"), ord("c")),
     }
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=current,
-        source_role="later exact material",
         source_boundary="later exact material boundary",
     )
     findings = measure_positions_for_recurrent_byte_pair_assertions(
@@ -209,7 +206,7 @@ def _fixture(
             recurrence_by_pair[(ord("a"), ord("b"))],
             recurrence_by_pair[(ord("b"), ord("c"))],
         ),
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
         through=ledger.append_boundary(),
     )
@@ -271,7 +268,7 @@ def _recurrent_result_coordinates(ledger, reference):
         ]
     )
     pair = ledger.get(reference.pair_measurement_occurrence_identity)
-    source = ledger.get(reference.source_ingest_occurrence_identity)
+    source = ledger.get(reference.source_material_acquisition_occurrence_identity)
     evidence_of_yield = ledger.get(
         result.material["evidence_of_yield_relation_identity"]
     )
@@ -343,8 +340,8 @@ def _position_coordinate_reference(reference, role):
         reference.exact_pair[:1] if role == "first" else reference.exact_pair[1:]
     )
     coordinates = {
-        "source_ingest_occurrence_identity": (
-            reference.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            reference.source_material_acquisition_occurrence_identity
         ),
         "locality_identity": reference.locality_identity,
         "completeness_boundary_identity": (
@@ -404,7 +401,7 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert "standing" not in assertion["dimensions"]
     content = assertion["dimensions"]["content"]
     assert content["shared_position_coordinate_reference"] == shared_reference
-    assert content["source_ingest_occurrence_identity"] == source.identity
+    assert content["source_material_acquisition_occurrence_identity"] == source.identity
     assert assertion["assertion_subject"][
         "first_position_assertion_reference"
     ] == first.assertion_reference
@@ -454,7 +451,7 @@ def test_ordered_path_exposes_input_position_assertion_coordinates_without_carry
     assert "exact_pair" not in path
     assert set(path["dimensions"]["content"]) == {
         "shared_position_coordinate_reference",
-        "source_ingest_occurrence_identity",
+        "source_material_acquisition_occurrence_identity",
         "completeness_boundary_identity",
     }
     assert ledger.append_boundary() == boundary_before_read
@@ -528,7 +525,7 @@ def test_ordered_source_positions_remain_beside_the_path_assertion():
     assert "ordered_source_position_coordinates" not in path
     assert set(path["dimensions"]["content"]) == {
         "shared_position_coordinate_reference",
-        "source_ingest_occurrence_identity",
+        "source_material_acquisition_occurrence_identity",
         "completeness_boundary_identity",
     }
     assert ledger.append_boundary() == boundary_before_read
@@ -1061,11 +1058,10 @@ def test_d2_shared_assignment_refuses_stale_or_forged_standing_atomically():
         ledger, locality=locality
     )
     stale = _standing(ledger, locality)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"later",
-        source_role="later material",
         source_boundary="later material boundary",
     )
     before = len(ledger.list())
@@ -1530,7 +1526,7 @@ def test_carried_standing_requires_each_exact_occurrence_coordinate_intact(
             recurrent = _recurrent_result_coordinates(ledger, first)
             identities = {
                 "result": first.recorded_occurrence_identity,
-                "source": first.source_ingest_occurrence_identity,
+                "source": first.source_material_acquisition_occurrence_identity,
                 "pair": first.pair_measurement_occurrence_identity,
                 "recurrent_assignment": recurrent["assignment"].identity,
                 "recurrent_act": recurrent["act"].identity,

@@ -9,7 +9,7 @@ FIDELITY_SUBJECT = (
 )
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -32,11 +32,10 @@ from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_r
 def _source_representation(
     ledger: EventLedger, locality_identity: str = "source"
 ) -> tuple[object, dict]:
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"\x00\xffprior\n",
-        source_role="fixture material",
         source_boundary="fixture boundary",
     )
     standing = read_operator_locality_standing(
@@ -143,7 +142,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert after_act["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
-    assert after_act["ingest_occurrences"] == []
+    assert after_act["material_acquisition_result_occurrences"] == []
     assert after_act["measurement_occurrences"] == {}
     assert after_act["exact_result_occurrences"] == {}
     assert after_act["representations"] == {}
@@ -219,7 +218,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert replayed["responsibility_assignment_occurrences"] == {
         assignment.identity: None
     }
-    assert replayed["ingest_occurrences"] == []
+    assert replayed["material_acquisition_result_occurrences"] == []
     assert replayed["measurement_occurrences"] == {}
     assert replayed["exact_result_occurrences"] == {}
     assert replayed["representations"] == {}
@@ -312,11 +311,10 @@ def test_later_source_occurrences_do_not_move_the_exact_source_cut():
     ledger = EventLedger()
     source, representation = _source_representation(ledger)
     act_evidence = _act(ledger, representation)
-    later = ingest_material(
+    later = record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"later",
-        source_role="fixture material",
         source_boundary="fixture boundary",
     )
 

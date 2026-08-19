@@ -4,7 +4,7 @@ This is a declared Measurement result, not a Candidate, Admission, or Standing
 movement.  Its inputs: two distinct occurrence references:
 
 * the recurrence Assertion yielded by an earlier byte-pair Measurement; and
-* one later exact Ingest result in the same Locality.
+* one later exact material acquisition result in the same Locality.
 
 Ordering and distance are views over the two measured positions.  The result
 carries neither a caller-supplied sign nor a grammatical meaning.
@@ -58,11 +58,11 @@ RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
 )
 RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "each ordered occurrence of the exact Yield-carried byte pair in one exact "
-    "Ingest result through one completeness boundary and occurrence limit"
+    "material acquisition result through one completeness boundary and occurrence limit"
 )
 AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = "bounded repository authority"
 EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "exact Yield-carried pair Assertion and exact later Ingest result only"
+    "exact Yield-carried pair Assertion and exact later material acquisition result only"
 )
 MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY = (
     "measurement_of_recurrent_byte_pair_occurrence_position"
@@ -84,7 +84,7 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "source_localities",
         "completeness_boundary",
         "pair_assertion_reference",
-        "source_ingest_occurrence_identity",
+        "source_material_acquisition_occurrence_identity",
         "occurrence_limit",
         "available_occurrence_count",
         "known_loss",
@@ -123,7 +123,7 @@ def _exact_measurement_occurrence_standing_coordinates(
     }
 
 
-def _exact_ingest_occurrence_standing_coordinates(
+def _exact_material_acquisition_occurrence_standing_coordinates(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event = read_exact_material_acquisition_result(ledger, event_identity)
@@ -165,7 +165,7 @@ class FindingOfRecurrentBytePairOccurrencePositions(NamedTuple):
     """Bounded ordered position findings for one exact pair subject."""
 
     pair_reference: ReferenceToRecordedRecurrentBytePair
-    source_ingest_occurrence_identity: str
+    source_material_acquisition_occurrence_identity: str
     source_locality_identity: str
     completeness_boundary: EventLedgerBoundary
     occurrence_limit: int
@@ -181,7 +181,7 @@ class ReferenceToRecordedRecurrentBytePairOccurrencePosition(NamedTuple):
     pair_measurement_occurrence_identity: str
     recurrence_assertion_identity: str
     count_assertion_identity: str
-    source_ingest_occurrence_identity: str
+    source_material_acquisition_occurrence_identity: str
     locality_identity: str
     completeness_boundary_identity: str
     exact_pair: bytes
@@ -227,8 +227,8 @@ def _validate_finding(finding: FindingOfRecurrentBytePairOccurrencePositions) ->
         raise TypeError("pair occurrence finding requires one exact finding")
     _validate_pair_reference(finding.pair_reference)
     if (
-        type(finding.source_ingest_occurrence_identity) is not str
-        or not finding.source_ingest_occurrence_identity
+        type(finding.source_material_acquisition_occurrence_identity) is not str
+        or not finding.source_material_acquisition_occurrence_identity
         or type(finding.source_locality_identity) is not str
         or not finding.source_locality_identity
         or not isinstance(finding.completeness_boundary, EventLedgerBoundary)
@@ -336,9 +336,9 @@ def _references_to_recorded_recurrent_byte_pairs(
         or not sources
         or any(
             type(reference) is not dict
-            or set(reference) != {"ingest_occurrence_identity"}
-            or type(reference["ingest_occurrence_identity"]) is not str
-            or not reference["ingest_occurrence_identity"]
+            or set(reference) != {"material_acquisition_occurrence_identity"}
+            or type(reference["material_acquisition_occurrence_identity"]) is not str
+            or not reference["material_acquisition_occurrence_identity"]
             for reference in sources
         )
         or type(boundary) is not dict
@@ -348,7 +348,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     ):
         raise ValueError("the recurrent pair carries no exact source boundary")
     source_occurrence_identities = tuple(
-        reference["ingest_occurrence_identity"] for reference in sources
+        reference["material_acquisition_occurrence_identity"] for reference in sources
     )
     found = []
     for recurrence_assertion_identity in recurrence_assertion_identities:
@@ -393,12 +393,12 @@ def _references_to_recorded_recurrent_byte_pairs(
     return tuple(found)
 
 
-def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
+def _exact_material_acquisition_event(ledger: EventLedger, event_identity: str) -> Event:
     try:
         return read_exact_material_acquisition_result(ledger, event_identity)
     except (TypeError, ValueError) as error:
         raise ValueError(
-            "pair occurrence Measurement requires one intact Ingest result"
+            "pair occurrence Measurement requires one intact material acquisition result"
         ) from error
 
 
@@ -406,12 +406,12 @@ def _measurement_source_position_coordinates(
     ledger: EventLedger,
     *,
     pair_references: tuple[ReferenceToRecordedRecurrentBytePair, ...],
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     boundary: EventLedgerBoundary,
 ) -> tuple[Event, tuple[tuple[int, ...], ...]]:
     if not pair_references:
         raise ValueError("pair occurrence Measurement requires one pair subject")
-    source = _exact_ingest_event(ledger, source_ingest_occurrence_identity)
+    source = _exact_material_acquisition_event(ledger, source_material_acquisition_occurrence_identity)
     pair_measurement_identity = pair_references[0].recorded_occurrence_identity
     if any(
         reference.recorded_occurrence_identity != pair_measurement_identity
@@ -474,7 +474,7 @@ def _finding_from_source_position_coordinates(
             break
     finding = FindingOfRecurrentBytePairOccurrencePositions(
         pair_reference=pair_reference,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary=boundary,
         occurrence_limit=occurrence_limit,
@@ -489,14 +489,14 @@ def _measure_through(
     ledger: EventLedger,
     *,
     pair_reference: ReferenceToRecordedRecurrentBytePair,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     boundary: EventLedgerBoundary,
     occurrence_limit: int,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
         pair_references=(pair_reference,),
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         boundary=boundary,
     )
     return _finding_from_source_position_coordinates(
@@ -513,11 +513,11 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     *,
     pair_measurement_occurrence_identity: str,
     recurrence_assertion_identity: str,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     occurrence_limit: int,
     through: EventLedgerBoundary | None = None,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
-    """Measure one yielded pair subject in one later exact Ingest result."""
+    """Measure one yielded pair subject in one later exact material acquisition result."""
 
     if type(occurrence_limit) is not int or occurrence_limit <= 0:
         raise ValueError("pair occurrence Measurement requires a positive exact limit")
@@ -529,7 +529,7 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     return _measure_through(
         ledger,
         pair_reference=pair_reference,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         boundary=through or ledger.append_boundary(),
         occurrence_limit=occurrence_limit,
     )
@@ -540,7 +540,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     *,
     pair_measurement_occurrence_identity: str,
     recurrence_assertion_identities: tuple[str, ...],
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     occurrence_limit: int,
     through: EventLedgerBoundary,
 ) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
@@ -560,7 +560,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
         pair_references=references,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         boundary=through,
     )
     return tuple(
@@ -607,8 +607,8 @@ def _responsibility_assignment_material(
         ),
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -625,7 +625,7 @@ def _responsibility_assignment_material(
             AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
         ),
         "limits": [
-            "assignment is bounded to the exact pair Assertion, Ingest result, "
+            "assignment is bounded to the exact pair Assertion, material acquisition result, "
             "completeness boundary, and occurrence limit"
         ],
         "unknown": ["what the measured pair relation represents: Unknown"],
@@ -651,7 +651,7 @@ def _require_current_assignment_standing(
         ledger, locality_identity=finding.source_locality_identity
     )
     measurements = locality_standing.get("measurement_occurrences")
-    ingests = locality_standing.get("ingest_occurrences")
+    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     if (
@@ -662,12 +662,12 @@ def _require_current_assignment_standing(
         or not boundary
         or type(measurements) is not dict
         or finding.pair_reference.recorded_occurrence_identity not in measurements
-        or type(ingests) is not list
+        or type(acquisition_results) is not list
         or not any(
             type(occurrence) is dict
             and occurrence.get("evidence_event_identity")
-            == finding.source_ingest_occurrence_identity
-            for occurrence in ingests
+            == finding.source_material_acquisition_occurrence_identity
+            for occurrence in acquisition_results
         )
         or (
             required_assignment_identity is not None
@@ -761,8 +761,8 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or type(pair_reference) is not dict
         or set(pair_reference) != {"recorded_occurrence_identity", "assertion_identity"}
         or any(type(value) is not str or not value for value in pair_reference.values())
-        or type(material.get("source_ingest_occurrence_identity")) is not str
-        or not material["source_ingest_occurrence_identity"]
+        or type(material.get("source_material_acquisition_occurrence_identity")) is not str
+        or not material["source_material_acquisition_occurrence_identity"]
         or type(material.get("completeness_boundary_identity")) is not str
         or not material["completeness_boundary_identity"]
         or type(material.get("occurrence_limit")) is not int
@@ -807,8 +807,8 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     finding = _measure_through(
         ledger,
         pair_reference=pair_subject,
-        source_ingest_occurrence_identity=material[
-            "source_ingest_occurrence_identity"
+        source_material_acquisition_occurrence_identity=material[
+            "source_material_acquisition_occurrence_identity"
         ],
         boundary=EventLedgerBoundary(material["completeness_boundary_identity"]),
         occurrence_limit=material["occurrence_limit"],
@@ -824,7 +824,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     ):
         raise ValueError("pair occurrence assignment coordinates are not exact")
     measurements = prior_standing.get("measurement_occurrences")
-    ingests = prior_standing.get("ingest_occurrences")
+    acquisition_results = prior_standing.get("material_acquisition_result_occurrences")
     carried_assignments = prior_standing.get(
         "responsibility_assignment_occurrences"
     )
@@ -843,25 +843,25 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             ledger, pair_occurrence_identity
         )
     )
-    exact_ingest_occurrence = _exact_ingest_occurrence_standing_coordinates(
-        ledger, finding.source_ingest_occurrence_identity
+    exact_material_acquisition_result_occurrence = _exact_material_acquisition_occurrence_standing_coordinates(
+        ledger, finding.source_material_acquisition_occurrence_identity
     )
-    carried_ingest_occurrences = (
+    carried_material_acquisition_result_occurrences = (
         [
             occurrence
-            for occurrence in ingests
+            for occurrence in acquisition_results
             if type(occurrence) is dict
             and occurrence.get("evidence_event_identity")
-            == finding.source_ingest_occurrence_identity
+            == finding.source_material_acquisition_occurrence_identity
         ]
-        if type(ingests) is list
+        if type(acquisition_results) is list
         else []
     )
     if (
         type(measurements) is not dict
         or measurements.get(pair_occurrence_identity, object())
         != exact_measurement_occurrence
-        or carried_ingest_occurrences != [exact_ingest_occurrence]
+        or carried_material_acquisition_result_occurrences != [exact_material_acquisition_result_occurrence]
     ):
         raise ValueError(
             "pair occurrence assignment has no exact prior Standing"
@@ -878,12 +878,12 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or not (boundary_is_exact or assignment_is_carried_later)
         or type(measurements) is not dict
         or finding.pair_reference.recorded_occurrence_identity not in measurements
-        or type(ingests) is not list
+        or type(acquisition_results) is not list
         or not any(
             type(occurrence) is dict
             and occurrence.get("evidence_event_identity")
-            == finding.source_ingest_occurrence_identity
-            for occurrence in ingests
+            == finding.source_material_acquisition_occurrence_identity
+            for occurrence in acquisition_results
         )
     ):
         raise ValueError("pair occurrence assignment has no exact prior Standing")
@@ -929,7 +929,7 @@ def _participation_in_measurement(
         {
             "subject_reference": {
                 "recorded_occurrence_identity": (
-                    finding.source_ingest_occurrence_identity
+                    finding.source_material_acquisition_occurrence_identity
                 )
             },
             "role": "exact material result input",
@@ -961,8 +961,8 @@ def _material_of_evidence_of_act_occurrence(
             "identity": finding.completeness_boundary.identity,
         },
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "occurrence_limit": finding.occurrence_limit,
         "participation": _participation_in_measurement(
@@ -993,7 +993,7 @@ def _validate_exact_finding_of_measurement(
     exact = _measure_through(
         ledger,
         pair_reference=pair_reference,
-        source_ingest_occurrence_identity=finding.source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=finding.source_material_acquisition_occurrence_identity,
         boundary=finding.completeness_boundary,
         occurrence_limit=finding.occurrence_limit,
     )
@@ -1084,7 +1084,7 @@ def _identity_of_position_assertion(
     for coordinate in (
         finding.pair_reference.recorded_occurrence_identity,
         finding.pair_reference.recurrence_assertion_identity,
-        finding.source_ingest_occurrence_identity,
+        finding.source_material_acquisition_occurrence_identity,
         finding.source_locality_identity,
         finding.completeness_boundary.identity,
         str(first_position),
@@ -1100,8 +1100,8 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
     scope = {"source_localities": [finding.source_locality_identity]}
     subject = {
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     }
@@ -1124,7 +1124,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                     ),
                     "content": content,
                     "source_provenance": (
-                        "the exact Yield-carried pair Assertion and later Ingest result"
+                        "the exact Yield-carried pair Assertion and later material acquisition result"
                     ),
                     "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_ASSERTION,
                     "authority": "unestablished",
@@ -1140,7 +1140,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                         finding.pair_reference.assertion_reference
                     ],
                     "occurrence_references": [
-                        finding.source_ingest_occurrence_identity
+                        finding.source_material_acquisition_occurrence_identity
                     ],
                     "local_assertion_references": [],
                 },
@@ -1174,7 +1174,7 @@ def _material_of_result_of_measurement(
             "content": "exact ordered pair occurrence position Assertions",
             "source_provenance": (
                 "one recurrence Assertion carried by Evidence of Yield relation and one later "
-                "exact Ingest result"
+                "exact material acquisition result"
             ),
             "authority": "unestablished",
             "evidence_scope": EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
@@ -1193,8 +1193,8 @@ def _material_of_result_of_measurement(
             "identity": finding.completeness_boundary.identity,
         },
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "occurrence_limit": finding.occurrence_limit,
         "available_occurrence_count": finding.available_occurrence_count,
@@ -1281,8 +1281,8 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "source_localities": result["source_localities"],
             "completeness_boundary": result["completeness_boundary"],
             "pair_assertion_reference": result["pair_assertion_reference"],
-            "source_ingest_occurrence_identity": result[
-                "source_ingest_occurrence_identity"
+            "source_material_acquisition_occurrence_identity": result[
+                "source_material_acquisition_occurrence_identity"
             ],
             "occurrence_limit": result["occurrence_limit"],
             "available_occurrence_count": result[
@@ -1424,8 +1424,8 @@ def _references_from_recorded_recurrent_pair_position_result(
                 count_assertion_identity=(
                     finding.pair_reference.count_assertion_identity
                 ),
-                source_ingest_occurrence_identity=(
-                    finding.source_ingest_occurrence_identity
+                source_material_acquisition_occurrence_identity=(
+                    finding.source_material_acquisition_occurrence_identity
                 ),
                 locality_identity=finding.source_locality_identity,
                 completeness_boundary_identity=(

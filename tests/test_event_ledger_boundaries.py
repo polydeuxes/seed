@@ -483,29 +483,29 @@ def _identity_read_matches_occurrence_read(ledger):
 
     boundaries = [None]
     ledger.append_many([
-        Event(identity="i1", kind="ingest", locality_identity="s"),
+        Event(identity="i1", kind="acquisition_result", locality_identity="s"),
         Event(identity="i2", kind="other", locality_identity="s"),
-        Event(identity="i3", kind="ingest", locality_identity="other"),
+        Event(identity="i3", kind="acquisition_result", locality_identity="other"),
     ])
     boundaries.append(ledger.append_boundary())
     ledger.append_many([
-        Event(identity="i4", kind="ingest", locality_identity="s"),
-        Event(identity="i5", kind="ingest", locality_identity="other"),
+        Event(identity="i4", kind="acquisition_result", locality_identity="s"),
+        Event(identity="i5", kind="acquisition_result", locality_identity="other"),
     ])
     boundaries.append(ledger.append_boundary())
 
     for boundary in boundaries:
         occurrences = [
             event.identity
-            for event in ledger.iter_locality_kind("s", "ingest", through=boundary)
+            for event in ledger.iter_locality_kind("s", "acquisition_result", through=boundary)
         ]
         identities = list(
-            ledger.iter_locality_kind_identities("s", "ingest", through=boundary)
+            ledger.iter_locality_kind_identities("s", "acquisition_result", through=boundary)
         )
         assert identities == occurrences
 
-    assert list(ledger.iter_locality_kind_identities("s", "ingest")) == ["i1", "i4"]
-    assert list(ledger.iter_locality_kind_identities("s", "ingest",
+    assert list(ledger.iter_locality_kind_identities("s", "acquisition_result")) == ["i1", "i4"]
+    assert list(ledger.iter_locality_kind_identities("s", "acquisition_result",
                                              through=boundaries[1])) == ["i1"]
     assert list(ledger.iter_locality_kind_identities("s", "absent")) == []
 

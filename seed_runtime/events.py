@@ -533,8 +533,9 @@ class SQLiteEventLedger(EventLedger):
         "representation_emission_applicability_act",
         "representation_emission_applicability_act_occurrence",
         "representation_emission_applicability_result",
-        "material_ingest_act", "material_ingest_act_occurrence",
-        "material_ingest_result",
+        "witness_material_acquisition_act",
+        "witness_material_acquisition_act_occurrence",
+        "witness_material_acquisition_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
         "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_assignment",
@@ -1024,9 +1025,10 @@ class SQLiteEventLedger(EventLedger):
         `integrity_of` remains the separate integrity boundary.
 
         The signature-count inputs run measured why this is worth its own
-        read: one 300-occurrence ingest read costs 7.09 ms as Events and
-        0.25 ms as identities, because 902 bytes of JSON per occurrence are
-        decoded and discarded by a caller that keeps only the identity.
+        read: one 300-occurrence material-acquisition result read costs 7.09 ms
+        as Events and 0.25 ms as identities, because 902 bytes of JSON per
+        occurrence are decoded and discarded by a caller that keeps only the
+        identity.
         """
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "

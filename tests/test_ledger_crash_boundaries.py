@@ -208,7 +208,7 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
 
     from io import BytesIO
 
-    from seed_runtime.material_ingest import ingest_material
+    from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
     )
@@ -220,11 +220,10 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
 
     path = tmp_path / "raw.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s1",
         exact_bytes=b"\x00\xffexact",
-        source_role="fixture material",
         source_boundary="fixture boundary",
     )
     standing = read_operator_locality_standing(
@@ -270,7 +269,7 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
 def test_accepted_emission_is_durable_before_a_later_flush_failure(tmp_path):
     from io import BytesIO
 
-    from seed_runtime.material_ingest import ingest_material
+    from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
     from seed_runtime.operator_locality_standing import read_operator_locality_standing
     from seed_runtime.operator_representation import (
         emit_operator_representation_material,
@@ -280,11 +279,10 @@ def test_accepted_emission_is_durable_before_a_later_flush_failure(tmp_path):
 
     path = tmp_path / "accepted-before-flush.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s1",
         exact_bytes=b"accepted",
-        source_role="fixture material",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(

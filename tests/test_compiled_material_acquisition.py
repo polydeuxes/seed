@@ -19,7 +19,7 @@ from compiled_material_acquisition import (  # noqa: E402
     measure_material_and_act_results,
     measure_material_time_counts,
 )
-from material_fixture_measurement import measured_one_byte_material  # noqa: E402
+from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
 from material_admission import admission_occurrence  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,

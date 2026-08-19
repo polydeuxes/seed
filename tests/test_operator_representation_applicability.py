@@ -5,7 +5,7 @@ import pytest
 FIDELITY_SUBJECT = "applicability_determination"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
     read_operator_locality_standing_through,
@@ -43,11 +43,10 @@ class IntegrityAdversaryLedger(EventLedger):
 
 
 def _representation(ledger, exact=b"applicable material"):
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="seed-locality",
         exact_bytes=exact,
-        source_role="operator",
         source_boundary="exact fixture boundary",
     )
     return record_operator_representation(

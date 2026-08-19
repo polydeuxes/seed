@@ -16,7 +16,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, EventLedgerBoundary, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
@@ -57,11 +57,10 @@ def _fixture(
 ):
     ledger = ledger or EventLedger()
     locality = "pair-occurrence-measurement"
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=premise,
-        source_role="premise material",
         source_boundary="exact premise boundary",
     )
     byte_assignment = record_byte_measurement_responsibility_assignment(
@@ -97,18 +96,17 @@ def _fixture(
         if assertion.result == "recurrence"
         and assertion.representation == (ord("a"), ord("b"))
     )
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=current,
-        source_role="operator material",
         source_boundary="later exact material boundary",
     )
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identity=recurrence.assertion_identity,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
     )
     return ledger, locality, pair, recurrence, source, finding
@@ -347,7 +345,7 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
                     "through_event_occurrence_identity"
                 ],
                 measurement_occurrences=standing["measurement_occurrences"],
-                ingest_occurrences=standing["ingest_occurrences"],
+                material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
                 responsibility_assignment_occurrences=standing[
                     "responsibility_assignment_occurrences"
                 ],
@@ -382,7 +380,7 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
             locality_identity=locality,
             through_event_occurrence_identity=pair.identity,
             measurement_occurrences=standing["measurement_occurrences"],
-            ingest_occurrences=standing["ingest_occurrences"],
+            material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
             responsibility_assignment_occurrences={
                 **standing["responsibility_assignment_occurrences"],
                 assignment.identity: None,
@@ -396,7 +394,7 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
         read_from_false_earlier_context()
 
 
-@pytest.mark.parametrize("forged_coordinate", ["measurement", "ingest"])
+@pytest.mark.parametrize("forged_coordinate", ["measurement", "acquisition_result"])
 @pytest.mark.parametrize("mutation", ["extra", "missing", "changed"])
 def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
     forged_coordinate, mutation,
@@ -412,7 +410,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
     )
 
     @_operator_standing_replay_validation
-    def read_from_context(measurements, ingests):
+    def read_from_context(measurements, acquisition_results):
         _set_operator_standing_validation_context(
             ledger,
             locality_identity=locality,
@@ -420,7 +418,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
                 "standing_boundary_identity"
             ],
             measurement_occurrences=measurements,
-            ingest_occurrences=ingests,
+            material_acquisition_result_occurrences=acquisition_results,
             responsibility_assignment_occurrences=standing[
                 "responsibility_assignment_occurrences"
             ],
@@ -430,13 +428,13 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
         )
 
     measurements = deepcopy(standing["measurement_occurrences"])
-    ingests = deepcopy(standing["ingest_occurrences"])
+    acquisition_results = deepcopy(standing["material_acquisition_result_occurrences"])
     coordinate = (
         measurements[pair.identity]
         if forged_coordinate == "measurement"
         else next(
             occurrence
-            for occurrence in ingests
+            for occurrence in acquisition_results
             if occurrence.get("evidence_event_identity") == source.identity
         )
     )
@@ -453,7 +451,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
         coordinate[key] += "-forged"
 
     with pytest.raises(ValueError, match="exact accumulators"):
-        read_from_context(measurements, ingests)
+        read_from_context(measurements, acquisition_results)
 
 
 def test_assignment_act_and_result_survive_distinct_durable_restarts(tmp_path):
@@ -523,7 +521,7 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
             reference.pair_measurement_occurrence_identity,
             reference.recurrence_assertion_identity,
             reference.count_assertion_identity,
-            reference.source_ingest_occurrence_identity,
+            reference.source_material_acquisition_occurrence_identity,
             reference.locality_identity,
             reference.completeness_boundary_identity,
             reference.exact_pair,
@@ -571,7 +569,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=identity,
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=through,
         )
@@ -584,7 +582,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     pair_result_read = (
         pair_occurrence_measurement._validated_recorded_byte_position_pair_measurement
     )
-    source_read = pair_occurrence_measurement._exact_ingest_event
+    source_read = pair_occurrence_measurement._exact_material_acquisition_event
     order_read = ledger.occurrences_in_append_order
     boundary_read = ledger.list_locality
 
@@ -618,7 +616,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
         witness_pair_result_read,
     )
     monkeypatch.setattr(
-        pair_occurrence_measurement, "_exact_ingest_event", witness_source_read
+        pair_occurrence_measurement, "_exact_material_acquisition_event", witness_source_read
     )
     monkeypatch.setattr(
         ledger, "occurrences_in_append_order", witness_order_read
@@ -635,7 +633,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identities=recurrence_identities,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
         through=through,
     )
@@ -643,7 +641,9 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     assert measured == expected
     assert pair_result_read_count == 1
     assert source_read_count == 1
-    assert order_read_count == exact_pair_read_order_count + 1
+    # One read validates the Witness acquisition's Act/Yield order; the other
+    # orders the pair/result subject coordinates.
+    assert order_read_count == exact_pair_read_order_count + 2
     assert boundary_read_count == exact_pair_read_boundary_count + 1
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
@@ -651,7 +651,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     ) == recurrence_identities
     assert {
         (
-            finding.source_ingest_occurrence_identity,
+            finding.source_material_acquisition_occurrence_identity,
             finding.source_locality_identity,
             finding.completeness_boundary.identity,
             finding.occurrence_limit,
@@ -720,7 +720,7 @@ def test_assignment_read_threads_one_exact_standing_to_pair_validation(monkeypat
     ) is None
 
 
-@pytest.mark.parametrize("changed_input", ("measurement", "ingest"))
+@pytest.mark.parametrize("changed_input", ("measurement", "acquisition_result"))
 def test_explicit_prior_standing_binds_each_exact_input_occurrence(changed_input):
     ledger, locality, pair, _recurrence, source, finding = _fixture()
     prior_standing = read_operator_locality_standing(
@@ -739,7 +739,7 @@ def test_explicit_prior_standing_binds_each_exact_input_occurrence(changed_input
     else:
         carried = next(
             occurrence
-            for occurrence in forged["ingest_occurrences"]
+            for occurrence in forged["material_acquisition_result_occurrences"]
             if occurrence["evidence_event_identity"] == source.identity
         )
         carried["result_identity"] = "substituted-result"
@@ -839,7 +839,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 ledger,
                 pair_measurement_occurrence_identity=pair.identity,
                 recurrence_assertion_identities=supplied,
-                source_ingest_occurrence_identity=source.identity,
+                source_material_acquisition_occurrence_identity=source.identity,
                 occurrence_limit=16,
                 through=through,
             )
@@ -851,7 +851,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 recurrence.assertion_identity,
                 recurrence.assertion_identity,
             ),
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=through,
         )
@@ -863,7 +863,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(count_identity,),
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=through,
         )
@@ -872,7 +872,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(recurrence.assertion_identity,),
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=BoundarySubclass(through.identity),
         )
@@ -881,7 +881,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(recurrence.assertion_identity,),
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=ledger.append_boundary_through_occurrence(pair.identity),
         )
@@ -903,7 +903,7 @@ def test_same_boundary_pair_subjects_keep_each_result_evidence_distinct():
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identities=recurrence_identities,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=16,
         through=ledger.append_boundary(),
     )
@@ -961,7 +961,7 @@ def test_occurrence_limit_is_explicit_and_preserves_exact_known_loss():
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identity=recurrence.assertion_identity,
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         occurrence_limit=2,
     )
     _act, result = _record(ledger, locality, finding)
@@ -1039,17 +1039,16 @@ def test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing(carr
         )
 
 
-def test_same_bytes_cannot_substitute_another_ingest_occurrence():
+def test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    substitute = ingest_material(
+    substitute = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"ba---ab",
-        source_role="same bytes at another occurrence",
         source_boundary="another exact boundary",
     )
     substituted = finding._replace(
-        source_ingest_occurrence_identity=substitute.identity
+        source_material_acquisition_occurrence_identity=substitute.identity
     )
 
     with pytest.raises(ValueError, match="outside its exact boundary"):
@@ -1064,11 +1063,10 @@ def test_same_bytes_cannot_substitute_another_ingest_occurrence():
 
 def test_distinct_locality_and_pre_source_boundary_are_refused():
     ledger, _locality, pair, recurrence, source, _finding = _fixture()
-    other = ingest_material(
+    other = record_witness_material_acquisition(
         ledger,
         locality_identity="other-locality",
         exact_bytes=b"ba---ab",
-        source_role="other",
         source_boundary="other",
     )
     with pytest.raises(ValueError, match="distinct Localities"):
@@ -1076,7 +1074,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=recurrence.assertion_identity,
-            source_ingest_occurrence_identity=other.identity,
+            source_material_acquisition_occurrence_identity=other.identity,
             occurrence_limit=16,
         )
     boundary_before_source = ledger.append_boundary_through_occurrence(pair.identity)
@@ -1085,7 +1083,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=recurrence.assertion_identity,
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
             through=boundary_before_source,
         )
@@ -1101,7 +1099,7 @@ def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=count_identity,
-            source_ingest_occurrence_identity=source.identity,
+            source_material_acquisition_occurrence_identity=source.identity,
             occurrence_limit=16,
         )
     act, _result = _record(ledger, locality, finding)
@@ -1114,11 +1112,10 @@ def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use(
 
 def test_unrelated_later_material_does_not_move_the_measured_boundary():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"abababab",
-        source_role="later unrelated material",
         source_boundary="later boundary",
     )
     _act, result = _record(ledger, locality, finding)
@@ -1201,7 +1198,7 @@ FIDELITY_SUBJECTS = {
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_result_evidence_distinct,
         test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
-        test_same_bytes_cannot_substitute_another_ingest_occurrence,
+        test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence,
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,
     ),

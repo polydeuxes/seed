@@ -22,7 +22,7 @@ from seed_runtime.operator_checkpoint import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -208,11 +208,10 @@ def test_recorded_reference_does_not_drift_when_the_source_advances():
         ).identity,
     )
     before = get_recorded_standing_boundary_reference(ledger, result.identity)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"later\n",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     assert get_recorded_standing_boundary_reference(ledger, result.identity) == before

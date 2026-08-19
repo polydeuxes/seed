@@ -1,4 +1,4 @@
-"""Exact system-attributed material supplied by one operator invocation."""
+"""Exact material supplied by this Witness through one operator invocation."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ from typing import Callable
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
-from seed_runtime.operator_system_locality import (
-    get_recorded_operator_system_locality,
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
+from seed_runtime.operator_invocation_locality import (
+    get_recorded_operator_invocation_locality,
 )
 
 
 @dataclass(frozen=True, slots=True)
-class SuppliedSystemMaterialOccurrence:
+class SuppliedWitnessMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
     egress: bool
@@ -45,25 +45,25 @@ class SuppliedSystemMaterialOccurrence:
             raise TypeError("exact prior supplied occurrence positions required")
 
 
-SuppliedSystemMaterialConsumer = Callable[
-    [SuppliedSystemMaterialOccurrence], None
+SuppliedWitnessMaterialConsumer = Callable[
+    [SuppliedWitnessMaterialOccurrence], None
 ]
 OperatorInvocationProvider = Callable[
-    [bytes, SuppliedSystemMaterialConsumer], None
+    [bytes, SuppliedWitnessMaterialConsumer], None
 ]
 
 
-def ingest_supplied_invocation_occurrence(
+def acquire_supplied_witness_material_occurrence(
     ledger: EventLedger,
     *,
     operator_invocation_locality_result_event_identity: str,
     command_occurrence_reference: str,
-    supplied: SuppliedSystemMaterialOccurrence,
+    supplied: SuppliedWitnessMaterialOccurrence,
     prior_supplied_occurrence_references: tuple[str, ...] = (),
 ) -> Event:
-    """Ingest one exact system occurrence in its invocation Locality."""
+    """Acquire one exact occurrence supplied by this Witness in its Locality."""
 
-    if type(supplied) is not SuppliedSystemMaterialOccurrence:
+    if type(supplied) is not SuppliedWitnessMaterialOccurrence:
         raise TypeError("exact supplied material required")
     if (
         type(prior_supplied_occurrence_references) is not tuple
@@ -79,7 +79,7 @@ def ingest_supplied_invocation_occurrence(
         )
     ):
         raise ValueError("exact prior supplied occurrence references required")
-    relation = get_recorded_operator_system_locality(
+    relation = get_recorded_operator_invocation_locality(
         ledger, operator_invocation_locality_result_event_identity
     )
     command_occurrence = (
@@ -93,7 +93,7 @@ def ingest_supplied_invocation_occurrence(
         != relation["operator_material_occurrence_reference"]
         or command_occurrence.locality_identity
         != relation["operator_locality_identity"]
-        or command_occurrence.material.get("source_role") != "operator"
+        or command_occurrence.material.get("source_role") != "this operator"
         or type(command_occurrence.exact_material) is not bytes
         or not command_occurrence.exact_material.startswith(b"!")
         or ledger.integrity_of(command_occurrence.identity) == CORRUPTED
@@ -108,9 +108,9 @@ def ingest_supplied_invocation_occurrence(
     )
     if any(
         occurrence is None
-        or occurrence.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or occurrence.kind != WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
         or occurrence.locality_identity != relation["destination_locality_identity"]
-        or occurrence.material.get("source_role") != "system"
+        or occurrence.material.get("source_role") != "this Witness"
         or occurrence.material.get("provenance_occurrence_references")[:2]
         != [
             command_occurrence.identity,
@@ -134,11 +134,10 @@ def ingest_supplied_invocation_occurrence(
             prior_supplied_occurrence_references
         ):
             raise ValueError("exact prior supplied occurrence references required")
-    return ingest_material(
+    return record_witness_material_acquisition(
         ledger,
         locality_identity=relation["destination_locality_identity"],
         exact_bytes=supplied.exact_bytes,
-        source_role="system",
         source_boundary=supplied.source_boundary,
         known_loss=supplied.known_loss,
         provenance_occurrence_references=(

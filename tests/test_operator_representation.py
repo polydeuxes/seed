@@ -22,7 +22,7 @@ from seed_runtime.operator_representation import (
     record_operator_representation,
 )
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -122,11 +122,10 @@ def _standing(ledger, *, locality="s"):
 
 
 def _byte_measurement(ledger, *, locality="s"):
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=b"aba",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     assignment = record_byte_measurement_responsibility_assignment(
@@ -230,11 +229,10 @@ def test_representation_reader_reads_the_exact_recorded_representation():
 
 def test_representation_carries_exact_material_without_claiming_meaning():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -256,11 +254,10 @@ def test_representation_carries_exact_material_without_claiming_meaning():
 
 def test_representation_refuses_a_changed_exact_material_rule():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -278,11 +275,10 @@ def test_representation_refuses_a_changed_exact_material_rule():
 
 def test_empty_exact_material_carries_its_rule_through_emission():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"",
-        source_role="operator",
         source_boundary="empty fixture boundary",
     )
     representation = record_operator_representation(
@@ -520,11 +516,10 @@ def test_representation_rejects_corrupted_measurement_yield(monkeypatch):
 def test_unrelated_occurrence_does_not_change_addressed_measurement_result():
     ledger = EventLedger()
     measurement = _byte_measurement(ledger)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"unrelated",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
 
@@ -578,11 +573,10 @@ def test_emission_attempt_reference_cannot_substitute_for_representation_source(
 
 def test_representation_consumes_an_exact_yielded_representation_result():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"\x00\xffresult",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     first = record_operator_representation(
@@ -615,11 +609,10 @@ def test_representation_consumes_an_exact_yielded_representation_result():
 
 def test_representation_refuses_a_raw_carrier_without_exact_yield():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"result",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     unrelated = ledger.append(
@@ -647,11 +640,10 @@ def test_representation_refuses_a_raw_carrier_without_exact_yield():
 
 def test_representation_refuses_a_nonidentity_result_carrier():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"result",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     standing = _standing(ledger)
@@ -690,11 +682,10 @@ def test_representation_refuses_a_missing_source_occurrence():
 
 def test_representation_refuses_a_source_from_another_locality():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="first",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
 
@@ -709,19 +700,17 @@ def test_representation_refuses_a_source_from_another_locality():
 
 def test_representation_refuses_a_source_after_its_standing_boundary():
     ledger = EventLedger()
-    first = ingest_material(
+    first = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"first",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     boundary_standing = _standing(ledger)
-    later = ingest_material(
+    later = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"later",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     boundary_standing["exact_result_occurrences"][later.identity] = None
@@ -739,18 +728,16 @@ def test_representation_refuses_a_source_after_its_standing_boundary():
 
 def test_representation_refuses_a_standing_boundary_from_another_locality():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"source",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
-    other = ingest_material(
+    other = record_witness_material_acquisition(
         ledger,
         locality_identity="other",
         exact_bytes=b"other",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     standing = _standing(ledger)
@@ -767,11 +754,10 @@ def test_representation_refuses_a_standing_boundary_from_another_locality():
 
 def test_representation_refuses_corrupted_source_material():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     standing = _standing(ledger)
@@ -788,11 +774,10 @@ def test_representation_refuses_corrupted_source_material():
 
 def test_representation_reader_and_egress_refuse_changed_material():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -812,11 +797,10 @@ def test_representation_reader_and_egress_refuse_changed_material():
 
 def test_exact_egress_reads_the_recorded_representation_material():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -968,11 +952,10 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
                 return False
 
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -1062,11 +1045,10 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
             raise ProcessDeath()
 
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -1101,11 +1083,10 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
 
 def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occurrence():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"hello",
-        source_role="operator",
         source_boundary="fixture boundary",
     )
     representation = record_operator_representation(
@@ -1244,7 +1225,7 @@ def test_representation_reader_refuses_different_locality_evidence_content():
 def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ledger, _ = _run_console("hello\n")
 
-    # A current Representation existing does not make the newest Ingest and the
+    # A current Representation existing does not make the newest material acquisition and the
     # most recently recorded Representation participants in one Compare.  The
     # occurrence and its exact Yield relation are preserved; no Compare or
     # Identification follows.
@@ -1257,17 +1238,17 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     )
     assert c0_formed.material["locality_standing_through_event_occurrence_identity"] is None
     assert c0_formed.material["unknown"] == []
-    # The console attaches no Representation to the Ingest: recording order
+    # The console attaches no Representation to the material acquisition: recording order
     # does not determine a relation between the two occurrences.
-    ingest = next(
+    acquisition_result = next(
         event
         for event in ledger.list()
         if _is_readable_acquisition_result(ledger, event)
     )
-    assert ingest.material.get("representation_reference") is None
+    assert acquisition_result.material.get("representation_reference") is None
 
 
-def test_console_ingest_adds_only_its_exact_occurrences():
+def test_console_material_acquisition_adds_only_its_exact_occurrences():
     # The required proving: C recorded, E preserved, yield provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
@@ -1278,17 +1259,17 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     kinds = [event.kind for event in ledger.list()]
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every Ingest retains an identity distinct from Representation occurrences.
+    # Every material acquisition retains an identity distinct from Representation occurrences.
     representations = [e for e in ledger.list() if e.kind == "operator.representation.recorded"]
-    ingests = [
+    acquisition_results = [
         event
         for event in ledger.list()
         if _is_readable_acquisition_result(ledger, event)
     ]
-    assert len(ingests) == 3
+    assert len(acquisition_results) == 3
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
-    assert len(standing["ingest_occurrences"]) == 3
+    assert len(standing["material_acquisition_result_occurrences"]) == 3
     assert all(
         set(occurrence)
         == {
@@ -1298,7 +1279,7 @@ def test_console_ingest_adds_only_its_exact_occurrences():
             "evidence_event_identity",
             "source_role",
         }
-        for occurrence in standing["ingest_occurrences"]
+        for occurrence in standing["material_acquisition_result_occurrences"]
     )
 
 
@@ -1351,7 +1332,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     ):
         assert forbidden_text not in flattened, forbidden_text
 
-def test_console_presents_standing_only_across_an_ingest():
+def test_console_presents_standing_only_across_an_acquire():
     ledger, _ = _run_console("hello\n")
 
     kinds = [event.kind for event in ledger.list()]
@@ -1365,7 +1346,7 @@ def test_console_presents_standing_only_across_an_ingest():
     ]
     c0 = representations[0]
     c1 = representations[-1]
-    ingest = next(
+    acquisition_result = next(
         event
         for event in events
         if _is_readable_acquisition_result(ledger, event)
@@ -1375,12 +1356,12 @@ def test_console_presents_standing_only_across_an_ingest():
         for event in events
         if event.kind == "operator.measurement.locality_occurrence_position_recorded"
     )
-    # C1 uses Standing that now contains the Ingest occurrence.
+    # C1 uses Standing that now contains the material acquisition occurrence.
     assert (
         c1.material["locality_standing_through_event_occurrence_identity"] == positions.identity
     )
     assert c1.material["source_occurrence_reference"] is None
-    assert ingest.identity in dict(
+    assert acquisition_result.identity in dict(
         get_recorded_occurrence_position_measurement(
             ledger,
             positions.identity,
@@ -1396,7 +1377,7 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
     ledger, output = _run_console("hello\n")
 
     events = ledger.list()
-    ingest_index = next(
+    material_acquisition_index = next(
         index
         for index, event in enumerate(events)
         if _is_readable_acquisition_result(ledger, event)
@@ -1405,7 +1386,7 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
         i for i, event in enumerate(events)
         if event.kind == "operator.representation.recorded"
     ]
-    assert recorded[0] < ingest_index < recorded[-1]
+    assert recorded[0] < material_acquisition_index < recorded[-1]
     assert output == ""
     assert not any(
         event.kind == "operator.representation.emitted" for event in events
@@ -1464,7 +1445,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
 
 def test_later_operator_material_does_not_replace_an_earlier_focus():
     ledger, _ = _run_console("O1\nO2\nO3\n")
-    ingests = [
+    acquisition_results = [
         event
         for event in ledger.list()
         if _is_readable_acquisition_result(ledger, event)
@@ -1474,13 +1455,13 @@ def test_later_operator_material_does_not_replace_an_earlier_focus():
         ledger,
         locality_identity="s",
         locality_standing=standing,
-        source_occurrence_reference=ingests[1].identity,
+        source_occurrence_reference=acquisition_results[1].identity,
     )
     read = read_operator_representation(
         ledger, focused["representation_event_identity"]
     )
 
-    assert read["source_occurrence_reference"] == ingests[1].identity
+    assert read["source_occurrence_reference"] == acquisition_results[1].identity
     assert read["exact_material"] == b"O2\n"
     assert read["locality_standing_through_event_occurrence_identity"] == standing[
         "through_event_occurrence_identity"
@@ -1488,9 +1469,9 @@ def test_later_operator_material_does_not_replace_an_earlier_focus():
     assert all(
         event.identity in {
             occurrence["evidence_event_identity"]
-            for occurrence in standing["ingest_occurrences"]
+            for occurrence in standing["material_acquisition_result_occurrences"]
         }
-        for event in ingests
+        for event in acquisition_results
     )
 
 
@@ -1525,10 +1506,10 @@ def test_acquisition_act_and_eof_do_not_manufacture_representation_results():
     ]
 
 
-def test_first_interaction_attaches_no_representation_to_the_ingest():
+def test_first_interaction_attaches_no_representation_to_the_acquire():
     ledger, _ = _run_console("first\n")
 
-    # No Representation is named by the Ingest. Representation and Ingest
+    # No Representation is named by the material acquisition. Representation and material acquisition
     # occurrences retain distinct identities; any relation between them is a
     # later responsible occurrence's to establish and record.
     kinds = {event.kind for event in ledger.list()}
@@ -1542,7 +1523,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         "operator.representation.locality_evidenced",
         "operator.representation.recorded",
     }
-    ingest = next(
+    acquisition_result = next(
         event
         for event in ledger.list()
         if _is_readable_acquisition_result(ledger, event)
@@ -1551,7 +1532,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     assert first_representation["representation_identity"]
 
 
-def test_each_ingest_freezes_one_exact_byte_measurement_boundary():
+def test_each_material_acquisition_freezes_one_exact_byte_measurement_boundary():
     ledger, _ = _run_console("a\nb\n")
     measurements = tuple(
         event
@@ -1581,7 +1562,7 @@ def test_each_ingest_freezes_one_exact_byte_measurement_boundary():
     assert second_counts == {10: 2, 97: 1, 98: 1}
 
 
-def test_each_ingest_freezes_one_exact_occurrence_position_boundary():
+def test_each_material_acquisition_freezes_one_exact_occurrence_position_boundary():
     ledger, _ = _run_console("a\nb\n")
     measurements = tuple(
         event

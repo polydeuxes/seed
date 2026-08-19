@@ -22,7 +22,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
@@ -67,16 +67,15 @@ def _record_byte_measurement(
 
 def _attempt(ledger, text, *, locality="s", locality_standing=None):
     exact = text.encode() if type(text) is str else text
-    event = ingest_material(
+    event = record_witness_material_acquisition(
         ledger,
         locality_identity=locality,
         exact_bytes=exact,
-        source_role="operator",
         source_boundary="test operator material boundary",
     )
     standing = {
         "current_standing": {
-            "ingest_occurrence": {
+            "material_acquisition_result_occurrence": {
                 "subject_reference": event.material["result_identity"],
                 "evidence_event_identity": event.identity,
             }
@@ -134,11 +133,10 @@ def _record_measurement(ledger, measurement_kind):
 
 def _measurement_ledger():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"material",
-        source_role="operator",
         source_boundary="test boundary",
     )
     return ledger
@@ -289,11 +287,10 @@ def test_pair_standing_replay_state_clears_after_exception(monkeypatch):
 def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path):
     path = tmp_path / "pair-standing-replay.sqlite"
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"material",
-        source_role="operator",
         source_boundary="test boundary",
     )
     assignment, _applicability_act, _applicability, _measurement_act, result = (
@@ -324,20 +321,20 @@ def test_events_from_different_localities_cannot_influence_one_another():
     assert standing_two["locality_identity"] == "s2"
     one_subjects = {
         occurrence["subject_reference"]
-        for occurrence in standing_one["ingest_occurrences"]
+        for occurrence in standing_one["material_acquisition_result_occurrences"]
     }
     two_subjects = {
         occurrence["subject_reference"]
-        for occurrence in standing_two["ingest_occurrences"]
+        for occurrence in standing_two["material_acquisition_result_occurrences"]
     }
-    assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_reference"]}
-    assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_reference"]}
+    assert one_subjects == {first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
+    assert two_subjects == {second["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
     assert not {
         occurrence["evidence_event_identity"]
-        for occurrence in standing_one["ingest_occurrences"]
+        for occurrence in standing_one["material_acquisition_result_occurrences"]
     } & {
         occurrence["evidence_event_identity"]
-        for occurrence in standing_two["ingest_occurrences"]
+        for occurrence in standing_two["material_acquisition_result_occurrences"]
     }
 
 
@@ -412,11 +409,10 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
 
 def test_locality_standing_carries_only_exact_yielded_result_identities():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
-        source_role="operator",
         source_boundary="test boundary",
     )
     measurement = _record_byte_measurement(
@@ -436,18 +432,16 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
 
 def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield():
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
-        source_role="operator",
         source_boundary="test boundary",
     )
-    other = ingest_material(
+    other = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"other result",
-        source_role="operator",
         source_boundary="test boundary",
     )
     source.material["evidence_of_yield_relation_identity"] = other.material[
@@ -462,11 +456,10 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
 
 def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
-        source_role="operator",
         source_boundary="test boundary",
     )
     integrity_of = ledger.integrity_of
@@ -489,11 +482,10 @@ def test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation(
     monkeypatch, evidence_coordinate
 ):
     ledger = EventLedger()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
-        source_role="operator",
         source_boundary="test boundary",
     )
     corrupted_identity = source.material[evidence_coordinate]
@@ -521,11 +513,10 @@ def test_locality_standing_refuses_a_corrupted_measurement(
     monkeypatch, measurement_kind, error_type
 ):
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"material",
-        source_role="operator",
         source_boundary="test boundary",
     )
     measurement = _record_measurement(ledger, measurement_kind)
@@ -644,11 +635,11 @@ def test_next_attempt_reads_standing_from_earlier_same_locality_events():
     second = _attempt(ledger, "later material\n", locality_standing=standing)
 
     assert second["locality_standing"] is standing
-    inherited = second["locality_standing"]["ingest_occurrences"]
+    inherited = second["locality_standing"]["material_acquisition_result_occurrences"]
     assert [occurrence["subject_reference"] for occurrence in inherited] == [
-        first["current_standing"]["ingest_occurrence"]["subject_reference"]
+        first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]
     ]
-    assert first["current_standing"]["ingest_occurrence"]["subject_reference"] == (
+    assert first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"] == (
         inherited[0]["subject_reference"]
     )
 

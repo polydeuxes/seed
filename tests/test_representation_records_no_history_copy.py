@@ -32,7 +32,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 
 RECORDED = "operator.representation.recorded"
 FAMILIES = (
-    "material.ingest.",
+    "material.acquisition_result.",
     "operator.material.acquire",
     "operator.measurement.",
     "operator.representation.",

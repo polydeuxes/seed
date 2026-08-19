@@ -535,14 +535,14 @@ class ExactMaterialResultReference:
 
 
 def _is_exact_material_coordinates(material: object) -> bool:
-    from compiled_material_invocation import IngestResultReference
+    from compiled_material_invocation import MaterialAcquisitionResultReference
 
     return type(material) in (
         ExactMaterialReference,
         ExactMaterialResultReference,
         ExactPositionMaterialReference,
         ExactPositionPairMaterialReference,
-        IngestResultReference,
+        MaterialAcquisitionResultReference,
     )
 
 

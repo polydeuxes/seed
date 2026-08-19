@@ -65,7 +65,7 @@ from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_R
 from seed_runtime.material_acquisition import (
     iter_exact_material_acquisition_results,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 
 
 def _record_byte_measurement(
@@ -454,11 +454,10 @@ def test_corrupted_exact_byte_assignment_cannot_authorize_an_act():
 
 def test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier():
     ledger = IntegrityCountingLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
-        source_role="test source",
         source_boundary="test boundary",
     )
     first = _record_byte_measurement(
@@ -486,11 +485,10 @@ def test_operator_replay_uses_exact_context_while_public_assignment_reads_recons
     from seed_runtime import operator_locality_standing as standing_module
 
     ledger = IntegrityCountingLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
-        source_role="test source",
         source_boundary="test boundary",
     )
     first = _record_byte_measurement(
@@ -546,11 +544,10 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
     )
 
     ledger = IntegrityCountingLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
-        source_role="test source",
         source_boundary="test boundary",
     )
     first = _record_byte_measurement(
@@ -570,12 +567,12 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
         ledger, locality_identity="measurement"
     )
     copied_measurements = deepcopy(exact["measurement_occurrences"])
-    copied_ingests = deepcopy(exact["ingest_occurrences"])
+    copied_acquisition_results = deepcopy(exact["material_acquisition_result_occurrences"])
     copied_assignments = deepcopy(exact["responsibility_assignment_occurrences"])
     assert copied_measurements == exact["measurement_occurrences"]
     assert copied_measurements is not exact["measurement_occurrences"]
-    assert copied_ingests == exact["ingest_occurrences"]
-    assert copied_ingests is not exact["ingest_occurrences"]
+    assert copied_acquisition_results == exact["material_acquisition_result_occurrences"]
+    assert copied_acquisition_results is not exact["material_acquisition_result_occurrences"]
     assert copied_assignments == exact["responsibility_assignment_occurrences"]
     assert copied_assignments is not exact["responsibility_assignment_occurrences"]
     ledger.corrupted.add(first.identity)
@@ -590,7 +587,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
                     "through_event_occurrence_identity"
                 ],
                 measurement_occurrences=copied_measurements,
-                ingest_occurrences=copied_ingests,
+                material_acquisition_result_occurrences=copied_acquisition_results,
                 responsibility_assignment_occurrences=copied_assignments,
             )
         return get_byte_measurement_responsibility_assignment(
@@ -604,11 +601,10 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
 def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
     path = tmp_path / "byte-assignment-restart.sqlite"
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"durable",
-        source_role="operator",
         source_boundary="durable boundary",
     )
     assignment = record_byte_measurement_responsibility_assignment(
@@ -688,11 +684,10 @@ def test_call_local_assignment_carry_requires_the_exact_assignment_at_tip():
         recording_locality_identity="measurement",
         locality_standing=standing,
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"later",
-        source_role="test source",
         source_boundary="after assignment",
     )
 
@@ -715,11 +710,10 @@ def test_call_local_result_requires_the_exact_act_at_tip():
     standing = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"later",
-        source_role="test source",
         source_boundary="after act",
     )
 
@@ -746,21 +740,21 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
     standing = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
-    original = byte_measurement._ingested_bytes
+    original = byte_measurement._acquired_bytes
     callback_recorded = False
 
-    def record_public_result_during_source_read(ledger, ingest):
+    def record_public_result_during_source_read(ledger, acquisition_result):
         nonlocal callback_recorded
         if not callback_recorded:
             callback_recorded = True
             record_byte_measurement_result(
                 ledger, responsible_act_evidence_event_identity=act.identity
             )
-        return original(ledger, ingest)
+        return original(ledger, acquisition_result)
 
     monkeypatch.setattr(
         byte_measurement,
-        "_ingested_bytes",
+        "_acquired_bytes",
         record_public_result_during_source_read,
     )
     with pytest.raises(ByteMeasurementError, match="Act at the append tip"):
@@ -786,11 +780,10 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
 def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
     path = tmp_path / "byte-consumed-act.sqlite"
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"a",
-        source_role="test source",
         source_boundary="durable source",
     )
     _assignment, act = _record_byte_measurement_assignment_and_act(
@@ -849,7 +842,7 @@ def test_two_stages_traverse_byte_counts_once(monkeypatch):
     ]
 
 
-def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material(
+def test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material(
     monkeypatch,
 ):
     from seed_runtime import byte_measurement
@@ -859,12 +852,11 @@ def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_materi
         b'{"function":"unobserved","occurrence_count":0}',
         b'{"function":"observed","occurrence_count":2}',
     )
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="measurement-sidecar",
             exact_bytes=material,
-            source_role="implementation function Measurement",
             source_boundary=f"sidecar-{position}",
         )
         for position, material in enumerate(materials)
@@ -883,8 +875,8 @@ def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_materi
     )
 
     assert counted_material == list(materials)
-    assert tuple(ingest.exact_material for ingest in ingests) == materials
-    assert b'"occurrence_count":0' in ingests[0].exact_material
+    assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == materials
+    assert b'"occurrence_count":0' in acquisition_results[0].exact_material
     expected_totals = ExactCounter(b"".join(materials))
     expected_carrying = {
         value: sum(value in material for material in materials)
@@ -899,18 +891,17 @@ def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_materi
     }
 
 
-def test_each_replay_validates_each_exact_ingest_and_reads_independently():
+def test_each_replay_validates_each_exact_material_acquisition_and_reads_independently():
     ledger = IntegrityCountingLedger()
     materials = (
         b'{"function":"unobserved","occurrence_count":0}',
         b'{"function":"observed","occurrence_count":2}',
     )
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="measurement-sidecar",
             exact_bytes=material,
-            source_role="implementation function Measurement",
             source_boundary=f"sidecar-{position}",
         )
         for position, material in enumerate(materials)
@@ -927,15 +918,15 @@ def test_each_replay_validates_each_exact_ingest_and_reads_independently():
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
-    after_result = [ledger.integrity_calls[ingest.identity] for ingest in ingests]
+    after_result = [ledger.integrity_calls[acquisition_result.identity] for acquisition_result in acquisition_results]
     assert all(count > 0 for count in after_result)
-    assert tuple(ingest.exact_material for ingest in ingests) == materials
+    assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == materials
 
     assert assertions_of_recorded_byte_measurement(ledger, result.identity)
-    after_read = [ledger.integrity_calls[ingest.identity] for ingest in ingests]
+    after_read = [ledger.integrity_calls[acquisition_result.identity] for acquisition_result in acquisition_results]
     assert all(after > before for after, before in zip(after_read, after_result))
 
-    ledger.corrupted.add(ingests[0].identity)
+    ledger.corrupted.add(acquisition_results[0].identity)
     with pytest.raises(ByteMeasurementError, match="without intact physiology"):
         assertions_of_recorded_byte_measurement(ledger, result.identity)
 
@@ -943,11 +934,10 @@ def test_each_replay_validates_each_exact_ingest_and_reads_independently():
 def test_yield_resolves_the_exact_act_evidence_after_reopen(tmp_path):
     path = str(tmp_path / "measurement.sqlite")
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"durable",
-        source_role="operator",
         source_boundary="durable boundary",
     )
     assignment, act_evidence = _record_byte_measurement_assignment_and_act(
@@ -983,11 +973,10 @@ def test_material_appended_after_act_evidence_cannot_enter_its_result():
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"b",
-        source_role="operator",
         source_boundary="later boundary",
     )
 
@@ -1074,7 +1063,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
     )
     assert len(measured.source_material) == 2
     assert all(
-        set(item) == {"ingest_occurrence_identity"}
+        set(item) == {"material_acquisition_occurrence_identity"}
         for item in measured.source_material
     )
     assert measured.completeness_boundary.identity
@@ -1232,21 +1221,19 @@ def test_recording_occurrence_evidence_is_validated_exactly():
         assertions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
+def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"a",
-        source_role="operator",
         source_boundary="first boundary",
     )
     boundary = ledger.append_boundary()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"b",
-        source_role="system",
         source_boundary="second boundary",
     )
     measured = _measure_byte_counts_through(
@@ -1266,15 +1253,15 @@ def test_a_missing_declared_locality_is_refused():
 
 def test_acquisition_result_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
-    ingest = next(iter_exact_material_acquisition_results(ledger, "source"))
-    object.__setattr__(ingest, "exact_material", None)
+    acquisition_result = next(iter_exact_material_acquisition_results(ledger, "source"))
+    object.__setattr__(acquisition_result, "exact_material", None)
     with pytest.raises(ByteMeasurementError, match="without intact physiology"):
         measure_byte_counts(
             ledger, source_localities=("source",)
         )
 
 
-def test_repeated_locality_coordinate_does_not_repeat_one_ingest():
+def test_repeated_locality_coordinate_does_not_repeat_one_acquire():
     ledger = _ledger("a\n")
     once = measure_byte_counts(
         ledger, source_localities=("source",)
@@ -1320,7 +1307,7 @@ def test_byte_position_pair_results_follow_first_observed_pair_positions():
     ] == [(116, 97), (97, 116), (97, 10)]
 
 
-def test_position_pairs_never_cross_ingest_boundaries():
+def test_position_pairs_never_cross_material_acquisition_boundaries():
     ledger = _ledger("a\nb\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
@@ -1460,11 +1447,10 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
 
 def test_same_locality_pair_result_reuses_one_exact_prior_standing(monkeypatch):
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"tatatata\n",
-        source_role="system",
         source_boundary="exact same-locality source",
     )
     source = _record_byte_measurement(
@@ -1928,10 +1914,10 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
 
     ledger = _ledger("abab\n")
     source = _byte_source(ledger)
-    original = byte_measurement._ingested_bytes
+    original = byte_measurement._acquired_bytes
     callback_recorded = False
 
-    def append_during_pair_measurement(ledger, ingest):
+    def append_during_pair_measurement(ledger, acquisition_result):
         nonlocal callback_recorded
         events = ledger.list()
         tip = events[-1] if events else None
@@ -1947,10 +1933,10 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
                 {"unknown": ["unrelated append during pair Measurement"]},
                 locality_identity="unrelated",
             )
-        return original(ledger, ingest)
+        return original(ledger, acquisition_result)
 
     monkeypatch.setattr(
-        byte_measurement, "_ingested_bytes", append_during_pair_measurement
+        byte_measurement, "_acquired_bytes", append_during_pair_measurement
     )
     with pytest.raises(ByteMeasurementError, match="Act at the append tip"):
         record_byte_position_pair_count_layer(
@@ -2135,11 +2121,10 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
     shaped["measurement_occurrences"] = {
         source_result.identity: {"recorded_occurrence_identity": source_result.identity}
     }
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity=source_result.locality_identity,
         exact_bytes=b"later",
-        source_role="test source",
         source_boundary="after source Standing",
     )
     destination = read_operator_locality_standing(
@@ -2247,11 +2232,10 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
     stale = read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="movement",
         exact_bytes=b"later",
-        source_role="test source",
         source_boundary="after assignment",
     )
     with pytest.raises(ByteMeasurementError, match="current destination Standing"):
@@ -2265,11 +2249,10 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
 def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     path = tmp_path / "movement-assignment.sqlite"
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
-        source_role="test source",
         source_boundary="durable source",
     )
     source_result = _record_byte_measurement(
@@ -2323,11 +2306,10 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
 
 def test_movement_assignment_reader_refuses_corrupted_source_carrier():
     ledger = IntegrityCountingLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
-        source_role="test source",
         source_boundary="source",
     )
     source_result = _record_byte_measurement(
@@ -2498,11 +2480,10 @@ def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
     ledger = _ledger("ta\n")
     state = _movement_carry_phase(ledger, phase)
     before = deepcopy(state["destination_standing"])
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="movement-carry",
         exact_bytes=b"later",
-        source_role="test source",
         source_boundary="after carried movement phase",
     )
 
@@ -2582,11 +2563,10 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
 
     path = tmp_path / "movement-batch-carry.sqlite"
     ledger = SQLiteEventLedger(path)
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
-        source_role="test source",
         source_boundary="durable source",
     )
     source_result = _record_byte_measurement(
@@ -2827,8 +2807,8 @@ FIDELITY_SUBJECTS = {
     "declared_measurement_result": (
         test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
         test_two_stages_traverse_byte_counts_once,
-        test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material,
-        test_each_replay_validates_each_exact_ingest_and_reads_independently,
+        test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,
+        test_each_replay_validates_each_exact_material_acquisition_and_reads_independently,
         test_exact_bytes_supply_the_measured_subjects_without_whitespace,
         test_the_complete_declared_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
@@ -2836,13 +2816,13 @@ FIDELITY_SUBJECTS = {
         test_recorded_results_replay_the_complete_bounded_source_read,
         test_a_self_consistent_truncated_source_assertion_is_refused,
         test_recording_occurrence_evidence_is_validated_exactly,
-        test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement,
+        test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement,
         test_a_missing_declared_locality_is_refused,
         test_acquisition_result_must_match_its_exact_byte_coordinates,
-        test_repeated_locality_coordinate_does_not_repeat_one_ingest,
+        test_repeated_locality_coordinate_does_not_repeat_one_acquire,
         test_every_overlapping_byte_position_pair_is_measured,
         test_byte_position_pair_results_follow_first_observed_pair_positions,
-        test_position_pairs_never_cross_ingest_boundaries,
+        test_position_pairs_never_cross_material_acquisition_boundaries,
         test_position_pair_measurement_remains_byte_not_character_based,
         test_recorded_pair_results_replay_the_complete_bounded_source_read,
         test_same_locality_pair_result_reuses_one_exact_prior_standing,

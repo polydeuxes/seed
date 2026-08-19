@@ -1,6 +1,6 @@
 """Measure first and second position coordinates of each byte-pair occurrence.
 
-The exact source Ingest result bounds the population.  The Measurement records
+The exact source material acquisition result bounds the population.  The Measurement records
 first and second byte values with their position coordinates; it establishes no
 recurrence, represented relation, character, word, or meaning.
 """
@@ -46,11 +46,11 @@ RESULT_KIND = "result of Measurement of position coordinates of byte-pair occurr
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
 RESPONSIBILITY = (
     "Measurement of the position coordinates of each exact byte-pair occurrence "
-    "within one exact Ingest result"
+    "within one exact material acquisition result"
 )
 MEASUREMENT_RULE = (
     "each exact byte-pair occurrence with its first position and second position "
-    "in source occurrence order within one exact Ingest result"
+    "in source occurrence order within one exact material acquisition result"
 )
 AUTHORITY = "bounded repository authority"
 ASSERTION_RESPONSIBILITY = (
@@ -63,7 +63,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: "01.Source.D",
 }
 class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
-    source_ingest_occurrence_identity: str
+    source_material_acquisition_occurrence_identity: str
     source_locality_identity: str
     completeness_boundary: EventLedgerBoundary
     exact_material: bytes
@@ -80,8 +80,8 @@ class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
         )
 
 
-class UnassignedPositionCoordinateMeasurementIngestReading(NamedTuple):
-    """Exact Ingest coordinates read before this family's assignment record.
+class UnassignedPositionCoordinateMeasurementAcquisitionReading(NamedTuple):
+    """Exact material acquisition coordinates read before this family's assignment record.
 
     This family-local runtime projection preserves exact source coordinates
     beside the absence of this family's assignment or result through B.  It
@@ -89,7 +89,7 @@ class UnassignedPositionCoordinateMeasurementIngestReading(NamedTuple):
     Responsibility assignment, Applicability, Act, or Standing.
     """
 
-    source_ingest_occurrence_identity: str
+    source_material_acquisition_occurrence_identity: str
     source_result_identity: str
     source_locality_identity: str
     source_completeness_boundary_identity: str
@@ -110,7 +110,7 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
 ):
     recorded_occurrence_identity: str
     assertion_identity: str
-    source_ingest_occurrence_identity: str
+    source_material_acquisition_occurrence_identity: str
     locality_identity: str
     completeness_boundary_identity: str
     exact_pair: bytes
@@ -127,8 +127,8 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     @property
     def first_position_coordinate_reference(self) -> dict[str, Any]:
         return _source_position_coordinate_reference(
-            source_ingest_occurrence_identity=(
-                self.source_ingest_occurrence_identity
+            source_material_acquisition_occurrence_identity=(
+                self.source_material_acquisition_occurrence_identity
             ),
             source_locality_identity=self.locality_identity,
             completeness_boundary_identity=(
@@ -141,8 +141,8 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     @property
     def second_position_coordinate_reference(self) -> dict[str, Any]:
         return _source_position_coordinate_reference(
-            source_ingest_occurrence_identity=(
-                self.source_ingest_occurrence_identity
+            source_material_acquisition_occurrence_identity=(
+                self.source_material_acquisition_occurrence_identity
             ),
             source_locality_identity=self.locality_identity,
             completeness_boundary_identity=(
@@ -155,23 +155,23 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
 
 def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     if type(value) is not list or any(type(item) is not str for item in value):
-        raise ValueError(f"exact Ingest assignment subject has malformed {coordinate}")
+        raise ValueError(f"exact material acquisition assignment subject has malformed {coordinate}")
     return tuple(value)
 
 
-def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
+def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
     ledger: EventLedger,
     bounded_locality_replay: dict[str, Any],
     *,
     locality_identity: str,
-) -> tuple[UnassignedPositionCoordinateMeasurementIngestReading, ...]:
+) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
     if (
         not isinstance(ledger, EventLedger)
         or type(locality_identity) is not str
         or not locality_identity
         or type(bounded_locality_replay) is not dict
         or bounded_locality_replay.get("locality_identity") != locality_identity
-        or type(bounded_locality_replay.get("ingest_occurrences")) is not list
+        or type(bounded_locality_replay.get("material_acquisition_result_occurrences")) is not list
         or type(
             bounded_locality_replay.get("responsibility_assignment_occurrences")
         )
@@ -209,7 +209,7 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
             and assignment.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
         ):
             _assignment, finding = _read_assignment(ledger, assignment_identity)
-            recorded_sources.add(finding.source_ingest_occurrence_identity)
+            recorded_sources.add(finding.source_material_acquisition_occurrence_identity)
     for result_identity in bounded_locality_replay["measurement_occurrences"]:
         result = ledger.get(result_identity)
         if (
@@ -217,22 +217,22 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
             and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
         ):
             _result, finding, _assertions = _read_result(ledger, result_identity)
-            recorded_sources.add(finding.source_ingest_occurrence_identity)
+            recorded_sources.add(finding.source_material_acquisition_occurrence_identity)
 
-    sources: list[UnassignedPositionCoordinateMeasurementIngestReading] = []
-    for occurrence in bounded_locality_replay["ingest_occurrences"]:
+    sources: list[UnassignedPositionCoordinateMeasurementAcquisitionReading] = []
+    for occurrence in bounded_locality_replay["material_acquisition_result_occurrences"]:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("evidence_event_identity")) is not str
             or not occurrence["evidence_event_identity"]
         ):
-            raise ValueError("current Standing carries a malformed Ingest occurrence")
+            raise ValueError("current Standing carries a malformed material acquisition occurrence")
         source_identity = occurrence["evidence_event_identity"]
         if source_identity in recorded_sources:
             continue
         source = ledger.get(source_identity)
         if source is None or source.locality_identity != locality_identity:
-            raise ValueError("current Standing carries an absent Ingest occurrence")
+            raise ValueError("current Standing carries an absent material acquisition occurrence")
         if not all(
             type(source.material.get(key)) is str and source.material[key]
             for key in (
@@ -240,7 +240,7 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
                 "evidence_of_yield_relation_identity",
             )
         ):
-            # Preserved legacy material is not an exact result of the Ingest
+            # Preserved legacy material is not an exact result of the material acquisition
             # Act/Yield physiology required by this assignment subject.
             continue
         source = read_exact_material_acquisition_result(ledger, source_identity)
@@ -259,10 +259,10 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
             type(value) is not str or not value
             for value in exact_coordinates.values()
         ):
-            raise ValueError("exact Ingest assignment subject coordinates are malformed")
+            raise ValueError("exact material acquisition assignment subject coordinates are malformed")
         sources.append(
-            UnassignedPositionCoordinateMeasurementIngestReading(
-                source_ingest_occurrence_identity=source.identity,
+            UnassignedPositionCoordinateMeasurementAcquisitionReading(
+                source_material_acquisition_occurrence_identity=source.identity,
                 source_result_identity=exact_coordinates["result_identity"],
                 source_locality_identity=source.locality_identity,
                 source_completeness_boundary_identity=(
@@ -298,13 +298,13 @@ def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_re
     return tuple(sources)
 
 
-def read_unassigned_position_coordinate_measurement_ingests_through(
+def read_unassigned_position_coordinate_measurement_acquisition_results_through(
     ledger: EventLedger,
     *,
     locality_identity: str,
     through_event_occurrence_identity: str,
-) -> tuple[UnassignedPositionCoordinateMeasurementIngestReading, ...]:
-    """Read exact unassigned Ingest results for this family through B.
+) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
+    """Read exact unassigned material acquisition results for this family through B.
 
     The non-recording projection establishes neither an exact Locality
     relation nor that any returned source is a subject of this Measurement's
@@ -320,7 +320,7 @@ def read_unassigned_position_coordinate_measurement_ingests_through(
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
-    return _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
+    return _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
         ledger,
         bounded_locality_replay,
         locality_identity=locality_identity,
@@ -332,8 +332,8 @@ def _validate_finding(
     if type(finding) is not FindingOfPositionCoordinatesOfBytePairOccurrences:
         raise TypeError("byte-pair position-coordinate Measurement requires one exact finding")
     if (
-        type(finding.source_ingest_occurrence_identity) is not str
-        or not finding.source_ingest_occurrence_identity
+        type(finding.source_material_acquisition_occurrence_identity) is not str
+        or not finding.source_material_acquisition_occurrence_identity
         or type(finding.source_locality_identity) is not str
         or not finding.source_locality_identity
         or type(finding.completeness_boundary) is not EventLedgerBoundary
@@ -345,10 +345,10 @@ def _validate_finding(
 def _measure_through(
     ledger: EventLedger,
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     boundary: EventLedgerBoundary,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    source = read_exact_material_acquisition_result(ledger, source_ingest_occurrence_identity)
+    source = read_exact_material_acquisition_result(ledger, source_material_acquisition_occurrence_identity)
     exact_boundary = ledger.append_boundary_through_occurrence(source.identity)
     if type(boundary) is not EventLedgerBoundary or boundary != exact_boundary:
         raise ValueError(
@@ -356,7 +356,7 @@ def _measure_through(
         )
     exact = acquired_material_bytes(source)
     finding = FindingOfPositionCoordinatesOfBytePairOccurrences(
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary=boundary,
         exact_material=exact,
@@ -368,22 +368,22 @@ def _measure_through(
 def measure_position_coordinates_of_byte_pair_occurrences(
     ledger: EventLedger,
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    """Measure each exact byte-pair window in one Ingest result."""
+    """Measure each exact byte-pair window in one material acquisition result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("byte-pair position-coordinate Measurement requires one EventLedger")
     if (
-        type(source_ingest_occurrence_identity) is not str
-        or not source_ingest_occurrence_identity
+        type(source_material_acquisition_occurrence_identity) is not str
+        or not source_material_acquisition_occurrence_identity
     ):
-        raise ValueError("byte-pair position-coordinate Measurement requires one Ingest result")
+        raise ValueError("byte-pair position-coordinate Measurement requires one material acquisition result")
     return _measure_through(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         boundary=ledger.append_boundary_through_occurrence(
-            source_ingest_occurrence_identity
+            source_material_acquisition_occurrence_identity
         ),
     )
 
@@ -407,7 +407,7 @@ def _input_relation(
     return {
         "first_subject": {
             "recorded_occurrence_identity": (
-                finding.source_ingest_occurrence_identity
+                finding.source_material_acquisition_occurrence_identity
             )
         },
         "relation": "input_to",
@@ -417,7 +417,7 @@ def _input_relation(
             "act_occurrence_identity": act_occurrence_identity,
         },
         "through": (
-            "one intact exact Ingest result carried by current Locality Standing"
+            "one intact exact material acquisition result carried by current Locality Standing"
         ),
     }
 
@@ -446,8 +446,8 @@ def _assignment_material(
         "book_clause_identity": "01.Source.D",
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -455,8 +455,8 @@ def _assignment_material(
         "input_relation": input_relation,
         "measurement_rule": MEASUREMENT_RULE,
         "scope": {
-            "source_ingest_occurrence_identity": (
-                finding.source_ingest_occurrence_identity
+            "source_material_acquisition_occurrence_identity": (
+                finding.source_material_acquisition_occurrence_identity
             ),
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": (
@@ -466,7 +466,7 @@ def _assignment_material(
         },
         "authority": AUTHORITY,
         "limits": [
-            "assignment is bounded to this exact Ingest result and source boundary"
+            "assignment is bounded to this exact material acquisition result and source boundary"
         ],
         "unknown": [
             "Participation or representation of each measured byte pair: Unknown"
@@ -479,7 +479,7 @@ def _require_current_standing(
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
-    source_ingest_occurrence_identity: str | None = None,
+    source_material_acquisition_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
     from seed_runtime.operator_locality_standing import (
@@ -494,11 +494,11 @@ def _require_current_standing(
         ledger, locality_identity=locality_identity
     )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    ingests = locality_standing.get("ingest_occurrences")
+    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
-    carried_ingests = {
+    carried_acquisition_results = {
         occurrence.get("evidence_event_identity")
-        for occurrence in ingests or ()
+        for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
     if (
@@ -507,8 +507,8 @@ def _require_current_standing(
         or type(boundary) is not str
         or not boundary
         or (
-            source_ingest_occurrence_identity is not None
-            and source_ingest_occurrence_identity not in carried_ingests
+            source_material_acquisition_occurrence_identity is not None
+            and source_material_acquisition_occurrence_identity not in carried_acquisition_results
         )
         or (
             assignment_identity is not None
@@ -529,7 +529,7 @@ def _require_carried_standing_at_tip(
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
-    source_ingest_occurrence_identity: str | None = None,
+    source_material_acquisition_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
     """Validate a call-local Standing at the latest event in its Locality."""
@@ -539,11 +539,11 @@ def _require_carried_standing_at_tip(
             "byte-pair position-coordinate Measurement requires current Locality Standing"
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    ingests = locality_standing.get("ingest_occurrences")
+    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
-    carried_ingests = {
+    carried_acquisition_results = {
         occurrence.get("evidence_event_identity")
-        for occurrence in ingests or ()
+        for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
     if (
@@ -551,8 +551,8 @@ def _require_carried_standing_at_tip(
         or type(boundary) is not str
         or not boundary
         or (
-            source_ingest_occurrence_identity is not None
-            and source_ingest_occurrence_identity not in carried_ingests
+            source_material_acquisition_occurrence_identity is not None
+            and source_material_acquisition_occurrence_identity not in carried_acquisition_results
         )
         or (
             assignment_identity is not None
@@ -587,13 +587,13 @@ def _require_carried_standing_at_tip(
 def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     locality_standing: dict[str, Any],
     carried: bool,
 ) -> Event:
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
     )
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
         ledger,
@@ -618,25 +618,25 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         ledger,
         locality_identity=finding.source_locality_identity,
         locality_standing=locality_standing,
-        source_ingest_occurrence_identity=(
-            finding.source_ingest_occurrence_identity
+        source_material_acquisition_occurrence_identity=(
+            finding.source_material_acquisition_occurrence_identity
         ),
     )
     # This runtime refusal prevents malformed or already-recorded sources from
     # crossing the public recorder.  Membership establishes neither the
     # missing exact Locality relation nor the assignment-subject relation.
     current_sources = (
-        _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
+        _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
             ledger,
             locality_standing,
             locality_identity=finding.source_locality_identity,
         )
     )
-    if finding.source_ingest_occurrence_identity not in {
-        source.source_ingest_occurrence_identity for source in current_sources
+    if finding.source_material_acquisition_occurrence_identity not in {
+        source.source_material_acquisition_occurrence_identity for source in current_sources
     }:
         raise ValueError(
-            "byte-pair position-coordinate assignment requires one exact current unassigned Ingest result"
+            "byte-pair position-coordinate assignment requires one exact current unassigned material acquisition result"
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
@@ -692,14 +692,14 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
 def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
     """Assign the exact source result to this declared Measurement."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         locality_standing=locality_standing,
         carried=False,
     )
@@ -708,14 +708,14 @@ def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
 def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
     ledger: EventLedger,
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
     """Assign the exact source already carried at the current append tip."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         locality_standing=locality_standing,
         carried=True,
     )
@@ -745,7 +745,7 @@ def _read_assignment(
             "measurement_result_identity",
         )
     }
-    source_identity = material.get("source_ingest_occurrence_identity")
+    source_identity = material.get("source_material_acquisition_occurrence_identity")
     boundary_identity = material.get("completeness_boundary_identity")
     standing_boundary_identity = material.get("standing_boundary_identity")
     if (
@@ -764,7 +764,7 @@ def _read_assignment(
     try:
         finding = _measure_through(
             ledger,
-            source_ingest_occurrence_identity=source_identity,
+            source_material_acquisition_occurrence_identity=source_identity,
             boundary=EventLedgerBoundary(boundary_identity),
         )
     except (TypeError, ValueError) as error:
@@ -802,7 +802,7 @@ def _read_assignment(
     if not any(
         type(occurrence) is dict
         and occurrence.get("evidence_event_identity") == source_identity
-        for occurrence in prior.get("ingest_occurrences", ())
+        for occurrence in prior.get("material_acquisition_result_occurrences", ())
     ):
         raise ValueError(
             "byte-pair position-coordinate assignment has no exact prior Standing"
@@ -872,7 +872,7 @@ def _participation(
     act_occurrence_identity: str,
 ) -> dict[str, str]:
     return {
-        "subject_reference": finding.source_ingest_occurrence_identity,
+        "subject_reference": finding.source_material_acquisition_occurrence_identity,
         "role": "input",
         "act_occurrence_identity": act_occurrence_identity,
     }
@@ -1067,14 +1067,14 @@ def _canonical(value: Any) -> str:
 
 def _source_position_coordinate_reference(
     *,
-    source_ingest_occurrence_identity: str,
+    source_material_acquisition_occurrence_identity: str,
     source_locality_identity: str,
     completeness_boundary_identity: str,
     position: int,
     exact_material: bytes,
 ) -> dict[str, Any]:
     coordinates = {
-        "source_ingest_occurrence_identity": source_ingest_occurrence_identity,
+        "source_material_acquisition_occurrence_identity": source_material_acquisition_occurrence_identity,
         "locality_identity": source_locality_identity,
         "completeness_boundary_identity": completeness_boundary_identity,
         "position": position,
@@ -1095,16 +1095,16 @@ def _assertion_coordinates(
     second_position: int,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, int]]:
     subject = {
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "exact_pair": list(exact_pair),
         "measurement_rule": MEASUREMENT_RULE,
     }
     scope = {
         "source_locality_identity": finding.source_locality_identity,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "completeness_boundary_identity": finding.completeness_boundary.identity,
     }
@@ -1113,8 +1113,8 @@ def _assertion_coordinates(
         "second_position": second_position,
         "first_position_coordinate_reference": (
             _source_position_coordinate_reference(
-                source_ingest_occurrence_identity=(
-                    finding.source_ingest_occurrence_identity
+                source_material_acquisition_occurrence_identity=(
+                    finding.source_material_acquisition_occurrence_identity
                 ),
                 source_locality_identity=finding.source_locality_identity,
                 completeness_boundary_identity=(
@@ -1126,8 +1126,8 @@ def _assertion_coordinates(
         ),
         "second_position_coordinate_reference": (
             _source_position_coordinate_reference(
-                source_ingest_occurrence_identity=(
-                    finding.source_ingest_occurrence_identity
+                source_material_acquisition_occurrence_identity=(
+                    finding.source_material_acquisition_occurrence_identity
                 ),
                 source_locality_identity=finding.source_locality_identity,
                 completeness_boundary_identity=(
@@ -1164,7 +1164,7 @@ def _assertion(
         "dimensions": {
             "identity": assertion_identity,
             "content": content,
-            "source_provenance": "one exact Ingest occurrence and source boundary",
+            "source_provenance": "one exact material acquisition occurrence and source boundary",
             "responsibility": ASSERTION_RESPONSIBILITY,
             "authority": "unestablished",
             "evidence_scope": (
@@ -1177,7 +1177,7 @@ def _assertion(
         "assertion_subject": subject,
         "assertion_scope": scope,
         "input_support": {
-            "occurrence_references": [finding.source_ingest_occurrence_identity],
+            "occurrence_references": [finding.source_material_acquisition_occurrence_identity],
             "local_assertion_references": [],
         },
         "conflicts": "Unknown",
@@ -1185,7 +1185,7 @@ def _assertion(
             "Participation or representation of this byte pair: Unknown"
         ],
         "limits": [
-            "first and second position coordinates bounded by one exact Ingest result "
+            "first and second position coordinates bounded by one exact material acquisition result "
             "and source boundary"
         ],
     }
@@ -1221,8 +1221,8 @@ def _assertion_population(
     return {
         "result": "position",
         "measurement_rule": MEASUREMENT_RULE,
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -1263,8 +1263,8 @@ def _result_material(
         "input_relation": assignment.material["input_relation"],
         "measurement_rule": MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
-        "source_ingest_occurrence_identity": (
-            finding.source_ingest_occurrence_identity
+        "source_material_acquisition_occurrence_identity": (
+            finding.source_material_acquisition_occurrence_identity
         ),
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity
@@ -1348,8 +1348,8 @@ def _record_byte_pair_occurrence_position_measurement_result(
             "input_relation": result["input_relation"],
             "measurement_rule": result["measurement_rule"],
             "source_localities": result["source_localities"],
-            "source_ingest_occurrence_identity": result[
-                "source_ingest_occurrence_identity"
+            "source_material_acquisition_occurrence_identity": result[
+                "source_material_acquisition_occurrence_identity"
             ],
             "completeness_boundary": result["completeness_boundary"],
             "assertions": result["assertions"],
@@ -1512,8 +1512,8 @@ def _recorded_position_reference(
             first_position=first_position,
             second_position=second_position,
         ),
-        source_ingest_occurrence_identity=(
-            finding.source_ingest_occurrence_identity
+        source_material_acquisition_occurrence_identity=(
+            finding.source_material_acquisition_occurrence_identity
         ),
         locality_identity=finding.source_locality_identity,
         completeness_boundary_identity=finding.completeness_boundary.identity,
@@ -1571,7 +1571,7 @@ def _position_of_exact_source_position_coordinate_reference(
 ) -> int:
     coordinate_keys = {
         "identity",
-        "source_ingest_occurrence_identity",
+        "source_material_acquisition_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
         "position",
@@ -1582,9 +1582,9 @@ def _position_of_exact_source_position_coordinate_reference(
         or set(position_coordinate_reference) != coordinate_keys
         or type(position_coordinate_reference.get("identity")) is not str
         or not position_coordinate_reference["identity"]
-        or type(position_coordinate_reference.get("source_ingest_occurrence_identity"))
+        or type(position_coordinate_reference.get("source_material_acquisition_occurrence_identity"))
         is not str
-        or not position_coordinate_reference["source_ingest_occurrence_identity"]
+        or not position_coordinate_reference["source_material_acquisition_occurrence_identity"]
         or type(position_coordinate_reference.get("locality_identity")) is not str
         or not position_coordinate_reference["locality_identity"]
         or type(
@@ -1604,11 +1604,11 @@ def _position_of_exact_source_position_coordinate_reference(
     position = position_coordinate_reference["position"]
     if position < 0 or position >= len(finding.exact_material):
         raise ValueError(
-            "addressed source position is outside the exact Ingest result"
+            "addressed source position is outside the exact material acquisition result"
         )
     expected = _source_position_coordinate_reference(
-        source_ingest_occurrence_identity=(
-            finding.source_ingest_occurrence_identity
+        source_material_acquisition_occurrence_identity=(
+            finding.source_material_acquisition_occurrence_identity
         ),
         source_locality_identity=finding.source_locality_identity,
         completeness_boundary_identity=finding.completeness_boundary.identity,

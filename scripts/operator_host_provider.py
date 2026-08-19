@@ -12,8 +12,8 @@ import tempfile
 import time
 
 from seed_runtime.supplied_invocation_material import (
-    SuppliedSystemMaterialConsumer,
-    SuppliedSystemMaterialOccurrence,
+    SuppliedWitnessMaterialConsumer,
+    SuppliedWitnessMaterialOccurrence,
 )
 
 
@@ -100,7 +100,7 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
 def _bounded_invocation(
     argv: tuple[bytes, ...],
     *,
-    supply: SuppliedSystemMaterialConsumer,
+    supply: SuppliedWitnessMaterialConsumer,
     environment: dict[str, str] | None = None,
     working_directory: Path | None = None,
 ) -> tuple[bool, bool, bool]:
@@ -176,7 +176,7 @@ def _bounded_invocation(
                 exact = found[:available]
                 if exact:
                     supply(
-                        SuppliedSystemMaterialOccurrence(
+                        SuppliedWitnessMaterialOccurrence(
                             exact_bytes=exact,
                             source_boundary=(
                                 f"invocation {key.data} occurrence "
@@ -205,7 +205,7 @@ def _bounded_invocation(
     for role in ("output", "error"):
         if supplied_positions[role] == 0:
             supply(
-                SuppliedSystemMaterialOccurrence(
+                SuppliedWitnessMaterialOccurrence(
                     exact_bytes=b"",
                     source_boundary=f"invocation {role} occurrence 0",
                     egress=True,
@@ -233,7 +233,7 @@ def _bounded_artifact(
 
 
 def _supply_completion(
-    supply: SuppliedSystemMaterialConsumer,
+    supply: SuppliedWitnessMaterialConsumer,
     *,
     timed_out: bool,
     output_limited: bool,
@@ -245,7 +245,7 @@ def _supply_completion(
         else ()
     )
     supply(
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             exact_bytes=b"",
             source_boundary="invocation completion",
             egress=False,
@@ -256,7 +256,7 @@ def _supply_completion(
 
 def invoke_operator_host(
     exact_command: bytes,
-    supply: SuppliedSystemMaterialConsumer,
+    supply: SuppliedWitnessMaterialConsumer,
 ) -> None:
     if not callable(supply):
         raise TypeError("exact supplied material consumer required")
@@ -302,7 +302,7 @@ def invoke_operator_host(
             ),
         )
     supply(
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             exact_bytes=catalog,
             source_boundary="implementation function catalog",
             egress=False,
@@ -317,7 +317,7 @@ def invoke_operator_host(
         )
     )
     supply(
-        SuppliedSystemMaterialOccurrence(
+        SuppliedWitnessMaterialOccurrence(
             exact_bytes=artifact,
             source_boundary="implementation function measurement",
             egress=False,

@@ -27,7 +27,7 @@ def supplied_material(root: Path, name: str, first_line: int) -> bytes:
     lines = (root / "corpus" / name).read_bytes().splitlines(keepends=True)
     material = lines[first_line : first_line + 300]
     if len(material) != 300:
-        raise ValueError("fixture material does not carry 300 lines")
+        raise ValueError("book material test witness does not carry 300 lines")
     return b"".join(material)
 
 

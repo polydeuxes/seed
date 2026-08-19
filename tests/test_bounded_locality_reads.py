@@ -16,7 +16,7 @@ from seed_runtime.material_acquisition import (
     iter_exact_material_acquisition_results,
     read_exact_material_acquisition_result,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -176,7 +176,7 @@ def test_unrelated_locality_occurrence_does_not_enter_acquisition_read(
 
     unrelated = ledger.append(
         "unrelated.malformed",
-        {"claimed_source_role": "operator"},
+        {"claimed_source_role": "another source"},
         locality_identity="s1",
     )
 
@@ -239,7 +239,7 @@ def test_the_kind_stream_seeks_by_locality_and_kind(durable_ledger):
             "EXPLAIN QUERY PLAN "
             "SELECT * FROM events WHERE locality_identity = ? "
             "AND kind = ? ORDER BY rowid",
-            ("s1", MATERIAL_INGEST_OCCURRED_KIND),
+            ("s1", WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND),
         ).fetchall()
     finally:
         connection.close()

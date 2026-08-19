@@ -20,9 +20,9 @@ from seed_runtime.evidence_of_yield_relation import (
 )
 from seed_runtime.identities import new_identity
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result
-from seed_runtime.operator_system_locality import (
-    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
-    get_recorded_operator_system_locality,
+from seed_runtime.operator_invocation_locality import (
+    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
+    get_recorded_operator_invocation_locality,
 )
 
 
@@ -80,7 +80,7 @@ def _identity(value: Any, message: str) -> str:
     return value
 
 
-def _operator_acquisition_for_ingest_result(
+def _operator_acquisition_for_material_result(
     ledger: EventLedger, added: Event
 ) -> tuple[Event, dict[str, Any]]:
     """Read direct O1 or the older generic result carrying O1 provenance."""
@@ -287,7 +287,7 @@ def _source_occurrence_references_from_assignment(
             "comparison input carries no exact source occurrence sequence"
         )
     references = tuple(
-        item.get("ingest_occurrence_identity") if type(item) is dict else None
+        item.get("material_acquisition_occurrence_identity") if type(item) is dict else None
         for item in source_material
     )
     if (
@@ -370,18 +370,18 @@ def _comparison_inputs(
     source_role = added.material.get("source_role")
     operator_material_acquire_result_event_identity = None
     operator_material_source_standing_reference = None
-    if source_role == "system":
+    if source_role == "this Witness":
         if not cited_prior:
             raise RecordedPairMeasurementComparisonError(
                 "later Measurement requires one supplied occurrence with exact provenance"
             )
-        input_relation = "system supplied occurrence provenance"
-    elif source_role == "operator":
+        input_relation = "this Witness supplied occurrence provenance"
+    elif source_role == "this operator":
         from seed_runtime.operator_locality_standing import (
             read_operator_locality_standing_through,
         )
 
-        acquired_event, acquired = _operator_acquisition_for_ingest_result(
+        acquired_event, acquired = _operator_acquisition_for_material_result(
             ledger, added
         )
         source_standing_reference = acquired.get("source_standing_reference")
@@ -407,7 +407,7 @@ def _comparison_inputs(
             ) from error
         carried_sources = {
             occurrence.get("evidence_event_identity")
-            for occurrence in source_standing.get("ingest_occurrences", ())
+            for occurrence in source_standing.get("material_acquisition_result_occurrences", ())
             if type(occurrence) is dict
         }
         carried_representation_event_identities = {
@@ -434,13 +434,14 @@ def _comparison_inputs(
         input_relation = "operator material acquisition at prior Standing"
     else:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one system or operator occurrence"
+            "later Measurement requires one occurrence supplied by this Witness "
+            "or one operator occurrence"
         )
     invocation_relations = tuple(
         event
         for reference in provenance
         for event in (ledger.get(reference),)
-        if event is not None and event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+        if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
     if len(invocation_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
@@ -448,10 +449,10 @@ def _comparison_inputs(
         )
     invocation_relation = invocation_relations[0] if invocation_relations else None
     operator_locality_identity = (
-        earlier.locality_identity if source_role == "operator" else None
+        earlier.locality_identity if source_role == "this operator" else None
     )
     if invocation_relation is not None:
-        relation = get_recorded_operator_system_locality(
+        relation = get_recorded_operator_invocation_locality(
             ledger, invocation_relation.identity
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:
@@ -576,8 +577,8 @@ def _comparison_inputs_from_carried_measurements(
     source_role = added.material.get("source_role")
     acquisition_identity = None
     source_standing_reference = None
-    if source_role == "operator":
-        acquired, acquired_material = _operator_acquisition_for_ingest_result(
+    if source_role == "this operator":
+        acquired, acquired_material = _operator_acquisition_for_material_result(
             ledger, added
         )
         exact_results = locality_standing.get("exact_result_occurrences")
@@ -627,22 +628,23 @@ def _comparison_inputs_from_carried_measurements(
         acquisition_identity = acquired.identity
         input_relation = "operator material acquisition at prior Standing"
         operator_locality_identity = earlier.locality_identity
-    elif source_role == "system":
+    elif source_role == "this Witness":
         if not cited_prior:
             raise RecordedPairMeasurementComparisonError(
                 "later Measurement requires one supplied occurrence with exact provenance"
             )
-        input_relation = "system supplied occurrence provenance"
+        input_relation = "this Witness supplied occurrence provenance"
         operator_locality_identity = None
     else:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one system or operator occurrence"
+            "later Measurement requires one occurrence supplied by this Witness "
+            "or one operator occurrence"
         )
     invocation_relations = tuple(
         event
         for reference in provenance
         for event in (ledger.get(reference),)
-        if event is not None and event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+        if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
     if len(invocation_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
@@ -650,7 +652,7 @@ def _comparison_inputs_from_carried_measurements(
         )
     invocation_relation = invocation_relations[0] if invocation_relations else None
     if invocation_relation is not None:
-        relation = get_recorded_operator_system_locality(
+        relation = get_recorded_operator_invocation_locality(
             ledger, invocation_relation.identity
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:

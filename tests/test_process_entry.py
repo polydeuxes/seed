@@ -10,7 +10,7 @@ import pytest
 
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
@@ -260,26 +260,26 @@ def live_pytest_invocation(tmp_path_factory):
     assert result.returncode == 0, result.stderr
     ledger = SQLiteEventLedger(database)
     try:
-        ingests = [
+        acquisition_results = [
             event
             for event in ledger.list()
-            if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+            if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
         ]
     finally:
         ledger.close()
-    supplied = ingests[1:]
+    supplied = acquisition_results[1:]
     supplied_by_boundary = {
         event.material["source_boundary"]: event for event in supplied
     }
-    return result, ingests, supplied, supplied_by_boundary
+    return result, acquisition_results, supplied, supplied_by_boundary
 
 
-def test_live_process_ingests_each_supplied_pytest_occurrence(
+def test_live_process_acquisition_results_each_supplied_pytest_occurrence(
     live_pytest_invocation,
 ):
-    _, ingests, supplied, supplied_by_boundary = live_pytest_invocation
+    _, acquisition_results, supplied, supplied_by_boundary = live_pytest_invocation
 
-    assert len(ingests) >= 6
+    assert len(acquisition_results) >= 6
     assert {
         "implementation function catalog",
         "implementation function measurement",
@@ -303,7 +303,7 @@ def test_live_process_ingests_each_supplied_pytest_occurrence(
     assert all(
         type(references) is list
         and len(references) == 2
-        and references[0] == ingests[0].identity
+        and references[0] == acquisition_results[0].identity
         for references in provenance
     )
     assert len(
@@ -378,7 +378,7 @@ FIDELITY_SUBJECTS = {
         test_other_slash_material_remains_exact_operator_material,
     ),
     "supplied_material_invocation": (
-        test_live_process_ingests_each_supplied_pytest_occurrence,
+        test_live_process_acquisition_results_each_supplied_pytest_occurrence,
     ),
     "declared_Measurement_result": (
         test_live_process_preserves_the_exact_pytest_measurement_result,

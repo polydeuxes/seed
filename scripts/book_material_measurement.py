@@ -20,7 +20,9 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import (
+    record_witness_material_acquisition,
+)
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
@@ -32,11 +34,10 @@ def measured_book_material():
         if path.is_file()
     )
     for path in paths:
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="book-material",
             exact_bytes=path.read_bytes(),
-            source_role="fixture material",
             source_boundary=str(path.relative_to(SCRIPT_DIRECTORY.parent)),
         )
     assignment = record_byte_measurement_responsibility_assignment(

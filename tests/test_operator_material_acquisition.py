@@ -14,7 +14,7 @@ from seed_runtime.material_acquisition import (
     iter_exact_material_acquisition_results,
     read_exact_material_acquisition_result,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
@@ -331,12 +331,12 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
             "locality_evidence_identity": acquired[0].identity,
         }
     }
-    ingests = [
+    acquisition_results = [
         event
         for event in ledger.list()
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     ]
-    assert ingests == []
+    assert acquisition_results == []
     assert read_exact_material_acquisition_result(ledger, acquired[0].identity) == acquired[0]
     assert acquired[0].exact_material == b"Hello\n"
     assert acquired[0].material["provenance_occurrence_references"] == []
@@ -351,12 +351,12 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     ]
     assert len(position_results) == len(byte_results) == 1
-    assert position_results[0].material["source_ingest_occurrence_identity"] == (
+    assert position_results[0].material["source_material_acquisition_occurrence_identity"] == (
         acquired[0].identity
     )
     assert byte_results[0].material["assertions"][0]["dimensions"]["content"][
         "source_material"
-    ] == [{"ingest_occurrence_identity": acquired[0].identity}]
+    ] == [{"material_acquisition_occurrence_identity": acquired[0].identity}]
 
 
 def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
@@ -364,7 +364,7 @@ def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
     claimed = ledger.append(
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
         {
-            "source_role": "operator",
+            "source_role": "this operator",
             "unknown": ["represented_relation", "source_relation"],
         },
         exact_material=b"claimed O1",
@@ -377,11 +377,10 @@ def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
 
 def test_exact_acquisition_families_merge_only_their_append_order():
     ledger = EventLedger()
-    first = ingest_material(
+    first = record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"first supplied material",
-        source_role="system",
         source_boundary="first boundary",
     )
     run_persistent_operator_console(
@@ -395,11 +394,10 @@ def test_exact_acquisition_families_merge_only_their_append_order():
         for event in ledger.list_locality("source")
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     )
-    last = ingest_material(
+    last = record_witness_material_acquisition(
         ledger,
         locality_identity="source",
         exact_bytes=b"last supplied material",
-        source_role="system",
         source_boundary="last boundary",
     )
 

@@ -17,7 +17,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
@@ -113,7 +113,7 @@ from material_admission import (  # noqa: E402
     compare_admission_result_pairs,
     preserves,
 )
-from material_fixture_books import (  # noqa: E402
+from book_material_test_witness import (  # noqa: E402
     MATERIAL_WINDOWS,
     supplied_book_material,
 )
@@ -133,12 +133,11 @@ def measured_book_pairs():
     if any(not path.is_file() for path in paths):
         pytest.skip("supplied fixture material is unavailable")
     supplied_material = supplied_book_material(ROOT)
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="book-material",
             exact_bytes=material,
-            source_role="fixture material",
             source_boundary="fixture",
         )
         for material in supplied_material
@@ -179,7 +178,7 @@ def measured_book_pairs():
     )
     return (
         supplied_material,
-        ingests,
+        acquisition_results,
         assertions,
         pairs,
         byte_assertions,
@@ -514,13 +513,13 @@ def _return_boundaries(occurrences):
 IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
-def test_every_supplied_material_has_its_own_ingest(measured_book_pairs):
-    supplied_material, ingests, *_ = measured_book_pairs
+def test_every_supplied_material_has_its_own_acquire(measured_book_pairs):
+    supplied_material, acquisition_results, *_ = measured_book_pairs
 
-    assert len(supplied_material) == len(ingests) == 16
-    assert {ingest.locality_identity for ingest in ingests} == {"book-material"}
-    assert len({ingest.identity for ingest in ingests}) == len(supplied_material)
-    assert tuple(ingest.exact_material for ingest in ingests) == supplied_material
+    assert len(supplied_material) == len(acquisition_results) == 16
+    assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
+    assert len({acquisition_result.identity for acquisition_result in acquisition_results}) == len(supplied_material)
+    assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == supplied_material
 
 
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
@@ -3968,7 +3967,7 @@ FIDELITY_SUBJECTS = {
         test_bounded_invocation_requires_input_boundary_acceptance,
     ),
     "content_locality_occurrence_distinction": (
-        test_every_supplied_material_has_its_own_ingest,
+        test_every_supplied_material_has_its_own_acquire,
     ),
     "declared_measurement_result": (
         test_pair_material_comes_from_the_complete_recorded_measurement,

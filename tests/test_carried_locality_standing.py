@@ -36,8 +36,8 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -57,7 +57,7 @@ from seed_runtime.standing_measurement_declarations import (
     record_declared_measurements_from_current_standing,
 )
 from seed_runtime.supplied_invocation_material import (
-    SuppliedSystemMaterialOccurrence,
+    SuppliedWitnessMaterialOccurrence,
 )
 
 MATERIALS = (
@@ -89,24 +89,24 @@ def _replay(events):
 
 
 def _ingress_event(index, *, unknown):
-    """One recorded ingest occurrence carrying distinct Unknown."""
+    """One recorded acquisition_result occurrence carrying distinct Unknown."""
     ledger = EventLedger()
     return ledger.append(
-        MATERIAL_INGEST_OCCURRED_KIND,
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
         {
             "dimensions": {
                 "identity": f"material_{index}",
                 "authority": "unestablished",
                 "content": "00",
             },
-            "source_role": "operator",
+            "source_role": "this operator",
             "unknown": list(unknown),
         },
         locality_identity="s",
     )
 
 
-def test_operator_ingest_records_exact_byte_pair_occurrence_position_result():
+def test_operator_acquisition_records_exact_byte_pair_occurrence_position_result():
     ledger, _output = _console("2+2=5\n")
     results = tuple(
         event
@@ -132,19 +132,19 @@ def test_operator_ingest_records_exact_byte_pair_occurrence_position_result():
     )
 
 
-def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_result():
+def test_supplied_witness_acquisition_records_exact_byte_pair_occurrence_position_result():
     ledger = EventLedger()
 
     def provide(_command, supply):
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"4\n",
                 "invocation output occurrence 0",
                 True,
             )
         )
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 b"",
                 "invocation completion",
                 False,
@@ -159,7 +159,7 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
         raw_output_stream=BytesIO(),
         operator_invocation_provider=provide,
     )
-    system_locality = next(
+    invocation_locality = next(
         event.material["destination_locality_identity"]
         for event in ledger.list()
         if event.kind == "operator.invocation_locality_recorded"
@@ -167,19 +167,19 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
     supplied = tuple(
         event
         for event in ledger.list()
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
-        and event.locality_identity == system_locality
+        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        and event.locality_identity == invocation_locality
     )
     results = tuple(
         event
         for event in ledger.list()
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        and event.locality_identity == system_locality
+        and event.locality_identity == invocation_locality
     )
 
     assert tuple(event.exact_material for event in supplied) == (b"4\n", b"")
     assert tuple(
-        event.material["source_ingest_occurrence_identity"] for event in results
+        event.material["source_material_acquisition_occurrence_identity"] for event in results
     ) == tuple(event.identity for event in supplied)
     assert tuple(
         tuple(
@@ -191,7 +191,7 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
         for event in results
     ) == (((b"4\n", 0, 1),), ())
     standing = read_operator_locality_standing(
-        ledger, locality_identity=system_locality
+        ledger, locality_identity=invocation_locality
     )
     assert all(
         event.identity in standing["measurement_occurrences"]
@@ -199,20 +199,18 @@ def test_supplied_system_ingest_records_exact_byte_pair_occurrence_position_resu
     )
 
 
-def test_one_current_standing_pin_records_each_declared_ingest_measurement_once():
+def test_one_current_standing_pin_records_each_declared_material_acquisition_measurement_once():
     ledger = EventLedger()
-    first = ingest_material(
+    first = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"first\n",
-        source_role="exact supplied material",
         source_boundary="first exact boundary",
     )
-    second = ingest_material(
+    second = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"second\n",
-        source_role="exact supplied material",
         source_boundary="second exact boundary",
     )
 
@@ -227,7 +225,7 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
         BYTE_MEASUREMENT_RECORDED_KIND,
     )
     assert tuple(
-        event.material["source_ingest_occurrence_identity"]
+        event.material["source_material_acquisition_occurrence_identity"]
         for event in recorded.result_occurrences[:2]
     ) == (first.identity, second.identity)
     assert recorded.locality_standing == read_operator_locality_standing(
@@ -245,11 +243,10 @@ def test_one_current_standing_pin_records_each_declared_ingest_measurement_once(
 
 def test_current_standing_exposes_assignments_only_after_each_family_records_them():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"Hello, how are you\n",
-        source_role="exact supplied material",
         source_boundary="operator material occurrence",
     )
     before = read_operator_locality_standing(ledger, locality_identity="s")
@@ -284,16 +281,16 @@ def test_current_standing_exposes_assignments_only_after_each_family_records_the
     )
 
 
-def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
+def test_declared_measurements_do_not_promote_a_material_acquisition_without_exact_yield():
     ledger = EventLedger()
     source = ledger.append(
-        MATERIAL_INGEST_OCCURRED_KIND,
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
         {
             "dimensions": {
                 "identity": "preserved material",
                 "authority": "unestablished",
             },
-            "source_role": "operator",
+            "source_role": "this operator",
             "unknown": [],
         },
         exact_material=b"preserved material",
@@ -319,17 +316,16 @@ def test_declared_measurements_do_not_promote_an_ingest_without_exact_yield():
         if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     )
     assert assignment.material["source_occurrence_references"] == [
-        {"ingest_occurrence_identity": source.identity}
+        {"material_acquisition_occurrence_identity": source.identity}
     ]
 
 
 def test_carried_declaration_accepts_current_locality_standing_after_another_locality_append():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"pin\n",
-        source_role="exact supplied material",
         source_boundary="exact pin boundary",
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
@@ -355,11 +351,10 @@ def test_carried_declaration_accepts_current_locality_standing_after_another_loc
 
 def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locality():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"pin\n",
-        source_role="exact supplied material",
         source_boundary="exact pin boundary",
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
@@ -386,11 +381,10 @@ def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_pa
     path = str(tmp_path / "standing-declarations.sqlite")
     ledger = SQLiteEventLedger(path)
     try:
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="s",
             exact_bytes=b"2+2=5\n",
-            source_role="exact supplied material",
             source_boundary="exact claim boundary",
         )
         first = record_declared_measurements_from_current_standing(
@@ -452,7 +446,7 @@ def test_advancing_one_occurrence_at_a_time_equals_replay(material):
 
 
 def test_advancing_in_the_console_s_own_groupings_equals_replay():
-    """Two Representation occurrences, then three ingest occurrences, repeating."""
+    """Two Representation occurrences, then three acquisition_result occurrences, repeating."""
     ledger, _ = _console("alpha\nbeta\ngamma\n")
     events = ledger.list()
     standing = _advance([])
@@ -493,24 +487,24 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
     try:
         for ledger in ledgers:
             first = ledger.append(
-                MATERIAL_INGEST_OCCURRED_KIND,
+                WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
                 {
                     "dimensions": {
                         "identity": "first",
                         "authority": "unestablished",
                     },
-                    "source_role": "operator",
+                    "source_role": "this operator",
                 },
                 locality_identity="s",
             )
             second = ledger.append(
-                MATERIAL_INGEST_OCCURRED_KIND,
+                WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
                 {
                     "dimensions": {
                         "identity": "second",
                         "authority": "unestablished",
                     },
-                    "source_role": "operator",
+                    "source_role": "this operator",
                 },
                 locality_identity="s",
             )
@@ -528,13 +522,13 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
 def test_an_advance_refuses_an_occurrence_from_another_locality():
     ledger = EventLedger()
     event = ledger.append(
-        MATERIAL_INGEST_OCCURRED_KIND,
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
         {
             "dimensions": {
                 "identity": "elsewhere",
                 "authority": "unestablished",
             },
-            "source_role": "operator",
+            "source_role": "this operator",
         },
         locality_identity="elsewhere",
     )
@@ -552,11 +546,10 @@ def test_input_boundary_cannot_append_an_occurrence_during_acquisition():
 
     class AppendingInput:
         def readline(self):
-            ingest_material(
+            record_witness_material_acquisition(
                 ledger,
                 locality_identity="s",
                 exact_bytes=b"outside acquisition",
-                source_role="operator",
                 source_boundary="inside input boundary invocation",
             )
             return b"addressed material\n"
@@ -651,7 +644,7 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
 
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
-    # One identity for Ingest or the separately observable byte Measurement
+    # One identity for material acquisition or the separately observable byte Measurement
     # Act Evidence, two for its Yield/result, three for occurrence-position
     # Measurement, four for a record-only Representation, six for the distinct
     # pair-input Applicability and pair Measurement lifecycles, and all ten
@@ -664,11 +657,10 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
     from seed_runtime import byte_measurement, operator_console
 
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"abab",
-        source_role="material witness",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -727,11 +719,10 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
 
 def test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged():
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"abab",
-        source_role="material witness",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -793,11 +784,10 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
     )
 
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"abab",
-        source_role="material witness",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -838,11 +828,10 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
         "_read_recorded_byte_position_pair_measurement",
         record,
     )
-    later_boundary = ingest_material(
+    later_boundary = record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"later material",
-        source_role="material witness",
         source_boundary="later exact boundary",
     )
     standing = _advance([later_boundary], prior=standing, ledger=ledger)
@@ -900,11 +889,10 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     )
 
     ledger = EventLedger()
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="s",
         exact_bytes=b"abab",
-        source_role="material witness",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -1046,13 +1034,13 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
     ledger = EventLedger()
     if existing_locality:
         ledger.append(
-            MATERIAL_INGEST_OCCURRED_KIND,
+            WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
             {
                 "dimensions": {
                     "identity": "existing-material",
                     "authority": "unestablished",
                 },
-                "source_role": "operator",
+                "source_role": "this operator",
                 "unknown": [],
             },
             exact_material=b"existing material",
@@ -1125,7 +1113,7 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
             output_stream=StringIO(),
             raw_output_stream=FailedBoundary(),
             operator_invocation_provider=lambda _command, supply: supply(
-                SuppliedSystemMaterialOccurrence(
+                SuppliedWitnessMaterialOccurrence(
                     b"exact raw material\n",
                     "invocation output occurrence 0",
                     True,
@@ -1133,13 +1121,13 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
             ),
         )
 
-    system_locality_identity = next(
+    invocation_locality_identity = next(
         event.locality_identity
         for event in ledger.list()
         if event.kind == "operator.invocation_locality_recorded"
     )
     assert observed[-1] == read_operator_locality_standing(
-        ledger, locality_identity=system_locality_identity
+        ledger, locality_identity=invocation_locality_identity
     )
 
 
@@ -1159,11 +1147,11 @@ def test_the_advance_reads_its_prior():
     prefix = EventLedger()
     prefix.extend(events[:5])
     prior = _advance(events[:5], ledger=prefix)
-    before = len(prior["ingest_occurrences"])
+    before = len(prior["material_acquisition_result_occurrences"])
     prefix.extend(events[5:])
     advanced = _advance(events[5:], prior=prior, ledger=prefix)
-    assert advanced["ingest_occurrences"] is prior["ingest_occurrences"]
-    assert len(prior["ingest_occurrences"]) >= before
+    assert advanced["material_acquisition_result_occurrences"] is prior["material_acquisition_result_occurrences"]
+    assert len(prior["material_acquisition_result_occurrences"]) >= before
 
 
 def test_every_growable_accumulator_participates_without_copying():
@@ -1183,7 +1171,7 @@ def test_every_growable_accumulator_participates_without_copying():
     advanced = _advance(events[5:], prior=prior, ledger=prefix)
     for coordinate in (
         "representations",
-        "ingest_occurrences",
+        "material_acquisition_result_occurrences",
         "measurement_occurrences",
         "exact_result_occurrences",
         "operator_material_acquire_act_occurrences",
