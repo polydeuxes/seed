@@ -32,6 +32,54 @@ from scripts.book_admission import (
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "seed_runtime"
 GRAMMAR = ROOT / "book_of_seed" / "witness_grammar.json"
+ACTIVE_PYTHON_SURFACES = (
+    ROOT / "material_witnesses",
+    ROOT / "scripts",
+    RUNTIME,
+    ROOT / "tests",
+)
+REFUSED_REGULAR_EXPRESSION_MODULES = frozenset({"re", "regex"})
+
+
+def _active_python_sources():
+    for surface in ACTIVE_PYTHON_SURFACES:
+        yield from sorted(surface.rglob("*.py"))
+
+
+def _regular_expression_imports(path: Path):
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for imported in node.names:
+                if (
+                    imported.name.split(".", 1)[0]
+                    in REFUSED_REGULAR_EXPRESSION_MODULES
+                ):
+                    yield node.lineno, imported.name
+        elif (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.split(".", 1)[0]
+            in REFUSED_REGULAR_EXPRESSION_MODULES
+        ):
+            yield node.lineno, node.module
+
+
+def test_active_python_sources_refuse_regular_expression_modules():
+    """Keep pattern-based classification out of active Python sources."""
+
+    refused = [
+        (path.relative_to(ROOT).as_posix(), line, module)
+        for path in _active_python_sources()
+        for line, module in _regular_expression_imports(path)
+    ]
+
+    assert refused == [], "\nActive Python sources importing regex modules:\n  " + (
+        "\n  ".join(
+            f"{path}:{line} imports {module}"
+            for path, line, module in refused
+        )
+    )
 
 
 def _runtime_trees():
@@ -1281,3 +1329,8 @@ FIDELITY_SUBJECTS = {
         test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses,
     ),
 }
+
+
+WITNESS_MATERIAL_TESTS = (
+    test_active_python_sources_refuse_regular_expression_modules,
+)
