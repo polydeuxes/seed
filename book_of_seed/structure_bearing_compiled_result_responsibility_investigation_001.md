@@ -13,7 +13,7 @@ material, Witness Grammar, runtime, scripts, or tests.
 
 ```text
 parser returned
-!= exact structure-bearing result retained
+!= exact parser-output result material retained
 != Seed structure
 != relation Standing
 ```
@@ -36,6 +36,24 @@ parser returned
 Book material is primary orientation. Witness Grammar, runtime, scripts,
 tests, and history are testimony.
 
+`Structure-bearing` is investigation language for exact output material that
+externally appears to preserve parser-produced structure. It does not name an
+active Book kind, result species, or Standing:
+
+```text
+exact parser-output material
+!= constitutional Structure
+!= structure-bearing result kind
+```
+
+The implementation function and constitutional Act also remain separate:
+
+```text
+exact implementation-function reference
+!= exact Act
+!= Act occurrence
+```
+
 ## 1. Correction to the apparent single wall
 
 The preceding report found a concrete boundary in the complete Book acquisition
@@ -55,7 +73,7 @@ That finding is exact for `compiled_format_invocation.py`. It is not the whole
 repository.
 
 `compiled_parser_invocation.py` carries two other witness shapes that retain
-structure-bearing output material:
+exact parser-output material:
 
 1. direct CPython AST invocation records exact `ast.dump(...)` bytes for a
    successful parse and exact diagnostic bytes for a refusal;
@@ -66,7 +84,7 @@ structure-bearing output material:
 Therefore:
 
 ```text
-repository has no structure-bearing parser result mechanism
+repository carries no exact parser-output material
 ```
 
 is false.
@@ -121,7 +139,7 @@ complete returned vectors and retains every source and invocation-result
 reference.
 
 Thus this road has exact Ingest lineage and complete parser fan-out, but no
-structure-bearing result material.
+parser-output result material.
 
 ## 3. The compiled-parser witness retains output material but lacks Ingest lineage
 
@@ -215,7 +233,7 @@ same Standing
 ```
 
 No current exact relation connects a Book acquisition Ingest reference to a
-structure-bearing compiled-parser result occurrence. Re-running one parser on
+compiled-parser occurrence carrying exact output material. Re-running one parser on
 equal bytes would create another occurrence; it would not retroactively give
 the earlier Book invocation a result it did not carry.
 
@@ -275,13 +293,13 @@ output as Seed grammar.
 
 Commit `ad442f60` later connected the complete exact Book-file surface to the
 boolean compiled-format road. It did not connect that surface to the separate
-structure-bearing parser witness.
+parser-output-material witness.
 
 History therefore supports this distinction:
 
 ```text
 format discriminator
-!= structure-bearing parser-output witness
+!= parser-output-material witness
 ```
 
 It supplies no active Responsibility joining them.
@@ -382,9 +400,13 @@ one exact Ingest result reference
 ↓
 one exact assigned Responsibility
 ↓
-one exact function/Act occurrence
+one exact implementation-function reference
 ↓
-one exact structure-bearing result representation
+one exact relation of that function to the Act: unresolved
+↓
+one exact Act occurrence
+↓
+one exact result carrying exact parser-output material
 ```
 
 That result would have to preserve, without borrowing:
@@ -411,7 +433,7 @@ active Book does not currently assign this exact Responsibility.
 Even after such a result existed:
 
 ```text
-structure-bearing result
+result carrying exact parser-output material
 != word occurrence recovered
 != relation participant recovered
 != relation Standing
@@ -426,12 +448,12 @@ Those are later crossings.
 | Does the complete Book acquisition road retain exact Ingest references? | yes |
 | Does it apply every declared compiled-format function to every source? | yes |
 | Does it retain parser-returned structure? | no |
-| Does another current witness retain structure-bearing parser output? | yes |
+| Does another current witness retain exact parser-output material? | yes |
 | Is that output connected to an exact Book Ingest reference? | no |
 | Does it have Seed Responsibility, Yield, or Standing physiology? | no |
 | Does exact parser output establish Seed structure? | no |
 | Does history preserve format discrimination separately from parser-output material? | yes |
-| Is a structure-bearing result mechanism entirely absent? | no; witness testimony exists |
+| Is exact parser-output material entirely absent? | no; witness testimony exists |
 | Is the exact Seed-native crossing established? | no |
 
 ## Conclusion
@@ -457,7 +479,7 @@ Joining them by equal bytes, parser identity, or Python return shape would
 repeat the endpoints-imply-edge error.
 
 The next recovery is the exact Responsibility and result physiology, if any,
-that makes one structure-bearing output the bounded result of an Act over one
+that makes exact parser-output material the bounded result of an Act over one
 exact Ingest result. Until that exists, the external word-coordinate campaign
 remains Witness Material and the separate parser outputs remain Witness
 Material. Neither supplies Seed relation Standing.
