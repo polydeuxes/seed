@@ -462,7 +462,7 @@ def test_every_admitted_book_word_has_explicit_source_and_relation_coordinates()
     )
 
 
-def test_every_exact_positive_relation_occurrence_of_a_declared_word_has_a_home():
+def test_every_exact_positive_relation_occurrence_has_a_declared_coordinate_pair():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declared_relation_coordinates = {
         word: {
@@ -480,7 +480,7 @@ def test_every_exact_positive_relation_occurrence_of_a_declared_word_has_a_home(
 
     assert missing == [], (
         "\nExact positive Witness Grammar relation occurrences without a "
-        "declared word home:\n  "
+        "declared word coordinate pair:\n  "
         + "\n  ".join(
             f"{word}: " + " -> ".join(str(coordinate) for coordinate in path)
             for word, path in missing
@@ -1148,7 +1148,7 @@ FIDELITY_SUBJECTS = {
         test_declared_book_word_source_and_relation_coordinates_resolve,
         test_book_word_coordinate_siren_refuses_a_missing_source_or_relation,
         test_every_admitted_book_word_has_explicit_source_and_relation_coordinates,
-        test_every_exact_positive_relation_occurrence_of_a_declared_word_has_a_home,
+        test_every_exact_positive_relation_occurrence_has_a_declared_coordinate_pair,
     ),
     "public_export_standing_distinction": (
         test_public_export_standing_not_established_standing,

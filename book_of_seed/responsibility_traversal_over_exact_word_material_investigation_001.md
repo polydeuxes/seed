@@ -232,6 +232,24 @@ occurrences are likewise not absorbed by these named positions. Negative
 branches remain negative, and exact material currently stored inside an array
 is not silently identified with a named dictionary coordinate.
 
+The coordinate pairs are external addressability over material in the Witness
+Grammar artifact. They do not establish Seed possession of that material:
+
+```text
+coordinate reference resolves
+!= Witness Material Ingest occurrence
+!= Ingest result
+!= Witness uptake
+!= Standing for the material
+!= Standing for the represented relation
+```
+
+The current campaign records what a later Seed-native acquisition and recovery
+road must reproduce without developer selection. It is not that road. The same
+artifact can serve as Witness Grammar for external Fidelity and as exact
+material supplied to a later Ingest occurrence; those roles are not identical
+by file identity.
+
 Commit `0b6abb56` adds a second, narrower completeness pressure. It traverses
 every Witness Grammar object carrying an exact string-valued `relation`, omits
 objects beneath an explicit `standing_not_established` branch, and asks whether
@@ -247,7 +265,7 @@ word-name coverage
 
 The word-name siren currently reports 385 admitted words without any declared
 coordinate pair. The relation-occurrence siren separately reports 96 positive
-objects whose already-declared exact spelling has no home:
+objects whose already-declared exact spelling has no coordinate pair:
 
 | exact spelling | unresolved positive relation objects |
 |---|---:|
@@ -346,7 +364,8 @@ on the exact containing material, not on the spelling alone.
 
 #### 1. Independently established relation families
 
-Active Book clauses and the Witness Grammar root agree on exact homes for:
+Active Book clauses and the Witness Grammar root carry exact coordinate pairs
+for:
 
 ```text
 Participation  → 01.Standing.E.1
@@ -356,7 +375,7 @@ Locality       → 06.Locality.A
 
 Witness Grammar's root also names `carried_by` and points it at `02.Acts.A`.
 The active clause establishes exact Yield and occurrence-to-result physiology,
-but the current word-coordinate surface does not independently home `carried`
+but the current word-coordinate surface does not independently pair `carried`
 or `by` to one `carried_by` relation. This report therefore retains that root
 entry as Witness Grammar testimony rather than promoting it into the synced
 word survivors above.
