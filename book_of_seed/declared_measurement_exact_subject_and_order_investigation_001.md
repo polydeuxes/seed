@@ -118,13 +118,15 @@ occurrence.  Recording the exact-byte result adds no acquisition-result
 occurrence.  Their material subjects therefore remain stable across either
 Measurement lifecycle.
 
-This does not make their exact occurrence order irrelevant.
+This does not by itself establish either a dependency or a shared responsible
+boundary for their exact occurrences.
 
-## 3. Serial order changes the exact carried boundary
+## 3. Current serial order changes the exact carried boundary
 
-`01.Source.D` requires current Standing to carry each recorded occurrence
-before another declared Responsibility assignment is recorded.  Both
-assignment records preserve the exact prior boundary.
+The current `01.Source.D` text requires current Standing to carry each recorded
+occurrence before another declared Responsibility assignment is recorded.  The
+runtime follows that text and both assignment records preserve the moving
+prior boundary.
 
 With the current numeric order:
 
@@ -142,21 +144,74 @@ exact-byte assignment / Act / Yield / result
 position assignment / Act / Yield / result
 ```
 
-The measured material and findings may remain equal.  The assignment
-occurrences, their prior boundaries, later Evidence, and later result
-occurrences do not become identical.
+Under that current implementation, the measured material and findings may
+remain equal while the assignment occurrences, their prior boundaries, later
+Evidence, and later result occurrences do not become identical.
 
 Thus:
 
 ```text
 equal eventual finding populations
-!= commutative exact occurrence physiology
+!= proof of equal occurrence physiology
 
 serial storage need
 != authority to choose either constitutional order
 ```
 
-## 4. The current order is externally addressed
+This describes the current runtime.  It does not prove that either Measurement
+constitutionally depends on the other's completed lifecycle.
+
+## 4. The serial Standing rule and host loop entered together
+
+History gives the current sentence a narrower evidentiary weight.
+
+Commit `d0e6c025` introduced all of these in one change:
+
+```text
+the host declaration tuple
+numeric declaration order
+the generic discovery / record loop
+the Book phrase `declared order`
+the requirement to carry each new occurrence before another assignment
+```
+
+No earlier general Standing clause says:
+
+```text
+one Standing boundary
+→ at most one Responsibility assignment
+```
+
+The serial sentence therefore cannot serve as independent evidence that the
+runtime recovered an older constitutional dependency.  The runtime loop and
+the Book sentence were two representations of the same newly introduced
+orchestration.
+
+Thus the current implementation collapses two unresolved possibilities:
+
+```text
+POSSIBILITY A — constitutional dependency
+
+S0 → position lifecycle → S1 → exact-byte lifecycle
+
+
+POSSIBILITY B — common responsible boundary, serial recording
+
+             ┌→ position assignment carrying S0
+S0 subject ──┤
+             └→ exact-byte assignment carrying S0
+
+storage appends those distinct occurrences in one deterministic sequence
+without making the first occurrence part of the second assignment's warrant
+```
+
+Possibility B does not mean simultaneous writes.  It distinguishes the exact
+responsible boundary carried by each assignment from the append order required
+by one durable writer.
+
+Current Standing does not decide between A and B.
+
+## 5. The current order is externally addressed
 
 Active `01.Source.D` says `declared order`.  Witness Grammar carries two
 `standing_emission_declarations` with numeric coordinates `0` and `1`.
@@ -186,12 +241,13 @@ The tuple additionally binds each external declaration coordinate to Python
 discovery and recording functions.  No exact Seed relation between those
 coordinates and functions is established.
 
-Therefore the current loop remains bounded host testimony about the intended
-order.  Removing its numeric field, sorting by another implementation value,
-or writing two direct calls in source-code order would not internalize the
-order.  Each would only move the same host decision.
+Therefore the current loop remains bounded host testimony about one intended
+serialization and one proposed constitutional order.  Removing its numeric
+field, sorting by another implementation value, or writing two direct calls in
+source-code order would not recover the distinction.  Each would only move the
+same host decision.
 
-## 5. Current boundary
+## 6. Current boundary
 
 Recovered:
 
@@ -200,25 +256,34 @@ position-coordinate Measurement exact subject shape       yes
 exact-byte Measurement exact source-set subject shape      yes
 cross-subject refusal before append                        yes
 incomplete exact-byte source-set refusal before append     yes
-bounded deterministic external order testimony             yes
+bounded deterministic external serialization testimony     yes
 ```
 
 Not recovered:
 
 ```text
-positive Standing for the declared order                   no
+whether A or B carries the other's lifecycle in its warrant no
+whether both assignments carry one earlier boundary         no
+positive Standing for a constitutional order                no
 Seed-native relation from declaration to implementation    no
 Seed-native traversal of all borne Measurement assignments no
-lawful replacement for the host order decision             no
+lawful separation of append order and responsible boundary no
 ```
 
 The declaration tuple should not be expanded into a general traversal list.
-It also cannot yet be deleted without hiding the unresolved order behind
+It also cannot yet be deleted without hiding the unresolved distinction behind
 ordinary source-code sequence.
 
-The next lawful crossing is not another scheduler shape.  It is exact Standing
-for the declaration/order coordinates, followed by the exact relation, if any,
-under which the corresponding Responsibility becomes readable and applicable.
+The next lawful crossing is not another scheduler shape.  It is determining
+whether all exact assignments applicable at one boundary retain that common
+responsible boundary while their occurrence records remain serial, or whether
+an exact relation requires one completed lifecycle before the other assignment
+becomes applicable.  Only the latter would warrant a constitutional A-before-B
+order.
+
+After that distinction is recovered, exact Standing for any required
+declaration/order coordinates and the exact relation from declaration to
+implementation remain separate work.
 The open Witness-acquisition and Locality gates remain separate prerequisites;
 this report does not use downstream Measurement results to legitimate either
 gate.
