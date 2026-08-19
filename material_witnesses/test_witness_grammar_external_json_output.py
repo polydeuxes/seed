@@ -195,7 +195,7 @@ def test_seed_native_byte_measurement_reads_only_the_external_output_ingest_resu
     )
 
 
-def test_seed_native_position_measurement_owes_every_external_output_byte_pair(
+def test_seed_native_position_measurement_records_every_external_output_byte_pair_occurrence(
     witness_grammar_external_json_observation,
 ):
     observation = witness_grammar_external_json_observation

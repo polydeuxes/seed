@@ -406,8 +406,9 @@ Unknown
 ```
 
 The complete Candidate-production road additionally replays its source surface
-and reconstructs every result owed through its exact frozen boundary. That is
-stronger than storing an opaque Python object after one call.
+and reconstructs every result required by its exact Act through its exact
+frozen boundary. That is stronger than storing an opaque Python object after
+one call.
 
 No current Candidate-production Responsibility names parser-returned structure
 as its source or result. Candidate physiology cannot be borrowed merely because
