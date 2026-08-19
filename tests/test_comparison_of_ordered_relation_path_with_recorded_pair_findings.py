@@ -921,6 +921,10 @@ def test_compare_result_and_finding_enter_both_complete_later_candidate_producti
         if candidate["assertion_subject"]["source_assertion_reference"]
         in compare_references
     ) == compare_references
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in one_source["candidate_assertions"]
+    )
 
     candidate_pairs = tuple(
         (
