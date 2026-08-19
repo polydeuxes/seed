@@ -21,7 +21,7 @@ from seed_runtime.operator_representation import (
     read_operator_representation,
     record_operator_representation,
 )
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.material_ingest import ingest_material, is_exact_ingest_result
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -40,11 +40,6 @@ from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_r
 from seed_runtime.operator_representation_admission import RepresentationAdmissionError
 from seed_runtime.operator_console import run_persistent_operator_console
 
-_INGEST_KINDS = (
-    "material.ingest.act_evidenced",
-    "operator.evidence_of_yield_relation_recorded",
-    "material.ingest.occurred",
-)
 _BYTE_MEASUREMENT_KINDS = (
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     "operator.measurement.byte_responsible_act_evidenced",
@@ -86,7 +81,6 @@ def _one_material_console_kinds():
         *_OPERATOR_MATERIAL_ACQUIRE_RESULT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
-        *_INGEST_KINDS,
         *_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
@@ -1259,7 +1253,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ingest = next(
         event
         for event in ledger.list()
-        if event.kind == "material.ingest.occurred"
+        if is_exact_ingest_result(event)
     )
     assert ingest.material.get("representation_reference") is None
 
@@ -1277,7 +1271,7 @@ def test_console_ingest_adds_only_its_exact_occurrences():
 
     # Every Ingest retains an identity distinct from Representation occurrences.
     representations = [e for e in ledger.list() if e.kind == "operator.representation.recorded"]
-    ingests = [e for e in ledger.list() if e.kind == "material.ingest.occurred"]
+    ingests = [e for e in ledger.list() if is_exact_ingest_result(e)]
     assert len(ingests) == 3
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
@@ -1359,7 +1353,7 @@ def test_console_presents_standing_only_across_an_ingest():
     c0 = representations[0]
     c1 = representations[-1]
     ingest = next(
-        event for event in events if event.kind == "material.ingest.occurred"
+        event for event in events if is_exact_ingest_result(event)
     )
     positions = next(
         event
@@ -1390,7 +1384,7 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
     ingest_index = next(
         index
         for index, event in enumerate(events)
-        if event.kind == "material.ingest.occurred"
+        if is_exact_ingest_result(event)
     )
     recorded = [
         i for i, event in enumerate(events)
@@ -1456,7 +1450,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
 def test_later_operator_material_does_not_replace_an_earlier_focus():
     ledger, _ = _run_console("O1\nO2\nO3\n")
     ingests = [
-        event for event in ledger.list() if event.kind == "material.ingest.occurred"
+        event for event in ledger.list() if is_exact_ingest_result(event)
     ]
     standing = _standing(ledger)
     focused = record_operator_representation(
@@ -1522,7 +1516,6 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     # later responsible occurrence's to establish and record.
     kinds = {event.kind for event in ledger.list()}
     assert kinds == {
-        *_INGEST_KINDS,
         *_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
@@ -1535,7 +1528,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     ingest = next(
         event
         for event in ledger.list()
-        if event.kind == "material.ingest.occurred"
+        if is_exact_ingest_result(event)
     )
     first_representation = next(iter(_standing(ledger)["representations"].values()))
     assert first_representation["representation_identity"]
@@ -1598,19 +1591,13 @@ def test_each_ingest_freezes_one_exact_occurrence_position_boundary():
     assert measurements[1].identity not in dict(findings[1].occurrences)
 
 
-def test_absent_ingest_records_no_measurement(monkeypatch):
-    monkeypatch.setattr(
-        "seed_runtime.operator_console.run_operator_ingest",
-        lambda **_coordinates: {
-            "current_standing": {"ingest_occurrence": None}
-        },
-    )
+def test_empty_operator_boundary_records_no_measurement():
     ledger = EventLedger()
 
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="s",
-        input_stream=binary_input("a\n"),
+        input_stream=BytesIO(),
         output_stream=StringIO(),
     )
 

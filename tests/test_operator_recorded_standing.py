@@ -76,9 +76,13 @@ def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
     assert point["standing"]["through_event_occurrence_identity"] == point[
         "source_standing_reference"
     ]["source_standing_through_event_occurrence_identity"]
-    assert _ingested_materials(ledger, point["standing"]) == [b"book material\n"]
+    assert _ingested_materials(ledger, point["standing"]) == [
+        b"book material\n",
+        b"/checkpoint\n",
+    ]
     assert _ingested_materials(ledger, current) == [
         b"book material\n",
+        b"/checkpoint\n",
         b"later source material\n",
     ]
     assert point["standing"] is not current
@@ -103,7 +107,10 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
     )
 
     assert point["standing"]["locality_identity"] == "source"
-    assert _ingested_materials(ledger, point["standing"]) == [b"book material\n"]
+    assert _ingested_materials(ledger, point["standing"]) == [
+        b"book material\n",
+        b"/memory\n",
+    ]
     assert _ingested_materials(ledger, destination_standing) == [
         b"destination material\n"
     ]
@@ -131,7 +138,10 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
     )
 
     assert point["standing"]["locality_identity"] == "source"
-    assert _ingested_materials(ledger, point["standing"]) == [b"book material\n"]
+    assert _ingested_materials(ledger, point["standing"]) == [
+        b"book material\n",
+        b"/checkpoint\n",
+    ]
     assert point["standing"]["recorded_standing_boundary_references"] == {}
     assert point["standing"]["recorded_standing_boundary_locality_relations"] == {}
 
@@ -286,7 +296,8 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
             recorded_occurrence_identity=checkpoint_identity,
         )
         assert _ingested_materials(reopened, point["standing"]) == [
-            b"book material\n"
+            b"book material\n",
+            b"/checkpoint\n",
         ]
         source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
             "evidence_event_identity"

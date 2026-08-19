@@ -14,8 +14,13 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
+    is_exact_ingest_result,
+    iter_exact_ingest_results,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_material_acquisition import (
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+)
 
 BODIES = {
     "s1": "a noun is a word\nand a verb is a word\n",
@@ -29,17 +34,12 @@ def _all_locality_occurrences(ledger, *, locality_identity):
         event
         for event in ledger.list()
         if event.locality_identity == locality_identity
-        and event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        and is_exact_ingest_result(event)
     ]
 
 
 def _ingest_occurrences(ledger, *, locality_identity):
-    return list(
-        ledger.iter_locality_kind(
-            locality_identity,
-            MATERIAL_INGEST_OCCURRED_KIND,
-        )
-    )
+    return list(iter_exact_ingest_results(ledger, locality_identity))
 
 
 def _fill(ledger):
@@ -126,14 +126,16 @@ def test_one_kind_is_streamed_from_only_one_locality(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
     occurrences = ledger.iter_locality_kind(
         "s1",
-        MATERIAL_INGEST_OCCURRED_KIND,
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     )
 
     assert iter(occurrences) is occurrences
     events = list(occurrences)
     assert events
     assert {event.locality_identity for event in events} == {"s1"}
-    assert {event.kind for event in events} == {MATERIAL_INGEST_OCCURRED_KIND}
+    assert {event.kind for event in events} == {
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    }
 
 
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))

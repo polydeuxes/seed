@@ -65,6 +65,7 @@ from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_R
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
+    iter_exact_ingest_results,
 )
 
 
@@ -1266,9 +1267,7 @@ def test_a_missing_declared_locality_is_refused():
 
 def test_ingest_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
-    ingest = next(
-        ledger.iter_locality_kind("source", MATERIAL_INGEST_OCCURRED_KIND)
-    )
+    ingest = next(iter_exact_ingest_results(ledger, "source"))
     object.__setattr__(ingest, "exact_material", None)
     with pytest.raises(ByteMeasurementError, match="carries no exact bytes"):
         measure_byte_counts(

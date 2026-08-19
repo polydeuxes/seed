@@ -1432,7 +1432,6 @@ def advance_operator_locality_standing(
                     "locality_evidence_identity"
                 ],
             }
-            continue
         if (
             event.kind
             == OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -2939,12 +2938,14 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
     locality_relations = locality_standing.get(
         "operator_material_locality_relation_occurrences"
     )
+    ingest_occurrences = locality_standing.get("ingest_occurrences")
     exact_results = locality_standing.get("exact_result_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
         or type(acts) is not dict
         or type(locality_relations) is not dict
+        or type(ingest_occurrences) is not list
         or type(exact_results) is not dict
         or type(event_count) is not int
         or event_count < 0
@@ -3006,6 +3007,15 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
                 "locality_evidence_identity"
             ],
         }
+        ingest_occurrences.append(
+            {
+                "subject_reference": event.material["dimensions"]["identity"],
+                "standing": "preserved",
+                "authority": event.material["dimensions"]["authority"],
+                "evidence_event_identity": event.identity,
+                "source_role": event.material["source_role"],
+            }
+        )
     for key, added in standing_additions.items():
         for value in added:
             _record_distinct(locality_standing[key], value)

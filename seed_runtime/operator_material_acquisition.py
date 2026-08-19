@@ -19,6 +19,7 @@ from seed_runtime.evidence_of_yield_relation import (
     _record_evidence_of_yield_relation,
     read_requirements_of_yield_relation,
 )
+from seed_runtime.material_ingest import record_exact_ingest_result
 
 
 OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
@@ -337,10 +338,10 @@ def _result_material(
 def _recorded_result_material(
     result_material: dict[str, Any],
     *,
-    responsible_act_evidence_identity: str,
-    evidence_of_yield_relation_identity: str,
+    responsible_act_evidence_identity: str | None = None,
+    evidence_of_yield_relation_identity: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    recorded = {
         "result_identity": result_material["result_identity"],
         "acquire_act_identity": result_material["acquire_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
@@ -364,9 +365,37 @@ def _recorded_result_material(
         "standing": result_material["standing"],
         "limits": result_material["limits"],
         "unknown": result_material["unknown"],
-        "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
+        "source_role": "operator",
+        "provenance_occurrence_references": [],
+        "dimensions": {
+            "identity": result_material["result_identity"],
+            "source_provenance": result_material["source_boundary"],
+            "responsibility": result_material["responsibility"],
+            "authority": result_material["authority"],
+            "evidence_scope": (
+                "bounded to this exact operator material boundary occurrence "
+                "and exact material result"
+            ),
+            "scope_locality": (
+                "locality:"
+                + result_material["source_standing_reference"][
+                    "locality_identity"
+                ]
+            ),
+            "occurrence_preservation": (
+                "exact operator material Ingest occurrence recorded"
+            ),
+        },
     }
+    if responsible_act_evidence_identity is not None:
+        recorded["responsible_act_evidence_identity"] = (
+            responsible_act_evidence_identity
+        )
+    if evidence_of_yield_relation_identity is not None:
+        recorded["evidence_of_yield_relation_identity"] = (
+            evidence_of_yield_relation_identity
+        )
+    return recorded
 
 
 def record_operator_material_acquire_responsibility_assignment(
@@ -696,7 +725,7 @@ def _record_operator_material_acquire_result(
     evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act_evidence.locality_identity,
-        exact_act=OPERATOR_MATERIAL_ACQUIRE_ACT,
+        exact_act="Acquire one exact operator material boundary result",
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind=OPERATOR_MATERIAL_ACQUIRE_RESULT_KIND,
@@ -707,23 +736,18 @@ def _record_operator_material_acquire_result(
         responsible_boundary="this Seed",
         result_exact_material=boundary_material.exact_bytes,
     )
-    return ledger.append_many(
-        (
-            Event(
-                identity=recorded_result_event_identity,
-                kind=OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-                material=_recorded_result_material(
-                    result_material,
-                    responsible_act_evidence_identity=act_evidence.identity,
-                    evidence_of_yield_relation_identity=(
-                        evidence_of_yield_relation.identity
-                    ),
-                ),
-                exact_material=boundary_material.exact_bytes,
-                locality_identity=act_evidence.locality_identity,
-            ),
-        )
-    )[0]
+    return record_exact_ingest_result(
+        ledger,
+        result_event=Event(
+            identity=recorded_result_event_identity,
+            kind=OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+            material=_recorded_result_material(result_material),
+            exact_material=boundary_material.exact_bytes,
+            locality_identity=act_evidence.locality_identity,
+        ),
+        responsible_act_evidence_identity=act_evidence.identity,
+        evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
+    )
 
 
 def read_operator_material_acquire_locality_relation_requirements(

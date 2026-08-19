@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from seed_runtime.event import Event
-from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
 from seed_runtime.evidence_of_yield_relation import (
     _record_evidence_of_yield_relation,
@@ -25,6 +25,51 @@ MATERIAL_RESULT_UNKNOWN = ("represented_relation", "source_relation")
 
 class MaterialIngestError(ValueError):
     pass
+
+
+def record_exact_ingest_result(
+    ledger: EventLedger,
+    *,
+    result_event: Event,
+    responsible_act_evidence_identity: str,
+    evidence_of_yield_relation_identity: str,
+) -> Event:
+    """Record one exact bounded material result after its family-local Yield."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("exact Ingest result requires one EventLedger")
+    if (
+        type(result_event) is not Event
+        or type(result_event.exact_material) is not bytes
+        or type(result_event.locality_identity) is not str
+        or not result_event.locality_identity
+        or type(responsible_act_evidence_identity) is not str
+        or not responsible_act_evidence_identity
+        or type(evidence_of_yield_relation_identity) is not str
+        or not evidence_of_yield_relation_identity
+        or "responsible_act_evidence_identity" in result_event.material
+        or "evidence_of_yield_relation_identity" in result_event.material
+    ):
+        raise MaterialIngestError("exact Ingest result occurrence required")
+    return ledger.append_many(
+        (
+            Event(
+                identity=result_event.identity,
+                kind=result_event.kind,
+                material={
+                    **result_event.material,
+                    "responsible_act_evidence_identity": (
+                        responsible_act_evidence_identity
+                    ),
+                    "evidence_of_yield_relation_identity": (
+                        evidence_of_yield_relation_identity
+                    ),
+                },
+                exact_material=result_event.exact_material,
+                locality_identity=result_event.locality_identity,
+            ),
+        )
+    )[0]
 
 
 def ingest_material(
@@ -98,6 +143,21 @@ def ingest_material(
         },
         locality_identity=locality_identity,
     )
+    material: dict[str, object] = {
+        **result,
+        "dimensions": {
+            "identity": result_identity,
+            "source_provenance": source_boundary,
+            "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
+            "authority": "unestablished",
+            "evidence_scope": (
+                "bounded to this exact Ingest occurrence and exact material result; "
+                "represented relation Unknown"
+            ),
+            "scope_locality": f"locality:{locality_identity}",
+            "occurrence_preservation": "exact Ingest material occurrence recorded",
+        },
+    }
     evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=locality_identity,
@@ -113,34 +173,22 @@ def ingest_material(
         coordinates_of_recorded_result={key: (key,) for key in result},
         result_exact_material=exact_bytes,
     )
-    material: dict[str, object] = {
-        **result,
-        "dimensions": {
-            "identity": result_identity,
-            "source_provenance": source_boundary,
-            "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
-            "authority": "unestablished",
-            "evidence_scope": (
-                "bounded to this exact Ingest occurrence and exact material result; "
-                "represented relation Unknown"
-            ),
-            "scope_locality": f"locality:{locality_identity}",
-            "occurrence_preservation": "exact Ingest material occurrence recorded",
-        },
-        "responsible_act_evidence_identity": responsible_act_evidence.identity,
-        "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
-    }
-
-    return ledger.append(
-        MATERIAL_INGEST_OCCURRED_KIND,
-        material,
-        exact_material=exact_bytes,
-        locality_identity=locality_identity,
+    return record_exact_ingest_result(
+        ledger,
+        result_event=Event(
+            identity=ledger.allocate_event_identity(),
+            kind=MATERIAL_INGEST_OCCURRED_KIND,
+            material=material,
+            exact_material=exact_bytes,
+            locality_identity=locality_identity,
+        ),
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
+        evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
     )
 
 
 def ingested_material_bytes(event: Event) -> bytes:
-    if event.kind != MATERIAL_INGEST_OCCURRED_KIND:
+    if not is_exact_ingest_result(event):
         raise MaterialIngestError(
             f"only Ingest occurrences carry exact material: {event.kind}"
         )
@@ -148,6 +196,33 @@ def ingested_material_bytes(event: Event) -> bytes:
     if type(exact) is not bytes:
         raise MaterialIngestError("Ingest occurrence carries no exact bytes")
     return exact
+
+
+def is_exact_ingest_result(event: Event) -> bool:
+    """Recognize the bounded generic or operator-specific Ingest result."""
+
+    if type(event) is not Event:
+        return False
+    if event.kind == MATERIAL_INGEST_OCCURRED_KIND:
+        return True
+    from seed_runtime.operator_material_acquisition import (
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    )
+
+    return event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+
+
+def iter_exact_ingest_results(
+    ledger: EventLedger,
+    locality_identity: str,
+    *,
+    through: EventLedgerBoundary | None = None,
+):
+    """Yield every exact generic or source-specific Ingest result in order."""
+
+    for event in ledger.list_locality(locality_identity, through=through):
+        if is_exact_ingest_result(event):
+            yield event
 
 
 def read_exact_ingest_result(ledger: EventLedger, event_identity: str) -> Event:
@@ -160,7 +235,7 @@ def read_exact_ingest_result(ledger: EventLedger, event_identity: str) -> Event:
     event = ledger.get(event_identity)
     if (
         event is None
-        or event.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or not is_exact_ingest_result(event)
         or type(event.locality_identity) is not str
         or not event.locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED

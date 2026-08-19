@@ -10,6 +10,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
+    read_exact_ingest_result,
 )
 from seed_runtime.operator_system_locality import (
     get_recorded_operator_system_locality,
@@ -91,7 +92,6 @@ def ingest_supplied_invocation_occurrence(
     )
     if (
         command_occurrence is None
-        or command_occurrence.kind != MATERIAL_INGEST_OCCURRED_KIND
         or command_occurrence.identity
         != relation["operator_material_occurrence_reference"]
         or command_occurrence.locality_identity
@@ -102,6 +102,10 @@ def ingest_supplied_invocation_occurrence(
         or ledger.integrity_of(command_occurrence.identity) == CORRUPTED
     ):
         raise ValueError("exact operator occurrence required")
+    try:
+        read_exact_ingest_result(ledger, command_occurrence.identity)
+    except (TypeError, ValueError) as error:
+        raise ValueError("exact operator occurrence required") from error
     prior_occurrences = tuple(
         ledger.get(reference) for reference in prior_supplied_occurrence_references
     )

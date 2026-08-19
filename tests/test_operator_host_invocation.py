@@ -9,9 +9,9 @@ FIDELITY_SUBJECT = "supplied_material_invocation"
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
     ingested_material_bytes,
+    is_exact_ingest_result,
 )
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
@@ -102,7 +102,7 @@ def _ingests(ledger):
     return [
         event
         for event in ledger.list()
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if is_exact_ingest_result(event)
     ]
 
 
@@ -314,7 +314,10 @@ _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     ),
-    (OCCURRENCE_POSITION_RECORDED_KIND, MATERIAL_INGEST_OCCURRED_KIND),
+    (
+        OCCURRENCE_POSITION_RECORDED_KIND,
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    ),
     ("operator.representation.recorded", None),
 )
 

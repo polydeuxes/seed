@@ -11,8 +11,8 @@ from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
 from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
+    is_exact_ingest_result,
 )
 
 
@@ -28,11 +28,11 @@ def _run(material: bytes, *, handlers=None):
     return ledger
 
 
-def _raw_bytes(ledger: EventLedger) -> list[bytes]:
+def _bounded_material_bytes(ledger: EventLedger) -> list[bytes]:
     return [
         ingested_material_bytes(event)
         for event in ledger.list_locality("root-locality")
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if is_exact_ingest_result(event)
     ]
 
 
@@ -47,7 +47,7 @@ def _acquired_bytes(ledger: EventLedger) -> list[bytes]:
 def test_non_slash_frames_are_exact_operator_material():
     ledger = _run(b"exit\n\xff\x00\n")
 
-    assert _raw_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
+    assert _bounded_material_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
     assert _acquired_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
     assert not [event for event in ledger.list() if event.kind.startswith("operator.command.")]
 
@@ -55,7 +55,7 @@ def test_non_slash_frames_are_exact_operator_material():
 def test_eof_ends_input_without_establishing_a_material_result():
     ledger = _run(b"")
 
-    assert _raw_bytes(ledger) == []
+    assert _bounded_material_bytes(ledger) == []
     assert _acquired_bytes(ledger) == []
 
 
@@ -78,7 +78,7 @@ def test_slash_frame_invokes_the_exact_registered_implementation_function():
         addressed_command.addressed_at_representation_event_identity
     )
     assert addressed_representation.locality_identity == "root-locality"
-    assert _raw_bytes(ledger) == []
+    assert _bounded_material_bytes(ledger) == [b"/inspect \xff\x00\n"]
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
@@ -127,7 +127,7 @@ def test_repeated_checkpoints_record_distinct_exact_references_without_a_chain()
 def test_unregistered_slash_name_reaches_the_exact_ingress_road():
     ledger = _run(b"/unregistered\nafter\n")
 
-    assert _raw_bytes(ledger) == [b"/unregistered\n", b"after\n"]
+    assert _bounded_material_bytes(ledger) == [b"/unregistered\n", b"after\n"]
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
@@ -136,14 +136,14 @@ def test_unregistered_slash_name_reaches_the_exact_ingress_road():
 def test_exit_is_exact_operator_material():
     ledger = _run(b"/exit\nafter\n")
 
-    assert _raw_bytes(ledger) == [b"/exit\n", b"after\n"]
+    assert _bounded_material_bytes(ledger) == [b"/exit\n", b"after\n"]
     assert _acquired_bytes(ledger) == [b"/exit\n", b"after\n"]
 
 
 def test_exit_does_not_establish_stop():
     ledger = _run(b"/exit\nafter\n")
 
-    assert _raw_bytes(ledger)[-1] == b"after\n"
+    assert _bounded_material_bytes(ledger)[-1] == b"after\n"
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
@@ -152,7 +152,7 @@ def test_exit_does_not_establish_stop():
 def test_unregistered_binary_slash_material_is_preserved_exactly():
     ledger = _run(b"/\xff\x00 material\n")
 
-    assert _raw_bytes(ledger) == [b"/\xff\x00 material\n"]
+    assert _bounded_material_bytes(ledger) == [b"/\xff\x00 material\n"]
 
 
 FIDELITY_SUBJECTS = {

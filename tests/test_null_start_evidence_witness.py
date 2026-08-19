@@ -9,8 +9,8 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
+    is_exact_ingest_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
@@ -33,9 +33,12 @@ def run_null_start() -> list:
     return ledger.list()
 
 
-def represent_null_start_evidence() -> str:
+def represent_null_start_evidence(events=None) -> str:
     lines = []
-    for position, event in enumerate(run_null_start(), start=1):
+    for position, event in enumerate(
+        run_null_start() if events is None else events,
+        start=1,
+    ):
         lines.append(f"[{position}] {event.kind}  {event.identity}")
         for key, value in sorted(event.material.items()):
             lines.append(f"      {key} = {json.dumps(value, default=str)}")
@@ -58,7 +61,7 @@ def _ingests(ledger: EventLedger):
     return [
         event
         for event in ledger.list_locality("s")
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        if is_exact_ingest_result(event)
     ]
 
 
@@ -103,31 +106,25 @@ def test_ingest_does_not_assert_a_represented_relation(ledger):
             "represented_relation",
             "source_relation",
         ]
-        (provenance_reference,) = ingest.material[
-            "provenance_occurrence_references"
-        ]
-        supplied_occurrence = ledger.get(provenance_reference)
-        assert supplied_occurrence is not None
-        assert supplied_occurrence.locality_identity == ingest.locality_identity
-        assert supplied_occurrence.exact_material == ingest.exact_material
-        assert "represented relation Unknown" in ingest.material["dimensions"][
+        assert ingest.material["provenance_occurrence_references"] == []
+        assert "exact material result" in ingest.material["dimensions"][
             "evidence_scope"
         ]
 
 
-def test_ingest_evidence_is_inspectable():
-    represented = represent_null_start_evidence()
+def test_ingest_evidence_is_inspectable(ledger):
+    represented = represent_null_start_evidence(ledger.list())
 
-    assert MATERIAL_INGEST_OCCURRED_KIND in represented
+    assert "operator.material.acquire_recorded" in represented
     assert "responsible_act_evidence_identity" in represented
     assert "evidence_of_yield_relation_identity" in represented
 
 
-def test_ingest_exact_material_is_inspectable():
+def test_ingest_exact_material_is_inspectable(ledger):
     ingests = [
         event
-        for event in run_null_start()
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        for event in ledger.list()
+        if is_exact_ingest_result(event)
     ]
 
     assert all(type(event.exact_material) is bytes for event in ingests)

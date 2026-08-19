@@ -22,12 +22,11 @@ from seed_runtime.operator_checkpoint import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import record_operator_representation
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
@@ -209,15 +208,12 @@ def test_recorded_reference_does_not_drift_when_the_source_advances():
         ).identity,
     )
     before = get_recorded_standing_boundary_reference(ledger, result.identity)
-    run_operator_ingest(
-        ledger=ledger,
+    ingest_material(
+        ledger,
         locality_identity="source",
-        boundary_material=OperatorBoundaryMaterial(
-            exact_bytes=b"later\n",
-            eof=False,
-            material_boundary="fixture boundary",
-            known_loss=(),
-        ),
+        exact_bytes=b"later\n",
+        source_role="operator",
+        source_boundary="fixture boundary",
     )
     assert get_recorded_standing_boundary_reference(ledger, result.identity) == before
 

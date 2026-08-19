@@ -16,7 +16,6 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_egress import (
     EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     operator_emission_boundary,
@@ -650,28 +649,7 @@ def run_persistent_operator_console(
         ):
             operator_locality_identity = locality_identity
             with ledger.batched():
-                command_record = run_operator_ingest(
-                    ledger=ledger,
-                    locality_identity=locality_identity,
-                    boundary_material=boundary_material,
-                    locality_standing=(
-                        locality_standing
-                        if locality_standing["event_count"]
-                        else None
-                    ),
-                    operator_material_occurrence_reference=(
-                        acquired_material.identity
-                    ),
-                )
-                command_occurrence = command_record["current_standing"][
-                    "ingest_occurrence"
-                ]
-                locality_standing = _advance_over(
-                    ledger,
-                    locality_standing,
-                    (command_occurrence["evidence_event_identity"],),
-                    locality_identity=locality_identity,
-                )
+                command_occurrence_reference = acquired_material.identity
                 locality_standing, _byte_measurement = _record_measurements_after_pin(
                     ledger,
                     locality_standing,
@@ -681,9 +659,7 @@ def run_persistent_operator_console(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
-                    source_occurrence_reference=command_occurrence[
-                        "evidence_event_identity"
-                    ],
+                    source_occurrence_reference=command_occurrence_reference,
                 )
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, command_representation
@@ -696,7 +672,7 @@ def run_persistent_operator_console(
                     record_operator_system_locality_responsibility_assignment(
                         ledger,
                         operator_material_occurrence_reference=(
-                            command_occurrence["evidence_event_identity"]
+                            command_occurrence_reference
                         ),
                         operator_locality_standing=locality_standing,
                     )
@@ -768,9 +744,7 @@ def run_persistent_operator_console(
                     operator_invocation_locality_result_event_identity=(
                         relation_result.identity
                     ),
-                    command_occurrence_reference=command_occurrence[
-                        "evidence_event_identity"
-                    ],
+                    command_occurrence_reference=command_occurrence_reference,
                     supplied=supplied,
                     prior_supplied_occurrence_references=tuple(
                         supplied_occurrence_references
@@ -1182,28 +1156,6 @@ def run_persistent_operator_console(
             if request is not None or command_run.addressed.frame.name in handlers:
                 continue
         with ledger.batched():
-            attempt_record = run_operator_ingest(
-                ledger=ledger,
-                locality_identity=locality_identity,
-                boundary_material=boundary_material,
-                locality_standing=(
-                    locality_standing if locality_standing["event_count"] else None
-                ),
-                operator_material_occurrence_reference=(
-                    acquired_material.identity
-                ),
-            )
-            ingest_occurrence = attempt_record["current_standing"][
-                "ingest_occurrence"
-            ]
-            if ingest_occurrence is None:
-                continue
-            locality_standing = _advance_over(
-                ledger,
-                locality_standing,
-                (ingest_occurrence["evidence_event_identity"],),
-                locality_identity=locality_identity,
-            )
             locality_standing, byte_measurement = _record_measurements_after_pin(
                 ledger,
                 locality_standing,

@@ -17,8 +17,8 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
+    iter_exact_ingest_results,
 )
 
 
@@ -42,12 +42,7 @@ def _localities(ledger: EventLedger) -> list[str]:
 
 
 def _ingest_occurrences(ledger, *, locality_identity):
-    return list(
-        ledger.iter_locality_kind(
-            locality_identity,
-            MATERIAL_INGEST_OCCURRED_KIND,
-        )
-    )
+    return list(iter_exact_ingest_results(ledger, locality_identity))
 
 
 # --------------------------------------------------------------------------

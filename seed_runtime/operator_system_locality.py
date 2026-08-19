@@ -8,7 +8,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import read_exact_ingest_result
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     _record_evidence_of_yield_relation,
@@ -59,7 +59,6 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     )
     if (
         event is None
-        or event.kind != MATERIAL_INGEST_OCCURRED_KIND
         or event.material.get("source_role") != "operator"
         or type(event.exact_material) is not bytes
         or not event.exact_material.startswith(b"!")
@@ -68,6 +67,12 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
         raise OperatorSystemLocalityError(
             "invocation Locality requires one intact operator material occurrence"
         )
+    try:
+        read_exact_ingest_result(ledger, event.identity)
+    except (TypeError, ValueError) as error:
+        raise OperatorSystemLocalityError(
+            "invocation Locality requires one intact operator material occurrence"
+        ) from error
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,

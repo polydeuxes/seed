@@ -9,7 +9,10 @@ FIDELITY_SUBJECT = "operator_material_acquisition_witness"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    read_exact_ingest_result,
+)
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
@@ -301,7 +304,7 @@ def test_console_records_one_fresh_occurrence_per_read_including_final_empty_rea
     ]
 
 
-def test_ordinary_operator_material_reaches_measurement_through_a_distinct_ingest():
+def test_ordinary_operator_material_is_the_exact_ingest_measurement_source():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -331,12 +334,10 @@ def test_ordinary_operator_material_reaches_measurement_through_a_distinct_inges
         for event in ledger.list()
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
-    assert len(ingests) == 1
-    assert ingests[0].identity != acquired[0].identity
-    assert ingests[0].exact_material == acquired[0].exact_material == b"Hello\n"
-    assert ingests[0].material["provenance_occurrence_references"] == [
-        acquired[0].identity
-    ]
+    assert ingests == []
+    assert read_exact_ingest_result(ledger, acquired[0].identity) == acquired[0]
+    assert acquired[0].exact_material == b"Hello\n"
+    assert acquired[0].material["provenance_occurrence_references"] == []
     position_results = [
         event
         for event in ledger.list()
@@ -349,11 +350,11 @@ def test_ordinary_operator_material_reaches_measurement_through_a_distinct_inges
     ]
     assert len(position_results) == len(byte_results) == 1
     assert position_results[0].material["source_ingest_occurrence_identity"] == (
-        ingests[0].identity
+        acquired[0].identity
     )
     assert byte_results[0].material["assertions"][0]["dimensions"]["content"][
         "source_material"
-    ] == [{"ingest_occurrence_identity": ingests[0].identity}]
+    ] == [{"ingest_occurrence_identity": acquired[0].identity}]
 
 
 def test_equal_raw_results_keep_distinct_occurrences_and_scopes():

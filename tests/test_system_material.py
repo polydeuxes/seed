@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from io import BytesIO
 import sqlite3
 
 import pytest
@@ -15,9 +14,7 @@ from seed_runtime.material_ingest import (
     ingest_material,
     ingested_material_bytes,
 )
-from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND, read_requirements_of_yield_relation
 
 
@@ -145,15 +142,12 @@ def test_durable_ingest_preserves_raw_material_and_evidence_of_yield_relation(tm
 
 
 def _operator_ingest(ledger, *, locality, exact):
-    standing = run_operator_ingest(
-        ledger=ledger,
+    return ingest_material(
+        ledger,
         locality_identity=locality,
-        boundary_material=operator_boundary_material(BytesIO(exact)),
-    )
-    return ledger.get(
-        standing["current_standing"]["ingest_occurrence"][
-            "evidence_event_identity"
-        ]
+        exact_bytes=exact,
+        source_role="operator",
+        source_boundary="binary-stream.readline (exact bytes)",
     )
 
 

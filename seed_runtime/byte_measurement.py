@@ -33,6 +33,7 @@ from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     MaterialIngestError,
     ingested_material_bytes,
+    iter_exact_ingest_results,
 )
 
 
@@ -780,8 +781,8 @@ def _measure_byte_counts_through(
     carrying = [0] * 256
     totals = [0] * 256
     for locality in localities:
-        for ingest in ledger.iter_locality_kind(
-            locality, INGEST_OCCURRED_KIND, through=boundary
+        for ingest in iter_exact_ingest_results(
+            ledger, locality, through=boundary
         ):
             exact = _ingested_bytes(ledger, ingest)
             if ingest.identity in seen_material:
@@ -2082,8 +2083,8 @@ def _measure_byte_position_pair_counts_through(
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
     for locality in localities:
-        for ingest in ledger.iter_locality_kind(
-            locality, INGEST_OCCURRED_KIND, through=boundary
+        for ingest in iter_exact_ingest_results(
+            ledger, locality, through=boundary
         ):
             if ledger.integrity_of(ingest.identity) == CORRUPTED:
                 raise ByteMeasurementError(
@@ -2263,8 +2264,8 @@ def _byte_measurement_source_material(
     source_material = []
     seen_material = set()
     for locality in localities:
-        for ingest in ledger.iter_locality_kind(
-            locality, INGEST_OCCURRED_KIND, through=boundary
+        for ingest in iter_exact_ingest_results(
+            ledger, locality, through=boundary
         ):
             _ingested_bytes(ledger, ingest)
             if ingest.identity in seen_material:

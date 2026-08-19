@@ -1249,7 +1249,7 @@ def test_c0_still_forms_from_empty_standing():
 def test_the_locality_records_only_responsible_representation_occurrences():
     ledger, output = _console("alpha\nbeta\n")
     kinds = [event.kind for event in ledger.list()]
-    assert kinds.count(MATERIAL_INGEST_OCCURRED_KIND) == 2
+    assert kinds.count(OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND) == 2
     assert kinds.count("operator.representation.recorded") == 5
     assert kinds.count("operator.representation.emitted") == 0
     assert output == ""

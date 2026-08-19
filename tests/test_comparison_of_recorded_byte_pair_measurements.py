@@ -31,7 +31,6 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_acquisition import (
     record_operator_material_acquire_responsibility_assignment,
     record_operator_material_acquire_responsible_act_evidence,
@@ -248,17 +247,7 @@ def _operator_inputs(*, acquisition_before_earlier_measurement=False):
     )
     if acquisition_before_earlier_measurement:
         earlier = _pair_measurement(ledger)
-    added_standing = run_operator_ingest(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        boundary_material=boundary,
-        operator_material_occurrence_reference=acquired.identity,
-    )
-    added = ledger.get(
-        added_standing["current_standing"]["ingest_occurrence"][
-            "evidence_event_identity"
-        ]
-    )
+    added = acquired
     later = _pair_measurement(ledger)
     return ledger, earlier_source, acquired, added, earlier, later
 
@@ -327,7 +316,7 @@ def test_operator_acquisition_before_the_premise_cannot_supply_compare():
 
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="operator acquisition carries no exact prior Standing",
+        match="later Measurement must extend the earlier exact source sequence once",
     ):
         record_recorded_pair_measurement_comparison_responsibility_assignment(
             ledger,

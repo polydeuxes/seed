@@ -19,7 +19,7 @@ from seed_runtime.evidence_of_yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import is_exact_ingest_result
 from seed_runtime.operator_system_locality import (
     OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
     get_recorded_operator_system_locality,
@@ -78,6 +78,43 @@ def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise RecordedPairMeasurementComparisonError(message)
     return value
+
+
+def _operator_acquisition_for_ingest_result(
+    ledger: EventLedger, added: Event
+) -> tuple[Event, dict[str, Any]]:
+    """Read direct O1 or the older generic result carrying O1 provenance."""
+
+    from seed_runtime.operator_material_acquisition import (
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        get_recorded_operator_material_acquire,
+    )
+
+    provenance = added.material.get("provenance_occurrence_references")
+    reference = (
+        added.identity
+        if added.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+        else provenance[0]
+        if type(provenance) is list and len(provenance) == 1
+        else None
+    )
+    acquired_event = ledger.get(reference) if type(reference) is str else None
+    try:
+        acquired = get_recorded_operator_material_acquire(ledger, reference)
+    except (TypeError, ValueError) as error:
+        raise RecordedPairMeasurementComparisonError(
+            "later Measurement requires one exact operator acquisition occurrence"
+        ) from error
+    if (
+        acquired_event is None
+        or acquired_event.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+        or acquired_event.locality_identity != added.locality_identity
+        or acquired_event.exact_material != added.exact_material
+    ):
+        raise RecordedPairMeasurementComparisonError(
+            "later Measurement requires one exact operator acquisition occurrence"
+        )
+    return acquired_event, acquired
 
 
 def _authority() -> dict[str, str]:
@@ -316,7 +353,7 @@ def _comparison_inputs(
     )
     if (
         added is None
-        or added.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or not is_exact_ingest_result(added)
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
         or type(provenance) is not list
@@ -334,34 +371,16 @@ def _comparison_inputs(
             )
         input_relation = "system supplied occurrence provenance"
     elif source_role == "operator":
-        if len(provenance) != 1:
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one exact operator acquisition occurrence"
-            )
         from seed_runtime.operator_locality_standing import (
             read_operator_locality_standing_through,
         )
-        from seed_runtime.operator_material_acquisition import (
-            OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-            get_recorded_operator_material_acquire,
-        )
 
-        acquired_event = ledger.get(provenance[0])
-        try:
-            acquired = get_recorded_operator_material_acquire(
-                ledger, provenance[0]
-            )
-        except (TypeError, ValueError) as error:
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one exact operator acquisition occurrence"
-            ) from error
+        acquired_event, acquired = _operator_acquisition_for_ingest_result(
+            ledger, added
+        )
         source_standing_reference = acquired.get("source_standing_reference")
         if (
-            acquired_event is None
-            or acquired_event.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
-            or acquired_event.locality_identity != earlier.locality_identity
-            or acquired_event.exact_material != added.exact_material
-            or type(source_standing_reference) is not dict
+            type(source_standing_reference) is not dict
             or source_standing_reference.get("locality_identity")
             != earlier.locality_identity
         ):
@@ -534,7 +553,7 @@ def _comparison_inputs_from_carried_measurements(
     )
     if (
         added is None
-        or added.kind != MATERIAL_INGEST_OCCURRED_KIND
+        or not is_exact_ingest_result(added)
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
         or type(provenance) is not list
@@ -546,20 +565,12 @@ def _comparison_inputs_from_carried_measurements(
     acquisition_identity = None
     source_standing_reference = None
     if source_role == "operator":
-        from seed_runtime.operator_material_acquisition import (
-            OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        acquired, acquired_material = _operator_acquisition_for_ingest_result(
+            ledger, added
         )
-
-        if len(provenance) != 1:
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one exact operator acquisition occurrence"
-            )
-        acquired = ledger.get(provenance[0])
         exact_results = locality_standing.get("exact_result_occurrences")
-        source_standing_reference = (
-            acquired.material.get("source_standing_reference")
-            if acquired is not None
-            else None
+        source_standing_reference = acquired_material.get(
+            "source_standing_reference"
         )
         representations = locality_standing.get("representations")
         represented = (
@@ -568,9 +579,7 @@ def _comparison_inputs_from_carried_measurements(
             else ()
         )
         if (
-            acquired is None
-            or acquired.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
-            or acquired.locality_identity != earlier.locality_identity
+            acquired.locality_identity != earlier.locality_identity
             or acquired.exact_material != added.exact_material
             or type(exact_results) is not dict
             or acquired.identity not in exact_results

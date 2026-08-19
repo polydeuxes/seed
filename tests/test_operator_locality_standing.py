@@ -30,8 +30,6 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.operator_ingest import run_operator_ingest
-from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
@@ -68,12 +66,25 @@ def _record_byte_measurement(
 
 
 def _attempt(ledger, text, *, locality="s", locality_standing=None):
-    return run_operator_ingest(
-        ledger=ledger,
+    exact = text.encode() if type(text) is str else text
+    event = ingest_material(
+        ledger,
         locality_identity=locality,
-        boundary_material=operator_boundary_material(binary_input(text)),
-        locality_standing=locality_standing,
+        exact_bytes=exact,
+        source_role="operator",
+        source_boundary="test operator material boundary",
     )
+    standing = {
+        "current_standing": {
+            "ingest_occurrence": {
+                "subject_reference": event.material["result_identity"],
+                "evidence_event_identity": event.identity,
+            }
+        }
+    }
+    if locality_standing is not None:
+        standing["locality_standing"] = locality_standing
+    return standing
 
 
 def _standing(ledger, *, locality="s"):
