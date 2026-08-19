@@ -27,9 +27,12 @@ parser returned
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/material_ingest.py`
 - `scripts/compiled_format_invocation.py`
+- `scripts/compiled_material_invocation.py`
 - `scripts/compiled_parser_invocation.py`
 - `scripts/material_admission.py`
 - `tests/test_book_material_acquisition.py`
+- `tests/test_compiled_material_acquisition.py`
+- `tests/test_compiled_material_measurement_harness.py`
 - `tests/test_compiled_parser_invocation.py`
 - history at `5b3739d4`, `a32094e8`, `eee46cb1`, and `ad442f60`
 
@@ -96,7 +99,10 @@ complete Book Ingest / compiled-format road
 does not retain its parser-returned structure
 ```
 
-The two halves currently exist in separate witnesses.
+The two inspected roads retain those coordinates separately. An adjacent third
+witness, examined below, already carries an exact Ingest result reference and
+exact external-function output material together. It does not supply the
+missing constitutional physiology.
 
 ## 2. Complete Book acquisition retains source lineage but only a return coordinate
 
@@ -197,9 +203,79 @@ They are exact Witness Material at a bounded function-read seam. Active
 only what occurs at that exact seam. They establish no Standing suggested by
 the function name, output words, or behavior.
 
+### 3.1 A third witness already joins Ingest lineage to output bytes mechanically
+
+`scripts/compiled_material_invocation.py` defines an `IngestResultReference`
+that validates the exact Ingest occurrence and its Evidence-of-Yield relation.
+Its `reference_occurrences_across` function supplies each exact reference to
+each exact external implementation function. Every resulting
+`MaterialInvocationOccurrence` retains:
+
+```text
+exact source reference
+exact source bytes
+implementation-function reference
+invocation identity
+return coordinates
+stdout bytes
+stderr bytes
+time and byte-count limits
+```
+
+This is a real mechanical crossing:
+
+```text
+exact Ingest result reference
+↓
+bounded external function invocation
+↓
+exact output material
+```
+
+It corrects an overbroad reading of the two-road distinction. One current
+witness data structure already carries both endpoints.
+
+The current function population on this road is a spelling-tool witness, not
+the complete JSON/TOML/XML/Python-AST/property-list population used by the Book
+format-discrimination road. Current tests apply it to measured one-byte
+material, not to the Witness Grammar Ingest result.
+
+More importantly, `MaterialInvocationOccurrence` is a script-level witness
+object. It is not a ledger Event and carries no exact:
+
+```text
+Responsibility assignment
+constitutional Act
+relation of implementation function to Act
+Act Evidence
+Evidence of Yield relation for its output
+result Locality
+Authority
+Scope
+Unknown
+result Standing
+```
+
+Therefore the missing crossing is constitutional, not mechanical.
+
+This is one bounded example of Seed physiology currently prototyped outside
+Seed runtime:
+
+```text
+external witness performs exact mechanics
+!= mechanics absent
+!= Seed bears the Responsibility
+!= Seed records the Act occurrence
+!= Seed carries the result Standing
+```
+
+Moving the mechanism into `seed_runtime` by file location would establish none
+of those missing relations. Internalization requires the exact constitutional
+crossing, not a module move.
+
 ## 4. The two source and result populations do not join by byte equality
 
-The repository currently has:
+The Book-format and parser-output roads still carry distinct occurrences:
 
 ```text
 ROAD A
@@ -233,9 +309,11 @@ same Standing
 ```
 
 No current exact relation connects a Book acquisition Ingest reference to a
-compiled-parser occurrence carrying exact output material. Re-running one parser on
-equal bytes would create another occurrence; it would not retroactively give
-the earlier Book invocation a result it did not carry.
+compiled-parser occurrence carrying exact output material. The generic
+material-invocation witness proves that such endpoints can be carried together;
+it does not identify either earlier occurrence with a new invocation. Re-running
+one parser on equal bytes would create another occurrence; it would not
+retroactively give the earlier Book invocation a result it did not carry.
 
 ## 5. The retained output is a parser representation, not source structure by identity
 
@@ -450,7 +528,8 @@ Those are later crossings.
 | Does it apply every declared compiled-format function to every source? | yes |
 | Does it retain parser-returned structure? | no |
 | Does another current witness retain exact parser-output material? | yes |
-| Is that output connected to an exact Book Ingest reference? | no |
+| Does a third witness retain an exact Ingest reference with exact external-function output? | yes |
+| Does that third witness currently invoke the JSON format function over the Witness Grammar Ingest result? | no |
 | Does it have Seed Responsibility, Yield, or Standing physiology? | no |
 | Does exact parser output establish Seed structure? | no |
 | Does history preserve format discrimination separately from parser-output material? | yes |
@@ -459,8 +538,8 @@ Those are later crossings.
 
 ## Conclusion
 
-The repository does not face one empty structure wall. It has two nonjoining
-roads:
+The repository does not face one empty structure wall. It has three distinct
+witness roads:
 
 ```text
 complete exact Ingest lineage
@@ -476,8 +555,20 @@ exact parser-output material
 no Ingest lineage or Seed result Standing
 ```
 
-Joining them by equal bytes, parser identity, or Python return shape would
-repeat the endpoints-imply-edge error.
+and:
+
+```text
+exact Ingest lineage
++
+exact external-function output material
++
+no Seed Responsibility, Yield, or Standing physiology
+```
+
+The third road proves the endpoints can be carried together without resolving
+their constitutional relation. Identifying any occurrences across the roads by
+equal bytes, parser identity, or Python return shape would still repeat the
+endpoints-imply-edge error.
 
 The next recovery is the exact Responsibility and result physiology, if any,
 that makes exact parser-output material the bounded result of an Act over one
