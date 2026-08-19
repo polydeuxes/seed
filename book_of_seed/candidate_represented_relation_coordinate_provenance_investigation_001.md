@@ -428,6 +428,139 @@ That is not an exhaustive constitutional role grammar. It also supplies no
 basis for assigning `represents`, `is`, `for`, or another admitted word as a
 Candidate role.
 
+## Operator testimony: the unfinished Responsibility-head road
+
+The operator reports that the earlier Responsibility-head work was intended to
+establish this exhaustive pressure but was never finished. Repository history
+recovers a narrower, useful result from that attempt.
+
+### What the Responsibility-head sequence established
+
+Commit `e1e3a1f2` opened the Responsibility-root investigation. Corrections at
+`94ecf891` and `001bfa92` separated the structural presentation from a
+constitutional hierarchy, restored independently owned coordinates, and split
+Act occurrence, production occurrence, and Standing occurrence. Commit
+`e1fd24b4` then added the Responsibility presentation to the Book root;
+`9544e60e` and `d636ea92` corrected its branch classifications and Stopping
+coordinates.
+
+The recovered structure supplied a repeatable traversal:
+
+```text
+exact Responsibility assignment
+├── responsible boundary
+├── subject or material addressed
+├── exact Act
+├── Authority
+├── Evidence
+├── Scope and Locality
+├── input source and provenance, where instantiated
+├── Act occurrence and occurrence Evidence, where instantiated
+├── result coordinates, where instantiated
+├── Standing coordinates, where instantiated
+└── neighboring exact relations, where instantiated
+```
+
+The headings expose positions to examine. They do not populate those positions,
+assign one Responsibility, or establish one Act occurrence. The active Book now
+states the stronger ordering correction introduced after that history:
+
+```text
+Standing is the Book's root.
+Standing
+→ Responsibility
+→ exact Act
+→ Act occurrence
+→ result
+→ Standing
+```
+
+Responsibility remains the first branch read from current Standing whose subject
+is the exact Responsibility assignment. Therefore the historical phrase
+`Responsibility HEAD` is provenance for a presentation and traversal method. It
+is not the active root by identity and is not a constitutional kind named
+`HEAD`.
+
+### What the BOGE projection proved
+
+Commit `eb1b3da2` applied the complete Responsibility-root traversal to one
+bounded BOGE road. The traversal reached every applicable branch and recovered
+several exact upstream Responsibilities. At the admitted-interpretation branch
+it also found:
+
+```text
+candidate-production ownership:
+    positively instantiated but unresolved
+
+candidate-production occurrence:
+    unresolved
+```
+
+The report did not fill those coordinates from the existence of a Candidate,
+from the usefulness of Candidate production, or from the completeness of the
+traversal. It concluded that an unresolved branch value is not a missing
+structural branch.
+
+That is direct historical testimony for the present vacancy:
+
+```text
+Responsibility-root traversal
+    can expose every exact question a road owes
+
+Responsibility-root traversal
+    != Responsibility assignment
+    != Authority
+    != exact Act
+    != occurrence
+    != result
+    != Standing
+```
+
+Commit `791f29e0` later repeated the same discipline while investigating an
+unnamed present-subject Responsibility: the Responsibility headings exposed the
+coordinates, while active fragments did not establish a complete
+Responsibility.
+
+### What remained unfinished
+
+The earlier work therefore recovered much of the eventual onslaught's
+interrogation surface, but not its producer physiology. It did not establish:
+
+```text
+one exact bounded word surface
+one Responsibility assignment to this Seed over that surface
+one exact Act applying the Responsibility questions to every exact member
+Applicability and Participation for every neutral member
+one occurrence that omits no required member
+one complete result and its replay boundary
+result Standing
+```
+
+The Responsibility presentation also does not enumerate the source surface. It
+cannot decide whether the surface is Book admission, exact Book word
+occurrences, Witness Grammar material, or another bounded material set. That
+enumeration must be independently exact before traversal can refuse omission.
+
+Nor does applying the Responsibility questions to a word classify the word as
+a relation, role, Act, or connective. The questions are discriminating
+coordinates; they are not answers.
+
+The operator testimony consequently narrows the missing road without supplying
+it:
+
+```text
+frozen exact neutral material surface
+        ↓
+current Standing whose subject is an exact exhaustive Responsibility assignment
+        ↓
+exact Act examining every member through the Responsibility coordinates
+        ↓
+complete neutral results, with unresolved coordinates preserved
+```
+
+Whether active material establishes that assignment remains not established.
+Whether a future exact assignment does so remains Unknown.
+
 ## Vacancy before an exhaustive word onslaught
 
 Avoiding semantic selection requires the source boundary to be mechanical.
@@ -449,6 +582,11 @@ complete result and replay boundary
 
 No active Responsibility assigns that Act. E.1 consumes exact result
 Assertions, not raw lexicon entries by admission-file membership.
+
+The historical Responsibility-head road does not close this vacancy. It
+supplies the branch questions by which such an Act would be audited, while its
+own BOGE application preserved candidate-production ownership and occurrence as
+unresolved.
 
 Likewise, no active grammar defines `connective-shaped` or `relation-shaped`
 without first interpreting the word. A filter under either label would restore
@@ -495,6 +633,9 @@ The smallest non-authoring order is:
 | Does Book admission currently cover every active Book word? | No; siren ringing |
 | Is Witness Grammar's root relation inventory exhaustive of its local relation strings? | No |
 | Does any exact Responsibility own exhaustive neutral word-Candidate formation? | Not established |
+| Did the Responsibility-head work establish the traversal coordinates? | Yes, as presentation and traversal testimony retained in the active Responsibility branch structure |
+| Did that work assign this Seed an exhaustive word-Candidate Act? | No |
+| Did the BOGE Responsibility-root traversal fill unresolved Candidate-production ownership? | No; it preserved that exact vacancy |
 
 ## Earliest remaining crossing
 
@@ -523,6 +664,9 @@ relation Standing
 The immediate vacancy is not which word should win. It is the exact
 Responsibility that requires every word from one bounded neutral surface
 without omission and without declaring any word a relation or role in advance.
+
+The unfinished Responsibility-head work explains why the vacancy has a known
+shape. It does not itself supply the missing assignment or occurrence.
 
 ## What this does not establish
 
