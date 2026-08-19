@@ -9,6 +9,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ORDERED_PAIR_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     ordered_candidate_act_occurrence_beside_represented_relation_coordinates,
+    ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates,
     ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates,
     boundaries_of_recorded_candidate_standing,
     exact_source_assertion_materials_from_ordered_pair_candidate,
@@ -882,6 +883,16 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    (
+        applicability_result_occurrence,
+        applicability_coordinates,
+        relations_beside_applicability,
+    ) = (
+        ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
 
     assert tuple(candidate for candidate, *_coordinates in exposed) == tuple(
         candidate["dimensions"]["identity"]
@@ -900,6 +911,42 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     }
     assert relations_beside_act == exposed
     assert relations_beside_participations == exposed
+    assert relations_beside_applicability == exposed
+    assert applicability_result_occurrence == {
+        "grammar_coordinate_reference": [
+            "clause_coordinates",
+            BOOK_CLAUSE,
+            "ordered_pair_candidate_responsibility",
+            "source_Applicability",
+            "result_occurrence",
+        ],
+        "coordinate": "Applicability_result_occurrence",
+        "material": standing["applicability_result_event_identity"],
+    }
+    assert tuple(
+        applicability["material"]
+        for applicability in applicability_coordinates
+    ) == tuple(
+        get_recorded_candidate_standing_applicability(
+            ledger, standing["applicability_result_event_identity"]
+        )["applicability_findings"]
+    )
+    assert all(
+        applicability["grammar_coordinate_reference"]
+        == [
+            "clause_coordinates",
+            BOOK_CLAUSE,
+            "ordered_pair_candidate_responsibility",
+            "source_Applicability",
+            "finding",
+        ]
+        and applicability["coordinate"] == "source_Applicability_finding"
+        and applicability["material"]["relation"] == "input_to"
+        and applicability["material"]["role"] == "input"
+        and applicability["material"]["finding"] == "applicable"
+        and "represented_relation" not in applicability["material"]
+        for applicability in applicability_coordinates
+    )
     assert tuple(
         participation["material"]
         for participation in participation_coordinates
@@ -980,9 +1027,28 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
                 ),
             )
         )
+        (
+            cardinality_applicability_result,
+            cardinality_applicability,
+            applicability_relations,
+        ) = (
+            ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates(
+                cardinality_ledger,
+                candidate_standing_result_event_identity=(
+                    cardinality_result.identity
+                ),
+            )
+        )
 
+        assert len(cardinality_applicability) == source_count
         assert len(cardinality_participations) == source_count
         assert len(cardinality_relations) == source_count * (source_count - 1)
+        assert applicability_relations == cardinality_relations
+        assert cardinality_applicability_result["material"] == (
+            get_recorded_candidate_standing(
+                cardinality_ledger, cardinality_result.identity
+            )["applicability_result_event_identity"]
+        )
         assert {
             participation["material"]["act_occurrence"]
             for participation in cardinality_participations
@@ -1003,6 +1069,26 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
         ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates(
             cardinality_ledger,
             candidate_standing_result_event_identity=cardinality_result.identity,
+        )
+
+    applicability_ledger = EventLedger()
+    _source(applicability_ledger, exact_bytes=b"")
+    applicability_result = record_complete_ordered_pair_candidate_standing(
+        applicability_ledger,
+        recording_locality_identity="ordered-pair-candidates",
+        source_append_boundary=applicability_ledger.append_boundary(),
+    )
+    applicability_standing = get_recorded_candidate_standing(
+        applicability_ledger, applicability_result.identity
+    )
+    recorded_applicability = applicability_ledger.get(
+        applicability_standing["applicability_result_event_identity"]
+    )
+    recorded_applicability.material["applicability_findings"].pop()
+    with pytest.raises(ValueError, match="Applicability result is not exact"):
+        ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates(
+            applicability_ledger,
+            candidate_standing_result_event_identity=applicability_result.identity,
         )
 
     act_evidence = ledger.get(standing["responsible_act_evidence_identity"])
@@ -1200,6 +1286,16 @@ def test_witness_grammar_names_the_exact_source_assertion_coordinates_and_one_so
         "second_subject": ONE_SOURCE_CANDIDATE_ACT.replace(" ", "_"),
         "role": "input",
     }
+    assert coordinate["source_Applicability"] == {
+        "result_occurrence": "exact_Applicability_result_occurrence",
+        "finding": {
+            "source_assertion_reference": "exact_source_Assertion_reference",
+            "candidate_act_identity": "exact_Candidate_Act_identity",
+            "relation": "input_to",
+            "role": "input",
+            "material": "applicable",
+        },
+    }
     assert coordinate["source_Participation"] == {
         "subject_reference": "exact_source_Assertion",
         "role": "input",
@@ -1230,6 +1326,16 @@ def test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility()
         "relation": "input_to",
         "second_subject": ORDERED_PAIR_CANDIDATE_ACT.replace(" ", "_"),
         "role": "input",
+    }
+    assert coordinate["source_Applicability"] == {
+        "result_occurrence": "exact_Applicability_result_occurrence",
+        "finding": {
+            "source_assertion_reference": "exact_source_Assertion_reference",
+            "candidate_act_identity": "exact_Candidate_Act_identity",
+            "relation": "input_to",
+            "role": "input",
+            "material": "applicable",
+        },
     }
     assert coordinate["source_Participation"] == {
         "subject_reference": "exact_source_Assertion",

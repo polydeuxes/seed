@@ -1416,6 +1416,16 @@
           "second_subject": "record_one_Candidate_for_each_exact_source_Assertion_in_event_order",
           "role": "input"
         },
+        "source_Applicability": {
+          "result_occurrence": "exact_Applicability_result_occurrence",
+          "finding": {
+            "source_assertion_reference": "exact_source_Assertion_reference",
+            "candidate_act_identity": "exact_Candidate_Act_identity",
+            "relation": "input_to",
+            "role": "input",
+            "material": "applicable"
+          }
+        },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",
           "role": "input",
@@ -1440,6 +1450,16 @@
           "relation": "input_to",
           "second_subject": "record_one_Candidate_for_each_distinct_ordered_source_Assertion_pair_in_source_event_order",
           "role": "input"
+        },
+        "source_Applicability": {
+          "result_occurrence": "exact_Applicability_result_occurrence",
+          "finding": {
+            "source_assertion_reference": "exact_source_Assertion_reference",
+            "candidate_act_identity": "exact_Candidate_Act_identity",
+            "relation": "input_to",
+            "role": "input",
+            "material": "applicable"
+          }
         },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",

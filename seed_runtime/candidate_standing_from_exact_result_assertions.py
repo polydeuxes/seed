@@ -1756,6 +1756,66 @@ def ordered_candidate_source_participation_coordinates_beside_represented_relati
     )
 
 
+def ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[dict[str, Any], ...],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read every source Applicability beside every represented_relation coordinate."""
+
+    result, _act, applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    applicability_findings = tuple(
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "source_Applicability",
+                "finding",
+            ],
+            "coordinate": "source_Applicability_finding",
+            "material": deepcopy(finding),
+        }
+        for finding in applicability.material["applicability_findings"]
+    )
+    return (
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "source_Applicability",
+                "result_occurrence",
+            ],
+            "coordinate": "Applicability_result_occurrence",
+            "material": applicability.identity,
+        },
+        applicability_findings,
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
 def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,
