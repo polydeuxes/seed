@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 
@@ -37,18 +37,17 @@ def piper_witness_observation():
         pytest.skip("the external voice implementation function is unavailable")
 
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="piper-material-witness-source",
             exact_bytes=material,
-            source_role="operator supplied material",
             source_boundary=f"piper-material-witness-source-{position}",
         )
         for position, material in enumerate(EXACT_MATERIAL)
     )
     references = tuple(
-        ingest_result_reference(ledger, occurrence.identity) for occurrence in ingests
+        material_acquisition_result_reference(ledger, occurrence.identity) for occurrence in acquisition_results
     )
     implementation_function = MaterialImplementationFunction(
         identity="material-witness-piper-voice-0",
@@ -62,35 +61,34 @@ def piper_witness_observation():
         time_limit_second_count=15.0,
         material_byte_count_limit=1048576,
     )[0]
-    result_ingests = tuple(
-        ingest_material(
+    result_acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="piper-material-witness-result",
             exact_bytes=occurrence.stdout_bytes or b"",
-            source_role="system",
             source_boundary=f"external voice stdout occurrence {position}",
-            provenance_occurrence_references=(ingests[position].identity,),
+            provenance_occurrence_references=(acquisition_results[position].identity,),
         )
         for position, occurrence in enumerate(invocations)
     )
     return (
         ledger,
-        ingests,
+        acquisition_results,
         references,
         implementation_function,
         invocations,
-        result_ingests,
+        result_acquisition_results,
     )
 
 
 def test_exact_prose_reaches_the_external_voice_function_unchanged(
     piper_witness_observation,
 ):
-    _, ingests, references, implementation_function, invocations, _ = (
+    _, acquisition_results, references, implementation_function, invocations, _ = (
         piper_witness_observation
     )
 
-    assert tuple(occurrence.exact_material for occurrence in ingests) == EXACT_MATERIAL
+    assert tuple(occurrence.exact_material for occurrence in acquisition_results) == EXACT_MATERIAL
     assert tuple(reference.exact_material for reference in references) == EXACT_MATERIAL
     assert tuple(occurrence.exact_material for occurrence in invocations) == EXACT_MATERIAL
     assert tuple(
@@ -122,12 +120,12 @@ def test_external_voice_results_preserve_distinct_opaque_material(
 def test_external_voice_results_enter_seed_only_as_exact_provenanced_material(
     piper_witness_observation,
 ):
-    _, source_ingests, _, _, invocations, result_ingests = piper_witness_observation
+    _, source_acquisition_results, _, _, invocations, result_acquisition_results = piper_witness_observation
 
-    assert tuple(occurrence.exact_material for occurrence in result_ingests) == tuple(
+    assert tuple(occurrence.exact_material for occurrence in result_acquisition_results) == tuple(
         invocation.stdout_bytes or b"" for invocation in invocations
     )
     assert tuple(
         occurrence.material["provenance_occurrence_references"]
-        for occurrence in result_ingests
-    ) == tuple([source.identity] for source in source_ingests)
+        for occurrence in result_acquisition_results
+    ) == tuple([source.identity] for source in source_acquisition_results)

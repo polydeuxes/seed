@@ -12,7 +12,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_checkpoint import (
     record_standing_boundary_reference_responsibility_assignment,
     record_standing_boundary_reference_responsible_act_evidence,
@@ -38,10 +38,10 @@ from compiled_format_invocation import (  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     compare_material_reference_invocations,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
-from tests.material_fixture_books import (  # noqa: E402
+from tests.book_material_test_witness import (  # noqa: E402
     MATERIAL_WINDOWS,
     supplied_book_material,
 )
@@ -62,21 +62,19 @@ def exact_material_references_for_comparison():
     books = supplied_book_material(ROOT)
     ledger = EventLedger()
     book_occurrences = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="comparison-of-material-references-source-locality",
             exact_bytes=material,
-            source_role="fixture material",
             source_boundary=f"supplied book occurrence {position}",
         )
         for position, material in enumerate(books)
     )
     other_occurrences = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity=locality,
             exact_bytes=material,
-            source_role="fixture material",
             source_boundary=boundary,
         )
         for locality, material, boundary in (
@@ -103,7 +101,7 @@ def exact_material_references_for_comparison():
         )
     )
     book_references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
+        material_acquisition_result_reference(ledger, occurrence.identity)
         for occurrence in book_occurrences
     )
     (
@@ -112,7 +110,7 @@ def exact_material_references_for_comparison():
         lineage_reference,
         unrelated_locality_reference,
     ) = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
+        material_acquisition_result_reference(ledger, occurrence.identity)
         for occurrence in other_occurrences
     )
     return (
@@ -224,11 +222,10 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
     locality_identity = "recorded-standing-material-comparison-locality"
     ledger = EventLedger()
     corpus = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity=locality_identity,
             exact_bytes=material,
-            source_role="fixture material",
             source_boundary=f"supplied book occurrence {position}",
         )
         for position, material in enumerate(books)
@@ -236,11 +233,10 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
     standing_boundary_reference = _record_standing_boundary_reference(
         ledger, locality_identity=locality_identity
     )
-    operator = ingest_material(
+    operator = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"what does this exact material distinguish?\n",
-        source_role="operator material",
         source_boundary="operator material",
     )
 
@@ -251,11 +247,11 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
     )
     assert [
         occurrence["evidence_event_identity"]
-        for occurrence in point["standing"]["ingest_occurrences"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     ] == [occurrence.identity for occurrence in corpus]
-    operator_reference = ingest_result_reference(ledger, operator.identity)
+    operator_reference = material_acquisition_result_reference(ledger, operator.identity)
     book_references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
+        material_acquisition_result_reference(ledger, occurrence.identity)
         for occurrence in corpus
     )
 
@@ -270,7 +266,7 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
 
     assert operator.identity not in {
         occurrence["evidence_event_identity"]
-        for occurrence in point["standing"]["ingest_occurrences"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     }
     assert len(comparisons) == 9
     assert all(len(row) == 16 for row in comparisons)
@@ -289,11 +285,10 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
     books = supplied_book_material(ROOT)
     locality_identity = "recorded-standing-pair-comparison-locality"
     ledger = EventLedger()
-    corpus = ingest_material(
+    corpus = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"".join(books),
-        source_role="fixture material",
         source_boundary="sixteen supplied books",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -330,11 +325,11 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
     )
     assert [
         occurrence["evidence_event_identity"]
-        for occurrence in point["standing"]["ingest_occurrences"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     ] == [corpus.identity]
     assert measurement.identity in point["standing"]["measurement_occurrences"]
     assert pair_measurement.identity in point["standing"]["measurement_occurrences"]
-    corpus_reference = ingest_result_reference(ledger, corpus.identity)
+    corpus_reference = material_acquisition_result_reference(ledger, corpus.identity)
     pair_references = exact_references_to_recurrent_material_pairs(
         ledger, pair_measurement.identity
     )
@@ -352,16 +347,15 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         for position, subject in enumerate(pair_subjects)
     )
 
-    operator = ingest_material(
+    operator = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"what does this exact material distinguish?\n",
-        source_role="operator material",
         source_boundary="operator material",
     )
     assert operator.identity not in {
         occurrence["evidence_event_identity"]
-        for occurrence in point["standing"]["ingest_occurrences"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     }
 
     expected_counts: dict[bytes, int] = {}
@@ -377,7 +371,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         for subject in pair_subjects
     } == expected_materials
 
-    operator_reference = ingest_result_reference(ledger, operator.identity)
+    operator_reference = material_acquisition_result_reference(ledger, operator.identity)
     preserved = []
     comparisons = []
     for subject_position, (subject, premise) in enumerate(

@@ -2,7 +2,7 @@
 
 ## Question
 
-After the duplicate operator Ingest bridge is removed, what exact occurrences
+After the duplicate operator material-acquisition bridge is removed, what exact occurrences
 are already recorded for one `!pytest` interaction, and what remains missing
 before the next ordinary operator material can receive this Seed's first normal
 response?
@@ -19,14 +19,14 @@ egress, current runtime records:
 O1
 one exact operator-material acquisition result
     exact material: !pytest
-    source role: operator
+    source role: this operator
     Locality: operator Locality
     provenance occurrence references: empty
 
 O2
-one exact supplied-system material acquisition result
+one exact material-acquisition result supplied by this Witness
     exact material: provider return material
-    source role: system
+    source role: this Witness
     Locality: fresh invocation Locality
     provenance occurrence references:
         O1
@@ -54,17 +54,15 @@ O1 != O3-current
 ```
 
 O1 now enters the exact yielded material-acquisition result surface directly.
-No second generic occurrence copies O1's bytes before Measurement.  This does
-not establish `Ingest` as another coordinate carried by O1.  `Ingest` remains
-compressed investigation language for the already distinct acquisition, Act,
-Yield, and exact material-result coordinates.
+No second occurrence copies O1's bytes before Measurement. Acquisition, its
+exact Act occurrence, Yield, and exact material result remain distinct.
 
 O2 remains a distinct acquisition.  Provider return material did not cross the
 operator input boundary and does not become O1 by byte equality, provenance, or
 chronology.
 
-O3-current remains an emission occurrence.  It does not make the emitted
-system material authored by this Seed.
+O3-current remains an emission occurrence. It does not make the emitted
+material supplied by this Witness authored by this Seed.
 
 ## Intended Selection and presentation pressure
 
@@ -97,7 +95,7 @@ O3
 ```
 
 A movie stream with later subtitle emissions and an `!ls` excerpt with a
-separate response are external projections of this same open population.  No
+separate response are external presentation forms of this same open population.  No
 constitutional line count, geometry, split view, or single-emission form is
 established.
 
@@ -134,11 +132,11 @@ After that invocation cycle, operator material `Hello` is a fresh contact:
 O4
 one new exact operator-material acquisition result
     exact material: Hello
-    source role: operator
+    source role: this operator
     provenance occurrence references: empty
 ```
 
-O4 does not borrow O1's operator contact, O2's system provenance, or O3's
+O4 does not borrow O1's operator contact, O2's Witness provenance, or O3's
 emission occurrence.
 
 The desired later position is:
@@ -159,8 +157,8 @@ copy of O4 to stand in for this Seed's emission.
 
 ```text
 O1 operator material acquisition and yielded result           recorded
-O2 supplied-system material acquisition                       recorded
-O3 exact system-material Representation emission              recorded
+O2 material acquisition supplied by this Witness              recorded
+O3 exact Witness-material Representation emission             recorded
 
 O3 Selection / presentation:
     selected O2 boundary and completeness                     unestablished

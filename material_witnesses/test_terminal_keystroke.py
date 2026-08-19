@@ -29,7 +29,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
 )
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
 )
@@ -50,8 +50,8 @@ from seed_runtime.operator_representation_admission import (
     get_recorded_exact_material_representation_admission,
     get_recorded_representation_candidate,
 )
-from seed_runtime.operator_system_locality import OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
-from seed_runtime.supplied_invocation_material import SuppliedSystemMaterialOccurrence
+from seed_runtime.operator_invocation_locality import OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,7 +59,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     invocation_occurrence,
     reference_occurrences_across,
 )
@@ -97,18 +97,17 @@ def terminal_witness_observation():
         pytest.skip("opaque PTY implementation function is unavailable")
 
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="terminal-material-witness-source",
             exact_bytes=material,
-            source_role="operator supplied material",
             source_boundary=f"terminal-material-witness-source-{position}",
         )
         for position, material in enumerate(EXACT_MATERIAL)
     )
     references = tuple(
-        ingest_result_reference(ledger, occurrence.identity) for occurrence in ingests
+        material_acquisition_result_reference(ledger, occurrence.identity) for occurrence in acquisition_results
     )
     invocations = reference_occurrences_across(
         references,
@@ -118,26 +117,25 @@ def terminal_witness_observation():
         time_limit_second_count=2.0,
         material_byte_count_limit=65536,
     )[0]
-    result_ingests = tuple(
-        ingest_material(
+    result_acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="terminal-material-witness-result",
             exact_bytes=occurrence.stdout_bytes or b"",
-            source_role="system",
             source_boundary=f"external PTY stdout occurrence {position}",
-            provenance_occurrence_references=(ingests[position].identity,),
+            provenance_occurrence_references=(acquisition_results[position].identity,),
         )
         for position, occurrence in enumerate(invocations)
     )
-    return ledger, ingests, references, invocations, result_ingests
+    return ledger, acquisition_results, references, invocations, result_acquisition_results
 
 
 def test_exact_material_reaches_the_external_function_unchanged(
     terminal_witness_observation,
 ):
-    _, ingests, references, invocations, _ = terminal_witness_observation
+    _, acquisition_results, references, invocations, _ = terminal_witness_observation
 
-    assert tuple(occurrence.exact_material for occurrence in ingests) == EXACT_MATERIAL
+    assert tuple(occurrence.exact_material for occurrence in acquisition_results) == EXACT_MATERIAL
     assert tuple(reference.exact_material for reference in references) == EXACT_MATERIAL
     assert tuple(occurrence.exact_material for occurrence in invocations) == EXACT_MATERIAL
     assert tuple(
@@ -183,15 +181,15 @@ def test_one_exact_del_byte_changes_the_external_result(
 def test_external_results_enter_seed_only_as_exact_provenanced_material(
     terminal_witness_observation,
 ):
-    _, source_ingests, _, invocations, result_ingests = terminal_witness_observation
+    _, source_acquisition_results, _, invocations, result_acquisition_results = terminal_witness_observation
 
-    assert tuple(occurrence.exact_material for occurrence in result_ingests) == tuple(
+    assert tuple(occurrence.exact_material for occurrence in result_acquisition_results) == tuple(
         invocation.stdout_bytes or b"" for invocation in invocations
     )
     assert tuple(
         occurrence.material["provenance_occurrence_references"]
-        for occurrence in result_ingests
-    ) == tuple([source.identity] for source in source_ingests)
+        for occurrence in result_acquisition_results
+    ) == tuple([source.identity] for source in source_acquisition_results)
 
 
 def test_seed_measures_source_and_result_pair_findings_independently(
@@ -211,11 +209,10 @@ def test_seed_measures_source_and_result_pair_findings_independently(
 
     for locality_identity, exact_materials in zip(localities, materials):
         for position, exact_material in enumerate(exact_materials):
-            ingest_material(
+            record_witness_material_acquisition(
                 ledger,
                 locality_identity=locality_identity,
                 exact_bytes=exact_material,
-                source_role="material witness",
                 source_boundary=f"terminal pair occurrence {position}",
             )
         byte_assignment = record_byte_measurement_responsibility_assignment(
@@ -292,8 +289,8 @@ def test_seed_measures_source_and_result_pair_findings_independently(
 def test_one_exact_witness_result_crosses_the_operator_emission_road(
     terminal_witness_observation,
 ):
-    ledger, _, _, _, result_ingests = terminal_witness_observation
-    source = result_ingests[0]
+    ledger, _, _, _, result_acquisition_results = terminal_witness_observation
+    source = result_acquisition_results[0]
     representation = record_operator_representation(
         ledger,
         locality_identity=source.locality_identity,
@@ -346,7 +343,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     def provider(exact_command, supply):
         assert exact_command == command
         supply(
-            SuppliedSystemMaterialOccurrence(
+            SuppliedWitnessMaterialOccurrence(
                 exact_bytes=IMPLEMENTATION_FUNCTION.identity.encode("ascii"),
                 source_boundary="terminal witness implementation function reference",
                 egress=False,
@@ -356,14 +353,14 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
             zip(EXACT_MATERIAL, observations)
         ):
             supply(
-                SuppliedSystemMaterialOccurrence(
+                SuppliedWitnessMaterialOccurrence(
                     exact_bytes=exact_source,
                     source_boundary=f"terminal witness source occurrence {position}",
                     egress=False,
                 )
             )
             supply(
-                SuppliedSystemMaterialOccurrence(
+                SuppliedWitnessMaterialOccurrence(
                     exact_bytes=observation.stdout_bytes or b"",
                     source_boundary=f"terminal witness stdout occurrence {position}",
                     egress=True,
@@ -386,52 +383,52 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
-    system_locality = relation.material["destination_locality_identity"]
-    system_events = ledger.list_locality(system_locality)
-    ingests = tuple(
-        event for event in system_events if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    invocation_locality = relation.material["destination_locality_identity"]
+    witness_events = ledger.list_locality(invocation_locality)
+    acquisition_results = tuple(
+        event for event in witness_events if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     )
     measurements = tuple(
-        event for event in system_events if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+        event for event in witness_events if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
     pair_measurements = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
     )
     position_measurements = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
     )
     direct_position_measurements = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
     emissions = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == "operator.representation.emitted"
     )
     comparisons = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
     representations = tuple(
-        event for event in system_events if event.kind == REPRESENTATION_RECORDED_KIND
+        event for event in witness_events if event.kind == REPRESENTATION_RECORDED_KIND
     )
     candidates = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == REPRESENTATION_CANDIDATE_RECORDED_KIND
     )
     admissions = tuple(
         event
-        for event in system_events
+        for event in witness_events
         if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND
     )
 
@@ -451,18 +448,18 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     expected_emitted = tuple(
         observation.stdout_bytes or b"" for observation in observations
     )
-    assert tuple(event.exact_material for event in ingests) == expected_supplied
+    assert tuple(event.exact_material for event in acquisition_results) == expected_supplied
     assert tuple(
         event.material["provenance_occurrence_references"][-2:]
-        for event in ingests[2::2]
+        for event in acquisition_results[2::2]
     ) == tuple(
-        [ingests[0].identity, ingests[1 + position * 2].identity]
+        [acquisition_results[0].identity, acquisition_results[1 + position * 2].identity]
         for position in range(len(EXACT_MATERIAL))
     )
-    assert len(measurements) == len(ingests) == 5
-    assert len(direct_position_measurements) == len(ingests) == 5
+    assert len(measurements) == len(acquisition_results) == 5
+    assert len(direct_position_measurements) == len(acquisition_results) == 5
     assert len(pair_measurements) == len(EXACT_MATERIAL) * 2 == 4
-    assert len(position_measurements) == len(ingests) == 5
+    assert len(position_measurements) == len(acquisition_results) == 5
     for position, measurement in enumerate(measurements):
         assertions = assertions_of_recorded_byte_measurement(
             ledger, measurement.identity
@@ -473,8 +470,8 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
             if assertion.result == "exact_source_material_set"
         )
         assert source_set.material["dimensions"]["content"]["source_material"] == [
-            {"ingest_occurrence_identity": event.identity}
-            for event in ingests[: position + 1]
+            {"material_acquisition_occurrence_identity": event.identity}
+            for event in acquisition_results[: position + 1]
         ]
     assert tuple(event.exact_material for event in emissions) == expected_emitted
     assert emitted_material == b"".join(expected_emitted)
@@ -496,7 +493,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         assert assignment.material["later_measurement_reference"][
             "recorded_occurrence_identity"
         ] == pair_measurements[1 + position * 2].identity
-        assert assignment.material["added_occurrence_reference"] == ingests[
+        assert assignment.material["added_occurrence_reference"] == acquisition_results[
             2 + position * 2
         ].identity
         assert assignment.material[
@@ -507,7 +504,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         )
         assert assignment.material[
             "added_occurrence_provenance_references"
-        ] == ingests[2 + position * 2].material[
+        ] == acquisition_results[2 + position * 2].material[
             "provenance_occurrence_references"
         ]
         assert recorded["findings"]["conflicting_findings"]
@@ -568,7 +565,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     )
 
     standing = read_operator_locality_standing(
-        ledger, locality_identity=system_locality
+        ledger, locality_identity=invocation_locality
     )
     assert set(standing["measurement_occurrences"]) == {
         *(measurement.identity for measurement in measurements),

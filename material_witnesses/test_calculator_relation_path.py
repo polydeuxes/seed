@@ -51,7 +51,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _source_position_coordinate_reference,
@@ -164,11 +164,10 @@ def _path_comparison(ledger, path, pair_comparison):
 
 
 def _claim_path(ledger):
-    earlier_source = ingest_material(
+    earlier_source = record_witness_material_acquisition(
         ledger,
         locality_identity="calculator-claim",
         exact_bytes=EARLIER_MATERIAL,
-        source_role="system",
         source_boundary="earlier exact supplied material boundary",
     )
     earlier_declared = record_declared_measurements_from_current_standing(
@@ -176,11 +175,10 @@ def _claim_path(ledger):
         locality_identity=earlier_source.locality_identity,
     )
     earlier_pair = _pair_measurement(ledger, earlier_declared)
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity="calculator-claim",
         exact_bytes=CLAIM,
-        source_role="system",
         source_boundary="exact supplied claim boundary",
         provenance_occurrence_references=(earlier_source.identity,),
     )
@@ -198,7 +196,7 @@ def _claim_path(ledger):
     pair_comparison = _pair_comparison(ledger, earlier_pair, claim_pair)
     standing = _standing(ledger)
     coordinate = _source_position_coordinate_reference(
-        source_ingest_occurrence_identity=source.identity,
+        source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary_identity=(
             ledger.append_boundary_through_occurrence(source.identity).identity
@@ -260,7 +258,7 @@ def calculator_relation_witness():
         raw_output_stream=raw_output,
         operator_invocation_provider=invoke_operator_host,
     )
-    system_locality = next(
+    invocation_locality = next(
         event.material["destination_locality_identity"]
         for event in ledger.list()
         if event.kind == "operator.invocation_locality_recorded"
@@ -268,15 +266,15 @@ def calculator_relation_witness():
     stdout = next(
         event
         for event in ledger.list()
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
-        and event.locality_identity == system_locality
+        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        and event.locality_identity == invocation_locality
         and event.exact_material == b"4\n"
     )
     stdout_result = next(
         event
         for event in ledger.list()
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        and event.material["source_ingest_occurrence_identity"] == stdout.identity
+        and event.material["source_material_acquisition_occurrence_identity"] == stdout.identity
     )
     candidate_source_boundary = ledger.append_boundary()
     (
@@ -296,7 +294,7 @@ def calculator_relation_witness():
         "path_result": path_result,
         "path_comparison": path_comparison,
         "claim_standing": claim_standing,
-        "system_locality": system_locality,
+        "invocation_locality": invocation_locality,
         "stdout": stdout,
         "stdout_result": stdout_result,
         "candidate_source_boundary": candidate_source_boundary,
@@ -362,7 +360,7 @@ def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
     assert path_reference["source_locality_identity"] == "calculator-claim"
     assert (
         calculator_reference["source_locality_identity"]
-        == witness["system_locality"]
+        == witness["invocation_locality"]
     )
     assert witness["candidate_standing_result"].locality_identity == (
         "calculator-candidate-standing"
@@ -606,8 +604,8 @@ def test_calculator_result_preserves_its_own_occurrence_and_provenance(
     references = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
         witness["ledger"], witness["stdout_result"].identity
     )
-    system_standing = read_operator_locality_standing(
-        witness["ledger"], locality_identity=witness["system_locality"]
+    witness_standing = read_operator_locality_standing(
+        witness["ledger"], locality_identity=witness["invocation_locality"]
     )
 
     assert witness["stdout"].exact_material == b"4\n"
@@ -616,7 +614,7 @@ def test_calculator_result_preserves_its_own_occurrence_and_provenance(
         (reference.exact_pair, reference.first_position, reference.second_position)
         for reference in references
     ) == ((b"4\n", 0, 1),)
-    assert witness["stdout_result"].identity in system_standing[
+    assert witness["stdout_result"].identity in witness_standing[
         "measurement_occurrences"
     ]
     assert b"4\n" in witness["raw_output"]
@@ -651,7 +649,7 @@ def test_no_current_act_compares_recorded_distinction_with_calculator_result(
     ].identity
     assert witness["stdout"].identity not in json.dumps(reading, sort_keys=True)
     assert all(
-        event.locality_identity != witness["system_locality"]
+        event.locality_identity != witness["invocation_locality"]
         for event in witness["ledger"].list()
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
     )
@@ -668,11 +666,10 @@ def test_two_assertion_movements_construct_one_locality_without_a_relation(
         comparison_result_occurrence_identity=witness["path_comparison"].identity,
         destination_locality=destination,
     )
-    ingest_material(
+    record_witness_material_acquisition(
         ledger,
         locality_identity="unrelated-locality",
         exact_bytes=b"unrelated",
-        source_role="test source",
         source_boundary="between two Assertion movements",
     )
     calculator_position = (
@@ -855,11 +852,10 @@ def test_two_assertion_movement_coordinates_replay_after_restart(tmp_path):
     _claim_source, _path_result, path_comparison, _claim_standing = _claim_path(
         ledger
     )
-    calculator_source = ingest_material(
+    calculator_source = record_witness_material_acquisition(
         ledger,
         locality_identity="calculator-result",
         exact_bytes=b"4\n",
-        source_role="system",
         source_boundary="exact calculator result boundary",
     )
     calculator_declared = record_declared_measurements_from_current_standing(

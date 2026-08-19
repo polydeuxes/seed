@@ -1,7 +1,7 @@
 """Carry exact Witness Grammar bytes through one external JSON result boundary.
 
 The external function occurrence remains Witness Material.  Its exact stdout
-enters Seed only through a later Ingest Act and then becomes exact material for
+enters Seed only through a later material acquisition Act and then becomes exact material for
 one Seed-native byte Measurement.  Neither road establishes JSON structure,
 word positions, or relation Standing.
 """
@@ -17,10 +17,10 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import (
-    MATERIAL_INGEST_OCCURRED_KIND,
-    ingest_material,
-    read_exact_ingest_result,
+from seed_runtime.material_acquire import (
+    WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+    record_witness_material_acquisition,
+    read_exact_material_acquisition_result,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 
@@ -57,14 +57,13 @@ EXTERNAL_JSON_KNOWN_LOSS = (
 def witness_grammar_external_json_observation():
     ledger = EventLedger()
     exact_source = WITNESS_GRAMMAR.read_bytes()
-    source = ingest_material(
+    source = record_witness_material_acquisition(
         ledger,
         locality_identity=SOURCE_LOCALITY,
         exact_bytes=exact_source,
-        source_role="Witness Grammar material",
         source_boundary="exact Witness Grammar file bytes",
     )
-    source_reference = ingest_result_reference(ledger, source.identity)
+    source_reference = material_acquisition_result_reference(ledger, source.identity)
 
     before_external_invocation = ledger.append_boundary()
     invocation = reference_occurrences_across(
@@ -85,11 +84,10 @@ def witness_grammar_external_json_observation():
     ):
         pytest.fail("external JSON witness did not return exact result material")
 
-    result = ingest_material(
+    result = record_witness_material_acquisition(
         ledger,
         locality_identity=RESULT_LOCALITY,
         exact_bytes=invocation.stdout_bytes,
-        source_role="external JSON result material",
         source_boundary="external JSON stdout occurrence 0",
         known_loss=EXTERNAL_JSON_KNOWN_LOSS,
         provenance_occurrence_references=(source.identity,),
@@ -123,7 +121,7 @@ def witness_grammar_external_json_observation():
     }
 
 
-def test_exact_witness_grammar_ingest_result_reaches_the_external_json_function(
+def test_exact_witness_grammar_acquisition_result_reaches_the_external_json_function(
     witness_grammar_external_json_observation,
 ):
     observation = witness_grammar_external_json_observation
@@ -131,7 +129,7 @@ def test_exact_witness_grammar_ingest_result_reaches_the_external_json_function(
     source_reference = observation["source_reference"]
     invocation = observation["invocation"]
 
-    assert read_exact_ingest_result(
+    assert read_exact_material_acquisition_result(
         observation["ledger"], source.identity
     ) == source
     assert source_reference.recorded_occurrence_identity == source.identity
@@ -163,8 +161,8 @@ def test_external_json_output_enters_seed_only_as_exact_provenanced_material(
     invocation = observation["invocation"]
     result = observation["result"]
 
-    assert result.kind == MATERIAL_INGEST_OCCURRED_KIND
-    assert read_exact_ingest_result(ledger, result.identity) == result
+    assert result.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+    assert read_exact_material_acquisition_result(ledger, result.identity) == result
     assert result.exact_material == invocation.stdout_bytes
     assert result.material["provenance_occurrence_references"] == [
         source.identity
@@ -178,7 +176,7 @@ def test_external_json_output_enters_seed_only_as_exact_provenanced_material(
     assert "external_invocation_occurrence_identity" not in result.material
 
 
-def test_seed_native_byte_measurement_reads_only_the_external_output_ingest_result(
+def test_seed_native_byte_measurement_reads_only_the_external_output_acquisition_result(
     witness_grammar_external_json_observation,
 ):
     observation = witness_grammar_external_json_observation
@@ -209,7 +207,7 @@ def test_seed_native_position_measurement_records_every_external_output_byte_pai
     )
 
     assert measurement.locality_identity == RESULT_LOCALITY
-    assert measurement.material["source_ingest_occurrence_identity"] == (
+    assert measurement.material["source_material_acquisition_occurrence_identity"] == (
         result.identity
     )
     assert measurement.material["assertions"]["occurrences"] == max(

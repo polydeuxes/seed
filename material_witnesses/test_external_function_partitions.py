@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 from material_witnesses.audio_ladder import occurrence_material
 
@@ -23,27 +23,26 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 
 
 def _source_references(exact_material: tuple[bytes, ...], *, boundary: str):
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
+    acquisition_results = tuple(
+        record_witness_material_acquisition(
             ledger,
             locality_identity=f"{boundary}-source",
             exact_bytes=material,
-            source_role="operator supplied material",
             source_boundary=f"{boundary}-source-{position}",
         )
         for position, material in enumerate(exact_material)
     )
     references = tuple(
-        ingest_result_reference(ledger, occurrence.identity) for occurrence in ingests
+        material_acquisition_result_reference(ledger, occurrence.identity) for occurrence in acquisition_results
     )
-    return ledger, ingests, references
+    return ledger, acquisition_results, references
 
 
 BASH_FUNCTIONS = (

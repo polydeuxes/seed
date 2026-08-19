@@ -13,7 +13,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
-    ingest_result_reference,
+    material_acquisition_result_reference,
     reference_occurrences_across,
 )
 
@@ -41,17 +41,16 @@ def game_protocol_witness_observation():
 
     ledger = EventLedger()
     sources = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="game-protocol-material-witness-source",
             exact_bytes=material,
-            source_role="operator supplied material",
             source_boundary=f"game protocol source occurrence {position}",
         )
         for position, material in enumerate(EXACT_MATERIAL)
     )
     references = tuple(
-        ingest_result_reference(ledger, source.identity) for source in sources
+        material_acquisition_result_reference(ledger, source.identity) for source in sources
     )
     function = MaterialImplementationFunction(
         identity="material-witness-game-protocol-0",
@@ -66,11 +65,10 @@ def game_protocol_witness_observation():
         material_byte_count_limit=1048576,
     )[0]
     results = tuple(
-        ingest_material(
+        record_witness_material_acquisition(
             ledger,
             locality_identity="game-protocol-material-witness-result",
             exact_bytes=invocation.stdout_bytes or b"",
-            source_role="system",
             source_boundary=f"external game stdout occurrence {position}",
             provenance_occurrence_references=(sources[position].identity,),
         )
