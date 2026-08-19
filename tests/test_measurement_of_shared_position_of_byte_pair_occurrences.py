@@ -1364,8 +1364,9 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
         first.assertion_identity,
         second.recorded_occurrence_identity,
         second.assertion_identity,
-        None,
+        standing,
     )
+    independently_read_call = (*expected_call[:-1], None)
 
     measurement_act = record_shared_position_measurement_act_evidence(
         ledger,
@@ -1378,16 +1379,27 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
         ledger,
         measurement_act_evidence_event_identity=measurement_act.identity,
     )
-    assert calls == [expected_call] * 2
+    assert calls == [expected_call, independently_read_call]
 
     get_shared_position_measurement_act_evidence(ledger, measurement_act.identity)
-    assert calls == [expected_call] * 3
+    assert calls == [expected_call, independently_read_call, independently_read_call]
 
     get_recorded_shared_position_measurement(ledger, result.identity)
-    assert calls == [expected_call] * 4
+    assert calls == [
+        expected_call,
+        independently_read_call,
+        independently_read_call,
+        independently_read_call,
+    ]
 
     get_recorded_shared_position_measurement(ledger, result.identity)
-    assert calls == [expected_call] * 5
+    assert calls == [
+        expected_call,
+        independently_read_call,
+        independently_read_call,
+        independently_read_call,
+        independently_read_call,
+    ]
 
 
 def test_corrupted_shared_position_yield_relations_are_refused():

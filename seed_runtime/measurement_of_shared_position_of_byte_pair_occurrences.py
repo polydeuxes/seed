@@ -923,6 +923,7 @@ def record_shared_position_responsibility_assignment(
         first_assertion_identity=first_assertion_identity,
         second_result_occurrence_identity=second_result_occurrence_identity,
         second_assertion_identity=second_assertion_identity,
+        prior_standing=locality_standing,
     )
     required = tuple(
         dict.fromkeys(
@@ -1117,7 +1118,11 @@ def record_shared_position_applicability_act_evidence(
     assignment_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment, inputs = _read_assignment(ledger, assignment_event_identity)
+    assignment, inputs = _read_assignment(
+        ledger,
+        assignment_event_identity,
+        prior_standing=locality_standing,
+    )
     boundary = _require_standing(
         ledger,
         inputs=inputs,
@@ -1141,6 +1146,7 @@ def _read_applicability_act(
     event_identity: str,
     *,
     assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, SharedPairPositionInputs]:
     event = ledger.get(
         _identity(event_identity, "shared-position Applicability requires Act Evidence")
@@ -1157,7 +1163,11 @@ def _read_applicability_act(
         raise SharedPairPositionError("Applicability Act carries no assignment")
     assignment_identity = assignment_reference.get("recorded_occurrence_identity")
     if assignment_reading is None:
-        assignment_reading = _read_assignment(ledger, assignment_identity)
+        assignment_reading = _read_assignment(
+            ledger,
+            assignment_identity,
+            prior_standing=prior_standing,
+        )
     assignment, inputs = assignment_reading
     boundary = event.material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
@@ -1421,6 +1431,7 @@ def _read_applicability_result(
     event_identity: str,
     *,
     assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, SharedPairPositionInputs, dict[str, Any]]:
     event = ledger.get(_identity(event_identity, "Applicability requires one result"))
     if (
@@ -1432,7 +1443,10 @@ def _read_applicability_result(
         raise SharedPairPositionError("shared-position Applicability result is corrupted")
     act_identity = event.material.get("responsible_act_evidence_identity")
     act, assignment, inputs = _read_applicability_act(
-        ledger, act_identity, assignment_reading=assignment_reading
+        ledger,
+        act_identity,
+        assignment_reading=assignment_reading,
+        prior_standing=prior_standing,
     )
     expected = _applicability_result_material(
         act=act,
@@ -1528,7 +1542,9 @@ def record_shared_position_measurement_act_evidence(
 ) -> Event:
     applicability, _act, assignment, inputs, applicability_material = (
         _read_applicability_result(
-            ledger, applicability_result_event_identity
+            ledger,
+            applicability_result_event_identity,
+            prior_standing=locality_standing,
         )
     )
     if applicability_material["applicability"] != "applicable":
@@ -1559,6 +1575,7 @@ def _read_measurement_act(
     event_identity: str,
     *,
     assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, SharedPairPositionInputs]:
     event = ledger.get(_identity(event_identity, "shared-position requires Act Evidence"))
     if (
@@ -1574,7 +1591,9 @@ def _read_measurement_act(
         raise SharedPairPositionError("Measurement Act carries no exact inputs")
     if assignment_reading is None:
         assignment_reading = _read_assignment(
-            ledger, assignment_reference.get("recorded_occurrence_identity")
+            ledger,
+            assignment_reference.get("recorded_occurrence_identity"),
+            prior_standing=prior_standing,
         )
     assignment, inputs = assignment_reading
     if (
@@ -1859,6 +1878,7 @@ def _read_measurement_result(
     event_identity: str,
     *,
     assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, dict[str, Any]]:
     event = ledger.get(_identity(event_identity, "shared-position requires one result"))
     if (
@@ -1873,6 +1893,7 @@ def _read_measurement_result(
         ledger,
         act_identity,
         assignment_reading=assignment_reading,
+        prior_standing=prior_standing,
     )
     expected = _measurement_result_material(
         act=act,
@@ -2251,9 +2272,16 @@ def _advance_shared_position_replay_reading(
 
 
 def get_recorded_shared_position_measurement(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    _event, carried = _read_measurement_result(ledger, event_identity)
+    _event, carried = _read_measurement_result(
+        ledger,
+        event_identity,
+        prior_standing=prior_standing,
+    )
     return json.loads(json.dumps(carried))
 
 

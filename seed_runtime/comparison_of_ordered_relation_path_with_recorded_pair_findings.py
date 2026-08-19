@@ -169,14 +169,23 @@ def _result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _path_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any]:
+def _path_input(
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    prior_standing: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     event = _event(
         ledger,
         event_identity,
         kind=SHARED_POSITION_MEASUREMENT_RESULT_KIND,
         message="comparison of ordered relation path with recorded pair findings requires one exact path Measurement result",
     )
-    material = get_recorded_shared_position_measurement(ledger, event.identity)
+    material = get_recorded_shared_position_measurement(
+        ledger,
+        event.identity,
+        prior_standing=prior_standing,
+    )
     assertions = material.get("assertions")
     if type(assertions) is not list or len(assertions) != 1:
         raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
@@ -325,8 +334,13 @@ def _inputs(
     *,
     path_result_event_identity: Any,
     comparison_result_event_identity: Any,
+    prior_standing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    path = _path_input(ledger, path_result_event_identity)
+    path = _path_input(
+        ledger,
+        path_result_event_identity,
+        prior_standing=prior_standing,
+    )
     comparison = _comparison_input(ledger, comparison_result_event_identity)
     if path["event"].locality_identity != comparison["event"].locality_identity:
         raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact Locality")
@@ -911,6 +925,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_respo
         ledger,
         path_result_event_identity=path_result_event_identity,
         comparison_result_event_identity=comparison_result_event_identity,
+        prior_standing=locality_standing,
     )
     boundary = _require_input_standing(ledger, inputs, locality_standing)
     identities = _new_identities()
@@ -924,7 +939,10 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_respo
 
 
 def _read_assignment(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -941,6 +959,23 @@ def _read_assignment(
         raise ValueError("comparison of ordered relation path with recorded pair findings assignment identities are not exact")
     path_reference = material.get("path_result_reference")
     comparison_reference = material.get("comparison_result_reference")
+    boundary = material.get("standing_boundary_identity")
+    if prior_standing is None:
+        from seed_runtime.operator_locality_standing import (
+            _operator_standing_validation_context,
+            read_operator_locality_standing_through,
+        )
+
+        prior_standing = _operator_standing_validation_context(
+            ledger,
+            locality_identity=event.locality_identity,
+        )
+        if prior_standing is None:
+            prior_standing = read_operator_locality_standing_through(
+                ledger,
+                locality_identity=event.locality_identity,
+                through_event_occurrence_identity=boundary,
+            )
     inputs = _inputs(
         ledger,
         path_result_event_identity=(
@@ -953,8 +988,8 @@ def _read_assignment(
             if type(comparison_reference) is dict
             else None
         ),
+        prior_standing=prior_standing,
     )
-    boundary = material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     expected = _assignment_material(inputs, boundary, identities)
     if (
@@ -1045,7 +1080,9 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     locality_standing: dict[str, Any],
 ) -> Event:
     assignment, _inputs_reading = _read_assignment(
-        ledger, responsibility_assignment_event_identity
+        ledger,
+        responsibility_assignment_event_identity,
+        prior_standing=locality_standing,
     )
     _require_assignment_standing(assignment, locality_standing)
     return ledger.append(
@@ -1387,7 +1424,9 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_e
     locality_standing: dict[str, Any],
 ) -> Event:
     assignment_reading = _read_assignment(
-        ledger, responsibility_assignment_event_identity
+        ledger,
+        responsibility_assignment_event_identity,
+        prior_standing=locality_standing,
     )
     assignment, _inputs_reading = assignment_reading
     applicability, _act, applicability_assignment, inputs = (
