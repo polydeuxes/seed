@@ -141,20 +141,26 @@
   },
   "words": {
     "of": {
-      "grammar_coordinate_reference": ["composite"],
-      "relation_coordinate_reference": ["composite", "relations", "of"]
+      "grammar_coordinate_references": [["composite"]],
+      "relation_coordinate_references": [["composite", "relations", "of"]]
     },
     "participation": {
-      "grammar_coordinate_reference": ["clause_coordinates", "01.Standing.E.1"],
-      "relation_coordinate_reference": ["relations", "participation"]
+      "grammar_coordinate_references": [
+        ["clause_coordinates", "01.Standing.E.1"]
+      ],
+      "relation_coordinate_references": [["relations", "participation"]]
     },
     "yield": {
-      "grammar_coordinate_reference": ["clause_coordinates", "02.Acts.A"],
-      "relation_coordinate_reference": ["relations", "yield"]
+      "grammar_coordinate_references": [
+        ["clause_coordinates", "02.Acts.A"]
+      ],
+      "relation_coordinate_references": [["relations", "yield"]]
     },
     "locality": {
-      "grammar_coordinate_reference": ["clause_coordinates", "06.Locality.A"],
-      "relation_coordinate_reference": ["relations", "locality"]
+      "grammar_coordinate_references": [
+        ["clause_coordinates", "06.Locality.A"]
+      ],
+      "relation_coordinate_references": [["relations", "locality"]]
     }
   },
   "standing": {
