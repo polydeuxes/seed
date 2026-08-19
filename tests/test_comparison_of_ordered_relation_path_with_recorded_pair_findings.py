@@ -742,6 +742,68 @@ def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     )[0].recorded_finding_reference["finding_category"] == "same_content_findings"
 
 
+def test_every_current_compare_result_exposes_every_exact_finding_reference_branch():
+    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
+    ledger, _second_source, _second_added, _second_comparison, _second_path = (
+        _inputs(ledger=ledger)
+    )
+    record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    results = record_ordered_path_pair_finding_compare_results_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    ).compare_result_occurrences
+    boundary = ledger.append_boundary()
+
+    pins = recorded_distinction_pins_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+
+    assert len(results) == 2
+    assert tuple(pin.comparison_result_occurrence_identity for pin in pins) == tuple(
+        result.identity for result in results for _ in range(4)
+    )
+    assert tuple(pin.path_role for pin in pins) == (
+        "first_path_relation",
+        "first_path_relation",
+        "second_path_relation",
+        "second_path_relation",
+    ) * len(results)
+    assert tuple(pin.pair_subject for pin in pins) == (
+        b"ab",
+        b"ab",
+        b"bc",
+        b"bc",
+    ) * len(results)
+    assert tuple(
+        pin.recorded_finding_reference["finding_category"] for pin in pins
+    ) == (
+        "same_content_findings",
+        "conflicting_findings",
+        "same_content_findings",
+        "conflicting_findings",
+    ) * len(results)
+    assert len(
+        {
+            (
+                pin.comparison_result_occurrence_identity,
+                pin.path_role,
+                pin.recorded_finding_reference["finding_category"],
+                pin.recorded_finding_reference["finding_position"],
+            )
+            for pin in pins
+        }
+    ) == len(pins)
+    assert all(pin.standing_boundary_identity == results[-1].identity for pin in pins)
+    assert ledger.append_boundary() == boundary
+
+
 def test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence():
     ledger, _earlier_source, _added, _comparison, _path = _inputs()
     boundary = ledger.append_boundary()
@@ -1021,6 +1083,7 @@ FIDELITY_SUBJECTS = {
         test_only_applicable_current_compare_results_record_participation_and_act_evidence,
         test_every_current_compare_act_records_one_separate_yield_and_result,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
+        test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
