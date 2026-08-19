@@ -112,10 +112,30 @@ Therefore the recursive Assertion road is established at this boundary:
 neutral Candidate-production inputs
 ```
 
-This does not establish that either Assertion participates in a different Act.
-`01.Source.E.1` establishes only its own Candidate-production Applicability and
-Participation. Each resulting Candidate preserves its exact source coordinates
-while what it represents remains `Unknown`.
+Commit `1d161da9` then records both exact `01.Source.E.1` Candidate productions
+over one such frozen boundary. Its 37 exact source Assertions produce:
+
+```text
+one-source Candidate Act
+→ 37 exact unary Candidates
+
+ordered-pair Candidate Act
+→ 37 × 36 = 1,332 exact ordered-pair Candidates
+```
+
+The exact Compare result and finding references each occur once in the unary
+result and in every ordered-pair position required by the second Act. With two
+such references in a 37-reference surface, 142 ordered Candidates carry at
+least one of those two exact references:
+
+```text
+2 × (2 × 37 - 2 - 1) = 142
+```
+
+This establishes their Applicability and Participation only in the two exact
+Candidate-production Acts. It does not establish that either Assertion
+participates in a different Act. Each resulting Candidate preserves its exact
+source coordinates while what it represents remains `Unknown`.
 
 ## 3. Candidate recursion does not choose the next relation
 
@@ -191,7 +211,7 @@ addressability establish none of that Participation by identity.
 Therefore:
 
 ```text
-finding Assertion is available to Candidate production        established
+finding Assertion participates in both Candidate Acts          established
 
 finding Assertion participates in another Act                 not established
 
@@ -314,6 +334,8 @@ read bundle is a constitutional finding kind                no
 
 Compare result Assertion enters later Candidate sources      established
 Compare finding Assertion enters later Candidate sources     established
+both exact Candidate-production Acts occur                   established
+each Compare Assertion enters every required Candidate role  established
 Candidate represented relation                               Unknown
 Candidate source roles become later relation roles           not established
 
