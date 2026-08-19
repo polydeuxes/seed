@@ -402,7 +402,8 @@ one exact assigned Responsibility
 ↓
 one exact implementation-function reference
 ↓
-one exact relation of that function to the Act: unresolved
+whether any relation connects the implementation-function reference to the Act:
+unresolved
 ↓
 one exact Act occurrence
 ↓
