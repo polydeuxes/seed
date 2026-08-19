@@ -22,6 +22,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
+    record_ordered_path_pair_finding_compare_assignments_from_current_standing,
     unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -411,6 +412,82 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
     )
 
 
+def test_every_current_compare_subject_records_one_serial_responsibility_assignment():
+    ledger, _first_source, _first_added, first_comparison, first_path = _inputs()
+    ledger, _second_source, _second_added, second_comparison, second_path = _inputs(
+        ledger=ledger
+    )
+    standing_before = _standing(ledger)
+    boundary_before = ledger.append_boundary()
+    assert boundary_before.identity != standing_before[
+        "through_event_occurrence_identity"
+    ]
+    expected_subjects = tuple(
+        OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=path.identity,
+            comparison_result_event_identity=comparison.identity,
+        )
+        for path in (first_path, second_path)
+        for comparison in (first_comparison, second_comparison)
+    )
+
+    recorded = (
+        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    )
+    assignments = recorded.assignment_occurrences
+
+    assert len(assignments) == len(expected_subjects) == 4
+    assert tuple(
+        OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=assignment.material[
+                "path_result_reference"
+            ]["recorded_occurrence_identity"],
+            comparison_result_event_identity=assignment.material[
+                "comparison_result_reference"
+            ]["recorded_occurrence_identity"],
+        )
+        for assignment in assignments
+    ) == expected_subjects
+    assert tuple(
+        assignment.material["standing_boundary_identity"]
+        for assignment in assignments
+    ) == (
+        standing_before["through_event_occurrence_identity"],
+        assignments[0].identity,
+        assignments[1].identity,
+        assignments[2].identity,
+    )
+    assert recorded.locality_standing["through_event_occurrence_identity"] == (
+        assignments[-1].identity
+    )
+    assert all(
+        assignment.identity
+        in recorded.locality_standing["responsibility_assignment_occurrences"]
+        for assignment in assignments
+    )
+    assert recorded.locality_standing["applicability_result_occurrences"] == (
+        standing_before["applicability_result_occurrences"]
+    )
+    assert (
+        unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+        == ()
+    )
+
+    boundary_after = ledger.append_boundary()
+    repeated = (
+        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    )
+    assert repeated.assignment_occurrences == ()
+    assert repeated.locality_standing == recorded.locality_standing
+    assert ledger.append_boundary() == boundary_after
+
+
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
@@ -728,6 +805,7 @@ FIDELITY_SUBJECTS = {
         test_unassigned_exact_compare_subject_read_records_nothing,
         test_unassigned_exact_compare_subject_read_replays_after_restart,
         test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
+        test_every_current_compare_subject_records_one_serial_responsibility_assignment,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,

@@ -90,6 +90,11 @@ class OrderedPathPairFindingCompareAssignmentSubject(NamedTuple):
     comparison_result_event_identity: str
 
 
+class RecordedOrderedPathPairFindingCompareAssignments(NamedTuple):
+    locality_standing: dict[str, Any]
+    assignment_occurrences: tuple[Event, ...]
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -390,6 +395,45 @@ def unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
                     )
                 )
     return tuple(subjects)
+
+
+def record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> RecordedOrderedPathPairFindingCompareAssignments:
+    """Record each exact Book-assigned 04.Compare.B subject serially."""
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    assignments: list[Event] = []
+    while True:
+        subjects = (
+            unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+                ledger, locality_identity=locality_identity
+            )
+        )
+        if not subjects:
+            return RecordedOrderedPathPairFindingCompareAssignments(
+                locality_standing=read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                ),
+                assignment_occurrences=tuple(assignments),
+            )
+        subject = subjects[0]
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        )
+        assignments.append(
+            record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+                ledger,
+                path_result_event_identity=subject.path_result_event_identity,
+                comparison_result_event_identity=(
+                    subject.comparison_result_event_identity
+                ),
+                locality_standing=standing,
+            )
+        )
 
 
 def _authority() -> dict[str, str]:
