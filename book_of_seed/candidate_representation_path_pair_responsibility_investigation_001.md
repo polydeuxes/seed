@@ -210,9 +210,18 @@ participants or an established relation.
 
 ### 4.6 Fidelity
 
-The Fidelity subject `candidate_source_representation_path_order` currently
-has no exact `grammar_coordinate_reference`. That is an honest unresolved
-subject under the explicit test-to-grammar-coordinate siren.
+The first report boundary found that the Fidelity subject
+`candidate_source_representation_path_order` had no exact
+`grammar_coordinate_reference`. The explicit test-to-grammar-coordinate siren
+correctly rejected that state; a Fidelity subject may not use an absent
+reference to represent unresolved constitutional debt.
+
+The follow-up removes that subject from witness grammar and declares the three
+path-projection test functions explicitly as `IMPLEMENTATION_TESTIMONY`. The
+measurement hook runs those pytest functions without recording them as
+Fidelity occurrences. Structural collection coverage requires every pytest
+function to occur exactly once in either one Fidelity subject or implementation
+testimony and rejects overlap, repetition, or an undeclared function.
 
 The existing tests establish that the implementation projection is ordered,
 exactly reproducible, and read-only. Fidelity to that implementation behavior

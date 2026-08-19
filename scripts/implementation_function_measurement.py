@@ -42,7 +42,7 @@ _enclosing_measurement_coordinates: list[
     tuple[dict[str, list[int]], int, int]
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
-_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, object]]()
+_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, object] | None]()
 _active_sql_invocations = threading.local()
 
 
@@ -646,11 +646,23 @@ def _pytest_subject(
     module: object,
     function_under_test: object,
     declared: dict[str, dict[str, object]],
-) -> dict[str, object]:
+) -> dict[str, object] | None:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
+    implementation_testimony = getattr(module, "IMPLEMENTATION_TESTIMONY", ())
+    if type(implementation_testimony) is not tuple:
+        raise TypeError("exact implementation testimony functions are required")
+    if any(not callable(function) for function in implementation_testimony):
+        raise TypeError("exact implementation testimony functions are required")
+    if len(set(implementation_testimony)) != len(implementation_testimony):
+        raise ValueError("test function entered implementation testimony twice")
+    is_implementation_testimony = function_under_test in implementation_testimony
     if uniform is not None and families is not None:
         raise ValueError("test module carries two Fidelity subject boundaries")
+    if uniform is not None and implementation_testimony:
+        raise ValueError(
+            "uniform Fidelity subject crossed implementation testimony"
+        )
     if uniform is not None:
         if type(uniform) is not str:
             raise TypeError("one exact test subject reference is required")
@@ -675,6 +687,12 @@ def _pytest_subject(
                 entered_functions.add(function)
                 if function is function_under_test:
                     matches.append(family_subject)
+        if is_implementation_testimony:
+            if matches:
+                raise ValueError(
+                    "test function crossed Fidelity and implementation testimony"
+                )
+            return None
         if len(matches) != 1:
             raise ValueError("one exact test subject is required")
         subject = matches[0]
@@ -700,8 +718,11 @@ def pytest_collection_modifyitems(
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
-    occurrence_position = len(_pytest_occurrences)
     subject_coordinates = item.stash[_PYTEST_SUBJECT_COORDINATES]
+    if subject_coordinates is None:
+        yield
+        return
+    occurrence_position = len(_pytest_occurrences)
     begin()
     (
         _,

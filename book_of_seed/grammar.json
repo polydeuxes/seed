@@ -546,7 +546,6 @@
         {"subject": "candidate_participation_distinction"},
         {"subject": "candidate_role_distinction"},
         {"subject": "candidate_source_coordinates"},
-        {"subject": "candidate_source_representation_path_order"},
         {
           "subject": "complete_candidate_standing_source_coordinates",
           "grammar_coordinate_reference": [

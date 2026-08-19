@@ -1077,11 +1077,6 @@ FIDELITY_SUBJECTS = {
         test_empty_source_surface_records_one_complete_empty_candidate_standing,
         test_complete_candidate_standing_replays_after_sqlite_restart,
     ),
-    "candidate_source_representation_path_order": (
-        test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
-        test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate,
-        test_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate_replays_after_sqlite_restart,
-    ),
     "one_source_candidate_standing_responsibility_coordinates": (
         test_machine_grammar_names_the_exact_source_assertion_coordinates_and_one_source_candidate_responsibility,
     ),
@@ -1100,3 +1095,10 @@ FIDELITY_SUBJECTS = {
         test_ordered_pair_candidate_source_roles_and_represented_relation_coordinates,
     ),
 }
+
+
+IMPLEMENTATION_TESTIMONY = (
+    test_every_ordered_pair_candidate_exposes_every_nested_representation_path,
+    test_every_ordered_candidate_exposes_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate,
+    test_every_cross_role_representation_path_pair_beside_unresolved_represented_relation_coordinate_replays_after_sqlite_restart,
+)
