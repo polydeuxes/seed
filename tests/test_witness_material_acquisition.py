@@ -261,6 +261,15 @@ def test_generic_material_result_read_refuses_a_changed_source_coordinate():
         read_exact_material_acquisition_result(ledger, occurred.identity)
 
 
+def test_material_acquisition_refuses_a_supplied_representation_coordinate():
+    ledger = EventLedger()
+    occurred = _preserve(ledger, b"exact")
+    occurred.material["represented_material"] = "supplied Representation material"
+
+    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
+        read_exact_material_acquisition_result(ledger, occurred.identity)
+
+
 def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
     ledger = EventLedger()
     act = ledger.append("unrelated.act", locality_identity="s")

@@ -39,7 +39,6 @@ def record_witness_material_acquisition(
     locality_identity: str,
     exact_bytes: bytes,
     source_boundary: str,
-    represented_material: str | None = None,
     known_loss: tuple[str, ...] = (),
     provenance_occurrence_references: tuple[str, ...] = (),
 ) -> Event:
@@ -55,8 +54,6 @@ def record_witness_material_acquisition(
             raise WitnessMaterialAcquisitionError(
                 f"Witness material acquisition requires exact {name}"
             )
-    if represented_material is not None and type(represented_material) is not str:
-        raise WitnessMaterialAcquisitionError("represented material must be exact material")
     if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
         raise WitnessMaterialAcquisitionError("known loss must be an exact tuple of material")
     if (
@@ -90,9 +87,6 @@ def record_witness_material_acquisition(
             provenance_occurrence_references
         ),
     }
-    if represented_material is not None:
-        result["represented_material"] = represented_material
-
     responsible_act_evidence = ledger.append(
         WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND,
         {
@@ -225,13 +219,6 @@ def _read_witness_material_acquisition_result(
         "unknown": unknown,
         "provenance_occurrence_references": provenance,
     }
-    represented_material = material.get("represented_material")
-    if represented_material is not None:
-        if type(represented_material) is not str:
-            raise MaterialAcquisitionError(
-                "Witness material-acquisition result is absent or corrupted"
-            )
-        result["represented_material"] = represented_material
     expected_act_evidence = {
         "material_acquisition_act_identity": material_acquisition_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
