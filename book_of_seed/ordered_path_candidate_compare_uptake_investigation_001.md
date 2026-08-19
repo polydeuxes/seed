@@ -276,20 +276,25 @@ comparison-result order second. It excludes exactly a subject whose
 Responsibility assignment is already recorded. It does not filter by the
 later Applicability finding.
 
-Thus the current forward frontier is:
+Commits `b2963448` and `3344f465` subsequently instantiate the first two
+occurrence boundaries after that read:
 
 ```text
-complete unassigned 04.Compare.B subject read
+complete unassigned 04.Compare.B subject read             established
 ↓
-serial Responsibility assignment occurrence for each exact subject
+serial Responsibility assignment occurrence per subject  established
 ↓
-Applicability for each assigned subject
+separate Applicability result per assignment               established
 ↓
-Participation and Compare only where that Applicability is established
+Participation only where Applicability is established      current frontier
+↓
+Compare result                                             later boundary
 ```
 
-The read supplies no occurrence by identity. Candidate production supplies no
-part of this exact road by identity.
+The subject read supplies no occurrence by identity. Assignment supplies no
+Applicability by identity. Applicability supplies no Participation or Compare
+by identity. Candidate production supplies no part of this exact road by
+identity.
 
 ## 8. Disposition
 
@@ -307,7 +312,10 @@ Candidate Assertion participates in 04.Compare.B              not established
 Candidate source roles become Compare input roles              not established
 Candidate completeness establishes Compare assignment         not established
 complete unassigned assignment-subject surface                 established
-Responsibility assignment occurrence for each read subject     not established by the read
+Responsibility assignment occurrence for each read subject     established separately
+Applicability result for each assignment                        established separately
+Participation for each applicable result                        not yet recorded exhaustively
+Compare result for each participating subject                   not yet recorded exhaustively
 
 04.Compare.B establishes path material                         no
 04.Compare.B establishes represented relation                  no
@@ -325,13 +333,13 @@ current Standing
         ↓
 complete unassigned assignment-subject read
         ↓
-serial exact Responsibility assignment occurrences
+serial exact Responsibility assignment occurrences             established
         ↓
-Applicability
+Applicability                                                   established
         ↓
-Participation
+Participation                                                   current frontier
         ↓
-Compare
+Compare result                                                  later boundary
 ```
 
 Candidate production independently makes the path impossible to omit from its
@@ -339,6 +347,6 @@ bounded source-pair field. It neither discovers nor assigns the exact
 `04.Compare.B` subject. Current Standing and the Book clause now provide that
 complete subject read directly.
 
-Recording and advancing each exact assignment lifecycle remains separate from
-recursive path formation and path-to-material recovery. No one supplies
-another by identity.
+Recording and advancing each remaining Participation and Compare-result
+boundary remains separate from recursive path formation and path-to-material
+recovery. No one supplies another by identity.
