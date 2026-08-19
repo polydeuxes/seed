@@ -1787,10 +1787,7 @@ def ordered_candidate_source_applicability_coordinates_beside_represented_relati
         {
             "grammar_coordinate_reference": [
                 "clause_coordinates",
-                BOOK_CLAUSE,
-                "ordered_pair_candidate_responsibility",
-                "source_Applicability",
-                "finding",
+                "01.Standing.E.1",
             ],
             "coordinate": "source_Applicability_finding",
             "material": deepcopy(finding),
@@ -1801,10 +1798,7 @@ def ordered_candidate_source_applicability_coordinates_beside_represented_relati
         {
             "grammar_coordinate_reference": [
                 "clause_coordinates",
-                BOOK_CLAUSE,
-                "ordered_pair_candidate_responsibility",
-                "source_Applicability",
-                "result_occurrence",
+                "01.Standing.E.1",
             ],
             "coordinate": "Applicability_result_occurrence",
             "material": applicability.identity,

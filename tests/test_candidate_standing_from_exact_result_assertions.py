@@ -846,9 +846,17 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     import json
 
     with open("book_of_seed/witness_grammar.json", encoding="utf-8") as source:
-        responsibility = json.load(source)["clause_coordinates"][BOOK_CLAUSE][
+        grammar = json.load(source)
+        responsibility = grammar["clause_coordinates"][BOOK_CLAUSE][
             "ordered_pair_candidate_responsibility"
         ]
+    applicability_grammar = grammar["clause_coordinates"]["01.Standing.E.1"]
+    carried_applicability_grammar = grammar
+    for part in responsibility["source_Applicability"][
+        "grammar_coordinate_reference"
+    ]:
+        carried_applicability_grammar = carried_applicability_grammar[part]
+    assert carried_applicability_grammar == applicability_grammar
     assert responsibility["candidate_source_roles"] == [
         "first_source_Assertion",
         "second_source_Assertion",
@@ -915,10 +923,7 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     assert applicability_result_occurrence == {
         "grammar_coordinate_reference": [
             "clause_coordinates",
-            BOOK_CLAUSE,
-            "ordered_pair_candidate_responsibility",
-            "source_Applicability",
-            "result_occurrence",
+            "01.Standing.E.1",
         ],
         "coordinate": "Applicability_result_occurrence",
         "material": standing["applicability_result_event_identity"],
@@ -935,16 +940,19 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
         applicability["grammar_coordinate_reference"]
         == [
             "clause_coordinates",
-            BOOK_CLAUSE,
-            "ordered_pair_candidate_responsibility",
-            "source_Applicability",
-            "finding",
+            "01.Standing.E.1",
         ]
         and applicability["coordinate"] == "source_Applicability_finding"
         and applicability["material"]["relation"] == "input_to"
         and applicability["material"]["role"] == "input"
         and applicability["material"]["finding"] == "applicable"
         and "represented_relation" not in applicability["material"]
+        for applicability in applicability_coordinates
+    )
+    assert "occurrence_identity" in applicability_grammar["coordinates"]
+    assert all(
+        applicability["material"]["finding"]
+        in applicability_grammar["Applicability_findings"]
         for applicability in applicability_coordinates
     )
     assert tuple(
@@ -1287,14 +1295,10 @@ def test_witness_grammar_names_the_exact_source_assertion_coordinates_and_one_so
         "role": "input",
     }
     assert coordinate["source_Applicability"] == {
-        "result_occurrence": "exact_Applicability_result_occurrence",
-        "finding": {
-            "source_assertion_reference": "exact_source_Assertion_reference",
-            "candidate_act_identity": "exact_Candidate_Act_identity",
-            "relation": "input_to",
-            "role": "input",
-            "material": "applicable",
-        },
+        "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Standing.E.1",
+        ]
     }
     assert coordinate["source_Participation"] == {
         "subject_reference": "exact_source_Assertion",
@@ -1328,14 +1332,10 @@ def test_witness_grammar_names_the_exact_ordered_pair_candidate_responsibility()
         "role": "input",
     }
     assert coordinate["source_Applicability"] == {
-        "result_occurrence": "exact_Applicability_result_occurrence",
-        "finding": {
-            "source_assertion_reference": "exact_source_Assertion_reference",
-            "candidate_act_identity": "exact_Candidate_Act_identity",
-            "relation": "input_to",
-            "role": "input",
-            "material": "applicable",
-        },
+        "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Standing.E.1",
+        ]
     }
     assert coordinate["source_Participation"] == {
         "subject_reference": "exact_source_Assertion",

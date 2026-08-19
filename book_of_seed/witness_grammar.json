@@ -1417,14 +1417,10 @@
           "role": "input"
         },
         "source_Applicability": {
-          "result_occurrence": "exact_Applicability_result_occurrence",
-          "finding": {
-            "source_assertion_reference": "exact_source_Assertion_reference",
-            "candidate_act_identity": "exact_Candidate_Act_identity",
-            "relation": "input_to",
-            "role": "input",
-            "material": "applicable"
-          }
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Standing.E.1"
+          ]
         },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",
@@ -1452,14 +1448,10 @@
           "role": "input"
         },
         "source_Applicability": {
-          "result_occurrence": "exact_Applicability_result_occurrence",
-          "finding": {
-            "source_assertion_reference": "exact_source_Assertion_reference",
-            "candidate_act_identity": "exact_Candidate_Act_identity",
-            "relation": "input_to",
-            "role": "input",
-            "material": "applicable"
-          }
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Standing.E.1"
+          ]
         },
         "source_Participation": {
           "subject_reference": "exact_source_Assertion",
