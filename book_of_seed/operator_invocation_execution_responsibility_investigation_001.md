@@ -42,6 +42,19 @@ supplied output Ingest
 Book material is primary orientation. Witness Grammar, runtime, scripts,
 tests, material-witness documentation, and history are testimony.
 
+`Execution` is investigation language for the external implementation
+mechanics observed at this boundary. It does not name an active Book kind,
+Responsibility kind, Act kind, occurrence kind, result kind, or Standing:
+
+```text
+external implementation mechanics
+!= constitutional Execution kind
+```
+
+The exact constitutional question is whether current material establishes any
+Responsibility for one external implementation-function occurrence and its
+result.
+
 ## 1. The operator road owns one Locality Act exactly
 
 Active `06.Locality.D` assigns this Seed one bounded Responsibility when
@@ -271,8 +284,10 @@ Authority for that exact invocation only. In the same clause, the assigned
 Responsibility and exact Act are bounded to establishing the new Locality and
 its direct Locality relation.
 
-The Authority coordinate therefore supports that exact assignment and Act.
-It does not by identity establish:
+Source Locality Standing supports the assignment through its exact Evidence,
+Authority, Scope, and preserved limits. Operator Authority is one coordinate
+carried within that exact assignment physiology. Authority is not the support
+relation by identity, and its presence does not by identity establish:
 
 ```text
 another Responsibility
@@ -500,8 +515,10 @@ exact parser-output result                          unestablished in Seed
 ```
 
 An external provider can already carry the source reference and exact output
-material together. The Seed-native vacancy belongs to the occurrence that
-owes that output as its exact result.
+material together. If Seed bears a Responsibility for that external
+implementation-function occurrence, its physiology requires one exact
+occurrence whose Yield establishes that output as its exact result. Whether
+current material establishes such a Responsibility remains unresolved.
 
 ## 11. Disposition
 
