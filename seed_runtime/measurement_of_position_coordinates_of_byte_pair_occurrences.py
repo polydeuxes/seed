@@ -80,6 +80,30 @@ class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
         )
 
 
+class PositionCoordinateMeasurementAssignmentSubjectReading(NamedTuple):
+    """Exact current subject coordinates read before any assignment record.
+
+    This family-local read preserves the coordinates required by
+    ``01.Source.D``.  Presence in this read establishes no Responsibility
+    assignment, Applicability, Act, or Standing.
+    """
+
+    source_ingest_occurrence_identity: str
+    source_result_identity: str
+    source_locality_identity: str
+    source_completeness_boundary_identity: str
+    standing_through_event_occurrence_identity: str
+    standing_append_boundary_identity: str
+    responsible_act_evidence_identity: str
+    evidence_of_yield_relation_identity: str
+    source_role: str
+    source_boundary: str
+    exact_material: bytes
+    known_loss: tuple[str, ...]
+    unknown: tuple[str, ...]
+    provenance_occurrence_references: tuple[str, ...]
+
+
 class ReferenceToRecordedPositionOfBytePairOccurrence(
     NamedTuple
 ):
@@ -127,6 +151,174 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
             exact_material=self.exact_pair[1:],
         )
 
+
+def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
+    if type(value) is not list or any(type(item) is not str for item in value):
+        raise ValueError(f"exact Ingest assignment subject has malformed {coordinate}")
+    return tuple(value)
+
+
+def _position_coordinate_measurement_assignment_subjects_from_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    *,
+    locality_identity: str,
+) -> tuple[PositionCoordinateMeasurementAssignmentSubjectReading, ...]:
+    if (
+        not isinstance(ledger, EventLedger)
+        or type(locality_identity) is not str
+        or not locality_identity
+        or type(locality_standing) is not dict
+        or locality_standing.get("locality_identity") != locality_identity
+        or type(locality_standing.get("ingest_occurrences")) is not list
+        or type(
+            locality_standing.get("responsibility_assignment_occurrences")
+        )
+        is not dict
+        or type(locality_standing.get("measurement_occurrences")) is not dict
+    ):
+        raise ValueError(
+            "position-coordinate assignment subjects require exact Locality Standing"
+        )
+    standing_through = locality_standing.get("through_event_occurrence_identity")
+    standing_event = (
+        ledger.get(standing_through)
+        if type(standing_through) is str and standing_through
+        else None
+    )
+    if (
+        standing_event is None
+        or standing_event.locality_identity != locality_identity
+        or ledger.integrity_of(standing_event.identity) == CORRUPTED
+    ):
+        raise ValueError(
+            "position-coordinate assignment subjects require one exact Standing boundary"
+        )
+    standing_boundary = ledger.append_boundary_through_occurrence(standing_through)
+
+    recorded_sources: set[str] = set()
+    for assignment_identity in locality_standing[
+        "responsibility_assignment_occurrences"
+    ]:
+        assignment = ledger.get(assignment_identity)
+        if (
+            assignment is not None
+            and assignment.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
+        ):
+            _assignment, finding = _read_assignment(ledger, assignment_identity)
+            recorded_sources.add(finding.source_ingest_occurrence_identity)
+    for result_identity in locality_standing["measurement_occurrences"]:
+        result = ledger.get(result_identity)
+        if (
+            result is not None
+            and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        ):
+            _result, finding, _assertions = _read_result(ledger, result_identity)
+            recorded_sources.add(finding.source_ingest_occurrence_identity)
+
+    subjects: list[PositionCoordinateMeasurementAssignmentSubjectReading] = []
+    for occurrence in locality_standing["ingest_occurrences"]:
+        if (
+            type(occurrence) is not dict
+            or type(occurrence.get("evidence_event_identity")) is not str
+            or not occurrence["evidence_event_identity"]
+        ):
+            raise ValueError("current Standing carries a malformed Ingest occurrence")
+        source_identity = occurrence["evidence_event_identity"]
+        if source_identity in recorded_sources:
+            continue
+        source = ledger.get(source_identity)
+        if source is None or source.locality_identity != locality_identity:
+            raise ValueError("current Standing carries an absent Ingest occurrence")
+        if not all(
+            type(source.material.get(key)) is str and source.material[key]
+            for key in (
+                "responsible_act_evidence_identity",
+                "evidence_of_yield_relation_identity",
+            )
+        ):
+            # Preserved legacy material is not an exact result of the Ingest
+            # Act/Yield physiology required by this assignment subject.
+            continue
+        source = read_exact_ingest_result(ledger, source_identity)
+        material = source.material
+        exact_coordinates = {
+            key: material.get(key)
+            for key in (
+                "result_identity",
+                "responsible_act_evidence_identity",
+                "evidence_of_yield_relation_identity",
+                "source_role",
+                "source_boundary",
+            )
+        }
+        if any(
+            type(value) is not str or not value
+            for value in exact_coordinates.values()
+        ):
+            raise ValueError("exact Ingest assignment subject coordinates are malformed")
+        subjects.append(
+            PositionCoordinateMeasurementAssignmentSubjectReading(
+                source_ingest_occurrence_identity=source.identity,
+                source_result_identity=exact_coordinates["result_identity"],
+                source_locality_identity=source.locality_identity,
+                source_completeness_boundary_identity=(
+                    ledger.append_boundary_through_occurrence(source.identity).identity
+                ),
+                standing_through_event_occurrence_identity=standing_through,
+                standing_append_boundary_identity=standing_boundary.identity,
+                responsible_act_evidence_identity=exact_coordinates[
+                    "responsible_act_evidence_identity"
+                ],
+                evidence_of_yield_relation_identity=exact_coordinates[
+                    "evidence_of_yield_relation_identity"
+                ],
+                source_role=exact_coordinates["source_role"],
+                source_boundary=exact_coordinates["source_boundary"],
+                exact_material=ingested_material_bytes(source),
+                known_loss=_exact_string_list(
+                    material.get("known_loss"), coordinate="known_loss"
+                ),
+                unknown=_exact_string_list(
+                    material.get("unknown"), coordinate="unknown"
+                ),
+                provenance_occurrence_references=_exact_string_list(
+                    material.get("provenance_occurrence_references"),
+                    coordinate="provenance_occurrence_references",
+                ),
+            )
+        )
+    return tuple(subjects)
+
+
+def read_position_coordinate_measurement_assignment_subjects_through(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    through_event_occurrence_identity: str,
+) -> tuple[PositionCoordinateMeasurementAssignmentSubjectReading, ...]:
+    """Read all exact current subjects for this declared family through B.
+
+    The result is a non-recording projection of exact source coordinates and
+    absence of this family's assignment or result through the supplied
+    boundary.  Subject presence establishes no assignment or assignment
+    Standing.
+    """
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing_through,
+    )
+
+    standing = read_operator_locality_standing_through(
+        ledger,
+        locality_identity=locality_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
+    )
+    return _position_coordinate_measurement_assignment_subjects_from_standing(
+        ledger,
+        standing,
+        locality_identity=locality_identity,
+    )
 
 def _validate_finding(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
@@ -424,6 +616,19 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             finding.source_ingest_occurrence_identity
         ),
     )
+    current_subjects = (
+        _position_coordinate_measurement_assignment_subjects_from_standing(
+            ledger,
+            locality_standing,
+            locality_identity=finding.source_locality_identity,
+        )
+    )
+    if finding.source_ingest_occurrence_identity not in {
+        subject.source_ingest_occurrence_identity for subject in current_subjects
+    }:
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact current subject"
+        )
     global_recording_boundary = ledger.append_boundary()
     identities = {
         "assignment_identity": new_identity(

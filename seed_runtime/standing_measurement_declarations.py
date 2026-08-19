@@ -31,6 +31,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
+    _position_coordinate_measurement_assignment_subjects_from_standing,
     measure_position_coordinates_of_byte_pair_occurrences,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
 )
@@ -123,48 +124,15 @@ def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:
     return tuple(identities)
 
 
-def _direct_assignment_sources(
-    ledger: EventLedger, locality_identity: str
-) -> set[str]:
-    sources: set[str] = set()
-    for assignment in ledger.iter_locality_kind(
-        locality_identity, BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
-    ):
-        source = assignment.material.get("source_ingest_occurrence_identity")
-        if (
-            ledger.integrity_of(assignment.identity) == CORRUPTED
-            or type(source) is not str
-            or not source
-        ):
-            raise ValueError("recorded direct Measurement assignment is malformed")
-        sources.add(source)
-    return sources
-
-
 def _discover_direct_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
 ) -> str | None:
-    assigned = _direct_assignment_sources(ledger, locality_identity)
-    for identity in _ingest_identities(standing):
-        if identity in assigned:
-            continue
-        event = ledger.get(identity)
-        if event is None or event.locality_identity != locality_identity:
-            raise ValueError("current Standing carries an absent Ingest occurrence")
-        if not all(
-            type(event.material.get(key)) is str and event.material[key]
-            for key in (
-                "responsible_act_evidence_identity",
-                "evidence_of_yield_relation_identity",
-            )
-        ):
-            # Older preserved material can be an Ingest occurrence without an
-            # exact Act/Yield result.  It is input to the aggregate byte road,
-            # but it is not the exact subject of this direct Measurement.
-            continue
-        read_exact_ingest_result(ledger, identity)
-        return identity
-    return None
+    subjects = _position_coordinate_measurement_assignment_subjects_from_standing(
+        ledger,
+        standing,
+        locality_identity=locality_identity,
+    )
+    return subjects[0].source_ingest_occurrence_identity if subjects else None
 
 
 def _complete_direct_measurement(

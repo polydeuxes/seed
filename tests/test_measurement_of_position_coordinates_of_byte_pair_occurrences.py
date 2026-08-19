@@ -29,6 +29,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_act_evidence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     record_byte_pair_occurrence_position_measurement_result,
+    read_position_coordinate_measurement_assignment_subjects_through,
     references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
@@ -124,6 +125,164 @@ def test_each_input_pair_has_first_and_second_exact_position_coordinates():
     assert finding.completeness_boundary == (
         ledger.append_boundary_through_occurrence(source.identity)
     )
+
+
+def test_exact_current_assignment_subjects_are_read_through_frozen_b():
+    ledger = EventLedger()
+    first = _source(ledger, b"ab", locality="s")
+    first_boundary = ledger.append_boundary_through_occurrence(first.identity)
+    second = _source(ledger, b"cd", locality="s")
+    tip_before_read = ledger.append_boundary()
+
+    through_first = read_position_coordinate_measurement_assignment_subjects_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=first.identity,
+    )
+    through_second = read_position_coordinate_measurement_assignment_subjects_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=second.identity,
+    )
+
+    assert ledger.append_boundary() == tip_before_read
+    assert tuple(
+        subject.source_ingest_occurrence_identity for subject in through_first
+    ) == (first.identity,)
+    assert tuple(
+        subject.source_ingest_occurrence_identity for subject in through_second
+    ) == (first.identity, second.identity)
+    first_subject = through_first[0]
+    assert first_subject.source_result_identity == first.material["result_identity"]
+    assert first_subject.source_locality_identity == "s"
+    assert (
+        first_subject.source_completeness_boundary_identity
+        == first_boundary.identity
+    )
+    assert first_subject.standing_through_event_occurrence_identity == first.identity
+    assert first_subject.standing_append_boundary_identity == first_boundary.identity
+    assert first_subject.responsible_act_evidence_identity == first.material[
+        "responsible_act_evidence_identity"
+    ]
+    assert first_subject.evidence_of_yield_relation_identity == first.material[
+        "evidence_of_yield_relation_identity"
+    ]
+    assert first_subject.source_role == "exact supplied material"
+    assert first_subject.source_boundary == "exact supplied material boundary"
+    assert first_subject.exact_material == b"ab"
+    assert first_subject.known_loss == ()
+    assert first_subject.unknown == ("represented_relation", "source_relation")
+    assert first_subject.provenance_occurrence_references == ()
+
+
+def test_later_assignment_does_not_change_an_earlier_subject_read():
+    ledger = EventLedger()
+    first = _source(ledger, b"ab", locality="s")
+    second = _source(ledger, b"cd", locality="s")
+    through_sources = read_position_coordinate_measurement_assignment_subjects_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=second.identity,
+    )
+    assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        source_ingest_occurrence_identity=first.identity,
+        locality_standing=_standing(ledger, "s"),
+    )
+    tip_after_assignment = ledger.append_boundary()
+
+    same_earlier_read = (
+        read_position_coordinate_measurement_assignment_subjects_through(
+            ledger,
+            locality_identity="s",
+            through_event_occurrence_identity=second.identity,
+        )
+    )
+    through_assignment = (
+        read_position_coordinate_measurement_assignment_subjects_through(
+            ledger,
+            locality_identity="s",
+            through_event_occurrence_identity=assignment.identity,
+        )
+    )
+
+    assert ledger.append_boundary() == tip_after_assignment
+    assert same_earlier_read == through_sources
+    assert tuple(
+        subject.source_ingest_occurrence_identity for subject in through_assignment
+    ) == (second.identity,)
+
+
+def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded():
+    ledger = EventLedger()
+    source = _source(ledger, locality="s")
+    record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        source_ingest_occurrence_identity=source.identity,
+        locality_standing=_standing(ledger, "s"),
+    )
+    boundary = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="one exact current subject"):
+        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+            ledger,
+            source_ingest_occurrence_identity=source.identity,
+            locality_standing=_standing(ledger, "s"),
+        )
+
+    assert ledger.append_boundary() == boundary
+
+
+def test_assignment_subject_read_does_not_promote_legacy_ingest_material():
+    ledger = EventLedger()
+    legacy = ledger.append(
+        "material.ingest.occurred",
+        {
+            "dimensions": {"identity": "legacy", "authority": "unestablished"},
+            "source_role": "operator",
+            "unknown": [],
+        },
+        exact_material=b"legacy",
+        locality_identity="s",
+    )
+    boundary = ledger.append_boundary()
+
+    assert read_position_coordinate_measurement_assignment_subjects_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=legacy.identity,
+    ) == ()
+    assert ledger.append_boundary() == boundary
+
+
+def test_assignment_subject_read_survives_sqlite_restart(tmp_path):
+    path = tmp_path / "position-coordinate-assignment-subjects.sqlite"
+    ledger = SQLiteEventLedger(path)
+    first = _source(ledger, b"ab", locality="s")
+    second = _source(ledger, b"cd", locality="s")
+    before = read_position_coordinate_measurement_assignment_subjects_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=second.identity,
+    )
+    boundary = ledger.append_boundary()
+    second_identity = second.identity
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        after = read_position_coordinate_measurement_assignment_subjects_through(
+            reopened,
+            locality_identity="s",
+            through_event_occurrence_identity=second_identity,
+        )
+        assert after == before
+        assert reopened.append_boundary() == boundary
+        assert tuple(
+            subject.source_ingest_occurrence_identity for subject in after
+        ) == (first.identity, second.identity)
+    finally:
+        reopened.close()
 
 
 def test_same_pair_material_at_distinct_positions_remains_distinct_occurrences():
