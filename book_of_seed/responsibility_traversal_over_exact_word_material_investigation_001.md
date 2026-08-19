@@ -115,7 +115,7 @@ Book language.
 The exact Witness Grammar at this investigation boundary has SHA-256:
 
 ```text
-e4ca00f2b0a032a0f6d0785d2f72105c3481ef14abd8af815b1453bbc77bb659
+53c14e4cff6ca4880933b33263e9752d3bff34928e531a637c42075a384d7f42
 ```
 
 Structural JSON traversal, without testing a spelling pattern, finds 166 exact
@@ -190,9 +190,9 @@ grammar_coordinate_reference
 relation_coordinate_reference
 ```
 
-Commit `c85d7f38` records two additional words only where Witness Grammar
-already contains exact positive relation objects. Six exact words are now
-declared in seven coordinate pairs:
+Commits `c85d7f38` and `aed76aa8` record five additional words only where
+Witness Grammar already contains independently addressable positive relation
+objects. Nine exact words are now declared in twelve coordinate pairs:
 
 | word | grammar coordinate | relation coordinate |
 |---|---|---|
@@ -203,10 +203,15 @@ declared in seven coordinate pairs:
 | `bears` | `clause_coordinates → 01.Standing.D.2` | `clause_coordinates → 01.Standing.D.2 → Applicability_considered_with_respect_to` |
 | `bears` | `clause_coordinates → 06.Locality.B` | `clause_coordinates → 06.Locality.B → subject` |
 | `comparison` | `clause_coordinates → 01.Source.C` | `clause_coordinates → 01.Source.C → comparison` |
+| `represents` | `witness_grammar` | `witness_grammar → represented_relation` |
+| `carries` | `clause_coordinates → 01.Source.D` | `clause_coordinates → 01.Source.D → result_carries` |
+| `carries` | `clause_coordinates → 01.Standing.E.1` | `clause_coordinates → 01.Standing.E.1 → Assertion_coordinates` |
+| `carries` | `clause_coordinates → 04.Compare.B` | `clause_coordinates → 04.Compare.B → comparison_rule` |
+| `supports` | `clause_coordinates → 06.Locality.D` | `clause_coordinates → 06.Locality.D → authority` |
 
 The siren refuses an empty coordinate population, a repeated coordinate pair,
 or a missing or unresolved reference. It also compares the exact 394-word
-admission surface with the six declared words and currently reports 388 words
+admission surface with the nine declared words and currently reports 385 words
 without explicit source and relation coordinates. That failure is retained.
 No placeholder references were added to quiet it.
 
@@ -222,7 +227,10 @@ The coordinate population preserves what is already explicit. It does not
 claim that the current population is exhaustive for a word. In particular,
 the third `bears` occurrence inside the `01.Source.C` test-subject sequence is
 not silently represented by either of the two independently addressable
-`bears` coordinate pairs.
+`bears` coordinate pairs. The remaining `represents`, `carries`, and `supports`
+occurrences are likewise not absorbed by these named positions. Negative
+branches remain negative, and exact material currently stored inside an array
+is not silently identified with a named dictionary coordinate.
 
 ## Complete Responsibility interrogation of Surface A
 
