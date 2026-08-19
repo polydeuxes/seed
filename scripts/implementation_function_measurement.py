@@ -649,18 +649,18 @@ def _pytest_subject(
 ) -> dict[str, object] | None:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
-    witnesses = getattr(module, "WITNESSES", ())
-    if type(witnesses) is not tuple:
-        raise TypeError("exact Witness functions are required")
-    if any(not callable(function) for function in witnesses):
-        raise TypeError("exact Witness functions are required")
-    if len(set(witnesses)) != len(witnesses):
-        raise ValueError("test function entered Witnesses twice")
-    is_witness = function_under_test in witnesses
+    witness_material = getattr(module, "WITNESS_MATERIAL", ())
+    if type(witness_material) is not tuple:
+        raise TypeError("exact Witness Material functions are required")
+    if any(not callable(function) for function in witness_material):
+        raise TypeError("exact Witness Material functions are required")
+    if len(set(witness_material)) != len(witness_material):
+        raise ValueError("test function entered Witness Material twice")
+    is_witness_material = function_under_test in witness_material
     if uniform is not None and families is not None:
         raise ValueError("test module carries two Fidelity subject boundaries")
-    if uniform is not None and witnesses:
-        raise ValueError("uniform Fidelity subject crossed Witnesses")
+    if uniform is not None and witness_material:
+        raise ValueError("uniform Fidelity subject crossed Witness Material")
     if uniform is not None:
         if type(uniform) is not str:
             raise TypeError("one exact test subject reference is required")
@@ -685,9 +685,11 @@ def _pytest_subject(
                 entered_functions.add(function)
                 if function is function_under_test:
                     matches.append(family_subject)
-        if is_witness:
+        if is_witness_material:
             if matches:
-                raise ValueError("test function crossed Fidelity and Witnesses")
+                raise ValueError(
+                    "test function crossed Fidelity and Witness Material"
+                )
             return None
         if len(matches) != 1:
             raise ValueError("one exact test subject is required")

@@ -201,33 +201,33 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
     nonfunction_family = SimpleNamespace(
         FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": ("first",)}
     )
-    witnesses = SimpleNamespace(
+    witness_material = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESSES=(second,),
+        WITNESS_MATERIAL=(second,),
     )
-    crossed_witness = SimpleNamespace(
+    crossed_witness_material = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESSES=(first,),
+        WITNESS_MATERIAL=(first,),
     )
-    repeated_witness = SimpleNamespace(
+    repeated_witness_material = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESSES=(second, second),
+        WITNESS_MATERIAL=(second, second),
     )
-    witness_list = SimpleNamespace(
+    witness_material_list = SimpleNamespace(
         FIDELITY_SUBJECTS={
             "this_book_material_acquisition_witness": (first,),
         },
-        WITNESSES=[second],
+        WITNESS_MATERIAL=[second],
     )
-    uniform_witness = SimpleNamespace(
+    uniform_witness_material = SimpleNamespace(
         FIDELITY_SUBJECT="this_book_material_acquisition_witness",
-        WITNESSES=(second,),
+        WITNESS_MATERIAL=(second,),
     )
 
     declared = measured._fidelity_test_subjects()
@@ -255,22 +255,22 @@ def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
     with pytest.raises(TypeError, match="exact Fidelity subject functions"):
         measured._pytest_subject(nonfunction_family, first, declared)
     assert measured._pytest_subject(
-        witnesses, second, declared
+        witness_material, second, declared
     ) is None
     with pytest.raises(
         ValueError,
-        match="crossed Fidelity and Witnesses",
+        match="crossed Fidelity and Witness Material",
     ):
-        measured._pytest_subject(crossed_witness, first, declared)
-    with pytest.raises(ValueError, match="entered Witnesses twice"):
-        measured._pytest_subject(repeated_witness, second, declared)
-    with pytest.raises(TypeError, match="exact Witness functions"):
-        measured._pytest_subject(witness_list, second, declared)
+        measured._pytest_subject(crossed_witness_material, first, declared)
+    with pytest.raises(ValueError, match="entered Witness Material twice"):
+        measured._pytest_subject(repeated_witness_material, second, declared)
+    with pytest.raises(TypeError, match="exact Witness Material functions"):
+        measured._pytest_subject(witness_material_list, second, declared)
     with pytest.raises(
         ValueError,
-        match="uniform Fidelity subject crossed Witnesses",
+        match="uniform Fidelity subject crossed Witness Material",
     ):
-        measured._pytest_subject(uniform_witness, second, declared)
+        measured._pytest_subject(uniform_witness_material, second, declared)
 
 
 def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
@@ -292,8 +292,8 @@ def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
     assert valid.stash == invalid.stash == {}
 
 
-def test_witness_pytest_occurrence_is_not_measured_as_fidelity():
-    function = test_witness_pytest_occurrence_is_not_measured_as_fidelity
+def test_witness_material_pytest_occurrence_is_not_measured_as_fidelity():
+    function = test_witness_material_pytest_occurrence_is_not_measured_as_fidelity
     item = SimpleNamespace(
         module=SimpleNamespace(
             FIDELITY_SUBJECTS={
@@ -301,7 +301,7 @@ def test_witness_pytest_occurrence_is_not_measured_as_fidelity():
                     test_pytest_subject_collection_is_complete_before_any_test_occurrence,
                 ),
             },
-            WITNESSES=(function,),
+            WITNESS_MATERIAL=(function,),
         ),
         function=function,
         stash={},
@@ -437,7 +437,7 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
         }
         uniform = []
         families = []
-        witnesses = []
+        witness_material = []
         for node in tree.body:
             if not isinstance(node, ast.Assign):
                 continue
@@ -450,25 +450,29 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
                 uniform.append(node.value)
             if "FIDELITY_SUBJECTS" in assigned:
                 families.append(node.value)
-            if "WITNESSES" in assigned:
-                witnesses.append(node.value)
+            if "WITNESS_MATERIAL" in assigned:
+                witness_material.append(node.value)
 
         assert len(uniform) + len(families) == 1, path
-        assert len(witnesses) <= 1, path
-        witness_functions: list[str] = []
-        if witnesses:
-            witness_collection = witnesses[0]
-            assert isinstance(witness_collection, ast.Tuple)
-            witness_functions.extend(
+        assert len(witness_material) <= 1, path
+        witness_material_functions: list[str] = []
+        if witness_material:
+            witness_material_collection = witness_material[0]
+            assert isinstance(witness_material_collection, ast.Tuple)
+            witness_material_functions.extend(
                 element.id
-                for element in witness_collection.elts
+                for element in witness_material_collection.elts
                 if isinstance(element, ast.Name)
             )
-            assert len(witness_functions) == len(witness_collection.elts), path
-            assert len(witness_functions) == len(set(witness_functions)), path
-            assert set(witness_functions) <= test_functions, path
+            assert len(witness_material_functions) == len(
+                witness_material_collection.elts
+            ), path
+            assert len(witness_material_functions) == len(
+                set(witness_material_functions)
+            ), path
+            assert set(witness_material_functions) <= test_functions, path
         if uniform:
-            assert not witness_functions, path
+            assert not witness_material_functions, path
             value = uniform[0]
             subject = (
                 value.value
@@ -489,9 +493,11 @@ def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
             entered.extend(
                 element.id for element in value.elts if isinstance(element, ast.Name)
             )
-        assert not set(entered) & set(witness_functions), path
-        assert set(entered) | set(witness_functions) == test_functions, path
-        assert len(entered) + len(witness_functions) == len(test_functions), path
+        assert not set(entered) & set(witness_material_functions), path
+        assert set(entered) | set(witness_material_functions) == test_functions, path
+        assert len(entered) + len(witness_material_functions) == len(
+            test_functions
+        ), path
 
     declared = measured._fidelity_test_subjects()
     assert set(declared) == subjects
@@ -530,7 +536,7 @@ FIDELITY_SUBJECTS = {
     ),
     "fidelity_witness_occurrence": (
         test_one_pytest_occurrence_keeps_its_exact_witness_measurement,
-        test_witness_pytest_occurrence_is_not_measured_as_fidelity,
+        test_witness_material_pytest_occurrence_is_not_measured_as_fidelity,
     ),
     "fidelity_witness_subject": (
         test_pytest_subject_refuses_missing_crossed_or_unadmitted_families,
