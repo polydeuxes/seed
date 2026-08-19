@@ -226,13 +226,17 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             or type(occurrence.get("result_occurrence_identity")) is not str
             or not occurrence["result_occurrence_identity"]
         ):
-            raise ValueError("current Standing carries a malformed material acquisition occurrence")
+            raise ValueError(
+                "bounded Locality replay contains a malformed material acquisition result"
+            )
         source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
             continue
         source = ledger.get(source_identity)
         if source is None or source.locality_identity != locality_identity:
-            raise ValueError("current Standing carries an absent material acquisition occurrence")
+            raise ValueError(
+                "bounded Locality replay contains an absent material acquisition result"
+            )
         if not all(
             type(source.material.get(key)) is str and source.material[key]
             for key in (
@@ -306,7 +310,7 @@ def read_unassigned_position_coordinate_measurement_acquisition_results_through(
 ) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
     """Read exact unassigned material acquisition results for this Measurement through B.
 
-    The non-recording projection establishes neither an exact Locality
+    The non-recording read establishes neither an exact Locality
     relation nor that any returned source is a subject of this Measurement's
     Responsibility assignment.
     """
