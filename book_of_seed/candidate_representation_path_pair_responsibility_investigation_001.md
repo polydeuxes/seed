@@ -217,11 +217,11 @@ correctly rejected that state; a Fidelity subject may not use an absent
 reference to represent unresolved constitutional debt.
 
 The follow-up removes that subject from witness grammar and declares the three
-path-projection test functions explicitly as `IMPLEMENTATION_TESTIMONY`. The
-measurement hook runs those pytest functions without recording them as
-Fidelity occurrences. Structural collection coverage requires every pytest
-function to occur exactly once in either one Fidelity subject or implementation
-testimony and rejects overlap, repetition, or an undeclared function.
+path-projection test functions explicitly as `WITNESSES`. The measurement hook
+runs those pytest functions without recording them as Fidelity occurrences.
+Structural collection coverage requires every pytest function to occur exactly
+once in either one Fidelity subject or `WITNESSES` and rejects overlap,
+repetition, or an undeclared function.
 
 The existing tests establish that the implementation projection is ordered,
 exactly reproducible, and read-only. Fidelity to that implementation behavior
@@ -317,8 +317,8 @@ No current active clause supplies that physiology.
 
 The current path-pair helper is retained as a deterministic, non-mutating read
 projection over exact already-recovered material. It is useful implementation
-testimony that no serialized path pairing is hidden by a developer-selected
-read.
+testimony, carried by explicit Witnesses, that no serialized path pairing is
+hidden by a developer-selected read.
 
 It is not currently a Candidate Act result, Candidate completeness debt,
 Measurement, Compare, Representation result, or established relation surface.
@@ -326,7 +326,7 @@ Measurement, Compare, Representation result, or established relation surface.
 The smallest exact disposition is:
 
 ```text
-retain as non-mutating implementation testimony
+retain as non-mutating Witnesses
 preserve one represented_relation coordinate per Candidate
 do not give path pairs grammar-coordinate Standing
 do not make a later Responsibility depend on path-pair completeness

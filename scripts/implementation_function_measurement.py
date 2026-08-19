@@ -649,20 +649,18 @@ def _pytest_subject(
 ) -> dict[str, object] | None:
     uniform = getattr(module, "FIDELITY_SUBJECT", None)
     families = getattr(module, "FIDELITY_SUBJECTS", None)
-    implementation_testimony = getattr(module, "IMPLEMENTATION_TESTIMONY", ())
-    if type(implementation_testimony) is not tuple:
-        raise TypeError("exact implementation testimony functions are required")
-    if any(not callable(function) for function in implementation_testimony):
-        raise TypeError("exact implementation testimony functions are required")
-    if len(set(implementation_testimony)) != len(implementation_testimony):
-        raise ValueError("test function entered implementation testimony twice")
-    is_implementation_testimony = function_under_test in implementation_testimony
+    witnesses = getattr(module, "WITNESSES", ())
+    if type(witnesses) is not tuple:
+        raise TypeError("exact Witness functions are required")
+    if any(not callable(function) for function in witnesses):
+        raise TypeError("exact Witness functions are required")
+    if len(set(witnesses)) != len(witnesses):
+        raise ValueError("test function entered Witnesses twice")
+    is_witness = function_under_test in witnesses
     if uniform is not None and families is not None:
         raise ValueError("test module carries two Fidelity subject boundaries")
-    if uniform is not None and implementation_testimony:
-        raise ValueError(
-            "uniform Fidelity subject crossed implementation testimony"
-        )
+    if uniform is not None and witnesses:
+        raise ValueError("uniform Fidelity subject crossed Witnesses")
     if uniform is not None:
         if type(uniform) is not str:
             raise TypeError("one exact test subject reference is required")
@@ -687,11 +685,9 @@ def _pytest_subject(
                 entered_functions.add(function)
                 if function is function_under_test:
                     matches.append(family_subject)
-        if is_implementation_testimony:
+        if is_witness:
             if matches:
-                raise ValueError(
-                    "test function crossed Fidelity and implementation testimony"
-                )
+                raise ValueError("test function crossed Fidelity and Witnesses")
             return None
         if len(matches) != 1:
             raise ValueError("one exact test subject is required")
