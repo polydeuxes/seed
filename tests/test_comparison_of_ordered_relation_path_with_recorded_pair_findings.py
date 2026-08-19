@@ -12,6 +12,8 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
+    get_recorded_candidate_standing,
+    record_one_source_and_ordered_pair_candidate_standings,
     source_assertion_references_for_candidate_standing,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
@@ -871,6 +873,95 @@ def test_every_current_compare_result_and_finding_enter_later_candidate_source_r
     assert ledger.append_boundary() == boundary
 
 
+def test_compare_result_and_finding_enter_both_complete_later_candidate_productions():
+    ledger, _source, _added, comparison, path = _inputs()
+    _assignment, _applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
+    source_boundary = ledger.append_boundary()
+    source_references = source_assertion_references_for_candidate_standing(
+        ledger, source_append_boundary=source_boundary
+    )
+    compare_references = tuple(
+        reference
+        for reference in source_references
+        if reference["recorded_result_occurrence_identity"] == result.identity
+    )
+    assert tuple(
+        reference["assertion_coordinate"] for reference in compare_references
+    ) == ("result", "finding")
+    comparison_count_before = sum(
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        for event in ledger.list()
+    )
+
+    one_source_result, ordered_pair_result = (
+        record_one_source_and_ordered_pair_candidate_standings(
+            ledger,
+            source_append_boundary=source_boundary,
+            one_source_recording_locality_identity="ordered-path-unary-candidates",
+            ordered_pair_recording_locality_identity="ordered-path-pair-candidates",
+        )
+    )
+    one_source = get_recorded_candidate_standing(
+        ledger, one_source_result.identity
+    )
+    ordered_pair = get_recorded_candidate_standing(
+        ledger, ordered_pair_result.identity
+    )
+
+    assert tuple(
+        candidate["assertion_subject"]["source_assertion_reference"]
+        for candidate in one_source["candidate_assertions"]
+    ) == tuple(source_references)
+    assert tuple(
+        candidate["assertion_subject"]["source_assertion_reference"]
+        for candidate in one_source["candidate_assertions"]
+        if candidate["assertion_subject"]["source_assertion_reference"]
+        in compare_references
+    ) == compare_references
+
+    candidate_pairs = tuple(
+        (
+            candidate["assertion_subject"]["first_source_assertion_reference"],
+            candidate["assertion_subject"]["second_source_assertion_reference"],
+        )
+        for candidate in ordered_pair["candidate_assertions"]
+    )
+    expected_compare_pairs = tuple(
+        (first, second)
+        for first_position, first in enumerate(source_references)
+        for second_position, second in enumerate(source_references)
+        if first_position != second_position
+        and (first in compare_references or second in compare_references)
+    )
+    assert tuple(
+        pair
+        for pair in candidate_pairs
+        if pair[0] in compare_references or pair[1] in compare_references
+    ) == expected_compare_pairs
+    assert len(expected_compare_pairs) == (
+        len(compare_references)
+        * (2 * len(source_references) - len(compare_references) - 1)
+    )
+    assert all(
+        candidate["represented_relation"] == "Unknown"
+        for candidate in ordered_pair["candidate_assertions"]
+    )
+    assert one_source_result.locality_identity == "ordered-path-unary-candidates"
+    assert ordered_pair_result.locality_identity == "ordered-path-pair-candidates"
+    assert all(
+        reference["source_locality_identity"] == LOCALITY
+        for reference in compare_references
+    )
+    assert sum(
+        event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+        for event in ledger.list()
+    ) == comparison_count_before
+
+
 def test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence():
     ledger, _earlier_source, _added, _comparison, _path = _inputs()
     boundary = ledger.append_boundary()
@@ -1152,6 +1243,7 @@ FIDELITY_SUBJECTS = {
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
         test_every_current_compare_result_and_finding_enter_later_candidate_source_read,
+        test_compare_result_and_finding_enter_both_complete_later_candidate_productions,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
