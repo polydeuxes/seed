@@ -52,6 +52,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     get_recorded_shared_position_applicability,
     get_shared_position_measurement_act_evidence,
     get_recorded_shared_position_measurement,
+    ordered_relation_path_assertion_beside_input_position_assertion_coordinates,
     record_shared_position_applicability_act_evidence,
     record_shared_position_applicability_result,
     record_shared_position_measurement_act_evidence,
@@ -428,6 +429,71 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert reading["authority"] != reading["scope"]
     assert result.exact_material is None
     assert result.identity in _standing(ledger, locality)["measurement_occurrences"]
+
+
+def test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material():
+    ledger, locality, _source, first, second = _fixture()
+    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    boundary_before_read = ledger.append_boundary()
+
+    path, first_coordinates, second_coordinates = (
+        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+            ledger, result.identity
+        )
+    )
+    reading = get_recorded_shared_position_measurement(ledger, result.identity)
+
+    assert path == reading["assertions"][0]
+    assert first_coordinates == reading["first_position_assertion"]
+    assert second_coordinates == reading["second_position_assertion"]
+    assert first_coordinates["exact_pair"] == list(first.exact_pair)
+    assert second_coordinates["exact_pair"] == list(second.exact_pair)
+    assert "exact_pair" not in path
+    assert set(path["dimensions"]["content"]) == {
+        "shared_position_coordinate_reference",
+        "source_ingest_occurrence_identity",
+        "completeness_boundary_identity",
+    }
+    assert ledger.append_boundary() == boundary_before_read
+
+    first_coordinates["exact_pair"][0] = 255
+    assert (
+        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+            ledger, result.identity
+        )[1]["exact_pair"]
+        == list(first.exact_pair)
+    )
+
+
+def test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart(
+    tmp_path,
+):
+    database = tmp_path / "shared-position-input-coordinates.sqlite"
+    ledger = SQLiteEventLedger(str(database))
+    ledger, locality, _source, first, second = _fixture(ledger=ledger)
+    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    result_identity = result.identity
+    expected = (
+        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+            ledger, result_identity
+        )
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    try:
+        assert (
+            ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+                reopened, result_identity
+            )
+            == expected
+        )
+    finally:
+        reopened.close()
 
 
 def test_two_recurrent_results_share_one_exact_later_standing_read(monkeypatch):
@@ -1671,3 +1737,9 @@ FIDELITY_SUBJECTS = {
         test_structured_path_can_be_addressed_but_is_not_raw_emission_material,
     ),
 }
+
+
+WITNESS_MATERIAL_TESTS = (
+    test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
+    test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart,
+)

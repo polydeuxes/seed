@@ -2255,3 +2255,30 @@ def get_recorded_shared_position_measurement(
 ) -> dict[str, Any]:
     _event, carried = _read_measurement_result(ledger, event_identity)
     return json.loads(json.dumps(carried))
+
+
+def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+    ledger: EventLedger, event_identity: str
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Read one path Assertion beside its two input Assertion representations.
+
+    The input representations retain their exact pair and position coordinates.
+    Returning them beside the path establishes no material carried by the path.
+    """
+
+    reading = get_recorded_shared_position_measurement(ledger, event_identity)
+    assertions = reading.get("assertions")
+    first = reading.get("first_position_assertion")
+    second = reading.get("second_position_assertion")
+    if (
+        type(assertions) is not list
+        or len(assertions) != 1
+        or type(assertions[0]) is not dict
+        or assertions[0].get("result") != "ordered_relation_path"
+        or type(first) is not dict
+        or type(second) is not dict
+    ):
+        raise SharedPairPositionError(
+            "shared-position result carries no exact path and input coordinates"
+        )
+    return deepcopy(assertions[0]), deepcopy(first), deepcopy(second)
