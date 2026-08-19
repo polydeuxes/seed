@@ -12,8 +12,7 @@ create an occurrence kind, relation, Standing, or universal interaction cycle.
 
 ## Recovered current sequence
 
-For one operator invocation whose provider supplies one result selected for
-egress, current runtime records:
+For one operator invocation, current runtime records:
 
 ```text
 O1
@@ -32,25 +31,18 @@ one exact material-acquisition result supplied by this Witness
         O1
         exact invocation-Locality relation result
 
-O3-current
-one exact Representation emission occurrence
-    source: Representation of O2
-    destination: exact operator output boundary
-    exact emitted material: O2 material
 ```
 
 The append order is exact:
 
 ```text
-O1 < O2 < O3-current
+O1 < O2
 ```
 
 The identities are distinct:
 
 ```text
 O1 != O2
-O2 != O3-current
-O1 != O3-current
 ```
 
 O1 now enters the exact yielded material-acquisition result surface directly.
@@ -61,35 +53,50 @@ O2 remains a distinct acquisition.  Provider return material did not cross the
 operator input boundary and does not become O1 by byte equality, provenance, or
 chronology.
 
-O3-current remains an emission occurrence. It does not make the emitted
-material supplied by this Witness authored by this Seed.
-
-## Intended Selection and presentation pressure
-
-`O3` is one investigation position, not one emission occurrence or one fixed
-external arrangement.  At that position, Selection can address none, some, or
-all of the exact O2 material.  For example, five selected lines from a larger
-return remain a distinct bounded selection:
+The removed host branch was not warranted by the append order:
 
 ```text
-complete O2 material
-↓ Selection
-selected bounded material M'
-
-M' is carried from O2
-M' != complete O2 by identity
+this Witness supplies exact O2 material
++ a transient egress value is true
+→ host records Representation / emission
 ```
 
-Selection must preserve the exact O2 source, selected boundary, known loss,
-and whether the selection carries the complete O2 material.  Five lines cannot
-stand as the complete result merely because they are the only lines emitted.
+The transient value was neither recorded Witness testimony nor Admission,
+Applicability, Participation, a Representation Responsibility, or an emission
+Responsibility carried by this Seed. Current runtime preserves every exact O2
+material occurrence without using that value to record Representation or
+emission.
 
-Presentation can then preserve any exact selected O2 material beside distinct
-material emitted by this Seed, or preserve them through separate emissions:
+## Responsibility exhaustion and presentation pressure
+
+`O3` is one investigation position, not one emission occurrence or one fixed
+external arrangement. No selecting subject is established. The recovered
+pressure begins with every exact O2 occurrence:
+
+```text
+all exact O2 material occurrences
+↓ changed bounded surface
+exact borne Responsibilities
+↓ family-local assignment conditions
+Applicability
+↓ Participation / Acts / results
+changed bounded surface
+↓ repeated pressure
+Representation / emission Applicability, if established
+```
+
+If five lines of a larger `!ls` result eventually reach emission, their exact
+source, boundary, known loss, and completeness remain required coordinates.
+Five emitted lines do not become the complete O2 result by being the only
+material that crossed the output boundary.
+
+External presentation testimony supplies an open target shape with exact O2
+material beside distinct material emitted by this Seed, or through separate
+emissions:
 
 ```text
 O3
-├── selected return-material emission, if any
+├── bounded return-material emission, if any
 ├── Seed-authored material emission, if any
 └── later emissions at the same investigation position, if any
 ```
@@ -111,17 +118,17 @@ truth carried by this Seed
 Standing carried by this Seed
 ```
 
-Current runtime records one exact emitted Representation of O2 material at the
-O3 investigation position.  That occurrence is not O3 by identity.  It does
-not establish that Selection chose a proper part of O2, record a distinct
-Seed-authored emission, require another emission, or close the O3 population.
-Therefore:
+Current runtime records no O3 emission merely because this Witness supplied O2
+material. It also does not use supplied provenance to select an immediately
+preceding occurrence for Compare. Exact provenance remains recorded testimony;
+it establishes no later Responsibility, Applicability, Participation, Act, or
+relation by identity. Therefore:
 
 ```text
-one current O2 emission
-!= O3
-!= a complete O3 emission population
-!= Selection of a proper part of O2
+O2 occurrence
+!= O3 emission
+!= Compare subject
+!= represented relation
 ```
 
 ## Next ordinary turn
@@ -158,10 +165,12 @@ copy of O4 to stand in for this Seed's emission.
 ```text
 O1 operator material acquisition and yielded result           recorded
 O2 material acquisition supplied by this Witness              recorded
-O3 exact Witness-material Representation emission             recorded
+O3 Representation / emission population                       absent
 
-O3 Selection / presentation:
-    selected O2 boundary and completeness                     unestablished
+O3 Responsibility exhaustion / presentation:
+    exact O2 material and provenance testimony                recorded
+    Seed-borne Representation / emission Applicability         unestablished
+    bounded O2 material and completeness                      unestablished
     Seed-authored emission                                    absent
     later emission population                                 open
     exact relation, if any, between emitted surfaces          unestablished
@@ -172,7 +181,7 @@ O5 first normal response emission                             absent
 
 The next recovery must not ask emission to manufacture the missing response.
 It must first identify the exact result material and responsible occurrence,
-if any, that this Seed can lawfully carry into O5.  Selection and Presentation
-can then preserve an exact portion of O2, all of O2, none of O2, and any exact
-Seed-authored material through one or more emissions without collapsing their
-boundaries, completeness, authors, occurrences, or relations.
+if any, that this Seed can lawfully carry into O5. Every outward crossing then
+requires its own exact Representation and emission physiology without
+collapsing material boundaries, completeness, authors, occurrences, or
+relations.
