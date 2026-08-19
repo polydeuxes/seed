@@ -13,6 +13,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    OrderedPathPairFindingCompareAssignmentSubject,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
     recorded_distinction_pins_from_current_standing,
@@ -21,6 +22,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
+    unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison,
@@ -316,6 +318,97 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
     assert first_count["earlier_content"]["count"] == 2
     assert first_count["later_content"]["count"] == 3
     assert result.exact_material is None
+
+
+def test_unassigned_exact_compare_subject_read_records_nothing():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    boundary_before_read = ledger.append_boundary()
+
+    assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+        ledger, locality_identity=LOCALITY
+    ) == (
+        OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=path.identity,
+            comparison_result_event_identity=comparison.identity,
+        ),
+    )
+    assert ledger.append_boundary() == boundary_before_read
+
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+        ledger,
+        path_result_event_identity=path.identity,
+        comparison_result_event_identity=comparison.identity,
+        locality_standing=_standing(ledger),
+    )
+
+    assert (
+        unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+        == ()
+    )
+
+
+def test_unassigned_exact_compare_subject_read_replays_after_restart(tmp_path):
+    database = str(tmp_path / "ordered-path-compare-subject.sqlite")
+    ledger = SQLiteEventLedger(database)
+    ledger, _earlier_source, _added, comparison, path = _inputs(ledger=ledger)
+    expected = (
+        OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=path.identity,
+            comparison_result_event_identity=comparison.identity,
+        ),
+    )
+    assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+        ledger, locality_identity=LOCALITY
+    ) == expected
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    try:
+        assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+            reopened, locality_identity=LOCALITY
+        ) == expected
+    finally:
+        reopened.close()
+
+
+def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair():
+    ledger, _first_source, _first_added, first_comparison, first_path = _inputs()
+    ledger, _second_source, _second_added, second_comparison, second_path = _inputs(
+        ledger=ledger
+    )
+    expected = tuple(
+        OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=path.identity,
+            comparison_result_event_identity=comparison.identity,
+        )
+        for path in (first_path, second_path)
+        for comparison in (first_comparison, second_comparison)
+    )
+
+    assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+        ledger, locality_identity=LOCALITY
+    ) == expected
+
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+        ledger,
+        path_result_event_identity=first_path.identity,
+        comparison_result_event_identity=second_comparison.identity,
+        locality_standing=_standing(ledger),
+    )
+
+    assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+        ledger, locality_identity=LOCALITY
+    ) == tuple(
+        subject
+        for subject in expected
+        if subject
+        != OrderedPathPairFindingCompareAssignmentSubject(
+            path_result_event_identity=first_path.identity,
+            comparison_result_event_identity=second_comparison.identity,
+        )
+    )
 
 
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
@@ -632,6 +725,9 @@ FIDELITY_SUBJECTS = {
     ),
     "relation_required_coordinates": (
         test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
+        test_unassigned_exact_compare_subject_read_records_nothing,
+        test_unassigned_exact_compare_subject_read_replays_after_restart,
+        test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,

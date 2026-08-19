@@ -85,6 +85,11 @@ _FINDING_CATEGORIES = (
 )
 
 
+class OrderedPathPairFindingCompareAssignmentSubject(NamedTuple):
+    path_result_event_identity: str
+    comparison_result_event_identity: str
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -301,6 +306,90 @@ def _inputs(
         and path["source_occurrence_identity"]
         == comparison["added_occurrence_identity"],
     }
+
+
+def unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> tuple[OrderedPathPairFindingCompareAssignmentSubject, ...]:
+    """Read every unassigned exact 04.Compare.B subject in current Standing.
+
+    The read records no assignment, Applicability, Participation, Compare, or
+    result occurrence.
+    """
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("ordered-path Compare subjects require one EventLedger")
+    if type(locality_identity) is not str or not locality_identity:
+        raise ValueError("ordered-path Compare subjects require one exact Locality")
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    measurement_occurrences = standing.get("measurement_occurrences")
+    comparison_occurrences = standing.get("comparison_result_occurrences")
+    if (
+        type(measurement_occurrences) is not dict
+        or type(comparison_occurrences) is not dict
+    ):
+        raise ValueError(
+            "ordered-path Compare subjects require exact current Standing"
+        )
+
+    path_identities = tuple(
+        identity
+        for identity in measurement_occurrences
+        if (
+            (event := ledger.get(identity)) is not None
+            and event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
+        )
+    )
+    comparison_identities = tuple(
+        identity
+        for identity in comparison_occurrences
+        if (
+            (event := ledger.get(identity)) is not None
+            and event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+        )
+    )
+
+    assigned: set[tuple[str, str]] = set()
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ):
+        assignment, inputs = _read_assignment(ledger, occurrence.identity)
+        assigned.add(
+            (
+                inputs["path"]["event"].identity,
+                inputs["comparison"]["event"].identity,
+            )
+        )
+        if assignment.locality_identity != locality_identity:
+            raise ValueError(
+                "ordered-path Compare assignment belongs to another Locality"
+            )
+
+    subjects = []
+    for path_identity in path_identities:
+        for comparison_identity in comparison_identities:
+            inputs = _inputs(
+                ledger,
+                path_result_event_identity=path_identity,
+                comparison_result_event_identity=comparison_identity,
+            )
+            _require_input_standing(ledger, inputs, standing)
+            if (path_identity, comparison_identity) not in assigned:
+                subjects.append(
+                    OrderedPathPairFindingCompareAssignmentSubject(
+                        path_result_event_identity=path_identity,
+                        comparison_result_event_identity=comparison_identity,
+                    )
+                )
+    return tuple(subjects)
 
 
 def _authority() -> dict[str, str]:
