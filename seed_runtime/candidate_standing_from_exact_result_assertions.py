@@ -10,6 +10,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     _record_evidence_of_yield_relation,
     read_requirements_of_yield_relation,
 )
@@ -65,6 +66,7 @@ APPLICABILITY_RESULT_NAME = (
     "Applicability result for exact Candidate Standing source Assertions"
 )
 CANDIDATE_RESULT_NAME = "complete Candidate Standing result"
+CANDIDATE_RESULT_OCCURRENCE_BOUNDARY = "complete_candidate_standing"
 CANDIDATE_ASSERTION_RESPONSIBILITY = (
     "preserve this Candidate Assertion's carried Standing coordinates"
 )
@@ -1215,7 +1217,7 @@ def record_candidate_standing_result(
             }
         },
         responsibility=assignment.material["responsibility"],
-        occurrence_boundary="complete_candidate_standing",
+        occurrence_boundary=CANDIDATE_RESULT_OCCURRENCE_BOUNDARY,
         responsible_boundary="this Seed",
     )
     return ledger.append(
@@ -1247,11 +1249,20 @@ def _read_candidate_result(
             evidence_identity,
             "Candidate Standing requires exact Yield Evidence",
         )
+    evidence = _event(
+        ledger,
+        exact_evidence_identity,
+        kind=RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+        message="Candidate Standing requires exact Yield Evidence",
+    )
     if event.material != _candidate_result_material(
         act,
         assignment,
         applicability,
         evidence_identity=exact_evidence_identity,
+    ) or evidence.material.get("result_kind") != CANDIDATE_RESULT_NAME or (
+        evidence.material.get("occurrence_boundary")
+        != CANDIDATE_RESULT_OCCURRENCE_BOUNDARY
     ) or not all(
         read_requirements_of_yield_relation(
             ledger,
@@ -1878,6 +1889,50 @@ def ordered_candidate_boundaries_beside_represented_relation_coordinates(
             "candidate_result_ledger_boundary": (
                 ledger.append_boundary_through_occurrence(result.identity)
             ),
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
+def ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read exact Evidence-of-Yield-relation occurrence material beside coordinates."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    evidence = _event(
+        ledger,
+        result.material["evidence_of_yield_relation_identity"],
+        kind=RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+        message="Candidate Standing requires exact Yield Evidence",
+    )
+    return (
+        {
+            "recorded_occurrence_identity": evidence.identity,
+            "result_kind": evidence.material["result_kind"],
+            "occurrence_boundary": evidence.material["occurrence_boundary"],
         },
         _represented_relation_coordinates_from_ordered_pair_candidates(
             result, assignment

@@ -44,6 +44,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
     ordered_candidate_boundaries_beside_represented_relation_coordinates,
+    ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
@@ -447,6 +448,12 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    candidate_yield_evidence, yield_evidence_relations = (
+        ordered_candidate_evidence_of_yield_relation_occurrence_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
     _, path_source_coordinates, calculator_source_coordinates = next(
         reading
         for reading in every_exact_source_coordinate
@@ -474,6 +481,17 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
+    assert yield_evidence_relations == every_relation_coordinate
+    assert candidate_yield_evidence[
+        "recorded_occurrence_identity"
+    ] == standing["evidence_of_yield_relation_identity"]
+    assert candidate_yield_evidence["result_kind"] == (
+        "complete Candidate Standing result"
+    )
+    assert candidate_yield_evidence["occurrence_boundary"] == (
+        "complete_candidate_standing"
+    )
+    assert "represented_relation" not in candidate_yield_evidence
     assert candidate_boundaries["source_ledger_boundary"] == witness[
         "candidate_source_boundary"
     ]
