@@ -241,11 +241,16 @@ def _assert_word_coordinates_resolve(grammar):
                 "grammar_coordinate_reference",
                 "relation_coordinate_reference",
             }
-            coordinate_pair = []
-            for reference in exact_coordinate.values():
+            coordinate_pair = tuple(
+                tuple(exact_coordinate[coordinate])
+                for coordinate in (
+                    "grammar_coordinate_reference",
+                    "relation_coordinate_reference",
+                )
+            )
+            for reference in coordinate_pair:
                 assert _resolve_grammar_coordinate(grammar, reference)
-                coordinate_pair.append(tuple(reference))
-            coordinate_pairs.append(tuple(coordinate_pair))
+            coordinate_pairs.append(coordinate_pair)
         assert len(set(coordinate_pairs)) == len(coordinate_pairs)
 
 
