@@ -258,8 +258,8 @@ result Standing
 
 Therefore the missing crossing is constitutional, not mechanical.
 
-This is one bounded example of Seed physiology currently prototyped outside
-Seed runtime:
+This is one bounded external mechanical witness whose shape is testimony
+toward an unresolved Seed physiology:
 
 ```text
 external witness performs exact mechanics
