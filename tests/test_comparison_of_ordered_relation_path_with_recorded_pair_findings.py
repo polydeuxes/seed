@@ -23,6 +23,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
     record_ordered_path_pair_finding_compare_assignments_from_current_standing,
+    record_ordered_path_pair_finding_compare_applicability_from_current_standing,
     unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -488,6 +489,70 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     assert ledger.append_boundary() == boundary_after
 
 
+def test_every_current_compare_assignment_records_one_separate_applicability_result():
+    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
+    ledger, _second_source, _second_added, _second_comparison, _second_path = (
+        _inputs(ledger=ledger)
+    )
+    assignments = (
+        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        ).assignment_occurrences
+    )
+    compare_results_before = tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        )
+    )
+
+    recorded = (
+        record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    )
+    results = recorded.applicability_result_occurrences
+
+    assert len(results) == len(assignments) == 4
+    assert tuple(result.material["applicability"] for result in results) == (
+        "applicable",
+        "inapplicable",
+        "inapplicable",
+        "applicable",
+    )
+    assert tuple(
+        result.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+        for result in results
+    ) == tuple(assignment.identity for assignment in assignments)
+    assert all(
+        result.identity
+        in recorded.locality_standing["applicability_result_occurrences"]
+        for result in results
+    )
+    assert all(
+        "participation_of_input_in_compare" not in result.material
+        for result in results
+    )
+    assert tuple(
+        ledger.iter_locality_kind(
+            LOCALITY,
+            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        )
+    ) == compare_results_before
+
+    boundary_after = ledger.append_boundary()
+    repeated = (
+        record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    )
+    assert repeated.applicability_result_occurrences == ()
+    assert repeated.locality_standing == recorded.locality_standing
+    assert ledger.append_boundary() == boundary_after
+
+
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
@@ -806,6 +871,7 @@ FIDELITY_SUBJECTS = {
         test_unassigned_exact_compare_subject_read_replays_after_restart,
         test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
         test_every_current_compare_subject_records_one_serial_responsibility_assignment,
+        test_every_current_compare_assignment_records_one_separate_applicability_result,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,

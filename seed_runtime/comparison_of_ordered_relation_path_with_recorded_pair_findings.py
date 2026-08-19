@@ -95,6 +95,11 @@ class RecordedOrderedPathPairFindingCompareAssignments(NamedTuple):
     assignment_occurrences: tuple[Event, ...]
 
 
+class RecordedOrderedPathPairFindingCompareApplicability(NamedTuple):
+    locality_standing: dict[str, Any]
+    applicability_result_occurrences: tuple[Event, ...]
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -434,6 +439,93 @@ def record_ordered_path_pair_finding_compare_assignments_from_current_standing(
                 locality_standing=standing,
             )
         )
+
+
+def record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> RecordedOrderedPathPairFindingCompareApplicability:
+    """Record Applicability once for each exact current 04.Compare.B assignment."""
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    standing_assignments = standing.get("responsibility_assignment_occurrences")
+    if type(standing_assignments) is not dict:
+        raise ValueError(
+            "ordered-path Compare Applicability requires exact current Standing"
+        )
+    assignments = tuple(
+        event
+        for identity in standing_assignments
+        if (
+            (event := ledger.get(identity)) is not None
+            and event.kind
+            == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND
+        )
+    )
+    for assignment in assignments:
+        _read_assignment(ledger, assignment.identity)
+
+    acts_by_assignment: dict[str, Event] = {}
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    ):
+        act, assignment, _inputs_reading = _read_applicability_act(
+            ledger, occurrence.identity
+        )
+        if assignment.identity in acts_by_assignment:
+            raise ValueError(
+                "ordered-path Compare assignment carries repeated Applicability Evidence"
+            )
+        acts_by_assignment[assignment.identity] = act
+
+    results_by_assignment: dict[str, Event] = {}
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    ):
+        result, _act, assignment, _inputs_reading = _read_applicability_result(
+            ledger, occurrence.identity
+        )
+        if assignment.identity in results_by_assignment:
+            raise ValueError(
+                "ordered-path Compare assignment carries repeated Applicability result"
+            )
+        results_by_assignment[assignment.identity] = result
+
+    recorded: list[Event] = []
+    for assignment in assignments:
+        if assignment.identity in results_by_assignment:
+            continue
+        act = acts_by_assignment.get(assignment.identity)
+        if act is None:
+            standing = read_operator_locality_standing(
+                ledger, locality_identity=locality_identity
+            )
+            act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+                ledger,
+                responsibility_assignment_event_identity=assignment.identity,
+                locality_standing=standing,
+            )
+            acts_by_assignment[assignment.identity] = act
+        result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+            ledger,
+            responsible_act_evidence_event_identity=act.identity,
+        )
+        results_by_assignment[assignment.identity] = result
+        recorded.append(result)
+
+    return RecordedOrderedPathPairFindingCompareApplicability(
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+        applicability_result_occurrences=tuple(recorded),
+    )
 
 
 def _authority() -> dict[str, str]:
