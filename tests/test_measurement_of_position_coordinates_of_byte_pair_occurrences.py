@@ -29,7 +29,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_act_evidence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     record_byte_pair_occurrence_position_measurement_result,
-    read_position_coordinate_measurement_assignment_subjects_through,
+    read_unassigned_position_coordinate_measurement_ingests_through,
     references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
@@ -127,19 +127,19 @@ def test_each_input_pair_has_first_and_second_exact_position_coordinates():
     )
 
 
-def test_exact_current_assignment_subjects_are_read_through_frozen_b():
+def test_exact_unassigned_ingest_results_are_read_through_frozen_b():
     ledger = EventLedger()
     first = _source(ledger, b"ab", locality="s")
     first_boundary = ledger.append_boundary_through_occurrence(first.identity)
     second = _source(ledger, b"cd", locality="s")
     tip_before_read = ledger.append_boundary()
 
-    through_first = read_position_coordinate_measurement_assignment_subjects_through(
+    through_first = read_unassigned_position_coordinate_measurement_ingests_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=first.identity,
     )
-    through_second = read_position_coordinate_measurement_assignment_subjects_through(
+    through_second = read_unassigned_position_coordinate_measurement_ingests_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -152,34 +152,42 @@ def test_exact_current_assignment_subjects_are_read_through_frozen_b():
     assert tuple(
         subject.source_ingest_occurrence_identity for subject in through_second
     ) == (first.identity, second.identity)
-    first_subject = through_first[0]
-    assert first_subject.source_result_identity == first.material["result_identity"]
-    assert first_subject.source_locality_identity == "s"
+    first_source = through_first[0]
+    assert first_source.source_result_identity == first.material["result_identity"]
+    assert first_source.source_locality_identity == "s"
     assert (
-        first_subject.source_completeness_boundary_identity
+        first_source.source_completeness_boundary_identity
         == first_boundary.identity
     )
-    assert first_subject.standing_through_event_occurrence_identity == first.identity
-    assert first_subject.standing_append_boundary_identity == first_boundary.identity
-    assert first_subject.responsible_act_evidence_identity == first.material[
+    assert (
+        first_source.bounded_locality_replay_through_event_occurrence_identity
+        == first.identity
+    )
+    assert (
+        first_source.bounded_locality_replay_append_boundary_identity
+        == first_boundary.identity
+    )
+    assert first_source.responsible_act_evidence_identity == first.material[
         "responsible_act_evidence_identity"
     ]
-    assert first_subject.evidence_of_yield_relation_identity == first.material[
+    assert first_source.evidence_of_yield_relation_identity == first.material[
         "evidence_of_yield_relation_identity"
     ]
-    assert first_subject.source_role == "exact supplied material"
-    assert first_subject.source_boundary == "exact supplied material boundary"
-    assert first_subject.exact_material == b"ab"
-    assert first_subject.known_loss == ()
-    assert first_subject.unknown == ("represented_relation", "source_relation")
-    assert first_subject.provenance_occurrence_references == ()
+    assert first_source.source_role == "exact supplied material"
+    assert first_source.source_boundary == "exact supplied material boundary"
+    assert first_source.exact_material == b"ab"
+    assert first_source.known_loss == ()
+    assert first_source.unknown == ("represented_relation", "source_relation")
+    assert first_source.provenance_occurrence_references == ()
+    assert "locality_relation" not in first_source._fields
+    assert "locality_evidence" not in first_source._fields
 
 
 def test_later_assignment_does_not_change_an_earlier_subject_read():
     ledger = EventLedger()
     first = _source(ledger, b"ab", locality="s")
     second = _source(ledger, b"cd", locality="s")
-    through_sources = read_position_coordinate_measurement_assignment_subjects_through(
+    through_sources = read_unassigned_position_coordinate_measurement_ingests_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -192,14 +200,14 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     tip_after_assignment = ledger.append_boundary()
 
     same_earlier_read = (
-        read_position_coordinate_measurement_assignment_subjects_through(
+        read_unassigned_position_coordinate_measurement_ingests_through(
             ledger,
             locality_identity="s",
             through_event_occurrence_identity=second.identity,
         )
     )
     through_assignment = (
-        read_position_coordinate_measurement_assignment_subjects_through(
+        read_unassigned_position_coordinate_measurement_ingests_through(
             ledger,
             locality_identity="s",
             through_event_occurrence_identity=assignment.identity,
@@ -223,7 +231,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     )
     boundary = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="one exact current subject"):
+    with pytest.raises(ValueError, match="one exact current unassigned Ingest result"):
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
             source_ingest_occurrence_identity=source.identity,
@@ -233,7 +241,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     assert ledger.append_boundary() == boundary
 
 
-def test_assignment_subject_read_does_not_promote_legacy_ingest_material():
+def test_unassigned_ingest_read_does_not_promote_legacy_ingest_material():
     ledger = EventLedger()
     legacy = ledger.append(
         "material.ingest.occurred",
@@ -247,7 +255,7 @@ def test_assignment_subject_read_does_not_promote_legacy_ingest_material():
     )
     boundary = ledger.append_boundary()
 
-    assert read_position_coordinate_measurement_assignment_subjects_through(
+    assert read_unassigned_position_coordinate_measurement_ingests_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=legacy.identity,
@@ -255,12 +263,12 @@ def test_assignment_subject_read_does_not_promote_legacy_ingest_material():
     assert ledger.append_boundary() == boundary
 
 
-def test_assignment_subject_read_survives_sqlite_restart(tmp_path):
+def test_unassigned_ingest_read_survives_sqlite_restart(tmp_path):
     path = tmp_path / "position-coordinate-assignment-subjects.sqlite"
     ledger = SQLiteEventLedger(path)
     first = _source(ledger, b"ab", locality="s")
     second = _source(ledger, b"cd", locality="s")
-    before = read_position_coordinate_measurement_assignment_subjects_through(
+    before = read_unassigned_position_coordinate_measurement_ingests_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -271,7 +279,7 @@ def test_assignment_subject_read_survives_sqlite_restart(tmp_path):
 
     reopened = SQLiteEventLedger(path)
     try:
-        after = read_position_coordinate_measurement_assignment_subjects_through(
+        after = read_unassigned_position_coordinate_measurement_ingests_through(
             reopened,
             locality_identity="s",
             through_event_occurrence_identity=second_identity,

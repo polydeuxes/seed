@@ -31,7 +31,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
-    _position_coordinate_measurement_assignment_subjects_from_standing,
+    _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
 )
@@ -127,12 +127,12 @@ def _ingest_identities(standing: dict[str, Any]) -> tuple[str, ...]:
 def _discover_direct_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
 ) -> str | None:
-    subjects = _position_coordinate_measurement_assignment_subjects_from_standing(
+    sources = _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
         ledger,
         standing,
         locality_identity=locality_identity,
     )
-    return subjects[0].source_ingest_occurrence_identity if subjects else None
+    return sources[0].source_ingest_occurrence_identity if sources else None
 
 
 def _complete_direct_measurement(

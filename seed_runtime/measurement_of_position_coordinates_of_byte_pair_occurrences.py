@@ -80,20 +80,21 @@ class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
         )
 
 
-class PositionCoordinateMeasurementAssignmentSubjectReading(NamedTuple):
-    """Exact current subject coordinates read before any assignment record.
+class UnassignedPositionCoordinateMeasurementIngestReading(NamedTuple):
+    """Exact Ingest coordinates read before this family's assignment record.
 
-    This family-local read preserves the coordinates required by
-    ``01.Source.D``.  Presence in this read establishes no Responsibility
-    assignment, Applicability, Act, or Standing.
+    This family-local runtime projection preserves exact source coordinates
+    beside the absence of this family's assignment or result through B.  It
+    establishes no Locality relation, assignment subject relation,
+    Responsibility assignment, Applicability, Act, or Standing.
     """
 
     source_ingest_occurrence_identity: str
     source_result_identity: str
     source_locality_identity: str
     source_completeness_boundary_identity: str
-    standing_through_event_occurrence_identity: str
-    standing_append_boundary_identity: str
+    bounded_locality_replay_through_event_occurrence_identity: str
+    bounded_locality_replay_append_boundary_identity: str
     responsible_act_evidence_identity: str
     evidence_of_yield_relation_identity: str
     source_role: str
@@ -158,46 +159,48 @@ def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     return tuple(value)
 
 
-def _position_coordinate_measurement_assignment_subjects_from_standing(
+def _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    bounded_locality_replay: dict[str, Any],
     *,
     locality_identity: str,
-) -> tuple[PositionCoordinateMeasurementAssignmentSubjectReading, ...]:
+) -> tuple[UnassignedPositionCoordinateMeasurementIngestReading, ...]:
     if (
         not isinstance(ledger, EventLedger)
         or type(locality_identity) is not str
         or not locality_identity
-        or type(locality_standing) is not dict
-        or locality_standing.get("locality_identity") != locality_identity
-        or type(locality_standing.get("ingest_occurrences")) is not list
+        or type(bounded_locality_replay) is not dict
+        or bounded_locality_replay.get("locality_identity") != locality_identity
+        or type(bounded_locality_replay.get("ingest_occurrences")) is not list
         or type(
-            locality_standing.get("responsibility_assignment_occurrences")
+            bounded_locality_replay.get("responsibility_assignment_occurrences")
         )
         is not dict
-        or type(locality_standing.get("measurement_occurrences")) is not dict
+        or type(bounded_locality_replay.get("measurement_occurrences")) is not dict
     ):
         raise ValueError(
-            "position-coordinate assignment subjects require exact Locality Standing"
+            "position-coordinate source read requires exact bounded Locality replay"
         )
-    standing_through = locality_standing.get("through_event_occurrence_identity")
-    standing_event = (
-        ledger.get(standing_through)
-        if type(standing_through) is str and standing_through
+    replay_through = bounded_locality_replay.get(
+        "through_event_occurrence_identity"
+    )
+    replay_event = (
+        ledger.get(replay_through)
+        if type(replay_through) is str and replay_through
         else None
     )
     if (
-        standing_event is None
-        or standing_event.locality_identity != locality_identity
-        or ledger.integrity_of(standing_event.identity) == CORRUPTED
+        replay_event is None
+        or replay_event.locality_identity != locality_identity
+        or ledger.integrity_of(replay_event.identity) == CORRUPTED
     ):
         raise ValueError(
-            "position-coordinate assignment subjects require one exact Standing boundary"
+            "position-coordinate source read requires one exact replay boundary"
         )
-    standing_boundary = ledger.append_boundary_through_occurrence(standing_through)
+    replay_boundary = ledger.append_boundary_through_occurrence(replay_through)
 
     recorded_sources: set[str] = set()
-    for assignment_identity in locality_standing[
+    for assignment_identity in bounded_locality_replay[
         "responsibility_assignment_occurrences"
     ]:
         assignment = ledger.get(assignment_identity)
@@ -207,7 +210,7 @@ def _position_coordinate_measurement_assignment_subjects_from_standing(
         ):
             _assignment, finding = _read_assignment(ledger, assignment_identity)
             recorded_sources.add(finding.source_ingest_occurrence_identity)
-    for result_identity in locality_standing["measurement_occurrences"]:
+    for result_identity in bounded_locality_replay["measurement_occurrences"]:
         result = ledger.get(result_identity)
         if (
             result is not None
@@ -216,8 +219,8 @@ def _position_coordinate_measurement_assignment_subjects_from_standing(
             _result, finding, _assertions = _read_result(ledger, result_identity)
             recorded_sources.add(finding.source_ingest_occurrence_identity)
 
-    subjects: list[PositionCoordinateMeasurementAssignmentSubjectReading] = []
-    for occurrence in locality_standing["ingest_occurrences"]:
+    sources: list[UnassignedPositionCoordinateMeasurementIngestReading] = []
+    for occurrence in bounded_locality_replay["ingest_occurrences"]:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("evidence_event_identity")) is not str
@@ -257,16 +260,20 @@ def _position_coordinate_measurement_assignment_subjects_from_standing(
             for value in exact_coordinates.values()
         ):
             raise ValueError("exact Ingest assignment subject coordinates are malformed")
-        subjects.append(
-            PositionCoordinateMeasurementAssignmentSubjectReading(
+        sources.append(
+            UnassignedPositionCoordinateMeasurementIngestReading(
                 source_ingest_occurrence_identity=source.identity,
                 source_result_identity=exact_coordinates["result_identity"],
                 source_locality_identity=source.locality_identity,
                 source_completeness_boundary_identity=(
                     ledger.append_boundary_through_occurrence(source.identity).identity
                 ),
-                standing_through_event_occurrence_identity=standing_through,
-                standing_append_boundary_identity=standing_boundary.identity,
+                bounded_locality_replay_through_event_occurrence_identity=(
+                    replay_through
+                ),
+                bounded_locality_replay_append_boundary_identity=(
+                    replay_boundary.identity
+                ),
                 responsible_act_evidence_identity=exact_coordinates[
                     "responsible_act_evidence_identity"
                 ],
@@ -288,35 +295,34 @@ def _position_coordinate_measurement_assignment_subjects_from_standing(
                 ),
             )
         )
-    return tuple(subjects)
+    return tuple(sources)
 
 
-def read_position_coordinate_measurement_assignment_subjects_through(
+def read_unassigned_position_coordinate_measurement_ingests_through(
     ledger: EventLedger,
     *,
     locality_identity: str,
     through_event_occurrence_identity: str,
-) -> tuple[PositionCoordinateMeasurementAssignmentSubjectReading, ...]:
-    """Read all exact current subjects for this declared family through B.
+) -> tuple[UnassignedPositionCoordinateMeasurementIngestReading, ...]:
+    """Read exact unassigned Ingest results for this family through B.
 
-    The result is a non-recording projection of exact source coordinates and
-    absence of this family's assignment or result through the supplied
-    boundary.  Subject presence establishes no assignment or assignment
-    Standing.
+    The non-recording projection establishes neither an exact Locality
+    relation nor that any returned source is a subject of this Measurement's
+    Responsibility assignment.
     """
 
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing_through,
     )
 
-    standing = read_operator_locality_standing_through(
+    bounded_locality_replay = read_operator_locality_standing_through(
         ledger,
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
-    return _position_coordinate_measurement_assignment_subjects_from_standing(
+    return _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
         ledger,
-        standing,
+        bounded_locality_replay,
         locality_identity=locality_identity,
     )
 
@@ -616,18 +622,21 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             finding.source_ingest_occurrence_identity
         ),
     )
-    current_subjects = (
-        _position_coordinate_measurement_assignment_subjects_from_standing(
+    # This runtime refusal prevents malformed or already-recorded sources from
+    # crossing the public recorder.  Membership establishes neither the
+    # missing exact Locality relation nor the assignment-subject relation.
+    current_sources = (
+        _unassigned_position_coordinate_measurement_ingests_from_bounded_locality_replay(
             ledger,
             locality_standing,
             locality_identity=finding.source_locality_identity,
         )
     )
     if finding.source_ingest_occurrence_identity not in {
-        subject.source_ingest_occurrence_identity for subject in current_subjects
+        source.source_ingest_occurrence_identity for source in current_sources
     }:
         raise ValueError(
-            "byte-pair position-coordinate assignment requires one exact current subject"
+            "byte-pair position-coordinate assignment requires one exact current unassigned Ingest result"
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
