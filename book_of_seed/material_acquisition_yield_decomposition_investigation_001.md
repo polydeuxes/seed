@@ -1,8 +1,8 @@
-# Material acquisition / Ingest Responsibility investigation 001
+# Material acquisition and Yield decomposition investigation 001
 
 ## Question
 
-Curator testimony recovers the intended `Ingest` distinction as:
+Earlier implementation testimony compressed this passage under `Ingest`:
 
 ```text
 inert material
@@ -12,9 +12,8 @@ exact bounding occurrence
 material in one exact bounded position
 ```
 
-`Ingest` did not originally name acquisition by identity. What exact bounding
-distinction, if any, remains in generic Ingest after the operator-material
-acquisition road records:
+What exact coordinate does `Ingest` add after the operator-material acquisition
+road already records:
 
 ```text
 one exact operator boundary
@@ -27,9 +26,10 @@ M --locality--> this Seed
 ```
 
 This investigation compares the active material-boundary, acquisition,
-operator-Ingest, generic-Ingest, and supplied-invocation roads from their
-recorded Responsibilities and exact occurrences. It changes none of those
-roads, the declared Measurements, active Book, Witness Grammar, or Ledger.
+generic-Ingest, and supplied-invocation roads from their recorded
+Responsibilities and exact occurrences. `Ingest` is retained below when
+naming exact legacy code, event kinds, or quoted grammar. It supplies no new
+constitutional coordinate merely by naming their composite.
 
 `Inert`, `bounding occurrence`, and `bounded position` are curator orientation
 in this report. `Bounded` here does not establish truth, represented relation,
@@ -91,9 +91,9 @@ result under a source boundary, occurrence, result boundary, Scope, loss,
 Unknown, and Locality relation. O1 is not merely contact beside an independent
 Ingest crossing.
 
-### 1.3 `operator_ingest`
+### 1.3 deleted `operator_ingest`
 
-`run_operator_ingest` records no independent Responsibility, assignment, Act,
+Before deletion, `run_operator_ingest` recorded no independent Responsibility, assignment, Act,
 occurrence, Yield, or result. With an O1 reference, it:
 
 1. rereads O1 through its family reader;
@@ -102,8 +102,9 @@ occurrence, Yield, or result. With an O1 reference, it:
 3. calls generic `ingest_material` with those same coordinates; and
 4. records O1 as provenance of the new generic Ingest result.
 
-It is a runtime adapter from O1 to generic Ingest. Its function boundary does
-not establish another constitutional relation by identity.
+It was a runtime adapter from O1 to generic Ingest. Its function boundary did
+not establish another constitutional relation by identity. It is now deleted;
+O1 is the sole operator material acquisition/result occurrence.
 
 ### 1.4 `material_ingest`
 
@@ -277,7 +278,9 @@ exact_Ingest_source_set
 source_ingest_occurrence_identity
 ```
 
-The family readers call `read_exact_ingest_result`. Later position,
+The earlier family readers called `read_exact_ingest_result`. The shared read
+is now named `read_exact_material_acquisition_result`, and it enters each
+source-specific reader before admitting the result. Later position,
 shared-position, addressed-byte, comparison, Candidate, and Locality surfaces
 preserve the same source-Ingest identity.
 
@@ -335,10 +338,9 @@ material result afterward. That is direct testimony for the intended
 inert-to-bounded distinction. It does not complete the common constitutional
 Responsibility.
 
-## 6. The Ingest distinction is real; its current common physiology is incomplete
+## 6. Ingest adds no coordinate
 
-A common inert-to-bounded material grammar would have to preserve, for each
-exact source road, at least:
+The natural physiology already decomposes the apparent Ingest passage:
 
 ```text
 exact source boundary
@@ -354,8 +356,13 @@ limits and Unknown
 source-specific provenance
 ```
 
-O1 now records that shape for the operator boundary. Generic Ingest records
-the central exact occurrence/result crossing but does not record:
+No additional subject, relation, Act, occurrence, Evidence, Authority, Scope,
+Yield, result, or Standing coordinate is supplied by calling this population
+`Ingest`. The word is a compression over material acquisition, its exact Act,
+its Evidence of Yield relation, and its exact material result.
+
+O1 records that decomposed shape for the operator boundary. Generic
+`material_ingest` records part of the same shape but does not record:
 
 ```text
 Responsibility assignment       absent
@@ -367,29 +374,31 @@ source role                     caller-supplied scalar
 ```
 
 The supplied-system road contributes a distinct source boundary, destination
-Locality, and ordered provenance. Generic Ingest is the only current point
-where its externally supplied Python value becomes one exact recorded
-material result. It still uses the incomplete common physiology rather than a
-source-specific boundary Responsibility.
+Locality, and ordered provenance. Generic `material_ingest` is the only current
+point where its externally supplied Python value becomes one exact recorded
+material result. That makes the implementation mechanically necessary today;
+it does not establish an `Ingest` constitutional species.
 
-Therefore the current evidence supports neither extreme:
-
-```text
-current generic Ingest is the complete common constitutional grammar refused
-operator O1 physiology is universal for every material source    refused
-```
-
-The narrower finding is:
+Therefore:
 
 ```text
-Ingest names a real inert-to-bounded distinction
-current generic Ingest records its shared runtime event/result shape
-the complete common constitutional Responsibility remains unrecovered
+Ingest adds a coordinate beyond acquisition / Act / Yield / result   refused
+operator O1 physiology is universal for every material source        refused
+generic system acquisition physiology is complete                    refused
 ```
 
-`Ingest` is not discarded as an empty noun. The implementation error is the
-operator road performing its work twice, not the existence of the distinction.
-Its noun form still must not stand in for the missing exact source relations.
+The exact finding is:
+
+```text
+material acquisition is source-specific
+Yield relates the exact Act occurrence to its exact material result
+the exact result carries the bounded material and preserved coordinates
+`Ingest` compresses those already distinct positions
+```
+
+The implementation error was the operator road performing that work twice.
+The remaining generic system road is separate debt: its exact source-specific
+material-acquisition Responsibility remains incomplete.
 
 ## 7. Surviving distinctions
 
@@ -416,11 +425,15 @@ distinct recorded occurrence
 
 common runtime function
 != common constitutional grammar
+
+Ingest
+!= another constitutional coordinate
 ```
 
-The supplied-system distinction blocks blind deletion of generic Ingest. The
-O1/I overlap blocks treating every present Ingest occurrence as an independently
-recovered material acquisition merely because it has its own identity.
+The supplied-system distinction blocks blind deletion of the generic runtime
+road. The former O1/I overlap blocks treating every legacy Ingest event as an
+independently recovered material acquisition merely because it has its own
+identity.
 
 ## 8. Disposition
 
@@ -434,8 +447,7 @@ operator_material_acquisition / O1
     M --locality--> this Seed                             recorded/replayable
 
 operator_ingest
-    independent constitutional Responsibility            absent
-    adapter from O1 to generic Ingest                     established
+    redundant adapter and second operator result          deleted
 
 operator O1 → generic Ingest I
     same material and source boundary                     established
@@ -453,9 +465,9 @@ supplied_invocation_material
     O1-equivalent source-specific acquisition physiology  not established
 
 generic material_ingest
-    intended inert-to-bounded distinction                 recovered testimony
-    shared runtime bounding Act/Yield/result shape        established
-    complete common Ingest grammar                        not established
+    generic system runtime Act/Yield/result shape         recorded/replayable
+    source-specific acquisition Responsibility           not established
+    additional Ingest coordinate                         absent
 ```
 
 ## 9. Next bounded questions
@@ -463,32 +475,30 @@ generic material_ingest
 The operator duplicate and system distinction should be separated before any
 runtime change:
 
-1. What exact common Ingest coordinates are present in both O1 and the system
-   material boundary, without identifying their source-specific coordinates?
-2. What exact source-specific Responsibility records provider-supplied system
+1. What exact source-specific Responsibility records provider-supplied system
    material in the invocation Locality?
-3. After operator and system boundary roads independently carry their required
+2. After operator and system boundary roads independently carry their required
    source, Locality, Evidence, Authority, Scope, and provenance, what exact
    coordinate family is genuinely common?
-4. Does `01.Source.D` intend declared Measurement subjects to remain exact
-   Ingest results, or to become exact material occurrences carrying the
+3. Does `01.Source.D` intend declared Measurement subjects to remain legacy
+   `exact_Ingest_result` material, or to become exact yielded material-
+   acquisition results carrying the
    required Locality Evidence?
-5. Which later consumers require a source boundary identity, and which
+4. Which later consumers require a source boundary identity, and which
    require only the exact material occurrence and its warranted relations?
 
 Until those questions are recovered:
 
 ```text
-do not delete generic Ingest
-do not merge O1 and I histories
+do not delete the remaining generic system road
 do not make O1 universal
-do not change declared Measurement subjects
 do not move the decision into Ledger
 ```
 
-The completed audit localizes the implementation error: O1 recovered the
-operator contact by duplicating the inert-to-bounded passage instead of
-specializing the existing Ingest passage. Ordinary O1-to-I is retained by
-Ingest-specific consumers. Supplied system material still needs one
-inert-to-bounded passage and preserves exact source distinctions that current
-generic Ingest does not itself constitutionally establish.
+The completed audit localizes the implementation error and the surviving debt.
+O1 is now the sole operator acquisition and yielded material result. Shared
+consumers read exact yielded acquisition results through source-specific
+physiology rather than a bare event-kind union. Supplied system material still
+needs one source-specific acquisition road; legacy `material_ingest` currently
+records its Act, Yield, and result without adding another constitutional
+distinction named Ingest.
