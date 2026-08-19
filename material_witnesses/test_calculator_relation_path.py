@@ -40,10 +40,10 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.candidate_standing_from_exact_result_assertions import (
     boundaries_of_recorded_candidate_standing,
-    candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates,
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
+    ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
@@ -441,8 +441,8 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    act_occurrence, every_relation_coordinate = (
-        candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+    source_participations, every_relation_coordinate = (
+        ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
@@ -463,7 +463,6 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     assert len(every_exact_source_coordinate) == len(
         standing["candidate_assertions"]
     )
-    assert act_occurrence["material"] == standing["act_occurrence_identity"]
     assert tuple(
         candidate_identity
         for candidate_identity, *_coordinates in every_relation_coordinate
@@ -474,6 +473,16 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
     assert all(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
+    )
+    assert tuple(
+        participation["material"]["subject_reference"]
+        for participation in source_participations
+    ) == tuple(standing["source_assertion_references"])
+    assert all(
+        participation["material"]["act_occurrence"]
+        == standing["act_occurrence_identity"]
+        and "represented_relation" not in participation["material"]
+        for participation in source_participations
     )
     assert tuple(
         coordinate["coordinate"] for coordinate in path_source_coordinates

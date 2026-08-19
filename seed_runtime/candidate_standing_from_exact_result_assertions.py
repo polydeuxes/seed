@@ -1650,7 +1650,7 @@ def _represented_relation_coordinates_from_ordered_pair_candidates(
     return tuple(coordinates)
 
 
-def candidate_act_occurrence_beside_ordered_candidate_represented_relation_coordinates(
+def ordered_candidate_act_occurrence_beside_represented_relation_coordinates(
     ledger: EventLedger,
     *,
     candidate_standing_result_event_identity: str,
@@ -1696,6 +1696,60 @@ def candidate_act_occurrence_beside_ordered_candidate_represented_relation_coord
             "coordinate": "act_occurrence",
             "material": act_occurrence_identity,
         },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
+def ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    tuple[dict[str, Any], ...],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read every source Participation beside every represented_relation coordinate."""
+
+    result, act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    participations = tuple(
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+                "source_Participation",
+            ],
+            "coordinate": "source_Participation",
+            "material": {
+                "subject_reference": deepcopy(
+                    participation["source_assertion_reference"]
+                ),
+                "role": participation["role"],
+                "act": act.material["act"],
+                "act_occurrence": participation["act_occurrence_identity"],
+            },
+        }
+        for participation in act.material["participation"]
+    )
+    return (
+        participations,
         _represented_relation_coordinates_from_ordered_pair_candidates(
             result, assignment
         ),
