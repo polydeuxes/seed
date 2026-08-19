@@ -521,10 +521,12 @@ unnamed present-subject Responsibility: the Responsibility headings exposed the
 coordinates, while active fragments did not establish a complete
 Responsibility.
 
-### What remained unfinished
+### What the unfinished experiment was trying to add
 
 The earlier work therefore recovered much of the eventual onslaught's
-interrogation surface, but not its producer physiology. It did not establish:
+interrogation surface. Operator testimony says the unfinished experiment was
+trying to add the following shape. The shape is a proposed future road, not
+recovered physiology:
 
 ```text
 one exact bounded word surface
@@ -545,8 +547,8 @@ Nor does applying the Responsibility questions to a word classify the word as
 a relation, role, Act, or connective. The questions are discriminating
 coordinates; they are not answers.
 
-The operator testimony consequently narrows the missing road without supplying
-it:
+The operator testimony consequently orients one possible missing road without
+supplying it:
 
 ```text
 frozen exact neutral material surface
@@ -560,6 +562,18 @@ complete neutral results, with unresolved coordinates preserved
 
 Whether active material establishes that assignment remains not established.
 Whether a future exact assignment does so remains Unknown.
+
+```text
+Responsibility traversal
+!= Act that performs Responsibility traversal
+
+unresolved answers exposed by traversal
+!= neutral result kind
+```
+
+Neither `Responsibility-traversal Act` nor `neutral result` is recovered as an
+active constitutional kind or coordinate. They remain report-language
+descriptions of the unfinished experiment.
 
 ## Vacancy before an exhaustive word onslaught
 
