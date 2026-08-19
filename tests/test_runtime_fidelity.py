@@ -1002,6 +1002,7 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
                 family in name
                 for family in (
                     "LOCALITY_EVIDENCE_KIND",
+                    "LOCALITY_RELATION_OCCURRENCE_KIND",
                     "PARTICIPATION_EVIDENCE_KIND",
                     "RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND",
                 )

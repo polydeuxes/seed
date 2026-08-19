@@ -76,6 +76,8 @@ Supplied material carries an asserted exact relation from X to Y only as materia
 
 Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed a Responsibility bounded to preservation of one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
 
+When that boundary supplies exact material, the recorded material-result occurrence carries one exact Locality relation. Its first subject is that occurrence's exact material coordinate. Its second subject is this Seed. That recorded occurrence is the Locality-relation occurrence and its exact Evidence. This shared occurrence identity establishes no identity between the exact material, the material result, and the Locality relation.
+
 The material result carries exact assignment, Act, Act-occurrence, Yield, and result references. The same exact material under another occurrence establishes neither result nor occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
 
 When the boundary supplies no material, this Seed establishes no material result, Yield, or completion. Another operator material boundary occurrence requires another exact assignment and Act occurrence.

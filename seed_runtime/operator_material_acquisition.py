@@ -28,6 +28,9 @@ OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND = (
     "operator.material.acquire_act_evidenced"
 )
 OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND = "operator.material.acquire_recorded"
+OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND = (
+    "operator.material.acquire_recorded"
+)
 OPERATOR_MATERIAL_ACQUIRE_RESULT_KIND = "exact operator material boundary result"
 OPERATOR_MATERIAL_ACQUIRE_ACT = "Acquire one exact operator material boundary result"
 OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY = (
@@ -291,8 +294,13 @@ def _result_material(
     act_evidence: Event,
     *,
     boundary_material: OperatorBoundaryMaterial,
+    recorded_result_event_identity: str,
 ) -> dict[str, Any]:
     material = act_evidence.material
+    exact_material_subject = {
+        "recorded_occurrence_identity": recorded_result_event_identity,
+        "coordinate": "exact_material",
+    }
     return {
         "result_identity": material["result_boundary_identity"],
         "acquire_act_identity": material["acquire_act_identity"],
@@ -308,6 +316,13 @@ def _result_material(
         ),
         "scope": deepcopy(material["scope"]),
         "source_boundary": boundary_material.material_boundary,
+        "locality_relation": {
+            "first_subject": exact_material_subject,
+            "relation": "locality",
+            "second_subject": "this Seed",
+            "relation_occurrence_identity": recorded_result_event_identity,
+        },
+        "locality_evidence_identity": recorded_result_event_identity,
         "known_loss": list(boundary_material.known_loss),
         "authority": _authority(),
         "standing": "preserved",
@@ -340,6 +355,10 @@ def _recorded_result_material(
         ],
         "scope": result_material["scope"],
         "source_boundary": result_material["source_boundary"],
+        "locality_relation": result_material["locality_relation"],
+        "locality_evidence_identity": result_material[
+            "locality_evidence_identity"
+        ],
         "known_loss": result_material["known_loss"],
         "authority": result_material["authority"],
         "standing": result_material["standing"],
@@ -668,8 +687,11 @@ def _record_operator_material_acquire_result(
             raise OperatorMaterialAcquireError(
                 "operator material acquire Act already carries a Yield"
             )
+    recorded_result_event_identity = ledger.allocate_event_identity()
     result_material = _result_material(
-        act_evidence, boundary_material=boundary_material
+        act_evidence,
+        boundary_material=boundary_material,
+        recorded_result_event_identity=recorded_result_event_identity,
     )
     evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
@@ -685,16 +707,72 @@ def _record_operator_material_acquire_result(
         responsible_boundary="this Seed",
         result_exact_material=boundary_material.exact_bytes,
     )
-    return ledger.append(
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-        _recorded_result_material(
-            result_material,
-            responsible_act_evidence_identity=act_evidence.identity,
-            evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
-        ),
-        exact_material=boundary_material.exact_bytes,
-        locality_identity=act_evidence.locality_identity,
+    return ledger.append_many(
+        (
+            Event(
+                identity=recorded_result_event_identity,
+                kind=OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+                material=_recorded_result_material(
+                    result_material,
+                    responsible_act_evidence_identity=act_evidence.identity,
+                    evidence_of_yield_relation_identity=(
+                        evidence_of_yield_relation.identity
+                    ),
+                ),
+                exact_material=boundary_material.exact_bytes,
+                locality_identity=act_evidence.locality_identity,
+            ),
+        )
+    )[0]
+
+
+def read_operator_material_acquire_locality_relation_requirements(
+    ledger: EventLedger,
+    *,
+    recorded_result_event_identity: str,
+) -> dict[str, bool]:
+    """Read the exact material-to-this-Seed Locality relation in O1."""
+
+    result = ledger.get(recorded_result_event_identity)
+    if result is None or result.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    relation = result.material.get("locality_relation")
+    exact_material_subject = {
+        "recorded_occurrence_identity": result.identity,
+        "coordinate": "exact_material",
+    }
+    evidence = ledger.get(result.material.get("locality_evidence_identity"))
+    evidence_is_result_occurrence = bool(
+        evidence is not None
+        and evidence.identity == result.identity
+        and evidence.kind == result.kind
+        and evidence.locality_identity == result.locality_identity
+        and evidence.material == result.material
+        and evidence.exact_material == result.exact_material
     )
+    return {
+        "exact_relation": bool(
+            type(relation) is dict
+            and relation.get("first_subject") == exact_material_subject
+            and relation.get("relation") == "locality"
+            and relation.get("second_subject") == "this Seed"
+            and evidence_is_result_occurrence
+            and type(result.exact_material) is bytes
+            and bool(result.exact_material)
+        ),
+        "occurrence_witness": bool(
+            type(relation) is dict
+            and relation.get("relation_occurrence_identity") == result.identity
+        ),
+        "intact_evidence": bool(
+            evidence_is_result_occurrence
+            and ledger.integrity_of(result.identity) != CORRUPTED
+        ),
+    }
 
 
 def get_recorded_operator_material_acquire(
@@ -728,7 +806,11 @@ def get_recorded_operator_material_acquire(
         material_boundary=result.material.get("source_boundary"),
         known_loss=tuple(result.material.get("known_loss", ())),
     )
-    expected_result = _result_material(act_evidence, boundary_material=boundary)
+    expected_result = _result_material(
+        act_evidence,
+        boundary_material=boundary,
+        recorded_result_event_identity=result.identity,
+    )
     expected = _recorded_result_material(
         expected_result,
         responsible_act_evidence_identity=act_evidence.identity,
@@ -750,5 +832,15 @@ def get_recorded_operator_material_acquire(
     if not all(requirements.values()):
         raise OperatorMaterialAcquireError(
             "operator material acquire carries no exact Evidence of Yield relation"
+        )
+    locality_requirements = (
+        read_operator_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=result.identity,
+        )
+    )
+    if not all(locality_requirements.values()):
+        raise OperatorMaterialAcquireError(
+            "operator material acquire carries no exact Locality relation"
         )
     return deepcopy(result.material)

@@ -127,11 +127,13 @@ from seed_runtime.operator_representation_applicability import (
 from seed_runtime.operator_material_acquisition import (
     EVENT_KIND_RESPONSIBILITIES as ACQUIRE_EVENT_KIND_RESPONSIBILITIES,
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     record_operator_material_acquire_responsibility_assignment,
     record_operator_material_acquire_responsible_act_evidence,
     record_operator_material_acquire_result,
+    read_operator_material_acquire_locality_relation_requirements,
 )
 from seed_runtime.operator_system_locality import (
     EVENT_KIND_RESPONSIBILITIES as SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES,
@@ -1351,6 +1353,64 @@ def _operator_material_acquire_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
+def _operator_material_acquire_locality_witness(bundle: dict) -> str:
+    requirements = read_operator_material_acquire_locality_relation_requirements(
+        bundle["ledger"],
+        recorded_result_event_identity=bundle["event"].identity,
+    )
+    return EXACT if all(requirements.values()) else MISSING
+
+
+def _operator_material_acquire_locality_fidelity_findings() -> dict[str, str]:
+    exact = _operator_material_acquire_yield_witness()
+
+    relation_missing = _operator_material_acquire_yield_witness()
+    relation_missing["event"].material["locality_relation"]["relation"] = (
+        "another relation"
+    )
+
+    alternate = _operator_material_acquire_yield_witness()
+    different_occurrence = _operator_material_acquire_yield_witness()
+    different_occurrence["event"].material["locality_relation"][
+        "relation_occurrence_identity"
+    ] = alternate["event"].identity
+
+    evidence_not_intact = _operator_material_acquire_yield_witness()
+    evidence_not_intact["ledger"].mark_corrupted(
+        evidence_not_intact["event"].identity
+    )
+
+    different_relation_occurrence = _operator_material_acquire_yield_witness()
+    different_relation_occurrence["ledger"].append(
+        "unrelated.locality.fixture",
+        {
+            "first_subject": "another exact material",
+            "relation": "locality",
+            "second_subject": "another bounded subject",
+            "relation_occurrence_identity": alternate["event"].identity,
+        },
+        locality_identity=different_relation_occurrence["event"].locality_identity,
+    )
+
+    return {
+        "exact": _operator_material_acquire_locality_witness(exact),
+        "relation_missing": _operator_material_acquire_locality_witness(
+            relation_missing
+        ),
+        "different_occurrence": _operator_material_acquire_locality_witness(
+            different_occurrence
+        ),
+        "evidence_not_intact": _operator_material_acquire_locality_witness(
+            evidence_not_intact
+        ),
+        "different_relation_occurrence": (
+            _operator_material_acquire_locality_witness(
+                different_relation_occurrence
+            )
+        ),
+    }
+
+
 def _standing_boundary_reference_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality_identity = "standing-boundary-reference"
@@ -2548,6 +2608,9 @@ def _relation_occurrence_fidelity_findings() -> dict[
     )
     registered.update(_additional_relation_occurrence_fidelity_findings())
     registered[("locality", "assertion_movement")] = _locality_fidelity_findings()
+    registered[("locality", "operator_material_acquisition")] = (
+        _operator_material_acquire_locality_fidelity_findings()
+    )
     registered.update(
         {
             ("yield", boundary): {
@@ -5516,7 +5579,8 @@ def test_standing_locality_continuation_stages_keep_distinct_clause_coordinates(
 
 
 def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
-    assert _clause("01.Source.G")["no_material_boundary"] == {
+    clause = _clause("01.Source.G")
+    assert clause["no_material_boundary"] == {
         "standing_not_established": [
             {
                 "first_subject": "boundary_supplies_no_material",
@@ -5547,6 +5611,25 @@ def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     ] == "01.Source.G"
+    assert OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND == (
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    )
+    locality_relation = next(
+        coordinate
+        for coordinate in clause["responsibility"]["coordinates"]
+        if type(coordinate) is dict and coordinate.get("relation") == "locality"
+    )
+    assert locality_relation == {
+        "identity": "operator_material_to_this_Seed_Locality_relation",
+        "first_subject": {
+            "recorded_occurrence": "operator_material_result_occurrence",
+            "coordinate": "exact_material",
+        },
+        "relation": "locality",
+        "second_subject": "this_Seed",
+        "relation_occurrence": "operator_material_result_occurrence",
+        "Evidence": "operator_material_result_occurrence",
+    }
 
 
 def test_standing_boundary_reference_stages_keep_distinct_clause_coordinates():
@@ -6521,6 +6604,7 @@ LOCALITY_BOUNDARY_BY_KIND = {
 LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {
     "byte_measurement",
     "assertion_movement",
+    "operator_material_acquisition",
 }
 
 

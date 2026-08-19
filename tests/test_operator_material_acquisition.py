@@ -15,11 +15,13 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OperatorMaterialAcquireError,
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
+    read_operator_material_acquire_locality_relation_requirements,
     record_operator_material_acquire_responsibility_assignment,
     record_operator_material_acquire_responsible_act_evidence,
     record_operator_material_acquire_result,
@@ -124,6 +126,28 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
         ],
     }
     assert recorded["scope"] == assignment.material["scope"]
+    assert OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND == (
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    )
+    assert recorded["locality_relation"] == {
+        "first_subject": {
+            "recorded_occurrence_identity": result.identity,
+            "coordinate": "exact_material",
+        },
+        "relation": "locality",
+        "second_subject": "this Seed",
+        "relation_occurrence_identity": result.identity,
+    }
+    assert recorded["locality_evidence_identity"] == result.identity
+    assert recorded["result_identity"] != result.identity
+    assert read_operator_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=result.identity,
+    ) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
@@ -285,6 +309,12 @@ def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
 
     assert results[0].exact_material == results[1].exact_material
     assert results[0].identity != results[1].identity
+    assert results[0].material["locality_relation"]["first_subject"] != results[
+        1
+    ].material["locality_relation"]["first_subject"]
+    assert results[0].material["locality_relation"][
+        "relation_occurrence_identity"
+    ] != results[1].material["locality_relation"]["relation_occurrence_identity"]
     assert results[0].material["result_identity"] != results[1].material[
         "result_identity"
     ]
@@ -448,6 +478,8 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
         "source_standing_reference",
         "scope",
         "source_boundary",
+        "locality_relation",
+        "locality_evidence_identity",
         "known_loss",
         "authority",
         "standing",
@@ -470,6 +502,83 @@ def test_changed_result_coordinates_are_refused(coordinate):
 
     with pytest.raises((OperatorMaterialAcquireError, TypeError, ValueError)):
         get_recorded_operator_material_acquire(ledger, result.identity)
+
+
+@pytest.mark.parametrize(
+    ("coordinate", "changed"),
+    (
+        (
+            "first_subject",
+            {
+                "recorded_occurrence_identity": "another occurrence",
+                "coordinate": "exact_material",
+            },
+        ),
+        ("relation", "another relation"),
+        ("second_subject", "another bounded subject"),
+        ("relation_occurrence_identity", "another occurrence"),
+    ),
+)
+def test_locality_relation_refuses_each_changed_coordinate(coordinate, changed):
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+    act = _act(ledger, _assignment(ledger, standing, representation))
+    result = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    ledger.get(result.identity).material["locality_relation"][coordinate] = changed
+
+    requirements = read_operator_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=result.identity,
+    )
+
+    assert not all(requirements.values())
+    with pytest.raises(OperatorMaterialAcquireError):
+        get_recorded_operator_material_acquire(ledger, result.identity)
+
+
+def test_locality_relation_refuses_a_different_or_corrupted_evidence_occurrence(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+    act = _act(ledger, _assignment(ledger, standing, representation))
+    result = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+    result.material["locality_evidence_identity"] = act.identity
+
+    assert read_operator_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=result.identity,
+    ) == {
+        "exact_relation": False,
+        "occurrence_witness": True,
+        "intact_evidence": False,
+    }
+
+    result.material["locality_evidence_identity"] = result.identity
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == result.identity else integrity_of(identity)
+        ),
+    )
+    assert read_operator_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=result.identity,
+    ) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": False,
+    }
 
 
 def test_prior_acquire_act_carrier_must_remain_an_identity_dictionary():

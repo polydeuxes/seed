@@ -175,6 +175,19 @@
             "06.Locality.A"
           ],
           "relation_coordinate_reference": ["relations", "locality"]
+        },
+        {
+          "grammar_coordinate_reference": [
+            "clause_coordinates",
+            "01.Source.G"
+          ],
+          "relation_coordinate_reference": [
+            "clause_coordinates",
+            "01.Source.G",
+            "responsibility",
+            "coordinates",
+            7
+          ]
         }
       ]
     },
@@ -1807,7 +1820,17 @@
           "result_boundary",
           "addressed_Representation_occurrence",
           "current_Locality_Standing_boundary",
-          "Locality",
+          {
+            "identity": "operator_material_to_this_Seed_Locality_relation",
+            "first_subject": {
+              "recorded_occurrence": "operator_material_result_occurrence",
+              "coordinate": "exact_material"
+            },
+            "relation": "locality",
+            "second_subject": "this_Seed",
+            "relation_occurrence": "operator_material_result_occurrence",
+            "Evidence": "operator_material_result_occurrence"
+          },
           "Scope",
           {
             "identity": "occurrence_of_Evidence_event",
