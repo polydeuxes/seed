@@ -1844,6 +1844,47 @@ def ordered_candidate_responsibility_assignment_reference_beside_represented_rel
     )
 
 
+def ordered_candidate_boundaries_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, EventLedgerBoundary],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read distinct source/result boundaries beside represented_relation coordinates."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    return (
+        {
+            "source_ledger_boundary": _boundary(
+                ledger, assignment.material["source_ledger_boundary_identity"]
+            ),
+            "candidate_result_ledger_boundary": (
+                ledger.append_boundary_through_occurrence(result.identity)
+            ),
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
 def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,

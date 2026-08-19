@@ -43,7 +43,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
-    ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates,
+    ordered_candidate_boundaries_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
@@ -441,8 +441,8 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    assignment_reference, every_relation_coordinate = (
-        ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+    candidate_boundaries, every_relation_coordinate = (
+        ordered_candidate_boundaries_beside_represented_relation_coordinates(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
@@ -474,8 +474,21 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert assignment_reference == standing["responsibility_assignment_reference"]
-    assert "represented_relation" not in assignment_reference
+    assert candidate_boundaries["source_ledger_boundary"] == witness[
+        "candidate_source_boundary"
+    ]
+    assert candidate_boundaries["candidate_result_ledger_boundary"] == (
+        ledger.append_boundary_through_occurrence(result.identity)
+    )
+    assert (
+        candidate_boundaries["source_ledger_boundary"]
+        != candidate_boundaries["candidate_result_ledger_boundary"]
+    )
+    assert all(
+        "source_ledger_boundary" not in relation_coordinate
+        and "candidate_result_ledger_boundary" not in relation_coordinate
+        for *_sources, relation_coordinate in every_relation_coordinate
+    )
     assert tuple(
         coordinate["coordinate"] for coordinate in path_source_coordinates
     ) == tuple(

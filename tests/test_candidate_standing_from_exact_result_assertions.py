@@ -9,6 +9,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ORDERED_PAIR_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     ordered_candidate_act_occurrence_beside_represented_relation_coordinates,
+    ordered_candidate_boundaries_beside_represented_relation_coordinates,
     ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates,
     ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates,
     ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates,
@@ -730,6 +731,22 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    ingest_material(
+        ledger,
+        locality_identity="unrelated",
+        exact_bytes=b"unrelated",
+        source_role="unrelated source",
+        source_boundary="unrelated boundary",
+    )
+    expected_boundaries_and_relations = (
+        ordered_candidate_boundaries_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
+    assert expected_boundaries_and_relations[0][
+        "candidate_result_ledger_boundary"
+    ] != ledger.append_boundary()
     boundary = ledger.append_boundary()
     ledger.close()
 
@@ -750,6 +767,10 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
         reopened,
         candidate_standing_result_event_identity=result.identity,
     ) == expected_assignment_and_relations
+    assert ordered_candidate_boundaries_beside_represented_relation_coordinates(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+    ) == expected_boundaries_and_relations
     assert reopened.append_boundary() == boundary
 
 
@@ -875,6 +896,7 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     assert responsibility["represented_relation"] == "Unknown"
 
     ledger = EventLedger()
+    empty_boundary = ledger.append_boundary()
     _source(ledger, exact_bytes=b"a")
     result = record_complete_ordered_pair_candidate_standing(
         ledger,
@@ -918,6 +940,12 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    boundaries, relations_beside_boundaries = (
+        ordered_candidate_boundaries_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
 
     assert tuple(candidate for candidate, *_coordinates in exposed) == tuple(
         candidate["dimensions"]["identity"]
@@ -938,6 +966,23 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     assert relations_beside_participations == exposed
     assert relations_beside_applicability == exposed
     assert relations_beside_assignment == exposed
+    assert relations_beside_boundaries == exposed
+    assert boundaries == boundaries_of_recorded_candidate_standing(
+        ledger, result.identity
+    )
+    assert (
+        boundaries["source_ledger_boundary"]
+        != boundaries["candidate_result_ledger_boundary"]
+    )
+    assert set(boundaries) == {
+        "source_ledger_boundary",
+        "candidate_result_ledger_boundary",
+    }
+    assert all(
+        "source_ledger_boundary" not in relation_coordinate
+        and "candidate_result_ledger_boundary" not in relation_coordinate
+        for *_sources, relation_coordinate in relations_beside_boundaries
+    )
     assert assignment_reference == standing["responsibility_assignment_reference"]
     assert set(assignment_reference) == {
         "recorded_occurrence_identity",
@@ -1095,6 +1140,19 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
                 cardinality_ledger, cardinality_result.identity
             )["responsibility_assignment_reference"]
         )
+        cardinality_boundaries, boundary_relations = (
+            ordered_candidate_boundaries_beside_represented_relation_coordinates(
+                cardinality_ledger,
+                candidate_standing_result_event_identity=(
+                    cardinality_result.identity
+                ),
+            )
+        )
+        assert boundary_relations == cardinality_relations
+        assert (
+            cardinality_boundaries["source_ledger_boundary"]
+            != cardinality_boundaries["candidate_result_ledger_boundary"]
+        )
         assert {
             participation["material"]["act_occurrence"]
             for participation in cardinality_participations
@@ -1152,6 +1210,24 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
         )
     recorded_result.material["responsibility_assignment_reference"] = (
         exact_assignment_reference
+    )
+
+    assignment_event = ledger.get(
+        exact_assignment_reference["recorded_occurrence_identity"]
+    )
+    exact_source_boundary_identity = assignment_event.material[
+        "source_ledger_boundary_identity"
+    ]
+    assignment_event.material["source_ledger_boundary_identity"] = (
+        empty_boundary.identity
+    )
+    with pytest.raises(ValueError):
+        ordered_candidate_boundaries_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    assignment_event.material["source_ledger_boundary_identity"] = (
+        exact_source_boundary_identity
     )
 
     act_evidence = ledger.get(standing["responsible_act_evidence_identity"])
