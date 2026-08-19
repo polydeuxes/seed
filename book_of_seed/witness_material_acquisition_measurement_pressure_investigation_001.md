@@ -109,7 +109,7 @@ coordinates:
 exact assignment subject
 assignment occurrence
 Evidence supporting the assignment
-Authority for this Seed to bear it
+Authority supporting an exact assignment whose responsible boundary is this Seed
 Scope and limits of the assignment
 positive Standing whose subject is the assignment
 ```
@@ -163,7 +163,7 @@ not authorize the missing source-specific acquisition Act by identity.
 ## 4. The O2 Locality relation is also absent
 
 Active `01.Source.D` directly supplies the relation subjects required before
-the declared Measurement Responsibility is borne:
+the declared Measurement Responsibility can be assigned to this Seed:
 
 ```text
 first subject  = exact material M
@@ -234,7 +234,7 @@ and explicitly establishes no:
 
 ```text
 Locality relation
-assignment-subject relation
+required assignment subject and coordinates
 Responsibility assignment
 Applicability
 Act
@@ -243,9 +243,9 @@ Standing
 
 The public assignment recorder then checks that the requested occurrence is a
 member of this family-local result population. Its own comment preserves that
-membership establishes neither the missing Locality relation nor the
-assignment-subject relation. After that check, it records the `01.Source.D`
-Responsibility assignment.
+membership establishes neither the missing Locality relation nor the subject
+and coordinates required for the assignment. After that check, it records the
+`01.Source.D` Responsibility assignment.
 
 Therefore the exact implemented crossing is:
 
@@ -262,9 +262,9 @@ exact material M
 + exact M --locality--> this Seed relation and Evidence
 + exact declared Measurement
 ↓
-this Seed bears the Measurement Responsibility
-↓
-exact subject-specific assignment condition
+exact Measurement Responsibility assignment
+whose responsible boundary is this Seed
++ exact subject and required coordinates
 ↓
 Responsibility assignment occurrence
 ```
@@ -301,14 +301,14 @@ O2 carrying exact material M
 + M --locality--> this Seed
 + exact Locality occurrence and Evidence
 ↓
-01.Source.D assignment-subject relation
+exact subject and coordinates required by 01.Source.D
 ↓
 Measurement Responsibility assignment
 ```
 
 Current O2 supplies the material, result, Yield, boundary, loss, provenance,
 and Unknown. It does not supply the Locality relation, its Evidence, or the
-assignment-subject relation.
+subject and coordinates required for the assignment.
 
 Gate B cannot retroactively authorize Gate A. Gate A cannot establish Gate B
 by shared occurrence identity.
@@ -320,8 +320,9 @@ Before runtime can add a Witness acquisition assignment, the repository must
 recover or amend the exact Book assignment that answers:
 
 ```text
-What bounded subject causes this Seed to bear
-the Witness material-acquisition Responsibility?
+What bounded subject and conditions establish the Witness
+material-acquisition Responsibility assignment
+whose responsible boundary is this Seed?
 
 What Evidence, Authority, Scope, limits, and Standing
 support that exact assignment before the Act occurs?
@@ -372,7 +373,7 @@ Locality relation occurrence and Evidence                 absent
 
 bounded source membership                                 exact runtime refusal
 bounded source membership as Locality                     refused
-bounded source membership as assignment-subject relation refused
+bounded source membership as required assignment coordinates refused
 current 01.Source.D assignment crossing                   premature
 
 smallest lawful runtime implementation                    blocked by exact
@@ -382,5 +383,5 @@ smallest lawful runtime implementation                    blocked by exact
 The next change must not copy O1, create a scheduler, or turn the Witness
 callback into constitutional Authority. The next curator question is the
 exact source-specific Witness acquisition assignment. Once that assignment is
-recovered, the O2 Locality relation and the `01.Source.D` subject relation can
-be decomposed in order.
+recovered, the O2 Locality relation and the `01.Source.D` assignment
+coordinates can be decomposed in order.

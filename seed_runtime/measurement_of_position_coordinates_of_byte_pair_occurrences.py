@@ -85,8 +85,8 @@ class UnassignedPositionCoordinateMeasurementAcquisitionReading(NamedTuple):
 
     This family-local runtime projection preserves exact source coordinates
     beside the absence of this family's assignment or result through B.  It
-    establishes no Locality relation, assignment subject relation,
-    Responsibility assignment, Applicability, Act, or Standing.
+    establishes no Locality relation, required assignment subject or
+    coordinates, Responsibility assignment, Applicability, Act, or Standing.
     """
 
     source_material_acquisition_occurrence_identity: str
@@ -624,7 +624,8 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     )
     # This runtime refusal prevents malformed or already-recorded sources from
     # crossing the public recorder.  Membership establishes neither the
-    # missing exact Locality relation nor the assignment-subject relation.
+    # missing exact Locality relation nor the required assignment subject and
+    # coordinates.
     current_sources = (
         _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
             ledger,
