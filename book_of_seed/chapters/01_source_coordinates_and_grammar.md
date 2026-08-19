@@ -32,7 +32,7 @@ This Book material acquisition witness is one declared distinction carried as th
 
 Where a declared Measurement occurrence carries bounded exact identity distinctions, count, recurrence, prefix occurrence, declared-predicate result, or position findings, its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
-A declared byte Measurement counts each exact byte occurrence in the exact Ingest material occurrences within its completeness boundary. The same byte material in another occurrence establishes neither occurrence nor position, and the result establishes no represented relation for a byte.
+A declared byte Measurement counts each exact byte occurrence in the exact yielded material-acquisition results within its completeness boundary. The same byte material in another occurrence establishes neither occurrence nor position, and the result establishes no represented relation for a byte.
 
 Determining Applicability to one declared shared position Measurement requires current Standing in one Locality carrying exact recorded position Assertions. Participation of exact pair occurrence Assertions requires one exact source occurrence, Locality, and completeness boundary. The second position-coordinate reference of the first Assertion and the first position-coordinate reference of the second Assertion establish one ordered relation path only with both references of one exact byte occurrence. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, the exact shared position-coordinate reference, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no other relation, material of the input pair occurrences, or represented relation.
 
@@ -46,7 +46,7 @@ Each exact occurrence reference in a count finding preserves exact occurrence id
 
 ### 01.Source.D.2 — Addressed byte occurrence reference determination
 
-Where current Standing in one Locality carries one exact recorded Measurement result of position coordinates of byte-pair occurrences, this Book assigns this Seed the bounded Responsibility for one declared Measurement that determines the exact Assertion references addressed by one exact source-byte position-coordinate reference within that result's exact Ingest result and completeness boundary.
+Where current Standing in one Locality carries one exact recorded Measurement result of position coordinates of byte-pair occurrences, this Book assigns this Seed the bounded Responsibility for one declared Measurement that determines the exact Assertion references addressed by one exact source-byte position-coordinate reference within that result's exact yielded material-acquisition result and completeness boundary.
 
 Before the declared Measurement Act, current Standing must carry the exact Responsibility assignment, the exact Applicability Act occurrence, its Act Evidence, Evidence of its Yield relation, and its exact result occurrence. The Measurement Act occurrence, its Act Evidence, Evidence of its Yield relation, and its exact result occurrence are distinct from the Applicability occurrences. The Measurement result carries every exact pair-occurrence position Assertion reference with a first or second position-coordinate reference of the addressed byte occurrence, in source occurrence order. It carries no Assertion reference with first and second position-coordinate references of other byte occurrences.
 

@@ -4,11 +4,11 @@
 Bounded representation and movement between localities.
 
 ## Bounded resolution
-One exact Ingest Act preserves material supplied at one source boundary. Its occurrence yields the exact material and carries its source role, source boundary, Locality, known loss, and Unknown. Operator material and material supplied at another source boundary use the same Ingest Act. Different source coordinates do not revise the Act.
+One exact material-acquisition Responsibility preserves material supplied at one exact source boundary. Its exact Act occurrence yields one exact material result carrying its source role, source boundary, Locality, known loss, and Unknown. Material supplied by this operator and material supplied by this Witness have distinct source Responsibilities and occurrences. Shared material or result coordinates establish no shared Responsibility, Act, or source relation.
 
-Each Ingest occurrence carries one exact result reference. Two Ingest occurrences yielding the same material each carry their own exact occurrence, result, and Yield-Evidence references. The same material content establishes neither occurrence, result, nor Yield relation. Use of the material by another Act requires the exact result reference and Yield Evidence of the Ingest occurrence that yields it.
+Each material-acquisition occurrence carries one exact result reference. Two material-acquisition occurrences yielding the same material each carry their own exact occurrence, result, and Yield-Evidence references. The same material content establishes neither occurrence, result, nor Yield relation. Use of the material by another Act requires the exact result reference and Yield Evidence of the material-acquisition occurrence that yields it.
 
-An Ingest occurrence establishes no Assertion about what the material represents, source relation, truth carried by this Seed, Authority, or later Standing.
+A material-acquisition occurrence establishes no Assertion about what the material represents, source relation, truth carried by this Seed, Authority, or later Standing.
 
 A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknown, and limits where established. For one intact source result with exact material, the exact rule is preserve exact material of source result. The Representation carries the same exact material and source result occurrence. The rule establishes no assertion of what the material represents and no represented relation. A finding with no exact material carries no exact material representation rule by identity. Missing coordinates carry Unknown or no instantiation; representation words do not instantiate them.
 
@@ -41,7 +41,7 @@ Material movement cannot move Authority.
 - Admission to one operator Locality != Admission to another operator Locality
 - Applicability != input support
 - material movement != Authority movement
-- same material content != same Ingest occurrence, result identity, or Yield Evidence
+- same material content != same material-acquisition occurrence, result identity, or Yield Evidence
 - Assertion identity != Assertion occurrence
 - locality subjects != locality relation
 

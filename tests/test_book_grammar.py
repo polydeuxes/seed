@@ -524,7 +524,7 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "relation": "of",
                 "second_subject": "byte_pair_occurrences",
             },
-            "subject": "exact_Ingest_result",
+            "subject": "exact_material_acquisition_result",
             "requires": ["current_Standing", "exact_subject"],
             "standing_not_established": [
                 "Responsibility_assignment_by_subject_presence",
@@ -539,9 +539,9 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "identity": "measurement_of_exact_byte_occurrences",
                 "first_subject": "exact_byte_occurrences",
                 "relation": "of",
-                "second_subject": "exact_Ingest_source_set",
+                "second_subject": "exact_material_acquisition_result_set",
             },
-            "subject": "exact_Ingest_source_set",
+            "subject": "exact_material_acquisition_result_set",
             "requires": ["current_Standing", "exact_subject"],
             "standing_not_established": [
                 "Responsibility_assignment_by_subject_presence",

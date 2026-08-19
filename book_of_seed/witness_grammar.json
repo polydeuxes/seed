@@ -718,8 +718,8 @@
         {"subject": "representation_exact_evidence_references"},
         {"subject": "exact_act_occurrence"},
         {"subject": "input_act_relation_occurrence"},
-        {"subject": "material_ingest_act_yield_relation"},
-        {"subject": "material_ingest_evidence_visibility"},
+        {"subject": "material_acquisition_act_yield_relation"},
+        {"subject": "material_acquisition_evidence_visibility"},
         {"subject": "exact_act_occurrence_relation"},
         {"subject": "measurement_result_exact_act_clause_distinction"},
         {"subject": "measurement_result_act_evidence_clause_distinction"},
@@ -940,7 +940,7 @@
         {"subject": "movement_coordinate_distinction"},
         {"subject": "emission_locality_distinction"},
         {"subject": "exact_emission_boundary"},
-        {"subject": "material_ingest_representation_distinction"},
+        {"subject": "material_acquisition_representation_distinction"},
         {
           "subject": "representation_source_coordinates",
           "grammar_coordinate_reference": [
@@ -975,10 +975,10 @@
         {"subject": "read_material_multiplicity"},
         {"subject": "read_write_refusal_distinction"},
         {"subject": "read_write_difference"},
-        {"subject": "operator_material_ingest_occurrence"},
-        {"subject": "operator_material_ingest_role"},
-        {"subject": "material_ingest_exact_material"},
-        {"subject": "material_ingest_exact_material_visibility"},
+        {"subject": "operator_material_acquisition_occurrence"},
+        {"subject": "operator_material_acquisition_role"},
+        {"subject": "material_acquisition_exact_material"},
+        {"subject": "material_acquisition_exact_material_visibility"},
         {"subject": "exact_material_occurrence_reference_distinction"},
         {"subject": "exact_material_reference_distinction"},
         {"subject": "exact_material_identity_distinction"},
@@ -1111,7 +1111,7 @@
             "relation": "of",
             "second_subject": "byte_pair_occurrences"
           },
-          "subject": "exact_Ingest_result",
+          "subject": "exact_material_acquisition_result",
           "requires": ["current_Standing", "exact_subject"],
           "standing_not_established": [
             "Responsibility_assignment_by_subject_presence",
@@ -1126,9 +1126,9 @@
             "identity": "measurement_of_exact_byte_occurrences",
             "first_subject": "exact_byte_occurrences",
             "relation": "of",
-            "second_subject": "exact_Ingest_source_set"
+            "second_subject": "exact_material_acquisition_result_set"
           },
-          "subject": "exact_Ingest_source_set",
+          "subject": "exact_material_acquisition_result_set",
           "requires": ["current_Standing", "exact_subject"],
           "standing_not_established": [
             "Responsibility_assignment_by_subject_presence",
@@ -1143,11 +1143,11 @@
             "subject": {
               "first_subject": "exact_byte_occurrences",
               "relation": "of",
-              "second_subject": "exact_Ingest_source_set"
+              "second_subject": "exact_material_acquisition_result_set"
             },
             "findings": ["count", "recurrence"]
           },
-          "input_subject": "exact_Ingest_source_set",
+          "input_subject": "exact_material_acquisition_result_set",
           "bounded_by": ["source_localities", "completeness_boundary"],
           "standing_not_established": ["represented_relation"]
         },
@@ -1185,14 +1185,14 @@
                 "second_subject": "result"
               }
             ],
-            "input_reference": "source_ingest_occurrence_identity",
+            "input_reference": "source_material_acquisition_occurrence_identity",
             "input_relation": {
-              "first_subject": "exact_Ingest_result",
+              "first_subject": "exact_material_acquisition_result",
               "relation": "input_to",
               "second_subject": "exact_Act"
             },
             "Participation": {
-              "subject_reference": "exact_Ingest_result",
+              "subject_reference": "exact_material_acquisition_result",
               "role": "input"
             },
             "result_coordinates": [
@@ -1210,7 +1210,7 @@
             ],
             "determination": "position_coordinates_of_byte_pair_occurrences"
           },
-          "input_subject": "exact_Ingest_result",
+          "input_subject": "exact_material_acquisition_result",
           "findings": [
             "first_position",
             "second_position",
@@ -1277,7 +1277,7 @@
             },
             "input_references": [
               "pair_assertion_reference",
-              "source_ingest_occurrence_identity"
+              "source_material_acquisition_occurrence_identity"
             ],
             "result_coordinates": [
               "dimensions",
@@ -1304,7 +1304,7 @@
               "second_subject": "Yield_relation"
             }
           },
-          "input_material": "later_exact_Ingest_result",
+          "input_material": "later_exact_material_acquisition_result",
           "findings": ["first_position", "second_position"],
           "order_and_position_difference_read_from": [
             "first_position",
@@ -1337,7 +1337,7 @@
               "second_pair_position_Assertion_reference"
             ],
             "same_source_coordinates": [
-              "source_Ingest_occurrence",
+              "source_material_acquisition_occurrence",
               "Locality",
               "completeness_boundary"
             ],
@@ -1478,7 +1478,7 @@
         "direct_pair_position_result": {
           "kind": "position_coordinate_Measurement_result",
           "Standing": "current",
-          "source": "one_exact_Ingest_result",
+          "source": "one_exact_material_acquisition_result",
           "boundary": "one_exact_completeness_boundary"
         },
         "addressed_source_byte_position_coordinate_reference": {
