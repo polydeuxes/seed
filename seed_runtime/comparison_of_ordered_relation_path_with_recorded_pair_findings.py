@@ -100,6 +100,11 @@ class RecordedOrderedPathPairFindingCompareApplicability(NamedTuple):
     applicability_result_occurrences: tuple[Event, ...]
 
 
+class RecordedOrderedPathPairFindingCompareActEvidence(NamedTuple):
+    locality_standing: dict[str, Any]
+    compare_act_evidence_occurrences: tuple[Event, ...]
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -525,6 +530,80 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             ledger, locality_identity=locality_identity
         ),
         applicability_result_occurrences=tuple(recorded),
+    )
+
+
+def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> RecordedOrderedPathPairFindingCompareActEvidence:
+    """Record Compare Act Evidence and Participation for each applicable result."""
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    standing_results = standing.get("applicability_result_occurrences")
+    if type(standing_results) is not dict:
+        raise ValueError(
+            "ordered-path Compare Participation requires exact current Standing"
+        )
+    applicability_readings = []
+    for identity in standing_results:
+        event = ledger.get(identity)
+        if (
+            event is None
+            or event.kind
+            != COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
+        ):
+            continue
+        applicability_readings.append(
+            _read_applicability_result(ledger, event.identity)
+        )
+
+    acts_by_applicability: dict[str, Event] = {}
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    ):
+        act, _assignment, applicability, _inputs_reading = _read_compare_act(
+            ledger, occurrence.identity
+        )
+        if applicability.identity in acts_by_applicability:
+            raise ValueError(
+                "ordered-path Compare Applicability carries repeated Compare Act Evidence"
+            )
+        acts_by_applicability[applicability.identity] = act
+
+    recorded: list[Event] = []
+    for applicability, _act, assignment, _inputs_reading in applicability_readings:
+        if applicability.material["applicability"] != "applicable":
+            if applicability.identity in acts_by_applicability:
+                raise ValueError(
+                    "inapplicable ordered-path Compare input carries Participation"
+                )
+            continue
+        if applicability.identity in acts_by_applicability:
+            continue
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        )
+        act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            applicability_result_event_identity=applicability.identity,
+            locality_standing=standing,
+        )
+        acts_by_applicability[applicability.identity] = act
+        recorded.append(act)
+
+    return RecordedOrderedPathPairFindingCompareActEvidence(
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+        compare_act_evidence_occurrences=tuple(recorded),
     )
 
 
