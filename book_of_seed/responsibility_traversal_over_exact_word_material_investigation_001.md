@@ -232,6 +232,36 @@ occurrences are likewise not absorbed by these named positions. Negative
 branches remain negative, and exact material currently stored inside an array
 is not silently identified with a named dictionary coordinate.
 
+Commit `0b6abb56` adds a second, narrower completeness pressure. It traverses
+every Witness Grammar object carrying an exact string-valued `relation`, omits
+objects beneath an explicit `standing_not_established` branch, and asks whether
+each positive occurrence whose exact spelling is already declared has its own
+relation-coordinate reference.
+
+The two sirens measure different unresolved surfaces:
+
+```text
+word-name coverage
+!= exact positive relation-occurrence coverage
+```
+
+The word-name siren currently reports 385 admitted words without any declared
+coordinate pair. The relation-occurrence siren separately reports 96 positive
+objects whose already-declared exact spelling has no home:
+
+| exact spelling | unresolved positive relation objects |
+|---|---:|
+| `of` | 90 |
+| `carries` | 4 |
+| `bears` | 1 |
+| `supports` | 1 |
+
+This second count is exact only for the Witness Grammar relation-field surface.
+It does not claim that every Book prose occurrence is a relation occurrence or
+that every load-bearing prose position has now been enumerated. It performs no
+case, word-form, or semantic normalization. Those remaining pressures are not
+hidden by a green word-name key.
+
 ## Complete Responsibility interrogation of Surface A
 
 Admission carries exact word material and the boundary that admits it. It does
