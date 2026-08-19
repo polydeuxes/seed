@@ -9,6 +9,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     ORDERED_PAIR_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_RESPONSIBILITY,
     ordered_candidate_act_occurrence_beside_represented_relation_coordinates,
+    ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates,
     ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates,
     ordered_candidate_source_participation_coordinates_beside_represented_relation_coordinates,
     boundaries_of_recorded_candidate_standing,
@@ -723,6 +724,12 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    expected_assignment_and_relations = (
+        ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
     boundary = ledger.append_boundary()
     ledger.close()
 
@@ -739,6 +746,10 @@ def test_ordered_pair_candidate_represented_relation_coordinates_replay_after_sq
         reopened,
         candidate_standing_result_event_identity=result.identity,
     ) == expected_participations_and_relations
+    assert ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+        reopened,
+        candidate_standing_result_event_identity=result.identity,
+    ) == expected_assignment_and_relations
     assert reopened.append_boundary() == boundary
 
 
@@ -901,6 +912,12 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             candidate_standing_result_event_identity=result.identity,
         )
     )
+    assignment_reference, relations_beside_assignment = (
+        ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    )
 
     assert tuple(candidate for candidate, *_coordinates in exposed) == tuple(
         candidate["dimensions"]["identity"]
@@ -920,6 +937,17 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
     assert relations_beside_act == exposed
     assert relations_beside_participations == exposed
     assert relations_beside_applicability == exposed
+    assert relations_beside_assignment == exposed
+    assert assignment_reference == {
+        "grammar_coordinate_reference": [
+            "clause_coordinates",
+            BOOK_CLAUSE,
+            "ordered_pair_candidate_responsibility",
+        ],
+        "coordinate": "Responsibility_assignment_reference",
+        "material": standing["responsibility_assignment_reference"],
+    }
+    assert "represented_relation" not in assignment_reference["material"]
     assert applicability_result_occurrence == {
         "grammar_coordinate_reference": [
             "clause_coordinates",
@@ -1057,6 +1085,20 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
                 cardinality_ledger, cardinality_result.identity
             )["applicability_result_event_identity"]
         )
+        cardinality_assignment, assignment_relations = (
+            ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+                cardinality_ledger,
+                candidate_standing_result_event_identity=(
+                    cardinality_result.identity
+                ),
+            )
+        )
+        assert assignment_relations == cardinality_relations
+        assert cardinality_assignment["material"] == (
+            get_recorded_candidate_standing(
+                cardinality_ledger, cardinality_result.identity
+            )["responsibility_assignment_reference"]
+        )
         assert {
             participation["material"]["act_occurrence"]
             for participation in cardinality_participations
@@ -1098,6 +1140,23 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
             applicability_ledger,
             candidate_standing_result_event_identity=applicability_result.identity,
         )
+
+    recorded_result = ledger.get(result.identity)
+    exact_assignment_reference = deepcopy(
+        recorded_result.material["responsibility_assignment_reference"]
+    )
+    recorded_result.material["responsibility_assignment_reference"] = {
+        **exact_assignment_reference,
+        "recorded_occurrence_identity": "changed_after_read",
+    }
+    with pytest.raises(ValueError, match="result is not complete and exact"):
+        ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+            ledger,
+            candidate_standing_result_event_identity=result.identity,
+        )
+    recorded_result.material["responsibility_assignment_reference"] = (
+        exact_assignment_reference
+    )
 
     act_evidence = ledger.get(standing["responsible_act_evidence_identity"])
     act_evidence.material["act_occurrence_identity"] = "changed_after_read"

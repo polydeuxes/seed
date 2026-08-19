@@ -43,7 +43,7 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
     exact_source_assertion_materials_from_every_ordered_pair_candidate,
     exact_source_assertion_coordinates_from_every_ordered_pair_candidate,
     get_recorded_candidate_standing,
-    ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates,
+    ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates,
     record_one_source_and_ordered_pair_candidate_standings,
 )
 from seed_runtime.byte_measurement import (
@@ -441,12 +441,8 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
             candidate_standing_result_event_identity=result.identity,
         )
     )
-    (
-        applicability_result_occurrence,
-        source_applicability,
-        every_relation_coordinate,
-    ) = (
-        ordered_candidate_source_applicability_coordinates_beside_represented_relation_coordinates(
+    assignment_reference, every_relation_coordinate = (
+        ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
             ledger,
             candidate_standing_result_event_identity=result.identity,
         )
@@ -478,18 +474,10 @@ def test_ordered_pair_candidate_standing_cannot_omit_either_calculator_order(
         relation_coordinate["material"] == "Unknown"
         for *_sources, relation_coordinate in every_relation_coordinate
     )
-    assert tuple(
-        applicability["material"]["source_assertion_reference"]
-        for applicability in source_applicability
-    ) == tuple(standing["source_assertion_references"])
-    assert all(
-        applicability["material"]["finding"] == "applicable"
-        and "represented_relation" not in applicability["material"]
-        for applicability in source_applicability
+    assert assignment_reference["material"] == (
+        standing["responsibility_assignment_reference"]
     )
-    assert applicability_result_occurrence["material"] == (
-        standing["applicability_result_event_identity"]
-    )
+    assert "represented_relation" not in assignment_reference["material"]
     assert tuple(
         coordinate["coordinate"] for coordinate in path_source_coordinates
     ) == tuple(

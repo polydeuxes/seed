@@ -1810,6 +1810,50 @@ def ordered_candidate_source_applicability_coordinates_beside_represented_relati
     )
 
 
+def ordered_candidate_responsibility_assignment_reference_beside_represented_relation_coordinates(
+    ledger: EventLedger,
+    *,
+    candidate_standing_result_event_identity: str,
+) -> tuple[
+    dict[str, Any],
+    tuple[
+        tuple[
+            str,
+            dict[str, Any],
+            dict[str, Any],
+            dict[str, Any],
+        ],
+        ...,
+    ],
+]:
+    """Read one exact assignment reference beside every represented_relation coordinate."""
+
+    result, _act, _applicability, assignment = _read_candidate_result(
+        ledger, candidate_standing_result_event_identity
+    )
+    if (
+        assignment.material["responsibility"]
+        != ORDERED_PAIR_CANDIDATE_RESPONSIBILITY
+    ):
+        raise ValueError("Candidate Standing is not the exact ordered-pair result")
+    return (
+        {
+            "grammar_coordinate_reference": [
+                "clause_coordinates",
+                BOOK_CLAUSE,
+                "ordered_pair_candidate_responsibility",
+            ],
+            "coordinate": "Responsibility_assignment_reference",
+            "material": deepcopy(
+                result.material["responsibility_assignment_reference"]
+            ),
+        },
+        _represented_relation_coordinates_from_ordered_pair_candidates(
+            result, assignment
+        ),
+    )
+
+
 def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(
     ledger: EventLedger,
     *,
