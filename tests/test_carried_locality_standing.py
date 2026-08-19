@@ -46,6 +46,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
@@ -99,7 +100,7 @@ def _ingress_event(index, *, unknown):
                 "authority": "unestablished",
                 "content": "00",
             },
-            "source_role": "this operator",
+            "source_role": "this Witness",
             "unknown": list(unknown),
         },
         locality_identity="s",
@@ -281,7 +282,7 @@ def test_current_standing_exposes_assignments_only_after_each_family_records_the
     )
 
 
-def test_declared_measurements_do_not_promote_a_material_acquisition_without_exact_yield():
+def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield():
     ledger = EventLedger()
     source = ledger.append(
         WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
@@ -290,34 +291,32 @@ def test_declared_measurements_do_not_promote_a_material_acquisition_without_exa
                 "identity": "preserved material",
                 "authority": "unestablished",
             },
-            "source_role": "this operator",
+            "source_role": "this Witness",
             "unknown": [],
         },
         exact_material=b"preserved material",
         locality_identity="s",
     )
 
-    recorded = record_declared_measurements_from_current_standing(
-        ledger,
-        locality_identity="s",
-    )
+    with pytest.raises(
+        ByteMeasurementError,
+        match="material-acquisition result without intact physiology",
+    ):
+        record_declared_measurements_from_current_standing(
+            ledger,
+            locality_identity="s",
+        )
 
-    assert tuple(event.kind for event in recorded.result_occurrences) == (
-        BYTE_MEASUREMENT_RECORDED_KIND,
-    )
     assert not tuple(
         event
         for event in ledger.list()
-        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        if event.kind
+        in {
+            BYTE_MEASUREMENT_RECORDED_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        }
     )
-    assignment = next(
-        event
-        for event in ledger.list()
-        if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-    )
-    assert assignment.material["source_occurrence_references"] == [
-        {"material_acquisition_occurrence_identity": source.identity}
-    ]
+    assert ledger.get(source.identity) == source
 
 
 def test_carried_declaration_accepts_current_locality_standing_after_another_locality_append():
@@ -493,7 +492,7 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
                         "identity": "first",
                         "authority": "unestablished",
                     },
-                    "source_role": "this operator",
+                    "source_role": "this Witness",
                 },
                 locality_identity="s",
             )
@@ -504,7 +503,7 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
                         "identity": "second",
                         "authority": "unestablished",
                     },
-                    "source_role": "this operator",
+                    "source_role": "this Witness",
                 },
                 locality_identity="s",
             )
@@ -528,7 +527,7 @@ def test_an_advance_refuses_an_occurrence_from_another_locality():
                 "identity": "elsewhere",
                 "authority": "unestablished",
             },
-            "source_role": "this operator",
+            "source_role": "this Witness",
         },
         locality_identity="elsewhere",
     )
@@ -1033,18 +1032,11 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
 
     ledger = EventLedger()
     if existing_locality:
-        ledger.append(
-            WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-            {
-                "dimensions": {
-                    "identity": "existing-material",
-                    "authority": "unestablished",
-                },
-                "source_role": "this operator",
-                "unknown": [],
-            },
-            exact_material=b"existing material",
+        record_witness_material_acquisition(
+            ledger,
             locality_identity="existing",
+            exact_bytes=b"existing material",
+            source_boundary="existing exact material test boundary",
         )
 
     observed = {}
