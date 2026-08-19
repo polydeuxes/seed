@@ -342,7 +342,8 @@ neutral Candidates
 That recursion makes the completed finding impossible to omit from the later
 Candidate source surface. It does not write the next play.
 
-The next constitutional boundary belongs to an exact later Responsibility and
-Act whose subject is already recoverable from current Standing. No active
-clause inspected here assigns that later physiology to path extension,
-path-material recovery, grammar recovery, or relation to `C`.
+Current Standing now carries exact result and finding Assertions for later
+orientation. Whether a later Responsibility or Act exists, and what exact
+subject that Responsibility bears, remain unestablished. No active clause
+inspected here assigns later physiology to path extension, path-material
+recovery, grammar recovery, or relation to `C`.
