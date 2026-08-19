@@ -28,6 +28,7 @@ FIDELITY_SUBJECT = "current_Locality_Standing"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_locality_standing import (
+    _record_distinct,
     advance_operator_locality_standing,
     read_operator_locality_standing,
     read_operator_locality_standing_through,
@@ -38,6 +39,7 @@ from seed_runtime.operator_material_acquisition import (
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.material_acquisition import MaterialAcquisitionError
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -46,7 +48,6 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_responsible_act_evidence,
@@ -89,24 +90,6 @@ def _replay(events):
     return read_operator_locality_standing(ledger, locality_identity="s")
 
 
-def _ingress_event(index, *, unknown):
-    """One recorded acquisition_result occurrence carrying distinct Unknown."""
-    ledger = EventLedger()
-    return ledger.append(
-        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-        {
-            "dimensions": {
-                "identity": f"material_{index}",
-                "authority": "unestablished",
-                "content": "00",
-            },
-            "source_role": "this Witness",
-            "unknown": list(unknown),
-        },
-        locality_identity="s",
-    )
-
-
 def test_operator_acquisition_records_exact_byte_pair_occurrence_position_result():
     ledger, _output = _console("2+2=5\n")
     results = tuple(
@@ -141,14 +124,12 @@ def test_supplied_witness_acquisition_records_exact_byte_pair_occurrence_positio
             SuppliedWitnessMaterialOccurrence(
                 b"4\n",
                 "invocation output occurrence 0",
-                True,
             )
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
                 b"",
                 "invocation completion",
-                False,
             )
         )
 
@@ -299,8 +280,8 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
     )
 
     with pytest.raises(
-        ByteMeasurementError,
-        match="material-acquisition result without intact physiology",
+        MaterialAcquisitionError,
+        match="Witness material-acquisition result is absent or corrupted",
     ):
         record_declared_measurements_from_current_standing(
             ledger,
@@ -1068,23 +1049,17 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
         )
 
 
-@pytest.mark.parametrize("failure", ("write", "flush"))
-def test_a_failed_console_emission_advances_every_recorded_occurrence(
-    monkeypatch, failure
+def test_supplied_witness_material_does_not_invoke_the_raw_output_boundary(
+    monkeypatch,
 ):
     from seed_runtime import operator_console
 
     class FailedBoundary(BytesIO):
         def write(self, value):
-            if failure == "write":
-                super().write(value[:-1])
-                return len(value) - 1
-            return super().write(value)
+            pytest.fail(("unexpected raw output write", value))
 
         def flush(self):
-            if failure == "flush":
-                raise OSError("flush failed")
-            return super().flush()
+            pytest.fail("unexpected raw output flush")
 
     ledger = EventLedger()
     observed = []
@@ -1096,22 +1071,19 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
         return advanced
 
     monkeypatch.setattr(operator_console, "_advance_over_representation", record)
-    error = ValueError if failure == "write" else OSError
-    with pytest.raises(error):
-        run_persistent_operator_console(
-            ledger=ledger,
-            locality_identity="s",
-            input_stream=binary_input(b"!ls\n"),
-            output_stream=StringIO(),
-            raw_output_stream=FailedBoundary(),
-            operator_invocation_provider=lambda _command, supply: supply(
-                SuppliedWitnessMaterialOccurrence(
-                    b"exact raw material\n",
-                    "invocation output occurrence 0",
-                    True,
-                )
-            ),
-        )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input(b"!ls\n"),
+        output_stream=StringIO(),
+        raw_output_stream=FailedBoundary(),
+        operator_invocation_provider=lambda _command, supply: supply(
+            SuppliedWitnessMaterialOccurrence(
+                b"exact raw material\n",
+                "invocation output occurrence 0",
+            )
+        ),
+    )
 
     invocation_locality_identity = next(
         event.locality_identity
@@ -1178,12 +1150,12 @@ def test_every_growable_accumulator_participates_without_copying():
 
 
 def test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying():
-    """Distinct Unknown per occurrence, which acquisition would yield."""
+    """A growing carried Unknown population remains one exact sequence."""
     standing = _advance([])
     held = standing["unknown"]
     for index in range(200):
-        event = _ingress_event(index, unknown=[f"unknown {index}"])
-        standing = _advance([event], prior=standing)
+        _record_distinct(standing["unknown"], f"unknown {index}")
+        standing = _advance([], prior=standing)
         # The same sequence throughout: never rebuilt, never re-sorted into a
         # new object, however many distinct values accumulate.
         assert standing["unknown"] is held
@@ -1194,11 +1166,9 @@ def test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying():
 
 def test_repeated_values_are_recorded_once():
     standing = _advance([])
-    for index in range(5):
-        standing = _advance(
-            [_ingress_event(index, unknown=["one repeated unknown"])],
-            prior=standing,
-        )
+    for _index in range(5):
+        _record_distinct(standing["unknown"], "one repeated unknown")
+        standing = _advance([], prior=standing)
     assert standing["unknown"] == ["one repeated unknown"]
 
 

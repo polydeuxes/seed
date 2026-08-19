@@ -182,7 +182,6 @@ def _bounded_invocation(
                                 f"invocation {key.data} occurrence "
                                 f"{supplied_positions[key.data]}"
                             ),
-                            egress=True,
                         )
                     )
                     supplied_counts[key.data] += len(exact)
@@ -208,7 +207,6 @@ def _bounded_invocation(
                 SuppliedWitnessMaterialOccurrence(
                     exact_bytes=b"",
                     source_boundary=f"invocation {role} occurrence 0",
-                    egress=True,
                 )
             )
     return time_limit_reached, output_limit_reached, error_limit_reached
@@ -248,7 +246,6 @@ def _supply_completion(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=b"",
             source_boundary="invocation completion",
-            egress=False,
             known_loss=invocation_loss,
         )
     )
@@ -305,7 +302,6 @@ def invoke_operator_host(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=catalog,
             source_boundary="implementation function catalog",
-            egress=False,
             known_loss=(
                 _LIMIT_LOSS
                 if catalog_limited
@@ -320,7 +316,6 @@ def invoke_operator_host(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=artifact,
             source_boundary="implementation function measurement",
-            egress=False,
             known_loss=(
                 _LIMIT_LOSS
                 if artifact_limited

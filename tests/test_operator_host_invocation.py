@@ -6,7 +6,13 @@ import pytest
 
 FIDELITY_SUBJECT = "supplied_material_invocation"
 
-from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+)
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.material_acquisition import (
     acquired_material_bytes,
@@ -32,6 +38,9 @@ from seed_runtime.operator_invocation_locality import (
     record_operator_invocation_locality_act_evidence,
     record_operator_invocation_locality_result,
 )
+from seed_runtime.operator_representation_admission import (
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+)
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
     acquire_supplied_witness_material_occurrence,
@@ -43,9 +52,9 @@ def _supplied(
     *, output=b"\x00\xffout", error=b"same", end=b""
 ) -> tuple[SuppliedWitnessMaterialOccurrence, ...]:
     return (
-        SuppliedWitnessMaterialOccurrence(output, "provider:0", True),
-        SuppliedWitnessMaterialOccurrence(error, "provider:1", True),
-        SuppliedWitnessMaterialOccurrence(end, "provider:2", False),
+        SuppliedWitnessMaterialOccurrence(output, "provider:0"),
+        SuppliedWitnessMaterialOccurrence(error, "provider:1"),
+        SuppliedWitnessMaterialOccurrence(end, "provider:2"),
     )
 
 
@@ -58,7 +67,6 @@ def test_supplied_occurrence_requires_exact_distinct_prior_positions(positions):
         SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            False,
             provenance_occurrence_positions=positions,
         )
 
@@ -79,7 +87,6 @@ def test_provider_cannot_append_outside_one_supplied_occurrence():
             SuppliedWitnessMaterialOccurrence(
                 b"one exact supplied result",
                 "provider:guarded",
-                False,
             )
         )
         record_witness_material_acquisition(
@@ -147,7 +154,7 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
-            b"source", "provider:source", False
+            b"source", "provider:source"
         ),
     )
     result = acquire_supplied_witness_material_occurrence(
@@ -157,7 +164,6 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            False,
             provenance_occurrence_positions=(0,),
         ),
         prior_supplied_occurrence_references=(source.identity,),
@@ -179,7 +185,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
-            b"opaque external function reference", "provider:function", False
+            b"opaque external function reference", "provider:function"
         ),
     )
     source = acquire_supplied_witness_material_occurrence(
@@ -187,7 +193,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
-            b"source", "provider:source", False
+            b"source", "provider:source"
         ),
         prior_supplied_occurrence_references=(function.identity,),
     )
@@ -198,7 +204,6 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            False,
             provenance_occurrence_positions=(0, 1),
         ),
         prior_supplied_occurrence_references=(function.identity, source.identity),
@@ -226,7 +231,6 @@ def test_supplied_result_refuses_a_nonprior_occurrence_position():
             supplied=SuppliedWitnessMaterialOccurrence(
                 b"result",
                 "provider:result",
-                False,
                 provenance_occurrence_positions=(0,),
             ),
         )
@@ -242,13 +246,13 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
         ledger,
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
-        supplied=SuppliedWitnessMaterialOccurrence(b"first", "provider:first", False),
+        supplied=SuppliedWitnessMaterialOccurrence(b"first", "provider:first"),
     )
     second = acquire_supplied_witness_material_occurrence(
         ledger,
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
-        supplied=SuppliedWitnessMaterialOccurrence(b"second", "provider:second", False),
+        supplied=SuppliedWitnessMaterialOccurrence(b"second", "provider:second"),
         prior_supplied_occurrence_references=(first.identity,),
     )
     unrelated = record_witness_material_acquisition(
@@ -260,7 +264,6 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
     supplied = SuppliedWitnessMaterialOccurrence(
         b"result",
         "provider:result",
-        False,
         provenance_occurrence_positions=(0,),
     )
     before = len(ledger.list())
@@ -364,7 +367,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     )
 
     assert seen == [b"!ls \xff\x00\n"]
-    assert raw_output.getvalue() == b"\x00\xffoutsame"
+    assert raw_output.getvalue() == b""
     acquisition_results = _acquisition_results(ledger)
     assert [acquired_material_bytes(event) for event in acquisition_results] == [
         b"!ls \xff\x00\n",
@@ -412,18 +415,14 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         for event in ledger.list()
         if event.kind == "operator.representation.emitted"
     ]
-    assert len(emitted) == 2
+    assert emitted == []
     admissions = [
         event
         for event in ledger.list()
         if event.kind
         == "operator.representation.exact_material_admission_recorded"
     ]
-    assert len(admissions) == 2
-    assert {
-        event.material["destination_operator_locality_identity"]
-        for event in admissions
-    } == {"locality"}
+    assert admissions == []
     assert len(
         [
             event
@@ -438,26 +437,23 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in operator_standing["material_acquisition_result_occurrences"]
     ] == [acquisition_results[0].identity]
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in witness_standing["material_acquisition_result_occurrences"]
     ] == [event.identity for event in acquisition_results[1:]]
     assert operator_standing["admission_result_occurrences"] == {}
-    assert witness_standing["admission_result_occurrences"] == {
-        event.identity: None for event in admissions
-    }
-    assert len(witness_standing["applicability_result_occurrences"]) == 2
-    assert {
-        reference["emitted_event_identity"]
+    assert witness_standing["admission_result_occurrences"] == {}
+    assert witness_standing["applicability_result_occurrences"] == {}
+    assert all(
+        reference["emitted_event_identity"] is None
         for reference in witness_standing["representations"].values()
-        if reference["emitted_event_identity"] is not None
-    } == {event.identity for event in emitted}
+    )
 
 
-def test_operator_emission_uses_the_current_locality_after_locality_change():
+def test_supplied_material_does_not_gain_admission_from_a_locality_change():
     ledger = EventLedger()
 
     def provider(_exact_command, supply):
@@ -465,7 +461,6 @@ def test_operator_emission_uses_the_current_locality_after_locality_change():
             SuppliedWitnessMaterialOccurrence(
                 b"one result",
                 "provider:result",
-                True,
             )
         )
 
@@ -484,28 +479,27 @@ def test_operator_emission_uses_the_current_locality_after_locality_change():
         if event.kind
         == "operator.representation.exact_material_admission_recorded"
     ]
-    assert len(admissions) == 1
-    admission = admissions[0]
-    assert admission.locality_identity != "initial"
+    assert admissions == []
     relation = next(
         event
         for event in ledger.list()
         if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
-    assert admission.locality_identity == relation.locality_identity
-    assert admission.material["destination_operator_locality_identity"] == (
-        relation.material["operator_locality_identity"]
+    supplied = tuple(
+        event
+        for event in ledger.list_locality(relation.locality_identity)
+        if event.kind == "witness.material.acquire_recorded"
     )
+    assert tuple(event.exact_material for event in supplied) == (b"one result",)
     emitted = [
         event
         for event in ledger.list()
         if event.kind == "operator.representation.emitted"
     ]
-    assert len(emitted) == 1
-    assert emitted[0].locality_identity == admission.locality_identity
+    assert emitted == []
 
 
-def test_witness_material_is_durable_and_emitted_before_the_provider_resumes():
+def test_witness_material_is_durable_without_emission_before_provider_resumes():
     ledger = EventLedger()
     raw_output = BytesIO()
     observed = []
@@ -513,13 +507,13 @@ def test_witness_material_is_durable_and_emitted_before_the_provider_resumes():
     def provider(_exact_command, supply):
         for occurrence in (
             SuppliedWitnessMaterialOccurrence(
-                b"lower-0", "provider:output:0", True
+                b"lower-0", "provider:output:0"
             ),
             SuppliedWitnessMaterialOccurrence(
-                b"lower-1", "provider:output:1", True
+                b"lower-1", "provider:output:1"
             ),
             SuppliedWitnessMaterialOccurrence(
-                b"", "provider:completion", False
+                b"", "provider:completion"
             ),
         ):
             supply(occurrence)
@@ -540,22 +534,22 @@ def test_witness_material_is_durable_and_emitted_before_the_provider_resumes():
     )
 
     assert observed == [
-        (b"lower-0", (b"!ls\n", b"lower-0")),
-        (b"lower-0lower-1", (b"!ls\n", b"lower-0", b"lower-1")),
+        (b"", (b"!ls\n", b"lower-0")),
+        (b"", (b"!ls\n", b"lower-0", b"lower-1")),
         (
-            b"lower-0lower-1",
+            b"",
             (b"!ls\n", b"lower-0", b"lower-1", b""),
         ),
     ]
 
 
-def test_reused_witness_boundary_is_refused_before_second_acquisition_or_egress():
+def test_reused_witness_boundary_is_refused_before_second_acquisition():
     ledger = EventLedger()
     raw_output = BytesIO()
 
     def provider(_exact_command, supply):
-        supply(SuppliedWitnessMaterialOccurrence(b"first", "same", True))
-        supply(SuppliedWitnessMaterialOccurrence(b"second", "same", True))
+        supply(SuppliedWitnessMaterialOccurrence(b"first", "same"))
+        supply(SuppliedWitnessMaterialOccurrence(b"second", "same"))
 
     with pytest.raises(ValueError, match="distinct source boundary required"):
         run_persistent_operator_console(
@@ -571,7 +565,7 @@ def test_reused_witness_boundary_is_refused_before_second_acquisition_or_egress(
         b"!ls\n",
         b"first",
     ]
-    assert raw_output.getvalue() == b"first"
+    assert raw_output.getvalue() == b""
 
 
 def test_provider_death_leaves_the_complete_command_acquisition():
@@ -613,7 +607,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
     def die(_exact_command, supply):
         supply(
             SuppliedWitnessMaterialOccurrence(
-                b"partial", "provider:output:0", True
+                b"partial", "provider:output:0"
             )
         )
         raise KeyboardInterrupt
@@ -632,7 +626,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
         b"!cat path\n",
         b"partial",
     ]
-    assert raw_output.getvalue() == b"partial"
+    assert raw_output.getvalue() == b""
     relation = next(
         event
         for event in ledger.list()
@@ -657,16 +651,20 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
     ) == 1
 
 
-def test_provider_declares_exact_egress_order_without_egressing_other_results():
+def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     ledger = EventLedger()
     raw_output = BytesIO()
     supplied = (
-        SuppliedWitnessMaterialOccurrence(b"error", "provider:error", True),
-        SuppliedWitnessMaterialOccurrence(b"output", "provider:output", True),
+        SuppliedWitnessMaterialOccurrence(b"error", "provider:error"),
         SuppliedWitnessMaterialOccurrence(
-            b"artifact", "provider:artifact", False
+            b"output",
+            "provider:output",
+            provenance_occurrence_positions=(0,),
         ),
-        SuppliedWitnessMaterialOccurrence(b"end", "provider:end", False),
+        SuppliedWitnessMaterialOccurrence(
+            b"artifact", "provider:artifact"
+        ),
+        SuppliedWitnessMaterialOccurrence(b"end", "provider:end"),
     )
 
     run_persistent_operator_console(
@@ -691,11 +689,18 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         for event in ledger.list()
         if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
-    assert [
+    preserved_provenance = [
         event.material["provenance_occurrence_references"]
         for event in supplied_acquisition_results
-    ] == [[acquisition_results[0].identity, relation.identity]] * 4
-    assert raw_output.getvalue() == b"erroroutput"
+    ]
+    expected_base = [acquisition_results[0].identity, relation.identity]
+    assert preserved_provenance == [
+        expected_base,
+        [*expected_base, supplied_acquisition_results[0].identity],
+        expected_base,
+        expected_base,
+    ]
+    assert raw_output.getvalue() == b""
     supplied_identities = {event.identity for event in supplied_acquisition_results}
     assert [
         event.material["source_occurrence_reference"]
@@ -703,12 +708,16 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         if event.kind == "operator.representation.recorded"
         and event.material["source_occurrence_reference"]
         in supplied_identities
-    ] == [supplied_acquisition_results[0].identity, supplied_acquisition_results[1].identity]
+    ] == []
+    kinds = tuple(event.kind for event in ledger.list())
+    assert BYTE_PAIR_MEASUREMENT_RECORDED_KIND not in kinds
+    assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
+    assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
     standing = read_operator_locality_standing(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in standing["material_acquisition_result_occurrences"][-4:]
     ] == [event.identity for event in supplied_acquisition_results]
 
@@ -773,25 +782,7 @@ def test_supplied_occurrence_requires_exact_types():
             ledger,
             operator_invocation_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
-            supplied=OtherOccurrence(b"", "output", True),
-        )
-
-
-@pytest.mark.parametrize(
-    "egress",
-    (
-        0,
-        1,
-        None,
-        "yes",
-    ),
-)
-def test_supplied_occurrence_requires_an_exact_egress_distinction(egress):
-    with pytest.raises(TypeError, match="exact egress distinction required"):
-        SuppliedWitnessMaterialOccurrence(
-            exact_bytes=b"",
-            source_boundary="output",
-            egress=egress,
+            supplied=OtherOccurrence(b"", "output"),
         )
 
 

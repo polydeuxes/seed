@@ -407,7 +407,7 @@ def _pair_premise_for_existing_material(
     if not standing["material_acquisition_result_occurrences"]:
         return standing, None
     current_source_occurrence_references = tuple(
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in standing["material_acquisition_result_occurrences"]
     )
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
@@ -722,8 +722,6 @@ def run_persistent_operator_console(
             supplied_boundaries: set[str] = set()
             supplied_occurrence_count = 0
             supplied_occurrence_references: list[str] = []
-            byte_measurement_by_supplied_occurrence: dict[str, str] = {}
-            pair_measurement_by_byte_measurement: dict[str, Event] = {}
             provider_boundary = ledger.append_boundary()
 
             def acquire_witness_material(supplied) -> None:
@@ -758,144 +756,11 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=invocation_locality_identity,
                 )
-                witness_standing, byte_measurement = _record_measurements_after_pin(
+                witness_standing, _byte_measurement = _record_measurements_after_pin(
                     ledger,
                     witness_standing,
                     locality_identity=invocation_locality_identity,
                 )
-                byte_measurement_by_supplied_occurrence[
-                    supplied_occurrence.identity
-                ] = byte_measurement.identity
-                prior_position = len(supplied_occurrence_references) - 2
-                if prior_position in supplied.provenance_occurrence_positions:
-                    prior_reference = supplied_occurrence_references[prior_position]
-                    earlier_byte_measurement = byte_measurement_by_supplied_occurrence[
-                        prior_reference
-                    ]
-                    earlier_pair_measurement = (
-                        pair_measurement_by_byte_measurement.get(
-                            earlier_byte_measurement
-                        )
-                    )
-                    if earlier_pair_measurement is None:
-                        witness_standing, earlier_pair = _record_pair_measurement(
-                            ledger,
-                            witness_standing,
-                            byte_measurement_event_identity=earlier_byte_measurement,
-                            locality_identity=invocation_locality_identity,
-                        )
-                        earlier_pair_measurement = earlier_pair
-                        pair_measurement_by_byte_measurement[
-                            earlier_byte_measurement
-                        ] = earlier_pair_measurement
-                    witness_standing, later_pair = _record_pair_measurement(
-                        ledger,
-                        witness_standing,
-                        byte_measurement_event_identity=byte_measurement.identity,
-                        locality_identity=invocation_locality_identity,
-                    )
-                    pair_measurement_by_byte_measurement[
-                        byte_measurement.identity
-                    ] = later_pair
-                    witness_standing, comparison = (
-                        _record_pair_measurement_comparison(
-                            ledger,
-                            witness_standing,
-                            earlier_pair_measurement=earlier_pair_measurement,
-                            later_pair_measurement=later_pair,
-                            locality_identity=invocation_locality_identity,
-                        )
-                    )
-                    comparison_representation = record_operator_representation(
-                        ledger,
-                        locality_identity=invocation_locality_identity,
-                        locality_standing=witness_standing,
-                        source_occurrence_reference=comparison.identity,
-                    )
-                    witness_standing = _advance_over_representation(
-                        ledger, witness_standing, comparison_representation
-                    )
-                    destination_operator_boundary = operator_emission_boundary(
-                        raw_output_stream,
-                        boundary_identity=operator_egress_boundary_identity,
-                        locality_identity=operator_locality_identity,
-                        boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
-                    )
-                    witness_standing, _candidate = _record_representation_candidate(
-                        ledger,
-                        witness_standing,
-                        comparison_representation,
-                        destination_operator_boundary=(
-                            destination_operator_boundary
-                        ),
-                    )
-                if not supplied.egress:
-                    provider_boundary = ledger.append_boundary()
-                    return
-                witness_representation = record_operator_representation(
-                    ledger,
-                    locality_identity=invocation_locality_identity,
-                    locality_standing=witness_standing,
-                    source_occurrence_reference=supplied_occurrence.identity,
-                )
-                base_reference_count = len(
-                    witness_representation["recorded_occurrence_references"]
-                )
-                witness_standing = _advance_over_representation(
-                    ledger, witness_standing, witness_representation
-                )
-                destination_operator_boundary = operator_emission_boundary(
-                    raw_output_stream,
-                    boundary_identity=operator_egress_boundary_identity,
-                    locality_identity=operator_locality_identity,
-                    boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
-                )
-                witness_standing, admission, applicability = (
-                    _record_exact_material_representation_admission_and_applicability(
-                        ledger,
-                        witness_standing,
-                        witness_representation,
-                        destination_operator_boundary=(
-                            destination_operator_boundary
-                        ),
-                    )
-                )
-                base_reference_count += len(
-                    exact_material_representation_admission_occurrence_references(
-                        ledger, admission.identity
-                    )
-                )
-                base_reference_count += len(
-                    representation_emission_applicability_occurrence_references(
-                        ledger, applicability.identity
-                    )
-                )
-                try:
-                    emit_operator_representation_material(
-                        ledger,
-                        representation=witness_representation,
-                        admission_result_event_identity=admission.identity,
-                        applicability_result_event_identity=(
-                            applicability.identity
-                        ),
-                        locality_standing=witness_standing,
-                        output_boundary=destination_operator_boundary,
-                    )
-                finally:
-                    emission_references = witness_representation[
-                        "recorded_occurrence_references"
-                    ][base_reference_count:]
-                    if emission_references:
-                        witness_standing = _advance_over_representation(
-                            ledger,
-                            witness_standing,
-                            {
-                                "locality_identity": invocation_locality_identity,
-                                "recorded_occurrence_references": (
-                                    emission_references
-                                ),
-                            },
-                        )
                 provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(

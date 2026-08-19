@@ -11,6 +11,7 @@ from typing import Any, Iterable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -2087,18 +2088,18 @@ def advance_operator_locality_standing(
                 )
             representations[representation_reference]["boundary_failure_event_identity"] = event.identity
             continue
-        material_acquisition_reference = event.material["dimensions"]["identity"]
+        source_result = read_exact_material_acquisition_result(
+            ledger, event.identity
+        )
+        material_acquisition_reference = source_result.material["dimensions"][
+            "identity"
+        ]
         occurrence = {
             "subject_reference": material_acquisition_reference,
-            "standing": "preserved",
-            "authority": event.material["dimensions"]["authority"],
-            "evidence_event_identity": event.identity,
-            "source_role": event.material["source_role"],
+            "authority": source_result.material["dimensions"]["authority"],
+            "result_occurrence_identity": source_result.identity,
+            "source_role": source_result.material["source_role"],
         }
-        if isinstance(event.material.get("represented_material"), str):
-            occurrence["represented_material"] = event.material[
-                "represented_material"
-            ]
         material_acquisition_result_occurrences.append(occurrence)
 
     return {
@@ -2892,7 +2893,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         != prior_through_event_occurrence_identity
         or not any(
             type(occurrence) is dict
-            and occurrence.get("evidence_event_identity") == source_identity
+            and occurrence.get("result_occurrence_identity") == source_identity
             for occurrence in acquisition_results
         )
         or type(event.material.get("evidence_of_yield_relation_identity"))
@@ -3010,9 +3011,8 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         material_acquisition_result_occurrences.append(
             {
                 "subject_reference": event.material["dimensions"]["identity"],
-                "standing": "preserved",
                 "authority": event.material["dimensions"]["authority"],
-                "evidence_event_identity": event.identity,
+                "result_occurrence_identity": event.identity,
                 "source_role": event.material["source_role"],
             }
         )

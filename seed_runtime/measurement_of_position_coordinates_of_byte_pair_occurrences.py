@@ -223,11 +223,11 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
     for occurrence in bounded_locality_replay["material_acquisition_result_occurrences"]:
         if (
             type(occurrence) is not dict
-            or type(occurrence.get("evidence_event_identity")) is not str
-            or not occurrence["evidence_event_identity"]
+            or type(occurrence.get("result_occurrence_identity")) is not str
+            or not occurrence["result_occurrence_identity"]
         ):
             raise ValueError("current Standing carries a malformed material acquisition occurrence")
-        source_identity = occurrence["evidence_event_identity"]
+        source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
             continue
         source = ledger.get(source_identity)
@@ -497,7 +497,7 @@ def _require_current_standing(
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     carried_acquisition_results = {
-        occurrence.get("evidence_event_identity")
+        occurrence.get("result_occurrence_identity")
         for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
@@ -542,7 +542,7 @@ def _require_carried_standing_at_tip(
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     carried_acquisition_results = {
-        occurrence.get("evidence_event_identity")
+        occurrence.get("result_occurrence_identity")
         for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
@@ -801,7 +801,7 @@ def _read_assignment(
         ) from error
     if not any(
         type(occurrence) is dict
-        and occurrence.get("evidence_event_identity") == source_identity
+        and occurrence.get("result_occurrence_identity") == source_identity
         for occurrence in prior.get("material_acquisition_result_occurrences", ())
     ):
         raise ValueError(

@@ -140,14 +140,12 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
             SuppliedWitnessMaterialOccurrence(
                 b"exact output material",
                 "invocation output occurrence 0",
-                True,
             )
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
                 b"exact error material",
                 "invocation error occurrence 0",
-                True,
             )
         )
         return False, False, False
@@ -160,17 +158,14 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
         SuppliedWitnessMaterialOccurrence(
             b"exact output material",
             "invocation output occurrence 0",
-            True,
         ),
         SuppliedWitnessMaterialOccurrence(
             b"exact error material",
             "invocation error occurrence 0",
-            True,
         ),
         SuppliedWitnessMaterialOccurrence(
             b"",
             "invocation completion",
-            False,
         ),
     )
 
@@ -193,11 +188,6 @@ def test_cat_preserves_exact_posix_path_and_material(tmp_path):
         b"",
     )
     assert len({occurrence.source_boundary for occurrence in supplied}) == 3
-    assert tuple(occurrence.egress for occurrence in supplied) == (
-        True,
-        True,
-        False,
-    )
 
 
 def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
@@ -292,31 +282,36 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
 
     supplied = _invoke(b"!pytest " + nodeid + b"\n")
 
-    egress = tuple(occurrence for occurrence in supplied if occurrence.egress)
-    retained = {
+    by_boundary = {
         occurrence.source_boundary: occurrence
         for occurrence in supplied
-        if not occurrence.egress
     }
-    assert egress
+    invocation_output = tuple(
+        occurrence
+        for occurrence in supplied
+        if occurrence.source_boundary.startswith(
+            ("invocation output occurrence ", "invocation error occurrence ")
+        )
+    )
+    assert invocation_output
     assert all(
         occurrence.source_boundary.startswith(
             ("invocation output occurrence ", "invocation error occurrence ")
         )
-        for occurrence in egress
+        for occurrence in invocation_output
     )
-    assert set(retained) == {
+    assert {
         "implementation function catalog",
         "implementation function measurement",
         "invocation completion",
-    }
+    } <= set(by_boundary)
     assert any(
         occurrence.exact_bytes
-        for occurrence in egress
+        for occurrence in invocation_output
         if occurrence.source_boundary.startswith("invocation output occurrence ")
     )
-    catalog_occurrence = retained["implementation function catalog"]
-    artifact_occurrence = retained["implementation function measurement"]
+    catalog_occurrence = by_boundary["implementation function catalog"]
+    artifact_occurrence = by_boundary["implementation function measurement"]
     catalog = json.loads(catalog_occurrence.exact_bytes)
     artifact = json.loads(artifact_occurrence.exact_bytes)
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
@@ -337,7 +332,7 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     assert catalog_occurrence.known_loss == ()
     assert artifact_occurrence.known_loss == ()
     assert len(artifact_occurrence.exact_bytes) < 5000
-    assert retained["invocation completion"].exact_bytes == b""
+    assert by_boundary["invocation completion"].exact_bytes == b""
 
 
 def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse():
@@ -397,14 +392,12 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
             SuppliedWitnessMaterialOccurrence(
                 b"partial out",
                 "invocation output occurrence 0",
-                True,
             )
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
                 b"partial error",
                 "invocation error occurrence 0",
-                True,
             )
         )
         return timed_out, output_limited, error_limited

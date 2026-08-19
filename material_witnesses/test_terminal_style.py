@@ -19,20 +19,11 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
-    get_recorded_pair_measurement_comparison,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-from seed_runtime.operator_representation import (
-    REPRESENTATION_RECORDED_KIND,
-    read_operator_representation,
-)
-from seed_runtime.operator_representation_admission import (
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
-    REPRESENTATION_CANDIDATE_RECORDED_KIND,
-    get_recorded_exact_material_representation_admission,
-)
+from seed_runtime.operator_representation import REPRESENTATION_RECORDED_KIND
 from seed_runtime.operator_invocation_locality import OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
 from tests.binary_input import binary_input
@@ -232,7 +223,7 @@ def test_each_terminal_result_preserves_source_and_function_provenance(
         assert len({result.identity for result in results}) == len(results)
 
 
-def test_terminal_views_cross_compare_and_only_exact_styled_material_egresses(
+def test_terminal_material_preserves_provenance_without_host_compare_or_emission(
     terminal_style_witness_observation,
 ):
     _, _, _, plain_results, styled_results = terminal_style_witness_observation
@@ -242,34 +233,28 @@ def test_terminal_views_cross_compare_and_only_exact_styled_material_egresses(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=FUNCTION_MATERIAL,
             source_boundary="terminal style external function reference",
-            egress=False,
         ),
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=EXACT_MATERIAL[0],
             source_boundary="plain terminal source occurrence",
-            egress=False,
         ),
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=plain_results[0].exact_material,
             source_boundary="plain terminal cell result",
-            egress=False,
             provenance_occurrence_positions=(0, 1),
         ),
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=EXACT_MATERIAL[1],
             source_boundary="styled terminal source occurrence",
-            egress=False,
         ),
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=plain_results[1].exact_material,
             source_boundary="styled source plain terminal cell result",
-            egress=False,
             provenance_occurrence_positions=(0, 3),
         ),
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=styled_results[1].exact_material,
             source_boundary="styled source style preserving terminal result",
-            egress=True,
             provenance_occurrence_positions=(0, 3, 4),
         ),
     )
@@ -310,65 +295,21 @@ def test_terminal_views_cross_compare_and_only_exact_styled_material_egresses(
     assert tuple(event.exact_material for event in acquisition_results) == tuple(
         occurrence.exact_bytes for occurrence in supplied
     )
-    assert emitted == styled_results[1].exact_material
-    assert len(comparisons) == 3
-
-    terminal_view_comparison = get_recorded_pair_measurement_comparison(
-        ledger, comparisons[-1].identity
-    )
-    assignment = ledger.get(
-        terminal_view_comparison["responsibility_assignment_reference"][
-            "recorded_occurrence_identity"
-        ]
-    )
-    assert assignment is not None
-    assert assignment.material["added_occurrence_reference"] == acquisition_results[5].identity
-    assert assignment.material["added_occurrence_provenance_references"][-3:] == [
+    assert acquisition_results[5].material["provenance_occurrence_references"][-3:] == [
         acquisition_results[0].identity,
         acquisition_results[3].identity,
         acquisition_results[4].identity,
     ]
-    assert terminal_view_comparison["findings"]["conflicting_findings"]
-    assert terminal_view_comparison["findings"]["unknown_findings"] == []
-
-    comparison_identities = {event.identity for event in comparisons}
-    comparison_representations = tuple(
-        read_operator_representation(ledger, event.identity)
+    assert emitted == b""
+    assert comparisons == ()
+    supplied_identities = {event.identity for event in acquisition_results}
+    assert all(
+        event.material["source_occurrence_reference"] not in supplied_identities
         for event in events
         if event.kind == REPRESENTATION_RECORDED_KIND
-        and event.material["source_occurrence_reference"] in comparison_identities
     )
-    assert len(comparison_representations) == len(comparisons)
-    assert all(
-        representation["exact_material"] is None
-        and "representation_rule" not in representation
-        for representation in comparison_representations
-    )
-
-    comparison_representation_identities = {
-        representation["representation_event_identity"]
-        for representation in comparison_representations
-    }
-    comparison_candidate_identities = {
-        event.identity
-        for event in events
-        if event.kind == REPRESENTATION_CANDIDATE_RECORDED_KIND
-        and event.material["representation_reference"][
-            "representation_event_identity"
-        ]
-        in comparison_representation_identities
-    }
-    admitted_candidate_identities = {
-        get_recorded_exact_material_representation_admission(ledger, event.identity)[
-            "candidate_reference"
-        ]["recorded_occurrence_identity"]
-        for event in events
-        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND
-    }
-    assert len(comparison_candidate_identities) == len(comparisons)
-    assert comparison_candidate_identities.isdisjoint(admitted_candidate_identities)
 
     standing = read_operator_locality_standing(
         ledger, locality_identity=invocation_locality
     )
-    assert set(standing["comparison_result_occurrences"]) == comparison_identities
+    assert standing["comparison_result_occurrences"] == {}

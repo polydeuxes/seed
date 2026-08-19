@@ -23,6 +23,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.material_acquisition import MaterialAcquisitionError
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
@@ -77,7 +78,7 @@ def _attempt(ledger, text, *, locality="s", locality_standing=None):
         "current_standing": {
             "material_acquisition_result_occurrence": {
                 "subject_reference": event.material["result_identity"],
-                "evidence_event_identity": event.identity,
+                "result_occurrence_identity": event.identity,
             }
         }
     }
@@ -330,10 +331,10 @@ def test_events_from_different_localities_cannot_influence_one_another():
     assert one_subjects == {first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
     assert two_subjects == {second["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
     assert not {
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in standing_one["material_acquisition_result_occurrences"]
     } & {
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in standing_two["material_acquisition_result_occurrences"]
     }
 
@@ -448,10 +449,8 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
         "evidence_of_yield_relation_identity"
     ]
 
-    standing = _standing(ledger)
-
-    assert source.identity not in standing["exact_result_occurrences"]
-    assert standing["exact_result_occurrences"] == {other.identity: None}
+    with pytest.raises(MaterialAcquisitionError):
+        _standing(ledger)
 
 
 def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
@@ -471,7 +470,11 @@ def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
         ),
     )
 
-    assert _standing(ledger)["exact_result_occurrences"] == {}
+    with pytest.raises(
+        MaterialAcquisitionError,
+        match="absent or corrupted",
+    ):
+        _standing(ledger)
 
 
 @pytest.mark.parametrize(
@@ -498,7 +501,8 @@ def test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation(
         ),
     )
 
-    assert _standing(ledger)["exact_result_occurrences"] == {}
+    with pytest.raises(MaterialAcquisitionError):
+        _standing(ledger)
 
 
 @pytest.mark.parametrize(

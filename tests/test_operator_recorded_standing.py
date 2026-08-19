@@ -51,7 +51,7 @@ def _run(material: bytes) -> EventLedger:
 
 def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     return [
-        acquired_material_bytes(ledger.get(occurrence["evidence_event_identity"]))
+        acquired_material_bytes(ledger.get(occurrence["result_occurrence_identity"]))
         for occurrence in standing["material_acquisition_result_occurrences"]
     ]
 
@@ -298,7 +298,7 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
             b"/checkpoint\n",
         ]
         source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
-            "evidence_event_identity"
+            "result_occurrence_identity"
         ]
         representation = record_operator_representation(
             reopened,
@@ -336,7 +336,7 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         recorded_occurrence_identity=checkpoint.identity,
     )
     source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
-        "evidence_event_identity"
+        "result_occurrence_identity"
     ]
     representation = record_operator_representation(
         ledger,
@@ -381,7 +381,7 @@ def test_memory_availability_does_not_move_source_material_into_the_destination(
         recorded_occurrence_identity=continuation.identity,
     )
     source_occurrence_identity = point["standing"]["material_acquisition_result_occurrences"][0][
-        "evidence_event_identity"
+        "result_occurrence_identity"
     ]
 
     with pytest.raises(ValueError, match="distinct Locality"):

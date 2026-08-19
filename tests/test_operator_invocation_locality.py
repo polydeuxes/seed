@@ -116,7 +116,6 @@ def test_witness_material_occurs_only_in_the_related_locality():
         supplied=SuppliedWitnessMaterialOccurrence(
             b"one selected log line\n",
             "invocation output occurrence 0",
-            False,
         ),
     )
 
@@ -133,7 +132,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
         ledger, locality_identity=relation.locality_identity
     )
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in operator_standing["material_acquisition_result_occurrences"]
     ] == [command.identity]
     assert operator_standing["operator_invocation_locality_relations"] == {}
@@ -141,7 +140,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
         "responsibility_assignment_occurrences"
     ]
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in witness_standing["material_acquisition_result_occurrences"]
     ] == [supplied.identity]
     assert witness_standing["operator_invocation_locality_relations"] == {

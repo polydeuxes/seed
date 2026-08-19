@@ -688,14 +688,12 @@ def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
             SuppliedWitnessMaterialOccurrence(
                 exact_bytes=b"first",
                 source_boundary="first opaque occurrence",
-                egress=False,
             )
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
                 exact_bytes=b"second",
                 source_boundary="second opaque occurrence",
-                egress=False,
             )
         )
 
@@ -847,7 +845,7 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
         ],
     )
     assert assignment.material["added_occurrence_reference"] in {
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in standing["material_acquisition_result_occurrences"]
     }
     reopened.close()

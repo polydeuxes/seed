@@ -27,7 +27,6 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
-    get_recorded_pair_measurement_comparison,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.occurrence_position_measurement import (
@@ -41,14 +40,11 @@ from seed_runtime.operator_locality_standing import read_operator_locality_stand
 from seed_runtime.operator_representation import (
     REPRESENTATION_RECORDED_KIND,
     emit_operator_representation_material,
-    read_operator_representation,
     record_operator_representation,
 )
 from seed_runtime.operator_representation_admission import (
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
     REPRESENTATION_CANDIDATE_RECORDED_KIND,
-    get_recorded_exact_material_representation_admission,
-    get_recorded_representation_candidate,
 )
 from seed_runtime.operator_invocation_locality import OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
@@ -325,7 +321,7 @@ def test_one_exact_witness_result_crosses_the_operator_emission_road(
     )
 
 
-def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence():
+def test_console_preserves_each_terminal_occurrence_without_host_compare_or_emission():
     ledger = EventLedger()
     command = b"!witness terminal\n"
     observations = tuple(
@@ -346,7 +342,6 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
             SuppliedWitnessMaterialOccurrence(
                 exact_bytes=IMPLEMENTATION_FUNCTION.identity.encode("ascii"),
                 source_boundary="terminal witness implementation function reference",
-                egress=False,
             )
         )
         for position, (exact_source, observation) in enumerate(
@@ -356,14 +351,12 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
                 SuppliedWitnessMaterialOccurrence(
                     exact_bytes=exact_source,
                     source_boundary=f"terminal witness source occurrence {position}",
-                    egress=False,
                 )
             )
             supply(
                 SuppliedWitnessMaterialOccurrence(
                     exact_bytes=observation.stdout_bytes or b"",
                     source_boundary=f"terminal witness stdout occurrence {position}",
-                    egress=True,
                     provenance_occurrence_positions=(0, 1 + position * 2),
                 )
             )
@@ -445,9 +438,6 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
             ),
         )
     )
-    expected_emitted = tuple(
-        observation.stdout_bytes or b"" for observation in observations
-    )
     assert tuple(event.exact_material for event in acquisition_results) == expected_supplied
     assert tuple(
         event.material["provenance_occurrence_references"][-2:]
@@ -458,7 +448,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     )
     assert len(measurements) == len(acquisition_results) == 5
     assert len(direct_position_measurements) == len(acquisition_results) == 5
-    assert len(pair_measurements) == len(EXACT_MATERIAL) * 2 == 4
+    assert pair_measurements == ()
     assert len(position_measurements) == len(acquisition_results) == 5
     for position, measurement in enumerate(measurements):
         assertions = assertions_of_recorded_byte_measurement(
@@ -473,95 +463,16 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
             {"material_acquisition_occurrence_identity": event.identity}
             for event in acquisition_results[: position + 1]
         ]
-    assert tuple(event.exact_material for event in emissions) == expected_emitted
-    assert emitted_material == b"".join(expected_emitted)
-
-    assert len(comparisons) == len(EXACT_MATERIAL) == 2
-    for position, comparison in enumerate(comparisons):
-        recorded = get_recorded_pair_measurement_comparison(
-            ledger, comparison.identity
-        )
-        assignment = ledger.get(
-            recorded["responsibility_assignment_reference"][
-                "recorded_occurrence_identity"
-            ]
-        )
-        assert assignment is not None
-        assert assignment.material["earlier_measurement_reference"][
-            "recorded_occurrence_identity"
-        ] == pair_measurements[position * 2].identity
-        assert assignment.material["later_measurement_reference"][
-            "recorded_occurrence_identity"
-        ] == pair_measurements[1 + position * 2].identity
-        assert assignment.material["added_occurrence_reference"] == acquisition_results[
-            2 + position * 2
-        ].identity
-        assert assignment.material[
-            "operator_invocation_locality_relation_event_identity"
-        ] == relation.identity
-        assert assignment.material["destination_operator_locality_identity"] == (
-            "terminal-witness-operator-locality"
-        )
-        assert assignment.material[
-            "added_occurrence_provenance_references"
-        ] == acquisition_results[2 + position * 2].material[
-            "provenance_occurrence_references"
-        ]
-        assert recorded["findings"]["conflicting_findings"]
-        assert recorded["findings"]["unknown_findings"] == []
-        assert "cause" not in recorded
-        assert "meaning" not in recorded
-
-    comparison_identities = {comparison.identity for comparison in comparisons}
-    comparison_representations = tuple(
-        read_operator_representation(ledger, representation.identity)
+    assert emissions == ()
+    assert emitted_material == b""
+    assert comparisons == ()
+    assert candidates == ()
+    assert admissions == ()
+    supplied_identities = {event.identity for event in acquisition_results}
+    assert all(
+        representation.material["source_occurrence_reference"]
+        not in supplied_identities
         for representation in representations
-        if representation.material["source_occurrence_reference"]
-        in comparison_identities
-    )
-    assert len(comparison_representations) == len(comparisons)
-    assert {
-        representation["source_occurrence_reference"]
-        for representation in comparison_representations
-    } == comparison_identities
-    assert all(
-        representation["exact_material"] is None
-        and "representation_rule" not in representation
-        for representation in comparison_representations
-    )
-
-    comparison_representation_identities = {
-        representation["representation_event_identity"]
-        for representation in comparison_representations
-    }
-    comparison_candidates = tuple(
-        get_recorded_representation_candidate(ledger, candidate.identity)
-        for candidate in candidates
-        if candidate.material["representation_reference"][
-            "representation_event_identity"
-        ]
-        in comparison_representation_identities
-    )
-    assert len(comparison_candidates) == len(comparisons)
-    assert all(
-        candidate["destination_operator_locality_identity"]
-        == "terminal-witness-operator-locality"
-        and "representation_rule" not in candidate["representation_reference"]
-        for candidate in comparison_candidates
-    )
-    admitted_candidate_identities = {
-        get_recorded_exact_material_representation_admission(
-            ledger, admission.identity
-        )["candidate_reference"]["recorded_occurrence_identity"]
-        for admission in admissions
-    }
-    assert admitted_candidate_identities.isdisjoint(
-        candidate.identity
-        for candidate in candidates
-        if candidate.material["representation_reference"][
-            "representation_event_identity"
-        ]
-        in comparison_representation_identities
     )
 
     standing = read_operator_locality_standing(
@@ -569,22 +480,8 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     )
     assert set(standing["measurement_occurrences"]) == {
         *(measurement.identity for measurement in measurements),
-        *(measurement.identity for measurement in pair_measurements),
         *(measurement.identity for measurement in position_measurements),
         *(measurement.identity for measurement in direct_position_measurements),
     }
-    assert set(standing["comparison_result_occurrences"]) == {
-        comparison.identity for comparison in comparisons
-    }
-    assert comparison_representation_identities <= {
-        representation["representation_event_identity"]
-        for representation in standing["representations"].values()
-    }
-    assert {
-        candidate.identity
-        for candidate in candidates
-        if candidate.material["representation_reference"][
-            "representation_event_identity"
-        ]
-        in comparison_representation_identities
-    } <= set(standing["candidate_result_occurrences"])
+    assert standing["comparison_result_occurrences"] == {}
+    assert standing["candidate_result_occurrences"] == {}

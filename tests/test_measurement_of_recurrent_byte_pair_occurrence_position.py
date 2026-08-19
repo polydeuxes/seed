@@ -435,7 +435,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
         else next(
             occurrence
             for occurrence in acquisition_results
-            if occurrence.get("evidence_event_identity") == source.identity
+                if occurrence.get("result_occurrence_identity") == source.identity
         )
     )
     key = (
@@ -740,7 +740,7 @@ def test_explicit_prior_standing_binds_each_exact_input_occurrence(changed_input
         carried = next(
             occurrence
             for occurrence in forged["material_acquisition_result_occurrences"]
-            if occurrence["evidence_event_identity"] == source.identity
+            if occurrence["result_occurrence_identity"] == source.identity
         )
         carried["result_identity"] = "substituted-result"
 

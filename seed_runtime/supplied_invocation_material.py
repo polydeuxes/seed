@@ -18,7 +18,6 @@ from seed_runtime.operator_invocation_locality import (
 class SuppliedWitnessMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
-    egress: bool
     known_loss: tuple[str, ...] = ()
     provenance_occurrence_positions: tuple[int, ...] = ()
 
@@ -27,8 +26,6 @@ class SuppliedWitnessMaterialOccurrence:
             raise TypeError("exact material required")
         if type(self.source_boundary) is not str or not self.source_boundary:
             raise TypeError("exact source boundary required")
-        if type(self.egress) is not bool:
-            raise TypeError("exact egress distinction required")
         if type(self.known_loss) is not tuple or any(
             type(item) is not str for item in self.known_loss
         ):

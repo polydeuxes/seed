@@ -123,22 +123,17 @@ def _exact_measurement_occurrence_standing_coordinates(
     }
 
 
-def _exact_material_acquisition_occurrence_standing_coordinates(
+def _exact_material_acquisition_result_availability_coordinates(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event = read_exact_material_acquisition_result(ledger, event_identity)
     dimensions = event.material["dimensions"]
     occurrence = {
         "subject_reference": dimensions["identity"],
-        "standing": "preserved",
         "authority": dimensions["authority"],
-        "evidence_event_identity": event.identity,
+        "result_occurrence_identity": event.identity,
         "source_role": event.material["source_role"],
     }
-    if isinstance(event.material.get("represented_material"), str):
-        occurrence["represented_material"] = event.material[
-            "represented_material"
-        ]
     return occurrence
 
 
@@ -665,7 +660,7 @@ def _require_current_assignment_standing(
         or type(acquisition_results) is not list
         or not any(
             type(occurrence) is dict
-            and occurrence.get("evidence_event_identity")
+            and occurrence.get("result_occurrence_identity")
             == finding.source_material_acquisition_occurrence_identity
             for occurrence in acquisition_results
         )
@@ -843,7 +838,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             ledger, pair_occurrence_identity
         )
     )
-    exact_material_acquisition_result_occurrence = _exact_material_acquisition_occurrence_standing_coordinates(
+    exact_material_acquisition_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
         ledger, finding.source_material_acquisition_occurrence_identity
     )
     carried_material_acquisition_result_occurrences = (
@@ -851,7 +846,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             occurrence
             for occurrence in acquisition_results
             if type(occurrence) is dict
-            and occurrence.get("evidence_event_identity")
+            and occurrence.get("result_occurrence_identity")
             == finding.source_material_acquisition_occurrence_identity
         ]
         if type(acquisition_results) is list
@@ -881,7 +876,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or type(acquisition_results) is not list
         or not any(
             type(occurrence) is dict
-            and occurrence.get("evidence_event_identity")
+            and occurrence.get("result_occurrence_identity")
             == finding.source_material_acquisition_occurrence_identity
             for occurrence in acquisition_results
         )

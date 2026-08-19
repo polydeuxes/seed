@@ -116,11 +116,11 @@ def _material_acquisition_identities(standing: dict[str, Any]) -> tuple[str, ...
     for occurrence in standing["material_acquisition_result_occurrences"]:
         if (
             type(occurrence) is not dict
-            or type(occurrence.get("evidence_event_identity")) is not str
-            or not occurrence["evidence_event_identity"]
+            or type(occurrence.get("result_occurrence_identity")) is not str
+            or not occurrence["result_occurrence_identity"]
         ):
             raise ValueError("current Standing carries a malformed material acquisition occurrence")
-        identities.append(occurrence["evidence_event_identity"])
+        identities.append(occurrence["result_occurrence_identity"])
     return tuple(identities)
 
 

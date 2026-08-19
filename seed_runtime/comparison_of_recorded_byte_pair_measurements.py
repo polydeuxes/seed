@@ -406,7 +406,7 @@ def _comparison_inputs(
                 "operator acquisition carries no exact prior Standing"
             ) from error
         carried_sources = {
-            occurrence.get("evidence_event_identity")
+            occurrence.get("result_occurrence_identity")
             for occurrence in source_standing.get("material_acquisition_result_occurrences", ())
             if type(occurrence) is dict
         }
