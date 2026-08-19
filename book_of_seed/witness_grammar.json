@@ -158,6 +158,108 @@
       "branch_value_by_completion_without_responsible_occurrence_and_Evidence"
     ]
   },
+  "responsibility": {
+    "book_material_reference": "this_Book",
+    "subject": "Responsibility",
+    "coordinates": [
+      {
+        "subject": "Required branches",
+        "coordinates": [
+          {
+            "subject": "Responsible boundary",
+            "coordinate": "responsible_boundary"
+          },
+          {
+            "subject": "Subject or material addressed",
+            "coordinate": "subject_or_material_addressed"
+          },
+          {
+            "subject": "Exact responsible act",
+            "coordinate": "exact_responsible_act"
+          },
+          {"subject": "Authority", "coordinate": "authority"},
+          {"subject": "Evidence", "coordinate": "evidence"},
+          {
+            "subject": "Scope and locality",
+            "coordinate": "scope_and_locality"
+          }
+        ]
+      },
+      {
+        "subject": "Input branches",
+        "coordinates": [
+          {"subject": "Input source", "coordinate": "input_source"},
+          {"subject": "Provenance", "coordinate": "provenance"}
+        ]
+      },
+      {
+        "subject": "Support-relation branches",
+        "coordinates": [
+          {"subject": "Support relation", "coordinate": "support_relation"}
+        ]
+      },
+      {
+        "subject": "Act-occurrence and non-occurrence branches",
+        "coordinates": [
+          {"subject": "Act occurrence", "coordinate": "act_occurrence"},
+          {
+            "subject": "Absence-of-act-occurrence finding",
+            "coordinate": "absence_of_act_occurrence_finding"
+          },
+          {
+            "subject": "Occurrence or non-occurrence evidence",
+            "coordinate": "occurrence_or_nonoccurrence_evidence"
+          }
+        ]
+      },
+      {
+        "subject": "Result branches",
+        "coordinates": [
+          {
+            "subject": "Occurrence-result Evidence",
+            "coordinate": "occurrence_result_evidence"
+          },
+          {"subject": "Result", "coordinate": "result"}
+        ]
+      },
+      {
+        "subject": "Standing branches",
+        "coordinates": [
+          {
+            "subject": "Standing responsible boundary",
+            "coordinate": "standing_responsible_boundary"
+          },
+          {
+            "subject": "Standing occurrence",
+            "coordinate": "standing_occurrence"
+          },
+          {
+            "subject": "Standing-occurrence evidence",
+            "coordinate": "standing_occurrence_evidence"
+          },
+          {"subject": "Standing", "coordinate": "standing"}
+        ]
+      },
+      {
+        "subject": "Preservation, standing, and neighboring branches",
+        "coordinates": [
+          {
+            "subject": "Preservation record",
+            "coordinate": "preservation_record"
+          },
+          {
+            "subject": "Separate Authorization standing",
+            "coordinate": "separate_authorization_standing"
+          },
+          {
+            "subject": "Applicability and admission standing",
+            "coordinate": "applicability_and_admission_standing"
+          },
+          {"subject": "Lawful Stopping", "coordinate": "lawful_stopping"}
+        ]
+      }
+    ]
+  },
   "relations": {
     "participation": {
       "book_clause": "01.Standing.E.1",
@@ -414,6 +516,10 @@
         {"subject": "one_direct_recorded_Standing_boundary_Locality_relation"},
         {"subject": "current_Locality_Standing"},
         {"subject": "standing_responsibility_path"},
+        {
+          "subject": "book_responsibility_witness_grammar_coordinate_distinction",
+          "grammar_coordinate_reference": ["responsibility"]
+        },
         {"subject": "public_export_standing_distinction"},
         {"subject": "assertion_support_relation_standing_boundary"},
         {"subject": "event_kind_grammar_responsibility"},

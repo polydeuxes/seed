@@ -6,6 +6,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/witness_grammar.json"
 CHAPTERS = ROOT / "book_of_seed/chapters"
+BOOK_README = ROOT / "book_of_seed/README.md"
 
 
 def _active_book() -> str:
@@ -78,6 +79,130 @@ def test_witness_readable_grammar_traverses_responsibility_from_standing():
             "branch_value_by_completion_without_responsible_occurrence_and_Evidence",
         ],
     }
+
+
+RESPONSIBILITY_COORDINATES = (
+    (
+        "Required branches",
+        (
+            ("Responsible boundary", "responsible_boundary"),
+            ("Subject or material addressed", "subject_or_material_addressed"),
+            ("Exact responsible act", "exact_responsible_act"),
+            ("Authority", "authority"),
+            ("Evidence", "evidence"),
+            ("Scope and locality", "scope_and_locality"),
+        ),
+    ),
+    (
+        "Input branches",
+        (
+            ("Input source", "input_source"),
+            ("Provenance", "provenance"),
+        ),
+    ),
+    (
+        "Support-relation branches",
+        (("Support relation", "support_relation"),),
+    ),
+    (
+        "Act-occurrence and non-occurrence branches",
+        (
+            ("Act occurrence", "act_occurrence"),
+            (
+                "Absence-of-act-occurrence finding",
+                "absence_of_act_occurrence_finding",
+            ),
+            (
+                "Occurrence or non-occurrence evidence",
+                "occurrence_or_nonoccurrence_evidence",
+            ),
+        ),
+    ),
+    (
+        "Result branches",
+        (
+            ("Occurrence-result Evidence", "occurrence_result_evidence"),
+            ("Result", "result"),
+        ),
+    ),
+    (
+        "Standing branches",
+        (
+            ("Standing responsible boundary", "standing_responsible_boundary"),
+            ("Standing occurrence", "standing_occurrence"),
+            ("Standing-occurrence evidence", "standing_occurrence_evidence"),
+            ("Standing", "standing"),
+        ),
+    ),
+    (
+        "Preservation, standing, and neighboring branches",
+        (
+            ("Preservation record", "preservation_record"),
+            (
+                "Separate Authorization standing",
+                "separate_authorization_standing",
+            ),
+            (
+                "Applicability and admission standing",
+                "applicability_and_admission_standing",
+            ),
+            ("Lawful Stopping", "lawful_stopping"),
+        ),
+    ),
+)
+
+
+def _book_responsibility_heading_tree():
+    groups = []
+    current = None
+    inside = False
+    for line in BOOK_README.read_text(encoding="utf-8").splitlines():
+        if line == "## Responsibility":
+            assert not inside
+            inside = True
+            continue
+        if inside and line.startswith("## "):
+            break
+        if not inside:
+            continue
+        if line.startswith("### "):
+            current = [line[4:], []]
+            groups.append(current)
+        elif line.startswith("#### "):
+            assert current is not None
+            current[1].append(line[5:])
+    assert inside
+    return tuple((group, tuple(coordinates)) for group, coordinates in groups)
+
+
+def test_book_responsibility_and_witness_grammar_share_exact_coordinates():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    responsibility = grammar["responsibility"]
+    expected_headings = tuple(
+        (group, tuple(subject for subject, _ in coordinates))
+        for group, coordinates in RESPONSIBILITY_COORDINATES
+    )
+    grammar_coordinates = tuple(
+        (
+            group["subject"],
+            tuple(
+                (coordinate["subject"], coordinate["coordinate"])
+                for coordinate in group["coordinates"]
+            ),
+        )
+        for group in responsibility["coordinates"]
+    )
+
+    assert responsibility["book_material_reference"] == "this_Book"
+    assert responsibility["subject"] == "Responsibility"
+    assert _book_responsibility_heading_tree() == expected_headings
+    assert grammar_coordinates == RESPONSIBILITY_COORDINATES
+    coordinates = [
+        coordinate
+        for _, group_coordinates in grammar_coordinates
+        for _, coordinate in group_coordinates
+    ]
+    assert len(coordinates) == len(set(coordinates))
 
 
 def test_witness_discriminates_content_locality_and_occurrence():
@@ -732,6 +857,9 @@ FIDELITY_SUBJECTS = {
     "standing_responsibility_path": (
         test_witness_readable_grammar_traverses_responsibility_from_standing,
         test_source_measurement_declarations_require_one_current_standing_pin,
+    ),
+    "book_responsibility_witness_grammar_coordinate_distinction": (
+        test_book_responsibility_and_witness_grammar_share_exact_coordinates,
     ),
     "public_export_standing_distinction": (
         test_public_export_standing_not_established_standing,
