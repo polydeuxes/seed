@@ -25,6 +25,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_ordered_path_pair_finding_compare_assignments_from_current_standing,
     record_ordered_path_pair_finding_compare_applicability_from_current_standing,
     record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing,
+    record_ordered_path_pair_finding_compare_results_from_current_standing,
     unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -627,6 +628,77 @@ def test_only_applicable_current_compare_results_record_participation_and_act_ev
     assert ledger.append_boundary() == boundary_after
 
 
+def test_every_current_compare_act_records_one_separate_yield_and_result():
+    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
+    ledger, _second_source, _second_added, _second_comparison, _second_path = (
+        _inputs(ledger=ledger)
+    )
+    record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    acts = record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    ).compare_act_evidence_occurrences
+
+    recorded = record_ordered_path_pair_finding_compare_results_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    results = recorded.compare_result_occurrences
+
+    assert len(results) == len(acts) == 2
+    assert tuple(
+        result.material["responsible_act_evidence_identity"] for result in results
+    ) == tuple(act.identity for act in acts)
+    assert len(
+        {
+            result.material["evidence_of_yield_relation_identity"]
+            for result in results
+        }
+    ) == len(results)
+    assert all(
+        ledger.get(result.material["evidence_of_yield_relation_identity"])
+        is not None
+        for result in results
+    )
+    assert all(
+        result.identity
+        in recorded.locality_standing["comparison_result_occurrences"]
+        for result in results
+    )
+    assert all(
+        result.material["participation_of_input_in_compare"]
+        == act.material["participation_of_input_in_compare"]
+        for result, act in zip(results, acts)
+    )
+    assert all(result.exact_material is None for result in results)
+    assert all(
+        tuple(
+            role["role"] for role in result.material["finding"]["relation_findings"]
+        )
+        == ("first_path_relation", "second_path_relation")
+        for result in results
+    )
+    assert all("exact_material" not in result.material["finding"] for result in results)
+    assert all(
+        "represented_relation" not in result.material["finding"]
+        for result in results
+    )
+    assert recorded.locality_standing["through_event_occurrence_identity"] == (
+        results[-1].identity
+    )
+
+    boundary_after = ledger.append_boundary()
+    repeated = record_ordered_path_pair_finding_compare_results_from_current_standing(
+        ledger, locality_identity=LOCALITY
+    )
+    assert repeated.compare_result_occurrences == ()
+    assert repeated.locality_standing == recorded.locality_standing
+    assert ledger.append_boundary() == boundary_after
+
+
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
@@ -947,6 +1019,7 @@ FIDELITY_SUBJECTS = {
         test_every_current_compare_subject_records_one_serial_responsibility_assignment,
         test_every_current_compare_assignment_records_one_separate_applicability_result,
         test_only_applicable_current_compare_results_record_participation_and_act_evidence,
+        test_every_current_compare_act_records_one_separate_yield_and_result,
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,

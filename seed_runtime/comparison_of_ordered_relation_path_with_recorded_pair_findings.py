@@ -105,6 +105,11 @@ class RecordedOrderedPathPairFindingCompareActEvidence(NamedTuple):
     compare_act_evidence_occurrences: tuple[Event, ...]
 
 
+class RecordedOrderedPathPairFindingCompareResults(NamedTuple):
+    locality_standing: dict[str, Any]
+    compare_result_occurrences: tuple[Event, ...]
+
+
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(message)
@@ -604,6 +609,67 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
             ledger, locality_identity=locality_identity
         ),
         compare_act_evidence_occurrences=tuple(recorded),
+    )
+
+
+def record_ordered_path_pair_finding_compare_results_from_current_standing(
+    ledger: EventLedger, *, locality_identity: str
+) -> RecordedOrderedPathPairFindingCompareResults:
+    """Record one Yield and result for each exact current Compare Act Evidence."""
+
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    acts = []
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    ):
+        act, _assignment, _applicability, _inputs_reading = _read_compare_act(
+            ledger, occurrence.identity
+        )
+        acts.append(act)
+
+    results_by_act: dict[str, Event] = {}
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    ):
+        get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+            ledger, occurrence.identity
+        )
+        act_identity = occurrence.material.get("responsible_act_evidence_identity")
+        if type(act_identity) is not str or not act_identity:
+            raise ValueError(
+                "ordered-path Compare result carries no exact Act Evidence"
+            )
+        if act_identity in results_by_act:
+            raise ValueError(
+                "ordered-path Compare Act Evidence carries repeated results"
+            )
+        results_by_act[act_identity] = occurrence
+
+    recorded: list[Event] = []
+    for act in acts:
+        if act.identity in results_by_act:
+            continue
+        result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
+            ledger,
+            responsible_act_evidence_event_identity=act.identity,
+        )
+        results_by_act[act.identity] = result
+        recorded.append(result)
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        )
+
+    return RecordedOrderedPathPairFindingCompareResults(
+        locality_standing=standing,
+        compare_result_occurrences=tuple(recorded),
     )
 
 
