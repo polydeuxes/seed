@@ -15,9 +15,6 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
-    record_byte_measurement_responsibility_assignment,
-    record_byte_measurement_responsible_act_evidence,
-    record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import (
@@ -25,8 +22,12 @@ from seed_runtime.material_ingest import (
     ingest_material,
     read_exact_ingest_result,
 )
-from seed_runtime.operator_locality_standing import (
-    read_operator_locality_standing,
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
+)
+from seed_runtime.standing_measurement_declarations import (
+    record_declared_measurements_from_current_standing,
 )
 
 
@@ -93,24 +94,19 @@ def witness_grammar_external_json_observation():
         known_loss=EXTERNAL_JSON_KNOWN_LOSS,
         provenance_occurrence_references=(source.identity,),
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    declared_measurements = record_declared_measurements_from_current_standing(
         ledger,
-        source_localities=(RESULT_LOCALITY,),
-        recording_locality_identity=RESULT_LOCALITY,
-        locality_standing=read_operator_locality_standing(
-            ledger, locality_identity=RESULT_LOCALITY
-        ),
+        locality_identity=RESULT_LOCALITY,
     )
-    act = record_byte_measurement_responsible_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
-            ledger, locality_identity=RESULT_LOCALITY
-        ),
+    position_measurement = next(
+        event
+        for event in declared_measurements.result_occurrences
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
-    measurement = record_byte_measurement_result(
-        ledger,
-        responsible_act_evidence_event_identity=act.identity,
+    byte_measurement = next(
+        event
+        for event in declared_measurements.result_occurrences
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
     return {
         "ledger": ledger,
@@ -121,7 +117,9 @@ def witness_grammar_external_json_observation():
         "after_external_invocation": after_external_invocation,
         "invocation": invocation,
         "result": result,
-        "measurement": measurement,
+        "declared_measurements": declared_measurements,
+        "position_measurement": position_measurement,
+        "byte_measurement": byte_measurement,
     }
 
 
@@ -184,7 +182,7 @@ def test_seed_native_byte_measurement_reads_only_the_external_output_ingest_resu
     witness_grammar_external_json_observation,
 ):
     observation = witness_grammar_external_json_observation
-    measurement = observation["measurement"]
+    measurement = observation["byte_measurement"]
 
     assert measurement.kind == BYTE_MEASUREMENT_RECORDED_KIND
     assert measurement.locality_identity == RESULT_LOCALITY
@@ -194,4 +192,41 @@ def test_seed_native_byte_measurement_reads_only_the_external_output_ingest_resu
         assertion["assertion_scope"]["source_localities"]
         == [RESULT_LOCALITY]
         for assertion in measurement.material["assertions"]
+    )
+
+
+def test_seed_native_position_measurement_owes_every_external_output_byte_pair(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    ledger = observation["ledger"]
+    result = observation["result"]
+    measurement = observation["position_measurement"]
+    references = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, measurement.identity
+        )
+    )
+
+    assert measurement.locality_identity == RESULT_LOCALITY
+    assert measurement.material["source_ingest_occurrence_identity"] == (
+        result.identity
+    )
+    assert measurement.material["assertions"]["occurrences"] == max(
+        len(result.exact_material) - 1,
+        0,
+    )
+    assert len(references) == max(len(result.exact_material) - 1, 0)
+    assert tuple(reference.first_position for reference in references) == tuple(
+        range(len(references))
+    )
+    assert tuple(reference.second_position for reference in references) == tuple(
+        range(1, len(references) + 1)
+    )
+    assert all(
+        reference.exact_pair
+        == result.exact_material[
+            reference.first_position : reference.second_position + 1
+        ]
+        for reference in references
     )
