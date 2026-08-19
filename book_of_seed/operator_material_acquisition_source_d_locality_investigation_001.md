@@ -348,3 +348,65 @@ and Unknown inside that same bounded road.
 Do not add a second Locality lifecycle merely because the current O1 record is
 missing those coordinates. Do not add fields to O1 until the exact relation
 subjects and responsible physiology are recovered.
+
+## Subsequent recovery
+
+Commits `b140f5ba` and `e98252b1` preserve the investigation above as the
+boundary that preceded implementation. They do not add another Locality
+lifecycle.
+
+The existing `01.Source.G` material-result occurrence now records:
+
+```text
+first subject
+    exact_material coordinate of this exact result occurrence
+
+relation
+    locality
+
+second subject
+    this Seed
+
+relation occurrence
+    this exact material-result occurrence
+
+Evidence
+    this same intact material-result occurrence
+```
+
+The shared occurrence identity is explicit. It does not identify the exact
+material coordinate, the acquisition result, and the Locality relation with
+one another. Equal material under O1 and O2 retains two exact material-subject
+references and two relation occurrences.
+
+The `06.Locality.A` Fidelity matrix now pressures this occurrence directly. A
+changed relation, subject, relation-occurrence identity, Evidence identity, or
+corrupted Evidence makes the read refuse. The result replay also refuses the
+whole acquisition result when any one of those Locality requirements is not
+exact.
+
+This recovers the three coordinates that were missing at the close of the
+investigation:
+
+```text
+exact bounded M reference in first-subject position    recorded/replayable
+Locality relation occurrence                           recorded/replayable
+Locality Evidence                                      recorded/replayable
+```
+
+It does not establish by identity:
+
+```text
+M = acquisition result I
+M = Locality relation
+result occurrence = result identity
+same locality label = Locality relation
+Locality relation = assignment-subject relation
+Locality Evidence = assignment Evidence
+positive assignment Standing
+```
+
+The forward boundary is therefore no longer another contact occurrence. It is
+the still-separate transition from this exact evidenced Locality relation and
+the declared Measurement to the Responsibility this Seed bears, followed by
+the subject-specific assignment and its positive Standing.
