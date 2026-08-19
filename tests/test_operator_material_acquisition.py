@@ -110,6 +110,10 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     assert assignment.exact_material is act_evidence.exact_material is None
     assert result.exact_material == b"\x00\xffraw\n"
     assert assignment.material["book_clause_identity"] == "01.Source.G"
+    assert "locality_relation" not in assignment.material
+    assert assignment.material["unknown"] == [
+        "what exact material the operator boundary supplies: Unknown"
+    ]
     assert assignment.identity in after_assignment[
         "responsibility_assignment_occurrences"
     ]
@@ -604,6 +608,41 @@ def test_locality_relation_refuses_a_different_or_corrupted_evidence_occurrence(
             CORRUPTED if identity == result.identity else integrity_of(identity)
         ),
     )
+    assert read_operator_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=result.identity,
+    ) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": False,
+    }
+
+
+def test_a_self_reference_without_o1_physiology_is_not_locality_evidence():
+    ledger = EventLedger()
+    result = ledger.append(
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        {},
+        exact_material=b"material\n",
+        locality_identity="source",
+    )
+    result.material.update(
+        {
+            "responsible_boundary": "this Seed",
+            "source_boundary": "fixture boundary",
+            "locality_relation": {
+                "first_subject": {
+                    "recorded_occurrence_identity": result.identity,
+                    "coordinate": "exact_material",
+                },
+                "relation": "locality",
+                "second_subject": "this Seed",
+                "relation_occurrence_identity": result.identity,
+            },
+            "locality_evidence_identity": result.identity,
+        }
+    )
+
     assert read_operator_material_acquire_locality_relation_requirements(
         ledger,
         recorded_result_event_identity=result.identity,

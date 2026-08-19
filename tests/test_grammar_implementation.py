@@ -5617,18 +5617,44 @@ def test_operator_material_acquire_stages_keep_distinct_clause_coordinates():
     locality_relation = next(
         coordinate
         for coordinate in clause["responsibility"]["coordinates"]
-        if type(coordinate) is dict and coordinate.get("relation") == "locality"
+        if type(coordinate) is dict
+        and coordinate.get("identity")
+        == "operator_material_to_this_Seed_Locality_relation"
     )
     assert locality_relation == {
         "identity": "operator_material_to_this_Seed_Locality_relation",
-        "first_subject": {
-            "recorded_occurrence": "operator_material_result_occurrence",
-            "coordinate": "exact_material",
+        "assignment": {
+            "standing_not_established": [
+                {
+                    "first_subject": "Unknown",
+                    "relation": "locality",
+                    "second_subject": "this_Seed",
+                    "relation_occurrence": "Unknown",
+                    "Evidence": "Unknown",
+                }
+            ]
         },
-        "relation": "locality",
-        "second_subject": "this_Seed",
-        "relation_occurrence": "operator_material_result_occurrence",
-        "Evidence": "operator_material_result_occurrence",
+        "result": {
+            "first_subject": {
+                "recorded_occurrence": "operator_material_result_occurrence",
+                "coordinate": "exact_material",
+            },
+            "relation": "locality",
+            "second_subject": "this_Seed",
+            "relation_occurrence": "operator_material_result_occurrence",
+            "Evidence": {
+                "occurrence": "operator_material_result_occurrence",
+                "requires": [
+                    "Responsibility_assignment",
+                    "operator_boundary",
+                    "Act_occurrence",
+                    "Act_Evidence",
+                    "Yield",
+                    "exact_material_result",
+                ],
+                "self_reference_alone": "establishes_no_Evidence",
+            },
+        },
     }
 
 

@@ -754,6 +754,44 @@ def read_operator_material_acquire_locality_relation_requirements(
         and evidence.material == result.material
         and evidence.exact_material == result.exact_material
     )
+    existing_o1_physiology = False
+    try:
+        act_evidence = get_operator_material_acquire_act_evidence(
+            ledger,
+            result.material.get("responsible_act_evidence_identity"),
+        )
+        yield_evidence = ledger.get(
+            result.material.get("evidence_of_yield_relation_identity")
+        )
+        yield_dimensions = (
+            yield_evidence.material.get("dimensions", {})
+            if yield_evidence is not None
+            else {}
+        )
+        existing_o1_physiology = bool(
+            yield_evidence is not None
+            and yield_evidence.kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+            and yield_evidence.locality_identity == result.locality_identity
+            and yield_evidence.exact_material == result.exact_material
+            and yield_evidence.material.get("responsible_act_evidence_identity")
+            == act_evidence.identity
+            and yield_evidence.material.get("result_identity")
+            == result.material.get("result_identity")
+            and yield_dimensions.get("exact_act") == OPERATOR_MATERIAL_ACQUIRE_ACT
+            and yield_dimensions.get("act_occurrence_identity")
+            == result.material.get("act_occurrence_identity")
+            and yield_dimensions.get("responsibility")
+            == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY
+            and yield_dimensions.get("responsible_boundary") == "this Seed"
+            and act_evidence.locality_identity == result.locality_identity
+            and result.material.get("responsible_boundary") == "this Seed"
+            and type(result.material.get("source_boundary")) is str
+            and bool(result.material["source_boundary"])
+            and ledger.integrity_of(act_evidence.identity) != CORRUPTED
+            and ledger.integrity_of(yield_evidence.identity) != CORRUPTED
+        )
+    except (TypeError, ValueError):
+        existing_o1_physiology = False
     return {
         "exact_relation": bool(
             type(relation) is dict
@@ -769,6 +807,7 @@ def read_operator_material_acquire_locality_relation_requirements(
         ),
         "intact_evidence": bool(
             evidence_is_result_occurrence
+            and existing_o1_physiology
             and ledger.integrity_of(result.identity) != CORRUPTED
         ),
     }
