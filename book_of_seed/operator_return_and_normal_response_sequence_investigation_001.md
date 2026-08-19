@@ -53,8 +53,11 @@ O2 != O3-current
 O1 != O3-current
 ```
 
-O1 now enters the exact Ingest-result family directly.  No second generic
-Ingest occurrence copies O1's bytes before Measurement.
+O1 now enters the exact yielded material-acquisition result surface directly.
+No second generic occurrence copies O1's bytes before Measurement.  This does
+not establish `Ingest` as another coordinate carried by O1.  `Ingest` remains
+compressed investigation language for the already distinct acquisition, Act,
+Yield, and exact material-result coordinates.
 
 O2 remains a distinct acquisition.  Provider return material did not cross the
 operator input boundary and does not become O1 by byte equality, provenance, or
@@ -63,20 +66,43 @@ chronology.
 O3-current remains an emission occurrence.  It does not make the emitted
 system material authored by this Seed.
 
-## Intended presentation pressure
+## Intended Selection and presentation pressure
 
-The intended response to an invocation such as `!ls` is not one undivided
-stdout flood.  Operator testimony requires a presentation with at least two
-separately preserved surfaces:
+`O3` is one investigation position, not one emission occurrence or one fixed
+external arrangement.  At that position, Selection can address none, some, or
+all of the exact O2 material.  For example, five selected lines from a larger
+return remain a distinct bounded selection:
 
 ```text
-exact bounded system-return material
-        BESIDE
-material emitted by this Seed bearing on that return
+complete O2 material
+↓ Selection
+selected bounded material M'
+
+M' is carried from O2
+M' != complete O2 by identity
 ```
 
-One external view can place those surfaces in different areas.  Their presence
-in one view establishes none of these by identity:
+Selection must preserve the exact O2 source, selected boundary, known loss,
+and whether the selection carries the complete O2 material.  Five lines cannot
+stand as the complete result merely because they are the only lines emitted.
+
+Presentation can then preserve any exact selected O2 material beside distinct
+material emitted by this Seed, or preserve them through separate emissions:
+
+```text
+O3
+├── selected return-material emission, if any
+├── Seed-authored material emission, if any
+└── later emissions at the same investigation position, if any
+```
+
+A movie stream with later subtitle emissions and an `!ls` excerpt with a
+separate response are external projections of this same open population.  No
+constitutional line count, geometry, split view, or single-emission form is
+established.
+
+Their presence in one external view or at one investigation position
+establishes none of these by identity:
 
 ```text
 same material
@@ -87,14 +113,17 @@ truth carried by this Seed
 Standing carried by this Seed
 ```
 
-Current O3 records only the exact emitted Representation of selected O2
-material.  It does not yet record the second Seed-authored surface or one
-presentation carrying both exact surfaces.  Therefore:
+Current runtime records one exact emitted Representation of O2 material at the
+O3 investigation position.  That occurrence is not O3 by identity.  It does
+not establish that Selection chose a proper part of O2, record a distinct
+Seed-authored emission, require another emission, or close the O3 population.
+Therefore:
 
 ```text
-O3-current
-!=
-complete intended split presentation
+one current O2 emission
+!= O3
+!= a complete O3 emission population
+!= Selection of a proper part of O2
 ```
 
 ## Next ordinary turn
@@ -129,14 +158,15 @@ copy of O4 to stand in for this Seed's emission.
 ## Exact frontier
 
 ```text
-O1 operator acquisition / exact Ingest result                 recorded
+O1 operator material acquisition and yielded result           recorded
 O2 supplied-system material acquisition                       recorded
 O3 exact system-material Representation emission              recorded
 
-O3 split presentation:
-    bounded system-return surface                             absent
-    Seed-authored surface bearing on the return               absent
-    exact relation, if any, between those surfaces            unestablished
+O3 Selection / presentation:
+    selected O2 boundary and completeness                     unestablished
+    Seed-authored emission                                    absent
+    later emission population                                 open
+    exact relation, if any, between emitted surfaces          unestablished
 
 O4 fresh ordinary operator acquisition                        recorded
 O5 first normal response emission                             absent
@@ -144,6 +174,7 @@ O5 first normal response emission                             absent
 
 The next recovery must not ask emission to manufacture the missing response.
 It must first identify the exact result material and responsible occurrence,
-if any, that this Seed can lawfully carry into O5.  Presentation can then
-preserve that material beside bounded O2 material without collapsing their
-authors, occurrences, or relations.
+if any, that this Seed can lawfully carry into O5.  Selection and Presentation
+can then preserve an exact portion of O2, all of O2, none of O2, and any exact
+Seed-authored material through one or more emissions without collapsing their
+boundaries, completeness, authors, occurrences, or relations.
