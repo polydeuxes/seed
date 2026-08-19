@@ -42,9 +42,13 @@ Can current Standing expose the next Responsibility assignment
 before the exact assignment occurrence has been recorded?
 ```
 
-`Force surface`, `spring potential`, `cocked spring`, `release`, and `scheduler`
-are orientation language in this report. They establish no Book kind,
-Responsibility, Act, occurrence, result, or Standing.
+`Force surface`, `spring potential`, `potential`, `subject pressure`, `cocking`,
+`cocked spring`, `release`, `reloading`, `scheduler`, and `G` are orientation
+language in this report. They establish no Book kind, Responsibility, Act,
+occurrence, result, relation, or Standing. In particular, `G` does not name one
+opaque Seed predicate. It compresses exact family-local coordinates and
+refusals that remain individually recoverable only where their own physiology
+is established.
 
 This report changes no Book clause, Witness Grammar coordinate, or runtime
 event. The accompanying test records the exact before/after assignment surface
@@ -465,7 +469,7 @@ For each exact Book family, the desired shape remains mechanical:
 
 ```text
 exact current boundary B
-+ exact family assignment condition G
++ every exact family-local coordinate and refusal compressed here as G
 ↓
 every exact subject position satisfying G through B
 ↓
@@ -476,6 +480,10 @@ omit none by significance
 
 Meaning, usefulness, English, operator intention, and expected response are not
 inputs to that formation.
+
+The diagram is an external orientation, not a completed Seed road. Neither the
+word `satisfying` nor membership in a host-computed population establishes the
+missing relation from one exact subject to one already-borne Responsibility.
 
 The unresolved question is ownership:
 
