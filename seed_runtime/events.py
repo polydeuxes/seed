@@ -291,6 +291,11 @@ class EventLedger:
         self._store(event)
         return event
 
+    def allocate_event_identity(self) -> str:
+        """Allocate an identity for material built before `append_many`."""
+
+        return new_identity("evt")
+
     def append_many(
         self,
         events: Iterable[Event],
@@ -806,6 +811,11 @@ class SQLiteEventLedger(EventLedger):
         )
         self._insert(event)
         return event
+
+    def allocate_event_identity(self) -> str:
+        """Allocate an identity for material built before `append_many`."""
+
+        return self._new_event_identity()
 
     def append_many(
         self,

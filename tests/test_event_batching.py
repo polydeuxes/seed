@@ -35,6 +35,57 @@ def test_append_many_preserves_event_ordering():
     ]
 
 
+def test_an_allocated_identity_can_be_carried_by_its_prebuilt_occurrence():
+    ledger = EventLedger()
+
+    identity = ledger.allocate_event_identity()
+    recorded = ledger.append_many(
+        [
+            Event(
+                identity=identity,
+                kind="self.addressed",
+                material={"occurrence_identity": identity},
+            )
+        ]
+    )[0]
+
+    assert recorded.material == {"occurrence_identity": recorded.identity}
+
+
+def test_sqlite_allocated_identity_advances_after_its_occurrence_is_durable(tmp_path):
+    database = str(tmp_path / "self-addressed.db")
+    ledger = SQLiteEventLedger(database)
+    first_identity = ledger.allocate_event_identity()
+    first = ledger.append_many(
+        [
+            Event(
+                identity=first_identity,
+                kind="self.addressed",
+                material={"occurrence_identity": first_identity},
+            )
+        ]
+    )[0]
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    try:
+        second_identity = reopened.allocate_event_identity()
+        second = reopened.append_many(
+            [
+                Event(
+                    identity=second_identity,
+                    kind="self.addressed",
+                    material={"occurrence_identity": second_identity},
+                )
+            ]
+        )[0]
+        assert first.material == {"occurrence_identity": first.identity}
+        assert second.material == {"occurrence_identity": second.identity}
+        assert second.identity != first.identity
+    finally:
+        reopened.close()
+
+
 def test_sqlite_append_many_persists_same_events_as_repeated_append(tmp_path):
     batch = SQLiteEventLedger(str(tmp_path / "batch.db"))
     repeated = SQLiteEventLedger(str(tmp_path / "repeated.db"))
