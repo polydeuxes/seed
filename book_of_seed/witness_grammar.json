@@ -1623,7 +1623,7 @@
       "book_material_reference": "01.Standing.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "may_have": ["exact_identity", "Locality", "representations"],
+      "coordinates": ["exact_identity", "Locality", "representations"],
       "standing_not_established": [
         "acceptance",
         "input_support",
@@ -1754,9 +1754,7 @@
         "Standing_revision",
         "Stop"
       ],
-      "Unknown": {
-        "may_carry": "Unknown"
-      }
+      "Unknown": "Unknown"
     },
     "01.Standing.D.2": {
       "subject": "later_Assertion_with_current_Standing",
@@ -1829,7 +1827,7 @@
         "revision"
       ],
       "Compare_result": {
-        "may_have_own_subject": [
+        "subject_coordinates": [
           "comparison",
           "coordinate_distinction",
           "result_shape"
@@ -1990,14 +1988,14 @@
       "grammar": "established",
       "recorded_occurrence_kind": ["event_occurrence"],
       "witness_relations": [
-        "responsible_boundary_may_determine_whether_an_exact_proposed_input_may_participate_before_the_Act_occurrence",
+        "responsible_boundary_determines_Applicability_before_input_Participation",
         "the_resulting_Standing_determines_the_participating_input"
       ],
       "responsibility": {
         "default": "exact_Act_Responsibility",
         "assignment": "assigned_responsible_occurrence"
       },
-      "must_precede": ["participation"],
+      "required_before": ["participation"],
       "coordinates": [
         "input_identity",
         "exact_Act",
@@ -2061,7 +2059,7 @@
           }
         ]
       },
-      "same_occurrence_may_establish": [
+      "same_occurrence_coordinates": [
         "Applicability",
         "Act_occurrence_or_nonoccurrence",
         "output_Standing"
@@ -2611,11 +2609,11 @@
       "book_material_reference": "05.Recording.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "recording_boundary_may_establish": [
+      "recording_occurrence_establishes_within_declared_Scope": [
         "retrievable_record_exists",
         "Assertion_with_source_coordinates_preserved_within_declared_Scope"
       ],
-      "later_exact_Act_may_consider": "recorded_Assertion_through_Applicability",
+      "later_exact_Act_considers_through_Applicability": "recorded_Assertion",
       "standing_not_established": [
         "represented_source_occurrence",
         "current_Standing",
@@ -2633,7 +2631,7 @@
         "material_Evidence",
         "established_Standing_not_otherwise_retained"
       ],
-      "recording_may_preserve": [
+      "recording_preserves_only_through_exact_preservation_occurrence": [
         "Assertion_with_source_coordinates",
         "already_established_Standing"
       ],
@@ -2711,7 +2709,7 @@
       "book_material_reference": "05.Source.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "subjects_that_may_participate": [
+      "Participation_subjects": [
         "recorded_Assertion",
         "recorded_finding",
         "Evidence_record"
@@ -2988,7 +2986,7 @@
       "book_material_reference": "08.Authority.A",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "exact_Act_may_stand_on_established_content_bounded_by": [
+      "Act_Standing_requires": [
         "exact_role",
         "addressed_subject",
         "result_boundary",
@@ -3041,7 +3039,7 @@
       "book_material_reference": "08.Authority.C",
       "grammar": "established",
       "recorded_occurrence_kind": [],
-      "may_analyze_under_bounded_repository_Authority": [
+      "analysis_requires_bounded_repository_Authority": [
         "source_packets",
         "support_paths",
         "source_roles",

@@ -10,9 +10,9 @@ The exact locality relation between two exact bounded subjects.
 
 Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknown.
 
-One subject may bear several separately evidenced locality relations. The same subjects under another occurrence establish no relation carried by the first occurrence. A locality relation cannot enclose its subjects, create a hierarchy, establish Authority or Participation, or carry Standing for either subject.
+One subject bears several locality relations only through their separately evidenced occurrences. The same subjects under another occurrence establish no relation carried by the first occurrence. A locality relation cannot enclose its subjects, create a hierarchy, establish Authority or Participation, or carry Standing for either subject.
 
-A responsible movement occurrence may preserve an Assertion while establishing a new locality relation between that Assertion and an exact bounded subject. Movement preserves the original Assertion reference and identity, its earlier locality relations, Scope, Evidence, Standing, Unknown, and limits. It establishes the new locality relation and no other relation: it cannot copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
+A responsible movement occurrence preserves an Assertion while establishing a new locality relation only where its exact Responsibility, Act, Evidence, Authority, Scope, and limits establish every coordinate. Movement preserves the original Assertion reference and identity, its earlier locality relations, Scope, Evidence, Standing, Unknown, and limits. It establishes the new locality relation and no other relation: it cannot copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
 
 Chronology alone establishes no locality, causation, or response. An Act occurrence preserves the exact locality relation of each participating subject separately from any locality relation resulting from that occurrence.
 
@@ -20,7 +20,7 @@ Chronology alone establishes no locality, causation, or response. An Act occurre
 
 Within the Scope of one intact addressed Representation occurrence, active Book assigns this Seed a Responsibility bounded to preservation of the exact prior Locality Standing boundary addressed by that Representation as available at one new Locality. The assignment preserves the responsible boundary, source Standing boundary, addressed Representation occurrence, destination Locality, Evidence occurrence, Authority, Scope, limits, and Unknown.
 
-This assignment is its own bounded subject and Standing. It is not the continuation Act, Act occurrence, Locality relation, Yield, or result by identity. The continuation Act occurrence references the exact assignment occurrence before it may bear that Responsibility.
+This assignment is its own bounded subject and Standing. It is not the continuation Act, Act occurrence, Locality relation, Yield, or result by identity. Current Standing carrying the exact assignment occurrence is required before the continuation Act occurrence bears that Responsibility.
 
 Active Book Authority is bounded to this direct occurrence and result boundary. The assignment establishes no Applicability, Participation, copying, revision, hierarchy, global Standing, other Locality relation, or continuation from another continuation by identity.
 
@@ -34,9 +34,9 @@ The result carries exact assignment, Act, Act-occurrence, Locality-relation, Yie
 
 When one current operator Locality Standing carries one exact operator material occurrence beginning an invocation, active Book assigns this Seed a Responsibility bounded to establish one new Locality and one direct Locality relation from the operator Locality to it. The assignment preserves its own subject, the operator material occurrence, source Locality, new Locality, responsible boundary, exact Act, Act occurrence, relation occurrence, Evidence occurrence, Authority, Scope, limits, Unknown, and Standing.
 
-The assignment occurs in the new Locality. The exact Act may occur only when current Standing at that new Locality carries the exact assignment occurrence. Source Locality Standing supports the assignment through its Evidence, Authority, Scope, and preserved limits; ledger addressability cannot carry it across the Locality boundary.
+The assignment occurs in the new Locality. The exact Act occurs only when current Standing at that new Locality carries the exact assignment occurrence. Source Locality Standing supports the assignment through its Evidence, Authority, Scope, and preserved limits; ledger addressability cannot carry it across the Locality boundary.
 
-The operator material occurrence carries operator Authority for that exact invocation only. The result carries exact assignment, Act, Act-occurrence, Locality-relation, Yield, and result references. Material supplied by the invocation may occur in the new Locality with exact provenance to the operator material occurrence and relation result. The relation cannot copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
+The operator material occurrence carries operator Authority for that exact invocation only. The result carries exact assignment, Act, Act-occurrence, Locality-relation, Yield, and result references. Occurrence of material supplied by the invocation in the new Locality requires exact provenance to the operator material occurrence and relation result. The relation cannot copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
 
 ## Important distinctions
 

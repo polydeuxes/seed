@@ -7,14 +7,14 @@ The binding, Scope, and non-transferability of authority across Seed's boundarie
 What establishes Authority for a bounded result or Act, and what preserves its exact Scope in transit?
 
 ## Bounded resolution
-Operator material or approvals may contribute Authority after exact Authority and Scope binding. Without that binding they may not contribute Authority. Internal Representations, records, emissions, or transport material cannot create or enlarge that Authority.
+Operator material or approvals contribute Authority only after exact Authority and Scope binding by a responsible occurrence. Without that binding they contribute no Authority. Internal Representations, records, emissions, or transport material cannot create or enlarge that Authority.
 
-A Representation may carry Authority for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknown. The Representation cannot create, enlarge, transfer, or renew that Authority.
+A Representation carries Authority for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknown only where each coordinate is established. The Representation cannot create, enlarge, transfer, or renew that Authority.
 
 ## Boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support
-An Act may stand on established content within bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support establishes no Standing or Authority beyond those bounds and cannot prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
+Standing of an Act on established content requires bounds carried by its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support establishes no Standing or Authority beyond those bounds and cannot prove truth, revise a Responsibility assignment, authorize action, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
@@ -22,7 +22,7 @@ Support for a subject's Participation in an exact Act by an established support 
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
-Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown under bounded repository authority. Without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop, that competence != jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication.
+Analysis by Seed of source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknown requires bounded repository authority. Without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop, that competence != jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication.
 
 ## Important distinctions
 - operator request != unbounded authority
@@ -39,4 +39,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 
 ## Authorization boundary correction 001
 
-A responsible Authority boundary is required to establish Authorization as bounded Standing. The boundary preserves the Authority subject, source of Authority, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, applicable Assertions, Evidence, occurrence, negative Authority, and Unknown. Other findings may contribute Evidence within bounds carried by their own Standing and do not establish Authority by identity.
+A responsible Authority boundary is required to establish Authorization as bounded Standing. The boundary preserves the Authority subject, source of Authority, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, applicable Assertions, Evidence, occurrence, negative Authority, and Unknown. Other findings contribute Evidence only within bounds carried by their own Standing and do not establish Authority by identity.

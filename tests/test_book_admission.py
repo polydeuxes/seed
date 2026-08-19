@@ -79,18 +79,22 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     assert missing == []
 
 
-def test_book_has_its_own_admission_and_points_to_rosetta():
+def test_book_and_rosetta_admission_material_are_distinct():
+    modal_compressions = {
+        "may",
+        "sufficient",
+        "possible",
+        "allowed",
+        "capable",
+    }
+    rosetta_admission = set(_admission_entries(ROSETTA_ADMISSION))
     assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
     assert ROSETTA_ADMISSION != BOOK_ADMISSION
     assert not BOOK_ADMISSION.is_symlink()
     assert not ROSETTA_ADMISSION.is_symlink()
-    assert (
-        "# Rosetta admission: ../rosetta/rosetta_admission.txt"
-        in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
-    )
-    assert set(_admission_entries(BOOK_ADMISSION)) < set(
-        _admission_entries(ROSETTA_ADMISSION)
-    )
+    assert set(_admission_entries(BOOK_ADMISSION)) < rosetta_admission
+    assert modal_compressions.isdisjoint(book_admission())
+    assert modal_compressions <= rosetta_admission
     assert not {
         word
         for word in book_admission()
@@ -98,6 +102,13 @@ def test_book_has_its_own_admission_and_points_to_rosetta():
     }
     assert {"implementation", "machine"} <= set(
         _admission_entries(ROSETTA_ADMISSION)
+    )
+
+
+def test_book_admission_names_separate_rosetta_admission_material():
+    assert (
+        "# Rosetta admission: ../rosetta/rosetta_admission.txt"
+        in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
     )
 
 
@@ -230,7 +241,8 @@ FIDELITY_SUBJECTS = {
         test_admitted_material_reference_subjects_resolve_relative_markdown_links,
     ),
     "book_separate_admission_material_Admission_distinction": (
-        test_book_has_its_own_admission_and_points_to_rosetta,
+        test_book_and_rosetta_admission_material_are_distinct,
+        test_book_admission_names_separate_rosetta_admission_material,
     ),
     "separate_admission_material_composite_support_relation_distinction": (
         test_rosetta_admits_composite_support_relation_terms,

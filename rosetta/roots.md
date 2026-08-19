@@ -128,6 +128,13 @@ Addressability of preserved coordinates
 A connective noun does not establish a Seed relation. Translation resolves the
 exact coordinates doing the work:
 
+### May / sufficient / possible / allowed / capable
+
+These words are ordinary compression. Expand each into its exact subject,
+relation, Responsibility, Authority, Applicability, Participation, Act
+occurrence, Evidence, Scope, limits, Unknown, result, and Standing coordinates.
+The word alone establishes none of them.
+
 ### Fail / fails / failed
 
 These forms compress one exact Act occurrence plus a bounded failure Assertion

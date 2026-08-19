@@ -55,7 +55,7 @@ Carries the exact constitutional act assigned to the responsibility. Responsibil
 
 #### Authority
 
-Carries the exact Authority under which the responsible boundary may bear and perform the exact act.
+Carries the exact Authority of the responsible boundary for bearing and performing the exact act.
 
 ```text
 Authority
@@ -66,7 +66,7 @@ Authority
 != Authority carried by an input
 ```
 
-The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing cannot resolve the Authority coordinate.
+The Authority coordinate carries positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing cannot resolve the Authority coordinate.
 
 #### Evidence
 
@@ -109,7 +109,7 @@ act
 
 #### Absence-of-act-occurrence finding
 
-Carries the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and established support relations.
+Carries the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. The finding is a lawful result only under its own Responsibility, Evidence, Authority, Scope, and established support relations.
 
 ```text
 absence-of-act-occurrence finding
@@ -157,7 +157,7 @@ These branches apply where Standing is established for a result, relation, Asser
 
 #### Standing responsible boundary
 
-Carries the responsible boundary that establishes the Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
+Carries the responsible boundary that establishes the Standing. The result's Act responsible boundary and a separately assigned Responsibility establish no Standing responsible boundary by identity. The exact relation requires established identity.
 
 #### Standing occurrence
 
@@ -193,7 +193,7 @@ Standing occurrence
 
 ### Preservation, standing, and neighboring branches
 
-Each branch occurs where the exact responsibility instantiates it. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
+Each branch occurs where the exact responsibility instantiates it. A branch precedes the act, governs it, preserves its occurrence, or belongs to a later exact Act only where its exact Responsibility instantiates that position. Each retains its exact constitutional grammar.
 
 #### Preservation record
 
@@ -205,7 +205,7 @@ Carries any separately established Authorization input by the exact Act. It rema
 
 #### Applicability and admission standing
 
-Carries any act-local applicability or admission standing required before material may participate in that exact Act. Applicability, admission, participation, and input support remain distinct.
+Carries any act-local applicability or admission standing required before material participates in that exact Act. Applicability, admission, participation, and input support remain distinct.
 
 #### Lawful Stopping
 
@@ -240,7 +240,7 @@ same occurrence != same Assertion
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> This Seed may inspect this Witness. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
+> This Seed, inspect, and this Witness retain their exact positions. What inspect establishes: Unknown. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
 
 Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new Representation of the same grammar do not require revision.
 

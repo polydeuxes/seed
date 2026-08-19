@@ -6,13 +6,13 @@ The source coordinates carried by an Assertion and the separate Standing of any 
 
 ## Bounded resolution
 
-Supplied or recorded material may carry asserted content together with a source identity, provenance, and source occurrence where exact Evidence establishes them. Those coordinates do not establish that the named source supplied or asserted the content.
+Where supplied or recorded material carries asserted content together with a source identity, provenance, and source occurrence, exact Evidence must establish each coordinate. Those coordinates do not establish that the named source supplied or asserted the content.
 
 The relation “source S supplied or asserted Assertion A” is itself an Assertion. It requires its own Evidence, Authority, Scope, occurrence, conflicts, Unknown, limits, and Standing. A source label, nearby occurrence, copied provenance reference, or repeated material establishes no such relation.
 
 Standing carries its subject reference separately from its source-relation reference. Establishing either one establishes no other.
 
-An exact Representation Act may represent asserted content and source coordinates in another exact Representation. It cannot create a higher subject, supply missing Evidence, or strengthen Standing.
+An exact Representation Act represents asserted content and source coordinates in another exact Representation only under its exact Responsibility, Evidence, Authority, Scope, and limits. It cannot create a higher subject, supply missing Evidence, or strengthen Standing.
 
 ### 05.Source.A — Later participation preserves source coordinates
 

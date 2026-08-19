@@ -2,15 +2,15 @@
 
 ## Constitutional subject
 
-The exact coordinates by which current Standing may be compared with a bounded result Assertion, and the separate occurrence required for movement.
+The exact coordinates required for comparison of current Standing with a bounded result Assertion, and the separate occurrence required for movement.
 
 ## Bounded resolution
 
-Operator material or already-established Standing may carry one exact result Assertion reference under a Scope and exact locality relation. The result Assertion is not a new constitutional subject by identity. That exact result Assertion carries its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknown.
+Where operator material or already-established Standing carries one exact result Assertion reference, it requires a Scope and exact locality relation. The result Assertion is not a new constitutional subject by identity. That exact result Assertion carries its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknown.
 
-A responsible Compare may accept as input current Standing and that exact result Assertion. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknown. The Compare result preserves the exact difference, incompatibility, absence, or Unknown coordinate established by its occurrence.
+A responsible Compare accepts current Standing and that exact result Assertion as input only through their exact applicable input relations. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknown. The Compare result preserves the exact difference, incompatibility, absence, or Unknown coordinate established by its occurrence.
 
-An Act may occur under exact coordinates of Responsibility, Act, applicable material, Authority, applicable Assertions, locality, Evidence, and occurrence. Available material or one supported coordinate establishes no other coordinate and cannot authorize the Act.
+An Act occurrence requires exact coordinates of Responsibility, Act, applicable material, Authority, applicable Assertions, locality, Evidence, and occurrence. Available material or one supported coordinate establishes no other coordinate and cannot authorize the Act.
 
 Neither a result Assertion nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result Assertion having satisfied Standing within one Scope establishes no completion outside that Scope.
 

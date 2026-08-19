@@ -4,19 +4,19 @@
 The boundary between preserving Events or recorded output and later participation of recorded Assertions.
 
 ## Core distinction
-Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
+Which bounded Responsibility takes up recorded material, and what Standing, if any, does its responsible occurrence establish?
 
 ## Bounded resolution
-A recording boundary may create an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and make the same preserved Assertion available at its Locality. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording carry separate exact Act or occurrence references.
+A recording boundary creates an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing only within its Scope and exact recording occurrence. A later exact Act resolves that record reference, validates the coordinates it needs, and makes the same preserved Assertion available at its Locality only through its own exact input boundary. Those steps establish no separate Responsibility, subject, occurrence, or stronger Standing. Representation of one recorded Event and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording carry separate exact Act or occurrence references.
 
 
 ## Boundaries for recorded-revision witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared Scope. A later exact Act may consider that Assertion through Applicability. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
+A recording occurrence establishes that a retrievable record exists and preserves an Assertion carrying source coordinates only within its declared Scope. A later exact Act considers that Assertion only through its own Applicability occurrence. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
 
 ### 05.Recording.C — Preservation and discard of measurements
-Seed need not preserve every measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
+Seed preserves no measurement merely by existence. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording preserves an Assertion carrying source coordinates or already established Standing only through its exact preservation occurrence. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
 
 ### 05.Recording.D — Exact Standing boundary reference
 Within one current Locality Standing and one intact addressed Representation, active Book assigns this Seed a Responsibility bounded to recording that Representation and its exact Standing boundary as one durable bounded reference in the same Locality. The assignment preserves its own subject, the exact recording Act and occurrence, result identity, source Locality, addressed Representation occurrence, exact Standing boundary, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.

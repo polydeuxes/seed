@@ -6,11 +6,11 @@ The locality of exact content and the boundary between supplied material and See
 
 ## Bounded resolution
 
-A supplied representation may enter as material with exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. The same content under another source or occurrence establishes no shared identity or Standing.
+Where a supplied representation enters as material, it carries exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. The same content under another source or occurrence establishes no shared identity or Standing.
 
 Use of supplied material by an exact Responsibility requires its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate carries no support relation; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
 
-Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing establishes no relation carried by the first occurrence. Unsupported coordinates carry Unknown or no instantiation.
+Developer-supplied connective text is material carrying source coordinates. An asserted narrow relation within an exact representation requires its own exact material position; equivalent text under another subject, source, Scope, occurrence, or support-relation Standing establishes no relation carried by the first occurrence. Unsupported coordinates carry Unknown or no instantiation.
 
 A composite names several exact coordinates. The composite by identity establishes no named subject, Act, relation, occurrence, Evidence, Authority, Scope, or Standing; the composite requires each coordinate.
 
@@ -24,21 +24,21 @@ Acceptance of supplied material by an exact Act is bounded by its carried Scope 
 
 ### 01.Source.C — Fidelity is bounded comparison
 
-Fidelity is bounded comparison of this Seed's witness with its witness grammar through deterministic tests. Each test has its declared distinction as its subject and has no other subject. It may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test cannot certify this Seed beyond that test's boundary or establish correction Authority.
+Fidelity is bounded comparison of this Seed's witness with its witness grammar through deterministic tests. Each test has its declared distinction as its subject and has no other subject. A bounded Fidelity finding requires its exact test occurrence. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test cannot certify this Seed beyond that test's boundary or establish correction Authority.
 
 This Book material acquisition witness is one declared distinction carried as the subject of one deterministic test occurrence. Its material reference is this Book, and it is a witness for this Fidelity. This Book material acquisition witness is not this Witness by identity.
 
 ### 01.Source.D — Measurement carries its declared result
 
-A declared Measurement occurrence may carry bounded exact identity distinctions, count, recurrence, prefix occurrence, declared-predicate result, or position findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
+Where a declared Measurement occurrence carries bounded exact identity distinctions, count, recurrence, prefix occurrence, declared-predicate result, or position findings, its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
 A declared byte Measurement counts each exact byte occurrence in the exact Ingest material occurrences within its completeness boundary. The same byte material in another occurrence establishes neither occurrence nor position, and the result establishes no represented relation for a byte.
 
-Where current Standing in one Locality carries exact recorded position Assertions, this Seed may determine Applicability to one declared shared position Measurement. Exact pair occurrence Assertions from one exact source occurrence, Locality, and completeness boundary may participate. The second position-coordinate reference of the first Assertion and the first position-coordinate reference of the second Assertion establish one ordered relation path only with both references of one exact byte occurrence. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, the exact shared position-coordinate reference, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no other relation, material of the input pair occurrences, or represented relation.
+Determining Applicability to one declared shared position Measurement requires current Standing in one Locality carrying exact recorded position Assertions. Participation of exact pair occurrence Assertions requires one exact source occurrence, Locality, and completeness boundary. The second position-coordinate reference of the first Assertion and the first position-coordinate reference of the second Assertion establish one ordered relation path only with both references of one exact byte occurrence. Neither pair counts nor source material establishes that relation. The result Assertion carries each exact input Assertion reference, the exact shared position-coordinate reference, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no other relation, material of the input pair occurrences, or represented relation.
 
 Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment establishes no occurrence, recording of the Measurement occurrence, or transfer of the resulting Assertion's Standing-coordinate Responsibility.
 
-At one exact current Standing boundary, this Seed may record one declared Responsibility assignment in declared order when that Responsibility is already assigned to this Seed, current Standing carries the exact subject and every required coordinate, and no exact assignment or result for that subject is recorded. Subject presence establishes no assignment, Applicability, or Act. After each recorded occurrence, current Standing must carry that occurrence before recording another declared Responsibility assignment.
+Recording one declared Responsibility assignment in declared order requires one exact current Standing boundary, that Responsibility already assigned to this Seed, current Standing carrying the exact subject and every required coordinate, and no exact assignment or result recorded for that subject. Subject presence establishes no assignment, Applicability, or Act. After each recorded occurrence, current Standing must carry that occurrence before recording another declared Responsibility assignment.
 
 ### 01.Source.D.1 — Counts preserve occurrence identity
 
@@ -64,13 +64,13 @@ A candidate preserves every applicable source role, representation Act occurrenc
 
 At one exact ledger boundary, this Book assigns this Seed two bounded Responsibilities over each exact Measurement result Assertion or Compare result Assertion or Candidate result Assertion and each exact Assertion carried by that result and by Locality Standing through that boundary, in event order. Under one exact Responsibility, the exact Act determines Applicability and records one candidate for each exact source Assertion. Under the other exact Responsibility, the exact Act determines Applicability and records one candidate for each distinct ordered source Assertion pair, in source event order for the first role and then the second role. Each exact Act records one complete result carrying every candidate required by that Act.
 
-For each exact Act, each source Assertion bears the exact Act-local input role. Applicability for that exact input-to-Act relation is required before its Participation. Each source Assertion may participate only through its exact result reference, source Locality, source Standing boundary, Evidence, Authority, Scope, limits, and Unknown. Each candidate carries each exact source Assertion reference and its coordinates under that exact Act and bears the Responsibility to preserve its carried Standing coordinates. What the candidate represents: Unknown. Candidate Standing establishes no represented relation, Admission, Applicability to another Act, Participation in another Act, or movement of the source Assertion.
+For each exact Act, each source Assertion bears the exact Act-local input role. Applicability for that exact input-to-Act relation is required before its Participation. Participation of each source Assertion requires its exact result reference, source Locality, source Standing boundary, Evidence, Authority, Scope, limits, and Unknown. Each candidate carries each exact source Assertion reference and its coordinates under that exact Act and bears the Responsibility to preserve its carried Standing coordinates. What the candidate represents: Unknown. Candidate Standing establishes no represented relation, Admission, Applicability to another Act, Participation in another Act, or movement of the source Assertion.
 
 The complete result carries the exact ledger boundary, each ordered source Assertion reference, Responsibility assignment, exact Act occurrence, Evidence of Yield relation, and each ordered candidate reference. A missing required candidate, candidate not required by the exact Act, repeated candidate, different order, different source reference, unsupported source, occurrence not intact, or partial result establishes no complete Candidate Standing.
 
-### 01.Source.F — Supplied material may assert a relation
+### 01.Source.F — Supplied material carrying an asserted relation
 
-Supplied material may assert one exact relation from X to Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknown. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
+Supplied material carries an asserted exact relation from X to Y only as material. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknown. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ### 01.Source.G — One exact operator material boundary occurrence
 

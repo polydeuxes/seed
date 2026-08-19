@@ -174,8 +174,8 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
 )
 BYTE_PAIR_MEASUREMENT_AUTHORITY = "bounded repository authority"
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
-    "determine whether one exact source-material-set Assertion may participate "
-    "in one exact byte-position-pair Measurement Act"
+    "determine Applicability of one exact source-material-set Assertion to one "
+    "exact byte-position-pair Measurement Act"
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact addressed "

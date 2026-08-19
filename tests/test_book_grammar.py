@@ -138,8 +138,8 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
         },
     ]
     assert (
-        "At one exact current Standing boundary, this Seed may record one "
-        "declared Responsibility assignment in declared order"
+        "Recording one declared Responsibility assignment in declared order "
+        "requires one exact current Standing boundary"
     ) in _active_book()
 
 
@@ -540,7 +540,7 @@ def test_later_assertion_meets_current_standing_without_collapsed_boolean_claims
         ],
     }
     assert clause["Compare_result"] == {
-        "may_have_own_subject": [
+        "subject_coordinates": [
             "comparison",
             "coordinate_distinction",
             "result_shape",

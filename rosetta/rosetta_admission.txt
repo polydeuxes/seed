@@ -43,6 +43,7 @@ aggregation
 agreement
 aid
 all
+allowed
 allowing
 alone
 already
@@ -52,6 +53,7 @@ among
 an
 analytical
 analyze
+analysis
 anchors
 and
 another
@@ -131,6 +133,7 @@ callable
 calling
 came
 can
+capable
 candidate
 candidates
 cannot
@@ -210,6 +213,7 @@ connective
 connects
 consider
 considered
+considers
 constitutional
 constitutionally
 constrained
@@ -921,6 +925,7 @@ subjects
 substitute
 success
 successful
+sufficient
 such
 suggested
 summarizing

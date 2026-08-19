@@ -523,9 +523,7 @@ def _assignment_material(
         "limits": [
             "the complete result is bounded to the exact source ledger boundary"
         ],
-        "unknown": [
-            "what each Candidate represents or may participate in: Unknown"
-        ],
+        "unknown": ["what each Candidate represents: Unknown"],
     }
 
 
