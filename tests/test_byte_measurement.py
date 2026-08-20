@@ -2788,40 +2788,8 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
         assertions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
 
-FIDELITY_SUBJECTS = {
-    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
-        test_responsible_act_evidence_is_observable_before_yield_and_result,
-        test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_identities,
-        test_stale_and_shaped_standing_cannot_authorize_exact_byte_act,
-        test_corrupted_exact_byte_assignment_cannot_authorize_an_act,
-        test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier,
-        test_operator_replay_uses_exact_context_while_public_assignment_reads_reconstruct,
-        test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read,
-        test_call_local_assignment_carry_requires_the_exact_assignment_at_tip,
-        test_console_exact_byte_same_call_path_does_not_use_public_standing_gate,
-        test_old_unassigned_exact_byte_act_api_is_not_accepted,
-        test_one_responsible_act_occurrence_cannot_yield_twice,
-        test_reopened_public_result_refuses_an_act_already_consumed,
-        test_yield_refuses_missing_responsible_act_evidence,
-        test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities,
-        test_seed_native_responsibility_is_earned_from_preserved_occurrences,
-        test_pair_assignment_enters_current_standing_before_distinct_acts_and_result,
-        test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts,
-    ),
-    "exact_act_occurrence": (
-        test_pair_act_identity_is_not_its_occurrence_identity,
-    ),
-    "yield_result_occurrence_evidence": (
-        test_assignment_act_and_result_survive_distinct_sqlite_restarts,
-        test_call_local_result_requires_the_exact_act_at_tip,
-        test_call_local_result_rechecks_act_tip_after_source_callback,
-        test_yield_resolves_the_exact_act_evidence_after_reopen,
-        test_material_appended_after_act_evidence_cannot_enter_its_result,
-        test_yield_refuses_a_different_occurrence_kind,
-        test_pair_result_refuses_an_append_between_yield_and_result,
-        test_pair_result_rechecks_measurement_act_tip_after_source_callback,
-    ),
-    "declared_measurement_result": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.D", "result"): (
         test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,
@@ -2852,36 +2820,14 @@ FIDELITY_SUBJECTS = {
         test_byte_result_reader_refuses_changed_yield_result_identity,
         test_pair_result_reader_refuses_changed_yield_result_identity,
     ),
-    "measurement_result_distinctions": (
-        test_count_and_recurrence_are_distinct_results,
-        test_pair_count_and_recurrence_are_separate_results,
-    ),
-    "applicability_determination": (
+    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_addressed_act,
         test_pair_applicability_reads_exact_result_standing_instead_of_scalar,
         test_pair_applicability_reader_refuses_changed_yield_result_identity,
         test_pair_applicability_reader_revalidates_exact_input_standing,
     ),
-    "one_exact_movement_assertion": (
-        test_locality_movement_assignment_is_earned_from_the_exact_source,
-        test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_destination_standing,
-        test_movement_assignment_refuses_stale_or_shaped_source_standing,
-        test_movement_act_requires_current_destination_standing_carrying_assignment,
-        test_movement_lifecycle_refuses_duplicate_act_and_result,
-        test_movement_act_refuses_standing_before_a_later_destination_tip,
-        test_movement_assignment_and_lifecycle_survive_sqlite_restarts,
-        test_movement_assignment_reader_refuses_corrupted_source_carrier,
-        test_movement_reader_refuses_crossed_yield_boundary_or_result_kind,
-        test_movement_carried_standing_equals_replay_and_same_locality_is_noop,
-        test_bounded_movement_batch_carries_each_assignment_before_its_act,
-        test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation,
-        test_movement_batch_carry_phases_refuse_corruption_without_partial_standing,
-        test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs,
-        test_movement_batch_exact_carry_equals_public_replay,
-        test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly,
-    ),
-    "representation_source_coordinates": (
+    ("book_coordinates", "01.Source.A", "subject"): (
         test_pair_validation_requires_one_exact_ordered_representation,
     ),
 }

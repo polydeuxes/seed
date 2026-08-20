@@ -7,7 +7,6 @@ from io import BytesIO, StringIO
 import pytest
 from tests.representation_admission import admit_representation
 
-FIDELITY_SUBJECT = "one_exact_recorded_Standing_boundary_reference"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import acquired_material_bytes

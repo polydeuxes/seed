@@ -1023,28 +1023,8 @@ def test_result_carries_only_its_declared_measurement_coordinates():
     assert "standing" not in result.material["assertions"]["dimensions"]
 
 
-FIDELITY_SUBJECTS = {
-    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
-        test_assignment_act_yield_and_result_enter_current_standing,
-        test_act_requires_current_standing_that_carries_exact_assignment,
-        test_one_assignment_records_one_act_and_one_result,
-        test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
-        test_assignment_act_and_result_survive_separate_restarts,
-        test_reopened_public_result_refuses_a_second_yield,
-        test_same_call_result_carry_equals_full_standing_replay,
-        test_refused_same_call_result_does_not_change_prior_standing,
-        test_private_same_call_recorders_require_exact_carried_tip_membership,
-    ),
-    "yield_result_occurrence_evidence": (
-        test_result_refuses_an_intact_yield_from_another_exact_family,
-    ),
-    "one_exact_movement_assertion": (
-        test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment,
-        test_position_assertion_movement_requires_its_exact_source_after_act_evidence,
-        test_position_assertion_movement_requires_its_exact_source_after_evidence_of_yield_relation,
-        test_position_assertion_movement_requires_its_exact_source_when_carrying_the_result_into_standing,
-    ),
-    "declared_measurement_result": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.D", "result"): (
         test_each_input_pair_has_first_and_second_exact_position_coordinates,
         test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,
         test_material_without_a_byte_pair_yields_an_exact_empty_result,

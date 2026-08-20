@@ -124,15 +124,9 @@ def test_position_pair_admission_preserves_equal_occurrence_references():
     assert len({reference.occurrence_identity for reference in pairs}) == len(pairs)
 
 
-FIDELITY_SUBJECTS = {
-    "declared_measurement_result": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.D", "result"): (
         test_equal_material_at_different_positions_keeps_each_occurrence,
         test_exact_position_pairs_pair_again_at_the_exact_next_position,
-    ),
-    "input_act_relation_occurrence": (
-        test_position_pair_admission_preserves_equal_occurrence_references,
-    ),
-    "locality_relation_coordinates": (
-        test_position_pair_refuses_reordered_or_cross_locality_material,
     ),
 }

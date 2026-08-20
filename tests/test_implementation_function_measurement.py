@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 import sqlite3
 import sys
@@ -502,6 +503,33 @@ def test_fidelity_distinctions_resolve_current_book_coordinates():
     assert len(entered) == len(test_functions)
 
 
+def test_every_declared_fidelity_distinction_resolves_current_book_coordinates():
+    grammar = measured._witness_grammar()
+    entered = 0
+
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            targets = {
+                target.id for target in node.targets if isinstance(target, ast.Name)
+            }
+            assert not targets & {"FIDELITY_SUBJECT", "FIDELITY_SUBJECTS"}
+            if "FIDELITY_DISTINCTIONS" not in targets:
+                continue
+            assert isinstance(node.value, ast.Dict)
+            for reference_node, functions_node in zip(
+                node.value.keys, node.value.values
+            ):
+                reference = ast.literal_eval(reference_node)
+                measured._fidelity_distinction_coordinates(grammar, reference)
+                assert isinstance(functions_node, ast.Tuple)
+                entered += len(functions_node.elts)
+
+    assert entered > 0
+
+
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.C"): (
         test_compiled_code_supplies_exact_identities,
@@ -520,5 +548,6 @@ FIDELITY_DISTINCTIONS = {
         test_existing_sql_trace_callback_receives_the_same_statement,
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
         test_fidelity_distinctions_resolve_current_book_coordinates,
+        test_every_declared_fidelity_distinction_resolves_current_book_coordinates,
     )
 }

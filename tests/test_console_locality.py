@@ -275,26 +275,3 @@ def test_separate_processes_receive_separate_localities(db):
         ]
     finally:
         ledger.close()
-
-
-FIDELITY_SUBJECTS = {
-    "operator_entry": (
-        test_console_options_alone_select_the_console,
-        test_any_other_argument_selects_something_else,
-        test_a_db_console_records_into_that_db,
-        test_the_bare_console_writes_no_durable_history,
-    ),
-    "operator_Locality_occurrence": (
-        test_two_console_lifetimes_receive_different_locality_identities,
-        test_each_lifetime_holds_only_its_own_ingress,
-        test_a_reopened_console_does_not_continue_the_prior_standing,
-        test_the_earlier_lifetime_remains_projectable,
-        test_a_locality_read_returns_only_that_locality,
-        test_a_fresh_locality_reads_none_of_the_history,
-        test_the_in_memory_ledger_scopes_the_same_way,
-        test_a_caller_supplied_locality_identity_remains_exact,
-        test_unrecorded_locality_named_list_is_refused_without_direct_output,
-        test_a_reopened_console_process_does_not_abort,
-        test_separate_processes_receive_separate_localities,
-    ),
-}

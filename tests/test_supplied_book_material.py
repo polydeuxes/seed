@@ -7,7 +7,6 @@ import sys
 
 import pytest
 
-FIDELITY_SUBJECT = "supplied_material_invocation_witness"
 
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition

@@ -99,21 +99,3 @@ def test_non_byte_coordinates_are_refused_before_invocation():
         assert str(error) == "addressed material must be one byte"
     else:
         raise AssertionError("non-byte addressed material was not refused")
-
-
-FIDELITY_SUBJECTS = {
-    "count_result_coordinates": (
-        test_absent_material_returns_zero_without_entering_returned_material,
-        test_one_added_position_changes_both_returned_count_coordinates,
-    ),
-    "added_position_material_order": (
-        test_one_added_position_preserves_exact_material_order,
-    ),
-    "count_result_admission": (test_exact_returned_coordinates_perform_admission,),
-    "count_recurrence_result_distinction": (
-        test_recurrence_changes_count_without_repeating_returned_material,
-    ),
-    "count_invocation_coordinate_boundary": (
-        test_non_byte_coordinates_are_refused_before_invocation,
-    ),
-}

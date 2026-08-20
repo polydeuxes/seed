@@ -9,7 +9,6 @@ import shutil
 import pytest
 
 
-FIDELITY_SUBJECT = "compiled_material_invocation_witness"
 
 
 ROOT = Path(__file__).resolve().parents[1]

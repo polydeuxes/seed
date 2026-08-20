@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-FIDELITY_SUBJECT = "locality_relation_coordinates"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import acquired_material_bytes

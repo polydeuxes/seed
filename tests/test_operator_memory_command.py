@@ -4,9 +4,6 @@ from io import BytesIO, StringIO
 
 import pytest
 
-FIDELITY_SUBJECT = (
-    "this_Seed_bears_Standing_Locality_continuation_Responsibility"
-)
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result

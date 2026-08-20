@@ -1169,30 +1169,8 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
         )
 
 
-FIDELITY_SUBJECTS = {
-    "assertion_standing_coordinates": (
-        test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_identities,
-        test_stale_standing_cannot_authorize_the_assigned_measurement_act,
-        test_shaped_standing_without_the_exact_assignment_cannot_authorize_the_act,
-        test_corrupted_assignment_occurrence_cannot_authorize_the_act,
-        test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier,
-        test_replay_validation_context_refuses_unbound_accumulators_and_clears,
-        test_replay_context_before_the_recorded_assignment_boundary_is_refused,
-        test_replay_context_refuses_forged_exact_boundary_input_coordinates,
-        test_explicit_prior_standing_binds_each_exact_input_occurrence,
-        test_assignment_act_and_result_survive_distinct_durable_restarts,
-        test_measurement_result_does_not_promote_across_the_three_later_crossings,
-        test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
-        test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing,
-    ),
-    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
-        test_act_evidence_has_inputs_and_responsibility_but_no_result_finding,
-    ),
-    "yield_result_occurrence_evidence": (
-        test_pair_occurrence_measurement_yield_preserves_the_exact_finding,
-        test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurrence_position_yield,
-    ),
-    "declared_measurement_result": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.D", "result"): (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
         test_same_boundary_pair_subjects_have_one_pair_result_read,
@@ -1206,10 +1184,7 @@ FIDELITY_SUBJECTS = {
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,
     ),
-    "locality_relation_coordinates": (
-        test_distinct_locality_and_pre_source_boundary_are_refused,
-    ),
-    "representation_source_coordinates": (
+    ("book_coordinates", "01.Source.A", "subject"): (
         test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_corruption,
     ),
 }

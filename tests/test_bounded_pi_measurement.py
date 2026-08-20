@@ -16,7 +16,6 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
-FIDELITY_SUBJECT = "material_measurement_witness"
 
 
 def _record_byte_measurement(

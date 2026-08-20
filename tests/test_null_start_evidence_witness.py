@@ -122,23 +122,6 @@ def test_material_acquisition_exact_material_is_inspectable(ledger):
     assert all(type(event.exact_material) is bytes for event in acquisition_results)
 
 
-FIDELITY_SUBJECTS = {
-    "operator_witness_material_acquisition_occurrence": (
-        test_one_acquisition_result_occurs_for_each_delivered_line,
-    ),
-    "operator_witness_material_acquisition_role": (test_each_material_acquisition_carries_the_operator_role,),
-    "witness_material_acquisition_exact_material": (test_each_material_acquisition_preserves_exact_bytes,),
-    "witness_material_acquisition_act_yield_relation": (
-        test_each_material_acquisition_binds_its_exact_act_and_evidence_of_yield_relation,
-    ),
-    "witness_material_acquisition_representation_distinction": (
-        test_material_acquisition_does_not_assert_a_represented_relation,
-    ),
-    "witness_material_acquisition_evidence_visibility": (test_material_acquisition_evidence_is_inspectable,),
-    "witness_material_acquisition_exact_material_visibility": (
-        test_material_acquisition_exact_material_is_inspectable,
-    ),
-}
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -10,7 +10,6 @@ except ImportError:  # pragma: no cover - Linux owns this kernel witness.
 
 import pytest
 
-FIDELITY_SUBJECT = "exact_emission_boundary"
 
 from seed_runtime.operator_egress import (
     EXACT_MATERIAL_WRITE_BOUNDARY_RULE,

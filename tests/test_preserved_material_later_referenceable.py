@@ -39,7 +39,6 @@ from io import StringIO
 
 import pytest
 
-FIDELITY_SUBJECT = "exact_material_preservation_witness"
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_locality_standing import (

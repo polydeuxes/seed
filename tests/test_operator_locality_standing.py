@@ -4,7 +4,6 @@ from io import StringIO
 
 import pytest
 
-FIDELITY_SUBJECT = "current_Locality_Standing"
 
 import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (

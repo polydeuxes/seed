@@ -2,8 +2,6 @@ from io import BytesIO
 
 import pytest
 
-FIDELITY_SUBJECT = "applicability_determination"
-
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import (
@@ -286,3 +284,17 @@ def test_applicability_standing_survives_durable_reopen(tmp_path):
         }
     finally:
         reopened.close()
+
+
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
+        test_admission_applicability_participation_and_emission_remain_distinct,
+        test_emitter_refuses_applicability_absent_from_current_standing,
+        test_applicability_refuses_a_destination_that_lost_write_capability,
+        test_applicability_refuses_a_distinct_destination_boundary_rule,
+        test_applicability_for_another_admission_cannot_participate,
+        test_one_applicability_act_cannot_yield_twice,
+        test_applicability_refuses_corrupted_yield_evidence,
+        test_applicability_standing_survives_durable_reopen,
+    ),
+}

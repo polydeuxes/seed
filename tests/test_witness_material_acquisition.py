@@ -4,7 +4,6 @@ import sqlite3
 
 import pytest
 
-FIDELITY_SUBJECT = "exact_material_preservation_witness"
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger

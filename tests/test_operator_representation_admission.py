@@ -2,7 +2,6 @@ from io import BytesIO
 
 import pytest
 
-FIDELITY_SUBJECT = "emission_candidate_Admission_to_operator_Locality"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition

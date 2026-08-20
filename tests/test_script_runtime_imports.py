@@ -4,7 +4,6 @@ import ast
 import importlib
 from pathlib import Path
 
-FIDELITY_SUBJECT = "function_reference"
 
 
 ROOT = Path(__file__).resolve().parents[1]

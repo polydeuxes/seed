@@ -1292,40 +1292,15 @@ def test_ordered_path_and_recorded_findings_are_addressable_without_exact_materi
     assert "representation_rule" not in recorded.material
 
 
-FIDELITY_SUBJECTS = {
-    "applicability_determination": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
         test_another_source_occurrence_is_inapplicable_and_cannot_participate,
     ),
-    "relation_required_coordinates": (
-        test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
-        test_unassigned_exact_compare_subject_read_records_nothing,
-        test_unassigned_exact_compare_subject_read_replays_after_restart,
-        test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
-        test_every_current_compare_subject_records_one_serial_responsibility_assignment,
-        test_every_current_compare_assignment_records_one_separate_applicability_result,
-        test_only_applicable_current_compare_results_record_participation_and_act_evidence,
-        test_every_current_compare_act_records_one_separate_yield_and_result,
-        test_current_standing_fans_one_comparison_into_exact_distinction_pins,
-        test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
-        test_every_current_compare_result_and_finding_enter_later_candidate_source_read,
-        test_compare_result_and_finding_enter_candidate_obligation_before_first_yield,
-        test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
-        test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
-        test_availability_without_both_exact_standings_cannot_assign_comparison,
-    ),
-    "yield_result_occurrence_evidence": (
-        test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice,
-        test_changed_input_compare_is_refused_on_later_read,
-        test_higher_input_preserves_the_validated_comparison_assignment,
-        test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
-        test_corrupted_higher_compare_yield_is_refused,
-        test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained_read,
-    ),
-    "declared_measurement_result": (
+    ("book_coordinates", "01.Source.D", "result"): (
         test_ordered_path_and_recorded_findings_survive_sqlite_restart,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
-    "representation_source_coordinates": (
+    ("book_coordinates", "01.Source.A", "subject"): (
         test_ordered_path_and_recorded_findings_are_addressable_without_exact_material,
     ),
 }

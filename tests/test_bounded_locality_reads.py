@@ -8,7 +8,6 @@ from io import StringIO
 
 import pytest
 
-FIDELITY_SUBJECT = "bounded_locality_read"
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import (

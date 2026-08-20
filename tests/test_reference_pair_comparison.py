@@ -180,29 +180,3 @@ def test_reference_directions_use_covering_indexes(tmp_path):
 
     for plan in plans:
         assert any("COVERING INDEX" in row[-1] for row in plan), plan
-
-
-FIDELITY_SUBJECTS = {
-    "reference_pair_comparison": (
-        test_bounded_comparison_reads_both_reference_directions,
-    ),
-    "later_reference_relation_distinction": (
-        test_bounded_comparison_does_not_turn_a_future_name_into_a_relation,
-    ),
-    "repeated_reference_relation": (
-        test_one_repeated_reference_relation_is_collected_once,
-    ),
-    "reference_collection_boundary": (
-        test_collection_stays_at_its_exact_boundary_after_the_ledger_advances,
-    ),
-    "persistent_reference_collection_boundary": (
-        test_persisted_collection_refuses_a_different_boundary,
-    ),
-    "reference_collection_exact_boundary": (
-        test_load_requires_the_ledger_and_exact_boundary,
-    ),
-    "reference_collection_without_boundary_refusal": (
-        test_unbounded_legacy_comparison_is_refused,
-    ),
-    "reference_indexing": (test_reference_directions_use_covering_indexes,),
-}

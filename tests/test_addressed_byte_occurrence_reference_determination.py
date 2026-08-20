@@ -778,29 +778,3 @@ def test_determination_result_refuses_iterator_append_without_yield():
     assert read_operator_locality_standing(
         ledger, locality_identity=recorded["source"].locality_identity
     ) == prior
-
-
-FIDELITY_SUBJECTS = {
-    "addressed_byte_occurrence_reference_determination": (
-        test_interior_address_carries_every_and_only_ordered_assertion_reference,
-        test_boundary_and_single_byte_addresses_have_exact_reference_population,
-        test_repeated_byte_occurrences_remain_distinct_by_position_assertion,
-        test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically,
-        test_each_stage_reader_refuses_corrupted_prior_stage,
-        test_each_recorded_occurrence_refuses_its_corruption,
-        test_applicability_refuses_wrong_yield_kind_or_boundary,
-        test_determination_refuses_wrong_yield_kind_or_boundary,
-        test_one_act_cannot_append_a_second_yield_or_result,
-        test_call_local_standing_equals_full_replay,
-        test_lifecycle_is_exact_after_sqlite_restart,
-        test_carried_lifecycle_is_exact_after_sqlite_restart,
-        test_determination_uses_addressed_kernel_without_full_reference_scan,
-        test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay,
-        test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_standing,
-        test_assignment_refuses_unrelated_append_during_source_revalidation,
-        test_act_requires_intact_retained_assignment_during_duplicate_iterator,
-        test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield,
-        test_determination_act_requires_intact_applicability_during_iterator,
-        test_determination_result_refuses_iterator_append_without_yield,
-    )
-}

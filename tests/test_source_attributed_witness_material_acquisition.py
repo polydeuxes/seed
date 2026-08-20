@@ -234,21 +234,3 @@ def test_source_attributed_witness_admission_refuses_one_changed_invocation_resu
                 *admission.invocation_result_references[1:],
             ),
         )
-
-
-FIDELITY_SUBJECTS = {
-    "exact_act_occurrence": (
-        test_each_compiled_function_receives_the_same_source_attributed_witness_occurrence_order,
-    ),
-    "content_locality_occurrence_distinction": (
-        test_each_source_attributed_witness_material_has_one_exact_ordered_material_acquisition_result_occurrence,
-    ),
-    "input_act_relation_occurrence": (
-        test_source_attributed_witness_invocation_results_enter_one_complete_admission,
-        test_source_attributed_witness_occurrence_order_refuses_one_reordered_compiled_function,
-        test_source_attributed_witness_admission_refuses_one_changed_invocation_result,
-    ),
-    "relation_required_coordinates": (
-        test_each_invocation_position_matches_the_measured_occurrence_position,
-    ),
-}

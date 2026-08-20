@@ -93,26 +93,3 @@ def test_each_ordered_admission_pair_is_read_once(monkeypatch):
 
     assert len(calls) == 6
     assert len(set(calls)) == 6
-
-
-FIDELITY_SUBJECTS = {
-    "admission_preservation_relation": (
-        test_an_admission_preserves_itself_and_the_one_without_distinctions,
-    ),
-    "material_function_same_Admission": (
-        test_many_decoder_functions_reach_the_same_admission,
-    ),
-    "material_function_admission_distinction": (
-        test_the_decoder_functions_do_not_share_one_admission,
-    ),
-    "admission_result_relation": (
-        test_the_relation_over_results_is_itself_admitted,
-    ),
-    "admission_preservation_boundary": (test_one_admission_preserves_no_other,),
-    "prior_admission_identity": (
-        test_repeated_comparison_uses_the_exact_prior_admission,
-    ),
-    "ordered_admission_pair_comparison": (
-        test_each_ordered_admission_pair_is_read_once,
-    ),
-}

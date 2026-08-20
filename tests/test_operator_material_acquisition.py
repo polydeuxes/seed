@@ -5,7 +5,6 @@ from io import BytesIO, StringIO
 
 import pytest
 
-FIDELITY_SUBJECT = "operator_material_acquisition_witness"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND

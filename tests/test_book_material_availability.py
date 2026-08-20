@@ -11,7 +11,6 @@ from seed_runtime.declared_measurement_responsibilities import (
 )
 
 
-FIDELITY_SUBJECT = "material_measurement_witness"
 
 
 ROOT = Path(__file__).resolve().parents[1]

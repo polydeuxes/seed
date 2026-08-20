@@ -144,35 +144,3 @@ def test_phase_zero_is_not_privileged_by_the_material():
         for phase in (0, 1)
     ]
     assert seen[0] == seen[1]
-
-
-FIDELITY_SUBJECTS = {
-    "position_support": (test_support_is_the_exact_set_of_values_at_each_offset,),
-    "position_support_count_distinction": (
-        test_one_offset_carries_two_values_where_another_carries_many,
-    ),
-    "candidate_standing_not_established_by_position_support": (
-        test_support_sizes_differ_under_every_stride_so_inequality_selects_nothing,
-    ),
-    "recurrent_position_composite_candidate_distinction": (
-        test_a_stride_and_its_multiple_carry_the_same_distinction,
-    ),
-    "boundary_standing_not_established_by_position_measurement": (
-        test_no_module_level_name_states_a_read_framing,
-    ),
-    "boundary_standing_not_established_by_position_recurrence": (
-        test_a_stride_does_not_say_where_a_group_begins,
-    ),
-    "position_support_exact_difference": (
-        test_the_reversal_is_exact_rather_than_approximate,
-    ),
-    "supplied_position_coordinate_finding_distinction": (
-        test_phase_defaults_to_a_supplied_coordinate_and_not_a_finding,
-    ),
-    "byte_count_material_boundary_distinction": (
-        test_the_materials_own_byte_count_is_not_an_internal_boundary,
-    ),
-    "supplied_position_coordinate_distinction": (
-        test_phase_zero_is_not_privileged_by_the_material,
-    ),
-}

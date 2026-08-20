@@ -4,7 +4,6 @@ from io import BytesIO, StringIO
 import pytest
 from tests.representation_admission import admit_representation
 
-FIDELITY_SUBJECT = "exact_Representation_occurrence"
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,

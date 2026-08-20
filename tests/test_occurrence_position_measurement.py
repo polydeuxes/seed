@@ -881,32 +881,8 @@ def test_reopened_public_result_refuses_a_second_yield(tmp_path):
         reopened.close()
 
 
-FIDELITY_SUBJECTS = {
-    "assertion_standing_coordinates": (
-        test_result_carries_one_ordered_assertion_per_exact_position,
-        test_measured_scalar_cannot_impersonate_occurrence_position_standing,
-    ),
-    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
-        test_assignment_act_yield_and_result_keep_distinct_exact_identities,
-        test_act_requires_current_standing_that_carries_its_assignment,
-        test_assignment_refuses_stale_current_standing_without_appending,
-        test_one_assignment_cannot_record_two_act_occurrences,
-        test_corrupted_source_cannot_enter_act_evidence_after_measurement,
-        test_act_evidence_is_observed_before_yield_without_reconstructing_finding,
-        test_result_refuses_arbitrary_act_evidence_identity_without_appending,
-        test_result_refuses_wrong_kind_and_corrupted_act_evidence,
-    ),
-    "yield_result_occurrence_evidence": (
-        test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relation,
-        test_result_refuses_substituted_assignment_without_appending_yield,
-        test_one_measurement_act_cannot_yield_two_results,
-        test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
-        test_corrupted_input_act_or_evidence_of_yield_relation_is_refused,
-        test_durable_locality_positions_read_through_their_exact_yield,
-        test_assignment_act_and_result_survive_separate_restarts,
-        test_reopened_public_result_refuses_a_second_yield,
-    ),
-    "declared_measurement_result": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.D", "result"): (
         test_a_later_occurrence_does_not_revise_the_bounded_positions,
         test_supplied_reversal_cannot_replace_the_ledger_measurement,
         test_subclass_finding_cannot_replace_the_exact_measurement_type,
@@ -917,9 +893,5 @@ FIDELITY_SUBJECTS = {
         test_wrong_result_boundary_coordinates_are_refused,
         test_wrong_boundary_is_refused_without_reconstructing_positions,
         test_durable_position_identities_are_not_reissued_after_reopen,
-    ),
-    "locality_relation_coordinates": (
-        test_exact_locality_occurrences_receive_exact_positions,
-        test_another_locality_does_not_enter_the_position_measurement,
     ),
 }

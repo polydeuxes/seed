@@ -1768,31 +1768,11 @@ def test_structured_path_can_be_addressed_but_is_not_raw_emission_material():
     assert "representation_rule" not in recorded.material
 
 
-FIDELITY_SUBJECTS = {
-    "applicability_determination": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
         test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate,
     ),
-    "yield_result_occurrence_evidence": (
-        test_one_act_cannot_yield_two_shared_position_results,
-        test_each_new_elevator_crossing_is_read_from_its_exact_occurrences,
-        test_each_shared_position_occurrence_read_requires_exact_input_coordinates,
-        test_generic_assignment_refuses_raw_direct_result_inputs_atomically,
-        test_later_direct_occurrence_read_requires_assignment_carried_exact_coordinates,
-        test_d2_shared_assignment_refuses_stale_or_forged_standing_atomically,
-        test_d2_result_corruption_invalidates_shared_assignment_reader,
-        test_d2_shared_assignment_revalidates_after_callback_atomically,
-        test_corrupted_shared_position_yield_relations_are_refused,
-        test_two_recurrent_results_share_one_exact_later_standing_read,
-        test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_override,
-        test_shared_assignment_refuses_inexact_explicit_prior_standing,
-        test_shared_assignment_explicit_prior_revalidates_later_input_mutation,
-        test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing,
-        test_recurrent_result_batch_refuses_assertion_and_locality_substitution,
-        test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary,
-        test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_append,
-        test_recurrent_result_batch_and_public_readers_survive_restart,
-    ),
-    "declared_measurement_result": (
+    ("book_coordinates", "01.Source.D", "result"): (
         test_exact_yielded_pair_relations_compose_at_one_shared_position,
         test_direct_position_coordinate_assertions_compose_without_recurrence_support,
         test_d2_result_without_exactly_two_references_cannot_assign_shared_position,
@@ -1809,7 +1789,7 @@ FIDELITY_SUBJECTS = {
         test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
         test_carried_standing_matches_replay_for_the_whole_new_elevator,
     ),
-    "representation_source_coordinates": (
+    ("book_coordinates", "01.Source.A", "subject"): (
         test_structured_path_can_be_addressed_but_is_not_raw_emission_material,
     ),
 }
