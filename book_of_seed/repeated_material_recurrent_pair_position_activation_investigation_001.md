@@ -170,20 +170,24 @@ consumer and that the road can reach an ordered relation path. It addresses
 exact position Assertions from the recurrent-position results; it does not
 make the recurrence Assertions participate again.
 
-The proof remains caller-addressed. No current function exhausts the complete
-population of applicable ordered position-reference pairs, and the family does
-not refuse a repeated result for the same exact pair before append.
+The proof remains caller-addressed. No current function derives exact
+shared-position subjects from the recurrent results; callers address each pair
+before Applicability. The family also does not refuse a repeated result for the
+same exact pair before append.
 
 Because the ordinary repeated invocations produce no recurrent-position result,
 the live console does not reach shared-position Applicability.
 
-## Exact live gaps
+## Exact implementation gaps before decomposition
 
-The recursive experiment stops before the demonstrated road for three separate
-reasons.
+The recursive experiment stops before the demonstrated road at three current
+implementation seams. These are not, merely by existing in a function
+signature, three separate constitutional requirements. Their decomposition is
+recorded in
+`recurrent_pair_position_constraint_decomposition_investigation_001.md`.
 
-First, the live console has no owner that discovers and exhausts the exact
-subject population:
+First, the live console does not continue the exact result coordinates into
+the recurrence population carried by that result:
 
 ```text
 earlier pair-Measurement result
@@ -194,10 +198,12 @@ earlier pair-Measurement result
 recurrent-position Measurement
 ```
 
-The existing entry points require the caller to supply every address.
+The existing entry points require the caller to supply every address. The pair
+result itself already bounds and carries its recurrence Assertion population;
+caller enumeration is not thereby established as required grammar.
 
-Second, ordinary repeated invocations do not supply the required same-Locality
-subjects:
+Second, ordinary repeated invocations do not carry both subjects under the
+same current Locality Standing:
 
 ```text
 earlier recurrence Assertion Locality I1
@@ -208,27 +214,33 @@ existing recurrent-position Measurement refuses
 ```
 
 No current Standing Locality continuation or Assertion Locality movement road
-carries this exact recurrence subject into the later invocation Locality.
+carries this exact recurrence subject into the later invocation Locality. The
+equality check protects that current boundary in the implementation; equality
+of invocation-Locality addresses is not independently established as law.
 
-Third, even same-Locality subjects cannot enter the live road without an exact
-owned limit:
+Third, the current function requires a numeric bound for each result:
 
 ```text
 recurrent-position Measurement requires exact occurrence limit
 + live console carries no such limit
 ↓
-no lawful live invocation
+current entry point cannot be called by the live console
 ```
 
-After recurrent-position results exist, the shared-position family has the
-same live ownership gap: current functions require the caller to address the
-exact ordered position-reference subjects rather than exhausting the
-applicable population.
+Exact finite material bounds the mathematical population, but the sixteen-book
+rule would expose 39,175,638,934 ordered position findings. Bounded partial
+Measurement and its exact known loss are real distinctions. Caller provision
+of a positive integer is only the current implementation shape.
 
-Do not route the corpus through Candidate. Do not weaken the Locality refusal,
-copy the recurrence Assertion into another Locality, reuse the test limit, or
-invent a limit merely to continue the observation.
+After recurrent-position results exist, the shared-position family still
+requires callers to address the exact ordered position-reference subjects.
+That later caller-addressing seam is not decomposed by this investigation.
+
+Do not route the corpus through Candidate. Do not delete the Locality equality
+check merely to cross the boundary, copy the recurrence Assertion into another
+Locality, reuse the test limit, or invent a limit merely to continue the
+observation.
 
 The existing road itself is proved through ordered relation path. The live
-continuation is not established: subject discovery, the occurrence limit, and
-shared-position subject exhaustion have no current owner.
+continuation is not established. The current parameter shapes must not be
+mistaken for the distinctions they protect.
