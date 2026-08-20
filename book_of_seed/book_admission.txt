@@ -58,8 +58,6 @@ carry
 carrying
 citing
 clause
-code
-collection
 collective
 compare
 comparing
@@ -103,7 +101,6 @@ difference
 different
 direct
 discarding
-displayed
 distinct
 distinction
 distinctions
@@ -146,7 +143,6 @@ first
 fixed
 for
 from
-function
 g
 global
 grammar
@@ -154,7 +150,6 @@ have
 identity
 in
 inapplicable
-indexing
 input
 inspection
 instantiation
@@ -214,7 +209,6 @@ other
 otherwise
 output
 own
-packets
 pair
 partial
 participants
@@ -277,7 +271,6 @@ revised
 revision
 role
 roles
-route
 rule
 same
 scope
@@ -313,9 +306,7 @@ through
 timestamp
 to
 transition
-treatment
 truth
-type
 uncertainty
 under
 unknown
@@ -323,7 +314,6 @@ unsupported
 until
 use
 value
-visibility
 what
 whether
 whose
