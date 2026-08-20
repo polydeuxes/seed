@@ -994,29 +994,16 @@ def test_every_declared_event_occurrence_carries_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 
-def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
-    admitted = set()
-    for _path, tree in _runtime_trees():
-        for name, value in _module_strings(tree).items():
-            if any(
-                family in name
-                for family in (
-                    "LOCALITY_EVIDENCE_KIND",
-                    "LOCALITY_RELATION_OCCURRENCE_KIND",
-                    "PARTICIPATION_EVIDENCE_KIND",
-                    "RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND",
-                )
-            ) or name == "ASSERTION_LOCALITY_MOVEMENT_KIND":
-                admitted.add(value)
+def test_every_relation_occurrence_carries_its_exact_relation_position():
+    incomplete = []
+    for path, line, _name, value, keys in _event_materials():
+        if {"first_subject", "second_subject"} <= keys and "relation" not in keys:
+            incomplete.append((path.name, line, value))
 
-    relation_shaped = set()
-    for _path, _line, name, value, keys in _event_materials():
-        if name.endswith("RELATED_KIND") or {"first_subject", "second_subject"} <= keys:
-            relation_shaped.add(value)
-
-    assert relation_shaped <= admitted, (
-        "\nRuntime records assert a relation without an admitted relation witness:"
-        f"\n  {sorted(relation_shaped - admitted)}"
+    assert incomplete == [], (
+        "\nRuntime relation occurrences require first subject, exact relation "
+        "content, and second subject:\n  "
+        + "\n  ".join(f"{path}:{line} {value}" for path, line, value in incomplete)
     )
 
 
@@ -1237,8 +1224,8 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence,
     ),
-    "event_record_relation_admission": (
-        test_every_relation_shaped_runtime_record_is_an_admitted_relation,
+    "event_record_relation_position": (
+        test_every_relation_occurrence_carries_its_exact_relation_position,
     ),
     "witness_relation_declarations": (
         test_witness_grammar_declares_the_exact_relations,

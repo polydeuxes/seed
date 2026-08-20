@@ -11,10 +11,12 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.candidate_standing_from_exact_result_assertions import (
-    get_recorded_candidate_standing,
-    record_one_source_and_ordered_pair_candidate_standings,
-    source_assertion_references_for_candidate_standing,
+from seed_runtime.candidate_results_from_exact_result_assertions import (
+    candidate_assertion_from_result,
+    get_candidate_responsibility,
+    record_one_owed_candidate_result,
+    record_one_source_and_ordered_pair_candidate_responsibilities,
+    source_assertion_references_through_boundary,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
@@ -872,7 +874,7 @@ def test_every_current_compare_result_and_finding_enter_later_candidate_source_r
     ).compare_result_occurrences
     boundary = ledger.append_boundary()
 
-    references = source_assertion_references_for_candidate_standing(
+    references = source_assertion_references_through_boundary(
         ledger, source_append_boundary=boundary
     )
     result_identities = {result.identity for result in results}
@@ -905,25 +907,25 @@ def test_every_current_compare_result_and_finding_enter_later_candidate_source_r
         )
     )
     assert all(
-        reference["source_standing_coordinate"]
+        reference["source_replay_coordinate"]
         == "comparison_result_occurrences"
         for reference in comparison_references
     )
     assert all(
-        reference["source_standing_through_event_occurrence_identity"]
+        reference["source_replay_through_event_occurrence_identity"]
         == results[-1].identity
         for reference in comparison_references
     )
     assert ledger.append_boundary() == boundary
 
 
-def test_compare_result_and_finding_enter_both_complete_later_candidate_productions():
+def test_compare_result_and_finding_enter_candidate_obligation_before_first_yield():
     ledger, _source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
         ledger, comparison, path
     )
     source_boundary = ledger.append_boundary()
-    source_references = source_assertion_references_for_candidate_standing(
+    source_references = source_assertion_references_through_boundary(
         ledger, source_append_boundary=source_boundary
     )
     compare_references = tuple(
@@ -940,65 +942,52 @@ def test_compare_result_and_finding_enter_both_complete_later_candidate_producti
         for event in ledger.list()
     )
 
-    one_source_result, ordered_pair_result = (
-        record_one_source_and_ordered_pair_candidate_standings(
+    one_source_responsibility, ordered_pair_responsibility = (
+        record_one_source_and_ordered_pair_candidate_responsibilities(
             ledger,
             source_append_boundary=source_boundary,
             one_source_recording_locality_identity="ordered-path-unary-candidates",
             ordered_pair_recording_locality_identity="ordered-path-pair-candidates",
         )
     )
-    one_source = get_recorded_candidate_standing(
-        ledger, one_source_result.identity
+    one_source_coordinates = get_candidate_responsibility(
+        ledger, one_source_responsibility.identity
     )
-    ordered_pair = get_recorded_candidate_standing(
-        ledger, ordered_pair_result.identity
+    ordered_pair_coordinates = get_candidate_responsibility(
+        ledger, ordered_pair_responsibility.identity
     )
+    assert tuple(one_source_coordinates["source_assertion_references"]) == tuple(
+        source_references
+    )
+    assert tuple(ordered_pair_coordinates["source_assertion_references"]) == tuple(
+        source_references
+    )
+    assert all(reference in source_references for reference in compare_references)
 
-    assert tuple(
-        candidate["assertion_subject"]["source_assertion_reference"]
-        for candidate in one_source["candidate_assertions"]
-    ) == tuple(source_references)
-    assert tuple(
-        candidate["assertion_subject"]["source_assertion_reference"]
-        for candidate in one_source["candidate_assertions"]
-        if candidate["assertion_subject"]["source_assertion_reference"]
-        in compare_references
-    ) == compare_references
-    assert all(
-        candidate["represented_relation"] == "Unknown"
-        for candidate in one_source["candidate_assertions"]
+    one_source_yield = record_one_owed_candidate_result(
+        ledger, responsibility_event_identity=one_source_responsibility.identity
     )
-
-    candidate_pairs = tuple(
-        (
-            candidate["assertion_subject"]["first_source_assertion_reference"],
-            candidate["assertion_subject"]["second_source_assertion_reference"],
-        )
-        for candidate in ordered_pair["candidate_assertions"]
+    ordered_pair_yield = record_one_owed_candidate_result(
+        ledger, responsibility_event_identity=ordered_pair_responsibility.identity
     )
-    expected_compare_pairs = tuple(
-        (first, second)
-        for first_position, first in enumerate(source_references)
-        for second_position, second in enumerate(source_references)
-        if first_position != second_position
-        and (first in compare_references or second in compare_references)
+    assert one_source_yield is not None
+    assert ordered_pair_yield is not None
+    assert one_source_yield.progress.owed_candidate_addresses
+    assert ordered_pair_yield.progress.owed_candidate_addresses
+    assert candidate_assertion_from_result(
+        ledger,
+        candidate_result_event_identity=one_source_yield.result_occurrence.identity,
+    )["relation"] == "Unknown"
+    assert candidate_assertion_from_result(
+        ledger,
+        candidate_result_event_identity=ordered_pair_yield.result_occurrence.identity,
+    )["relation"] == "Unknown"
+    assert one_source_yield.result_occurrence.locality_identity == (
+        "ordered-path-unary-candidates"
     )
-    assert tuple(
-        pair
-        for pair in candidate_pairs
-        if pair[0] in compare_references or pair[1] in compare_references
-    ) == expected_compare_pairs
-    assert len(expected_compare_pairs) == (
-        len(compare_references)
-        * (2 * len(source_references) - len(compare_references) - 1)
+    assert ordered_pair_yield.result_occurrence.locality_identity == (
+        "ordered-path-pair-candidates"
     )
-    assert all(
-        candidate["represented_relation"] == "Unknown"
-        for candidate in ordered_pair["candidate_assertions"]
-    )
-    assert one_source_result.locality_identity == "ordered-path-unary-candidates"
-    assert ordered_pair_result.locality_identity == "ordered-path-pair-candidates"
     assert all(
         reference["source_locality_identity"] == LOCALITY
         for reference in compare_references
@@ -1291,7 +1280,7 @@ FIDELITY_SUBJECTS = {
         test_current_standing_fans_one_comparison_into_exact_distinction_pins,
         test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
         test_every_current_compare_result_and_finding_enter_later_candidate_source_read,
-        test_compare_result_and_finding_enter_both_complete_later_candidate_productions,
+        test_compare_result_and_finding_enter_candidate_obligation_before_first_yield,
         test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
         test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
         test_availability_without_both_exact_standings_cannot_assign_comparison,
