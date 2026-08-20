@@ -396,6 +396,14 @@ class EventLedger:
     ) -> list[Event]:
         return self.list(through=through)
 
+    def _exact_material_reference(self, event_identity: str) -> str | None:
+        """Address exact bytes without making the address occurrence material."""
+
+        event = self.get(event_identity)
+        if event is None or event.exact_material is None:
+            return None
+        return _exact_material_identity(event.exact_material)
+
     def integrity_of(self, event_identity: str) -> str:
         """What this ledger can say about a stored occurrence's integrity.
 

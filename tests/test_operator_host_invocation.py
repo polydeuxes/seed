@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from io import BytesIO, StringIO
 
 import pytest
@@ -12,7 +13,7 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_acquisition import (
     acquired_material_bytes,
     read_exact_material_acquisition_result,
@@ -821,6 +822,62 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     ] == [event.identity for event in supplied_acquisition_results]
 
 
+def test_repeated_exact_witness_material_does_not_repeat_measurement_work(tmp_path):
+    ledger = SQLiteEventLedger(tmp_path / "repeated-material.sqlite")
+
+    def provider(_command, supply):
+        supply(
+            SuppliedWitnessMaterialOccurrence(
+                b"tatatata",
+                "provider:repeated-material",
+            )
+        )
+
+    def derived_counts():
+        kinds = Counter(event.kind for event in ledger.list())
+        return {
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: kinds[
+                BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+            ],
+            BYTE_MEASUREMENT_RECORDED_KIND: kinds[BYTE_MEASUREMENT_RECORDED_KIND],
+            BYTE_PAIR_MEASUREMENT_RECORDED_KIND: kinds[
+                BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+            ],
+        }
+
+    for _position in range(2):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="locality",
+            input_stream=BytesIO(b"!opaque\n"),
+            output_stream=StringIO(),
+            raw_output_stream=BytesIO(),
+            operator_invocation_provider=provider,
+        )
+        if _position == 0:
+            first_counts = derived_counts()
+            first_acquisitions = _acquisition_results(ledger)
+            first_material_references = {
+                ledger._exact_material_reference(event.identity)
+                for event in first_acquisitions
+            }
+
+    assert first_counts == {
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: 2,
+        BYTE_MEASUREMENT_RECORDED_KIND: 2,
+        BYTE_PAIR_MEASUREMENT_RECORDED_KIND: 1,
+    }
+    assert derived_counts() == first_counts
+    assert len(first_acquisitions) == 2
+    later_acquisitions = _acquisition_results(ledger)
+    assert len(later_acquisitions) == 4
+    assert {
+        ledger._exact_material_reference(event.identity)
+        for event in later_acquisitions
+    } == first_material_references
+    ledger.close()
+
+
 def test_missing_supplied_result_is_refused_after_command_acquisition():
     ledger = EventLedger()
 
@@ -975,6 +1032,7 @@ PYTEST_ADMISSION = (
     test_provider_death_leaves_the_complete_command_acquisition,
     test_provider_death_preserves_each_already_supplied_witness_occurrence,
     test_provider_supply_acquires_every_occurrence_without_selecting_emission,
+    test_repeated_exact_witness_material_does_not_repeat_measurement_work,
     test_missing_supplied_result_is_refused_after_command_acquisition,
     test_equal_empty_supplied_material_remains_three_exact_occurrences,
     test_host_provider_requires_an_exact_output_boundary,

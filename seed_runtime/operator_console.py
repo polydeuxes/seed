@@ -8,6 +8,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_position_pair_count_layer_from_carried_locality_standing,
+    assertions_of_recorded_byte_measurement,
     get_byte_position_pair_measurement_responsibility_assignment,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -411,6 +412,53 @@ def _record_pair_measurements_after_declared_measurements(
     return standing, tuple(pair_measurements)
 
 
+def _recorded_byte_measurement_material_references(ledger):
+    """Recover exact-material storage references already measured by this Seed."""
+
+    references = set()
+    for event in ledger.list():
+        if event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
+            continue
+        assertions = assertions_of_recorded_byte_measurement(ledger, event.identity)
+        source = next(
+            (
+                assertion
+                for assertion in assertions or ()
+                if assertion.result == "exact_source_material_set"
+            ),
+            None,
+        )
+        if source is None:
+            raise ValueError("recorded byte Measurement carries no exact source")
+        source_material = source.material["dimensions"]["content"].get(
+            "source_material"
+        )
+        if type(source_material) is not list:
+            raise ValueError("recorded byte Measurement source is malformed")
+        for occurrence_reference in source_material:
+            occurrence_identity = (
+                occurrence_reference.get("material_acquisition_occurrence_identity")
+                if type(occurrence_reference) is dict
+                else None
+            )
+            reference = (
+                ledger._exact_material_reference(occurrence_identity)
+                if type(occurrence_identity) is str
+                else None
+            )
+            if reference is None:
+                raise ValueError("recorded byte Measurement source has no exact material")
+            references.add(reference)
+    return references
+
+
+def _material_measurement_reference(ledger, acquisition_result):
+    reference = ledger._exact_material_reference(acquisition_result.identity)
+    if reference is None:
+        raise ValueError("material acquisition result has no exact material")
+    return reference
+
+
 def _latest_carried_pair_premise(
     ledger,
     standing,
@@ -569,6 +617,9 @@ def run_persistent_operator_console(
     locality_standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
+    measured_material_references = _recorded_byte_measurement_material_references(
+        ledger
+    )
     locality_standing, pair_premise = _latest_carried_pair_premise(
         ledger,
         locality_standing,
@@ -673,13 +724,18 @@ def run_persistent_operator_console(
             operator_locality_identity = locality_identity
             with ledger.batched():
                 command_occurrence_reference = acquired_material.identity
-                locality_standing, _byte_measurement = (
-                    _record_measurements_from_bounded_locality_replay(
-                        ledger,
-                        locality_standing,
-                        locality_identity=locality_identity,
-                    )
+                command_material_reference = _material_measurement_reference(
+                    ledger, acquired_material
                 )
+                if command_material_reference not in measured_material_references:
+                    locality_standing, _byte_measurement = (
+                        _record_measurements_from_bounded_locality_replay(
+                            ledger,
+                            locality_standing,
+                            locality_identity=locality_identity,
+                        )
+                    )
+                    measured_material_references.add(command_material_reference)
                 command_representation = record_operator_representation(
                     ledger,
                     locality_identity=locality_identity,
@@ -781,20 +837,25 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=invocation_locality_identity,
                 )
-                recorded_witness_measurements = (
-                    _record_declared_measurements_from_carried_bounded_locality_replay(
-                        ledger,
-                        witness_standing,
-                        locality_identity=invocation_locality_identity,
-                    )
+                supplied_material_reference = _material_measurement_reference(
+                    ledger, supplied_occurrence
                 )
-                witness_standing, _witness_pair_measurements = (
-                    _record_pair_measurements_after_declared_measurements(
-                        ledger,
-                        recorded_witness_measurements,
-                        locality_identity=invocation_locality_identity,
+                if supplied_material_reference not in measured_material_references:
+                    recorded_witness_measurements = (
+                        _record_declared_measurements_from_carried_bounded_locality_replay(
+                            ledger,
+                            witness_standing,
+                            locality_identity=invocation_locality_identity,
+                        )
                     )
-                )
+                    witness_standing, _witness_pair_measurements = (
+                        _record_pair_measurements_after_declared_measurements(
+                            ledger,
+                            recorded_witness_measurements,
+                            locality_identity=invocation_locality_identity,
+                        )
+                    )
+                    measured_material_references.add(supplied_material_reference)
                 provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(
@@ -1055,42 +1116,53 @@ def run_persistent_operator_console(
             if request is not None or command_run.addressed.frame.name in handlers:
                 continue
         with ledger.batched():
-            locality_standing, byte_measurement = (
-                _record_measurements_from_bounded_locality_replay(
-                    ledger,
-                    locality_standing,
-                    locality_identity=locality_identity,
-                )
+            acquired_material_reference = _material_measurement_reference(
+                ledger, acquired_material
             )
-            locality_standing, later_pair = _record_pair_measurement(
-                ledger,
-                locality_standing,
-                byte_measurement_event_identity=byte_measurement.identity,
-                locality_identity=locality_identity,
-            )
-            if pair_premise is None:
+            if acquired_material_reference in measured_material_references:
                 representation = record_operator_representation(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
                 )
             else:
-                locality_standing, comparison = (
-                    _record_pair_measurement_comparison(
+                locality_standing, byte_measurement = (
+                    _record_measurements_from_bounded_locality_replay(
                         ledger,
                         locality_standing,
-                        earlier_pair_measurement=pair_premise,
-                        later_pair_measurement=later_pair,
                         locality_identity=locality_identity,
                     )
                 )
-                pair_premise = later_pair
-                representation = record_operator_representation(
+                measured_material_references.add(acquired_material_reference)
+                locality_standing, later_pair = _record_pair_measurement(
                     ledger,
+                    locality_standing,
+                    byte_measurement_event_identity=byte_measurement.identity,
                     locality_identity=locality_identity,
-                    locality_standing=locality_standing,
-                    source_occurrence_reference=comparison.identity,
                 )
+                if pair_premise is None:
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                    )
+                else:
+                    locality_standing, comparison = (
+                        _record_pair_measurement_comparison(
+                            ledger,
+                            locality_standing,
+                            earlier_pair_measurement=pair_premise,
+                            later_pair_measurement=later_pair,
+                            locality_identity=locality_identity,
+                        )
+                    )
+                    pair_premise = later_pair
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                        source_occurrence_reference=comparison.identity,
+                    )
             locality_standing = _advance_over_representation(
                 ledger, locality_standing, representation
             )
