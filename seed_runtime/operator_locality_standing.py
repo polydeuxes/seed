@@ -984,7 +984,6 @@ def advance_operator_locality_standing(
     through_event_occurrence_identity: str | None = None
     event_count = 0
 
-    replay_started_from_empty = prior is None
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
@@ -1079,45 +1078,45 @@ def advance_operator_locality_standing(
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
-    if replay_started_from_empty:
-        _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(
-            (
-                ledger,
-                locality_identity,
-                measurement_occurrences,
-                material_acquisition_result_occurrences,
-                responsibility_assignment_occurrences,
-            )
+    _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(
+        (
+            ledger,
+            locality_identity,
+            measurement_occurrences,
+            material_acquisition_result_occurrences,
+            responsibility_assignment_occurrences,
         )
-        _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
-            {
-                "ledger": ledger,
-                "locality_identity": locality_identity,
-                "through_event_occurrence_identity": None,
-                "measurement_occurrences": measurement_occurrences,
-                "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
-                "responsibility_assignment_occurrences": (
-                    responsibility_assignment_occurrences
-                ),
-            }
-        )
+    )
+    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+        {
+            "ledger": ledger,
+            "locality_identity": locality_identity,
+            "through_event_occurrence_identity": (
+                through_event_occurrence_identity
+            ),
+            "measurement_occurrences": measurement_occurrences,
+            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+            "responsibility_assignment_occurrences": (
+                responsibility_assignment_occurrences
+            ),
+        }
+    )
 
     for event in events:
         if event.locality_identity != locality_identity:
             continue
-        if replay_started_from_empty:
-            _set_operator_standing_validation_context(
-                ledger,
-                locality_identity=locality_identity,
-                through_event_occurrence_identity=(
-                    through_event_occurrence_identity
-                ),
-                measurement_occurrences=measurement_occurrences,
-                material_acquisition_result_occurrences=material_acquisition_result_occurrences,
-                responsibility_assignment_occurrences=(
-                    responsibility_assignment_occurrences
-                ),
-            )
+        _set_operator_standing_validation_context(
+            ledger,
+            locality_identity=locality_identity,
+            through_event_occurrence_identity=(
+                through_event_occurrence_identity
+            ),
+            measurement_occurrences=measurement_occurrences,
+            material_acquisition_result_occurrences=material_acquisition_result_occurrences,
+            responsibility_assignment_occurrences=(
+                responsibility_assignment_occurrences
+            ),
+        )
         if not (
             event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
             or event.kind.startswith("operator.representation.")
