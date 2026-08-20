@@ -217,12 +217,29 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
             ("book_coordinates", "01.Source.C"): ("first",)
         }
     )
+    explicit_witness_material = SimpleNamespace(
+        WITNESS_MATERIAL_TESTS=(second,)
+    )
     unreferenced = SimpleNamespace(
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): (first,)
         }
     )
-    assert measured._pytest_distinction(empty, first, grammar) is None
+    crossed = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): (first,)
+        },
+        WITNESS_MATERIAL_TESTS=(first,),
+    )
+    repeated_witness_material = SimpleNamespace(
+        WITNESS_MATERIAL_TESTS=(second, second)
+    )
+    malformed_witness_material = SimpleNamespace(
+        WITNESS_MATERIAL_TESTS=[second]
+    )
+
+    with pytest.raises(ValueError, match="no explicit Fidelity distinction"):
+        measured._pytest_distinction(empty, first, grammar)
     assert measured._pytest_distinction(exact, first, grammar) == {
         "fidelity_distinction_reference": [
             "book_coordinates",
@@ -241,7 +258,17 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         measured._pytest_distinction(functions_list, first, grammar)
     with pytest.raises(TypeError, match="exact Fidelity distinction functions"):
         measured._pytest_distinction(nonfunction_distinction, first, grammar)
-    assert measured._pytest_distinction(unreferenced, second, grammar) is None
+    assert measured._pytest_distinction(
+        explicit_witness_material, second, grammar
+    ) is None
+    with pytest.raises(ValueError, match="no explicit Fidelity distinction"):
+        measured._pytest_distinction(unreferenced, second, grammar)
+    with pytest.raises(ValueError, match="crossed Fidelity and Witness Material"):
+        measured._pytest_distinction(crossed, first, grammar)
+    with pytest.raises(ValueError, match="Witness Material tests twice"):
+        measured._pytest_distinction(repeated_witness_material, second, grammar)
+    with pytest.raises(TypeError, match="exact Witness Material test functions"):
+        measured._pytest_distinction(malformed_witness_material, second, grammar)
 
 
 def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence():
@@ -264,6 +291,20 @@ def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurren
     assert valid.stash == invalid.stash == {}
 
 
+def test_pytest_distinction_collection_refuses_an_ownerless_function():
+    function = test_pytest_distinction_collection_refuses_an_ownerless_function
+    item = SimpleNamespace(
+        module=SimpleNamespace(),
+        function=function,
+        stash={},
+    )
+
+    with pytest.raises(ValueError, match="no explicit Fidelity distinction"):
+        measured.pytest_collection_modifyitems(None, None, [item])
+
+    assert item.stash == {}
+
+
 def test_witness_material_occurrence_has_no_fidelity_uptake():
     function = test_witness_material_occurrence_has_no_fidelity_uptake
     item = SimpleNamespace(
@@ -273,7 +314,8 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
                 ("book_coordinates", "01.Source.C"): (
                     test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
                 ),
-            }
+            },
+            WITNESS_MATERIAL_TESTS=(function,),
         ),
         function=function,
         stash={},
@@ -470,6 +512,7 @@ FIDELITY_DISTINCTIONS = {
         test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction,
         test_pytest_distinction_refuses_duplicate_or_invalid_references,
         test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
+        test_pytest_distinction_collection_refuses_an_ownerless_function,
         test_witness_material_occurrence_has_no_fidelity_uptake,
         test_stable_catalog_is_separate_from_sparse_observation,
         test_reference_pair_measurement_contains_each_preserved_function,

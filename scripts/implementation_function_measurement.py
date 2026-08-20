@@ -642,8 +642,21 @@ def _pytest_distinction(
     grammar: dict[str, object],
 ) -> dict[str, object] | None:
     distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
+    witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
+    if type(witness_material_tests) is not tuple:
+        raise TypeError("exact Witness Material test functions are required")
+    if any(not callable(function) for function in witness_material_tests):
+        raise TypeError("exact Witness Material test functions are required")
+    if len(set(witness_material_tests)) != len(witness_material_tests):
+        raise ValueError("test function entered Witness Material tests twice")
+    produces_witness_material = function_under_test in witness_material_tests
     if distinctions is None:
-        return None
+        if produces_witness_material:
+            return None
+        raise ValueError(
+            "pytest function has no explicit Fidelity distinction or "
+            "Witness Material declaration"
+        )
     if type(distinctions) is not dict or not distinctions:
         raise TypeError("exact Fidelity distinctions are required")
     matches: list[object] = []
@@ -661,8 +674,17 @@ def _pytest_distinction(
             entered_functions.add(function)
             if function is function_under_test:
                 matches.append(distinction_reference)
-    if not matches:
+    if produces_witness_material:
+        if matches:
+            raise ValueError(
+                "test function crossed Fidelity and Witness Material declarations"
+            )
         return None
+    if not matches:
+        raise ValueError(
+            "pytest function has no explicit Fidelity distinction or "
+            "Witness Material declaration"
+        )
     if len(matches) != 1:
         raise ValueError("exact Fidelity distinction is required")
     reference = matches[0]
