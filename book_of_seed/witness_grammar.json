@@ -242,20 +242,21 @@
     },
     "01.Standing.E.1": {
       "subject": "subject_to_Act_position",
-      "Responsibility": "Applicability",
-      "exact_Act": "Applicability",
-      "coordinates": [
-        "Applicability_result",
-        {
-          "required_Admission": {
-            "boundary": "exact_boundary",
-            "occurrence": "exact_Admission_occurrence"
-          }
-        },
-        "participation_relation"
-      ],
-      "relations": ["participation"],
-      "result": "Applicability_result"
+      "Applicability": {
+        "Responsibility": "Applicability",
+        "exact_Act": "Applicability",
+        "result": "Applicability_result"
+      },
+      "Admission": {
+        "boundary": "required_Admission_boundary",
+        "Responsibility": "Admission",
+        "exact_Act": "Admission",
+        "occurrence": "exact_Admission_occurrence"
+      },
+      "Participation": {
+        "relation": "participation",
+        "occurrence": "exact_participation_relation_occurrence"
+      }
     },
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
@@ -274,16 +275,7 @@
       "subject": "recorded_pair_findings",
       "Responsibility": "compare_complete_recorded_pair_findings",
       "exact_Act": "Compare",
-      "input": [
-        "Applicability_result",
-        {
-          "required_Admission": {
-            "boundary": "exact_boundary",
-            "occurrence": "exact_Admission_occurrence"
-          }
-        },
-        "participation_relation"
-      ],
+      "input": ["Applicability_result", "participation_relation_occurrence"],
       "relations": ["participation", "yield"],
       "result": "recorded_pair_finding_Compare_result"
     },
@@ -291,16 +283,7 @@
       "subject": "ordered_relation_path_and_pair_findings",
       "Responsibility": "compare_ordered_relation_path_and_pair_findings",
       "exact_Act": "Compare",
-      "input": [
-        "Applicability_result",
-        {
-          "required_Admission": {
-            "boundary": "exact_boundary",
-            "occurrence": "exact_Admission_occurrence"
-          }
-        },
-        "participation_relation"
-      ],
+      "input": ["Applicability_result", "participation_relation_occurrence"],
       "relations": ["participation", "yield"],
       "result": "ordered_relation_path_Compare_result"
     },

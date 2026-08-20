@@ -1,8 +1,6 @@
 # Standing
 
-This Seed first current Standing is `S0`.
-
-`S0` carries no coordinates.
+This Seed first current Standing carries no coordinates.
 
 Each exact Responsibility carried by current Standing is one branch of that
 Standing. A Responsibility is no other Standing subject.

@@ -84,35 +84,42 @@ def test_current_standing_precedes_responsibility_without_assignment():
     }
 
 
-def test_empty_standing_is_only_initial_s_zero():
+def test_empty_standing_is_only_the_first_current_standing():
     active_book = _active_book()
-    assert active_book.count("This Seed first current Standing is `S0`.") == 2
-    assert active_book.count("`S0` carries no coordinates.") == 2
+    assert active_book.count(
+        "This Seed first current Standing carries no coordinates."
+    ) == 2
+    assert "S0" not in active_book
     assert "This Seed current Standing carries no coordinates." not in active_book
 
 
 def test_applicability_required_admission_and_participation_remain_separate():
     grammar = _grammar()
     boundary = grammar["book_coordinates"]["01.Standing.E.1"]
-    expected_input = [
-        "Applicability_result",
-        {
-            "required_Admission": {
-                "boundary": "exact_boundary",
-                "occurrence": "exact_Admission_occurrence",
-            }
-        },
-        "participation_relation",
-    ]
-    assert boundary["Responsibility"] == "Applicability"
-    assert boundary["exact_Act"] == "Applicability"
-    assert boundary["coordinates"] == expected_input
-    assert boundary["relations"] == ["participation"]
-    assert boundary["result"] == "Applicability_result"
+    assert boundary["Applicability"] == {
+        "Responsibility": "Applicability",
+        "exact_Act": "Applicability",
+        "result": "Applicability_result",
+    }
+    assert boundary["Admission"] == {
+        "boundary": "required_Admission_boundary",
+        "Responsibility": "Admission",
+        "exact_Act": "Admission",
+        "occurrence": "exact_Admission_occurrence",
+    }
+    assert boundary["Participation"] == {
+        "relation": "participation",
+        "occurrence": "exact_participation_relation_occurrence",
+    }
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
-        assert compare["input"] == expected_input
+        assert compare["input"] == [
+            "Applicability_result",
+            "participation_relation_occurrence",
+        ]
+        assert "Admission" not in compare
+        assert "required_Admission" not in compare
         assert compare["relations"] == ["participation", "yield"]
 
 
@@ -197,11 +204,16 @@ def test_witness_grammar_relation_population_is_empty():
 
 
 def test_each_book_coordinate_has_exact_responsibility_and_act():
+    coordinates_by_reference = {
+        reference: coordinates
+        for reference, coordinates in _grammar()["book_coordinates"].items()
+        if reference != "01.Standing.E.1"
+    }
     incomplete = {
         reference: sorted(
             {"subject", "Responsibility", "exact_Act"} - set(coordinates)
         )
-        for reference, coordinates in _grammar()["book_coordinates"].items()
+        for reference, coordinates in coordinates_by_reference.items()
         if {"subject", "Responsibility", "exact_Act"} - set(coordinates)
     }
     assert incomplete == {}
@@ -272,7 +284,9 @@ FIDELITY_SUBJECTS = {
     "standing_responsibility_direct_position": (
         test_current_standing_precedes_responsibility_without_assignment,
     ),
-    "initial_empty_standing_boundary": (test_empty_standing_is_only_initial_s_zero,),
+    "initial_empty_standing_boundary": (
+        test_empty_standing_is_only_the_first_current_standing,
+    ),
     "applicability_admission_participation_separation": (
         test_applicability_required_admission_and_participation_remain_separate,
     ),

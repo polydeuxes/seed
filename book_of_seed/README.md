@@ -2,9 +2,7 @@
 
 ## Standing
 
-This Seed first current Standing is `S0`.
-
-`S0` carries no coordinates.
+This Seed first current Standing carries no coordinates.
 
 Responsibility is one exact branch of current Standing. Standing and
 Responsibility are separate constitutional coordinates.
