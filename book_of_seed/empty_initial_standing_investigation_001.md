@@ -41,14 +41,15 @@ A newly instantiated Seed already has exact current Standing `S0`.
 
 ```text
 S0
-├── no established subject
-├── no established Assertion
-├── no established relation
-├── no established result
-├── no carried Responsibility
-├── no conflict
-├── no known loss
-└── no Unknown
+├── subject                              unestablished
+├── Assertion                            unestablished
+├── relation                             unestablished
+├── result                               unestablished
+├── Responsibility                       unestablished
+├── subject-Standing responsible boundary unestablished
+├── subject-Standing occurrence           unestablished
+├── subject-Standing Evidence             unestablished
+└── carried Unknown / conflict / loss      empty
 ```
 
 This does not assert that nothing exists.  It records no negative claim at
@@ -166,6 +167,24 @@ known-loss population = empty
 The absence of one coordinate is not an `Unknown` coordinate.  `Unknown` must
 be positively carried.  Likewise, no conflict or negative Assertion arises
 from an empty population.
+
+The grammar preserves three separate dispositions:
+
+```text
+unestablished
+    no responsible occurrence has established the coordinate
+
+unresolved
+    the coordinate is instantiated,
+    but its value has not been resolved
+
+Unknown
+    one responsible occurrence positively carries Unknown
+```
+
+S0 does not contain a map populated with `unestablished` values.  Its carried
+population is empty.  `unestablished` is the curator disposition of the absent
+subject-specific positions, not a value carried by S0.
 
 Therefore:
 
@@ -312,17 +331,16 @@ Those are the coordinates of positive Standing for an exact bounded subject.
 Therefore the correct disposition is:
 
 ```text
-S0 subject                          none
-S0 subject-Standing boundary        not applicable
-S0 subject-Standing occurrence      not applicable
-S0 subject-Standing Evidence        not applicable
-S0 subject Authority / Scope        not applicable
-S0 Unknown                          empty
+S0 subject                               unestablished
+S0 subject-Standing boundary             unestablished
+S0 subject-Standing occurrence           unestablished
+S0 subject-Standing Evidence             unestablished
+S0 subject Authority / Scope             unestablished
+S0 carried Unknown / conflict / loss     empty
 ```
 
-`not applicable` here does not mean that an Applicability Act ran and produced
-a negative result.  It means the coordinate belongs to a subject-specific
-shape that is not instantiated at `S0`.
+These absent coordinates are not `unresolved`: no subject-specific shape is
+instantiated at `S0`.  They are not `Unknown`: S0 carries no positive Unknown.
 
 The exact runtime Locality address and this Seed remain the context in which
 `S0` is read.  They are not an Assertion supported by `S0`.
@@ -468,8 +486,8 @@ The fresh-Locality problem becomes smaller:
 S0_L exists                              yes
 S0_L inherits source Standing            no
 S0_L carries destination Responsibility  no
-first destination Responsibility         unresolved
-first destination subject Standing       unresolved
+first destination Responsibility         unestablished
+first destination subject Standing       unestablished
 ```
 
 An exact Locality relation may preserve source and destination coordinates.
@@ -519,6 +537,7 @@ S0 Unknown / conflicts / known loss                          empty
 
 empty Standing != absence of Standing                       established
 empty != Unknown / negative / conflict                       established
+unestablished != unresolved != Unknown                       established
 S0 requires a prior Responsibility or occurrence             no
 S0 requires subject-specific Standing physiology             no
 
@@ -532,8 +551,8 @@ result automatically creates later Standing                  no
 
 fresh Locality begins with empty S0_L                        recovered
 fresh Locality inherits source Standing                      no
-first exact Responsibility after S0                          unresolved
-first subject-specific Standing after S0                     unresolved
+first exact Responsibility after S0                          unestablished
+first subject-specific Standing after S0                     unestablished
 ```
 
 ## Conclusion
