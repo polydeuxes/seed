@@ -39,6 +39,29 @@ The result preserves each source reference, ordered path roles, pair subjects,
 complete finding references, Authority, Scope, Locality, limits, conflicts,
 and Unknown. Shared subjects establish no recurrence or source relation.
 
+### 04.Compare.C — Candidate coordinates
+
+Current Standing carrying one complete Candidate result carries one
+Responsibility branch to Compare the first and second source Assertion
+coordinates carried by each Candidate.
+
+Each Candidate is one exact Compare subject. The first and second source
+Assertion references, roles, and coordinates are coordinates carried by that
+Candidate. A source Assertion reference is no other Compare subject.
+
+Each Candidate requires its exact Applicability result. This Compare boundary
+requires one exact Admission occurrence prior to Participation. Each admitted
+Candidate requires one exact Participation relation to its Compare Act
+occurrence under one exact Candidate role.
+
+The Responsibility carries every Candidate in the complete Candidate result.
+One exact Yield relation carries each Compare Act occurrence as first subject
+and one result as second subject. The result preserves the distinctions
+established under the exact rule and completeness boundary.
+
+Candidate Participation, source references, shared coordinates, or a Compare
+result establishes no source Assertion relation and no later Standing.
+
 ## References
 
 - [Measurement and Candidate](07_measurement_and_candidates.md)

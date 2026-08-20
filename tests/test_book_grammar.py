@@ -122,6 +122,69 @@ def test_applicability_required_admission_and_participation_remain_separate():
         assert "required_Admission" not in compare
         assert compare["relations"] == ["participation", "yield"]
 
+    candidate_compare = grammar["book_coordinates"]["04.Compare.C"]
+    assert candidate_compare["input"] == [
+        "Applicability_result",
+        "exact_Admission_occurrence",
+        "participation_relation_occurrence",
+    ]
+    assert candidate_compare["Participation"] == {
+        "subject": "Candidate",
+        "role": "Candidate",
+    }
+
+
+def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates():
+    candidate_compare = _grammar()["book_coordinates"]["04.Compare.C"]
+
+    assert candidate_compare == {
+        "subject": "Candidate",
+        "Responsibility": "compare_Candidate_coordinates",
+        "responsibility_source": (
+            "current_Standing_carrying_complete_Candidate_result"
+        ),
+        "exact_Act": "Compare",
+        "rule": "compare_first_and_second_source_Assertion_coordinates",
+        "carried_coordinates": [
+            "first_source_Assertion_reference",
+            "second_source_Assertion_reference",
+            "first_source_role",
+            "second_source_role",
+        ],
+        "completeness_boundary": (
+            "every_Candidate_in_complete_Candidate_result"
+        ),
+        "input": [
+            "Applicability_result",
+            "exact_Admission_occurrence",
+            "participation_relation_occurrence",
+        ],
+        "Participation": {
+            "subject": "Candidate",
+            "role": "Candidate",
+        },
+        "relations": ["participation", "yield"],
+        "result": "Candidate_coordinate_Compare_result",
+    }
+    assert candidate_compare["subject"] not in candidate_compare[
+        "carried_coordinates"
+    ]
+    assert candidate_compare["Participation"]["subject"] == candidate_compare[
+        "subject"
+    ]
+
+
+def test_candidate_compare_book_refuses_source_participation_and_relation_promotion():
+    compare = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
+
+    assert (
+        "A source Assertion reference is no other Compare subject."
+    ) in compare
+    assert (
+        "Candidate Participation, source references, shared coordinates, or a Compare\n"
+        "result establishes no source Assertion relation and no later Standing."
+    ) in compare
+
 
 def test_responsibility_coordinates_are_anatomy_not_assignment():
     assert _grammar()["responsibility"] == {
@@ -289,6 +352,10 @@ FIDELITY_SUBJECTS = {
     ),
     "applicability_admission_participation_separation": (
         test_applicability_required_admission_and_participation_remain_separate,
+    ),
+    "candidate_compare_subject_coordinate_distinction": (
+        test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
+        test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
     ),
     "responsibility_exact_anatomy": (
         test_responsibility_coordinates_are_anatomy_not_assignment,

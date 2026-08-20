@@ -287,6 +287,31 @@
       "relations": ["participation", "yield"],
       "result": "ordered_relation_path_Compare_result"
     },
+    "04.Compare.C": {
+      "subject": "Candidate",
+      "Responsibility": "compare_Candidate_coordinates",
+      "responsibility_source": "current_Standing_carrying_complete_Candidate_result",
+      "exact_Act": "Compare",
+      "rule": "compare_first_and_second_source_Assertion_coordinates",
+      "carried_coordinates": [
+        "first_source_Assertion_reference",
+        "second_source_Assertion_reference",
+        "first_source_role",
+        "second_source_role"
+      ],
+      "completeness_boundary": "every_Candidate_in_complete_Candidate_result",
+      "input": [
+        "Applicability_result",
+        "exact_Admission_occurrence",
+        "participation_relation_occurrence"
+      ],
+      "Participation": {
+        "subject": "Candidate",
+        "role": "Candidate"
+      },
+      "relations": ["participation", "yield"],
+      "result": "Candidate_coordinate_Compare_result"
+    },
     "05.Recording.A": {
       "subject": "recorded_Assertion",
       "Responsibility": "record_exact_Assertion",
