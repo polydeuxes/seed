@@ -20,8 +20,8 @@ tests.
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/07_result_boundaries_and_movement.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/08_compare.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/candidate_standing_from_exact_result_assertions.py`
 - `seed_runtime/measurement_of_shared_position_of_byte_pair_occurrences.py`

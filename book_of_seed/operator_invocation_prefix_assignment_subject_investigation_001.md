@@ -25,10 +25,10 @@ Act, finding, result, or Standing.
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/02_constitutional_standing.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/01_constitutional_standing.md`
 - `book_of_seed/chapters/03_acts_and_occurrences.md`
-- `book_of_seed/chapters/12_locality_relations.md`
+- `book_of_seed/chapters/06_locality_relations.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/operator_console.py`
 - `seed_runtime/operator_system_locality.py`

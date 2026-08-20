@@ -58,9 +58,9 @@ for one operator-material phrase.
 
 - the Standing root in `book_of_seed/README.md`
 - `01.Source.D` and `01.Source.G` in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - assignment Standing requirements in
-  `book_of_seed/chapters/02_constitutional_standing.md`
+  `book_of_seed/chapters/01_constitutional_standing.md`
 - Act and Responsibility distinctions in
   `book_of_seed/chapters/03_acts_and_occurrences.md`
 - `standing_emission_declarations` in

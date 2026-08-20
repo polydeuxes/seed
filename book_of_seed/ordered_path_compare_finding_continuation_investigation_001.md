@@ -24,13 +24,13 @@ path extension, attach material to the path, or introduce Presentation boundary
 ## Active sources inspected
 
 - `01.Source.E.1` in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - `01.Standing.D.2` and `01.Standing.E` in
-  `book_of_seed/chapters/02_constitutional_standing.md`
+  `book_of_seed/chapters/01_constitutional_standing.md`
 - `04.Compare.A` and `04.Compare.B` in
-  `book_of_seed/chapters/07_result_boundaries_and_movement.md`
+  `book_of_seed/chapters/08_compare.md`
 - the recorded-Assertion boundary in
-  `book_of_seed/chapters/09_assertion_source_coordinates.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - `seed_runtime/comparison_of_ordered_relation_path_with_recorded_pair_findings.py`
 - `seed_runtime/candidate_standing_from_exact_result_assertions.py`
 - `tests/test_comparison_of_ordered_relation_path_with_recorded_pair_findings.py`

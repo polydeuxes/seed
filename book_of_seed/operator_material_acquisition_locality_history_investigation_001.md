@@ -14,7 +14,7 @@ neither relation identity nor author intention by itself.
 - commit `59bc4e4e` (`Record exact operator material acquisition`)
 - the parent of `59bc4e4e`
 - later history of:
-  - `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  - `book_of_seed/chapters/04_source_coordinates.md`
   - `book_of_seed/witness_grammar.json`
   - `seed_runtime/operator_material_acquisition.py`
   - `tests/test_operator_material_acquisition.py`

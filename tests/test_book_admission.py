@@ -152,23 +152,16 @@ def test_clause_coordinate_tokens_require_explicit_curation():
 
 
 def test_standing_requires_the_exact_support_relation():
-    chapter = (BOOK / "chapters" / "02_constitutional_standing.md").read_text(
+    chapter = (BOOK / "chapters" / "01_constitutional_standing.md").read_text(
         encoding="utf-8"
     )
-    paragraph = next(
-        paragraph
-        for paragraph in chapter.split("\n\n")
-        if paragraph.startswith("Preserved material establishes no support relation")
-    )
-
-    assert paragraph == (
-        "Preserved material establishes no support relation to an Assertion it "
-        "carries. Standing carried by this Seed requires the exact support relation "
-        "from its Evidence, Authority, Scope, and preserved limits to the Assertion."
-    )
+    assert (
+        "Preservation of an Assertion establishes no support relation,\n"
+        "Applicability, Participation, revision, or Standing for that Assertion."
+    ) in chapter
 
 
-def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
+def test_composite_is_communication_in_rosetta_not_active_book_grammar():
     book_composite = {
         word for word in book_admission() if word.startswith("composite")
     }
@@ -177,7 +170,7 @@ def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
         for word in _admission_entries(ROSETTA_ADMISSION)
         if word.startswith("composite")
     }
-    assert book_composite == {"composite"}
+    assert book_composite == set()
     assert rosetta_composite == {"composite", "composites"}
 
 
@@ -243,7 +236,7 @@ FIDELITY_SUBJECTS = {
         test_clause_coordinate_tokens_require_explicit_curation,
     ),
     "book_separate_admission_material_composite_admission_distinction": (
-        test_composite_admission_is_broad_in_rosetta_and_singular_in_book,
+        test_composite_is_communication_in_rosetta_not_active_book_grammar,
     ),
     "active_book_within_book_admission": (
         test_book_proper_is_within_book_admission,

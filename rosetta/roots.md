@@ -1,36 +1,43 @@
-# Responsibility spine
+# Standing and Responsibility spine
 
 Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
 the authority; this file has none.
 
-Rosetta follows the same ordering as the Book and runtime:
+Rosetta follows the Book ordering:
 
 ```text
-Responsibility
+current Standing
+└── exact Responsibility
     ├── responsible boundary
     ├── subject or material
     ├── exact Act
-    ├── Authority / Evidence
-    ├── Scope / locality
-    ├── Applicability / Admission where required
-    ├── Act occurrence
-    ├── result / Assertion
-    └── Standing
+    ├── Authority
+    ├── Scope / Locality / limits
+    ├── source / provenance where required
+    └── exact support relations where required
+        ↓
+    Act occurrence
+        ↓ Yield
+    exact result
+
+later Standing
+    separate Responsibility + Act occurrence + Yield + result
 ```
 
 Relations recur across live implementation roads:
 
 ```text
-content ── Locality → occurrence
-subject ── Participation(role) → Act occurrence
-Act occurrence ── Yield → result
-Evidence of Yield relation ── Carried_by(evidence_of_yield_relation_identity) → recording occurrence of result
-first subject ── Locality → second subject
+exact subject and role ── Participation → exact Act occurrence
+exact content ── Carriage → exact Act occurrence
+exact Act occurrence ── Yield → exact result
+exact subject ── Locality → exact subject
+exact subject ── Support → exact input to Act position
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact Evidence. These relations are not every relation
-about which Seed may carry an Assertion or Standing.
+its exact responsible occurrence, Authority, Scope, Locality, limits, and
+Unknown. These are not every relation about which Seed may carry an Assertion
+or Standing.
 
 ## Live implementation references
 

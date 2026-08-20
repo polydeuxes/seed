@@ -1,31 +1,41 @@
 # Acts and Occurrences
 
-## Constitutional subject
-Exact Acts and their occurrences.
-
-## Core distinction
-What exact responsible occurrence establishes that an Act occurred?
-
-## Bounded resolution
-
 ### 02.Acts.A — Exact Act and occurrence
 
-An exact Act occurrence requires its exact Responsibility, subject, Authority, Scope, limits, applicable inputs, and Participation. An exact result requires the Yield relation from that occurrence. Neither an Act nor a result establishes its occurrence.
+One exact Responsibility bounds one exact Act. The Responsibility carries its
+responsible boundary, subject, Authority, Scope, Locality, limits, and required
+relations.
 
-Each finding established by an exact declared Measurement Act occurrence is carried by that Measurement result. The result preserves the exact finding, responsible occurrence, and result boundary and establishes no finding for another Act.
+An Act occurrence is the occurrence of that Act under the Responsibility. An
+Act, invocation, proposed Act, material availability, or result
+establishes no Act occurrence.
 
-**Yield** is the exact relation from an Act occurrence to its result. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
+Participation carries one subject, one Act-local role, and one Act occurrence:
 
-A Responsibility bounds establishment, preservation, or revision of Standing for its subject and governs one exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing for a new subject, revising Standing, and preserving Standing each require their responsible occurrence, Authority, Scope, and limits. Standing, available material, Responsibility, and exact Act establish no Act occurrence.
+```
+subject --Participation(role)--> Act occurrence
+```
 
-## Important distinctions
-- boundary invocation != assertion-bearing branch != supplied result != effect beyond the boundary
-- successful return != every asserted effect occurred
-- proposal != occurrence
-- exact Act != Assertion whose subject is that Act
-- Standing for a new subject != revision of Standing for a prior subject
-- Act occurrence-to-result relation != Assertion truth
+Carriage carries content and one Act occurrence:
 
-## Related chapters
-- [Assertion Source Coordinates](09_assertion_source_coordinates.md)
-- [Recording and preserved Assertions](11_recording_and_preserved_assertions.md)
+```
+content --Carriage--> Act occurrence
+```
+
+Yield is the exact relation from one Act occurrence to its exact result:
+
+```
+Act occurrence --Yield--> result
+```
+
+The Yield relation requires its first subject, second subject, relation occurrence, Authority,
+Scope, Locality, limits, and Unknown. Multiplicity of an occurrence and result
+establishes no Yield.
+
+A result preserves coordinates established by its Act occurrence. It
+establishes no later Standing.
+
+## References
+
+- [Standing](01_constitutional_standing.md)
+- [Authority and Scope](02_authority_scope.md)

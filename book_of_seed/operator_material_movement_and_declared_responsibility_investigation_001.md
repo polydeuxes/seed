@@ -48,15 +48,15 @@ or test.
 
 - the Standing root in `book_of_seed/README.md`
 - `01.Source.D`, `01.Source.E.1`, and `01.Source.G` in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - Standing preservation and movement in
-  `book_of_seed/chapters/02_constitutional_standing.md`
-- `03.Movement.A` in `book_of_seed/chapters/06_movement_coordinates.md`
+  `book_of_seed/chapters/01_constitutional_standing.md`
+- `03.Movement.A` in `book_of_seed/chapters/10_movement.md`
 - result and movement distinctions in
-  `book_of_seed/chapters/07_result_boundaries_and_movement.md`
-- Locality movement in `book_of_seed/chapters/12_locality_relations.md`
+  `book_of_seed/chapters/08_compare.md`
+- Locality movement in `book_of_seed/chapters/06_locality_relations.md`
 - absence of movement and Stopping in
-  `book_of_seed/chapters/15_stopping_and_completion.md`
+  `book_of_seed/chapters/12_stopping_and_completion.md`
 - `seed_runtime/operator_console.py`
 - `seed_runtime/operator_material_acquisition.py`
 - `seed_runtime/operator_system_locality.py`

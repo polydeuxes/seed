@@ -43,9 +43,9 @@ establishes no identity among them.
 ## Active material inspected
 
 - `01.Source.D` in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - `06.Locality.A` through `06.Locality.D` in
-  `book_of_seed/chapters/12_locality_relations.md`
+  `book_of_seed/chapters/06_locality_relations.md`
 - the Ingest lifecycle in `seed_runtime/material_ingest.py`
 - bounded Locality replay in `seed_runtime/operator_locality_standing.py`
 - Assertion movement Locality in `seed_runtime/byte_measurement.py`

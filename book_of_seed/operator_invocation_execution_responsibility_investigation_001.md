@@ -20,12 +20,12 @@ supplied output Ingest
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/02_constitutional_standing.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/01_constitutional_standing.md`
 - `book_of_seed/chapters/03_acts_and_occurrences.md`
-- `book_of_seed/chapters/07_result_boundaries_and_movement.md`
-- `book_of_seed/chapters/12_locality_relations.md`
-- `book_of_seed/chapters/14_representation_emission_and_locality.md`
+- `book_of_seed/chapters/08_compare.md`
+- `book_of_seed/chapters/06_locality_relations.md`
+- `book_of_seed/chapters/11_representation_and_emission.md`
 - `book_of_seed/witness_grammar.json`
 - `material_witnesses/README.md`
 - `seed_runtime/material_ingest.py`

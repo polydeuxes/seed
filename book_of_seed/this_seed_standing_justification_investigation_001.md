@@ -37,15 +37,15 @@ or test.
 
 - the Standing root and required branches in `book_of_seed/README.md`
 - `01.Standing.D.1`, `01.Standing.D.2`, and `01.Standing.E` in
-  `book_of_seed/chapters/02_constitutional_standing.md`
+  `book_of_seed/chapters/01_constitutional_standing.md`
 - source, Fidelity, Measurement, and Candidate boundaries in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - Act and Yield distinctions in
   `book_of_seed/chapters/03_acts_and_occurrences.md`
 - Compare result boundaries in
-  `book_of_seed/chapters/07_result_boundaries_and_movement.md`
+  `book_of_seed/chapters/08_compare.md`
 - recorded-Assertion boundaries in
-  `book_of_seed/chapters/09_assertion_source_coordinates.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - the exact-address addendum in
   `book_of_seed/coherent_locality_movement_authority_investigation_001.md`
 - the later positive Standing decomposition in

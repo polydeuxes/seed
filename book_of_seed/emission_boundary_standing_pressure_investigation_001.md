@@ -40,9 +40,9 @@ of the assigned Responsibility.
 ## Active sources inspected
 
 - Ingest, Representation, Admission, Participation, and emission in
-  `book_of_seed/chapters/14_representation_emission_and_locality.md`
+  `book_of_seed/chapters/11_representation_and_emission.md`
 - positive Standing branches in `book_of_seed/README.md` and
-  `book_of_seed/chapters/02_constitutional_standing.md`
+  `book_of_seed/chapters/01_constitutional_standing.md`
 - `seed_runtime/material_ingest.py`
 - `seed_runtime/operator_representation.py`
 - `seed_runtime/operator_representation_admission.py`

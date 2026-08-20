@@ -38,9 +38,9 @@ record, because there is no current relation record.
 ## Active material inspected
 
 - `01.Source.D` and `01.Source.G` in
-  `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
+  `book_of_seed/chapters/04_source_coordinates.md`
 - `06.Locality.A` through `06.Locality.D` in
-  `book_of_seed/chapters/12_locality_relations.md`
+  `book_of_seed/chapters/06_locality_relations.md`
 - `01.Source.G` in `book_of_seed/witness_grammar.json`
 - `seed_runtime/operator_console.py`
 - `seed_runtime/operator_material_acquisition.py`

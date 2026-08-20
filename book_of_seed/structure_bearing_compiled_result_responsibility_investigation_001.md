@@ -20,10 +20,10 @@ parser returned
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/02_constitutional_standing.md`
-- `book_of_seed/chapters/11_recording_and_preserved_assertions.md`
-- `book_of_seed/chapters/14_representation_emission_and_locality.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/01_constitutional_standing.md`
+- `book_of_seed/chapters/09_recording_and_preservation.md`
+- `book_of_seed/chapters/11_representation_and_emission.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/material_ingest.py`
 - `scripts/compiled_format_invocation.py`

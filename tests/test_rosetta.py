@@ -52,10 +52,10 @@ def _relation_coordinate_identity(coordinate: object) -> str:
 
 
 def _relation_line(name: str, coordinates: dict[str, object]) -> str:
-    source = _relation_coordinate_identity(coordinates["from"]).replace("_", " ")
+    source = _relation_coordinate_identity(coordinates["first_subject"]).replace(
+        "_", " "
+    )
     relation = name.capitalize()
-    if coordinate := coordinates.get("coordinate"):
-        relation = f"{relation}({_relation_coordinate_identity(coordinate)})"
     return f"{source} ── {relation}"
 
 
@@ -69,7 +69,10 @@ def _assert_rosetta_relation_order(grammar: dict, rosetta: str) -> None:
         ]
         assert len(matching) == 1
         assert matching[0].endswith(
-            f"→ {_relation_coordinate_identity(coordinates['to']).replace('_', ' ')}"
+            "→ "
+            + _relation_coordinate_identity(coordinates["second_subject"]).replace(
+                "_", " "
+            )
         )
 
 
@@ -98,8 +101,8 @@ def test_rosetta_reversed_relation_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
     altered = rosetta.replace(
-        "Act occurrence ── Yield → result",
-        "result ── Yield → Act occurrence",
+        "exact Act occurrence ── Yield → exact result",
+        "exact result ── Yield → exact Act occurrence",
         1,
     )
 

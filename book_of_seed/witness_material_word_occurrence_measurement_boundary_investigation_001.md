@@ -27,8 +27,8 @@ or relation.
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/02_constitutional_standing.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/01_constitutional_standing.md`
 - `book_of_seed/chapters/03_acts_and_occurrences.md`
 - `book_of_seed/witness_grammar.json`
 - `book_of_seed/book_admission.txt`

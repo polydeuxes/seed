@@ -31,8 +31,8 @@ result kind, Assertion kind, or Standing.
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/02_constitutional_standing.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/01_constitutional_standing.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/measurement_of_position_coordinates_of_byte_pair_occurrences.py`
 - `seed_runtime/addressed_byte_occurrence_reference_determination.py`

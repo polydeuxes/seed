@@ -1020,16 +1020,17 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     )
 
 
-def test_witness_grammar_declares_the_four_exact_relations():
+def test_witness_grammar_declares_the_exact_relations():
     grammar_relations = set(
         json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     )
 
     assert grammar_relations == {
         "participation",
+        "carriage",
         "yield",
         "locality",
-        "carried_by",
+        "support",
     }
 
 
@@ -1240,7 +1241,7 @@ FIDELITY_SUBJECTS = {
         test_every_relation_shaped_runtime_record_is_an_admitted_relation,
     ),
     "witness_relation_declarations": (
-        test_witness_grammar_declares_the_four_exact_relations,
+        test_witness_grammar_declares_the_exact_relations,
     ),
     "standing_boundary_reference_representation_emission_distinction": (
         test_checkpoint_names_the_representation_it_addresses_not_an_emission,

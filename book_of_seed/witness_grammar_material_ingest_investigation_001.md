@@ -20,8 +20,8 @@ external coordinate reference
 
 ## Material inspected
 
-- `book_of_seed/chapters/01_source_coordinates_and_grammar.md`
-- `book_of_seed/chapters/14_representation_emission_and_locality.md`
+- `book_of_seed/chapters/04_source_coordinates.md`
+- `book_of_seed/chapters/11_representation_and_emission.md`
 - `book_of_seed/witness_grammar.json`
 - `seed_runtime/material_ingest.py`
 - `tests/test_book_material_acquisition.py`
