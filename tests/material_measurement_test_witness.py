@@ -9,7 +9,9 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
@@ -21,10 +23,10 @@ from compiled_format_invocation import exact_byte_material_references  # noqa: E
 
 def measured_one_byte_material():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="one-byte-material",
-        exact_bytes=bytes(range(256)),
+        exact=bytes(range(256)),
         source_boundary="one-byte material test boundary",
     )
     assignment = record_byte_measurement_responsibility_assignment(

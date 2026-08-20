@@ -131,18 +131,33 @@ def _require_current_pin(
         raise ValueError("declared Measurement recording requires current Locality Standing")
 
 
-def _material_acquisition_identities(standing: dict[str, Any]) -> tuple[str, ...]:
+def _material_acquisition_identities(
+    ledger: EventLedger, bounded_locality_replay: dict[str, Any]
+) -> tuple[str, ...]:
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
+
     identities = []
-    for occurrence in standing["material_acquisition_result_occurrences"]:
+    for occurrence in bounded_locality_replay[
+        "material_acquisition_result_occurrences"
+    ]:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("result_occurrence_identity")) is not str
             or not occurrence["result_occurrence_identity"]
         ):
             raise ValueError(
-                "current Standing carries a malformed material acquisition occurrence"
+                "bounded Locality replay contains a malformed material acquisition result"
             )
-        identities.append(occurrence["result_occurrence_identity"])
+        identity = occurrence["result_occurrence_identity"]
+        if all(
+            read_operator_material_acquire_locality_relation_requirements(
+                ledger,
+                recorded_result_event_identity=identity,
+            ).values()
+        ):
+            identities.append(identity)
     return tuple(identities)
 
 
@@ -286,7 +301,7 @@ def _byte_assignment_source_sets(
 def _discover_byte_measurement(
     ledger: EventLedger, standing: dict[str, Any], locality_identity: str
 ) -> ExactByteOccurrenceMeasurementSubject | None:
-    current_sources = _material_acquisition_identities(standing)
+    current_sources = _material_acquisition_identities(ledger, standing)
     if not current_sources:
         return None
     if current_sources in _byte_assignment_source_sets(ledger, locality_identity):
@@ -295,11 +310,13 @@ def _discover_byte_measurement(
 
 
 def _require_exact_byte_occurrence_measurement_subject(
-    standing: dict[str, Any], subject: DeclaredMeasurementSubject
+    ledger: EventLedger,
+    standing: dict[str, Any],
+    subject: DeclaredMeasurementSubject,
 ) -> tuple[str, ...]:
     if type(subject) is not ExactByteOccurrenceMeasurementSubject:
         raise ValueError("exact-byte Measurement requires its exact subject")
-    current_sources = _material_acquisition_identities(standing)
+    current_sources = _material_acquisition_identities(ledger, standing)
     if subject.source_material_acquisition_occurrence_identities != current_sources:
         raise ValueError(
             "exact-byte Measurement subject differs from the current acquisition-result set"
@@ -355,7 +372,7 @@ def _record_byte_measurement(
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
-    _require_exact_byte_occurrence_measurement_subject(standing, subject)
+    _require_exact_byte_occurrence_measurement_subject(ledger, standing, subject)
     assignment = _record_byte_measurement_responsibility_assignment_from_carried_standing(
         ledger,
         source_localities=(locality_identity,),
@@ -373,7 +390,7 @@ def _record_byte_measurement_from_current(
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
-    _require_exact_byte_occurrence_measurement_subject(standing, subject)
+    _require_exact_byte_occurrence_measurement_subject(ledger, standing, subject)
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality_identity,),

@@ -25,6 +25,9 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
@@ -84,10 +87,10 @@ def _direct_d2(
     exact: bytes = b"2+2=5\n",
     position: int = 1,
 ):
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=exact,
+        exact=exact,
         source_boundary="exact material boundary",
     )
     direct_assignment = (
@@ -150,10 +153,10 @@ def _fixture(
 ):
     if ledger is None:
         ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abxxabbcxxbc",
+        exact=b"abxxabbcxxbc",
         source_boundary="exact premise boundary",
     )
     byte_assignment = record_byte_measurement_responsibility_assignment(
@@ -193,10 +196,10 @@ def _fixture(
         (ord("a"), ord("b")),
         (ord("b"), ord("c")),
     }
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=current,
+        exact=current,
         source_boundary="later exact material boundary",
     )
     findings = measure_positions_for_recurrent_byte_pair_assertions(

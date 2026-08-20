@@ -42,7 +42,6 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
     record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -64,6 +63,9 @@ from seed_runtime.operator_locality_standing import (
 from seed_runtime.operator_representation import (
     read_operator_representation,
     record_operator_representation,
+)
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
 )
 
 
@@ -205,30 +207,28 @@ def _record_path(ledger, pair_measurement, source):
 def _inputs(*, ledger=None, path_source_is_added=True):
     if ledger is None:
         ledger = EventLedger()
-    earlier_source = record_witness_material_acquisition(
+    earlier_source = record_operator_material_occurrence(
         ledger,
         locality_identity=LOCALITY,
-        exact_bytes=b"abcabc",
+        exact=b"abcabc",
         source_boundary="earlier exact occurrence",
     )
     earlier = _pair_measurement(ledger)
-    added = record_witness_material_acquisition(
+    added = record_operator_material_occurrence(
         ledger,
         locality_identity=LOCALITY,
-        exact_bytes=b"abc",
+        exact=b"abc",
         source_boundary="added exact occurrence",
-        provenance_occurrence_references=(earlier_source.identity,),
     )
     later = _pair_measurement(ledger)
     comparison = _record_pair_comparison(ledger, earlier, later)
     path_source = added
     if not path_source_is_added:
-        path_source = record_witness_material_acquisition(
+        path_source = record_operator_material_occurrence(
             ledger,
             locality_identity=LOCALITY,
-            exact_bytes=b"abc",
+            exact=b"abc",
             source_boundary="unrelated exact occurrence",
-            provenance_occurrence_references=(earlier_source.identity,),
         )
     path = _record_path(ledger, earlier, path_source)
     return ledger, earlier_source, added, comparison, path

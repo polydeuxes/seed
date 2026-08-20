@@ -15,7 +15,9 @@ from seed_runtime.byte_measurement import (
     ByteMeasurementError,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     RESULT_KIND,
@@ -77,10 +79,10 @@ def _standing(ledger, locality):
 
 
 def _source(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
-    return record_witness_material_acquisition(
+    return record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=exact,
+        exact=exact,
         source_boundary="exact supplied material boundary",
     )
 
@@ -172,7 +174,7 @@ def test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b
     assert first_source.evidence_of_yield_relation_identity == first.material[
         "evidence_of_yield_relation_identity"
     ]
-    assert first_source.source_role == "this Witness"
+    assert first_source.source_role == "this operator"
     assert first_source.source_boundary == "exact supplied material boundary"
     assert first_source.exact_material == b"ab"
     assert first_source.known_loss == ()
@@ -282,7 +284,7 @@ def test_same_pair_material_at_distinct_positions_remains_distinct_occurrences()
     assert finding.occurrences == ((b"aa", 0, 1), (b"aa", 1, 2))
 
 
-@pytest.mark.parametrize("exact", (b"", b"x"))
+@pytest.mark.parametrize("exact", (b"x",))
 def test_material_without_a_byte_pair_yields_an_exact_empty_result(exact):
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger, exact)
@@ -293,6 +295,36 @@ def test_material_without_a_byte_pair_yields_an_exact_empty_result(exact):
 
     assert finding.occurrences == ()
     assert result.material["assertions"]["occurrences"] == 0
+
+
+def test_empty_witness_material_can_be_measured_but_cannot_acquire_an_assignment():
+    from seed_runtime.witness_material_acquisition import (
+        record_witness_material_acquisition,
+    )
+
+    ledger = EventLedger()
+    source = record_witness_material_acquisition(
+        ledger,
+        locality_identity="position-occurrence-position",
+        exact_bytes=b"",
+        source_boundary="empty Witness boundary",
+    )
+    finding = measure_position_coordinates_of_byte_pair_occurrences(
+        ledger,
+        source_material_acquisition_occurrence_identity=source.identity,
+    )
+    boundary = ledger.append_boundary()
+
+    assert finding.occurrences == ()
+    with pytest.raises(ValueError, match="current Locality Standing"):
+        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+            ledger,
+            source_material_acquisition_occurrence_identity=source.identity,
+            locality_standing=_standing(
+                ledger, "position-occurrence-position"
+            ),
+        )
+    assert ledger.append_boundary() == boundary
 
 
 def test_assignment_act_yield_and_result_enter_current_standing():

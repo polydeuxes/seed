@@ -23,6 +23,9 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.material_acquisition import MaterialAcquisitionError
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
@@ -134,10 +137,10 @@ def _record_measurement(ledger, measurement_kind):
 
 def _measurement_ledger():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"material",
+        exact=b"material",
         source_boundary="test boundary",
     )
     return ledger
@@ -288,10 +291,10 @@ def test_pair_standing_replay_state_clears_after_exception(monkeypatch):
 def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path):
     path = tmp_path / "pair-standing-replay.sqlite"
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"material",
+        exact=b"material",
         source_boundary="test boundary",
     )
     assignment, _applicability_act, _applicability, _measurement_act, result = (
@@ -410,10 +413,10 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
 
 def test_locality_standing_carries_only_exact_yielded_result_identities():
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"raw result",
+        exact=b"raw result",
         source_boundary="test boundary",
     )
     measurement = _record_byte_measurement(
@@ -517,10 +520,10 @@ def test_locality_standing_refuses_a_corrupted_measurement(
     monkeypatch, measurement_kind, error_type
 ):
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"material",
+        exact=b"material",
         source_boundary="test boundary",
     )
     measurement = _record_measurement(ledger, measurement_kind)

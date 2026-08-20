@@ -159,6 +159,23 @@ def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     return tuple(value)
 
 
+def _has_exact_operator_material_locality_to_this_seed(
+    ledger: EventLedger, source_identity: str
+) -> bool:
+    """Whether exact operator acquisition supplies the Locality prerequisite."""
+
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
+
+    return all(
+        read_operator_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=source_identity,
+        ).values()
+    )
+
+
 def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
     ledger: EventLedger,
     bounded_locality_replay: dict[str, Any],
@@ -231,6 +248,12 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             )
         source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
+            continue
+        if not _has_exact_operator_material_locality_to_this_seed(
+            ledger, source_identity
+        ):
+            # Availability through B is not the exact material-to-this-Seed
+            # Locality occurrence and Evidence required by 01.Source.D.
             continue
         source = ledger.get(source_identity)
         if source is None or source.locality_identity != locality_identity:
@@ -421,7 +444,8 @@ def _input_relation(
             "act_occurrence_identity": act_occurrence_identity,
         },
         "through": (
-            "one intact exact material acquisition result carried by current Locality Standing"
+            "one intact exact operator material acquisition result with its exact "
+            "material-to-this-Seed Locality occurrence and Evidence"
         ),
     }
 
@@ -505,6 +529,12 @@ def _require_current_standing(
         for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
+    source_has_exact_locality = bool(
+        source_material_acquisition_occurrence_identity is None
+        or _has_exact_operator_material_locality_to_this_seed(
+            ledger, source_material_acquisition_occurrence_identity
+        )
+    )
     if (
         locality_standing != current
         or locality_standing.get("locality_identity") != locality_identity
@@ -512,7 +542,11 @@ def _require_current_standing(
         or not boundary
         or (
             source_material_acquisition_occurrence_identity is not None
-            and source_material_acquisition_occurrence_identity not in carried_acquisition_results
+            and (
+                source_material_acquisition_occurrence_identity
+                not in carried_acquisition_results
+                or not source_has_exact_locality
+            )
         )
         or (
             assignment_identity is not None
@@ -550,13 +584,23 @@ def _require_carried_standing_at_tip(
         for occurrence in acquisition_results or ()
         if type(occurrence) is dict
     }
+    source_has_exact_locality = bool(
+        source_material_acquisition_occurrence_identity is None
+        or _has_exact_operator_material_locality_to_this_seed(
+            ledger, source_material_acquisition_occurrence_identity
+        )
+    )
     if (
         locality_standing.get("locality_identity") != locality_identity
         or type(boundary) is not str
         or not boundary
         or (
             source_material_acquisition_occurrence_identity is not None
-            and source_material_acquisition_occurrence_identity not in carried_acquisition_results
+            and (
+                source_material_acquisition_occurrence_identity
+                not in carried_acquisition_results
+                or not source_has_exact_locality
+            )
         )
         or (
             assignment_identity is not None

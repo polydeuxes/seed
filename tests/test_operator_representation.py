@@ -23,6 +23,9 @@ from seed_runtime.operator_representation import (
 )
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -122,10 +125,10 @@ def _standing(ledger, *, locality="s"):
 
 
 def _byte_measurement(ledger, *, locality="s"):
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"aba",
+        exact=b"aba",
         source_boundary="fixture boundary",
     )
     assignment = record_byte_measurement_responsibility_assignment(
@@ -1267,16 +1270,16 @@ def test_console_material_acquisition_adds_only_its_exact_occurrences():
         if _is_readable_acquisition_result(ledger, event)
     ]
     assert len(acquisition_results) == 3
-    # Standing read remains valid and records the occurrences.
+    # The bounded Locality reconstruction retains availability without
+    # manufacturing positive Standing for the acquisition results.
     standing = _standing(ledger)
     assert len(standing["material_acquisition_result_occurrences"]) == 3
     assert all(
         set(occurrence)
         == {
             "subject_reference",
-            "standing",
             "authority",
-            "evidence_event_identity",
+            "result_occurrence_identity",
             "source_role",
         }
         for occurrence in standing["material_acquisition_result_occurrences"]
@@ -1467,10 +1470,10 @@ def test_later_operator_material_does_not_replace_an_earlier_focus():
         "through_event_occurrence_identity"
     ]
     assert all(
-        event.identity in {
-            occurrence["evidence_event_identity"]
-            for occurrence in standing["material_acquisition_result_occurrences"]
-        }
+            event.identity in {
+                occurrence["result_occurrence_identity"]
+                for occurrence in standing["material_acquisition_result_occurrences"]
+            }
         for event in acquisition_results
     )
 

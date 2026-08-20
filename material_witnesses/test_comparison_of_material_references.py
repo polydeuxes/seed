@@ -25,6 +25,9 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_representation import record_operator_representation
+from seed_runtime.standing_measurement_declarations import (
+    record_declared_measurements_from_current_standing,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -246,7 +249,7 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
         recorded_occurrence_identity=standing_boundary_reference.identity,
     )
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     ] == [occurrence.identity for occurrence in corpus]
     operator_reference = material_acquisition_result_reference(ledger, operator.identity)
@@ -265,7 +268,7 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
     comparisons = (*comparison_rows[2], *comparison_rows[4])
 
     assert operator.identity not in {
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     }
     assert len(comparisons) == 9
@@ -278,7 +281,7 @@ def test_operator_material_compares_against_exact_recorded_corpus_standing(
     )
 
 
-def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
+def test_witness_book_material_stops_before_recurrent_pair_measurement():
     paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
     if any(not path.is_file() for path in paths):
         pytest.skip("supplied fixture material is unavailable")
@@ -291,30 +294,6 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         exact_bytes=b"".join(books),
         source_boundary="sixteen supplied books",
     )
-    measurement_assignment = record_byte_measurement_responsibility_assignment(
-        ledger,
-        source_localities=(locality_identity,),
-        recording_locality_identity=locality_identity,
-        locality_standing=read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
-        ),
-    )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=measurement_assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
-            ledger, locality_identity=locality_identity
-        ),
-    )
-    measurement = record_byte_measurement_result(
-        ledger,
-        responsible_act_evidence_event_identity=measurement_act.identity,
-    )
-    pair_measurement = record_byte_position_pair_count_layer(
-        ledger,
-        source_measurement_event_identity=measurement.identity,
-        recording_locality_identity=locality_identity,
-    )
     standing_boundary_reference = _record_standing_boundary_reference(
         ledger, locality_identity=locality_identity
     )
@@ -324,28 +303,16 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         recorded_occurrence_identity=standing_boundary_reference.identity,
     )
     assert [
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     ] == [corpus.identity]
-    assert measurement.identity in point["standing"]["measurement_occurrences"]
-    assert pair_measurement.identity in point["standing"]["measurement_occurrences"]
-    corpus_reference = material_acquisition_result_reference(ledger, corpus.identity)
-    pair_references = exact_references_to_recurrent_material_pairs(
-        ledger, pair_measurement.identity
+    assert point["standing"]["measurement_occurrences"] == {}
+    boundary = ledger.append_boundary()
+    declared = record_declared_measurements_from_current_standing(
+        ledger, locality_identity=locality_identity
     )
-    pair_subjects = exact_subjects_of_recurrent_adjacent_material_pairs(
-        (corpus_reference,), pair_references
-    )
-    position_premises = tuple(
-        exact_position_premise_of_recurrent_material_pair(
-            subject,
-            boundary_identity=(
-                "recorded-standing-position-premise-"
-                f"of-recurrent-material-pair-{position}"
-            ),
-        )
-        for position, subject in enumerate(pair_subjects)
-    )
+    assert declared.result_occurrences == ()
+    assert ledger.append_boundary() == boundary
 
     operator = record_witness_material_acquisition(
         ledger,
@@ -354,71 +321,14 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         source_boundary="operator material",
     )
     assert operator.identity not in {
-        occurrence["evidence_event_identity"]
+        occurrence["result_occurrence_identity"]
         for occurrence in point["standing"]["material_acquisition_result_occurrences"]
     }
-
-    expected_counts: dict[bytes, int] = {}
-    corpus_material = b"".join(books)
-    for position in range(len(corpus_material) - 1):
-        material = corpus_material[position : position + 2]
-        expected_counts[material] = expected_counts.get(material, 0) + 1
-    expected_materials = {
-        material for material, count in expected_counts.items() if count >= 2
-    }
-    assert {
-        subject.reference_to_recurrent_material_pair.exact_material
-        for subject in pair_subjects
-    } == expected_materials
-
-    operator_reference = material_acquisition_result_reference(ledger, operator.identity)
-    preserved = []
-    comparisons = []
-    for subject_position, (subject, premise) in enumerate(
-        zip(pair_subjects, position_premises)
-    ):
-        occurrences = exact_occurrences_of_material_pair(subject, operator_reference)
-        if not occurrences:
-            continue
-        preserved.append((subject, occurrences))
-        comparisons.extend(
-            compare_occurrences_of_material_pair(
-                premise,
-                occurrences,
-                boundary_identity=(
-                    f"recorded-standing-operator-pair-{subject_position}"
-                ),
-            )
-        )
-
-    assert preserved
-    assert comparisons
-    assert any(
-        {occurrence.direction for occurrence in occurrences}
-        == {"before", "after"}
-        for _subject, occurrences in preserved
+    current = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
     )
-    assert any(comparison.distinction for comparison in comparisons)
-    assert any(not comparison.distinction for comparison in comparisons)
-    assert all(
-        comparison.position_premise_of_recurrent_material_pair.pair_identity
-        == comparison.current_occurrence_of_material_pair.pair_identity
-        for comparison in comparisons
-    )
-    assert all(
-        not hasattr(comparison, coordinate)
-        for comparison in comparisons
-        for coordinate in (
-            "candidate",
-            "admitted_material",
-            "admission",
-            "applicability",
-            "meaning",
-            "reference",
-            "standing",
-            "evidence_of_yield_relation_identity",
-        )
-    )
+    assert current["operator_material_locality_relation_occurrences"] == {}
+    assert current["measurement_occurrences"] == {}
 
 
 def test_operator_today_and_lineage_material_receive_separate_comparisons(

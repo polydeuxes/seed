@@ -67,6 +67,9 @@ from seed_runtime.standing_measurement_declarations import (
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
 )
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 
 MATERIALS = (
     "alpha\nbeta\ngamma\n",
@@ -122,7 +125,7 @@ def test_operator_acquisition_records_exact_byte_pair_occurrence_position_result
     )
 
 
-def test_supplied_witness_acquisition_records_exact_byte_pair_occurrence_position_result():
+def test_supplied_witness_acquisition_remains_available_without_declared_measurement():
     ledger = EventLedger()
 
     def provide(_command, supply):
@@ -166,28 +169,19 @@ def test_supplied_witness_acquisition_records_exact_byte_pair_occurrence_positio
     )
 
     assert tuple(event.exact_material for event in supplied) == (b"4\n", b"")
-    assert tuple(
-        event.material["source_material_acquisition_occurrence_identity"] for event in results
-    ) == tuple(event.identity for event in supplied)
-    assert tuple(
-        tuple(
-            (reference.exact_pair, reference.first_position, reference.second_position)
-            for reference in references_to_recorded_position_coordinates_of_byte_pair_occurrences(
-                ledger, event.identity
-            )
-        )
-        for event in results
-    ) == (((b"4\n", 0, 1),), ())
+    assert results == ()
     standing = read_operator_locality_standing(
         ledger, locality_identity=invocation_locality
     )
-    assert all(
-        event.identity in standing["measurement_occurrences"]
-        for event in results
-    )
+    assert tuple(
+        occurrence["result_occurrence_identity"]
+        for occurrence in standing["material_acquisition_result_occurrences"]
+    ) == tuple(event.identity for event in supplied)
+    assert standing["operator_material_locality_relation_occurrences"] == {}
+    assert standing["measurement_occurrences"] == {}
 
 
-def test_one_current_standing_pin_records_each_declared_material_acquisition_measurement_once():
+def test_raw_witness_acquisitions_do_not_enter_declared_measurement_pressure():
     ledger = EventLedger()
     first = record_witness_material_acquisition(
         ledger,
@@ -202,25 +196,26 @@ def test_one_current_standing_pin_records_each_declared_material_acquisition_mea
         source_boundary="second exact boundary",
     )
 
+    boundary = ledger.append_boundary()
     recorded = record_declared_measurements_from_current_standing(
         ledger,
         locality_identity="s",
     )
 
-    assert tuple(event.kind for event in recorded.result_occurrences) == (
-        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        BYTE_MEASUREMENT_RECORDED_KIND,
-    )
     assert tuple(
-        event.material["source_material_acquisition_occurrence_identity"]
-        for event in recorded.result_occurrences[:2]
+        occurrence["result_occurrence_identity"]
+        for occurrence in recorded.locality_standing[
+            "material_acquisition_result_occurrences"
+        ]
     ) == (first.identity, second.identity)
+    assert recorded.result_occurrences == ()
+    assert recorded.locality_standing[
+        "operator_material_locality_relation_occurrences"
+    ] == {}
     assert recorded.locality_standing == read_operator_locality_standing(
         ledger, locality_identity="s"
     )
 
-    boundary = ledger.append_boundary()
     again = record_declared_measurements_from_current_standing(
         ledger,
         locality_identity="s",
@@ -229,7 +224,7 @@ def test_one_current_standing_pin_records_each_declared_material_acquisition_mea
     assert ledger.append_boundary() == boundary
 
 
-def test_declared_measurements_preserve_their_distinct_exact_subject_shapes():
+def test_raw_witness_availability_is_not_a_declared_measurement_subject():
     ledger = EventLedger()
     first = record_witness_material_acquisition(
         ledger,
@@ -248,10 +243,8 @@ def test_declared_measurements_preserve_their_distinct_exact_subject_shapes():
     position_subject = _discover_direct_measurement(ledger, standing, "s")
     byte_subject = _discover_byte_measurement(ledger, standing, "s")
 
-    assert position_subject == PositionCoordinateMeasurementSubject(first.identity)
-    assert byte_subject == ExactByteOccurrenceMeasurementSubject(
-        (first.identity, second.identity)
-    )
+    assert position_subject is None
+    assert byte_subject is None
     boundary = ledger.append_boundary()
     with pytest.raises(
         ValueError, match="exact-byte Measurement requires its exact subject"
@@ -264,7 +257,7 @@ def test_declared_measurements_preserve_their_distinct_exact_subject_shapes():
     assert ledger.append_boundary() == boundary
 
 
-def test_exact_byte_measurement_refuses_an_incomplete_acquisition_result_set():
+def test_exact_byte_measurement_refuses_a_raw_witness_acquisition_result_set():
     ledger = EventLedger()
     first = record_witness_material_acquisition(
         ledger,
@@ -291,7 +284,7 @@ def test_exact_byte_measurement_refuses_an_incomplete_acquisition_result_set():
     assert ledger.append_boundary() == boundary
 
 
-def test_current_standing_exposes_assignments_only_after_each_family_records_them():
+def test_bounded_replay_does_not_expose_assignments_for_raw_witness_material():
     ledger = EventLedger()
     record_witness_material_acquisition(
         ledger,
@@ -318,14 +311,10 @@ def test_current_standing_exposes_assignments_only_after_each_family_records_the
         }
     )
 
-    assert ledger.append_boundary() != before_boundary
-    assert tuple(event.kind for event in assignments) == (
-        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
-        BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    )
-    assert tuple(
-        recorded.locality_standing["responsibility_assignment_occurrences"]
-    ) == tuple(event.identity for event in assignments)
+    assert ledger.append_boundary() == before_boundary
+    assert assignments == ()
+    assert recorded.result_occurrences == ()
+    assert recorded.locality_standing["responsibility_assignment_occurrences"] == {}
     assert recorded.locality_standing == read_operator_locality_standing(
         ledger, locality_identity="s"
     )
@@ -368,7 +357,7 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
     assert ledger.get(source.identity) == source
 
 
-def test_carried_declaration_accepts_current_locality_standing_after_another_locality_append():
+def test_carried_declaration_keeps_raw_witness_material_quiet_after_another_locality_append():
     ledger = EventLedger()
     record_witness_material_acquisition(
         ledger,
@@ -390,11 +379,8 @@ def test_carried_declaration_accepts_current_locality_standing_after_another_loc
         locality_identity="s",
     )
 
-    assert recorded.result_occurrences
-    assert ledger.append_boundary() != foreign_boundary
-    assert all(
-        event.locality_identity == "s" for event in recorded.result_occurrences
-    )
+    assert recorded.result_occurrences == ()
+    assert ledger.append_boundary() == foreign_boundary
 
 
 def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locality():
@@ -425,7 +411,7 @@ def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locali
     )
 
 
-def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_path):
+def test_raw_witness_material_remains_quiet_after_sqlite_reopen(tmp_path):
     path = str(tmp_path / "standing-declarations.sqlite")
     ledger = SQLiteEventLedger(path)
     try:
@@ -439,10 +425,7 @@ def test_completed_declared_measurements_remain_quiet_after_sqlite_reopen(tmp_pa
             ledger,
             locality_identity="s",
         )
-        assert tuple(event.kind for event in first.result_occurrences) == (
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            BYTE_MEASUREMENT_RECORDED_KIND,
-        )
+        assert first.result_occurrences == ()
         boundary = ledger.append_boundary()
     finally:
         ledger.close()
@@ -705,10 +688,10 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
     from seed_runtime import byte_measurement, operator_console
 
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"abab",
+        exact=b"abab",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -767,10 +750,10 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
 
 def test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"abab",
+        exact=b"abab",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -832,10 +815,10 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
     )
 
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"abab",
+        exact=b"abab",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -937,10 +920,10 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     )
 
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="s",
-        exact_bytes=b"abab",
+        exact=b"abab",
         source_boundary="exact pair material",
     )
     measurement_assignment = record_byte_measurement_responsibility_assignment(
@@ -1045,7 +1028,9 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         prior_through_event_occurrence_identity=act_evidence.identity,
     )
 
-    assert representation_reads == [representation["representation_event_identity"]]
+    assert representation_reads.count(
+        representation["representation_event_identity"]
+    ) == 1
     assert acquired.exact_material == b"next material"
     assert acquired.identity in standing["exact_result_occurrences"]
     with pytest.raises(

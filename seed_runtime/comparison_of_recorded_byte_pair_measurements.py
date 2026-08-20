@@ -49,7 +49,7 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE = (
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY = (
     "determine Applicability and compare earlier and later exact carried byte-position-pair "
-    "Measurement results through one supplied occurrence with exact provenance"
+    "Measurement results through one operator material acquisition at prior Standing"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT = (
     "Compare earlier and later exact carried byte-position-pair Measurement results"
@@ -365,17 +365,15 @@ def _comparison_inputs(
         or type(provenance) is not list
     ):
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one added occurrence with exact provenance"
+            "later Measurement requires one added occurrence with exact source coordinates"
         )
     source_role = added.material.get("source_role")
     operator_material_acquire_result_event_identity = None
     operator_material_source_standing_reference = None
     if source_role == "this Witness":
-        if not cited_prior:
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one supplied occurrence with exact provenance"
-            )
-        input_relation = "this Witness supplied occurrence provenance"
+        raise RecordedPairMeasurementComparisonError(
+            "Witness provenance establishes no comparison input relation"
+        )
     elif source_role == "this operator":
         from seed_runtime.operator_locality_standing import (
             read_operator_locality_standing_through,
@@ -434,8 +432,7 @@ def _comparison_inputs(
         input_relation = "operator material acquisition at prior Standing"
     else:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one occurrence supplied by this Witness "
-            "or one operator occurrence"
+            "later Measurement requires one exact operator occurrence"
         )
     invocation_relations = tuple(
         event
@@ -572,7 +569,7 @@ def _comparison_inputs_from_carried_measurements(
         or type(provenance) is not list
     ):
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one added occurrence with exact provenance"
+            "later Measurement requires one added occurrence with exact source coordinates"
         )
     source_role = added.material.get("source_role")
     acquisition_identity = None
@@ -629,16 +626,12 @@ def _comparison_inputs_from_carried_measurements(
         input_relation = "operator material acquisition at prior Standing"
         operator_locality_identity = earlier.locality_identity
     elif source_role == "this Witness":
-        if not cited_prior:
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one supplied occurrence with exact provenance"
-            )
-        input_relation = "this Witness supplied occurrence provenance"
-        operator_locality_identity = None
+        raise RecordedPairMeasurementComparisonError(
+            "Witness provenance establishes no comparison input relation"
+        )
     else:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one occurrence supplied by this Witness "
-            "or one operator occurrence"
+            "later Measurement requires one exact operator occurrence"
         )
     invocation_relations = tuple(
         event
@@ -838,7 +831,7 @@ def record_recorded_pair_measurement_comparison_responsibility_assignment(
     later_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one exact Compare through one append step with exact provenance."""
+    """Assign one exact Compare through one exact input relation."""
 
     inputs = _comparison_inputs(
         ledger,

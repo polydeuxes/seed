@@ -34,6 +34,9 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
@@ -48,10 +51,10 @@ from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
 
 
 def _source(ledger, *, locality="source", exact_bytes=b"ab"):
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=exact_bytes,
+        exact=exact_bytes,
         source_boundary="candidate source boundary",
     )
     return _record_byte_measurement(
@@ -1438,7 +1441,7 @@ def test_ordered_pair_candidate_source_roles_and_represented_relation_coordinate
         )
 
     applicability_ledger = EventLedger()
-    _source(applicability_ledger, exact_bytes=b"")
+    _source(applicability_ledger, exact_bytes=b"a")
     applicability_result = record_complete_ordered_pair_candidate_standing(
         applicability_ledger,
         recording_locality_identity="ordered-pair-candidates",

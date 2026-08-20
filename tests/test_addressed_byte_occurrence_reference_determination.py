@@ -24,6 +24,9 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
@@ -60,10 +63,10 @@ def _advance(ledger, standing, *events):
 
 
 def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=exact,
+        exact=exact,
         source_boundary="exact supplied material boundary",
     )
     standing = read_operator_locality_standing(ledger, locality_identity=locality)

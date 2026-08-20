@@ -19,6 +19,7 @@ def record_operator_material_occurrence(
     *,
     exact: bytes,
     locality_identity: str,
+    source_boundary: str = "operator boundary",
 ):
     """Record O1 through its exact Source.G physiology."""
 
@@ -57,7 +58,7 @@ def record_operator_material_occurrence(
         boundary_material=OperatorBoundaryMaterial(
             exact_bytes=exact,
             eof=exact == b"",
-            material_boundary="operator boundary",
+            material_boundary=source_boundary,
             known_loss=(),
         ),
     )

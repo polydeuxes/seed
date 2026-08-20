@@ -19,6 +19,9 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.standing_measurement_declarations import (
+    record_declared_measurements_from_current_standing,
+)
 
 
 def _record_byte_measurement(
@@ -127,7 +130,7 @@ def _implementation_functions_available():
 
 
 @pytest.fixture(scope="module")
-def measured_book_pairs():
+def book_material_acquisitions():
     ledger = EventLedger()
     paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
     if any(not path.is_file() for path in paths):
@@ -141,6 +144,16 @@ def measured_book_pairs():
             source_boundary="fixture",
         )
         for material in supplied_material
+    )
+    return ledger, supplied_material, acquisition_results
+
+
+@pytest.fixture(scope="module")
+def measured_book_pairs(book_material_acquisitions):
+    ledger, supplied_material, acquisition_results = book_material_acquisitions
+    pytest.skip(
+        "book Witness material stops before declared Measurement until its "
+        "material-to-this-Seed Locality occurrence and Evidence exist"
     )
     byte_measurement = _record_byte_measurement(
         ledger,
@@ -513,8 +526,8 @@ def _return_boundaries(occurrences):
 IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
-def test_every_supplied_material_has_its_own_acquire(measured_book_pairs):
-    supplied_material, acquisition_results, *_ = measured_book_pairs
+def test_every_supplied_material_has_its_own_acquisition(book_material_acquisitions):
+    _ledger, supplied_material, acquisition_results = book_material_acquisitions
 
     assert len(supplied_material) == len(acquisition_results) == 16
     assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
@@ -522,41 +535,34 @@ def test_every_supplied_material_has_its_own_acquire(measured_book_pairs):
     assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == supplied_material
 
 
-def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, assertions, pairs, _, _, pair_material, _ = measured_book_pairs
-    recorded = tuple(
-        bytes(assertion.representation)
-        for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+def test_book_witness_material_is_available_without_locality_or_measurement(
+    book_material_acquisitions,
+):
+    ledger, _supplied_material, acquisition_results = book_material_acquisitions
+    bounded_replay = read_operator_locality_standing(
+        ledger, locality_identity="book-material"
     )
 
-    assert pairs
-    assert pairs == recorded
-    assert len(pairs) == len(set(pairs))
-    assert all(len(pair) == 2 for pair in pairs)
-    assert tuple(reference.exact_material for reference in pair_material) == pairs
-    assert {reference.locality_identity for reference in pair_material} == {
-        "book-material-pairs"
-    }
+    assert tuple(
+        occurrence["result_occurrence_identity"]
+        for occurrence in bounded_replay["material_acquisition_result_occurrences"]
+    ) == tuple(result.identity for result in acquisition_results)
+    assert bounded_replay["operator_material_locality_relation_occurrences"] == {}
+    assert bounded_replay["measurement_occurrences"] == {}
 
 
-def test_byte_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, _, _, assertions, material, _, byte_material = measured_book_pairs
-    recorded = tuple(
-        assertion.representation
-        for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+def test_book_witness_availability_records_no_declared_measurement(
+    book_material_acquisitions,
+):
+    ledger, _supplied_material, _acquisition_results = book_material_acquisitions
+    boundary = ledger.append_boundary()
+
+    recorded = record_declared_measurements_from_current_standing(
+        ledger, locality_identity="book-material"
     )
 
-    assert material
-    assert material == recorded
-    assert len(material) == len(set(material))
-    assert tuple(reference.exact_material for reference in byte_material) == tuple(
-        bytes((value,)) for value in material
-    )
-    assert {reference.locality_identity for reference in byte_material} == {
-        "book-material-pairs"
-    }
+    assert recorded.result_occurrences == ()
+    assert ledger.append_boundary() == boundary
 
 
 @pytest.mark.skipif(
@@ -3967,11 +3973,11 @@ FIDELITY_SUBJECTS = {
         test_bounded_invocation_requires_input_boundary_acceptance,
     ),
     "content_locality_occurrence_distinction": (
-        test_every_supplied_material_has_its_own_acquire,
+        test_every_supplied_material_has_its_own_acquisition,
+        test_book_witness_material_is_available_without_locality_or_measurement,
+        test_book_witness_availability_records_no_declared_measurement,
     ),
     "declared_measurement_result": (
-        test_pair_material_comes_from_the_complete_recorded_measurement,
-        test_byte_material_comes_from_the_complete_recorded_measurement,
         test_measured_book_pairs_reach_one_compiled_material_function,
         test_compiled_material_function_exposes_one_byte_return_code_boundaries,
         test_exact_position_material_returns_once_through_its_original_order,

@@ -16,7 +16,9 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, EventLedgerBoundary, SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
@@ -57,10 +59,10 @@ def _fixture(
 ):
     ledger = ledger or EventLedger()
     locality = "pair-occurrence-measurement"
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=premise,
+        exact=premise,
         source_boundary="exact premise boundary",
     )
     byte_assignment = record_byte_measurement_responsibility_assignment(
@@ -96,10 +98,10 @@ def _fixture(
         if assertion.result == "recurrence"
         and assertion.representation == (ord("a"), ord("b"))
     )
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=current,
+        exact=current,
         source_boundary="later exact material boundary",
     )
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
@@ -641,9 +643,11 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     assert measured == expected
     assert pair_result_read_count == 1
     assert source_read_count == 1
-    # One read validates the Witness acquisition's Act/Yield order; the other
-    # orders the pair/result subject coordinates.
-    assert order_read_count == exact_pair_read_order_count + 2
+    # O1 source validation and each exact recurrence address preserve their
+    # own occurrence order while the source result itself is still read once.
+    assert order_read_count == (
+        exact_pair_read_order_count + len(recurrence_identities) + 3
+    )
     assert boundary_read_count == exact_pair_read_boundary_count + 1
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
@@ -1041,10 +1045,10 @@ def test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing(carr
 
 def test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    substitute = record_witness_material_acquisition(
+    substitute = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"ba---ab",
+        exact=b"ba---ab",
         source_boundary="another exact boundary",
     )
     substituted = finding._replace(
@@ -1063,10 +1067,10 @@ def test_same_bytes_cannot_substitute_another_material_acquisition_result_occurr
 
 def test_distinct_locality_and_pre_source_boundary_are_refused():
     ledger, _locality, pair, recurrence, source, _finding = _fixture()
-    other = record_witness_material_acquisition(
+    other = record_operator_material_occurrence(
         ledger,
         locality_identity="other-locality",
-        exact_bytes=b"ba---ab",
+        exact=b"ba---ab",
         source_boundary="other",
     )
     with pytest.raises(ValueError, match="distinct Localities"):
@@ -1112,10 +1116,10 @@ def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use(
 
 def test_unrelated_later_material_does_not_move_the_measured_boundary():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abababab",
+        exact=b"abababab",
         source_boundary="later boundary",
     )
     _act, result = _record(ledger, locality, finding)

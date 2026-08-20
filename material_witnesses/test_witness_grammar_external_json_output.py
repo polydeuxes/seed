@@ -1,8 +1,8 @@
 """Carry exact Witness Grammar bytes through one external JSON result boundary.
 
-The external function occurrence remains Witness Material.  Its exact stdout
-enters Seed only through a later material acquisition Act and then becomes exact material for
-one Seed-native byte Measurement.  Neither road establishes JSON structure,
+The external function occurrence remains Witness Material. Its exact stdout
+enters Seed only through a later material-acquisition Act. Acquisition
+availability establishes no declared Measurement pressure, JSON structure,
 word positions, or relation Standing.
 """
 
@@ -15,19 +15,18 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.material_acquire import (
+from seed_runtime.material_acquisition import (
+    read_exact_material_acquisition_result,
+)
+from seed_runtime.witness_material_acquisition import (
     WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
     record_witness_material_acquisition,
-    read_exact_material_acquisition_result,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
-)
-from seed_runtime.standing_measurement_declarations import (
-    record_declared_measurements_from_current_standing,
 )
 
 
@@ -92,20 +91,6 @@ def witness_grammar_external_json_observation():
         known_loss=EXTERNAL_JSON_KNOWN_LOSS,
         provenance_occurrence_references=(source.identity,),
     )
-    declared_measurements = record_declared_measurements_from_current_standing(
-        ledger,
-        locality_identity=RESULT_LOCALITY,
-    )
-    position_measurement = next(
-        event
-        for event in declared_measurements.result_occurrences
-        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-    )
-    byte_measurement = next(
-        event
-        for event in declared_measurements.result_occurrences
-        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
-    )
     return {
         "ledger": ledger,
         "exact_source": exact_source,
@@ -115,9 +100,6 @@ def witness_grammar_external_json_observation():
         "after_external_invocation": after_external_invocation,
         "invocation": invocation,
         "result": result,
-        "declared_measurements": declared_measurements,
-        "position_measurement": position_measurement,
-        "byte_measurement": byte_measurement,
     }
 
 
@@ -176,55 +158,40 @@ def test_external_json_output_enters_seed_only_as_exact_provenanced_material(
     assert "external_invocation_occurrence_identity" not in result.material
 
 
-def test_seed_native_byte_measurement_reads_only_the_external_output_acquisition_result(
-    witness_grammar_external_json_observation,
-):
-    observation = witness_grammar_external_json_observation
-    measurement = observation["byte_measurement"]
-
-    assert measurement.kind == BYTE_MEASUREMENT_RECORDED_KIND
-    assert measurement.locality_identity == RESULT_LOCALITY
-    assert measurement.material["source_localities"] == [RESULT_LOCALITY]
-    assert measurement.material["assertions"]
-    assert all(
-        assertion["assertion_scope"]["source_localities"]
-        == [RESULT_LOCALITY]
-        for assertion in measurement.material["assertions"]
-    )
-
-
-def test_seed_native_position_measurement_records_every_external_output_byte_pair_occurrence(
+def test_external_output_acquisition_availability_records_no_declared_measurement(
     witness_grammar_external_json_observation,
 ):
     observation = witness_grammar_external_json_observation
     ledger = observation["ledger"]
     result = observation["result"]
-    measurement = observation["position_measurement"]
-    references = (
-        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
-            ledger, measurement.identity
-        )
+
+    assert read_exact_material_acquisition_result(ledger, result.identity) == result
+    assert not tuple(
+        event
+        for event in ledger.list_locality(RESULT_LOCALITY)
+        if event.kind
+        in {
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+            BYTE_MEASUREMENT_RECORDED_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        }
     )
 
-    assert measurement.locality_identity == RESULT_LOCALITY
-    assert measurement.material["source_material_acquisition_occurrence_identity"] == (
-        result.identity
+
+def test_external_output_provenance_does_not_supply_measurement_pressure(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    ledger = observation["ledger"]
+    result = observation["result"]
+    boundary = ledger.append_boundary()
+
+    assert result.material["provenance_occurrence_references"] == [
+        observation["source"].identity
+    ]
+    assert not tuple(
+        event
+        for event in ledger.list_locality(RESULT_LOCALITY)
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
-    assert measurement.material["assertions"]["occurrences"] == max(
-        len(result.exact_material) - 1,
-        0,
-    )
-    assert len(references) == max(len(result.exact_material) - 1, 0)
-    assert tuple(reference.first_position for reference in references) == tuple(
-        range(len(references))
-    )
-    assert tuple(reference.second_position for reference in references) == tuple(
-        range(1, len(references) + 1)
-    )
-    assert all(
-        reference.exact_pair
-        == result.exact_material[
-            reference.first_position : reference.second_position + 1
-        ]
-        for reference in references
-    )
+    assert ledger.append_boundary() == boundary

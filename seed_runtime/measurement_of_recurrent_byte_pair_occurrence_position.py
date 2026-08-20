@@ -641,6 +641,9 @@ def _require_current_assignment_standing(
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
     )
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
 
     current = read_operator_locality_standing(
         ledger, locality_identity=finding.source_locality_identity
@@ -649,6 +652,14 @@ def _require_current_assignment_standing(
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
+    source_has_exact_locality = all(
+        read_operator_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=(
+                finding.source_material_acquisition_occurrence_identity
+            ),
+        ).values()
+    )
     if (
         locality_standing != current
         or locality_standing.get("locality_identity")
@@ -664,6 +675,7 @@ def _require_current_assignment_standing(
             == finding.source_material_acquisition_occurrence_identity
             for occurrence in acquisition_results
         )
+        or not source_has_exact_locality
         or (
             required_assignment_identity is not None
             and (
@@ -841,6 +853,17 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     exact_material_acquisition_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
         ledger, finding.source_material_acquisition_occurrence_identity
     )
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
+    source_has_exact_locality = all(
+        read_operator_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=(
+                finding.source_material_acquisition_occurrence_identity
+            ),
+        ).values()
+    )
     carried_material_acquisition_result_occurrences = (
         [
             occurrence
@@ -857,6 +880,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or measurements.get(pair_occurrence_identity, object())
         != exact_measurement_occurrence
         or carried_material_acquisition_result_occurrences != [exact_material_acquisition_result_occurrence]
+        or not source_has_exact_locality
     ):
         raise ValueError(
             "pair occurrence assignment has no exact prior Standing"
@@ -880,6 +904,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             == finding.source_material_acquisition_occurrence_identity
             for occurrence in acquisition_results
         )
+        or not source_has_exact_locality
     ):
         raise ValueError("pair occurrence assignment has no exact prior Standing")
     order = (

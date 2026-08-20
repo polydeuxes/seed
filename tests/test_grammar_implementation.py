@@ -60,6 +60,9 @@ from seed_runtime.candidate_standing_from_exact_result_assertions import (
 )
 from seed_runtime.identities import new_identity
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     EVENT_KIND_RESPONSIBILITIES as PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
@@ -780,10 +783,10 @@ def _complete_candidate_standing_yield_witness() -> dict:
 def _recorded_pair_measurement_comparison_yield_witnesses() -> dict[str, dict]:
     ledger = _IntegrityAdversaryLedger()
     locality_identity = "recorded-pair-comparison-yield"
-    earlier_source = record_witness_material_acquisition(
+    earlier_source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality_identity,
-        exact_bytes=b"abab",
+        exact=b"abab",
         source_boundary="earlier supplied occurrence",
     )
     earlier_measurement = _record_byte_measurement(
@@ -796,12 +799,11 @@ def _recorded_pair_measurement_comparison_yield_witnesses() -> dict[str, dict]:
         source_measurement_event_identity=earlier_measurement.identity,
         recording_locality_identity=locality_identity,
     )
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality_identity,
-        exact_bytes=b"abac",
+        exact=b"abac",
         source_boundary="later supplied occurrence",
-        provenance_occurrence_references=(earlier_source.identity,),
     )
     later_measurement = _record_byte_measurement(
         ledger,
@@ -1052,10 +1054,10 @@ def _occurrence_position_yield_witness() -> dict:
 def _byte_pair_occurrence_position_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality = "byte-pair-occurrence-position"
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abc",
+        exact=b"abc",
         source_boundary="exact material boundary",
     )
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
@@ -1082,10 +1084,10 @@ def _byte_pair_occurrence_position_yield_witness() -> dict:
 def _pair_occurrence_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     locality = "pair-occurrence"
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abxxab",
+        exact=b"abxxab",
         source_boundary="exact premise boundary",
     )
     byte = _record_byte_measurement(
@@ -1106,10 +1108,10 @@ def _pair_occurrence_yield_witness() -> dict:
         if assertion.result == "recurrence"
         and assertion.representation == (ord("a"), ord("b"))
     )
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"ba---ab",
+        exact=b"ba---ab",
         source_boundary="exact later boundary",
     )
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
@@ -1143,10 +1145,10 @@ def _pair_occurrence_yield_witness() -> dict:
 def _shared_position_yield_witnesses() -> dict[str, dict]:
     ledger = _IntegrityAdversaryLedger()
     locality = "shared-position"
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abxxabbcxxbc",
+        exact=b"abxxabbcxxbc",
         source_boundary="exact premise boundary",
     )
     byte = _record_byte_measurement(
@@ -1168,10 +1170,10 @@ def _shared_position_yield_witnesses() -> dict[str, dict]:
         and assertion.representation
         in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
     }
-    source = record_witness_material_acquisition(
+    source = record_operator_material_occurrence(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abc",
+        exact=b"abc",
         source_boundary="exact later boundary",
     )
     findings = measure_positions_for_recurrent_byte_pair_assertions(
@@ -6508,10 +6510,10 @@ def test_responsibility_coordinates_do_not_establish_assignment_standing():
 
 def test_occurrence_position_assignment_standing_refuses_a_corrupted_prior_carrier():
     ledger = _IntegrityAdversaryLedger()
-    record_witness_material_acquisition(
+    record_operator_material_occurrence(
         ledger,
         locality_identity="source",
-        exact_bytes=b"ab",
+        exact=b"ab",
         source_boundary="test boundary",
     )
     prior_result = _record_byte_measurement(

@@ -244,11 +244,23 @@ def _claim_path(ledger):
 
 
 @pytest.fixture(scope="module")
-def calculator_relation_witness():
+def calculator_boundary_witness():
     if not Path("/usr/bin/gnome-calculator").is_file():
         pytest.skip("fixed calculator invocation is unavailable")
     ledger = EventLedger()
-    claim_source, path_result, path_comparison, claim_standing = _claim_path(ledger)
+    earlier_source = record_witness_material_acquisition(
+        ledger,
+        locality_identity="calculator-claim",
+        exact_bytes=EARLIER_MATERIAL,
+        source_boundary="earlier exact Witness material boundary",
+    )
+    claim_source = record_witness_material_acquisition(
+        ledger,
+        locality_identity="calculator-claim",
+        exact_bytes=CLAIM,
+        source_boundary="exact Witness claim boundary",
+        provenance_occurrence_references=(earlier_source.identity,),
+    )
     raw_output = BytesIO()
     run_persistent_operator_console(
         ledger=ledger,
@@ -270,40 +282,71 @@ def calculator_relation_witness():
         and event.locality_identity == invocation_locality
         and event.exact_material == b"4\n"
     )
-    stdout_result = next(
-        event
-        for event in ledger.list()
-        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        and event.material["source_material_acquisition_occurrence_identity"] == stdout.identity
-    )
-    candidate_source_boundary = ledger.append_boundary()
-    (
-        candidate_standing_result,
-        ordered_pair_candidate_standing_result,
-    ) = record_one_source_and_ordered_pair_candidate_standings(
-        ledger,
-        one_source_recording_locality_identity="calculator-candidate-standing",
-        ordered_pair_recording_locality_identity=(
-            "calculator-ordered-pair-candidate-standing"
-        ),
-        source_append_boundary=candidate_source_boundary,
-    )
     return {
         "ledger": ledger,
+        "earlier_source": earlier_source,
         "claim_source": claim_source,
-        "path_result": path_result,
-        "path_comparison": path_comparison,
-        "claim_standing": claim_standing,
         "invocation_locality": invocation_locality,
         "stdout": stdout,
-        "stdout_result": stdout_result,
-        "candidate_source_boundary": candidate_source_boundary,
-        "candidate_standing_result": candidate_standing_result,
-        "ordered_pair_candidate_standing_result": (
-            ordered_pair_candidate_standing_result
-        ),
         "raw_output": raw_output.getvalue(),
     }
+
+
+@pytest.fixture(scope="module")
+def calculator_relation_witness(calculator_boundary_witness):
+    pytest.skip(
+        "calculator Witness material stops before Measurement until its "
+        "material-to-this-Seed Locality occurrence and Evidence exist"
+    )
+
+
+def test_calculator_examples_remain_exact_witness_material(
+    calculator_boundary_witness,
+):
+    witness = calculator_boundary_witness
+
+    assert witness["earlier_source"].exact_material == EARLIER_MATERIAL
+    assert witness["claim_source"].exact_material == CLAIM
+    assert witness["claim_source"].material[
+        "provenance_occurrence_references"
+    ] == [witness["earlier_source"].identity]
+
+
+def test_calculator_stdout_remains_exact_provenanced_o2(
+    calculator_boundary_witness,
+):
+    witness = calculator_boundary_witness
+    stdout = witness["stdout"]
+
+    assert stdout.exact_material == b"4\n"
+    assert stdout.material["provenance_occurrence_references"]
+    assert witness["raw_output"] == b""
+
+
+def test_calculator_o2_records_no_measurement_path_compare_or_candidate(
+    calculator_boundary_witness,
+):
+    witness = calculator_boundary_witness
+    events = witness["ledger"].list()
+    o2_identity = witness["stdout"].identity
+
+    assert not tuple(
+        event
+        for event in events
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        and event.material.get("source_material_acquisition_occurrence_identity")
+        == o2_identity
+    )
+    assert not tuple(
+        event
+        for event in events
+        if event.kind
+        in {
+            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+            RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
+        }
+        and event.locality_identity == witness["invocation_locality"]
+    )
 
 
 def test_complete_unary_candidate_standing_cannot_omit_either_calculator_branch(
@@ -846,61 +889,42 @@ def test_assertion_movement_standing_requires_exact_position_measurement_result(
     )
 
 
-def test_two_assertion_movement_coordinates_replay_after_restart(tmp_path):
+def test_calculator_witness_material_remains_available_without_measurement_after_restart(
+    tmp_path,
+):
     path = tmp_path / "calculator-relation-construction.sqlite"
     ledger = SQLiteEventLedger(path)
-    _claim_source, _path_result, path_comparison, _claim_standing = _claim_path(
-        ledger
+    claim_source = record_witness_material_acquisition(
+        ledger,
+        locality_identity="calculator-result",
+        exact_bytes=CLAIM,
+        source_boundary="exact Witness claim boundary",
     )
     calculator_source = record_witness_material_acquisition(
         ledger,
         locality_identity="calculator-result",
         exact_bytes=b"4\n",
-        source_boundary="exact calculator result boundary",
-    )
-    calculator_declared = record_declared_measurements_from_current_standing(
-        ledger, locality_identity=calculator_source.locality_identity
-    )
-    calculator_result = next(
-        event
-        for event in calculator_declared.result_occurrences
-        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-    )
-    calculator_position = (
-        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
-            ledger, calculator_result.identity
-        )[0]
-    )
-    destination = "calculator-relation-construction"
-    move_recorded_path_comparison_finding_assertion_to_locality(
-        ledger,
-        comparison_result_occurrence_identity=path_comparison.identity,
-        destination_locality=destination,
-    )
-    move_recorded_position_assertion_to_locality(
-        ledger,
-        source_assertion_reference=calculator_position.assertion_reference,
-        destination_locality=destination,
+        source_boundary="exact Witness calculator result boundary",
+        provenance_occurrence_references=(claim_source.identity,),
     )
     expected = deepcopy(
-        read_operator_locality_standing(ledger, locality_identity=destination)
+        read_operator_locality_standing(
+            ledger, locality_identity=calculator_source.locality_identity
+        )
     )
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
     try:
         replayed = read_operator_locality_standing(
-            reopened, locality_identity=destination
+            reopened, locality_identity=calculator_source.locality_identity
         )
         assert replayed == expected
         assert tuple(
-            coordinates["source_assertion_reference"]
-            for coordinates in replayed[
-                "assertion_locality_movement_occurrences"
-            ].values()
-        )[-1] == calculator_position.assertion_reference
-        assert replayed["comparison_result_occurrences"] == {}
-        assert replayed["applicability_result_occurrences"] == {}
-        assert replayed["recorded_relation_Standing"] == {}
+            occurrence["result_occurrence_identity"]
+            for occurrence in replayed["material_acquisition_result_occurrences"]
+        ) == (claim_source.identity, calculator_source.identity)
+        assert replayed["operator_material_locality_relation_occurrences"] == {}
+        assert replayed["measurement_occurrences"] == {}
     finally:
         reopened.close()

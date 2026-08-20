@@ -396,25 +396,29 @@ def _record_pair_measurement(
     return standing, pair_measurement
 
 
-def _pair_premise_for_existing_material(
+def _latest_carried_pair_premise(
     ledger,
     standing,
     *,
     locality_identity,
 ):
-    """Address the latest pair premise, or record one for existing material-acquisition results."""
+    """Address the latest exact pair Measurement already carried here."""
 
-    if not standing["material_acquisition_result_occurrences"]:
-        return standing, None
-    current_source_occurrence_references = tuple(
-        occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"]
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
     )
+
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
         event = ledger.get(event_identity)
+        if (
+            event is None
+            or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+            or event.locality_identity != locality_identity
+        ):
+            continue
         reference = (
             event.material.get("responsibility_assignment_reference")
-            if event is not None
+            if type(event.material) is dict
             else None
         )
         try:
@@ -432,28 +436,32 @@ def _pair_premise_for_existing_material(
             else None
         )
         if (
-            event is not None
-            and event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
-            and event.locality_identity == locality_identity
-            and type(source_occurrence_references) is list
-            and tuple(
-                reference.get("material_acquisition_occurrence_identity")
-                for reference in source_occurrence_references
-                if type(reference) is dict
+            type(source_occurrence_references) is list
+            and source_occurrence_references
+            and all(
+                type(source_reference) is dict
+                and type(
+                    source_reference.get(
+                        "material_acquisition_occurrence_identity"
+                    )
+                )
+                is str
+                for source_reference in source_occurrence_references
             )
-            == current_source_occurrence_references
+            and all(
+                all(
+                    read_operator_material_acquire_locality_relation_requirements(
+                        ledger,
+                        recorded_result_event_identity=source_reference[
+                            "material_acquisition_occurrence_identity"
+                        ],
+                    ).values()
+                )
+                for source_reference in source_occurrence_references
+            )
         ):
             return standing, event
-    standing, byte_measurement = _record_measurements_after_current_pin(
-        ledger,
-        locality_identity=locality_identity,
-    )
-    return _record_pair_measurement(
-        ledger,
-        standing,
-        byte_measurement_event_identity=byte_measurement.identity,
-        locality_identity=locality_identity,
-    )
+    return standing, None
 
 
 def _representation_source_for_pair_premise(ledger, standing, pair_premise):
@@ -546,7 +554,7 @@ def run_persistent_operator_console(
     locality_standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    locality_standing, pair_premise = _pair_premise_for_existing_material(
+    locality_standing, pair_premise = _latest_carried_pair_premise(
         ledger,
         locality_standing,
         locality_identity=locality_identity,
@@ -756,11 +764,20 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=invocation_locality_identity,
                 )
-                witness_standing, _byte_measurement = _record_measurements_after_pin(
-                    ledger,
-                    witness_standing,
-                    locality_identity=invocation_locality_identity,
+                recorded_witness_measurements = (
+                    _record_declared_measurements_from_carried_standing(
+                        ledger,
+                        witness_standing,
+                        locality_identity=invocation_locality_identity,
+                    )
                 )
+                witness_standing = recorded_witness_measurements.locality_standing
+                if recorded_witness_measurements.result_occurrences:
+                    raise ValueError(
+                        "Witness acquisition availability produced a declared "
+                        "Measurement without exact material-to-this-Seed Locality "
+                        "occurrence and Evidence"
+                    )
                 provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(
@@ -803,7 +820,7 @@ def run_persistent_operator_console(
                     ledger, locality_identity=locality_identity
                 )
                 locality_standing, pair_premise = (
-                    _pair_premise_for_existing_material(
+                    _latest_carried_pair_premise(
                         ledger,
                         locality_standing,
                         locality_identity=locality_identity,

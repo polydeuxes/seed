@@ -2281,11 +2281,24 @@ def _byte_measurement_source_material(
         )
     source_material = []
     seen_material = set()
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
+
     for locality in localities:
         for acquisition_result in _exact_material_acquisition_results(
             ledger, locality, through=boundary
         ):
             _acquired_bytes(ledger, acquisition_result)
+            if not all(
+                read_operator_material_acquire_locality_relation_requirements(
+                    ledger,
+                    recorded_result_event_identity=acquisition_result.identity,
+                ).values()
+            ):
+                # Exact acquisition availability does not supply the Locality
+                # occurrence and Evidence required by 01.Source.D.
+                continue
             if acquisition_result.identity in seen_material:
                 raise ByteMeasurementError(
                     "one material acquisition occurrence cannot enter a byte Measurement twice"
@@ -2296,7 +2309,9 @@ def _byte_measurement_source_material(
             )
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no acquisition_result through the Measurement boundary"
+            "declared source Localities contain no exact material result with "
+            "material-to-this-Seed Locality occurrence and Evidence through the "
+            "Measurement boundary"
         )
     return tuple(source_material)
 

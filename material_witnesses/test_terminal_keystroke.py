@@ -188,98 +188,30 @@ def test_external_results_enter_seed_only_as_exact_provenanced_material(
     ) == tuple([source.identity] for source in source_acquisition_results)
 
 
-def test_seed_measures_source_and_result_pair_findings_independently(
+def test_source_and_result_witness_material_remain_available_without_measurement(
     terminal_witness_observation,
 ):
-    _, _, _, invocations, _ = terminal_witness_observation
-    ledger = EventLedger()
-    localities = (
-        "terminal-pair-source-locality",
-        "terminal-pair-result-locality",
+    ledger, source_results, _, _invocations, result_results = (
+        terminal_witness_observation
     )
-    materials = (
-        EXACT_MATERIAL,
-        tuple(invocation.stdout_bytes or b"" for invocation in invocations),
-    )
-    findings = []
 
-    for locality_identity, exact_materials in zip(localities, materials):
-        for position, exact_material in enumerate(exact_materials):
-            record_witness_material_acquisition(
-                ledger,
-                locality_identity=locality_identity,
-                exact_bytes=exact_material,
-                source_boundary=f"terminal pair occurrence {position}",
-            )
-        byte_assignment = record_byte_measurement_responsibility_assignment(
-            ledger,
-            source_localities=(locality_identity,),
-            recording_locality_identity=locality_identity,
-            locality_standing=read_operator_locality_standing(
-                ledger, locality_identity=locality_identity
-            ),
-        )
-        byte_act = record_byte_measurement_responsible_act_evidence(
-            ledger,
-            responsibility_assignment_event_identity=byte_assignment.identity,
-            responsibility_assignment_standing=read_operator_locality_standing(
-                ledger, locality_identity=locality_identity
-            ),
-        )
-        byte_result = record_byte_measurement_result(
-            ledger,
-            responsible_act_evidence_event_identity=byte_act.identity,
-        )
-        pair_result = record_byte_position_pair_count_layer(
-            ledger,
-            source_measurement_event_identity=byte_result.identity,
-            recording_locality_identity=locality_identity,
-        )
-        assertions = assertions_of_recorded_byte_position_pair_measurement(
-            ledger, pair_result.identity
-        )
-        findings.append(
-            {
-                (
-                    assertion.result,
-                    assertion.representation,
-                ): assertion.material["dimensions"]["content"]
-                for assertion in assertions
-            }
-        )
-        standing = read_operator_locality_standing(
+    for locality_identity, expected in (
+        ("terminal-material-witness-source", source_results),
+        ("terminal-material-witness-result", result_results),
+    ):
+        bounded_replay = read_operator_locality_standing(
             ledger, locality_identity=locality_identity
         )
-        assert byte_result.identity in standing["measurement_occurrences"]
-        assert pair_result.identity in standing["measurement_occurrences"]
-
-    source_findings, result_findings = findings
-    assert len(source_findings) == 34
-    assert len(result_findings) == 45
-    assert source_findings != result_findings
-    assert set(source_findings) - set(result_findings) == {
-        ("count", (120, 127)),
-        ("count", (127, 51)),
-        ("count", (13, 101)),
-        ("recurrence", (13, 101)),
-    }
-    assert set(result_findings) - set(source_findings) == {
-        ("count", (10, 101)),
-        ("count", (10, 112)),
-        ("count", (10, 48)),
-        ("count", (120, 8)),
-        ("count", (13, 10)),
-        ("count", (32, 8)),
-        ("count", (51, 101)),
-        ("count", (8, 32)),
-        ("count", (8, 51)),
-        ("recurrence", (10, 101)),
-        ("recurrence", (10, 112)),
-        ("recurrence", (10, 48)),
-        ("recurrence", (13, 10)),
-        ("recurrence", (50, 51)),
-        ("recurrence", (51, 101)),
-    }
+        assert tuple(
+            occurrence["result_occurrence_identity"]
+            for occurrence in bounded_replay[
+                "material_acquisition_result_occurrences"
+            ]
+        ) == tuple(result.identity for result in expected)
+        assert bounded_replay[
+            "operator_material_locality_relation_occurrences"
+        ] == {}
+        assert bounded_replay["measurement_occurrences"] == {}
 
 
 def test_one_exact_witness_result_crosses_the_operator_emission_road(
@@ -446,23 +378,11 @@ def test_console_preserves_each_terminal_occurrence_without_host_compare_or_emis
         [acquisition_results[0].identity, acquisition_results[1 + position * 2].identity]
         for position in range(len(EXACT_MATERIAL))
     )
-    assert len(measurements) == len(acquisition_results) == 5
-    assert len(direct_position_measurements) == len(acquisition_results) == 5
+    assert len(acquisition_results) == 5
+    assert measurements == ()
+    assert direct_position_measurements == ()
     assert pair_measurements == ()
-    assert len(position_measurements) == len(acquisition_results) == 5
-    for position, measurement in enumerate(measurements):
-        assertions = assertions_of_recorded_byte_measurement(
-            ledger, measurement.identity
-        )
-        source_set = next(
-            assertion
-            for assertion in assertions
-            if assertion.result == "exact_source_material_set"
-        )
-        assert source_set.material["dimensions"]["content"]["source_material"] == [
-            {"material_acquisition_occurrence_identity": event.identity}
-            for event in acquisition_results[: position + 1]
-        ]
+    assert position_measurements == ()
     assert emissions == ()
     assert emitted_material == b""
     assert comparisons == ()
@@ -478,10 +398,6 @@ def test_console_preserves_each_terminal_occurrence_without_host_compare_or_emis
     standing = read_operator_locality_standing(
         ledger, locality_identity=invocation_locality
     )
-    assert set(standing["measurement_occurrences"]) == {
-        *(measurement.identity for measurement in measurements),
-        *(measurement.identity for measurement in position_measurements),
-        *(measurement.identity for measurement in direct_position_measurements),
-    }
+    assert standing["measurement_occurrences"] == {}
     assert standing["comparison_result_occurrences"] == {}
     assert standing["candidate_result_occurrences"] == {}

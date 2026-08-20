@@ -206,15 +206,15 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
 
 
 @pytest.mark.parametrize("name", ("ls", "cat"))
-def test_live_process_composes_the_bounded_host_provider(tmp_path, name):
+def test_live_process_preserves_host_witness_material_without_emitting_it(
+    tmp_path, name
+):
     directory = tmp_path / "source"
     directory.mkdir()
     material = b"\x00\xffhost material\n"
     path = directory / "one"
     path.write_bytes(material)
     addressed = directory if name == "ls" else path
-    expected = b"one\n" if name == "ls" else material
-
     result = subprocess.run(
         [
             sys.executable,
@@ -231,7 +231,7 @@ def test_live_process_composes_the_bounded_host_provider(tmp_path, name):
     )
 
     assert result.returncode == 0, result.stderr
-    assert result.stdout == expected
+    assert result.stdout == b""
 
 
 @pytest.fixture(scope="module")
@@ -267,7 +267,7 @@ def live_pytest_invocation(tmp_path_factory):
         ]
     finally:
         ledger.close()
-    supplied = acquisition_results[1:]
+    supplied = acquisition_results
     supplied_by_boundary = {
         event.material["source_boundary"]: event for event in supplied
     }
@@ -300,29 +300,22 @@ def test_live_process_acquisition_results_each_supplied_pytest_occurrence(
         event.material["provenance_occurrence_references"]
         for event in supplied
     ]
+    supplied_identities = {event.identity for event in supplied}
+    assert all(type(references) is list and len(references) >= 2 for references in provenance)
+    assert len({tuple(references[:2]) for references in provenance}) == 1
+    assert set(provenance[0][:2]).isdisjoint(supplied_identities)
     assert all(
-        type(references) is list
-        and len(references) == 2
-        and references[0] == acquisition_results[0].identity
-        for references in provenance
+        set(references[2:]) <= supplied_identities for references in provenance
     )
-    assert len(
-        {references[1] for references in provenance}
-    ) == 1
 
 
-def test_live_process_egresses_only_provider_selected_occurrences(
+def test_live_process_does_not_emit_witness_material_by_provider_classification(
     live_pytest_invocation,
 ):
     result, _, supplied, supplied_by_boundary = live_pytest_invocation
 
-    assert result.stdout == b"".join(
-        event.exact_material
-        for event in supplied
-        if event.material["source_boundary"].startswith(
-            ("invocation output occurrence ", "invocation error occurrence ")
-        )
-    )
+    assert any(event.exact_material for event in supplied)
+    assert result.stdout == b""
     assert result.stderr == b""
     assert (
         supplied_by_boundary["implementation function catalog"].exact_material
@@ -372,7 +365,7 @@ FIDELITY_SUBJECTS = {
         test_live_entry_has_only_help_and_database_flags,
     ),
     "supplied_function_invocation": (
-        test_live_process_composes_the_bounded_host_provider,
+        test_live_process_preserves_host_witness_material_without_emitting_it,
     ),
     "operator_material_occurrence": (
         test_other_slash_material_remains_exact_operator_material,
@@ -385,7 +378,7 @@ FIDELITY_SUBJECTS = {
     ),
     "exact_emission_boundary": (
         test_live_entry_does_not_emit_operator_material_back_to_stdout,
-        test_live_process_egresses_only_provider_selected_occurrences,
+        test_live_process_does_not_emit_witness_material_by_provider_classification,
     ),
     "operator_Locality_occurrence": (
         test_reopened_live_process_allocates_a_new_locality,

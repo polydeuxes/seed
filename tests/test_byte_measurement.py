@@ -65,7 +65,24 @@ from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_R
 from seed_runtime.material_acquisition import (
     iter_exact_material_acquisition_results,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
+
+
+def _record_operator_material_source(
+    ledger,
+    *,
+    locality_identity,
+    exact_bytes,
+    source_boundary,
+):
+    return record_operator_material_occurrence(
+        ledger,
+        exact=exact_bytes,
+        locality_identity=locality_identity,
+        source_boundary=source_boundary,
+    )
 
 
 def _record_byte_measurement(
@@ -454,7 +471,7 @@ def test_corrupted_exact_byte_assignment_cannot_authorize_an_act():
 
 def test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier():
     ledger = IntegrityCountingLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
@@ -485,7 +502,7 @@ def test_operator_replay_uses_exact_context_while_public_assignment_reads_recons
     from seed_runtime import operator_locality_standing as standing_module
 
     ledger = IntegrityCountingLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
@@ -544,7 +561,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
     )
 
     ledger = IntegrityCountingLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="measurement",
         exact_bytes=b"ab",
@@ -601,7 +618,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
 def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
     path = tmp_path / "byte-assignment-restart.sqlite"
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"durable",
@@ -684,7 +701,7 @@ def test_call_local_assignment_carry_requires_the_exact_assignment_at_tip():
         recording_locality_identity="measurement",
         locality_standing=standing,
     )
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"later",
@@ -710,7 +727,7 @@ def test_call_local_result_requires_the_exact_act_at_tip():
     standing = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"later",
@@ -780,7 +797,7 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
 def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
     path = tmp_path / "byte-consumed-act.sqlite"
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"a",
@@ -853,7 +870,7 @@ def test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occ
         b'{"function":"observed","occurrence_count":2}',
     )
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        _record_operator_material_source(
             ledger,
             locality_identity="measurement-sidecar",
             exact_bytes=material,
@@ -898,7 +915,7 @@ def test_each_replay_validates_each_exact_material_acquisition_and_reads_indepen
         b'{"function":"observed","occurrence_count":2}',
     )
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        _record_operator_material_source(
             ledger,
             locality_identity="measurement-sidecar",
             exact_bytes=material,
@@ -934,7 +951,7 @@ def test_each_replay_validates_each_exact_material_acquisition_and_reads_indepen
 def test_yield_resolves_the_exact_act_evidence_after_reopen(tmp_path):
     path = str(tmp_path / "measurement.sqlite")
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"durable",
@@ -973,7 +990,7 @@ def test_material_appended_after_act_evidence_cannot_enter_its_result():
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"b",
@@ -1223,14 +1240,14 @@ def test_recording_occurrence_evidence_is_validated_exactly():
 
 def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_measurement():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"a",
         source_boundary="first boundary",
     )
     boundary = ledger.append_boundary()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"b",
@@ -1447,7 +1464,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
 
 def test_same_locality_pair_result_reuses_one_exact_prior_standing(monkeypatch):
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"tatatata\n",
@@ -2121,7 +2138,7 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
     shaped["measurement_occurrences"] = {
         source_result.identity: {"recorded_occurrence_identity": source_result.identity}
     }
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity=source_result.locality_identity,
         exact_bytes=b"later",
@@ -2232,7 +2249,7 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
     stale = read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="movement",
         exact_bytes=b"later",
@@ -2249,7 +2266,7 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
 def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     path = tmp_path / "movement-assignment.sqlite"
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
@@ -2306,7 +2323,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
 
 def test_movement_assignment_reader_refuses_corrupted_source_carrier():
     ledger = IntegrityCountingLedger()
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
@@ -2480,7 +2497,7 @@ def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
     ledger = _ledger("ta\n")
     state = _movement_carry_phase(ledger, phase)
     before = deepcopy(state["destination_standing"])
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="movement-carry",
         exact_bytes=b"later",
@@ -2563,7 +2580,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
 
     path = tmp_path / "movement-batch-carry.sqlite"
     ledger = SQLiteEventLedger(path)
-    record_witness_material_acquisition(
+    _record_operator_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"ta",
