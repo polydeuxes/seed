@@ -176,6 +176,98 @@ def _has_exact_operator_material_locality_to_this_seed(
     )
 
 
+def _material_acquisition_identities_with_exact_operator_locality_from_bounded_replay(
+    bounded_locality_replay: dict[str, Any],
+) -> tuple[str, ...]:
+    """Resolve the exact O1 sources already validated into bounded replay."""
+
+    acquisitions = bounded_locality_replay.get(
+        "material_acquisition_result_occurrences"
+    )
+    locality_occurrences = bounded_locality_replay.get(
+        "operator_material_locality_relation_occurrences"
+    )
+    if type(acquisitions) is not list or type(locality_occurrences) is not dict:
+        raise ValueError(
+            "declared Measurement source resolution requires exact bounded "
+            "Locality replay"
+        )
+    identities: list[str] = []
+    for occurrence in acquisitions:
+        if (
+            type(occurrence) is not dict
+            or type(occurrence.get("result_occurrence_identity")) is not str
+            or not occurrence["result_occurrence_identity"]
+        ):
+            raise ValueError(
+                "bounded Locality replay contains a malformed material acquisition result"
+            )
+        source_identity = occurrence["result_occurrence_identity"]
+        locality_coordinates = locality_occurrences.get(source_identity)
+        if locality_coordinates is None:
+            continue
+        exact_relation = {
+            "first_subject": {
+                "recorded_occurrence_identity": source_identity,
+                "coordinate": "exact_material",
+            },
+            "relation": "locality",
+            "second_subject": "this Seed",
+            "relation_occurrence_identity": source_identity,
+        }
+        if (
+            type(locality_coordinates) is not dict
+            or locality_coordinates.get("locality_relation") != exact_relation
+            or locality_coordinates.get("locality_evidence_identity")
+            != source_identity
+        ):
+            raise ValueError(
+                "bounded Locality replay contains malformed material-to-this-Seed "
+                "Locality coordinates"
+            )
+        identities.append(source_identity)
+    return tuple(identities)
+
+
+def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
+    ledger: EventLedger,
+    bounded_locality_replay: dict[str, Any],
+) -> set[str]:
+    """Resolve sources from prior occurrences already validated by replay."""
+
+    recorded_sources: set[str] = set()
+    occurrence_populations = (
+        (
+            bounded_locality_replay["responsibility_assignment_occurrences"],
+            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        ),
+        (
+            bounded_locality_replay["measurement_occurrences"],
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        ),
+    )
+    for occurrence_identities, expected_kind in occurrence_populations:
+        for occurrence_identity in occurrence_identities:
+            event = ledger.get(occurrence_identity)
+            if event is None or event.kind != expected_kind:
+                continue
+            if ledger.integrity_of(event.identity) == CORRUPTED:
+                raise ValueError(
+                    "bounded Locality replay contains a corrupted position-coordinate "
+                    "Measurement occurrence"
+                )
+            source_identity = event.material.get(
+                "source_material_acquisition_occurrence_identity"
+            )
+            if type(source_identity) is not str or not source_identity:
+                raise ValueError(
+                    "bounded Locality replay contains a malformed position-coordinate "
+                    "Measurement occurrence"
+                )
+            recorded_sources.add(source_identity)
+    return recorded_sources
+
+
 def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
     ledger: EventLedger,
     bounded_locality_replay: dict[str, Any],
@@ -216,25 +308,16 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         )
     replay_boundary = ledger.append_boundary_through_occurrence(replay_through)
 
-    recorded_sources: set[str] = set()
-    for assignment_identity in bounded_locality_replay[
-        "responsibility_assignment_occurrences"
-    ]:
-        assignment = ledger.get(assignment_identity)
-        if (
-            assignment is not None
-            and assignment.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
-        ):
-            _assignment, finding = _read_assignment(ledger, assignment_identity)
-            recorded_sources.add(finding.source_material_acquisition_occurrence_identity)
-    for result_identity in bounded_locality_replay["measurement_occurrences"]:
-        result = ledger.get(result_identity)
-        if (
-            result is not None
-            and result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        ):
-            _result, finding, _assertions = _read_result(ledger, result_identity)
-            recorded_sources.add(finding.source_material_acquisition_occurrence_identity)
+    recorded_sources = (
+        _recorded_position_coordinate_measurement_sources_from_bounded_replay(
+            ledger, bounded_locality_replay
+        )
+    )
+    exact_operator_locality_sources = set(
+        _material_acquisition_identities_with_exact_operator_locality_from_bounded_replay(
+            bounded_locality_replay
+        )
+    )
 
     sources: list[UnassignedPositionCoordinateMeasurementAcquisitionReading] = []
     for occurrence in bounded_locality_replay["material_acquisition_result_occurrences"]:
@@ -249,9 +332,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
             continue
-        if not _has_exact_operator_material_locality_to_this_seed(
-            ledger, source_identity
-        ):
+        if source_identity not in exact_operator_locality_sources:
             # Availability through B is not the exact material-to-this-Seed
             # Locality occurrence and Evidence required by 01.Source.D.
             continue
