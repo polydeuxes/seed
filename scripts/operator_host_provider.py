@@ -17,11 +17,11 @@ from seed_runtime.supplied_invocation_material import (
 )
 
 
-TIME_LIMIT_SECONDS = 2.0
-MATERIAL_BYTE_LIMIT = 65536
+TIME_LIMIT_SECOND_COUNT = 2.0
+MATERIAL_BYTE_COUNT_LIMIT = 65536
 IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT = 262144
 PIPE_DRAIN_LIMIT_SECONDS = 0.05
-_IMPLEMENTATIONS = {
+_WITNESS_INVOCATIONS = {
     b"ls": b"/usr/bin/ls",
     b"cat": b"/usr/bin/cat",
 }
@@ -80,10 +80,10 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
     elif name == b"calculator":
         invocation = _CALCULATOR_INVOCATION
     else:
-        implementation = _IMPLEMENTATIONS.get(name)
-        if implementation is None:
+        witness_invocation = _WITNESS_INVOCATIONS.get(name)
+        if witness_invocation is None:
             raise OperatorHostProviderError("one exact invocation is required")
-        invocation = (implementation,)
+        invocation = (witness_invocation,)
     if b"\x00" in argument:
         raise OperatorHostProviderError("exact material cannot cross this boundary")
     if name == b"calculator":
@@ -101,9 +101,21 @@ def _bounded_invocation(
     argv: tuple[bytes, ...],
     *,
     supply: SuppliedWitnessMaterialConsumer,
+    time_limit_second_count: float,
+    material_byte_count_limit: int,
     environment: dict[str, str] | None = None,
     working_directory: Path | None = None,
 ) -> tuple[bool, bool, bool]:
+    if (
+        type(time_limit_second_count) is not float
+        or time_limit_second_count <= 0
+    ):
+        raise TypeError("exact positive time limit second count required")
+    if (
+        type(material_byte_count_limit) is not int
+        or material_byte_count_limit < 1
+    ):
+        raise TypeError("exact positive material byte count limit required")
     coordinates = {
         "stdin": subprocess.DEVNULL,
         "stdout": subprocess.PIPE,
@@ -139,7 +151,7 @@ def _bounded_invocation(
     for stream, role in ((process.stdout, "output"), (process.stderr, "error")):
         os.set_blocking(stream.fileno(), False)
         streams.register(stream, selectors.EVENT_READ, role)
-    deadline = time.monotonic() + TIME_LIMIT_SECONDS
+    deadline = time.monotonic() + time_limit_second_count
     try:
         while streams.get_map():
             now = time.monotonic()
@@ -172,7 +184,9 @@ def _bounded_invocation(
                     streams.unregister(stream)
                     stream.close()
                     continue
-                available = MATERIAL_BYTE_LIMIT - supplied_counts[key.data]
+                available = (
+                    material_byte_count_limit - supplied_counts[key.data]
+                )
                 exact = found[:available]
                 if exact:
                     supply(
@@ -262,6 +276,8 @@ def invoke_operator_host(
         timed_out, output_limited, error_limited = _bounded_invocation(
             argv,
             supply=supply,
+            time_limit_second_count=TIME_LIMIT_SECOND_COUNT,
+            material_byte_count_limit=MATERIAL_BYTE_COUNT_LIMIT,
         )
         _supply_completion(
             supply,
@@ -276,6 +292,8 @@ def invoke_operator_host(
         timed_out, output_limited, error_limited = _bounded_invocation(
             argv,
             supply=supply,
+            time_limit_second_count=TIME_LIMIT_SECOND_COUNT,
+            material_byte_count_limit=MATERIAL_BYTE_COUNT_LIMIT,
             environment={
                 "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",

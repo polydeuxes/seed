@@ -38,7 +38,7 @@ time limit as an invocation coordinate. Current examples use several counts:
 | compiled invocation default | 30.0 |
 | explicit time-boundary test | 0.25 |
 
-The shared host-provider `2.0` is therefore an implementation constant reused
+The shared host-provider `2.0` is therefore a provider constant reused
 across unlike invocations, not a repository-wide time law.
 
 The current host road has a second gap: it preserves generic known loss when
@@ -47,7 +47,7 @@ time count or distinguish a reached time boundary from reached output or
 error byte boundaries.
 
 This finding does not establish a different pytest count. It does establish
-the immediate implementation seam: shared bounded mechanics need an exact
+the immediate Witness invocation seam: shared bounded mechanics need an exact
 limit input instead of silently applying one module constant to every caller.
 Making that input explicit does not choose its value or establish Seed-native
 Responsibility for the external process.
@@ -112,7 +112,7 @@ the module supported only:
 !cat
 ```
 
-That first implementation declared `TIME_LIMIT_SECONDS = 2.0` and the
+That first provider declared `TIME_LIMIT_SECONDS = 2.0` and the
 65,536-byte material boundary together. It preserved a bounded prefix and
 known loss when a boundary was reached.
 
@@ -145,7 +145,7 @@ Nor does it carry that relation for calculator.
 
 ## 3. Piper confirms invocation-specific limits
 
-The current Piper Witness invokes its external implementation with:
+The current Piper Witness invokes its external function with:
 
 ```python
 time_limit_second_count=15.0
@@ -193,8 +193,8 @@ occurrence preserves `time_limit_reached=True`. Output and error limits have
 separate coordinates. Compare roads refuse to treat invocations with
 different exact limit coordinates as the same input condition.
 
-Commit `5f4f3f0c` made this distinction explicit by replacing the
-implementation phrase `wait_seconds` with `time_limit_second_count` and by
+Commit `5f4f3f0c` made this distinction explicit by replacing the Python name
+`wait_seconds` with `time_limit_second_count` and by
 retaining that coordinate across source and result invocations.
 
 This road demonstrates that invocation-local time counts are already

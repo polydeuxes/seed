@@ -129,10 +129,24 @@ def test_unknown_or_unrepresentable_host_invocation_is_refused_before_process(
 def test_calculator_provider_preserves_supplied_material_and_completion(
     monkeypatch,
 ):
-    def bounded(argv, *, supply):
+    def bounded(
+        argv,
+        *,
+        supply,
+        time_limit_second_count,
+        material_byte_count_limit,
+    ):
         assert argv == (
             b"/usr/bin/gnome-calculator",
             b"--solve=2+2",
+        )
+        assert (
+            time_limit_second_count
+            == operator_host_provider.TIME_LIMIT_SECOND_COUNT
+        )
+        assert (
+            material_byte_count_limit
+            == operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
@@ -208,11 +222,61 @@ def test_host_output_is_bounded_without_returncode_material():
     supplied = _invoke(b"!cat /dev/zero\n")
 
     assert len(supplied[0].exact_bytes) == (
-        operator_host_provider.MATERIAL_BYTE_LIMIT
+        operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
     )
     assert supplied[0].known_loss == ()
     assert supplied[-1].exact_bytes == b""
     assert supplied[-1].known_loss
+
+
+def test_bounded_invocation_uses_its_exact_material_byte_count_limit():
+    supplied = []
+
+    timed_out, output_limited, error_limited = (
+        operator_host_provider._bounded_invocation(
+            (b"/usr/bin/printf", b"abcdef"),
+            supply=supplied.append,
+            time_limit_second_count=1.0,
+            material_byte_count_limit=3,
+        )
+    )
+
+    assert not timed_out
+    assert output_limited
+    assert not error_limited
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
+        b"abc",
+        b"",
+    )
+
+
+@pytest.mark.parametrize(
+    ("time_limit_second_count", "material_byte_count_limit"),
+    (
+        (0.0, 3),
+        (1, 3),
+        (1.0, 0),
+        (1.0, 3.0),
+    ),
+)
+def test_bounded_invocation_refuses_invalid_exact_limits_before_process(
+    monkeypatch,
+    time_limit_second_count,
+    material_byte_count_limit,
+):
+    monkeypatch.setattr(
+        subprocess,
+        "Popen",
+        lambda *args, **kwargs: pytest.fail((args, kwargs)),
+    )
+
+    with pytest.raises(TypeError):
+        operator_host_provider._bounded_invocation(
+            (b"/usr/bin/printf", b"exact"),
+            supply=lambda _occurrence: None,
+            time_limit_second_count=time_limit_second_count,
+            material_byte_count_limit=material_byte_count_limit,
+        )
 
 
 def test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer(
@@ -225,11 +289,12 @@ def test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer(
         if len(supplied) == 1:
             time.sleep(0.03)
 
-    monkeypatch.setattr(operator_host_provider, "TIME_LIMIT_SECONDS", 0.01)
     timed_out, output_limited, error_limited = (
         operator_host_provider._bounded_invocation(
             (b"/usr/bin/printf", b"exact"),
             supply=slow_consumer,
+            time_limit_second_count=0.01,
+            material_byte_count_limit=64,
         )
     )
 
@@ -255,11 +320,12 @@ def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
         b"os._exit(0)\n"
     )
 
-    monkeypatch.setattr(operator_host_provider, "TIME_LIMIT_SECONDS", 0.05)
     timed_out, output_limited, error_limited = (
         operator_host_provider._bounded_invocation(
             (operator_host_provider._PYTEST_INVOCATION[0], b"-c", program),
             supply=supplied.append,
+            time_limit_second_count=0.05,
+            material_byte_count_limit=64,
         )
     )
 
