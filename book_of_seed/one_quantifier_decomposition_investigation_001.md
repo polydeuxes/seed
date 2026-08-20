@@ -255,23 +255,30 @@ each required subject, `R` requires these coordinates:
 
 ```text
 Applicability result
+required Admission occurrence where the exact boundary requires Admission
 Participation relation occurrence
 Candidate Act occurrence
 Yield relation occurrence
 Candidate result
 ```
 
-Assuming exact `R` exists, those coordinates are sufficient to distinguish
-the work `R` requires concerning `Q`. They do not require a subject-level Stop
-or Completion occurrence.
+Assuming exact `R` exists, those coordinates distinguish the work `R` requires
+concerning `Q`. Where the exact boundary requires Admission, `Q` remains in
+that work until its exact Admission occurrence precedes Participation. The
+required coordinates do not require a subject-level Stop or Completion
+occurrence.
 
-The current runtime already validates the exact chain before using a Candidate
-result in its traversal:
+The current runtime validates the exact chain before using a Candidate result
+in its traversal. No active runtime Candidate boundary declares required
+Admission. If an exact Candidate boundary requires Admission, its reader must
+validate that occurrence prior to Participation before removing `Q` from the
+required-subject traversal:
 
 ```text
 exact result
 ↓ exact Candidate Act occurrence
 ↓ exact Participation relation occurrence
+↓ exact required Admission occurrence where the boundary requires Admission
 ↓ exact Applicability result and Responsibility
 ↓ exact Yield relation occurrence
 ↓ exact Candidate Responsibility reference R
@@ -370,10 +377,11 @@ Remove singular rendering from `01.Source.E.1`. Preserve:
 
 ```text
 R carries an exact bounded required-subject population.
-R requires the exact Applicability, Participation, Candidate occurrence,
-Yield, and result coordinates for each Q in that population.
-Carriage of those exact coordinates under R exposes no additional required
-Candidate Act for Q under R.
+R requires the exact Applicability, conditional Admission, Participation,
+Candidate occurrence, Yield, and result coordinates for each Q in that
+population.
+When those exact coordinates are established under R, R exposes no additional
+required Candidate Act for Q under R.
 This establishes no prohibition on Q under another exact Responsibility.
 ```
 
@@ -389,7 +397,8 @@ one_exact_Candidate_result_for_each_required_subject
 ```
 
 with exact required coordinates owned by `R` and its bounded subject
-population. Express the result edge as:
+population. Preserve the exact Admission occurrence where the addressed
+boundary requires Admission. Express the result edge as:
 
 ```text
 Candidate_Act_occurrence --Yield--> exact_Candidate_result

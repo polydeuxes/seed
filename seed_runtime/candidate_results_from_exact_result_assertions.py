@@ -1,4 +1,4 @@
-"""Yield one exact Candidate result for each required subject."""
+"""Yield exact Candidate results under required subject coordinates."""
 
 from __future__ import annotations
 
@@ -26,24 +26,25 @@ BOOK_CLAUSE = "01.Source.E.1"
 APPLICABILITY_BOOK_CLAUSE = "01.Standing.E.1"
 ACT_BOOK_CLAUSE = "02.Acts.A"
 ONE_SOURCE_CANDIDATE_RESPONSIBILITY = (
-    "record one Candidate for each exact source Assertion through one exact boundary"
+    "record Candidate results for every exact source Assertion through an exact boundary"
 )
 ORDERED_PAIR_CANDIDATE_RESPONSIBILITY = (
-    "record one Candidate for each distinct ordered source Assertion pair through "
-    "one exact boundary"
+    "record Candidate results for every distinct ordered source Assertion pair "
+    "through an exact boundary"
 )
 _CANDIDATE_RESPONSIBILITIES = frozenset(
     (ONE_SOURCE_CANDIDATE_RESPONSIBILITY, ORDERED_PAIR_CANDIDATE_RESPONSIBILITY)
 )
 APPLICABILITY_ACT = (
-    "Applicability of one required Candidate subject to one Candidate Act"
+    "Applicability of an exact required Candidate subject to an exact Candidate Act"
 )
 APPLICABILITY_RESPONSIBILITY = (
-    "establish Applicability of one required subject to one Candidate Act position"
+    "establish Applicability of an exact required subject to an exact Candidate Act "
+    "position"
 )
-ONE_SOURCE_CANDIDATE_ACT = "record one Candidate for one exact source Assertion"
+ONE_SOURCE_CANDIDATE_ACT = "record a Candidate for an exact source Assertion"
 ORDERED_PAIR_CANDIDATE_ACT = (
-    "record one Candidate for one exact ordered source Assertion pair"
+    "record a Candidate for an exact ordered source Assertion pair"
 )
 _SOURCE_REPLAY_COORDINATES = (
     "measurement_occurrences",
@@ -1257,14 +1258,19 @@ def candidate_results_by_required_subject(
         ]
         recorded.append((required_subject_address, result.identity))
     recorded_addresses = tuple(address for address, _result in recorded)
-    if len(recorded_addresses) != len(set(recorded_addresses)) or any(
-        address not in required_addresses for address in recorded_addresses
-    ):
-        raise ValueError("Candidate Responsibility results cross its required subjects")
+    if any(address not in required_addresses for address in recorded_addresses):
+        raise ValueError(
+            "Candidate result required subject crosses Candidate Responsibility Scope"
+        )
+    if len(recorded_addresses) != len(set(recorded_addresses)):
+        raise ValueError(
+            "Candidate Responsibility requires no additional Candidate occurrence "
+            "for a required subject"
+        )
     return tuple(recorded)
 
 
-def _required_subjects_without_result(
+def _required_subjects_without_required_coordinates(
     ledger: EventLedger, responsibility: Event
 ) -> tuple[dict[str, Any], ...]:
     recorded = {
@@ -1286,10 +1292,13 @@ def _record_candidate_result_for_subject(
     subject_address = subject["required_subject_address"]
     if subject_address not in {
         required["required_subject_address"]
-        for required in _required_subjects_without_result(ledger, responsibility)
+        for required in _required_subjects_without_required_coordinates(
+            ledger, responsibility
+        )
     }:
         raise ValueError(
-            "Candidate Responsibility already has a result for this required subject"
+            "Candidate Responsibility requires no additional Candidate occurrence "
+            "for this required subject"
         )
     addresses = _lifecycle_addresses()
     with ledger.batched():
@@ -1373,10 +1382,12 @@ def _record_candidate_result_for_subject(
 def record_one_candidate_result(
     ledger: EventLedger, *, responsibility_event_identity: str
 ) -> Event | None:
-    """Record one still-unrecorded required subject in source order."""
+    """Record the next required subject in source order."""
 
     responsibility = _read_responsibility(ledger, responsibility_event_identity)
-    required = _required_subjects_without_result(ledger, responsibility)
+    required = _required_subjects_without_required_coordinates(
+        ledger, responsibility
+    )
     if not required:
         return None
     return _record_candidate_result_for_subject(

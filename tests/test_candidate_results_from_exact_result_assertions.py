@@ -305,7 +305,7 @@ def test_generator_rereads_required_subjects_and_results_after_yielding_control(
     assert len(completed) == 1
 
 
-def test_second_result_for_one_required_subject_is_refused_before_append():
+def test_same_responsibility_does_not_repeat_required_work_before_append():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
     yielded = record_one_candidate_result(
@@ -320,7 +320,7 @@ def test_second_result_for_one_required_subject_is_refused_before_append():
 
     with pytest.raises(
         ValueError,
-        match="already has a result for this required subject",
+        match="requires no additional Candidate occurrence for this required subject",
     ):
         candidate_module._record_candidate_result_for_subject(
             ledger, exact_responsibility, subject

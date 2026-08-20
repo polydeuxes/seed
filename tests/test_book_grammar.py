@@ -141,7 +141,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
         "subject": "Candidate",
         "Responsibility": "compare_Candidate_coordinates",
         "responsibility_source": (
-            "current_Standing_carrying_one_exact_Candidate_result"
+            "current_Standing_carrying_exact_Candidate_result"
         ),
         "exact_Act": "Compare",
         "rule": "compare_first_and_second_source_Assertion_coordinates",
@@ -151,7 +151,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
             "first_source_role",
             "second_source_role",
         ],
-        "completeness_boundary": "one_exact_Candidate_result",
+        "subject_boundary": "exact_Candidate_result",
         "input": [
             "Applicability_result",
             "exact_Admission_occurrence",
@@ -185,13 +185,14 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
             "Applicability_result",
             "participation_relation_occurrence",
         ],
+        "required_Admission": (
+            "exact_Admission_occurrence_prior_to_Participation"
+        ),
         "completeness_boundary": "Responsibility_bounded_subject_set",
         "relations": ["participation", "yield"],
-        "result_boundary": (
-            "one_exact_Candidate_result_for_each_required_subject"
-        ),
+        "result_boundary": "Candidate_Act_occurrence_Yield_exact_Candidate_result",
         "later_Standing": "requires_no_bounded_subject_set_completion",
-        "result": "one_exact_Candidate_result",
+        "result": "exact_Candidate_result",
     }
     assert standing["responsibility_subject_set"] == (
         "exhaustive_bounded_subject_set"
@@ -210,13 +211,13 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
     ).read_text(encoding="utf-8")
     compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
     assert (
-        "Each Responsibility is exhaustive\n"
-        "for its bounded subject set."
+        "Each Responsibility is exhaustive for its bounded\n"
+        "subject set."
     ) in candidate_book
     assert (
-        "One Candidate result requires\n"
-        "no completion of other required subjects carried by that Responsibility for\n"
-        "later Standing."
+        "A Candidate result\n"
+        "requires no completion of other required subjects under that Responsibility\n"
+        "for later Standing."
     ) in candidate_book
     assert (
         "An exhaustive bounded subject set for one Responsibility establishes no order,\n"

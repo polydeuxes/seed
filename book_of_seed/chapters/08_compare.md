@@ -41,23 +41,28 @@ and Unknown. Shared subjects establish no recurrence or source relation.
 
 ### 04.Compare.C — Candidate coordinates
 
-Current Standing carrying one exact Candidate result carries one
+Current Standing carrying an exact Candidate result carries an exact
 Responsibility branch to Compare the first and second source Assertion
 coordinates carried by that Candidate.
 
-Each Candidate is one exact Compare subject. The first and second source
+The Candidate is the exact Compare subject. The first and second source
 Assertion references, roles, and coordinates are coordinates carried by that
 Candidate. A source Assertion reference is no other Compare subject.
 
 Each Candidate requires its exact Applicability result. This Compare boundary
-requires one exact Admission occurrence prior to Participation. Each admitted
-Candidate requires one exact Participation relation to its Compare Act
-occurrence under one exact Candidate role.
+requires its exact Admission occurrence prior to Participation. Each admitted
+Candidate requires its exact Participation relation to its Compare Act
+occurrence under the exact Candidate role.
 
-The Responsibility carries that Candidate.
-One exact Yield relation carries each Compare Act occurrence as first subject
-and one result as second subject. The result preserves the distinctions
-established under the exact rule and Candidate result boundary.
+```
+Responsibility
+└── subject: exact Candidate
+
+Compare Act occurrence --Yield--> exact result
+```
+
+The result preserves the distinctions established under the exact rule and
+Candidate result boundary.
 
 Candidate Participation, source references, shared coordinates, or a Compare
 result establishes no source Assertion relation and no later Standing.
