@@ -2408,7 +2408,7 @@ def _require_current_byte_measurement_standing(
     return boundary
 
 
-def _require_carried_byte_measurement_standing_at_tip(
+def _require_carried_byte_measurement_replay_at_current_boundary(
     ledger: EventLedger,
     *,
     recording_locality_identity: str,
@@ -2455,6 +2455,47 @@ def _require_carried_byte_measurement_standing_at_tip(
             "byte Measurement requires exact current Locality Standing"
         )
     return boundary
+
+
+def _require_exact_byte_measurement_responsibility_boundary(
+    ledger: EventLedger,
+    *,
+    source_localities: tuple[str, ...],
+    recording_locality_identity: str,
+    responsibility_boundary_identity: str,
+) -> tuple[str, tuple[dict[str, str], ...]]:
+    """Validate one earlier boundary carrying the exact source population."""
+
+    if (
+        type(responsibility_boundary_identity) is not str
+        or not responsibility_boundary_identity
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires one exact responsible boundary"
+        )
+    boundary_event = ledger.get(responsibility_boundary_identity)
+    try:
+        boundary = ledger.append_boundary_through_occurrence(
+            responsibility_boundary_identity
+        )
+        source_material = _byte_measurement_source_material(
+            ledger,
+            localities=source_localities,
+            boundary=boundary,
+        )
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            "byte Measurement requires one exact responsible boundary"
+        ) from error
+    if (
+        boundary_event is None
+        or boundary_event.locality_identity != recording_locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires one exact responsible boundary"
+        )
+    return responsibility_boundary_identity, source_material
 
 
 def _prepare_byte_measurement_responsibility_assignment(
@@ -2570,7 +2611,7 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
         )
     )
     standing_boundary_identity = (
-        _require_carried_byte_measurement_standing_at_tip(
+        _require_carried_byte_measurement_replay_at_current_boundary(
             ledger,
             recording_locality_identity=recording_locality_identity,
             locality_standing=locality_standing,
@@ -2585,6 +2626,55 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=boundary.identity,
+        standing_boundary_identity=standing_boundary_identity,
+        recording_locality_identity=recording_locality_identity,
+    )
+
+
+def _record_byte_measurement_responsibility_assignment_from_responsibility_boundary(
+    ledger: EventLedger,
+    *,
+    source_localities: Iterable[str],
+    recording_locality_identity: str,
+    responsibility_boundary_identity: str,
+) -> Event:
+    """Record one assignment preserving its exact earlier responsible boundary."""
+
+    localities = tuple(dict.fromkeys(source_localities))
+    standing_boundary_identity, responsible_source_material = (
+        _require_exact_byte_measurement_responsibility_boundary(
+            ledger,
+            source_localities=localities,
+            recording_locality_identity=recording_locality_identity,
+            responsibility_boundary_identity=responsibility_boundary_identity,
+        )
+    )
+    current_localities, boundary, current_source_material = (
+        _prepare_byte_measurement_responsibility_assignment(
+            ledger,
+            source_localities=localities,
+            recording_locality_identity=recording_locality_identity,
+        )
+    )
+    if (
+        current_localities != localities
+        or current_source_material != responsible_source_material
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement source population changed after its responsible boundary"
+        )
+    if ledger.append_boundary() != boundary:
+        raise ByteMeasurementError(
+            "byte Measurement global recording boundary changed before assignment"
+        )
+    responsibility_completeness_boundary = (
+        ledger.append_boundary_through_occurrence(standing_boundary_identity)
+    )
+    return _append_byte_measurement_responsibility_assignment(
+        ledger,
+        source_localities=localities,
+        source_material=current_source_material,
+        completeness_boundary_identity=responsibility_completeness_boundary.identity,
         standing_boundary_identity=standing_boundary_identity,
         recording_locality_identity=recording_locality_identity,
     )
@@ -2697,9 +2787,19 @@ def _read_byte_measurement_responsibility_assignment(
         and type(carried_assignments) is dict
         and carried_assignments.get(assignment.identity, object()) is None
     )
+    recording_boundary_precedes_assignment = bool(
+        type(prior_boundary_identity) is str
+        and prior_boundary_identity
+        and prior_boundary_identity != standing_boundary_identity
+        and not assignment_is_carried_later
+    )
     if (
         prior_standing.get("locality_identity") != assignment.locality_identity
-        or not (boundary_is_exact or assignment_is_carried_later)
+        or not (
+            boundary_is_exact
+            or assignment_is_carried_later
+            or recording_boundary_precedes_assignment
+        )
     ):
         raise ByteMeasurementError(
             "byte Measurement Responsibility assignment has no exact prior Standing"
@@ -2710,6 +2810,12 @@ def _read_byte_measurement_responsibility_assignment(
             order = (standing_boundary_identity, assignment.identity)
     elif prior_boundary_identity == assignment.identity:
         order = (assignment.identity,)
+    elif recording_boundary_precedes_assignment:
+        order = (
+            standing_boundary_identity,
+            prior_boundary_identity,
+            assignment.identity,
+        )
     else:
         order = (assignment.identity, prior_boundary_identity)
         if standing_boundary_identity is not None:
@@ -2838,7 +2944,7 @@ def _record_byte_measurement_responsible_act_evidence_from_carried_standing(
         raise ByteMeasurementError(
             "byte Measurement requires its exact carried assignment"
         )
-    _require_carried_byte_measurement_standing_at_tip(
+    _require_carried_byte_measurement_replay_at_current_boundary(
         ledger,
         recording_locality_identity=responsibility_assignment.locality_identity,
         locality_standing=responsibility_assignment_standing,

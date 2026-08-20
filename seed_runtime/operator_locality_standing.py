@@ -2154,6 +2154,7 @@ def _carry_byte_measurement_assignment_into_standing(
     event,
     *,
     prior_through_event_occurrence_identity: str,
+    responsibility_boundary_replay: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Carry the exact-byte assignment produced beside this Standing."""
 
@@ -2169,7 +2170,13 @@ def _carry_byte_measurement_assignment_into_standing(
     ):
         raise ValueError("byte Measurement assignment must follow carried Standing")
     _read_byte_measurement_responsibility_assignment(
-        ledger, event.identity, prior_standing=locality_standing
+        ledger,
+        event.identity,
+        prior_standing=(
+            locality_standing
+            if responsibility_boundary_replay is None
+            else responsibility_boundary_replay
+        ),
     )
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     event_count = locality_standing.get("event_count")

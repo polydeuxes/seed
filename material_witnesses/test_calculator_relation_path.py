@@ -71,8 +71,8 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.standing_measurement_declarations import (
-    record_declared_measurements_from_current_standing,
+from seed_runtime.declared_measurement_responsibilities import (
+    record_declared_measurements_from_current_bounded_locality_replay,
 )
 
 
@@ -170,7 +170,7 @@ def _claim_path(ledger):
         exact_bytes=EARLIER_MATERIAL,
         source_boundary="earlier exact supplied material boundary",
     )
-    earlier_declared = record_declared_measurements_from_current_standing(
+    earlier_declared = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
         locality_identity=earlier_source.locality_identity,
     )
@@ -182,11 +182,11 @@ def _claim_path(ledger):
         source_boundary="exact supplied claim boundary",
         provenance_occurrence_references=(earlier_source.identity,),
     )
-    declared = record_declared_measurements_from_current_standing(
+    declared = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
         locality_identity=source.locality_identity,
     )
-    standing = declared.locality_standing
+    standing = declared.bounded_locality_replay
     direct_result = next(
         event
         for event in declared.result_occurrences

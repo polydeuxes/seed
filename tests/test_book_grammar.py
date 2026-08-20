@@ -502,7 +502,7 @@ def test_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
-def test_source_measurement_declarations_require_one_current_standing_pin():
+def test_source_measurement_declarations_require_one_responsible_standing_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     source = grammar["clause_coordinates"]["01.Source.D"]
     seed_subject = next(
@@ -514,7 +514,6 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
     assert source["responsibility"]["responsible_boundary"] == seed_subject
     assert source["standing_emission_declarations"] == [
         {
-            "order": 0,
             "book_clause": "01.Source.D",
             "measurement": {
                 "identity": (
@@ -525,7 +524,7 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "second_subject": "byte_pair_occurrences",
             },
             "subject": "exact_material_acquisition_result",
-            "requires": ["current_Standing", "exact_subject"],
+            "requires": ["exact_responsible_Standing_boundary", "exact_subject"],
             "standing_not_established": [
                 "Responsibility_assignment_by_subject_presence",
                 "Applicability_by_subject_presence",
@@ -533,7 +532,6 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
             ],
         },
         {
-            "order": 1,
             "book_clause": "01.Source.D",
             "measurement": {
                 "identity": "measurement_of_exact_byte_occurrences",
@@ -542,7 +540,7 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
                 "second_subject": "exact_material_acquisition_result_set",
             },
             "subject": "exact_material_acquisition_result_set",
-            "requires": ["current_Standing", "exact_subject"],
+            "requires": ["exact_responsible_Standing_boundary", "exact_subject"],
             "standing_not_established": [
                 "Responsibility_assignment_by_subject_presence",
                 "Applicability_by_subject_presence",
@@ -551,8 +549,8 @@ def test_source_measurement_declarations_require_one_current_standing_pin():
         },
     ]
     assert (
-        "Recording one declared Responsibility assignment in declared order "
-        "requires one exact current Standing boundary"
+        "Recording one declared Responsibility assignment requires one exact "
+        "responsible Standing boundary"
     ) in _active_book()
 
 
@@ -1144,7 +1142,7 @@ FIDELITY_SUBJECTS = {
     ),
     "standing_responsibility_path": (
         test_witness_readable_grammar_traverses_responsibility_from_standing,
-        test_source_measurement_declarations_require_one_current_standing_pin,
+        test_source_measurement_declarations_require_one_responsible_standing_boundary,
     ),
     "book_responsibility_witness_grammar_coordinate_distinction": (
         test_book_responsibility_and_witness_grammar_share_exact_coordinates,

@@ -5804,34 +5804,32 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
     }
 
 
-def test_standing_measurement_declarations_match_the_curated_runtime_order():
-    from seed_runtime.standing_measurement_declarations import (
-        STANDING_MEASUREMENT_DECLARATIONS,
+def test_declared_measurement_responsibilities_match_the_curated_runtime_coordinates():
+    from seed_runtime.declared_measurement_responsibilities import (
+        DECLARED_MEASUREMENT_RESPONSIBILITIES,
     )
 
     declared = _clause("01.Source.D")["standing_emission_declarations"]
 
-    assert tuple(
+    assert len(declared) == len(DECLARED_MEASUREMENT_RESPONSIBILITIES) == 2
+    assert {
         (
-            coordinate["order"],
             coordinate["book_clause"],
             coordinate["measurement"]["identity"],
         )
         for coordinate in declared
-    ) == tuple(
+    } == {
         (
-            declaration.order,
             declaration.book_clause_identity,
-            measurement,
+            declaration.measurement_identity,
         )
-        for declaration, measurement in zip(
-            STANDING_MEASUREMENT_DECLARATIONS,
-            (
-                "measurement_of_position_coordinates_of_byte_pair_occurrences",
-                "measurement_of_exact_byte_occurrences",
-            ),
-            strict=True,
-        )
+        for declaration in DECLARED_MEASUREMENT_RESPONSIBILITIES
+    }
+    assert all("order" not in coordinate for coordinate in declared)
+    assert all(
+        coordinate["requires"]
+        == ["exact_responsible_Standing_boundary", "exact_subject"]
+        for coordinate in declared
     )
     assert _clause("01.Source.D")["declared_measurements"][
         "measurement_of_exact_byte_occurrences"
@@ -6626,7 +6624,7 @@ def _declared_kind_constants(family: str) -> dict[str, list[str]]:
 
     Discovery from the runtime, as with Yield: the registry above is not
     asked what exists, the runtime is. A boundary that stops declaring itself,
-    or a new one that never registers, both surface here.
+    or a new one that never registers, both are reported here.
     """
 
     found: dict[str, list[str]] = {}
@@ -6875,7 +6873,7 @@ FIDELITY_SUBJECTS = {
     ),
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
-        test_standing_measurement_declarations_match_the_curated_runtime_order,
+        test_declared_measurement_responsibilities_match_the_curated_runtime_coordinates,
         test_each_declared_measurement_names_its_finding_and_responsible_occurrence,
         test_shared_position_measurement_decomposes_material_non_establishment,
         test_byte_pair_occurrence_position_measurement_is_structured_in_grammar,

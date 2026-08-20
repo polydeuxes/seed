@@ -38,7 +38,7 @@ Determining Applicability to one declared shared position Measurement requires c
 
 Where this Seed performs a Seed-native declared Measurement over exact material related to this Seed by exact Locality Evidence, this Seed bears the Measurement Responsibility. The assignment establishes no occurrence, recording of the Measurement occurrence, or transfer of the resulting Assertion's Standing-coordinate Responsibility.
 
-Recording one declared Responsibility assignment in declared order requires one exact current Standing boundary, that Responsibility already assigned to this Seed, current Standing carrying the exact subject and every required coordinate, and no exact assignment or result recorded for that subject. Subject presence establishes no assignment, Applicability, or Act. After each recorded occurrence, current Standing must carry that occurrence before recording another declared Responsibility assignment.
+Recording one declared Responsibility assignment requires one exact responsible Standing boundary, that Responsibility already assigned to this Seed, Standing at that boundary carrying the exact subject and every required coordinate, and no exact assignment or result recorded for that subject. Subject presence establishes no assignment, Applicability, or Act. Where the same exact responsible Standing boundary carries the subject and required coordinates for more than one declared Responsibility assignment, each assignment preserves that boundary. Recording order establishes no input relation from an earlier assignment or result to a later assignment. Before an exact Act, current Standing must carry that Act's exact Responsibility assignment.
 
 ### 01.Source.D.1 — Counts preserve occurrence identity
 

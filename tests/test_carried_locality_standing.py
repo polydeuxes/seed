@@ -54,15 +54,15 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.standing_measurement_declarations import (
+from seed_runtime.declared_measurement_responsibilities import (
     ExactByteOccurrenceMeasurementSubject,
     PositionCoordinateMeasurementSubject,
-    _discover_byte_measurement,
-    _discover_direct_measurement,
+    _discover_byte_measurements,
+    _discover_direct_measurements,
     _record_byte_measurement,
     _record_direct_measurement,
-    _record_declared_measurements_from_carried_standing,
-    record_declared_measurements_from_current_standing,
+    _record_declared_measurements_from_carried_bounded_locality_replay,
+    record_declared_measurements_from_current_bounded_locality_replay,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
@@ -123,6 +123,114 @@ def test_operator_acquisition_records_exact_byte_pair_occurrence_position_result
         (b"=5", 3, 4),
         (b"5\n", 4, 5),
     )
+
+
+def test_declared_measurement_assignments_share_one_responsible_boundary():
+    ledger = EventLedger()
+    record_operator_material_occurrence(
+        ledger,
+        locality_identity="s",
+        exact=b"first\n",
+        source_boundary="first operator boundary",
+    )
+    record_operator_material_occurrence(
+        ledger,
+        locality_identity="s",
+        exact=b"second\n",
+        source_boundary="second operator boundary",
+    )
+    responsible_replay = read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
+    responsible_boundary = responsible_replay[
+        "through_event_occurrence_identity"
+    ]
+
+    recorded = record_declared_measurements_from_current_bounded_locality_replay(
+        ledger,
+        locality_identity="s",
+    )
+    assignments = tuple(
+        event
+        for event in ledger.list_locality("s")
+        if event.kind
+        in {
+            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        }
+    )
+
+    assert len(assignments) == 3
+    assert {
+        assignment.material["standing_boundary_identity"]
+        for assignment in assignments
+    } == {responsible_boundary}
+    responsible_completeness_boundary = ledger.append_boundary_through_occurrence(
+        responsible_boundary
+    ).identity
+    assert {
+        assignment.material["completeness_boundary_identity"]
+        for assignment in assignments
+        if assignment.kind
+        == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    } == {responsible_completeness_boundary}
+    assert tuple(result.kind for result in recorded.result_occurrences) == (
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        BYTE_MEASUREMENT_RECORDED_KIND,
+    )
+    assert recorded.bounded_locality_replay == read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
+
+
+def test_recording_order_does_not_change_each_assignment_responsible_boundary(
+    monkeypatch,
+):
+    from seed_runtime import declared_measurement_responsibilities
+
+    monkeypatch.setattr(
+        declared_measurement_responsibilities,
+        "DECLARED_MEASUREMENT_RESPONSIBILITIES",
+        tuple(
+            reversed(
+                declared_measurement_responsibilities.DECLARED_MEASUREMENT_RESPONSIBILITIES
+            )
+        ),
+    )
+    ledger = EventLedger()
+    record_operator_material_occurrence(
+        ledger,
+        locality_identity="s",
+        exact=b"material\n",
+        source_boundary="operator boundary",
+    )
+    responsible_boundary = read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )["through_event_occurrence_identity"]
+
+    recorded = record_declared_measurements_from_current_bounded_locality_replay(
+        ledger,
+        locality_identity="s",
+    )
+    assignments = tuple(
+        event
+        for event in ledger.list_locality("s")
+        if event.kind
+        in {
+            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        }
+    )
+
+    assert tuple(result.kind for result in recorded.result_occurrences) == (
+        BYTE_MEASUREMENT_RECORDED_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+    )
+    assert {
+        assignment.material["standing_boundary_identity"]
+        for assignment in assignments
+    } == {responsible_boundary}
 
 
 def test_supplied_witness_acquisition_remains_available_without_declared_measurement():
@@ -197,26 +305,26 @@ def test_raw_witness_acquisitions_do_not_enter_declared_measurement_pressure():
     )
 
     boundary = ledger.append_boundary()
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
         locality_identity="s",
     )
 
     assert tuple(
         occurrence["result_occurrence_identity"]
-        for occurrence in recorded.locality_standing[
+        for occurrence in recorded.bounded_locality_replay[
             "material_acquisition_result_occurrences"
         ]
     ) == (first.identity, second.identity)
     assert recorded.result_occurrences == ()
-    assert recorded.locality_standing[
+    assert recorded.bounded_locality_replay[
         "operator_material_locality_relation_occurrences"
     ] == {}
-    assert recorded.locality_standing == read_operator_locality_standing(
+    assert recorded.bounded_locality_replay == read_operator_locality_standing(
         ledger, locality_identity="s"
     )
 
-    again = record_declared_measurements_from_current_standing(
+    again = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
         locality_identity="s",
     )
@@ -240,20 +348,20 @@ def test_raw_witness_availability_is_not_a_declared_measurement_subject():
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
 
-    position_subject = _discover_direct_measurement(ledger, standing, "s")
-    byte_subject = _discover_byte_measurement(ledger, standing, "s")
+    position_subjects = _discover_direct_measurements(ledger, standing, "s")
+    byte_subjects = _discover_byte_measurements(ledger, standing, "s")
 
-    assert position_subject is None
-    assert byte_subject is None
+    assert position_subjects == ()
+    assert byte_subjects == ()
     boundary = ledger.append_boundary()
     with pytest.raises(
         ValueError, match="exact-byte Measurement requires its exact subject"
     ):
-        _record_byte_measurement(ledger, standing, "s", position_subject)
+        _record_byte_measurement(ledger, standing, standing, "s", None)
     with pytest.raises(
         ValueError, match="position-coordinate Measurement requires its exact subject"
     ):
-        _record_direct_measurement(ledger, standing, "s", byte_subject)
+        _record_direct_measurement(ledger, standing, standing, "s", None)
     assert ledger.append_boundary() == boundary
 
 
@@ -279,7 +387,7 @@ def test_exact_byte_measurement_refuses_a_raw_witness_acquisition_result_set():
         ValueError,
         match="differs from the current acquisition-result set",
     ):
-        _record_byte_measurement(ledger, standing, "s", incomplete)
+        _record_byte_measurement(ledger, standing, standing, "s", incomplete)
 
     assert ledger.append_boundary() == boundary
 
@@ -297,7 +405,7 @@ def test_bounded_replay_does_not_expose_assignments_for_raw_witness_material():
 
     assert before["responsibility_assignment_occurrences"] == {}
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
         locality_identity="s",
     )
@@ -314,8 +422,8 @@ def test_bounded_replay_does_not_expose_assignments_for_raw_witness_material():
     assert ledger.append_boundary() == before_boundary
     assert assignments == ()
     assert recorded.result_occurrences == ()
-    assert recorded.locality_standing["responsibility_assignment_occurrences"] == {}
-    assert recorded.locality_standing == read_operator_locality_standing(
+    assert recorded.bounded_locality_replay["responsibility_assignment_occurrences"] == {}
+    assert recorded.bounded_locality_replay == read_operator_locality_standing(
         ledger, locality_identity="s"
     )
 
@@ -340,7 +448,7 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
         MaterialAcquisitionError,
         match="Witness material-acquisition result is absent or corrupted",
     ):
-        record_declared_measurements_from_current_standing(
+        record_declared_measurements_from_current_bounded_locality_replay(
             ledger,
             locality_identity="s",
         )
@@ -373,7 +481,7 @@ def test_carried_declaration_keeps_raw_witness_material_quiet_after_another_loca
     )
     foreign_boundary = ledger.append_boundary()
 
-    recorded = _record_declared_measurements_from_carried_standing(
+    recorded = _record_declared_measurements_from_carried_bounded_locality_replay(
         ledger,
         standing,
         locality_identity="s",
@@ -383,7 +491,7 @@ def test_carried_declaration_keeps_raw_witness_material_quiet_after_another_loca
     assert ledger.append_boundary() == foreign_boundary
 
 
-def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locality():
+def test_carried_declaration_refuses_replay_before_the_current_boundary():
     ledger = EventLedger()
     record_witness_material_acquisition(
         ledger,
@@ -398,8 +506,8 @@ def test_carried_declaration_refuses_standing_before_a_later_event_in_its_locali
         locality_identity="s",
     )
 
-    with pytest.raises(ValueError, match="current Locality Standing"):
-        _record_declared_measurements_from_carried_standing(
+    with pytest.raises(ValueError, match="current bounded Locality replay boundary"):
+        _record_declared_measurements_from_carried_bounded_locality_replay(
             ledger,
             standing,
             locality_identity="s",
@@ -421,7 +529,7 @@ def test_raw_witness_material_remains_quiet_after_sqlite_reopen(tmp_path):
             exact_bytes=b"2+2=5\n",
             source_boundary="exact claim boundary",
         )
-        first = record_declared_measurements_from_current_standing(
+        first = record_declared_measurements_from_current_bounded_locality_replay(
             ledger,
             locality_identity="s",
         )
@@ -432,13 +540,13 @@ def test_raw_witness_material_remains_quiet_after_sqlite_reopen(tmp_path):
 
     reopened = SQLiteEventLedger(path)
     try:
-        second = record_declared_measurements_from_current_standing(
+        second = record_declared_measurements_from_current_bounded_locality_replay(
             reopened,
             locality_identity="s",
         )
         assert second.result_occurrences == ()
         assert reopened.append_boundary() == boundary
-        assert second.locality_standing == read_operator_locality_standing(
+        assert second.bounded_locality_replay == read_operator_locality_standing(
             reopened, locality_identity="s"
         )
     finally:

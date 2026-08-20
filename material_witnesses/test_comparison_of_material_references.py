@@ -25,8 +25,8 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_representation import record_operator_representation
-from seed_runtime.standing_measurement_declarations import (
-    record_declared_measurements_from_current_standing,
+from seed_runtime.declared_measurement_responsibilities import (
+    record_declared_measurements_from_current_bounded_locality_replay,
 )
 
 
@@ -308,7 +308,7 @@ def test_witness_book_material_stops_before_recurrent_pair_measurement():
     ] == [corpus.identity]
     assert point["standing"]["measurement_occurrences"] == {}
     boundary = ledger.append_boundary()
-    declared = record_declared_measurements_from_current_standing(
+    declared = record_declared_measurements_from_current_bounded_locality_replay(
         ledger, locality_identity=locality_identity
     )
     assert declared.result_occurrences == ()

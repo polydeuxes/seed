@@ -98,9 +98,8 @@ from seed_runtime.occurrence_position_measurement import (
     _record_occurrence_position_measurement_result_from_carried_act_evidence,
     measure_occurrence_position,
 )
-from seed_runtime.standing_measurement_declarations import (
-    _record_declared_measurements_from_carried_standing,
-    record_declared_measurements_from_current_standing,
+from seed_runtime.declared_measurement_responsibilities import (
+    _record_declared_measurements_from_carried_bounded_locality_replay,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -338,35 +337,28 @@ def _record_occurrence_position_after_declared_measurements(
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
     if len(byte_measurements) != 1:
-        raise ValueError("one exact-byte Measurement is required after this pin")
+        raise ValueError(
+            "one exact-byte Measurement is required after this responsible boundary"
+        )
     standing = _record_occurrence_position_measurement(
         ledger,
-        recorded.locality_standing,
+        recorded.bounded_locality_replay,
         locality_identity=locality_identity,
     )
     return standing, byte_measurements[0]
 
 
-def _record_measurements_after_pin(ledger, standing, *, locality_identity):
-    """Exhaust declared material acquisition roads, then record the explicit Locality road."""
+def _record_measurements_from_bounded_locality_replay(
+    ledger,
+    bounded_locality_replay,
+    *,
+    locality_identity,
+):
+    """Record declared Measurements, then the explicit Locality road."""
 
-    recorded = _record_declared_measurements_from_carried_standing(
+    recorded = _record_declared_measurements_from_carried_bounded_locality_replay(
         ledger,
-        standing,
-        locality_identity=locality_identity,
-    )
-    return _record_occurrence_position_after_declared_measurements(
-        ledger,
-        recorded,
-        locality_identity=locality_identity,
-    )
-
-
-def _record_measurements_after_current_pin(ledger, *, locality_identity):
-    """Exhaust declarations from independently read current Locality Standing."""
-
-    recorded = record_declared_measurements_from_current_standing(
-        ledger,
+        bounded_locality_replay,
         locality_identity=locality_identity,
     )
     return _record_occurrence_position_after_declared_measurements(
@@ -658,10 +650,12 @@ def run_persistent_operator_console(
             operator_locality_identity = locality_identity
             with ledger.batched():
                 command_occurrence_reference = acquired_material.identity
-                locality_standing, _byte_measurement = _record_measurements_after_pin(
-                    ledger,
-                    locality_standing,
-                    locality_identity=locality_identity,
+                locality_standing, _byte_measurement = (
+                    _record_measurements_from_bounded_locality_replay(
+                        ledger,
+                        locality_standing,
+                        locality_identity=locality_identity,
+                    )
                 )
                 command_representation = record_operator_representation(
                     ledger,
@@ -765,13 +759,15 @@ def run_persistent_operator_console(
                     locality_identity=invocation_locality_identity,
                 )
                 recorded_witness_measurements = (
-                    _record_declared_measurements_from_carried_standing(
+                    _record_declared_measurements_from_carried_bounded_locality_replay(
                         ledger,
                         witness_standing,
                         locality_identity=invocation_locality_identity,
                     )
                 )
-                witness_standing = recorded_witness_measurements.locality_standing
+                witness_standing = (
+                    recorded_witness_measurements.bounded_locality_replay
+                )
                 if recorded_witness_measurements.result_occurrences:
                     raise ValueError(
                         "Witness acquisition availability produced a declared "
@@ -1038,10 +1034,12 @@ def run_persistent_operator_console(
             if request is not None or command_run.addressed.frame.name in handlers:
                 continue
         with ledger.batched():
-            locality_standing, byte_measurement = _record_measurements_after_pin(
-                ledger,
-                locality_standing,
-                locality_identity=locality_identity,
+            locality_standing, byte_measurement = (
+                _record_measurements_from_bounded_locality_replay(
+                    ledger,
+                    locality_standing,
+                    locality_identity=locality_identity,
+                )
             )
             if pair_premise is None:
                 representation = record_operator_representation(

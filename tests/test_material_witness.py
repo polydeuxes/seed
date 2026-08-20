@@ -19,8 +19,8 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-from seed_runtime.standing_measurement_declarations import (
-    record_declared_measurements_from_current_standing,
+from seed_runtime.declared_measurement_responsibilities import (
+    record_declared_measurements_from_current_bounded_locality_replay,
 )
 
 
@@ -557,7 +557,7 @@ def test_book_witness_availability_records_no_declared_measurement(
     ledger, _supplied_material, _acquisition_results = book_material_acquisitions
     boundary = ledger.append_boundary()
 
-    recorded = record_declared_measurements_from_current_standing(
+    recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger, locality_identity="book-material"
     )
 

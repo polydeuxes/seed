@@ -127,8 +127,6 @@ but
 by
 byte
 c
-cache
-caching
 callable
 calling
 came
@@ -939,7 +937,6 @@ supported
 supporting
 supports
 suppression
-surface
 take
 taking
 temporal

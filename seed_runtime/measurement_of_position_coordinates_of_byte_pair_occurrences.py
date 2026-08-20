@@ -562,7 +562,7 @@ def _require_current_standing(
     return boundary
 
 
-def _require_carried_standing_at_tip(
+def _require_carried_replay_at_current_boundary(
     ledger: EventLedger,
     *,
     locality_identity: str,
@@ -570,7 +570,7 @@ def _require_carried_standing_at_tip(
     source_material_acquisition_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
-    """Validate a call-local Standing at the latest event in its Locality."""
+    """Validate a carried replay at the current event in its Locality."""
 
     if type(locality_standing) is not dict:
         raise ValueError(
@@ -632,6 +632,73 @@ def _require_carried_standing_at_tip(
     return boundary
 
 
+def _require_exact_responsibility_boundary(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    responsibility_boundary_identity: str,
+    source_material_acquisition_occurrence_identity: str,
+) -> str:
+    """Validate the exact earlier boundary that supplies this assignment subject."""
+
+    if (
+        type(responsibility_boundary_identity) is not str
+        or not responsibility_boundary_identity
+    ):
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact "
+            "responsible boundary"
+        )
+    boundary_event = ledger.get(responsibility_boundary_identity)
+    try:
+        boundary = ledger.append_boundary_through_occurrence(
+            responsibility_boundary_identity
+        )
+        order = (source_material_acquisition_occurrence_identity,)
+        if (
+            source_material_acquisition_occurrence_identity
+            != responsibility_boundary_identity
+        ):
+            order = (
+                source_material_acquisition_occurrence_identity,
+                responsibility_boundary_identity,
+            )
+        ledger.occurrences_in_append_order(order, locality_identity=locality_identity)
+    except ValueError as error:
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact "
+            "responsible boundary"
+        ) from error
+    if (
+        boundary_event is None
+        or boundary_event.locality_identity != locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or not _has_exact_operator_material_locality_to_this_seed(
+            ledger, source_material_acquisition_occurrence_identity
+        )
+    ):
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact "
+            "responsible boundary"
+        )
+    source = read_exact_material_acquisition_result(
+        ledger, source_material_acquisition_occurrence_identity
+    )
+    if not any(
+        event.identity == source.identity
+        for event in ledger.iter_locality_kind(
+            locality_identity,
+            source.kind,
+            through=boundary,
+        )
+    ):
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact "
+            "responsible boundary"
+        )
+    return responsibility_boundary_identity
+
+
 def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
@@ -660,7 +727,9 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
 ) -> Event:
     _validate_finding(finding)
     require_standing = (
-        _require_carried_standing_at_tip if carried else _require_current_standing
+        _require_carried_replay_at_current_boundary
+        if carried
+        else _require_current_standing
     )
     standing_boundary_identity = require_standing(
         ledger,
@@ -728,13 +797,84 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one finding produced beside the exact carried Standing at the tip."""
+    """Assign one finding produced beside the exact carried replay boundary."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
         ledger,
         finding=finding,
         locality_standing=locality_standing,
         carried=True,
+    )
+
+
+def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_responsibility_boundary(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
+    responsibility_boundary_identity: str,
+) -> Event:
+    """Record one assignment preserving its exact earlier responsible boundary."""
+
+    global_recording_boundary = ledger.append_boundary()
+    _validate_finding(finding)
+    standing_boundary_identity = _require_exact_responsibility_boundary(
+        ledger,
+        locality_identity=finding.source_locality_identity,
+        responsibility_boundary_identity=responsibility_boundary_identity,
+        source_material_acquisition_occurrence_identity=(
+            finding.source_material_acquisition_occurrence_identity
+        ),
+    )
+    if any(
+        event.material.get("source_material_acquisition_occurrence_identity")
+        == finding.source_material_acquisition_occurrence_identity
+        for kind in (
+            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        )
+        for event in ledger.iter_locality_kind(
+            finding.source_locality_identity,
+            kind,
+        )
+    ):
+        raise ValueError(
+            "byte-pair position-coordinate assignment requires one exact "
+            "unassigned subject at its responsibility boundary"
+        )
+    identities = {
+        "assignment_identity": new_identity(
+            "byte_pair_occurrence_position_assignment"
+        ),
+        "assignment_subject_identity": new_identity(
+            "byte_pair_occurrence_position_assignment_subject"
+        ),
+        "measurement_act_identity": new_identity(
+            "byte_pair_occurrence_position_measurement_act"
+        ),
+        "act_occurrence_identity": new_identity(
+            "byte_pair_occurrence_position_measurement_act_occurrence"
+        ),
+        "measurement_result_identity": new_identity(
+            "byte_pair_occurrence_position_measurement_result"
+        ),
+    }
+    if len(set(identities.values())) != len(identities):
+        raise ValueError(
+            "byte-pair position-coordinate Measurement identities collapsed"
+        )
+    if ledger.append_boundary() != global_recording_boundary:
+        raise ValueError(
+            "byte-pair position-coordinate global recording boundary changed "
+            "before assignment"
+        )
+    return ledger.append(
+        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        _assignment_material(
+            finding,
+            standing_boundary_identity=standing_boundary_identity,
+            **identities,
+        ),
+        locality_identity=finding.source_locality_identity,
     )
 
 
@@ -760,7 +900,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     source_material_acquisition_occurrence_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign the exact source already carried at the current append tip."""
+    """Assign the exact source already carried at the current append boundary."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
@@ -961,7 +1101,9 @@ def _record_byte_pair_occurrence_position_measurement_act_evidence(
         ledger, responsibility_assignment_event_identity
     )
     require_standing = (
-        _require_carried_standing_at_tip if carried else _require_current_standing
+        _require_carried_replay_at_current_boundary
+        if carried
+        else _require_current_standing
     )
     require_standing(
         ledger,
@@ -1034,7 +1176,7 @@ def _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_
         responsibility_assignment=responsibility_assignment,
         finding=finding,
     )
-    _require_carried_standing_at_tip(
+    _require_carried_replay_at_current_boundary(
         ledger,
         locality_identity=responsibility_assignment.locality_identity,
         locality_standing=responsibility_assignment_standing,

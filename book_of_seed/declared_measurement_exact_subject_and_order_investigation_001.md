@@ -1,5 +1,10 @@
 # Declared Measurement exact subject and order investigation 001
 
+> Superseded for current runtime orientation by
+> [Declared Measurement common responsible boundary implementation 001](declared_measurement_common_responsible_boundary_implementation_001.md).
+> Sections 3 through 6 below describe the prior numeric-order implementation
+> and the boundary it exposed.
+
 ## Question
 
 The bounded Measurement loop currently places two declared Measurements in one

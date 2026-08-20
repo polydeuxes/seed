@@ -1103,7 +1103,6 @@
       "findings": ["count", "recurrence", "position", "ordered_relation_path"],
       "standing_emission_declarations": [
         {
-          "order": 0,
           "book_clause": "01.Source.D",
           "measurement": {
             "identity": "measurement_of_position_coordinates_of_byte_pair_occurrences",
@@ -1112,7 +1111,7 @@
             "second_subject": "byte_pair_occurrences"
           },
           "subject": "exact_material_acquisition_result",
-          "requires": ["current_Standing", "exact_subject"],
+          "requires": ["exact_responsible_Standing_boundary", "exact_subject"],
           "standing_not_established": [
             "Responsibility_assignment_by_subject_presence",
             "Applicability_by_subject_presence",
@@ -1120,7 +1119,6 @@
           ]
         },
         {
-          "order": 1,
           "book_clause": "01.Source.D",
           "measurement": {
             "identity": "measurement_of_exact_byte_occurrences",
@@ -1129,7 +1127,7 @@
             "second_subject": "exact_material_acquisition_result_set"
           },
           "subject": "exact_material_acquisition_result_set",
-          "requires": ["current_Standing", "exact_subject"],
+          "requires": ["exact_responsible_Standing_boundary", "exact_subject"],
           "standing_not_established": [
             "Responsibility_assignment_by_subject_presence",
             "Applicability_by_subject_presence",
