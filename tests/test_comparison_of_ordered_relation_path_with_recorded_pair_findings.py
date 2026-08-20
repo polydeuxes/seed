@@ -13,9 +13,11 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.candidate_results_from_exact_result_assertions import (
     candidate_assertion_from_result,
+    candidate_results_by_required_subject,
     get_candidate_responsibility,
-    record_one_owed_candidate_result,
+    record_one_candidate_result,
     record_one_source_and_ordered_pair_candidate_responsibilities,
+    required_subjects_for_candidate_responsibility,
     source_assertion_references_through_boundary,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
@@ -963,29 +965,55 @@ def test_compare_result_and_finding_enter_candidate_obligation_before_first_yiel
         source_references
     )
     assert all(reference in source_references for reference in compare_references)
+    path_references = tuple(
+        reference
+        for reference in source_references
+        if reference["recorded_result_occurrence_identity"] == path.identity
+    )
+    required_pairs = required_subjects_for_candidate_responsibility(
+        ledger,
+        responsibility_event_identity=ordered_pair_responsibility.identity,
+    )
+    for path_reference in path_references:
+        assert sum(
+            subject["source_assertion_references"][0] == path_reference
+            for subject in required_pairs
+        ) == len(source_references) - 1
+        assert sum(
+            subject["source_assertion_references"][1] == path_reference
+            for subject in required_pairs
+        ) == len(source_references) - 1
 
-    one_source_yield = record_one_owed_candidate_result(
+    one_source_yield = record_one_candidate_result(
         ledger, responsibility_event_identity=one_source_responsibility.identity
     )
-    ordered_pair_yield = record_one_owed_candidate_result(
+    ordered_pair_yield = record_one_candidate_result(
         ledger, responsibility_event_identity=ordered_pair_responsibility.identity
     )
     assert one_source_yield is not None
     assert ordered_pair_yield is not None
-    assert one_source_yield.progress.owed_candidate_addresses
-    assert ordered_pair_yield.progress.owed_candidate_addresses
+    assert len(candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=one_source_responsibility.identity
+    )) < len(required_subjects_for_candidate_responsibility(
+        ledger, responsibility_event_identity=one_source_responsibility.identity
+    ))
+    assert len(candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=ordered_pair_responsibility.identity
+    )) < len(required_subjects_for_candidate_responsibility(
+        ledger, responsibility_event_identity=ordered_pair_responsibility.identity
+    ))
     assert candidate_assertion_from_result(
         ledger,
-        candidate_result_event_identity=one_source_yield.result_occurrence.identity,
+        candidate_result_event_identity=one_source_yield.identity,
     )["relation"] == "Unknown"
     assert candidate_assertion_from_result(
         ledger,
-        candidate_result_event_identity=ordered_pair_yield.result_occurrence.identity,
+        candidate_result_event_identity=ordered_pair_yield.identity,
     )["relation"] == "Unknown"
-    assert one_source_yield.result_occurrence.locality_identity == (
+    assert one_source_yield.locality_identity == (
         "ordered-path-unary-candidates"
     )
-    assert ordered_pair_yield.result_occurrence.locality_identity == (
+    assert ordered_pair_yield.locality_identity == (
         "ordered-path-pair-candidates"
     )
     assert all(

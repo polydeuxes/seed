@@ -1,11 +1,11 @@
-"""Yield one exact Candidate result for each subject owed by one Responsibility."""
+"""Yield one exact Candidate result for each required subject."""
 
 from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
 import json
-from typing import Any, Iterator, NamedTuple
+from typing import Any, Iterator
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -23,6 +23,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 CANDIDATE_OCCURRENCE_STREAM = "operator.candidate.occurred"
 
 BOOK_CLAUSE = "01.Source.E.1"
+APPLICABILITY_BOOK_CLAUSE = "01.Standing.E.1"
+ACT_BOOK_CLAUSE = "02.Acts.A"
 ONE_SOURCE_CANDIDATE_RESPONSIBILITY = (
     "record one Candidate for each exact source Assertion through one exact boundary"
 )
@@ -36,29 +38,18 @@ _CANDIDATE_RESPONSIBILITIES = frozenset(
 APPLICABILITY_ACT = (
     "Applicability of one required Candidate subject to one Candidate Act"
 )
+APPLICABILITY_RESPONSIBILITY = (
+    "establish Applicability of one required subject to one Candidate Act position"
+)
 ONE_SOURCE_CANDIDATE_ACT = "record one Candidate for one exact source Assertion"
 ORDERED_PAIR_CANDIDATE_ACT = (
     "record one Candidate for one exact ordered source Assertion pair"
 )
-EVENT_KIND_RESPONSIBILITIES = {
-    CANDIDATE_OCCURRENCE_STREAM: "01.Source.E.1",
-}
 _SOURCE_REPLAY_COORDINATES = (
     "measurement_occurrences",
     "comparison_result_occurrences",
     "candidate_result_occurrences",
 )
-
-
-class CandidateResponsibilityProgress(NamedTuple):
-    required_candidate_addresses: tuple[str, ...]
-    recorded_candidate_result_occurrences: tuple[str, ...]
-    owed_candidate_addresses: tuple[str, ...]
-
-
-class YieldedCandidateResult(NamedTuple):
-    result_occurrence: Event
-    progress: CandidateResponsibilityProgress
 
 
 def _address(value: Any, message: str) -> str:
@@ -378,9 +369,18 @@ def source_assertion_references_through_boundary(
 def _authority(responsibility: str) -> dict[str, Any]:
     return {
         "source": "this Book",
-        "book_clause_identity": BOOK_CLAUSE,
+        "book_reference": BOOK_CLAUSE,
         "responsible_boundary": "this Seed",
         "scope": _candidate_responsibility(responsibility),
+    }
+
+
+def _applicability_authority() -> dict[str, Any]:
+    return {
+        "source": "this Book",
+        "book_reference": APPLICABILITY_BOOK_CLAUSE,
+        "responsible_boundary": "this Seed",
+        "scope": APPLICABILITY_RESPONSIBILITY,
     }
 
 
@@ -409,7 +409,7 @@ def _required_subject_address(
         "role": role,
         "source_assertion_references": references,
     }
-    return "candidate_" + hashlib.sha256(
+    return "required_subject_" + hashlib.sha256(
         _canonical(coordinates).encode("utf-8")
     ).hexdigest()
 
@@ -424,7 +424,7 @@ def _required_subjects(responsibility: Event) -> tuple[dict[str, Any], ...]:
             role = "source Assertion"
             subjects.append(
                 {
-                    "candidate_address": _required_subject_address(
+                    "required_subject_address": _required_subject_address(
                         responsibility,
                         position=position,
                         role=role,
@@ -446,7 +446,7 @@ def _required_subjects(responsibility: Event) -> tuple[dict[str, Any], ...]:
             role = "ordered source Assertion pair"
             subjects.append(
                 {
-                    "candidate_address": _required_subject_address(
+                    "required_subject_address": _required_subject_address(
                         responsibility,
                         position=position,
                         role=role,
@@ -472,7 +472,7 @@ def _responsibility_material(
 ) -> dict[str, Any]:
     return {
         "responsibility_subject_identity": responsibility_subject_address,
-        "book_clause_identity": BOOK_CLAUSE,
+        "book_reference": BOOK_CLAUSE,
         "responsibility": responsibility,
         "responsible_boundary": "this Seed",
         "candidate_act": _candidate_act_for_responsibility(responsibility),
@@ -599,6 +599,12 @@ def get_candidate_responsibility(
 
 def _lifecycle_addresses() -> dict[str, str]:
     return {
+        "applicability_responsibility_subject_address": new_identity(
+            "candidate_applicability_responsibility_subject"
+        ),
+        "applicability_scope_address": new_identity(
+            "candidate_applicability_scope"
+        ),
         "applicability_act_identity": new_identity("candidate_applicability_act"),
         "applicability_act_occurrence_identity": new_identity(
             "candidate_applicability_act_occurrence"
@@ -611,35 +617,83 @@ def _lifecycle_addresses() -> dict[str, str]:
             "candidate_act_occurrence"
         ),
         "candidate_result_identity": new_identity("candidate_result"),
+        "candidate_subject_address": new_identity("candidate_subject"),
     }
 
 
-def _applicability_act_material(
+def _applicability_scope(
     responsibility: Event,
     subject: dict[str, Any],
     addresses: dict[str, str],
 ) -> dict[str, Any]:
     return {
+        "address": addresses["applicability_scope_address"],
+        "recording_locality": responsibility.locality_identity,
+        "required_subject_address": subject["required_subject_address"],
+        "candidate_act": responsibility.material["candidate_act"],
+    }
+
+
+def _applicability_responsibility_material(
+    responsibility: Event,
+    subject: dict[str, Any],
+    addresses: dict[str, str],
+) -> dict[str, Any]:
+    return {
+        "responsibility_subject_identity": addresses[
+            "applicability_responsibility_subject_address"
+        ],
+        "book_reference": APPLICABILITY_BOOK_CLAUSE,
+        "responsibility": APPLICABILITY_RESPONSIBILITY,
+        "responsible_boundary": "this Seed",
+        "subject_to_act_position": {
+            "required_subject": deepcopy(subject),
+            "candidate_act": responsibility.material["candidate_act"],
+        },
+        "candidate_responsibility_reference": _responsibility_reference(
+            responsibility
+        ),
+        "exact_act": APPLICABILITY_ACT,
+        "scope": _applicability_scope(responsibility, subject, addresses),
+        "Locality": responsibility.locality_identity,
+        "authority": _applicability_authority(),
+        "limits": [
+            "Applicability establishes the exact subject-to-Act position"
+        ],
+        "unknown": [],
+    }
+
+
+def _applicability_act_material(
+    applicability_responsibility: Event,
+    addresses: dict[str, str],
+) -> dict[str, Any]:
+    position = applicability_responsibility.material["subject_to_act_position"]
+    return {
+        "book_reference": APPLICABILITY_BOOK_CLAUSE,
         "applicability_act_identity": addresses["applicability_act_identity"],
         "applicability_act_occurrence_identity": addresses[
             "applicability_act_occurrence_identity"
         ],
         "applicability_result_identity": addresses["applicability_result_identity"],
-        "candidate_act_identity": addresses["candidate_act_identity"],
-        "candidate_act_occurrence_identity": addresses[
-            "candidate_act_occurrence_identity"
-        ],
-        "candidate_result_identity": addresses["candidate_result_identity"],
         "act": APPLICABILITY_ACT,
-        "responsibility": responsibility.material["responsibility"],
+        "responsibility": APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_reference": _responsibility_reference(responsibility),
-        "required_subject": deepcopy(subject),
-        "candidate_act": responsibility.material["candidate_act"],
-        "scope": deepcopy(responsibility.material["scope"]),
-        "authority": deepcopy(responsibility.material["authority"]),
-        "limits": list(responsibility.material["limits"]),
-        "unknown": list(responsibility.material["unknown"]),
+        "responsibility_reference": _responsibility_reference(
+            applicability_responsibility
+        ),
+        "candidate_responsibility_reference": deepcopy(
+            applicability_responsibility.material[
+                "candidate_responsibility_reference"
+            ]
+        ),
+        "required_subject": deepcopy(position["required_subject"]),
+        "candidate_act": position["candidate_act"],
+        "scope": deepcopy(applicability_responsibility.material["scope"]),
+        "Locality": applicability_responsibility.material["Locality"],
+        "authority": deepcopy(applicability_responsibility.material["authority"]),
+        "limits": list(applicability_responsibility.material["limits"]),
+        "unknown": list(applicability_responsibility.material["unknown"]),
     }
 
 
@@ -651,6 +705,7 @@ def _yield_relation_material(
     result_name: str,
 ) -> dict[str, Any]:
     return {
+        "book_reference": ACT_BOOK_CLAUSE,
         "first_subject": {"Act_occurrence": act_occurrence_address},
         "relation": "yield",
         "second_subject": {"result": result_address, "name": result_name},
@@ -663,63 +718,82 @@ def _yield_relation_material(
 
 
 def _applicability_result_material(
-    responsibility: Event,
+    applicability_responsibility: Event,
     act: Event,
     yield_relation: Event,
 ) -> dict[str, Any]:
     return {
+        "book_reference": APPLICABILITY_BOOK_CLAUSE,
         "result_identity": act.material["applicability_result_identity"],
         "act_occurrence_identity": act.material[
             "applicability_act_occurrence_identity"
         ],
         "exact_act": APPLICABILITY_ACT,
-        "responsibility": responsibility.material["responsibility"],
-        "responsibility_reference": _responsibility_reference(responsibility),
+        "responsibility": APPLICABILITY_RESPONSIBILITY,
+        "responsibility_reference": _responsibility_reference(
+            applicability_responsibility
+        ),
+        "candidate_responsibility_reference": deepcopy(
+            applicability_responsibility.material[
+                "candidate_responsibility_reference"
+            ]
+        ),
         "required_subject": deepcopy(act.material["required_subject"]),
         "finding": "applicable",
-        "candidate_act": responsibility.material["candidate_act"],
+        "candidate_act": applicability_responsibility.material[
+            "subject_to_act_position"
+        ]["candidate_act"],
         "yield_relation_occurrence_identity": yield_relation.identity,
-        "scope": deepcopy(responsibility.material["scope"]),
-        "authority": deepcopy(responsibility.material["authority"]),
-        "limits": list(responsibility.material["limits"]),
-        "unknown": list(responsibility.material["unknown"]),
+        "scope": deepcopy(applicability_responsibility.material["scope"]),
+        "Locality": applicability_responsibility.material["Locality"],
+        "authority": deepcopy(applicability_responsibility.material["authority"]),
+        "limits": list(applicability_responsibility.material["limits"]),
+        "unknown": list(applicability_responsibility.material["unknown"]),
     }
 
 
 def _participation_material(
-    responsibility: Event, applicability: Event, act: Event
+    responsibility: Event,
+    applicability: Event,
+    *,
+    candidate_act_occurrence_address: str,
 ) -> dict[str, Any]:
     subject = applicability.material["required_subject"]
     return {
+        "book_reference": APPLICABILITY_BOOK_CLAUSE,
         "first_subject": deepcopy(subject),
         "relation": "participation",
         "role": subject["role"],
         "second_subject": {
-            "Act_occurrence": act.material["candidate_act_occurrence_identity"]
+            "Act_occurrence": candidate_act_occurrence_address
         },
         "responsibility_reference": _responsibility_reference(responsibility),
         "applicability_result_occurrence_identity": applicability.identity,
-        "authority": deepcopy(responsibility.material["authority"]),
-        "scope": deepcopy(responsibility.material["scope"]),
-        "limits": list(responsibility.material["limits"]),
-        "unknown": list(responsibility.material["unknown"]),
+        "authority": _applicability_authority(),
+        "scope": {
+            "recording_locality": responsibility.locality_identity,
+            "required_subject_address": subject["required_subject_address"],
+            "candidate_act_occurrence": candidate_act_occurrence_address,
+        },
+        "Locality": responsibility.locality_identity,
+        "limits": [
+            "Participation establishes no source Assertion relation"
+        ],
+        "unknown": [],
     }
 
 
 def _candidate_act_material(
     responsibility: Event,
     applicability: Event,
-    applicability_act: Event,
     participation: Event,
+    addresses: dict[str, str],
 ) -> dict[str, Any]:
     return {
-        "candidate_act_identity": applicability_act.material["candidate_act_identity"],
-        "act_occurrence_identity": applicability_act.material[
-            "candidate_act_occurrence_identity"
-        ],
-        "candidate_result_identity": applicability_act.material[
-            "candidate_result_identity"
-        ],
+        "book_reference": BOOK_CLAUSE,
+        "candidate_act_identity": addresses["candidate_act_identity"],
+        "act_occurrence_identity": addresses["candidate_act_occurrence_identity"],
+        "candidate_result_identity": addresses["candidate_result_identity"],
         "act": responsibility.material["candidate_act"],
         "responsibility": responsibility.material["responsibility"],
         "responsibility_reference": _responsibility_reference(responsibility),
@@ -734,7 +808,9 @@ def _candidate_act_material(
 
 
 def _candidate_assertion(
-    responsibility: Event, subject: dict[str, Any]
+    responsibility: Event,
+    subject: dict[str, Any],
+    candidate_subject_address: str,
 ) -> dict[str, Any]:
     references = subject["source_assertion_references"]
     if len(references) == 1:
@@ -755,10 +831,9 @@ def _candidate_assertion(
         "source_ledger_boundary_identity"
     ]
     return {
-        "subject_address": subject["candidate_address"],
+        "subject_address": candidate_subject_address,
         "content": content,
         "source": deepcopy(references),
-        "provenance": "exact source Assertion reference",
         "Authority": deepcopy(responsibility.material["authority"]),
         "Scope": deepcopy(responsibility.material["scope"]),
         "Locality": responsibility.locality_identity,
@@ -778,16 +853,21 @@ def _candidate_result_material(
     responsibility: Event,
     act: Event,
     yield_relation: Event,
+    *,
+    candidate_subject_address: str,
 ) -> dict[str, Any]:
     subject = act.material["required_subject"]
     return {
+        "book_reference": BOOK_CLAUSE,
         "result_identity": act.material["candidate_result_identity"],
         "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": responsibility.material["candidate_act"],
         "responsibility": responsibility.material["responsibility"],
         "responsibility_reference": _responsibility_reference(responsibility),
         "required_subject": deepcopy(subject),
-        "candidate_assertion": _candidate_assertion(responsibility, subject),
+        "candidate_assertion": _candidate_assertion(
+            responsibility, subject, candidate_subject_address
+        ),
         "applicability_result_occurrence_identity": act.material[
             "applicability_result_occurrence_identity"
         ],
@@ -802,42 +882,95 @@ def _candidate_result_material(
     }
 
 
-def _read_applicability_act(
+def _read_applicability_responsibility(
     ledger: EventLedger, event_address: Any
 ) -> tuple[Event, Event]:
+    event = _event(
+        ledger,
+        event_address,
+        message="Candidate production requires one Applicability Responsibility",
+    )
+    reference = event.material.get("candidate_responsibility_reference")
+    candidate_responsibility = _read_responsibility(
+        ledger,
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
+        else None,
+    )
+    position = event.material.get("subject_to_act_position")
+    subject = position.get("required_subject") if type(position) is dict else None
+    scope = event.material.get("scope")
+    addresses = {
+        "applicability_responsibility_subject_address": _address(
+            event.material.get("responsibility_subject_identity"),
+            "Applicability Responsibility requires one subject address",
+        ),
+        "applicability_scope_address": _address(
+            scope.get("address") if type(scope) is dict else None,
+            "Applicability Responsibility requires one Scope address",
+        ),
+    }
+    if (
+        subject not in _required_subjects(candidate_responsibility)
+        or event.locality_identity != candidate_responsibility.locality_identity
+        or event.material
+        != _applicability_responsibility_material(
+            candidate_responsibility, subject, addresses
+        )
+    ):
+        raise ValueError("Candidate Applicability Responsibility is not exact")
+    return event, candidate_responsibility
+
+
+def get_candidate_applicability_responsibility(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    return deepcopy(
+        _read_applicability_responsibility(ledger, event_identity)[0].material
+    )
+
+
+def _read_applicability_act(
+    ledger: EventLedger, event_address: Any
+) -> tuple[Event, Event, Event]:
     event = _event(
         ledger,
         event_address,
         message="Candidate production requires one Applicability Act occurrence",
     )
     reference = event.material.get("responsibility_reference")
-    responsibility = _read_responsibility(
-        ledger,
-        reference.get("recorded_occurrence_identity")
-        if type(reference) is dict
-        else None,
+    applicability_responsibility, candidate_responsibility = (
+        _read_applicability_responsibility(
+            ledger,
+            reference.get("recorded_occurrence_identity")
+            if type(reference) is dict
+            else None,
+        )
     )
     subject = event.material.get("required_subject")
     addresses = {
-        key: _address(event.material.get(key), "Candidate lifecycle address is not exact")
+        key: _address(
+            event.material.get(key), "Candidate lifecycle address is not exact"
+        )
         for key in (
             "applicability_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
-            "candidate_act_identity",
-            "candidate_act_occurrence_identity",
-            "candidate_result_identity",
         )
     }
     if (
-        subject not in _required_subjects(responsibility)
-        or event.locality_identity != responsibility.locality_identity
+        subject not in _required_subjects(candidate_responsibility)
+        or event.locality_identity != candidate_responsibility.locality_identity
         or event.material != _applicability_act_material(
-            responsibility, subject, addresses
+            applicability_responsibility, addresses
         )
     ):
         raise ValueError("Candidate Applicability Act occurrence is not exact")
-    return event, responsibility
+    ledger.occurrences_in_append_order(
+        (applicability_responsibility.identity, event.identity),
+        locality_identity=event.locality_identity,
+    )
+    return event, applicability_responsibility, candidate_responsibility
 
 
 def get_candidate_applicability_act(
@@ -883,19 +1016,19 @@ def get_candidate_yield_relation(
 
 def _read_applicability_result(
     ledger: EventLedger, event_address: Any
-) -> tuple[Event, Event, Event]:
+) -> tuple[Event, Event, Event, Event]:
     event = _event(
         ledger,
         event_address,
         message="Candidate production requires one Applicability result",
     )
     reference = event.material.get("responsibility_reference")
-    responsibility = _read_responsibility(
+    applicability_responsibility = _read_applicability_responsibility(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
-    )
+    )[0]
     applicability_acts = tuple(
         candidate
         for candidate in ledger.iter_locality_kind(
@@ -906,28 +1039,33 @@ def _read_applicability_result(
     )
     if len(applicability_acts) != 1:
         raise ValueError("Candidate Applicability result requires one exact Act")
-    act, exact_responsibility = _read_applicability_act(
-        ledger, applicability_acts[0].identity
-    )
-    if exact_responsibility.identity != responsibility.identity:
+    (
+        act,
+        exact_applicability_responsibility,
+        candidate_responsibility,
+    ) = _read_applicability_act(ledger, applicability_acts[0].identity)
+    if (
+        exact_applicability_responsibility.identity
+        != applicability_responsibility.identity
+    ):
         raise ValueError("Candidate Applicability result crosses Responsibilities")
     yield_relation = _read_yield_relation(
         ledger,
         event.material.get("yield_relation_occurrence_identity"),
-        responsibility=responsibility,
+        responsibility=applicability_responsibility,
         act_occurrence_address=act.material["applicability_act_occurrence_identity"],
         result_address=act.material["applicability_result_identity"],
         result_name="Applicability result",
     )
     if event.material != _applicability_result_material(
-        responsibility, act, yield_relation
+        applicability_responsibility, act, yield_relation
     ):
         raise ValueError("Candidate Applicability result is not exact")
     ledger.occurrences_in_append_order(
         (act.identity, yield_relation.identity, event.identity),
         locality_identity=event.locality_identity,
     )
-    return event, act, responsibility
+    return event, act, applicability_responsibility, candidate_responsibility
 
 
 def get_candidate_applicability_result(
@@ -944,11 +1082,25 @@ def _read_participation(
         event_address,
         message="Candidate production requires one Participation occurrence",
     )
-    applicability, applicability_act, responsibility = _read_applicability_result(
+    (
+        applicability,
+        applicability_act,
+        _applicability_responsibility,
+        responsibility,
+    ) = _read_applicability_result(
         ledger, event.material.get("applicability_result_occurrence_identity")
     )
+    second_subject = event.material.get("second_subject")
+    candidate_act_occurrence_address = _address(
+        second_subject.get("Act_occurrence")
+        if type(second_subject) is dict
+        else None,
+        "Candidate Participation requires one Candidate Act occurrence address",
+    )
     if event.material != _participation_material(
-        responsibility, applicability, applicability_act
+        responsibility,
+        applicability,
+        candidate_act_occurrence_address=candidate_act_occurrence_address,
     ):
         raise ValueError("Candidate Participation occurrence is not exact")
     ledger.occurrences_in_append_order(
@@ -977,8 +1129,22 @@ def _read_candidate_act(
             ledger, event.material.get("participation_relation_occurrence_identity")
         )
     )
+    addresses = {
+        "candidate_act_identity": _address(
+            event.material.get("candidate_act_identity"),
+            "Candidate Act requires one Act address",
+        ),
+        "candidate_act_occurrence_identity": _address(
+            event.material.get("act_occurrence_identity"),
+            "Candidate Act requires one occurrence address",
+        ),
+        "candidate_result_identity": _address(
+            event.material.get("candidate_result_identity"),
+            "Candidate Act requires one result address",
+        ),
+    }
     if event.material != _candidate_act_material(
-        responsibility, applicability, applicability_act, participation
+        responsibility, applicability, participation, addresses
     ):
         raise ValueError("Candidate Act occurrence is not exact")
     ledger.occurrences_in_append_order(
@@ -1026,7 +1192,15 @@ def _read_candidate_result(
         result_name="Candidate result",
     )
     if event.material != _candidate_result_material(
-        responsibility, act, yield_relation
+        responsibility,
+        act,
+        yield_relation,
+        candidate_subject_address=_address(
+            event.material.get("candidate_assertion", {}).get("subject_address")
+            if type(event.material.get("candidate_assertion")) is dict
+            else None,
+            "Candidate result requires one Candidate subject address",
+        ),
     ):
         raise ValueError("Candidate result is not exact")
     ledger.occurrences_in_append_order(
@@ -1052,12 +1226,21 @@ def candidate_assertion_from_result(
     )
 
 
-def candidate_responsibility_progress(
+def required_subjects_for_candidate_responsibility(
     ledger: EventLedger, *, responsibility_event_identity: str
-) -> CandidateResponsibilityProgress:
+) -> tuple[dict[str, Any], ...]:
+    responsibility = _read_responsibility(ledger, responsibility_event_identity)
+    return tuple(deepcopy(subject) for subject in _required_subjects(responsibility))
+
+
+def candidate_results_by_required_subject(
+    ledger: EventLedger, *, responsibility_event_identity: str
+) -> tuple[tuple[str, str], ...]:
     responsibility = _read_responsibility(ledger, responsibility_event_identity)
     required = _required_subjects(responsibility)
-    required_addresses = tuple(subject["candidate_address"] for subject in required)
+    required_addresses = tuple(
+        subject["required_subject_address"] for subject in required
+    )
     recorded: list[tuple[str, str]] = []
     for event in ledger.iter_locality_kind(
         responsibility.locality_identity, CANDIDATE_OCCURRENCE_STREAM
@@ -1069,39 +1252,63 @@ def candidate_responsibility_progress(
         )
         if result_responsibility.identity != responsibility.identity:
             continue
-        candidate_address = result.material["required_subject"]["candidate_address"]
-        recorded.append((candidate_address, result.identity))
+        required_subject_address = result.material["required_subject"][
+            "required_subject_address"
+        ]
+        recorded.append((required_subject_address, result.identity))
     recorded_addresses = tuple(address for address, _result in recorded)
     if len(recorded_addresses) != len(set(recorded_addresses)) or any(
         address not in required_addresses for address in recorded_addresses
     ):
         raise ValueError("Candidate Responsibility results cross its required subjects")
-    recorded_set = set(recorded_addresses)
-    return CandidateResponsibilityProgress(
-        required_candidate_addresses=required_addresses,
-        recorded_candidate_result_occurrences=tuple(
-            result for _address_value, result in recorded
-        ),
-        owed_candidate_addresses=tuple(
-            address for address in required_addresses if address not in recorded_set
-        ),
+    return tuple(recorded)
+
+
+def _required_subjects_without_result(
+    ledger: EventLedger, responsibility: Event
+) -> tuple[dict[str, Any], ...]:
+    recorded = {
+        subject_address
+        for subject_address, _result_address in candidate_results_by_required_subject(
+            ledger, responsibility_event_identity=responsibility.identity
+        )
+    }
+    return tuple(
+        subject
+        for subject in _required_subjects(responsibility)
+        if subject["required_subject_address"] not in recorded
     )
 
 
-def _record_one_candidate_result(
+def _record_candidate_result_for_subject(
     ledger: EventLedger, responsibility: Event, subject: dict[str, Any]
 ) -> Event:
+    subject_address = subject["required_subject_address"]
+    if subject_address not in {
+        required["required_subject_address"]
+        for required in _required_subjects_without_result(ledger, responsibility)
+    }:
+        raise ValueError(
+            "Candidate Responsibility already has a result for this required subject"
+        )
     addresses = _lifecycle_addresses()
     with ledger.batched():
+        applicability_responsibility = ledger.append(
+            CANDIDATE_OCCURRENCE_STREAM,
+            _applicability_responsibility_material(
+                responsibility, subject, addresses
+            ),
+            locality_identity=responsibility.locality_identity,
+        )
         applicability_act = ledger.append(
             CANDIDATE_OCCURRENCE_STREAM,
-            _applicability_act_material(responsibility, subject, addresses),
+            _applicability_act_material(applicability_responsibility, addresses),
             locality_identity=responsibility.locality_identity,
         )
         applicability_yield = ledger.append(
             CANDIDATE_OCCURRENCE_STREAM,
             _yield_relation_material(
-                responsibility,
+                applicability_responsibility,
                 act_occurrence_address=addresses[
                     "applicability_act_occurrence_identity"
                 ],
@@ -1113,14 +1320,20 @@ def _record_one_candidate_result(
         applicability = ledger.append(
             CANDIDATE_OCCURRENCE_STREAM,
             _applicability_result_material(
-                responsibility, applicability_act, applicability_yield
+                applicability_responsibility,
+                applicability_act,
+                applicability_yield,
             ),
             locality_identity=responsibility.locality_identity,
         )
         participation = ledger.append(
             CANDIDATE_OCCURRENCE_STREAM,
             _participation_material(
-                responsibility, applicability, applicability_act
+                responsibility,
+                applicability,
+                candidate_act_occurrence_address=addresses[
+                    "candidate_act_occurrence_identity"
+                ],
             ),
             locality_identity=responsibility.locality_identity,
         )
@@ -1129,8 +1342,8 @@ def _record_one_candidate_result(
             _candidate_act_material(
                 responsibility,
                 applicability,
-                applicability_act,
                 participation,
+                addresses,
             ),
             locality_identity=responsibility.locality_identity,
         )
@@ -1147,68 +1360,42 @@ def _record_one_candidate_result(
         result = ledger.append(
             CANDIDATE_OCCURRENCE_STREAM,
             _candidate_result_material(
-                responsibility, candidate_act, candidate_yield
+                responsibility,
+                candidate_act,
+                candidate_yield,
+                candidate_subject_address=addresses["candidate_subject_address"],
             ),
             locality_identity=responsibility.locality_identity,
         )
     return result
 
 
-def record_one_owed_candidate_result(
+def record_one_candidate_result(
     ledger: EventLedger, *, responsibility_event_identity: str
-) -> YieldedCandidateResult | None:
-    """Record one owed subject in source order, used only for durable serialization."""
+) -> Event | None:
+    """Record one still-unrecorded required subject in source order."""
 
     responsibility = _read_responsibility(ledger, responsibility_event_identity)
-    progress = candidate_responsibility_progress(
-        ledger, responsibility_event_identity=responsibility.identity
-    )
-    if not progress.owed_candidate_addresses:
+    required = _required_subjects_without_result(ledger, responsibility)
+    if not required:
         return None
-    owed_address = progress.owed_candidate_addresses[0]
-    subject = next(
-        subject
-        for subject in _required_subjects(responsibility)
-        if subject["candidate_address"] == owed_address
-    )
-    result = _record_one_candidate_result(ledger, responsibility, subject)
-    return YieldedCandidateResult(
-        result_occurrence=result,
-        progress=candidate_responsibility_progress(
-            ledger, responsibility_event_identity=responsibility.identity
-        ),
+    return _record_candidate_result_for_subject(
+        ledger, responsibility, required[0]
     )
 
 
 def yield_candidate_results(
     ledger: EventLedger, *, responsibility_event_identity: str
-) -> Iterator[YieldedCandidateResult]:
-    """Yield control after each exact result while preserving every owed subject."""
+) -> Iterator[Event]:
+    """Reread exact required subjects and results after every Yield."""
 
-    responsibility = _read_responsibility(ledger, responsibility_event_identity)
-    required = _required_subjects(responsibility)
-    initial = candidate_responsibility_progress(
-        ledger, responsibility_event_identity=responsibility.identity
-    )
-    owed = set(initial.owed_candidate_addresses)
-    owed_subjects = tuple(
-        subject for subject in required if subject["candidate_address"] in owed
-    )
-    recorded = list(initial.recorded_candidate_result_occurrences)
-    for position, subject in enumerate(owed_subjects):
-        result = _record_one_candidate_result(ledger, responsibility, subject)
-        recorded.append(result.identity)
-        yield YieldedCandidateResult(
-            result_occurrence=result,
-            progress=CandidateResponsibilityProgress(
-                required_candidate_addresses=initial.required_candidate_addresses,
-                recorded_candidate_result_occurrences=tuple(recorded),
-                owed_candidate_addresses=tuple(
-                    later["candidate_address"]
-                    for later in owed_subjects[position + 1 :]
-                ),
-            ),
+    while True:
+        yielded = record_one_candidate_result(
+            ledger, responsibility_event_identity=responsibility_event_identity
         )
+        if yielded is None:
+            return
+        yield yielded
 
 
 def record_one_source_and_ordered_pair_candidate_responsibilities(

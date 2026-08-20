@@ -3,23 +3,31 @@ import inspect
 
 import pytest
 
+import seed_runtime.candidate_results_from_exact_result_assertions as candidate_module
 from seed_runtime.candidate_results_from_exact_result_assertions import (
+    ACT_BOOK_CLAUSE,
     APPLICABILITY_ACT,
+    APPLICABILITY_BOOK_CLAUSE,
+    APPLICABILITY_RESPONSIBILITY,
+    BOOK_CLAUSE,
     CANDIDATE_OCCURRENCE_STREAM,
     ONE_SOURCE_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_ACT,
+    boundaries_of_recorded_candidate_result,
     candidate_assertion_from_result,
-    candidate_responsibility_progress,
+    candidate_results_by_required_subject,
     get_candidate_act,
     get_candidate_applicability_act,
+    get_candidate_applicability_responsibility,
     get_candidate_applicability_result,
     get_candidate_participation,
     get_candidate_responsibility,
     get_candidate_yield_relation,
     get_recorded_candidate_result,
-    record_one_owed_candidate_result,
+    record_one_candidate_result,
     record_one_source_candidate_responsibility,
     record_ordered_pair_candidate_responsibility,
+    required_subjects_for_candidate_responsibility,
     source_assertion_references_through_boundary,
     yield_candidate_results,
 )
@@ -74,22 +82,33 @@ def test_source_read_preserves_every_exact_assertion_coordinate_in_order():
     )
 
 
-def test_one_candidate_yields_while_its_responsibility_still_owes_subjects():
+def test_one_candidate_yields_while_required_subjects_remain_unrecorded():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
 
-    yielded = record_one_owed_candidate_result(
+    yielded = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
 
     assert yielded is not None
-    assert len(yielded.progress.required_candidate_addresses) == 4
-    assert yielded.progress.recorded_candidate_result_occurrences == (
-        yielded.result_occurrence.identity,
+    required = required_subjects_for_candidate_responsibility(
+        ledger, responsibility_event_identity=responsibility.identity
     )
-    assert len(yielded.progress.owed_candidate_addresses) == 3
+    recorded = candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert len(required) == 4
+    assert recorded == (
+        (
+            yielded.material["required_subject"][
+                "required_subject_address"
+            ],
+            yielded.identity,
+        ),
+    )
+    assert len(required) - len(recorded) == 3
     material = get_recorded_candidate_result(
-        ledger, yielded.result_occurrence.identity
+        ledger, yielded.identity
     )
     assert "candidate_assertion" in material
     assert "candidate_assertions" not in material
@@ -107,30 +126,36 @@ def test_another_responsibility_can_begin_before_the_first_is_exhausted():
         source_append_boundary=source_boundary,
         recording_locality_identity="first candidate road",
     )
-    first_yield = record_one_owed_candidate_result(
+    first_yield = record_one_candidate_result(
         ledger, responsibility_event_identity=first.identity
     )
     assert first_yield is not None
-    assert first_yield.progress.owed_candidate_addresses
+    assert len(candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=first.identity
+    )) == 1
 
     second = record_one_source_candidate_responsibility(
         ledger,
         source_append_boundary=source_boundary,
         recording_locality_identity="second candidate road",
     )
-    second_yield = record_one_owed_candidate_result(
+    second_yield = record_one_candidate_result(
         ledger, responsibility_event_identity=second.identity
     )
 
     assert second_yield is not None
-    assert first_yield.progress.owed_candidate_addresses
-    assert second_yield.progress.owed_candidate_addresses
+    assert len(candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=first.identity
+    )) == 1
+    assert len(candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=second.identity
+    )) == 1
 
 
-def test_resuming_one_responsibility_exhausts_every_owed_subject_once():
+def test_resuming_one_responsibility_records_every_required_subject_once():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
-    first = record_one_owed_candidate_result(
+    first = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert first is not None
@@ -140,15 +165,19 @@ def test_resuming_one_responsibility_exhausts_every_owed_subject_once():
             ledger, responsibility_event_identity=responsibility.identity
         )
     )
-    final = candidate_responsibility_progress(
+    required = required_subjects_for_candidate_responsibility(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    recorded = candidate_results_by_required_subject(
         ledger, responsibility_event_identity=responsibility.identity
     )
 
     assert len(later) == 3
-    assert final.owed_candidate_addresses == ()
-    assert len(final.recorded_candidate_result_occurrences) == 4
-    assert len(set(final.recorded_candidate_result_occurrences)) == 4
-    assert record_one_owed_candidate_result(
+    assert len(recorded) == len(required)
+    result_occurrences = tuple(result for _subject, result in recorded)
+    assert len(result_occurrences) == 4
+    assert len(set(result_occurrences)) == 4
+    assert record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     ) is None
 
@@ -156,12 +185,12 @@ def test_resuming_one_responsibility_exhausts_every_owed_subject_once():
 def test_each_subject_has_its_own_applicability_participation_act_yield_and_result():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
-    yielded = record_one_owed_candidate_result(
+    yielded = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert yielded is not None
 
-    result = get_recorded_candidate_result(ledger, yielded.result_occurrence.identity)
+    result = get_recorded_candidate_result(ledger, yielded.identity)
     applicability = get_candidate_applicability_result(
         ledger, result["applicability_result_occurrence_identity"]
     )
@@ -171,6 +200,13 @@ def test_each_subject_has_its_own_applicability_participation_act_yield_and_resu
         if event.material.get("applicability_result_identity")
         == applicability["result_identity"]
         and event.material.get("act") == APPLICABILITY_ACT
+    )
+    applicability_responsibility = next(
+        event
+        for event in ledger.iter_locality_kind(
+            "candidate", CANDIDATE_OCCURRENCE_STREAM
+        )
+        if event.material.get("responsibility") == APPLICABILITY_RESPONSIBILITY
     )
     participation = get_candidate_participation(
         ledger, result["participation_relation_occurrence_identity"]
@@ -183,6 +219,9 @@ def test_each_subject_has_its_own_applicability_participation_act_yield_and_resu
     )
 
     get_candidate_responsibility(ledger, responsibility.identity)
+    get_candidate_applicability_responsibility(
+        ledger, applicability_responsibility.identity
+    )
     get_candidate_applicability_act(ledger, applicability_act.identity)
     get_candidate_act(ledger, candidate_act.identity)
     get_candidate_yield_relation(
@@ -193,9 +232,159 @@ def test_each_subject_has_its_own_applicability_participation_act_yield_and_resu
     assert participation["second_subject"] == {
         "Act_occurrence": result["act_occurrence_identity"]
     }
+    assert applicability_act.material["responsibility"] == (
+        APPLICABILITY_RESPONSIBILITY
+    )
+    assert candidate_act.material["responsibility"] != APPLICABILITY_RESPONSIBILITY
+    assert applicability_act.material["authority"] != candidate_act.material[
+        "authority"
+    ]
+    assert applicability_act.material["scope"] != candidate_act.material["scope"]
+    assert set(result["required_subject"]) == {
+        "required_subject_address",
+        "position",
+        "role",
+        "source_assertion_references",
+    }
+    assert result["required_subject"]["required_subject_address"] != result[
+        "candidate_assertion"
+    ]["subject_address"]
 
 
-def test_ordered_pair_responsibility_owes_each_distinct_ordered_pair():
+def test_shared_storage_stream_preserves_each_occurrence_book_coordinate():
+    ledger = EventLedger()
+    responsibility = _one_source_responsibility(ledger)
+    yielded = record_one_candidate_result(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert yielded is not None
+
+    events = tuple(
+        ledger.iter_locality_kind("candidate", CANDIDATE_OCCURRENCE_STREAM)
+    )
+    assert len(events) == 9
+    for event in events:
+        material = event.material
+        if material.get("relation") == "yield":
+            assert material["book_reference"] == ACT_BOOK_CLAUSE
+        elif (
+            material.get("responsibility") == APPLICABILITY_RESPONSIBILITY
+            or material.get("act") == APPLICABILITY_ACT
+            or material.get("exact_act") == APPLICABILITY_ACT
+            or material.get("relation") == "participation"
+        ):
+            assert material["book_reference"] == APPLICABILITY_BOOK_CLAUSE
+        else:
+            assert material["book_reference"] == BOOK_CLAUSE
+
+
+def test_generator_rereads_required_subjects_and_results_after_yielding_control():
+    ledger = EventLedger()
+    responsibility = _one_source_responsibility(ledger)
+    generated = yield_candidate_results(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+
+    first = next(generated)
+    interleaved = record_one_candidate_result(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert interleaved is not None
+    resumed = next(generated)
+    completed = tuple(generated)
+
+    result_subjects = tuple(
+        subject
+        for subject, _result in candidate_results_by_required_subject(
+            ledger, responsibility_event_identity=responsibility.identity
+        )
+    )
+    assert len(result_subjects) == len(set(result_subjects)) == 4
+    assert first.identity != interleaved.identity
+    assert resumed.identity != interleaved.identity
+    assert len(completed) == 1
+
+
+def test_second_result_for_one_required_subject_is_refused_before_append():
+    ledger = EventLedger()
+    responsibility = _one_source_responsibility(ledger)
+    yielded = record_one_candidate_result(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert yielded is not None
+    exact_responsibility = candidate_module._read_responsibility(
+        ledger, responsibility.identity
+    )
+    subject = candidate_module._required_subjects(exact_responsibility)[0]
+    boundary = ledger.append_boundary()
+
+    with pytest.raises(
+        ValueError,
+        match="already has a result for this required subject",
+    ):
+        candidate_module._record_candidate_result_for_subject(
+            ledger, exact_responsibility, subject
+        )
+
+    assert ledger.append_boundary() == boundary
+
+
+def test_candidate_result_preserves_distinct_source_result_boundaries_and_localities():
+    ledger = EventLedger()
+    responsibility = _one_source_responsibility(
+        ledger, locality="candidate locality"
+    )
+    yielded = record_one_candidate_result(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert yielded is not None
+
+    result = get_recorded_candidate_result(ledger, yielded.identity)
+    boundaries = boundaries_of_recorded_candidate_result(
+        ledger, yielded.identity
+    )
+    source_reference = result["required_subject"][
+        "source_assertion_references"
+    ][0]
+
+    assert boundaries["source_ledger_boundary"] != boundaries[
+        "candidate_result_ledger_boundary"
+    ]
+    assert source_reference["source_locality_identity"] == "source"
+    assert yielded.locality_identity == "candidate locality"
+    assert result["candidate_assertion"]["Authority"] == result["authority"]
+    assert result["candidate_assertion"]["Authority"] != source_reference[
+        "source_assertion_coordinates"
+    ]["Authority"]
+
+
+def test_yielded_candidate_is_an_exact_subject_read_at_a_later_source_boundary():
+    ledger = EventLedger()
+    responsibility = _one_source_responsibility(ledger)
+    yielded = record_one_candidate_result(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    assert yielded is not None
+    later_boundary = ledger.append_boundary()
+
+    references = source_assertion_references_through_boundary(
+        ledger, source_append_boundary=later_boundary
+    )
+    candidate_references = tuple(
+        reference
+        for reference in references
+        if reference["recorded_result_occurrence_identity"]
+        == yielded.identity
+    )
+    assert tuple(
+        reference["assertion_coordinate"] for reference in candidate_references
+    ) == ("result", "candidate_assertion")
+    assert candidate_references[1]["assertion_identity"] == (
+        yielded.material["candidate_assertion"]["subject_address"]
+    )
+
+
+def test_ordered_pair_responsibility_requires_each_distinct_ordered_pair():
     ledger = EventLedger()
     _source(ledger, exact_bytes=b"a")
     boundary = ledger.append_boundary()
@@ -208,10 +397,10 @@ def test_ordered_pair_responsibility_owes_each_distinct_ordered_pair():
         recording_locality_identity="pairs",
     )
 
-    progress = candidate_responsibility_progress(
+    required_subjects = required_subjects_for_candidate_responsibility(
         ledger, responsibility_event_identity=responsibility.identity
     )
-    assert len(progress.required_candidate_addresses) == len(references) * (
+    assert len(required_subjects) == len(references) * (
         len(references) - 1
     )
 
@@ -226,7 +415,7 @@ def test_ordered_pair_responsibility_owes_each_distinct_ordered_pair():
                 reference["recorded_result_occurrence_identity"],
                 reference["assertion_coordinate"],
             )
-            for reference in item.result_occurrence.material["required_subject"][
+            for reference in item.material["required_subject"][
                 "source_assertion_references"
             ]
         )
@@ -235,7 +424,7 @@ def test_ordered_pair_responsibility_owes_each_distinct_ordered_pair():
     assert all(first != second for first, second in pairs)
     assert len(pairs) == len(set(pairs))
     assert all(
-        item.result_occurrence.material["exact_act"] == ORDERED_PAIR_CANDIDATE_ACT
+        item.material["exact_act"] == ORDERED_PAIR_CANDIDATE_ACT
         for item in yielded
     )
 
@@ -249,14 +438,14 @@ def test_source_boundary_is_frozen_when_later_sources_arrive():
         source_append_boundary=boundary,
         recording_locality_identity="candidate",
     )
-    required_before = candidate_responsibility_progress(
+    required_before = required_subjects_for_candidate_responsibility(
         ledger, responsibility_event_identity=responsibility.identity
-    ).required_candidate_addresses
+    )
 
     _source(ledger, locality="later", exact_bytes=b"bc")
-    required_after = candidate_responsibility_progress(
+    required_after = required_subjects_for_candidate_responsibility(
         ledger, responsibility_event_identity=responsibility.identity
-    ).required_candidate_addresses
+    )
 
     assert required_after == required_before
 
@@ -264,7 +453,7 @@ def test_source_boundary_is_frozen_when_later_sources_arrive():
 def test_candidate_result_is_available_to_bounded_replay_without_positive_standing():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
-    yielded = record_one_owed_candidate_result(
+    yielded = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert yielded is not None
@@ -273,8 +462,8 @@ def test_candidate_result_is_available_to_bounded_replay_without_positive_standi
         ledger, locality_identity="candidate"
     )
 
-    assert yielded.result_occurrence.identity in replay["candidate_result_occurrences"]
-    result = get_recorded_candidate_result(ledger, yielded.result_occurrence.identity)
+    assert yielded.identity in replay["candidate_result_occurrences"]
+    result = get_recorded_candidate_result(ledger, yielded.identity)
     assert "standing" not in result
     assert "standing_occurrence_identity" not in result
     assert "standing_responsibility_reference" not in result
@@ -283,60 +472,73 @@ def test_candidate_result_is_available_to_bounded_replay_without_positive_standi
 def test_candidate_assertion_is_independently_readable_from_one_result():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
-    yielded = record_one_owed_candidate_result(
+    yielded = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert yielded is not None
 
     assertion = candidate_assertion_from_result(
-        ledger, candidate_result_event_identity=yielded.result_occurrence.identity
+        ledger, candidate_result_event_identity=yielded.identity
     )
 
-    assert assertion == yielded.result_occurrence.material["candidate_assertion"]
+    assert assertion == yielded.material["candidate_assertion"]
     assert assertion["relation"] == "Unknown"
 
 
-def test_record_one_owed_candidate_accepts_no_caller_subject_choice():
-    parameters = inspect.signature(record_one_owed_candidate_result).parameters
+def test_record_one_candidate_accepts_no_caller_subject_choice():
+    parameters = inspect.signature(
+        record_one_candidate_result
+    ).parameters
     assert tuple(parameters) == ("ledger", "responsibility_event_identity")
 
 
-def test_sqlite_reopen_preserves_owed_work_and_resumes_it(tmp_path):
+def test_sqlite_reopen_preserves_unrecorded_work_and_resumes_it(tmp_path):
     database = str(tmp_path / "candidate.sqlite")
     ledger = SQLiteEventLedger(database)
     responsibility = _one_source_responsibility(ledger)
-    first = record_one_owed_candidate_result(
+    first = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert first is not None
-    before = first.progress
+    before_required = required_subjects_for_candidate_responsibility(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
+    before_recorded = candidate_results_by_required_subject(
+        ledger, responsibility_event_identity=responsibility.identity
+    )
     ledger.close()
 
     reopened = SQLiteEventLedger(database)
-    after = candidate_responsibility_progress(
+    after_required = required_subjects_for_candidate_responsibility(
         reopened, responsibility_event_identity=responsibility.identity
     )
-    assert after == before
+    after_recorded = candidate_results_by_required_subject(
+        reopened, responsibility_event_identity=responsibility.identity
+    )
+    assert after_required == before_required
+    assert after_recorded == before_recorded
     resumed = tuple(
         yield_candidate_results(
             reopened, responsibility_event_identity=responsibility.identity
         )
     )
-    assert len(resumed) == len(before.owed_candidate_addresses)
-    assert resumed[-1].progress.owed_candidate_addresses == ()
+    assert len(resumed) == len(before_required) - len(before_recorded)
+    assert len(candidate_results_by_required_subject(
+        reopened, responsibility_event_identity=responsibility.identity
+    )) == len(before_required)
 
 
 def test_changed_candidate_result_is_refused():
     ledger = EventLedger()
     responsibility = _one_source_responsibility(ledger)
-    yielded = record_one_owed_candidate_result(
+    yielded = record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     )
     assert yielded is not None
-    original = deepcopy(yielded.result_occurrence.material["candidate_assertion"])
-    yielded.result_occurrence.material["candidate_assertion"]["relation"] = "same"
+    original = deepcopy(yielded.material["candidate_assertion"])
+    yielded.material["candidate_assertion"]["relation"] = "same"
 
     with pytest.raises(ValueError, match="Candidate result is not exact"):
-        get_recorded_candidate_result(ledger, yielded.result_occurrence.identity)
+        get_recorded_candidate_result(ledger, yielded.identity)
 
     assert original["relation"] == "Unknown"

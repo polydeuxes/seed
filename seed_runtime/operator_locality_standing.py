@@ -202,10 +202,12 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
 )
 from seed_runtime.candidate_results_from_exact_result_assertions import (
     APPLICABILITY_ACT as CANDIDATE_APPLICABILITY_ACT,
+    APPLICABILITY_RESPONSIBILITY as CANDIDATE_APPLICABILITY_RESPONSIBILITY,
     CANDIDATE_OCCURRENCE_STREAM,
     ONE_SOURCE_CANDIDATE_ACT,
     ORDERED_PAIR_CANDIDATE_ACT,
     get_candidate_responsibility,
+    get_candidate_applicability_responsibility,
     get_candidate_applicability_act,
     get_candidate_applicability_result,
     get_candidate_participation,
@@ -1837,7 +1839,15 @@ def advance_operator_locality_standing(
         if event.kind == CANDIDATE_OCCURRENCE_STREAM:
             candidate_coordinates = event.material
             if "responsibility_subject_identity" in candidate_coordinates:
-                get_candidate_responsibility(ledger, event.identity)
+                if (
+                    candidate_coordinates.get("responsibility")
+                    == CANDIDATE_APPLICABILITY_RESPONSIBILITY
+                ):
+                    get_candidate_applicability_responsibility(
+                        ledger, event.identity
+                    )
+                else:
+                    get_candidate_responsibility(ledger, event.identity)
                 continue
             if type(candidate_coordinates.get("candidate_assertion")) is dict:
                 get_recorded_candidate_result(ledger, event.identity)

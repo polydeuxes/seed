@@ -103,7 +103,7 @@ def _runtime_event_kinds() -> dict[str, list[str]]:
     return found
 
 
-def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
+def _legacy_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
     found: dict[str, list[tuple[str, str]]] = {}
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
@@ -126,6 +126,60 @@ def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
                 if kind is not None and clause is not None:
                     found.setdefault(kind, []).append((path.name, clause))
     return found
+
+
+def _event_material_book_references() -> dict[str, list[tuple[str, str]]]:
+    """Read constitutional ownership from each occurrence's exact material."""
+
+    found: dict[str, list[tuple[str, str]]] = {}
+    for path, tree in _runtime_trees():
+        constants = _module_strings(tree)
+        functions = _module_functions(tree)
+        for scope in _scopes(tree):
+            named_dicts = _named_dicts(scope)
+            for call in (
+                node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
+            ):
+                if not (
+                    isinstance(call.func, ast.Attribute)
+                    and call.func.attr == "append"
+                    and len(call.args) >= 2
+                ):
+                    continue
+                kind, material = call.args[0], call.args[1]
+                value = constants.get(kind.id) if isinstance(kind, ast.Name) else None
+                if isinstance(kind, ast.Constant) and isinstance(kind.value, str):
+                    value = kind.value
+                resolved = _resolved_material_dict(
+                    material,
+                    line=call.lineno,
+                    named=named_dicts,
+                    functions=functions,
+                )
+                if value is None or resolved is None:
+                    continue
+                book_reference = _resolved_string(
+                    _dict_value(resolved, "book_reference"), constants
+                )
+                if book_reference is not None:
+                    found.setdefault(value, []).append(
+                        (path.name, book_reference)
+                    )
+    return {
+        stream: sorted(set(references))
+        for stream, references in found.items()
+    }
+
+
+def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
+    """Prefer carried Book references over storage-stream declarations."""
+
+    legacy = _legacy_event_kind_responsibilities()
+    carried = _event_material_book_references()
+    return {
+        stream: carried.get(stream, declarations)
+        for stream, declarations in (legacy | carried).items()
+    }
 
 
 def _dict_value(node: ast.Dict, coordinate: str) -> ast.expr | None:
@@ -614,20 +668,29 @@ def test_every_runtime_event_kind_declares_its_witness_grammar_responsibility():
     )
 
 
-def test_each_event_kind_responsibility_names_one_witness_grammar_clause():
+def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     accounted = _runtime_event_kind_responsibilities()
-    duplicate = {
-        kind: values for kind, values in accounted.items() if len(values) != 1
-    }
-    assert duplicate == {}, f"event species declare several responsibilities: {duplicate}"
-    clauses = set(grammar["clause_coordinates"])
+    clauses = set(
+        grammar.get("book_coordinates", grammar.get("clause_coordinates", {}))
+    )
     unknown = {
-        kind: values[0]
+        kind: values
         for kind, values in accounted.items()
-        if values[0][1] not in clauses
+        if any(clause not in clauses for _path, clause in values)
     }
-    assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
+    assert unknown == {}, f"occurrences name absent grammar clauses: {unknown}"
+
+
+def test_one_storage_stream_may_carry_several_constitutional_coordinates():
+    references = _runtime_event_kind_responsibilities()[
+        "operator.candidate.occurred"
+    ]
+    assert {clause for _path, clause in references} == {
+        "01.Source.E.1",
+        "01.Standing.E.1",
+        "02.Acts.A",
+    }
 
 
 def test_each_live_assertion_responsibility_has_one_clause_declaration():
@@ -743,9 +806,9 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
 
 def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses():
     event_clauses = {
-        values[0][1]
+        clause
         for values in _runtime_event_kind_responsibilities().values()
-        if len(values) == 1
+        for _path, clause in values
     }
     assertion_clauses = {
         values[0][1]
@@ -1197,8 +1260,9 @@ FIDELITY_SUBJECTS = {
     "event_kind_grammar_responsibility": (
         test_every_runtime_event_kind_declares_its_witness_grammar_responsibility,
     ),
-    "event_kind_responsibility_clause": (
-        test_each_event_kind_responsibility_names_one_witness_grammar_clause,
+    "recorded_occurrence_book_reference": (
+        test_each_recorded_occurrence_reference_names_a_witness_grammar_clause,
+        test_one_storage_stream_may_carry_several_constitutional_coordinates,
     ),
     "assertion_responsibility_clause_declarations": (
         test_each_live_assertion_responsibility_has_one_clause_declaration,
