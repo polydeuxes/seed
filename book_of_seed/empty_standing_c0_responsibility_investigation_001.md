@@ -344,7 +344,7 @@ unestablished
 
 The runtime labels C0 as a bounded Representation of the exact empty Locality
 Standing boundary.  The runtime result names that content after the host
-begins the call.  The label establishes no represented relation.
+begins the call.  The label does not populate the generic relation position.
 
 The active Book does not establish:
 
