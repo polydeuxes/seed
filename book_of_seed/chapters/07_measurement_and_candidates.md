@@ -30,14 +30,19 @@ other occurrence.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
-One declared Measurement Responsibility for one exact source-byte position
-reference in the material acquisition Yield result is a branch of current
-Standing carrying one exact byte-pair position Measurement result.
+Each exact source-byte position reference in the material acquisition Yield
+result is the subject of an exact declared Measurement Responsibility branch
+of current Standing carrying the exact byte-pair position Measurement result.
+The bounded subject set is exhaustive.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
 preserves every exact pair-position reference for that byte occurrence in source occurrence order.
 It preserves no reference for another byte occurrence.
+
+A result for one subject requires no completion of another subject for later
+Responsibility. The exhaustive bounded subject set establishes no order for
+another Responsibility.
 
 ### 01.Source.E — Candidate preservation
 

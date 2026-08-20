@@ -182,6 +182,8 @@
     "01.Source.D.2": {
       "subject": "addressed_byte_occurrence_reference",
       "Responsibility": "addressed_byte_occurrence_reference_Measurement",
+      "responsibility_source": "current_Standing_carrying_exact_byte_pair_position_Measurement_result",
+      "responsibility_subject_set": "exhaustive_bounded_source_byte_position_reference_set",
       "exact_Act": "Measurement",
       "result": "addressed_byte_occurrence_reference_result"
     },
@@ -282,6 +284,14 @@
       "Responsibility": "exact_movement",
       "exact_Act": "movement",
       "result": "exact_movement_result"
+    },
+    "04.Compare": {
+      "subject": "exact_Compare_subjects",
+      "Responsibility": "compare_exact_subjects_under_exact_rule",
+      "exact_Act": "Compare",
+      "input": ["Applicability_result", "participation_relation_occurrence"],
+      "relations": ["participation", "yield"],
+      "result": "exact_Compare_result"
     },
     "04.Compare.A": {
       "subject": "recorded_pair_findings",

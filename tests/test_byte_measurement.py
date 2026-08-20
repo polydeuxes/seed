@@ -1750,6 +1750,10 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
         output_stream=StringIO(),
     )
     source = _byte_source(ledger)
+    recorded_before = sum(
+        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        for event in ledger.list()
+    )
     ledger.callback_boundary = boundary
 
     with pytest.raises(ByteMeasurementError, match=message):
@@ -1760,10 +1764,10 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
         )
 
     assert ledger.callback_recorded is True
-    assert not any(
+    assert sum(
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
-    )
+    ) == recorded_before
 
 
 def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts():
@@ -1931,6 +1935,10 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
 
     ledger = _ledger("abab\n")
     source = _byte_source(ledger)
+    recorded_before = sum(
+        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        for event in ledger.list()
+    )
     original = byte_measurement._acquired_bytes
     callback_recorded = False
 
@@ -1963,10 +1971,10 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
         )
 
     assert callback_recorded is True
-    assert not any(
+    assert sum(
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
-    )
+    ) == recorded_before
 
 
 def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():

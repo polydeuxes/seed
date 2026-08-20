@@ -825,19 +825,23 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
         determination_result_event_identity,
         "shared-position assignment requires one exact D.2 determination result",
     )
+    current = locality_standing
     result, inputs = _d2_result_inputs(
         ledger,
         result_event_identity=result_identity,
-        prior_standing=locality_standing,
+        prior_standing=current,
     )
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
-    )
-
-    current = read_operator_locality_standing(
-        ledger, locality_identity=result.locality_identity
-    )
-    if locality_standing != current:
+    boundary = current.get("through_event_occurrence_identity")
+    boundary_event = ledger.get(boundary) if type(boundary) is str else None
+    if (
+        current != locality_standing
+        or current.get("locality_identity") != result.locality_identity
+        or boundary_event is None
+        or boundary_event.locality_identity != result.locality_identity
+        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(boundary_event.identity)
+        != ledger.append_boundary()
+    ):
         raise SharedPairPositionError(
             "shared-position assignment requires exact current Standing"
         )
@@ -847,7 +851,10 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
         prior_standing=current,
     )
     result_material = deepcopy(result.material)
-    current_snapshot = deepcopy(current)
+    current_boundary = current.get("through_event_occurrence_identity")
+    carried_result_reference = deepcopy(
+        current.get("measurement_occurrences", {}).get(result.identity)
+    )
     boundary = _require_exact_d2_result_standing(
         ledger,
         result=result,
@@ -870,15 +877,15 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
         result_read != result
         or result.material != result_material
         or inputs_read != inputs
-        or current != current_snapshot
-        or locality_standing != current_snapshot
-        or current_snapshot.get("through_event_occurrence_identity") != boundary
+        or current.get("through_event_occurrence_identity") != current_boundary
+        or current_boundary != boundary
         or boundary_event is None
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
         or ledger.append_boundary_through_occurrence(boundary_event.identity)
         != ledger.append_boundary()
-        or current_snapshot.get("measurement_occurrences", {}).get(result.identity)
-        != _determination_result_reference(result)
+        or current.get("measurement_occurrences", {}).get(result.identity)
+        != carried_result_reference
+        or carried_result_reference != _determination_result_reference(result)
     ):
         raise SharedPairPositionError(
             "D.2 determination result or current Standing changed before assignment"
@@ -2286,7 +2293,10 @@ def get_recorded_shared_position_measurement(
 
 
 def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Read one path Assertion beside its two input Assertion representations.
 
@@ -2294,7 +2304,9 @@ def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
     Returning them beside the path establishes no material carried by the path.
     """
 
-    reading = get_recorded_shared_position_measurement(ledger, event_identity)
+    reading = get_recorded_shared_position_measurement(
+        ledger, event_identity, prior_standing=prior_standing
+    )
     assertions = reading.get("assertions")
     first = reading.get("first_position_assertion")
     second = reading.get("second_position_assertion")
@@ -2313,7 +2325,10 @@ def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
 
 
 def ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_standing: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
     """Read three exact source-position coordinates beside one path Assertion.
 
@@ -2324,7 +2339,7 @@ def ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
 
     path, first, second = (
         ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
-            ledger, event_identity
+            ledger, event_identity, prior_standing=prior_standing
         )
     )
     first_position = first.get("first_position_coordinate_reference")

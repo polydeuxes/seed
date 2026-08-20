@@ -99,6 +99,12 @@ from seed_runtime.occurrence_position_measurement import (
     _record_occurrence_position_measurement_result_from_carried_act_evidence,
     measure_occurrence_position,
 )
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
+from seed_runtime.ordered_path_source_position_continuation import (
+    yield_ordered_path_source_position_continuations,
+)
 from seed_runtime.declared_measurement_responsibilities import (
     _record_declared_measurements_from_carried_bounded_locality_replay,
 )
@@ -341,9 +347,22 @@ def _record_occurrence_position_after_declared_measurements(
         raise ValueError(
             "one exact-byte Measurement is required after this responsible boundary"
         )
+    standing = recorded.bounded_locality_replay
+    direct_measurements = tuple(
+        event
+        for event in recorded.result_occurrences
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
+    for direct_measurement in direct_measurements:
+        for continuation in yield_ordered_path_source_position_continuations(
+            ledger,
+            direct_result_event_identity=direct_measurement.identity,
+            locality_standing=standing,
+        ):
+            standing = continuation.locality_standing
     standing = _record_occurrence_position_measurement(
         ledger,
-        recorded.bounded_locality_replay,
+        standing,
         locality_identity=locality_identity,
     )
     return standing, byte_measurements[0]

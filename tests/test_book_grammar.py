@@ -32,7 +32,7 @@ def _active_book() -> str:
 def _book_coordinates() -> set[str]:
     return set(
         re.findall(
-            r"^### ([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+) ",
+            r"^### ([0-9]+\.[A-Za-z]+(?:\.[A-Za-z0-9.]+)?) ",
             _active_book(),
             re.MULTILINE,
         )
@@ -170,6 +170,23 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
     assert candidate_compare["Participation"]["subject"] == candidate_compare[
         "subject"
     ]
+
+
+def test_addressed_position_responsibility_owns_the_bounded_subject_set():
+    measurement = _grammar()["book_coordinates"]["01.Source.D.2"]
+    chapter = (
+        CHAPTERS / "07_measurement_and_candidates.md"
+    ).read_text(encoding="utf-8")
+
+    assert measurement["responsibility_source"] == (
+        "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
+    )
+    assert measurement["responsibility_subject_set"] == (
+        "exhaustive_bounded_source_byte_position_reference_set"
+    )
+    assert (
+        "The bounded subject set is exhaustive."
+    ) in chapter
 
 
 def test_candidate_production_owns_completeness_without_a_result_barrier():

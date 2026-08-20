@@ -1716,6 +1716,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     direct_result_event_identity: str,
     addressed_source_byte_position_coordinate_reference: dict[str, Any],
     locality_standing: dict[str, Any],
+    mutate_locality_standing: bool = False,
 ) -> tuple[dict[str, Any], Event]:
     """Record one D.2 lifecycle while carrying its exact stage readings."""
 
@@ -1726,7 +1727,11 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("determination lifecycle requires one EventLedger")
-    standing = deepcopy(locality_standing)
+    standing = (
+        locality_standing
+        if mutate_locality_standing
+        else deepcopy(locality_standing)
+    )
     locality_identity = standing.get("locality_identity")
     boundary = standing.get("through_event_occurrence_identity")
     source_result, references = _source(

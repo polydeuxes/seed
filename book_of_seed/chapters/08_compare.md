@@ -1,5 +1,7 @@
 # Compare
 
+### 04.Compare — Exact subjects
+
 A Compare Responsibility carries its exact subjects, rule, Authority, Scope,
 Locality, limits, conflicts, and Unknown. Each subject requires its exact
 Applicability result and Participation relation to the Compare Act occurrence.

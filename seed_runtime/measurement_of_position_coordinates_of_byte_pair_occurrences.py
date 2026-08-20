@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import TYPE_CHECKING, Any, NamedTuple
+from contextlib import contextmanager
+from contextvars import ContextVar
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Iterator, NamedTuple
 
 if TYPE_CHECKING:
     from seed_runtime.byte_measurement import (
@@ -43,6 +46,22 @@ BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND = (
     "recording_occurrence_of_result"
 )
 RESULT_KIND = "result of Measurement of position coordinates of byte-pair occurrences"
+
+
+class _PositionResultReadingContext(NamedTuple):
+    ledger: EventLedger
+    result_event_identity: str
+    reading: tuple[
+        Event,
+        "FindingOfPositionCoordinatesOfBytePairOccurrences",
+        dict[str, Any],
+    ]
+    prefix_snapshot: tuple[Event, ...]
+
+
+_POSITION_RESULT_READING_CONTEXT: ContextVar[
+    _PositionResultReadingContext | None
+] = ContextVar("position_result_reading_context", default=None)
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
 RESPONSIBILITY = (
     "Measurement of the position coordinates of each exact byte-pair occurrence "
@@ -1699,6 +1718,22 @@ def _read_result(
     FindingOfPositionCoordinatesOfBytePairOccurrences,
     dict[str, Any],
 ]:
+    context = _POSITION_RESULT_READING_CONTEXT.get()
+    if (
+        context is not None
+        and context.ledger is ledger
+        and context.result_event_identity == result_event_identity
+    ):
+        if any(
+            ledger.get(expected.identity) != expected
+            or ledger.integrity_of(expected.identity) == CORRUPTED
+            for expected in context.prefix_snapshot
+        ):
+            raise ValueError(
+                "byte-pair position-coordinate source changed during its bounded continuation"
+            )
+        event, finding, assertions = context.reading
+        return event, finding, deepcopy(assertions)
     event = ledger.get(result_event_identity)
     if (
         event is None
@@ -1757,6 +1792,31 @@ def _read_result(
     ):
         raise ValueError("byte-pair position-coordinate result has false occurrence order")
     return event, finding, expected["assertions"]
+
+
+@contextmanager
+def carried_position_measurement_result_reading(
+    ledger: EventLedger, result_event_identity: str
+) -> Iterator[None]:
+    """Keep one validated direct-result reading through its bounded continuation."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("position result continuation requires one EventLedger")
+    reading = _read_result(ledger, result_event_identity)
+    boundary = ledger.append_boundary_through_occurrence(result_event_identity)
+    snapshot = tuple(deepcopy(event) for event in ledger.list(through=boundary))
+    token = _POSITION_RESULT_READING_CONTEXT.set(
+        _PositionResultReadingContext(
+            ledger,
+            result_event_identity,
+            reading,
+            snapshot,
+        )
+    )
+    try:
+        yield
+    finally:
+        _POSITION_RESULT_READING_CONTEXT.reset(token)
 
 
 def get_recorded_byte_pair_occurrence_position_measurement(
@@ -2025,6 +2085,26 @@ def references_to_recorded_position_coordinates_of_byte_pair_occurrences(
         )
         for first_position in range(len(finding.exact_material) - 1)
     )
+
+
+def source_position_coordinate_references_of_recorded_position_measurement(
+    ledger: EventLedger, result_event_identity: str
+) -> Iterator[dict[str, Any]]:
+    """Yield the exact bounded source-position subjects from one result read."""
+
+    _event, finding, _assertion_population_read = _read_result(
+        ledger, result_event_identity
+    )
+    for position, value in enumerate(finding.exact_material):
+        yield _source_position_coordinate_reference(
+            source_material_acquisition_occurrence_identity=(
+                finding.source_material_acquisition_occurrence_identity
+            ),
+            source_locality_identity=finding.source_locality_identity,
+            completeness_boundary_identity=finding.completeness_boundary.identity,
+            position=position,
+            exact_material=bytes((value,)),
+        )
 
 
 def _recorded_position_assertion_coordinates_for_locality_movement(
