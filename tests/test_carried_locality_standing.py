@@ -747,6 +747,71 @@ def test_the_console_never_replays_the_locality(monkeypatch):
     assert calls == [0]
 
 
+def test_incremental_advance_does_not_reconstruct_its_prior_boundary(monkeypatch):
+    """A validated prior replay remains the validation input while it advances."""
+
+    from seed_runtime import operator_locality_standing
+
+    ledger = EventLedger()
+    record_operator_material_occurrence(
+        ledger,
+        locality_identity="s",
+        exact=b"alpha\n",
+        source_boundary="exact operator boundary",
+    )
+    prior = read_operator_locality_standing(ledger, locality_identity="s")
+    assignment = record_byte_measurement_responsibility_assignment(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+        locality_standing=prior,
+    )
+
+    def refuse(*_args, **_kwargs):
+        raise AssertionError("incremental advance reconstructed its prior boundary")
+
+    monkeypatch.setattr(
+        operator_locality_standing,
+        "read_operator_locality_standing_through",
+        refuse,
+    )
+    advanced = advance_operator_locality_standing(
+        ledger,
+        (assignment.identity,),
+        locality_identity="s",
+        prior=prior,
+    )
+    assert advanced["through_event_occurrence_identity"] == assignment.identity
+
+
+def test_declared_measurement_discovery_uses_validated_replay_coordinates(
+    monkeypatch,
+):
+    """Discovery does not reconstruct lifecycles already validated into replay."""
+
+    from seed_runtime import (
+        measurement_of_position_coordinates_of_byte_pair_occurrences as position_measurement,
+        operator_material_acquisition,
+    )
+
+    ledger, _output = _console("alpha\nbeta\n")
+    replay = read_operator_locality_standing(ledger, locality_identity="s")
+
+    def refuse(*_args, **_kwargs):
+        raise AssertionError("declared Measurement reconstructed prior physiology")
+
+    monkeypatch.setattr(position_measurement, "_read_assignment", refuse)
+    monkeypatch.setattr(position_measurement, "_read_result", refuse)
+    monkeypatch.setattr(
+        operator_material_acquisition,
+        "read_operator_material_acquire_locality_relation_requirements",
+        refuse,
+    )
+
+    assert _discover_direct_measurements(ledger, replay, "s") == ()
+    assert _discover_byte_measurements(ledger, replay, "s") == ()
+
+
 def test_the_console_measures_each_occurrence_population_once(monkeypatch):
     """The same-call assignment, Act, and result consume one exact finding."""
 
@@ -1387,6 +1452,8 @@ PYTEST_ADMISSION = (
     test_input_boundary_cannot_append_an_occurrence_during_acquisition,
     test_a_persisted_ledger_advances_identically,
     test_the_console_never_replays_the_locality,
+    test_incremental_advance_does_not_reconstruct_its_prior_boundary,
+    test_declared_measurement_discovery_uses_validated_replay_coordinates,
     test_the_console_measures_each_occurrence_population_once,
     test_each_advance_reads_only_what_an_act_just_recorded,
     test_fresh_pair_measurement_is_not_reread_when_it_enters_standing,
