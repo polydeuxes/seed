@@ -245,15 +245,101 @@ Completion claim belongs to the existing Stopping or Completion grammar and
 requires its own exact subject, Responsibility, Act, and Scope. Subject-level
 uniqueness does not follow.
 
+## Candidate required work and later prohibition
+
+The absence of subject-level uniqueness does not require Candidate
+Responsibility `R` to repeat its required work for `Q`.
+
+The active clause gives `R` an exact bounded required-subject population. For
+each required subject, `R` requires these coordinates:
+
+```text
+Applicability result
+Participation relation occurrence
+Candidate Act occurrence
+Yield relation occurrence
+Candidate result
+```
+
+Assuming exact `R` exists, those coordinates are sufficient to distinguish
+the work `R` requires concerning `Q`. They do not require a subject-level Stop
+or Completion occurrence.
+
+The current runtime already validates the exact chain before using a Candidate
+result in its traversal:
+
+```text
+exact result
+↓ exact Candidate Act occurrence
+↓ exact Participation relation occurrence
+↓ exact Applicability result and Responsibility
+↓ exact Yield relation occurrence
+↓ exact Candidate Responsibility reference R
+↓ exact required-subject reference Q inside R's frozen population
+```
+
+The traversal then excludes `Q` from the subjects for which `R` records a
+later Candidate Act. This can be read narrowly:
+
+```text
+R requires no additional Candidate occurrence for Q
+```
+
+It does not establish:
+
+```text
+Q cannot participate in a later Candidate occurrence
+```
+
+A later occurrence concerning the same carried source material may arise
+under another exact Responsibility, Scope, source boundary, or required
+subject. Current required-subject references preserve those coordinates. The
+runtime already permits separate Candidate Responsibilities through separate
+recording Localities, and their required-subject references remain distinct.
+
+Stopping and Completion remain population-level later work. They may address
+`R` and its bounded population after every coordinate required by `R` is
+carried. They are not required to terminate each subject after its first
+Candidate result, and they establish no subject-level prohibition.
+
+Disposition:
+
+```text
+R requires no additional occurrence for Q
+!=
+R or Seed forbids another occurrence concerning Q
+```
+
+The left distinction is owned by `R`, its exact Scope, bounded subject
+population, and required coordinates. The right distinction is not
+established.
+
 ## Runtime disposition
 
-Current duplicate refusal must not be promoted as constitutional law.
+The current traversal behavior may remain: after the exact required chain for
+`Q` is carried under `R`, `R` need not record that work again.
 
-Removing it immediately would be incomplete. The current exhaustion read uses
-the presence of a result for each required-subject reference to decide whether
-that subject remains in the producer's next read. Allowing several results
-without first separating that implementation traversal from Stopping and
-Completion would leave the producer's stopping condition implicit.
+The current refusal wording is stronger than that behavior:
+
+```text
+Candidate Responsibility already has a result for this required subject
+```
+
+That wording sounds like result uniqueness. The guard is actually bounded to
+one exact `R` and its traversal. It should be oriented as refusal to repeat
+`R`'s required work, not prohibition on later participation by `Q`.
+
+The result reader also rejects a repeated required-subject reference under the
+same exact `R`. The refusal may remain, but its warrant is `R`'s Scope and
+required coordinates: a later occurrence cannot cite `R` as its governing
+Responsibility after `R` carries no additional required work for `Q`.
+
+That validation must remain bounded to exact `R`. The current reader first
+validates each result's Responsibility reference and filters results by exact
+`R`; the required-subject reference also carries `R` and its frozen source
+boundary. A Candidate occurrence concerning the same source material under a
+different Responsibility therefore remains distinct and is not rejected by
+this guard.
 
 The exact next questions are:
 
@@ -273,6 +359,62 @@ May Q participate in only one Candidate Act occurrence?
 ```
 
 No active coordinate answers the second question.
+
+## Smallest later correction
+
+No amendment is made by this investigation.
+
+### Book wording
+
+Remove singular rendering from `01.Source.E.1`. Preserve:
+
+```text
+R carries an exact bounded required-subject population.
+R requires the exact Applicability, Participation, Candidate occurrence,
+Yield, and result coordinates for each Q in that population.
+Carriage of those exact coordinates under R exposes no additional required
+Candidate Act for Q under R.
+This establishes no prohibition on Q under another exact Responsibility.
+```
+
+Do not state that `Q` has exactly one Candidate result. Do not introduce a
+subject-level Stop.
+
+### Witness grammar
+
+Replace:
+
+```text
+one_exact_Candidate_result_for_each_required_subject
+```
+
+with exact required coordinates owned by `R` and its bounded subject
+population. Express the result edge as:
+
+```text
+Candidate_Act_occurrence --Yield--> exact_Candidate_result
+```
+
+For `04.Compare.C`, replace `one_exact_Candidate_result` with the exact
+Candidate result that is the Responsibility's subject boundary. Do not use a
+Candidate-result cardinality claim as a completeness boundary.
+
+### Runtime traversal and refusal
+
+Preserve traversal across the required subjects whose exact chain under `R`
+is not carried. Preserve the interleaving reread after each Yield.
+
+Orient the private guard as a refusal to repeat `R`'s required work for `Q`.
+Do not make its message or validation a universal result-uniqueness claim.
+
+Keep the result reader's repeated-reference refusal bounded to exact `R` and
+orient it as a governing-Responsibility/Scope refusal. Several result
+occurrences concerning source material do not collapse; each must retain its
+exact Responsibility, required subject, Act occurrence, Yield, and result
+coordinates.
+
+Stopping and Completion remain outside this per-subject traversal. No
+Candidate-specific Stopping or Completion runtime is added by this correction.
 
 ## Finding
 
