@@ -30,8 +30,8 @@ earlier recurrence Assertion for b"ab"
 ```
 
 The test requires both relative orders and distances `1` and `5`. It proves
-that the coordinate space must retain the ability to address those
-distinctions. The current rule realizes that ability as:
+that the material and position coordinates must retain the ability to address
+those distinctions. The current rule realizes that ability as:
 
 ```text
 first byte role at every matching position
@@ -97,8 +97,7 @@ earlier source support, but it is not applied by the later finding rule.
 
 ## What the complete product preserves
 
-The complete coordinate space preserves distinctions that a narrower
-coordinate space could otherwise author silently:
+The complete product makes these distinctions explicit:
 
 - which byte occupies the first and second Act-local roles;
 - both relative position orders;
@@ -108,10 +107,10 @@ coordinate space could otherwise author silently:
 
 The test `test_pair_occurrence_measurement_finds_exact_positions_without_a_sign`
 proves that these distinctions are addressable and that the current runtime
-instantiates them. Removing their coordinates from the bounded space would
-change the demonstrated result. Declining to instantiate every member before
-an exact later Responsibility addresses it does not make that member or its
-coordinates cease to exist.
+instantiates them. Removing the exact material or position coordinates would
+change the demonstrated result. Declining to instantiate every combination
+before an exact later Responsibility addresses it does not remove those
+coordinates.
 
 What remains unsupported is the stronger statement:
 
@@ -124,13 +123,12 @@ every subject required to become a durable Measurement finding
 Current implementation asserts that statement through its loop. Active Book
 does not independently establish it.
 
-## The coordinate space is real material
+## Exact coordinates preserve addressability
 
-The Cartesian population is not disposable merely because every member need
-not become a durable finding immediately.
+No new `CoordinateSpace` subject or result is required here.
 
-For exact recurrent pair `R`, later material `M`, and boundary `B`, the runtime
-already determines:
+For exact recurrent pair `R`, later material `M`, and boundary `B`, the
+existing coordinates already preserve:
 
 ```text
 exact first-byte position population in M
@@ -142,16 +140,11 @@ exact recurrence Assertion R and its support
 exact Locality and completeness boundary B
 ```
 
-Together these coordinates define an exact finite space of possible meetings.
-`Meeting` is Rosetta orientation here; it names an ordered member `(p, q)` of
-that space, not a new constitutional relation.
-
-That exact space can be the result material from which later work addresses a
-member while retaining lineage:
+Together these coordinates let later work address an exact ordered position
+pair while retaining lineage:
 
 ```text
-coordinate space C(R, M, B)
-+ addressed positions (p, q)
+R + M + B + addressed positions (p, q)
 ↓
 recover exact first source occurrence
 recover exact second source occurrence
@@ -159,36 +152,35 @@ recover exact recurrence subject
 recover exact later material and boundary
 ```
 
-This separates two populations that the current result shape partially
-compresses:
+This separates addressability from durable relation occurrence:
 
 ```text
-exact bounded coordinate space
+exact material, positions, boundary, and carried relation
 !=
-every member recorded as a durable finding occurrence
+every addressable ordered position pair recorded as a finding
 ```
 
-The current ledger retains enough exact source coordinates to reconstruct the
-space: pair Assertion reference, exact later acquisition reference, exact
-material bytes, Locality, boundary, ordered roles, exclusion rule, and
-available count. The applied `occurrence_limit` then decides how many members
-are expanded into position Assertions and marks the rest as known loss.
+The current ledger already retains the exact pair Assertion reference, later
+acquisition reference, material bytes, Locality, boundary, ordered roles, and
+position coordinates. A later Responsibility can apply an exact carried
+relation to those coordinates without a separately serialized container for
+every possible relation.
 
-Calling every unexpanded member `known loss` is exact under the current result
-contract. It also shows the compression: the coordinate space itself is not
-given a separately readable result position, so preserving the space and
-recording every member are treated as though they were the same work.
+The current recurrent-position result instead calculates the complete
+Cartesian member count, expands a prefix chosen by `occurrence_limit`, and
+calls the remainder known loss. That is exact under its present contract. It
+does not establish that the complete Cartesian product must become a Seed
+subject or a new result object.
 
-If the exact space is itself preserved and remains addressable, lack of an
-expanded member Assertion does not mean its source coordinates were lost. It
-means no later responsible occurrence has yet instantiated that meeting.
+Lack of an expanded member Assertion does not mean its source coordinates were
+lost. It means no responsible occurrence has established that relation.
 
 The operator's lineage hypothesis is therefore supported:
 
 ```text
-preserve the exact coordinate space
+preserve exact material, positions, boundary, and carried relation
 ↓
-later addressed meeting retains exact lineage
+later addressed relation retains exact lineage
 ```
 
 It does not by itself establish which members may proceed, which relation a
@@ -242,21 +234,22 @@ no later relation under R is established at p
 
 The second branch does not establish a negative relation and does not
 establish some other direction or distance. Another exact Responsibility can
-later address another `(p, q)` relation through the preserved coordinate space
-without requiring every possible disagreement to have been precomputed.
+later address another `(p, q)` relation through the preserved material and
+coordinates without requiring every possible disagreement to have been
+precomputed.
 
 This is the decisive population distinction:
 
 ```text
-preserve every possible meeting as an addressable bounded space
+preserve complete addressability through exact coordinates
 !=
-instantiate every possible meeting before applying R
+instantiate every possible relation before applying R
 ```
 
 Under the repeated corpus's carried adjacent relation, the addressed road
-reaches 217,511 matching positions. The 39,175,421,423 other members remain
-addressable through the preserved coordinate space but do not become relations
-under `R` merely because both endpoints occur.
+reaches 217,511 matching positions. The 39,175,421,423 other combinations
+remain addressable through the exact material and position coordinates but do
+not become relations under `R` merely because both endpoints occur.
 
 ## Earlier association testimony
 
@@ -336,10 +329,10 @@ calculation appended no Seed occurrence; it applies the current pair-count and
 Cartesian formulas directly to the exact corpus bytes.
 
 This does not establish that only the 217,511 matching positions can ever
-become subjects. The coordinate space preserves exact access to the other
-39,175,421,423 combinations if another Responsibility addresses them. It does
-establish that co-presence of their endpoints is not enough to make them
-relations or required findings under the carried premise relation.
+become subjects. The exact material and position coordinates preserve access
+to the other 39,175,421,423 combinations if another Responsibility addresses
+them. It does establish that co-presence of their endpoints is not enough to
+make them relations or required findings under the carried premise relation.
 
 ## What shared-position and ordered-path require
 
@@ -400,16 +393,16 @@ material result. Inside its finding calculation, every distinct ordered pair
 of matching scalar positions becomes a finding without separate Applicability,
 Participation, or comparison against the carried premise relation.
 
-### Which distinction motivates the complete coordinate space?
+### Which distinction motivates the complete product?
 
 The demonstrated motive is to preserve every direction and distance without
-letting the caller provide either. That distinction is real. Addressability of
-the complete space preserves it. The choice to realize addressability by
+letting the caller provide either. The material and exact position coordinates
+preserve their addressability. The choice to realize that addressability by
 durable exhaustive Cartesian findings is an implementation shape.
 
 ### Is the product merely a discovery strategy?
 
-The coordinate space is more than a private strategy: its pair subject, source
+The current product is more than a private loop: its pair subject, source
 material, role order, boundary, available count, applied prefix, known loss,
 and carried position Assertions become durable result coordinates. It cannot
 be removed invisibly.
@@ -427,31 +420,286 @@ Applicability result determines whether the addressed coordinates share the
 required position. It does not consume or require the complete Cartesian
 population.
 
+## The existing adjacent-relation owner
+
+The repository already has an active owner for the exact adjacent relation
+used by this corpus experiment.
+
+Every fresh material acquisition presented to the declared-Measurement road
+produces a `PositionCoordinateMeasurementSubject`. The direct byte-pair
+position Measurement applies this exact rule:
+
+```text
+source position p
+↓
+second position p + 1
+↓
+exact two-byte material at those positions
+```
+
+Its result preserves the material acquisition, Locality, boundary, position
+coordinates, and exact adjacent material. The result does not append an event
+for every adjacent position. It records a compact bounded account from which
+exact Assertion references are derived. Focused tests prove that:
+
+- `b"aaa"` exposes `(aa, 0, 1)` and `(aa, 1, 2)` with their shared coordinate;
+- the complete reference reader does not construct a separate occurrence
+  population;
+- an exact addressed source position resolves only the adjacent pair
+  references carrying that coordinate.
+
+Thus the current owner of the corpus relation `second = first + 1` is the
+direct `01.Source.D` Measurement, not the Cartesian recurrent-position
+Measurement.
+
+The next two existing Responsibilities are also already exact:
+
+```text
+direct pair-position Measurement result
++ exact addressed source-byte position coordinate
+↓
+01.Source.D.2
+↓
+pair-position references carrying that coordinate, in source order
+
+01.Source.D.2 result
+↓
+shared-position Applicability and Measurement
+↓
+ordered_relation_path
+```
+
+`test_direct_position_coordinate_assertions_compose_without_recurrence_support`
+proves the complete road with the middle position of `b"2+2=5\n"`. The D.2
+result carries the exact `2+` and `+2` references. Shared-position reads those
+addressed references without reading the complete direct pair-position
+population and yields the ordered path.
+
+This road requires no recurrence support, Cartesian position product, numeric
+cap, or additional serialized container.
+
+## The equality-shaped path is already demonstrated
+
+The focused direct-path witness already uses the operator's proposed shape.
+It addresses the middle position of `b"2+2=5\n"`:
+
+```text
+first adjacent relation   2 -> +
+second adjacent relation  + -> 2
+shared position           +
+↓
+ordered source coordinates [2, +, 2]
+```
+
+The path reader exposes those three exact position-coordinate dictionaries
+beside the `ordered_relation_path` Assertion. Each coordinate retains its
+source occurrence, exact position, and exact byte material. It also states an
+important limit: returning the coordinates beside the path establishes no
+material or relation carried by the path.
+
+Therefore the endpoints needed for equality are already exact subjects:
+
+```text
+first path position coordinate carrying p
+third path position coordinate carrying p
+↓
+Compare exact endpoint material
+```
+
+The current repository does not perform that Compare. It establishes the path
+and leaves the endpoint relation open.
+
+An external calculation over the exact 218,058-byte corpus gives the scale of
+this possible next road:
+
+| calculation over exact bytes | population |
+|---|---:|
+| adjacent three-position windows | 218,056 |
+| windows whose first and third byte values are equal | 13,019 |
+| distinct equal-endpoint three-byte values | 343 |
+
+The most frequent exact values begin with `b"   "` (5,207), `b"\r\n\r"`
+(885), `b"\n\r\n"` (885), `b" a "` (418), and `b"ere"` (326). These counts
+are observer calculations, not Seed findings.
+
+They show why equality is a useful next distinction without authoring which
+language pattern matters. Every exact adjacent path has the same subject
+shape; Compare determines which endpoints have equal material. The developer
+does not nominate `ere`, `tat`, ` = `, or another favored pattern.
+
+Commit `fef5b41f` introduced the ordered-source-position reader specifically
+to expose these three exact coordinates beside the path. It made no Book or
+runtime-consumer amendment. Current callers of that reader are proving tests;
+no later Seed runtime consumes the endpoint coordinates. The equality road is
+therefore an exposed seam, not a relation already established by the reader.
+
+## Mechanical guard against the parallel Candidate road
+
+A focused scaling probe confirms that expanding every direct position
+Assertion through the generic Candidate source reader is the wrong mechanical
+continuation as well as the wrong Responsibility.
+
+For `N` addressed direct-position references, that reader resolves the direct
+result, then resolves each reference by scanning from source position zero to
+the addressed position. Measured time was:
+
+| addressed references | wall time |
+|---:|---:|
+| 63 | 0.128 s |
+| 127 | 0.368 s |
+| 255 | 1.220 s |
+| 511 | 4.403 s |
+| 1,023 | 16.626 s |
+
+At 218,057 references the repeated scans imply about 23.8 billion Assertion
+identity calculations and an extrapolated duration measured in days. This
+profile changes no law. It confirms that routing the direct result through the
+global Candidate expansion would miss both the adjacent D.2/shared-position
+road and the experiment's practical boundary.
+
+The exact addressed-position reader used by D.2 is different: it can resolve
+the at-most-two adjacent pair references carrying the addressed coordinate
+without reading the complete direct reference population.
+
+## Compare does different work
+
+Current `04.Compare.A` does not apply a carried position relation to address a
+later coordinate. It compares complete earlier and later byte-pair count
+Measurement results. Its distinctions are same content, conflict, earlier
+finding, later finding, and Unknown across those result populations.
+
+Current `04.Compare.B` also does not compare the first and third coordinates
+of the path. It compares each complete pair subject carried beside the path
+against recorded pair-count comparison findings. For `p q p`, its subjects
+are `pq` and `qp`, not endpoint `p` and endpoint `p`.
+
+The investigation script demonstrates comparison of a later direction and
+distance against an earlier premise relation, but it constructs the Cartesian
+product first and has no current durable owner. It is useful testimony for the
+distinction; it is not the active owner of adjacent coordinate addressing.
+
+Therefore:
+
+```text
+direct pair-position Measurement
+    owns the exact adjacent relation in current material
+
+01.Source.D.2
+    owns exact local resolution around an addressed source position
+
+shared-position Measurement
+    owns composition of two exact addressed relations
+
+04.Compare.A
+    owns comparison of complete pair-count result populations
+
+04.Compare.B
+    owns comparison of path pair subjects with recorded pair findings
+```
+
+No current Compare Responsibility performs general projection of arbitrary
+carried direction and distance coordinates. No such generalization is needed
+to continue the present adjacent-relation experiment. No current Compare
+Responsibility compares the exact first and third path coordinates either.
+
+## Exact live stop
+
+The ordinary Witness road already records the direct pair-position Measurement
+result. The stop occurs afterward:
+
+```text
+direct pair-position result carrying every exact adjacent reference
+↓
+exact source-byte position becomes a 01.Source.D.2 subject
+X
+```
+
+The D.2 clause and runtime govern an exact addressed position. Focused callers
+supply that exact coordinate. The live console does not carry source-position
+coordinates into D.2, and active law does not currently say that every source
+position is D.2 work. Treating the complete position population as required
+would recreate the global traversal mistake under a smaller name.
+
+This is the earliest live stop. It is not a missing adjacent relation and it
+is not a need for `CoordinateSpace`. The adjacent relations and their lineage
+are already exactly addressable.
+
+The focused path road then reaches another exact stop:
+
+```text
+ordered path beside [p, q, p]
+↓
+first and third position coordinates become exact Compare subjects
+X
+```
+
+The second stop is the equality question. The coordinates exist; their equal
+material has not become a Compare result or relation merely because the
+developer can observe it.
+
+## Smallest missing active position
+
+The missing Compare does not need composite path material. Its exact subjects
+are already beside the path:
+
+```text
+current Standing carrying ordered path P
+
+subject A
+    P first source-position coordinate
+
+subject B
+    P third source-position coordinate
+
+rule
+    Compare exact material carried by A and B
+
+Act occurrence
+    A and B participate under their exact endpoint roles
+
+result
+    same-content finding, difference, conflict, or Unknown
+    under the exact path and source boundary
+```
+
+This result would preserve the path reference, endpoint coordinate references,
+source occurrence, Locality, boundary, Authority, Scope, limits, and exact
+Compare finding. It would not by itself establish:
+
+- composite `p q p` material carried by the path;
+- a generic `is` relation;
+- equality of the endpoint occurrences;
+- equality of anything outside the exact endpoint material and Scope;
+- later Standing.
+
+That is the smallest missing active position exposed by the current witness.
+The Book has generic Compare physiology but no exact endpoint-coordinate
+Compare clause. Runtime has no endpoint-coordinate Compare occurrence.
+
 ## Disposition
 
 The exact answer is:
 
 ```text
 39,175,638,934
-= exact member count of the current runtime coordinate space
-!= accidental performance defect
+= exact member count calculated by the current Cartesian runtime rule
 != durable finding population independently required by active grammar
 != population required by shared-position / ordered-path
+
+217,511 adjacent recurrent-pair positions
+= exact relations already addressable through direct pair-position Measurement
 ```
 
-The current rule defines a legitimate exact coordinate space, then treats
-expansion of its members as the Measurement finding population before the next
-demonstrated exact distinction. The earlier recurrent-pair relation supplies a
-non-semantic positional premise capable of addressing the later second
-coordinate from the first, but current durable Measurement begins recording
-possible role-position combinations before applying that premise.
+The Cartesian rule calculates every possible ordered role-position
+combination, then treats expansion of those combinations as its Measurement
+finding population. Exact material, positions, boundary, and carried relation
+already preserve addressability without making that calculated product a new
+Seed object.
 
 No cap correction follows merely from this report. No runtime deletion follows.
-The exact space and its lineage must remain preserved. That does not require
-pre-recording every member. A later runtime correction would have to preserve
-addressability of reverse-order and distance distinctions while applying an
-exact carried relation before relation occurrence, rather than treating
-endpoint co-presence as an edge.
+Reverse-order and distance distinctions remain addressable through exact
+coordinates when another Responsibility carries such a relation. They do not
+need to be pre-recorded merely because both endpoints exist.
 
 The exact boundary is:
 
@@ -461,21 +709,42 @@ established
     exact adjacent premise occurrences
     exact premise position relation
     exact later material and scalar positions
-    exact finite coordinate space and its member count
-    exact premise relation capable of addressing q from p
+    exact Cartesian member count under the current runtime calculation
+    direct Measurement of every adjacent position relation
+    compact addressability of exact adjacent Assertion references
+    01.Source.D.2 resolution for an exact addressed source position
+    shared-position composition from an exact D.2 result
+    exact ordered source coordinates beside the path
+    demonstrated [2, +, 2] path subject
     current partial member expansion and bounded known loss
 
-not established
-    an active Responsibility requiring every coordinate-space member
+not established by active grammar
+    a Responsibility requiring every Cartesian combination
     to become a durable finding before the carried premise relation is applied
     endpoint co-presence as a relation occurrence
+    every source position as required 01.Source.D.2 work
+    general Compare projection of arbitrary direction and distance
+    endpoint-material Compare for the first and third path coordinates
 ```
 
-The population is now separated: preserve the exact addressable space, then
-instantiate relations warranted by the carried premise. Before assigning a
-live numeric bound or connecting the recurrent-position road to the corpus,
-the remaining question is which existing Responsibility owns that exact
-relation-addressing work and its durable result.
+The owner question is answered for the current adjacent relation. Direct
+pair-position Measurement establishes it, D.2 resolves it around an addressed
+position, and shared-position composes it. Compare A does not own that work.
+
+The remaining live road has two exact joints:
+
+```text
+what exact current Standing makes a source-byte position
+an addressed D.2 subject?
+
+missing endpoint-coordinate Compare Responsibility takes the first and third
+coordinates of the resulting path as its subjects
+```
+
+This report does not answer either by enumerating every position, creating a
+traversal Responsibility, routing the corpus through Candidate, manufacturing
+another coordinate container, or treating equal bytes as an already
+established relation.
 
 ## Validation
 
@@ -490,7 +759,21 @@ tests/test_material_pair_investigation.py::
 
 tests/test_measurement_of_shared_position_of_byte_pair_occurrences.py::
   test_exact_yielded_pair_relations_compose_at_one_shared_position
+
+tests/test_measurement_of_position_coordinates_of_byte_pair_occurrences.py::
+  test_full_reference_reader_does_not_construct_the_occurrence_population
+
+tests/test_measurement_of_position_coordinates_of_byte_pair_occurrences.py::
+  test_exact_addressed_source_position_reads_only_its_carried_pair_references
+
+tests/test_measurement_of_shared_position_of_byte_pair_occurrences.py::
+  test_direct_position_coordinate_assertions_compose_without_recurrence_support
+
+tests/test_measurement_of_shared_position_of_byte_pair_occurrences.py::
+  test_ordered_source_positions_remain_beside_the_path_assertion
 ```
 
-All three pass. The corpus calculation used the exact sixteen 300-line windows
-from `tests/book_material_test_witness.py` and appended no ledger occurrence.
+All seven focused witnesses pass. The Book admission gate also passes; the
+combined run reports 18 passed. The corpus calculations used the exact sixteen
+300-line windows from `tests/book_material_test_witness.py` and appended no
+ledger occurrence.
