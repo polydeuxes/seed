@@ -1,6 +1,8 @@
 # Standing
 
-This Seed current Standing carries no coordinates.
+This Seed first current Standing is `S0`.
+
+`S0` carries no coordinates.
 
 Each exact Responsibility carried by current Standing is one branch of that
 Standing. A Responsibility is no other Standing subject.
@@ -44,7 +46,7 @@ limits, conflicts, and Unknown.
 Multiplicity, temporal order, shared material, provenance, or a relation Assertion
 establishes no relation occurrence.
 
-### 01.Standing.E.1 — Applicability and Participation
+### 01.Standing.E.1 — Applicability, Admission, and Participation
 
 Applicability carries one exact subject-to-Act position. Its responsible
 occurrence carries the subject, Act, Authority, Scope, Locality, limits, and

@@ -84,6 +84,38 @@ def test_current_standing_precedes_responsibility_without_assignment():
     }
 
 
+def test_empty_standing_is_only_initial_s_zero():
+    active_book = _active_book()
+    assert active_book.count("This Seed first current Standing is `S0`.") == 2
+    assert active_book.count("`S0` carries no coordinates.") == 2
+    assert "This Seed current Standing carries no coordinates." not in active_book
+
+
+def test_applicability_required_admission_and_participation_remain_separate():
+    grammar = _grammar()
+    boundary = grammar["book_coordinates"]["01.Standing.E.1"]
+    expected_input = [
+        "Applicability_result",
+        {
+            "required_Admission": {
+                "boundary": "exact_boundary",
+                "occurrence": "exact_Admission_occurrence",
+            }
+        },
+        "participation_relation",
+    ]
+    assert boundary["Responsibility"] == "Applicability"
+    assert boundary["exact_Act"] == "Applicability"
+    assert boundary["coordinates"] == expected_input
+    assert boundary["relations"] == ["participation"]
+    assert boundary["result"] == "Applicability_result"
+
+    for reference in ("04.Compare.A", "04.Compare.B"):
+        compare = grammar["book_coordinates"][reference]
+        assert compare["input"] == expected_input
+        assert compare["relations"] == ["participation", "yield"]
+
+
 def test_responsibility_coordinates_are_anatomy_not_assignment():
     assert _grammar()["responsibility"] == {
         "subject": "Responsibility",
@@ -239,6 +271,10 @@ FIDELITY_SUBJECTS = {
     ),
     "standing_responsibility_direct_position": (
         test_current_standing_precedes_responsibility_without_assignment,
+    ),
+    "initial_empty_standing_boundary": (test_empty_standing_is_only_initial_s_zero,),
+    "applicability_admission_participation_separation": (
+        test_applicability_required_admission_and_participation_remain_separate,
     ),
     "responsibility_exact_anatomy": (
         test_responsibility_coordinates_are_anatomy_not_assignment,

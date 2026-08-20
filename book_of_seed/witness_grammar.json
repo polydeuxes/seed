@@ -242,8 +242,18 @@
     },
     "01.Standing.E.1": {
       "subject": "subject_to_Act_position",
-      "Responsibility": "Applicability_and_Participation",
+      "Responsibility": "Applicability",
       "exact_Act": "Applicability",
+      "coordinates": [
+        "Applicability_result",
+        {
+          "required_Admission": {
+            "boundary": "exact_boundary",
+            "occurrence": "exact_Admission_occurrence"
+          }
+        },
+        "participation_relation"
+      ],
       "relations": ["participation"],
       "result": "Applicability_result"
     },
@@ -264,12 +274,34 @@
       "subject": "recorded_pair_findings",
       "Responsibility": "compare_complete_recorded_pair_findings",
       "exact_Act": "Compare",
+      "input": [
+        "Applicability_result",
+        {
+          "required_Admission": {
+            "boundary": "exact_boundary",
+            "occurrence": "exact_Admission_occurrence"
+          }
+        },
+        "participation_relation"
+      ],
+      "relations": ["participation", "yield"],
       "result": "recorded_pair_finding_Compare_result"
     },
     "04.Compare.B": {
       "subject": "ordered_relation_path_and_pair_findings",
       "Responsibility": "compare_ordered_relation_path_and_pair_findings",
       "exact_Act": "Compare",
+      "input": [
+        "Applicability_result",
+        {
+          "required_Admission": {
+            "boundary": "exact_boundary",
+            "occurrence": "exact_Admission_occurrence"
+          }
+        },
+        "participation_relation"
+      ],
+      "relations": ["participation", "yield"],
       "result": "ordered_relation_path_Compare_result"
     },
     "05.Recording.A": {
