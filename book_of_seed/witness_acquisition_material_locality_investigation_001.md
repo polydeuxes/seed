@@ -29,13 +29,18 @@ acquired material to this Seed. Establishing the second relation requires no
 movement to the operator Locality, no copy of `M`, and no change to its source
 or provenance.
 
-Current law does not forbid the second relation. Current law and runtime leave
-the Witness road without the exact work that establishes it.
+Current law already establishes the shared material-acquisition physiology and
+separate operator and Witness source Responsibility branches. The operator
+road records the Locality relation; the Witness road omits it.
 
-The operator acquisition road contains an explicit clause for this work.
-Witness acquisition does not. The material is therefore not deliberately
-hidden; it is durably acquired and available in bounded replay, while later
-Measurement correctly refuses to treat availability as the missing relation.
+`01.Source.G` is an operator specialization. It does not state that only
+operator acquisition may establish the relation. Treating its explicit
+operator coordinates as an exclusive grant was the earlier report error.
+
+The material is not deliberately hidden. It is durably acquired and available
+in bounded replay. Later Measurement correctly refuses to treat availability
+as the relation, but the acquisition road should have recorded the relation
+under its existing Witness source branch.
 
 ## The `hello` case
 
@@ -130,12 +135,29 @@ Unknown
 The result carries neither a `locality_relation` coordinate nor a relation
 occurrence from its exact-material coordinate to this Seed.
 
-More importantly, the active Book has no exact Witness-acquisition companion
-to `01.Source.G`. Chapter 11 states that material supplied by this operator
-and material supplied by this Witness have separate source Responsibility
-branches and occurrences. It does not state the exact current-Standing
-coordinates that expose the Witness branch, nor that the Witness acquisition
-result occurrence establishes the material-to-this-Seed Locality relation.
+Chapter 11 already owns the common acquisition grammar:
+
+```text
+exact source boundary
+↓
+source-specific material-acquisition Responsibility
+↓
+exact acquisition Act occurrence
+↓ Yield
+exact material result carrying source role, boundary, provenance,
+Authority, Scope, Locality, loss, limits, and Unknown
+```
+
+It then distinguishes two branches:
+
+```text
+source role = this operator
+source role = this Witness
+```
+
+Separate branches and occurrences preserve the source distinction. They do
+not require two constitutional species or duplicate copies of the common
+acquisition grammar.
 
 The current Witness recorder begins by appending an acquisition Act occurrence
 whose payload contains:
@@ -145,10 +167,12 @@ responsibility = preserve exact material supplied by this Witness ...
 responsible boundary = this Seed
 ```
 
-Those strings are durable host testimony. They are not the exact
-Responsibility branch required before the Act.
+Those strings do not establish the branch by themselves. They agree with the
+Witness branch already declared by Chapter 11 and with the exact source role,
+source boundary, invocation Locality, provenance, Act occurrence, Yield, and
+result carried by this acquisition.
 
-## Why the generic clauses do not complete the road
+## How the generic grammar owns the road
 
 `01.Source.A` applies to supplied source coordinates generally. It says a
 responsible occurrence preserves material, source role, source occurrence,
@@ -174,7 +198,7 @@ subjects, relation occurrence, Responsibility, Act, Authority, Scope, limits,
 and Unknown. Shared Locality, temporal order, source coordinates, and
 multiplicity establish no relation.
 
-Consequently none of these crossings is lawful:
+None of these coordinates alone establishes the relation:
 
 ```text
 event.locality_identity = I
@@ -193,55 +217,75 @@ responsible-boundary string
 → exact Witness acquisition Responsibility
 ```
 
-## The earliest stop
+The complete acquisition road is different. Chapter 11 supplies the
+source-specific Responsibility branch. `02.Acts.A` supplies the exact
+Responsibility-to-Act, Act-occurrence, and Yield physiology. `06.Locality.A`
+supplies the exact Locality relation requirements. `01.Source.G` demonstrates
+the operator specialization in which the successful acquisition result
+occurrence also records the relation occurrence.
 
-The current Witness road lacks the exact Responsibility branch before it
-lacks the material Locality relation after it.
+Nothing in `01.Source.G` excludes the Witness branch. Its operator source role
+and boundary are specialization coordinates; the common acquisition work is
+already owned above it.
+
+Therefore the warrant is not:
 
 ```text
-exact Witness source boundary supplied to this Seed
-↓
-current Standing exposing exact Witness acquisition Responsibility
-    NOT ESTABLISHED BY AN ACTIVE CLAUSE
-↓
-exact Witness acquisition Act occurrence
-↓ Yield
-exact material result
-↓
-same occurrence establishing M --Locality--> this Seed
-    NOT ESTABLISHED BY AN ACTIVE CLAUSE
+event Locality or provenance alone
+→ material Locality relation
 ```
 
-The existing runtime records the lower Act, Yield, and result as host
-testimony. Adding only the Locality relation to that result would use the
-result of an Act whose prior Responsibility remains unsupported.
-
-Therefore the operator road cannot simply be copied into the Witness recorder
-yet.
-
-## Smallest lawful shape to test
-
-The repository supports a narrow proposed shape for later Book recovery:
+It is:
 
 ```text
-current Standing carrying the exact Witness source-boundary coordinates
-↓
-exact Witness material-acquisition Responsibility
-├── responsible boundary = this Seed
-├── subject = exact Witness source boundary / material boundary
-├── exact acquisition Act
-├── Authority
-├── Scope
-├── invocation Locality
-├── provenance
-├── known loss / limits
-└── Unknown
-↓
+exact Witness source branch
++ exact source boundary
++ exact acquisition Responsibility and Act occurrence
++ exact Yield and material result
++ Authority, Scope, invocation Locality, provenance, loss, limits, Unknown
+→
+the successful responsible occurrence records
+M --Locality--> this Seed
+```
+
+## Exact runtime difference
+
+The active grammar and two runtime roads currently differ here:
+
+```text
+operator source branch
+    exact acquisition Act occurrence
+    ↓ Yield
+    exact material result
+    + M --Locality--> this Seed
+
+Witness source branch
+    exact acquisition Act occurrence
+    ↓ Yield
+    exact material result
+    X relation omitted
+```
+
+History explains the difference without granting exclusivity. The operator
+Locality relation was added before generic acquisition was split into operator
+and Witness source branches. The later split renamed the supplied external
+road and preserved its Act, Yield, result, source role, and provenance, but it
+did not carry the already-recovered Locality relation into the Witness branch.
+
+That sequence is migration residue, not a constitutional refusal.
+
+## Smallest runtime correction
+
+No new Book clause or acquisition species is required. The smallest correction
+is to make successful Witness acquisition record the common relation already
+recorded by successful operator acquisition:
+
+```text
 acquisition Act occurrence in invocation Locality I
 ↓ Yield
 exact material result M in I
 ↓
-the same responsible occurrence also records
+the same successful responsible occurrence records
 M --Locality--> this Seed
 ```
 
@@ -257,10 +301,22 @@ material does not move to the operator Locality
 acquisition result remains distinct from the Locality relation
 ```
 
-The proposed shape is not active law. The exact current-Standing subject,
-Authority, Scope, and limits that expose the Witness acquisition
-Responsibility have not been recovered. Those positions must be established
-before runtime change.
+The correction must not copy the operator's source coordinates into the
+Witness result. It must retain the Witness source role, boundary, invocation
+Locality, command and invocation provenance, known loss, and limits. The
+shared reader should validate the relation through each source-specific
+acquisition reader rather than treating the operator event kind as the
+relation's exclusive owner.
+
+The current Witness payload still contains retired placeholder structure for
+Authority and Scope. That is runtime cleanup debt. It does not erase the
+active Chapter 11 Witness Responsibility branch, and it must not be copied
+into new relation grammar.
+
+Recording the relation does not by itself establish later relation Standing or
+every coordinate required by `01.Source.D`. The exact later Standing road must
+remain separate. This correction removes the present acquisition omission; it
+does not turn Locality into an automatic Measurement trigger.
 
 ## Disposition
 
@@ -274,16 +330,15 @@ material copied or moved to operator Locality          no
 movement required for material-to-Seed relation        no
 conflict between invocation Locality and relation      no
 
-Witness acquisition Responsibility branch in active law no
-exact Authority and Scope for that branch               no
+Witness acquisition Responsibility branch in active law yes, Chapter 11
+source role distinguishes Witness from operator          yes
 M --Locality--> this Seed relation occurrence           no
 relation Standing                                       no
 corpus Measurement                                      no
 ```
 
-The present stop is an unfinished Witness acquisition road, not a rule that
-external material must remain hidden from this Seed. The next constitutional
-question is the exact current-Standing branch for Witness acquisition. Once
-that branch is established, the successful acquisition occurrence can be
-tested as the occurrence that also records the material-to-this-Seed Locality
-relation, without movement or copying.
+The present stop is a runtime omission in the Witness acquisition branch, not
+a rule that external material must remain hidden from this Seed and not a need
+for another constitutional species. The existing generic grammar warrants the
+Witness branch. The successful acquisition occurrence should also record the
+material-to-this-Seed Locality relation, without movement or copying.
