@@ -342,8 +342,9 @@ unestablished
 
 ### Subject
 
-C0 represents the exact empty Locality Standing boundary.  The runtime result
-names that content after the host begins the call.
+The runtime labels C0 as a bounded Representation of the exact empty Locality
+Standing boundary.  The runtime result names that content after the host
+begins the call.  The label establishes no represented relation.
 
 The active Book does not establish:
 
