@@ -69,9 +69,11 @@ Every output acquisition matched its addressed window exactly.
 
 ## Invocation boundary
 
-The active `!cat` road accepts one path argument. Its output boundary is
-65,536 bytes. Concatenating the sixteen windows into one file would produce
-218,058 bytes and would cross that boundary with known loss.
+At this observation boundary, the active `!cat` road accepted one path
+argument and its output boundary was 65,536 bytes. Concatenating the sixteen
+windows into one file would have produced 218,058 bytes and crossed that
+boundary with known loss. The later single-batch observation raised this
+boundary and tested that distinct road directly.
 
 The observation therefore used sixteen commands in one operator-console run:
 
