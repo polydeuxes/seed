@@ -101,8 +101,6 @@ determines
 deterministic
 difference
 different
-dimensional
-dimensions
 direct
 discarding
 displayed
@@ -115,7 +113,6 @@ e
 each
 earlier
 effects
-eight
 emission
 enclosure
 emitted
@@ -142,7 +139,6 @@ export
 f
 failure
 fidelity
-fields
 final
 finding
 findings
@@ -155,13 +151,10 @@ g
 global
 grammar
 have
-hierarchy
-higher
 identity
 in
 inapplicable
 indexing
-indivisible
 input
 inspection
 instantiation
@@ -187,7 +180,6 @@ localities
 locality
 loss
 make
-mandatory
 material
 measured
 measurement
@@ -203,7 +195,6 @@ named
 names
 negation
 negative
-neighboring
 new
 no
 non
@@ -289,7 +280,6 @@ roles
 route
 rule
 same
-scalar
 scope
 second
 seed
