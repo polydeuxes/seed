@@ -1,11 +1,11 @@
-"""Compare exact material at the first and final source positions of a path."""
+"""Compare each exact path-ordered pair of source-position material."""
 
 from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
 import json
-from typing import Any, NamedTuple
+from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -76,6 +76,8 @@ _IDENTITY_COORDINATES = (
     "second_participation_relation_identity",
 )
 
+_PATH_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
+
 
 def _identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
@@ -124,6 +126,7 @@ def _path_input(
     ledger: EventLedger,
     path_result_event_identity: Any,
     *,
+    path_position_pair: tuple[int, int],
     prior_standing: dict[str, Any],
 ) -> dict[str, Any]:
     event = _event(
@@ -139,7 +142,10 @@ def _path_input(
     )
     if len(positions) != 3:
         raise ValueError("source position Compare requires exact ordered positions")
-    first, middle, second = positions
+    if path_position_pair not in _PATH_POSITION_PAIRS:
+        raise ValueError("source position Compare requires a path-ordered pair")
+    first_path_position, second_path_position = path_position_pair
+    first, middle, final = positions
     for coordinate in positions:
         material = coordinate.get("exact_material")
         if (
@@ -158,12 +164,12 @@ def _path_input(
         first["source_material_acquisition_occurrence_identity"]
         != middle["source_material_acquisition_occurrence_identity"]
         or middle["source_material_acquisition_occurrence_identity"]
-        != second["source_material_acquisition_occurrence_identity"]
+        != final["source_material_acquisition_occurrence_identity"]
         or first["completeness_boundary_identity"]
         != middle["completeness_boundary_identity"]
         or middle["completeness_boundary_identity"]
-        != second["completeness_boundary_identity"]
-        or (first["position"], middle["position"], second["position"])
+        != final["completeness_boundary_identity"]
+        or (first["position"], middle["position"], final["position"])
         != (first["position"], first["position"] + 1, first["position"] + 2)
     ):
         raise ValueError("source position Compare requires exact ordered positions")
@@ -182,8 +188,11 @@ def _path_input(
             "assertion_identity": path["dimensions"]["identity"],
         },
         "positions": tuple(deepcopy(position) for position in positions),
-        "first": deepcopy(first),
-        "second": deepcopy(second),
+        "path_position_pair": path_position_pair,
+        "first_path_position": first_path_position,
+        "second_path_position": second_path_position,
+        "first": deepcopy(positions[first_path_position]),
+        "second": deepcopy(positions[second_path_position]),
         "source_occurrence_identity": first[
             "source_material_acquisition_occurrence_identity"
         ],
@@ -237,6 +246,7 @@ def _applicability_act_material(
         "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
+        "path_position_pair": list(inputs["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
         "standing_boundary_identity": boundary,
@@ -258,7 +268,7 @@ def _applicability_act_material(
                     "act_occurrence_identity": identities[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": "first position of first relation",
+                    "role": f"path position {inputs['first_path_position']}",
                 },
                 "relation_occurrence_identity": identities[
                     "first_input_relation_identity"
@@ -272,7 +282,7 @@ def _applicability_act_material(
                     "act_occurrence_identity": identities[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": "second position of second relation",
+                    "role": f"path position {inputs['second_path_position']}",
                 },
                 "relation_occurrence_identity": identities[
                     "second_input_relation_identity"
@@ -341,6 +351,11 @@ def _read_applicability_act(
         path_reference.get("recorded_occurrence_identity")
         if type(path_reference) is dict
         else None,
+        path_position_pair=(
+            tuple(material.get("path_position_pair"))
+            if type(material.get("path_position_pair")) is list
+            else ()
+        ),
         prior_standing=prior_standing,
     )
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
@@ -411,6 +426,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "comparison_rule": RULE,
         "applicability": "applicable",
         "path_result_reference": deepcopy(material["path_result_reference"]),
+        "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
@@ -469,6 +485,7 @@ def _recorded_applicability_result_material(
         "comparison_rule": material["comparison_rule"],
         "applicability": material["applicability"],
         "path_result_reference": deepcopy(material["path_result_reference"]),
+        "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
@@ -501,6 +518,7 @@ def _recorded_compare_result_material(
         "comparison_rule": material["comparison_rule"],
         "finding": deepcopy(material["finding"]),
         "path_result_reference": deepcopy(material["path_result_reference"]),
+        "path_position_pair": list(material["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
@@ -588,6 +606,7 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
         "responsible_boundary": "this Seed",
         "applicability_result_event_identity": applicability.identity,
         "path_result_reference": deepcopy(material["path_result_reference"]),
+        "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
@@ -603,7 +622,7 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": "first position of first relation",
+                    "role": f"path position {material['path_position_pair'][0]}",
                 },
                 "relation_occurrence_identity": material[
                     "first_participation_relation_identity"
@@ -619,7 +638,7 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": "second position of second relation",
+                    "role": f"path position {material['path_position_pair'][1]}",
                 },
                 "relation_occurrence_identity": material[
                     "second_participation_relation_identity"
@@ -668,6 +687,7 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "ordered_relation_path_assertion_reference": deepcopy(
             inputs["path_assertion_reference"]
         ),
+        "path_position_pair": list(inputs["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(first),
         "second_source_position_coordinate": deepcopy(second),
     }
@@ -716,6 +736,7 @@ def _compare_result_material(
         "comparison_rule": RULE,
         "finding": _finding(inputs),
         "path_result_reference": deepcopy(inputs["reference"]),
+        "path_position_pair": list(inputs["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
@@ -807,13 +828,14 @@ def _yield_result(
     )
 
 
-def record_ordered_path_source_position_material_comparison(
+def _record_ordered_path_source_position_material_comparison(
     ledger: EventLedger,
     *,
     path_result_event_identity: str,
+    path_position_pair: tuple[int, int],
     locality_standing: dict[str, Any],
 ) -> OrderedPathSourcePositionMaterialComparison:
-    """Record the exact endpoint Compare through its existing path boundary."""
+    """Record one exact path-ordered pair Compare."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source position Compare requires an EventLedger")
@@ -831,7 +853,10 @@ def record_ordered_path_source_position_material_comparison(
     ):
         raise ValueError("source position Compare requires exact current Standing")
     inputs = _path_input(
-        ledger, path_result_event_identity, prior_standing=standing
+        ledger,
+        path_result_event_identity,
+        path_position_pair=path_position_pair,
+        prior_standing=standing,
     )
     identities = _new_identities()
     from seed_runtime.operator_locality_standing import (
@@ -919,3 +944,23 @@ def record_ordered_path_source_position_material_comparison(
     )
     carry(result_yield, result)
     return OrderedPathSourcePositionMaterialComparison(standing, result)
+
+
+def yield_ordered_path_source_position_material_comparisons(
+    ledger: EventLedger,
+    *,
+    path_result_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> Iterator[OrderedPathSourcePositionMaterialComparison]:
+    """Yield every distinct path-ordered coordinate pair before returning."""
+
+    standing = locality_standing
+    for path_position_pair in _PATH_POSITION_PAIRS:
+        comparison = _record_ordered_path_source_position_material_comparison(
+            ledger,
+            path_result_event_identity=path_result_event_identity,
+            path_position_pair=path_position_pair,
+            locality_standing=standing,
+        )
+        standing = comparison.locality_standing
+        yield comparison

@@ -5,7 +5,7 @@ import pytest
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
     COMPARE_RESULT_KIND,
     get_recorded_ordered_path_source_position_material_comparison,
-    record_ordered_path_source_position_material_comparison,
+    yield_ordered_path_source_position_material_comparisons,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -39,12 +39,14 @@ def _path(ledger, *, locality, exact, position=1):
     return _record_d2_shared_path(ledger, locality, determination)[-1]
 
 
-def _comparison(ledger, *, locality, exact, position=1):
+def _comparisons(ledger, *, locality, exact, position=1):
     path = _path(ledger, locality=locality, exact=exact, position=position)
-    recorded = record_ordered_path_source_position_material_comparison(
-        ledger,
-        path_result_event_identity=path.identity,
-        locality_standing=_standing(ledger, locality),
+    recorded = tuple(
+        yield_ordered_path_source_position_material_comparisons(
+            ledger,
+            path_result_event_identity=path.identity,
+            locality_standing=_standing(ledger, locality),
+        )
     )
     return path, recorded
 
@@ -75,65 +77,96 @@ def _direct_position_result(ledger, *, locality, exact):
     return result
 
 
-def test_path_first_and_final_equal_material_yield_same_content():
+def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
     ledger = EventLedger()
-    path, recorded = _comparison(
-        ledger, locality="ordered-path-endpoint-same", exact=b"2+2=5\n"
-    )
-
-    reading = get_recorded_ordered_path_source_position_material_comparison(
-        ledger, recorded.result_occurrence.identity
+    path, recorded = _comparisons(
+        ledger, locality="ordered-path-pair-population", exact=b"2+2=5\n"
     )
     _assertion, positions = (
         ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
             ledger, path.identity
         )
     )
+    readings = tuple(
+        get_recorded_ordered_path_source_position_material_comparison(
+            ledger, comparison.result_occurrence.identity
+        )
+        for comparison in recorded
+    )
 
-    assert recorded.result_occurrence.kind == COMPARE_RESULT_KIND
     assert tuple(position["position"] for position in positions) == (0, 1, 2)
-    assert reading["finding"]["result"] == "same-content"
-    assert reading["finding"]["subject"][
-        "first_source_position_coordinate"
-    ] == positions[0]
-    assert reading["finding"]["subject"][
-        "second_source_position_coordinate"
-    ] == positions[2]
-    assert reading["finding"]["subject"][
-        "first_source_position_coordinate"
-    ]["exact_material"] == [ord("2")]
-    assert reading["finding"]["subject"][
-        "second_source_position_coordinate"
-    ]["exact_material"] == [ord("2")]
-    assert recorded.result_occurrence.identity in recorded.locality_standing[
-        "comparison_result_occurrences"
-    ]
+    assert tuple(reading["path_position_pair"] for reading in readings) == (
+        [0, 1],
+        [0, 2],
+        [1, 2],
+    )
+    assert tuple(reading["finding"]["result"] for reading in readings) == (
+        "difference",
+        "same-content",
+        "difference",
+    )
+    assert tuple(
+        (
+            reading["finding"]["subject"][
+                "first_source_position_coordinate"
+            ]["exact_material"],
+            reading["finding"]["subject"][
+                "second_source_position_coordinate"
+            ]["exact_material"],
+        )
+        for reading in readings
+    ) == (
+        ([ord("2")], [ord("+")]),
+        ([ord("2")], [ord("2")]),
+        ([ord("+")], [ord("2")]),
+    )
+    assert all(
+        comparison.result_occurrence.kind == COMPARE_RESULT_KIND
+        and comparison.result_occurrence.identity
+        in comparison.locality_standing["comparison_result_occurrences"]
+        for comparison in recorded
+    )
 
 
-def test_path_first_and_final_different_material_yield_difference():
+def test_three_different_path_coordinates_yield_three_differences():
     ledger = EventLedger()
-    _path_result, recorded = _comparison(
-        ledger, locality="ordered-path-endpoint-difference", exact=b"abc"
+    _path_result, recorded = _comparisons(
+        ledger, locality="ordered-path-pair-difference", exact=b"abc"
+    )
+    readings = tuple(
+        get_recorded_ordered_path_source_position_material_comparison(
+            ledger, comparison.result_occurrence.identity
+        )
+        for comparison in recorded
     )
 
-    reading = get_recorded_ordered_path_source_position_material_comparison(
-        ledger, recorded.result_occurrence.identity
+    assert tuple(reading["finding"]["result"] for reading in readings) == (
+        "difference",
+        "difference",
+        "difference",
     )
 
-    assert reading["finding"]["result"] == "difference"
-    assert reading["finding"]["subject"][
-        "first_source_position_coordinate"
-    ]["exact_material"] == [ord("a")]
-    assert reading["finding"]["subject"][
-        "second_source_position_coordinate"
-    ]["exact_material"] == [ord("c")]
 
-
-def test_endpoint_comparison_refuses_a_changed_path_coordinate():
+def test_three_equal_path_coordinates_yield_three_same_content_findings():
     ledger = EventLedger()
-    _path_result, recorded = _comparison(
-        ledger, locality="ordered-path-endpoint-refusal", exact=b"aba"
+    _path_result, recorded = _comparisons(
+        ledger, locality="ordered-path-pair-same-content", exact=b"aaa"
     )
+
+    assert tuple(
+        get_recorded_ordered_path_source_position_material_comparison(
+            ledger, comparison.result_occurrence.identity
+        )["finding"]["result"]
+        for comparison in recorded
+    ) == ("same-content", "same-content", "same-content")
+
+
+def test_path_pair_comparison_refuses_a_changed_path_coordinate():
+    ledger = EventLedger()
+    _path_result, comparisons = _comparisons(
+        ledger, locality="ordered-path-pair-refusal", exact=b"aba"
+    )
+    recorded = comparisons[1]
     result = ledger.get(recorded.result_occurrence.identity)
     result.material["finding"]["subject"]["second_source_position_coordinate"][
         "exact_material"
@@ -145,22 +178,30 @@ def test_endpoint_comparison_refuses_a_changed_path_coordinate():
         )
 
 
-def test_endpoint_comparison_survives_sqlite_restart(tmp_path):
-    database = tmp_path / "ordered-path-endpoint-compare.sqlite"
+def test_path_pair_comparisons_survive_sqlite_restart(tmp_path):
+    database = tmp_path / "ordered-path-pair-compare.sqlite"
     ledger = SQLiteEventLedger(str(database))
-    _path_result, recorded = _comparison(
-        ledger, locality="ordered-path-endpoint-restart", exact=b"aba"
+    _path_result, recorded = _comparisons(
+        ledger, locality="ordered-path-pair-restart", exact=b"aba"
     )
-    identity = recorded.result_occurrence.identity
-    expected = get_recorded_ordered_path_source_position_material_comparison(
-        ledger, identity
+    identities = tuple(
+        comparison.result_occurrence.identity for comparison in recorded
+    )
+    expected = tuple(
+        get_recorded_ordered_path_source_position_material_comparison(
+            ledger, identity
+        )
+        for identity in identities
     )
     ledger.close()
 
     reopened = SQLiteEventLedger(str(database))
     try:
-        assert get_recorded_ordered_path_source_position_material_comparison(
-            reopened, identity
+        assert tuple(
+            get_recorded_ordered_path_source_position_material_comparison(
+                reopened, identity
+            )
+            for identity in identities
         ) == expected
     finally:
         reopened.close()
@@ -182,62 +223,60 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
     )
 
     assert tuple(
-        continuation.source_position_coordinate["position"]
-        for continuation in continuations
+        dict.fromkeys(
+            continuation.source_position_coordinate["position"]
+            for continuation in continuations
+        )
     ) == tuple(range(6))
+    assert len(continuations) == 14
     assert sum(
         continuation.ordered_path_result is not None
         for continuation in continuations
-    ) == 4
+    ) == 12
     assert sum(
         continuation.comparison_result is not None
         for continuation in continuations
-    ) == 4
-    findings = {
-        continuation.source_position_coordinate["position"]: (
-            continuation.comparison_result.material["finding"]["result"]
-            if continuation.comparison_result is not None
-            else None
-        )
+    ) == 12
+    centered_on_plus = tuple(
+        continuation.comparison_result.material
         for continuation in continuations
-    }
-    assert findings == {
-        0: None,
-        1: "same-content",
-        2: "difference",
-        3: "difference",
-        4: "difference",
-        5: None,
-    }
+        if continuation.source_position_coordinate["position"] == 1
+    )
+    assert tuple(
+        material["path_position_pair"] for material in centered_on_plus
+    ) == ([0, 1], [0, 2], [1, 2])
+    assert tuple(
+        material["finding"]["result"] for material in centered_on_plus
+    ) == ("difference", "same-content", "difference")
 
 
-def test_one_source_position_continuation_yields_before_its_siblings():
+def test_one_path_pair_yields_before_its_sibling_pairs():
     ledger = EventLedger()
-    locality = "ordered-path-source-position-independent-continuations"
-    direct = _direct_position_result(ledger, locality=locality, exact=b"abc")
-    continuations = yield_ordered_path_source_position_continuations(
+    locality = "ordered-path-pair-independent-continuations"
+    path = _path(ledger, locality=locality, exact=b"abc")
+    comparisons = yield_ordered_path_source_position_material_comparisons(
         ledger,
-        direct_result_event_identity=direct.identity,
+        path_result_event_identity=path.identity,
         locality_standing=_standing(ledger, locality),
     )
 
-    first = next(continuations)
-    assert first.source_position_coordinate["position"] == 0
-    assert first.ordered_path_result is None
+    first = next(comparisons)
+    assert first.result_occurrence.material["path_position_pair"] == [0, 1]
     events_after_first = len(ledger.list_events())
 
-    second = next(continuations)
+    second = next(comparisons)
     assert len(ledger.list_events()) > events_after_first
-    assert second.source_position_coordinate["position"] == 1
-    assert second.ordered_path_result is not None
-    assert second.comparison_result.material["finding"]["result"] == "difference"
+    assert second.result_occurrence.material["path_position_pair"] == [0, 2]
+    assert first.result_occurrence.material["finding"]["result"] == "difference"
+    assert second.result_occurrence.material["finding"]["result"] == "difference"
 
 
 PYTEST_ADMISSION = (
-    test_path_first_and_final_equal_material_yield_same_content,
-    test_path_first_and_final_different_material_yield_difference,
-    test_endpoint_comparison_refuses_a_changed_path_coordinate,
-    test_endpoint_comparison_survives_sqlite_restart,
+    test_every_path_ordered_pair_is_compared_without_a_chosen_pair,
+    test_three_different_path_coordinates_yield_three_differences,
+    test_three_equal_path_coordinates_yield_three_same_content_findings,
+    test_path_pair_comparison_refuses_a_changed_path_coordinate,
+    test_path_pair_comparisons_survive_sqlite_restart,
     test_each_exact_source_position_continues_without_a_chosen_subject,
-    test_one_source_position_continuation_yields_before_its_siblings,
+    test_one_path_pair_yields_before_its_sibling_pairs,
 )

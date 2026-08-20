@@ -1,4 +1,4 @@
-"""Continue each addressed source position through path endpoint Compare."""
+"""Continue each addressed source position through path-ordered Compare."""
 
 from __future__ import annotations
 
@@ -8,8 +8,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
 )
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
-    OrderedPathSourcePositionMaterialComparison,
-    record_ordered_path_source_position_material_comparison,
+    yield_ordered_path_source_position_material_comparisons,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
@@ -231,33 +230,39 @@ def _yield_ordered_path_source_position_continuations(
                 )
             )
             if len(determination.material["ordered_assertion_references"]) != 2:
-                continuation = OrderedPathSourcePositionContinuation(
-                    coordinate,
-                    determination,
-                    None,
-                    None,
-                    standing,
-                )
+                path = None
             else:
                 standing, path = _record_shared_path(
                     ledger, standing, determination
                 )
-                comparison: OrderedPathSourcePositionMaterialComparison = (
-                    record_ordered_path_source_position_material_comparison(
-                        ledger,
-                        path_result_event_identity=path.identity,
-                        locality_standing=standing,
-                    )
-                )
-                standing = comparison.locality_standing
-                continuation = OrderedPathSourcePositionContinuation(
-                    coordinate,
-                    determination,
-                    path,
-                    comparison.result_occurrence,
-                    standing,
-                )
-        yield continuation
+        if path is None:
+            yield OrderedPathSourcePositionContinuation(
+                coordinate,
+                determination,
+                None,
+                None,
+                standing,
+            )
+            continue
+        comparisons = yield_ordered_path_source_position_material_comparisons(
+            ledger,
+            path_result_event_identity=path.identity,
+            locality_standing=standing,
+        )
+        while True:
+            with ledger.batched():
+                try:
+                    comparison = next(comparisons)
+                except StopIteration:
+                    break
+            standing = comparison.locality_standing
+            yield OrderedPathSourcePositionContinuation(
+                coordinate,
+                determination,
+                path,
+                comparison.result_occurrence,
+                standing,
+            )
 
 
 def yield_ordered_path_source_position_continuations(
