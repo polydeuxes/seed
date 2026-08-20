@@ -297,7 +297,7 @@ def test_material_without_a_byte_pair_yields_an_exact_empty_result(exact):
     assert result.material["assertions"]["occurrences"] == 0
 
 
-def test_empty_witness_material_can_be_measured_but_cannot_acquire_an_assignment():
+def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assignment():
     from seed_runtime.witness_material_acquisition import (
         record_witness_material_acquisition,
     )
@@ -313,18 +313,17 @@ def test_empty_witness_material_can_be_measured_but_cannot_acquire_an_assignment
         ledger,
         source_material_acquisition_occurrence_identity=source.identity,
     )
-    boundary = ledger.append_boundary()
-
     assert finding.occurrences == ()
-    with pytest.raises(ValueError, match="current Locality Standing"):
-        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
-            ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
-            locality_standing=_standing(
-                ledger, "position-occurrence-position"
-            ),
-        )
-    assert ledger.append_boundary() == boundary
+    assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        source_material_acquisition_occurrence_identity=source.identity,
+        locality_standing=_standing(
+            ledger, "position-occurrence-position"
+        ),
+    )
+    assert assignment.material[
+        "source_material_acquisition_occurrence_identity"
+    ] == source.identity
 
 
 def test_assignment_act_yield_and_result_enter_current_standing():
@@ -1031,7 +1030,7 @@ PYTEST_ADMISSION = (
     test_unassigned_material_acquisition_read_survives_sqlite_restart,
     test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,
     test_material_without_a_byte_pair_yields_an_exact_empty_result,
-    test_empty_witness_material_can_be_measured_but_cannot_acquire_an_assignment,
+    test_empty_witness_material_locality_can_acquire_an_empty_measurement_assignment,
     test_assignment_act_yield_and_result_enter_current_standing,
     test_act_requires_current_standing_that_carries_exact_assignment,
     test_one_assignment_records_one_act_and_one_result,

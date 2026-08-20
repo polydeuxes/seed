@@ -396,8 +396,8 @@ def _latest_carried_pair_premise(
 ):
     """Address the latest exact pair Measurement already carried here."""
 
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
     )
 
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
@@ -442,7 +442,7 @@ def _latest_carried_pair_premise(
             )
             and all(
                 all(
-                    read_operator_material_acquire_locality_relation_requirements(
+                    read_material_acquisition_locality_relation_requirements(
                         ledger,
                         recorded_result_event_identity=source_reference[
                             "material_acquisition_occurrence_identity"
@@ -768,12 +768,6 @@ def run_persistent_operator_console(
                 witness_standing = (
                     recorded_witness_measurements.bounded_locality_replay
                 )
-                if recorded_witness_measurements.result_occurrences:
-                    raise ValueError(
-                        "Witness acquisition availability produced a declared "
-                        "Measurement without exact material-to-this-Seed Locality "
-                        "occurrence and Evidence"
-                    )
                 provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(

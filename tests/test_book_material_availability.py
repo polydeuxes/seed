@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from book_material_availability import acquired_book_material  # noqa: E402
 
 
-def test_book_material_acquisition_keeps_exact_lineage_without_measurement_pressure():
+def test_book_material_acquisition_locality_exposes_declared_measurements():
     ledger, paths, acquisition_results = acquired_book_material()
     assert tuple(acquired_material_bytes(acquisition_result) for acquisition_result in acquisition_results) == tuple(
         path.read_bytes() for path in paths
@@ -35,16 +35,18 @@ def test_book_material_acquisition_keeps_exact_lineage_without_measurement_press
     bounded_replay = read_operator_locality_standing(
         ledger, locality_identity="book-material"
     )
-    assert bounded_replay["operator_material_locality_relation_occurrences"] == {}
+    assert bounded_replay["material_locality_relation_occurrences"]
     assert bounded_replay["measurement_occurrences"] == {}
-    boundary = ledger.append_boundary()
     recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger, locality_identity="book-material"
     )
-    assert recorded.result_occurrences == ()
-    assert ledger.append_boundary() == boundary
+    assert recorded.result_occurrences
+    assert len(recorded.result_occurrences) == len(acquisition_results) + 1
+    assert set(recorded.bounded_locality_replay["measurement_occurrences"]) == {
+        result.identity for result in recorded.result_occurrences
+    }
 
 
 PYTEST_ADMISSION = (
-    test_book_material_acquisition_keeps_exact_lineage_without_measurement_pressure,
+    test_book_material_acquisition_locality_exposes_declared_measurements,
 )

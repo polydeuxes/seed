@@ -201,10 +201,9 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
         act_evidence.identity: None
     }
     assert replayed["exact_result_occurrences"][result.identity] is None
-    assert replayed["operator_material_locality_relation_occurrences"] == {
+    assert replayed["material_locality_relation_occurrences"] == {
         result.identity: {
             "locality_relation": deepcopy(recorded["locality_relation"]),
-            "locality_evidence_identity": result.identity,
         }
     }
 
@@ -322,12 +321,11 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
     standing = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    assert standing["operator_material_locality_relation_occurrences"] == {
+    assert standing["material_locality_relation_occurrences"] == {
         acquired[0].identity: {
             "locality_relation": deepcopy(
                 acquired[0].material["locality_relation"]
             ),
-            "locality_evidence_identity": acquired[0].identity,
         }
     }
     acquisition_results = [
@@ -798,10 +796,10 @@ def test_prior_acquire_locality_relations_must_remain_an_identity_dictionary():
     )
     prior = read_operator_locality_standing(ledger, locality_identity="source")
     assert result.identity in prior[
-        "operator_material_locality_relation_occurrences"
+        "material_locality_relation_occurrences"
     ]
     broken = deepcopy(prior)
-    broken["operator_material_locality_relation_occurrences"] = []
+    broken["material_locality_relation_occurrences"] = []
 
     with pytest.raises(ValueError, match="material Locality relation occurrences"):
         advance_operator_locality_standing(

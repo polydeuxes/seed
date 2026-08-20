@@ -2281,8 +2281,8 @@ def _byte_measurement_source_material(
         )
     source_material = []
     seen_material = set()
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
     )
 
     for locality in localities:
@@ -2291,7 +2291,7 @@ def _byte_measurement_source_material(
         ):
             _acquired_bytes(ledger, acquisition_result)
             if not all(
-                read_operator_material_acquire_locality_relation_requirements(
+                read_material_acquisition_locality_relation_requirements(
                     ledger,
                     recorded_result_event_identity=acquisition_result.identity,
                 ).values()

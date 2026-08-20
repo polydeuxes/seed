@@ -535,7 +535,7 @@ def test_every_supplied_material_has_its_own_acquisition(book_material_acquisiti
     assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == supplied_material
 
 
-def test_book_witness_material_is_available_without_locality_or_measurement(
+def test_book_witness_material_locality_is_available_before_measurement(
     book_material_acquisitions,
 ):
     ledger, _supplied_material, acquisition_results = book_material_acquisitions
@@ -547,22 +547,24 @@ def test_book_witness_material_is_available_without_locality_or_measurement(
         occurrence["result_occurrence_identity"]
         for occurrence in bounded_replay["material_acquisition_result_occurrences"]
     ) == tuple(result.identity for result in acquisition_results)
-    assert bounded_replay["operator_material_locality_relation_occurrences"] == {}
+    assert bounded_replay["material_locality_relation_occurrences"] == {
+        result.identity: {
+            "locality_relation": result.material["locality_relation"]
+        }
+        for result in acquisition_results
+    }
     assert bounded_replay["measurement_occurrences"] == {}
 
 
-def test_book_witness_availability_records_no_declared_measurement(
+def test_book_witness_locality_records_declared_measurements(
     book_material_acquisitions,
 ):
     ledger, _supplied_material, _acquisition_results = book_material_acquisitions
-    boundary = ledger.append_boundary()
-
     recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger, locality_identity="book-material"
     )
 
-    assert recorded.result_occurrences == ()
-    assert ledger.append_boundary() == boundary
+    assert len(recorded.result_occurrences) == len(_acquisition_results) + 1
 
 
 @pytest.mark.skipif(
@@ -3950,8 +3952,8 @@ def test_bounded_invocation_requires_input_boundary_acceptance():
 
 PYTEST_ADMISSION = (
     test_every_supplied_material_has_its_own_acquisition,
-    test_book_witness_material_is_available_without_locality_or_measurement,
-    test_book_witness_availability_records_no_declared_measurement,
+    test_book_witness_material_locality_is_available_before_measurement,
+    test_book_witness_locality_records_declared_measurements,
     test_every_measured_pair_reaches_every_implementation_function,
     test_distinct_implementation_functions_establish_their_admissions,
     test_measured_book_pairs_reach_one_compiled_material_function,

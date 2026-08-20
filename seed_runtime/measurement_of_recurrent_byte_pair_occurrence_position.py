@@ -641,8 +641,8 @@ def _require_current_assignment_standing(
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
     )
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
     )
 
     current = read_operator_locality_standing(
@@ -653,7 +653,7 @@ def _require_current_assignment_standing(
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     source_has_exact_locality = all(
-        read_operator_material_acquire_locality_relation_requirements(
+        read_material_acquisition_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_acquisition_occurrence_identity
@@ -853,11 +853,11 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     exact_material_acquisition_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
         ledger, finding.source_material_acquisition_occurrence_identity
     )
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
     )
     source_has_exact_locality = all(
-        read_operator_material_acquire_locality_relation_requirements(
+        read_material_acquisition_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_acquisition_occurrence_identity

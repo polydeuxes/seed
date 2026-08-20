@@ -12,11 +12,13 @@ from seed_runtime.material_acquisition import (
     _append_exact_material_result_occurrence,
     acquired_material_bytes,
     read_exact_material_acquisition_result,
+    read_material_acquisition_locality_relation_requirements,
 )
 from seed_runtime.witness_material_acquisition import (
     WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
     WitnessMaterialAcquisitionError,
     record_witness_material_acquisition,
+    read_witness_material_acquire_locality_relation_requirements,
 )
 from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND, read_requirements_of_yield_relation
 
@@ -47,6 +49,15 @@ def test_witness_material_preserves_exact_raw_bytes():
     assert occurred.locality_identity == "locality_000001"
     assert acquired_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
+    assert occurred.material["locality_relation"] == {
+        "first_subject": {
+            "recorded_occurrence_identity": occurred.identity,
+            "coordinate": "exact_material",
+        },
+        "relation": "locality",
+        "second_subject": "this Seed",
+        "relation_occurrence_identity": occurred.identity,
+    }
     assert set(occurred.material["dimensions"]) == {
         "identity",
         "source_provenance",
@@ -147,6 +158,71 @@ def test_witness_material_acquisition_fixes_its_exact_source_subject():
     occurred = _preserve(EventLedger())
 
     assert occurred.material["source_role"] == "this Witness"
+
+
+def test_witness_material_locality_relation_preserves_invocation_and_provenance():
+    ledger = EventLedger()
+    command = ledger.append(
+        "operator.command.recorded",
+        {"command": "cat"},
+        locality_identity="operator-locality",
+    )
+
+    occurred = _preserve(
+        ledger,
+        b"hello",
+        locality_identity="invocation-locality",
+        source_boundary="stdout",
+        provenance_occurrence_references=(command.identity,),
+    )
+
+    assert occurred.locality_identity == "invocation-locality"
+    assert occurred.exact_material == b"hello"
+    assert occurred.material["source_role"] == "this Witness"
+    assert occurred.material["source_boundary"] == "stdout"
+    assert occurred.material["provenance_occurrence_references"] == [
+        command.identity
+    ]
+    assert all(
+        read_witness_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=occurred.identity,
+        ).values()
+    )
+    assert all(
+        read_material_acquisition_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=occurred.identity,
+        ).values()
+    )
+    assert not any(
+        event.exact_material == b"hello"
+        for event in ledger.list_locality("operator-locality")
+    )
+
+
+def test_witness_material_locality_relation_refuses_mismatched_coordinates():
+    ledger = EventLedger()
+    occurred = _preserve(ledger, b"hello")
+    forged_relation = dict(occurred.material["locality_relation"])
+    forged_relation["second_subject"] = "another boundary"
+    forged = ledger.append(
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+        {**occurred.material, "locality_relation": forged_relation},
+        exact_material=occurred.exact_material,
+        locality_identity=occurred.locality_identity,
+    )
+
+    assert read_witness_material_acquire_locality_relation_requirements(
+        ledger,
+        recorded_result_event_identity=forged.identity,
+    ) == {
+        "exact_relation": False,
+        "relation_occurrence": False,
+        "responsible_acquisition": False,
+    }
+    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
+        read_exact_material_acquisition_result(ledger, forged.identity)
 
 
 def test_material_acquisition_event_binds_exact_act_and_evidence_of_yield_relation():

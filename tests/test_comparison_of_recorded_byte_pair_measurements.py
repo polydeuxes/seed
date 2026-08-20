@@ -748,7 +748,7 @@ def test_later_result_read_revalidates_changed_pair_measurement_evidence():
         get_recorded_pair_measurement_comparison(ledger, result.identity)
 
 
-def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
+def test_supplied_local_material_does_not_create_a_pair_premise():
     ledger = EventLedger()
 
     def provider(command, supply):
@@ -776,9 +776,7 @@ def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
     )
 
     kinds = tuple(event.kind for event in ledger.list())
-    # Only the command's O1 material has the exact material-to-this-Seed
-    # Locality occurrence and Evidence required for declared Measurement.
-    assert kinds.count("operator.measurement.byte_counts_recorded") == 1
+    assert kinds.count("operator.measurement.byte_counts_recorded") == 3
     assert "operator.measurement.byte_position_pair_counts_recorded" not in kinds
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
     assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
@@ -1030,7 +1028,7 @@ PYTEST_ADMISSION = (
     test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings,
     test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
     test_later_result_read_revalidates_changed_pair_measurement_evidence,
-    test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
+    test_supplied_local_material_does_not_create_a_pair_premise,
     test_raw_material_acquisition_does_not_create_a_pair_premise,
     test_new_raw_acquisition_does_not_replace_one_carried_pair_premise,
     test_operator_pair_premise_and_compare_survive_reopen,

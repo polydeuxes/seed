@@ -228,3 +228,41 @@ def read_exact_material_acquisition_result(
     raise MaterialAcquisitionError(
         "exact material-acquisition result is absent or corrupted"
     )
+
+
+def read_material_acquisition_locality_relation_requirements(
+    ledger: EventLedger,
+    *,
+    recorded_result_event_identity: str,
+) -> dict[str, bool]:
+    """Read one source-specific material-to-this-Seed Locality relation."""
+
+    result = read_exact_material_acquisition_result(
+        ledger, recorded_result_event_identity
+    )
+    from seed_runtime.witness_material_acquisition import (
+        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+        read_witness_material_acquire_locality_relation_requirements,
+    )
+
+    if result.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND:
+        return read_witness_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=result.identity,
+        )
+
+    from seed_runtime.operator_material_acquisition import (
+        read_operator_material_acquire_locality_relation_requirements,
+    )
+
+    operator_requirements = (
+        read_operator_material_acquire_locality_relation_requirements(
+            ledger,
+            recorded_result_event_identity=result.identity,
+        )
+    )
+    return {
+        "exact_relation": operator_requirements["exact_relation"],
+        "relation_occurrence": operator_requirements["occurrence_witness"],
+        "responsible_acquisition": operator_requirements["intact_evidence"],
+    }

@@ -11,7 +11,10 @@ from typing import Any, Iterable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_acquisition import (
+    read_exact_material_acquisition_result,
+    read_material_acquisition_locality_relation_requirements,
+)
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -958,7 +961,7 @@ def advance_operator_locality_standing(
     operator_invocation_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
     operator_material_acquire_act_occurrences: dict[str, None] = {}
-    operator_material_locality_relation_occurrences: dict[
+    material_locality_relation_occurrences: dict[
         str, dict[str, Any]
     ] = {}
     candidate_result_occurrences: dict[str, None] = {}
@@ -1043,12 +1046,12 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact operator material acquire Act occurrences"
             )
-        operator_material_locality_relation_occurrences = prior[
-            "operator_material_locality_relation_occurrences"
+        material_locality_relation_occurrences = prior[
+            "material_locality_relation_occurrences"
         ]
-        if type(operator_material_locality_relation_occurrences) is not dict:
+        if type(material_locality_relation_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact operator material Locality relation occurrences"
+                "prior Locality Standing requires exact material Locality relation occurrences"
             )
         candidate_result_occurrences = prior["candidate_result_occurrences"]
         if type(candidate_result_occurrences) is not dict:
@@ -1422,11 +1425,8 @@ def advance_operator_locality_standing(
             material = get_recorded_operator_material_acquire(
                 ledger, event.identity
             )
-            operator_material_locality_relation_occurrences[event.identity] = {
+            material_locality_relation_occurrences[event.identity] = {
                 "locality_relation": deepcopy(material["locality_relation"]),
-                "locality_evidence_identity": material[
-                    "locality_evidence_identity"
-                ],
             }
         if (
             event.kind
@@ -2099,6 +2099,21 @@ def advance_operator_locality_standing(
         source_result = read_exact_material_acquisition_result(
             ledger, event.identity
         )
+        locality_requirements = (
+            read_material_acquisition_locality_relation_requirements(
+                ledger,
+                recorded_result_event_identity=source_result.identity,
+            )
+        )
+        if not all(locality_requirements.values()):
+            raise ValueError(
+                "material acquisition carries no exact material Locality relation"
+            )
+        material_locality_relation_occurrences[source_result.identity] = {
+            "locality_relation": deepcopy(
+                source_result.material["locality_relation"]
+            ),
+        }
         material_acquisition_reference = source_result.material["dimensions"][
             "identity"
         ]
@@ -2143,8 +2158,8 @@ def advance_operator_locality_standing(
         "operator_material_acquire_act_occurrences": (
             operator_material_acquire_act_occurrences
         ),
-        "operator_material_locality_relation_occurrences": (
-            operator_material_locality_relation_occurrences
+        "material_locality_relation_occurrences": (
+            material_locality_relation_occurrences
         ),
         "candidate_result_occurrences": candidate_result_occurrences,
         "admission_result_occurrences": admission_result_occurrences,
@@ -2952,7 +2967,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     acts = locality_standing.get("operator_material_acquire_act_occurrences")
     locality_relations = locality_standing.get(
-        "operator_material_locality_relation_occurrences"
+        "material_locality_relation_occurrences"
     )
     material_acquisition_result_occurrences = locality_standing.get("material_acquisition_result_occurrences")
     exact_results = locality_standing.get("exact_result_occurrences")
@@ -3019,9 +3034,6 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         exact_results[event.identity] = None
         locality_relations[event.identity] = {
             "locality_relation": deepcopy(event.material["locality_relation"]),
-            "locality_evidence_identity": event.material[
-                "locality_evidence_identity"
-            ],
         }
         material_acquisition_result_occurrences.append(
             {

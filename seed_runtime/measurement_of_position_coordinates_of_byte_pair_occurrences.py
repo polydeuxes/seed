@@ -159,33 +159,33 @@ def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     return tuple(value)
 
 
-def _has_exact_operator_material_locality_to_this_seed(
+def _has_exact_material_locality_to_this_seed(
     ledger: EventLedger, source_identity: str
 ) -> bool:
-    """Whether exact operator acquisition supplies the Locality prerequisite."""
+    """Whether exact source acquisition supplies the Locality prerequisite."""
 
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
     )
 
     return all(
-        read_operator_material_acquire_locality_relation_requirements(
+        read_material_acquisition_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=source_identity,
         ).values()
     )
 
 
-def _material_acquisition_identities_with_exact_operator_locality_from_bounded_replay(
+def _material_acquisition_identities_with_exact_locality_from_bounded_replay(
     bounded_locality_replay: dict[str, Any],
 ) -> tuple[str, ...]:
-    """Resolve the exact O1 sources already validated into bounded replay."""
+    """Resolve exact acquisition sources already validated into bounded replay."""
 
     acquisitions = bounded_locality_replay.get(
         "material_acquisition_result_occurrences"
     )
     locality_occurrences = bounded_locality_replay.get(
-        "operator_material_locality_relation_occurrences"
+        "material_locality_relation_occurrences"
     )
     if type(acquisitions) is not list or type(locality_occurrences) is not dict:
         raise ValueError(
@@ -218,8 +218,6 @@ def _material_acquisition_identities_with_exact_operator_locality_from_bounded_r
         if (
             type(locality_coordinates) is not dict
             or locality_coordinates.get("locality_relation") != exact_relation
-            or locality_coordinates.get("locality_evidence_identity")
-            != source_identity
         ):
             raise ValueError(
                 "bounded Locality replay contains malformed material-to-this-Seed "
@@ -314,7 +312,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         )
     )
     exact_operator_locality_sources = set(
-        _material_acquisition_identities_with_exact_operator_locality_from_bounded_replay(
+        _material_acquisition_identities_with_exact_locality_from_bounded_replay(
             bounded_locality_replay
         )
     )
@@ -612,7 +610,7 @@ def _require_current_standing(
     }
     source_has_exact_locality = bool(
         source_material_acquisition_occurrence_identity is None
-        or _has_exact_operator_material_locality_to_this_seed(
+        or _has_exact_material_locality_to_this_seed(
             ledger, source_material_acquisition_occurrence_identity
         )
     )
@@ -667,7 +665,7 @@ def _require_carried_replay_at_current_boundary(
     }
     source_has_exact_locality = bool(
         source_material_acquisition_occurrence_identity is None
-        or _has_exact_operator_material_locality_to_this_seed(
+        or _has_exact_material_locality_to_this_seed(
             ledger, source_material_acquisition_occurrence_identity
         )
     )
@@ -754,7 +752,7 @@ def _require_exact_responsibility_boundary(
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or not _has_exact_operator_material_locality_to_this_seed(
+        or not _has_exact_material_locality_to_this_seed(
             ledger, source_material_acquisition_occurrence_identity
         )
     ):
