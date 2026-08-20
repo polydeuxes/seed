@@ -55,9 +55,9 @@ the relation content
 ```
 
 The third is not recovered grammar.  The generic relation position already
-exists.  Its exact content remains unestablished until Seed recovers it.  A
-result name, source reference, repeated material, formatting, or host label
-cannot populate that position.
+exists, but its existence does not instantiate a relation for every subject
+pair.  A result name, source reference, repeated material, formatting, or host
+label cannot add a relation instance.
 
 For sourced material, real work survives subtraction:
 
@@ -71,15 +71,16 @@ one addressable bounded result
 └── Scope / Locality / loss / Unknown preserved where established
 ```
 
-That work does not populate this relation shape:
+That work carries no relation instance between these subjects:
 
 ```text
 bounded result R
--- relation content: unestablished -->
 source I
+
+no relation instance carried between R and I
 ```
 
-For `C0`, even that sourced work is absent:
+For `C0`, none of that sourced work is carried:
 
 ```text
 source occurrence reference = None
@@ -122,10 +123,10 @@ Representation exact material
 exact material of source result
 ```
 
-and it separately refuses relation content:
+and it separately creates no relation instance:
 
 ```text
-generic relation content         unestablished
+no relation instance carried between result and source
 ```
 
 Thus:
@@ -137,8 +138,8 @@ generic relation position
 ```
 
 No special `represents` relation is recovered or proposed here.  If later
-responsible physiology establishes a relation between two exact subjects, its
-content belongs in the existing generic relation position.
+responsible physiology instantiates a relation between two exact subjects,
+its content belongs in the existing generic relation position.
 
 What becomes inexpressible without `Representation` here:
 
@@ -190,8 +191,9 @@ That text is testimony supplied by the recorder.  It does not establish:
 
 ```text
 C0
--- relation content: unestablished -->
 S0
+
+no relation instance carried between C0 and S0
 ```
 
 The earlier C0 investigation correctly found the proposed subject
@@ -205,7 +207,7 @@ empty Standing S0                         established initial condition
 host call                                 exact host occurrence
 host-created durable records              exact runtime testimony
 C0 subject                                unestablished
-C0-to-S0 relation content                  unestablished
+C0-to-S0 relation                           none carried
 Seed-native Responsibility before C0      unestablished
 Seed-native C0 Act                         unestablished
 ```
@@ -293,10 +295,12 @@ material preservation rule and cannot enter the exact-material Admission
 road.
 
 The exact work is therefore addressability of one prior structured result at
-one bounded position.  The new record does not establish:
+one bounded position.  The new record carries no relation instance concerning
+that structured result.
+
+It also does not establish:
 
 ```text
-relation content concerning the structured result
 how it should be rendered
 that it participates in emission
 ```
@@ -307,10 +311,10 @@ What becomes inexpressible without `Representation` here:
 nothing identified
 ```
 
-An exact bounded source-result reference remains expressible while the generic
-relation position remains unpopulated.
+An exact bounded source-result reference remains expressible without carrying
+another relation instance.
 
-## 5. Emission does not require relation content
+## 5. Emission does not require another relation instance
 
 The active emission physiology is already decomposed into:
 
@@ -330,9 +334,9 @@ distinction survives.  The word `Representation` currently labels the input,
 candidate, Responsibility, Admission, and result references, but it adds no
 coordinate to the input-to-Act relation.
 
-Emission establishes only the declared destination-boundary result.  It does
-not establish what the material means, populate the generic relation position,
-or establish effects beyond that boundary.
+Emission establishes only the declared destination-boundary result.  It adds
+no further relation instance concerning what the material means and
+establishes no effects beyond that boundary.
 
 What becomes inexpressible without `Representation` here:
 
@@ -341,7 +345,7 @@ nothing identified
 ```
 
 The exact preserved-material result can participate under the exact emission
-input role without populating the generic relation position.
+input role without another relation instance concerning that result.
 
 ## 6. Recording and Locality uses
 
@@ -356,8 +360,8 @@ Evidence / Authority / Scope / limits where established
 ```
 
 The recording road preserves a durable reference.  The Locality-continuation
-road preserves or relates exact boundary coordinates.  Neither requires the
-prior result to populate that relation position.
+road preserves or relates exact boundary coordinates.  Neither requires
+another relation instance concerning the prior result.
 
 What becomes inexpressible without `Representation` here:
 
@@ -378,14 +382,14 @@ recovered.
 
 Current C0 emits no operator material.  Current sourced emission writes exact
 preserved bytes.  No active responsible occurrence has been found that turns
-host formatting into relation content.
+host formatting into another relation instance.
 
 Thus:
 
 ```text
 host renders or labels material
 does not establish
-Seed-native relation content
+Seed-native relation instance
 ```
 
 What becomes inexpressible without `Representation` here:
@@ -440,7 +444,7 @@ Participation                        exact input role in emission Act
 emission                             exact boundary write and result
 recording                            exact durable reference
 Locality continuation                exact boundary-coordinate relation
-generic relation position            existing position; content unestablished
+generic relation position            existing grammar; no instance added
 ```
 
 No row requires `Representation` as an additional subject kind.
