@@ -942,6 +942,27 @@ def test_removal_result_admission_refuses_corrupted_raw_coordinates(
         )
 
 
+PYTEST_ADMISSION = (
+    test_material_function_admission_reads_exact_invocation_rows_once,
+    test_removal_result_admission_reads_exact_comparison_matrix_once,
+    test_added_result_admission_constructs_each_exact_result_reference_once,
+    test_compiled_invocation_preserves_exact_book_material_offered_at_input,
+    test_every_addition_position_has_an_exact_invocation,
+    test_comparison_keeps_each_addition_and_both_invocations,
+    test_comparisons_enter_the_same_addition_admission,
+    test_addition_admission_refuses_a_lookalike_compare,
+    test_small_boundary_refuses_a_lookalike_material_reference,
+    test_one_small_boundary_compares_all_implementation_functions,
+    test_each_returned_material_can_enter_a_fresh_locality,
+    test_compare_refuses_a_result_from_another_addition,
+    test_compare_refuses_different_time_limits,
+    test_removal_compare_preserves_exact_admission_and_raw_coordinates,
+    test_removal_compare_refuses_missing_and_unrelated_invocations,
+    test_removal_compare_refuses_wrong_or_mismatched_occurrences,
+    test_removal_result_admission_refuses_corrupted_raw_coordinates,
+)
+
+
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_small_boundary_refuses_a_lookalike_material_reference,

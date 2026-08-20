@@ -154,3 +154,11 @@ def represent_evidence_growth() -> str:
 
 if __name__ == "__main__":  # pragma: no cover - inspection entry point
     print(represent_evidence_growth())
+
+
+PYTEST_ADMISSION = (
+    test_later_representations_retain_references_to_earlier_preserved_material,
+    test_later_reference_does_not_alter_earlier_events,
+    test_representation_appends_nothing,
+    test_each_representation_act_is_appended_after_every_event_it_references,
+)

@@ -364,6 +364,21 @@ def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse()
     ) < 5000
 
 
+def test_admitted_implementation_test_has_no_fidelity_or_witness_uptake():
+    supplied = _invoke(
+        b"!pytest tests/test_events.py::test_append_records_reality_in_order\n"
+    )
+    measurement = next(
+        occurrence
+        for occurrence in supplied
+        if occurrence.source_boundary == "implementation function measurement"
+    )
+    artifact = json.loads(measurement.exact_bytes)
+
+    assert artifact["pytest"] == []
+    assert artifact["witness_material"] == []
+
+
 def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
     monkeypatch.setattr(
         operator_host_provider,
@@ -443,3 +458,23 @@ def test_pytest_provider_death_is_not_replaced_by_supplied_results(monkeypatch):
 
     with pytest.raises(KeyboardInterrupt):
         _invoke(b"!pytest tests/exact.py\n")
+
+
+PYTEST_ADMISSION = (
+    test_host_provider_uses_only_fixed_argv_without_a_shell,
+    test_pytest_provider_has_one_exact_argument_and_a_clean_environment,
+    test_unknown_or_unrepresentable_host_invocation_is_refused_before_process,
+    test_calculator_provider_preserves_supplied_material_and_completion,
+    test_cat_preserves_exact_posix_path_and_material,
+    test_ls_preserves_a_non_utf8_posix_path,
+    test_host_output_is_bounded_without_returncode_material,
+    test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer,
+    test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out,
+    test_pytest_provider_supplies_a_distinct_exact_measurement_artifact,
+    test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse,
+    test_admitted_implementation_test_has_no_fidelity_or_witness_uptake,
+    test_missing_pytest_measurement_artifact_is_refused,
+    test_bounded_pytest_preserves_partial_results_and_known_artifact_loss,
+    test_pytest_measurement_artifact_is_bounded,
+    test_pytest_provider_death_is_not_replaced_by_supplied_results,
+)

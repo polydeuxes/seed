@@ -311,3 +311,10 @@ def test_constructed_output_crosses_the_exact_material_byte_count_limit():
     assert occurrence.stderr_byte_count_limit_reached is False
     assert occurrence.returned is False
     assert occurrence.returncode is None
+
+
+PYTEST_ADMISSION = (
+    test_material_climb_refuses_the_collective_act_occurrence_count,
+    test_each_compiled_function_preserves_every_one_byte_input_boundary,
+    test_constructed_output_crosses_the_exact_material_byte_count_limit,
+)

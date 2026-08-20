@@ -1363,3 +1363,43 @@ def test_the_locality_records_only_responsible_representation_occurrences():
     assert kinds.count("operator.representation.recorded") == 5
     assert kinds.count("operator.representation.emitted") == 0
     assert output == ""
+
+
+PYTEST_ADMISSION = (
+    test_operator_acquisition_records_exact_byte_pair_occurrence_position_result,
+    test_declared_measurement_assignments_share_one_responsible_boundary,
+    test_recording_order_does_not_change_each_assignment_responsible_boundary,
+    test_supplied_witness_acquisition_remains_available_without_declared_measurement,
+    test_raw_witness_acquisitions_do_not_enter_declared_measurement_pressure,
+    test_raw_witness_availability_is_not_a_declared_measurement_subject,
+    test_exact_byte_measurement_refuses_a_raw_witness_acquisition_result_set,
+    test_bounded_replay_does_not_expose_assignments_for_raw_witness_material,
+    test_declared_measurements_refuse_a_material_acquisition_without_exact_yield,
+    test_carried_declaration_keeps_raw_witness_material_quiet_after_another_locality_append,
+    test_carried_declaration_refuses_replay_before_the_current_boundary,
+    test_raw_witness_material_remains_quiet_after_sqlite_reopen,
+    test_advancing_one_occurrence_at_a_time_equals_replay,
+    test_advancing_in_the_console_s_own_groupings_equals_replay,
+    test_an_advance_over_no_occurrences_changes_nothing,
+    test_replay_still_works_and_agrees_with_a_single_advance,
+    test_an_advance_refuses_reversed_exact_occurrences,
+    test_an_advance_refuses_an_occurrence_from_another_locality,
+    test_input_boundary_cannot_append_an_occurrence_during_acquisition,
+    test_a_persisted_ledger_advances_identically,
+    test_the_console_never_replays_the_locality,
+    test_the_console_measures_each_occurrence_population_once,
+    test_each_advance_reads_only_what_an_act_just_recorded,
+    test_fresh_pair_measurement_is_not_reread_when_it_enters_standing,
+    test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged,
+    test_fresh_pair_measurement_is_not_reread_to_address_its_representation,
+    test_fresh_representation_is_carried_until_acquisition_crosses_input,
+    test_each_console_road_leaves_carried_standing_matching_replay,
+    test_supplied_witness_material_does_not_invoke_the_raw_output_boundary,
+    test_the_advance_reads_its_prior,
+    test_every_growable_accumulator_participates_without_copying,
+    test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying,
+    test_repeated_values_are_recorded_once,
+    test_the_console_keeps_no_earlier_standing,
+    test_c0_still_forms_from_empty_standing,
+    test_the_locality_records_only_responsible_representation_occurrences,
+)

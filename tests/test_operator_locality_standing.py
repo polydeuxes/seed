@@ -739,3 +739,31 @@ def test_representation_does_not_mutate_ledger_or_synthesize_events():
     _standing(ledger)
 
     assert ledger.list() == events_before
+
+
+PYTEST_ADMISSION = (
+    test_pair_standing_replay_reads_one_assignment_per_complete_lifecycle,
+    test_pair_standing_replay_refuses_mutation_between_each_phase,
+    test_pair_standing_replay_refuses_a_substituted_same_shaped_assignment,
+    test_pair_standing_replay_state_clears_after_exception,
+    test_pair_standing_replay_and_public_readers_survive_sqlite_reopen,
+    test_events_from_different_localities_cannot_influence_one_another,
+    test_locality_standing_carries_exact_measurement_identities_in_append_order,
+    test_locality_standing_carries_no_measurement_without_a_recorded_result,
+    test_advance_refuses_a_nonexact_prior_measurement_accumulator,
+    test_locality_standing_carries_only_exact_yielded_result_identities,
+    test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield,
+    test_locality_standing_refuses_corrupted_raw_result,
+    test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation,
+    test_locality_standing_refuses_a_corrupted_measurement,
+    test_locality_standing_refuses_measurement_with_missing_yield,
+    test_locality_standing_refuses_yield_from_another_measurement_occurrence,
+    test_locality_standing_refuses_corrupted_measurement_yield,
+    test_unrelated_event_cannot_enter_measurement_occurrences,
+    test_next_attempt_reads_standing_from_earlier_same_locality_events,
+    test_representation_is_deterministic_regardless_of_unrelated_ledger_events,
+    test_unknown_conflict_and_absence_remain_distinct,
+    test_one_attempt_records_only_responsible_representation_results,
+    test_console_supplies_prior_locality_standing_to_later_interactions,
+    test_representation_does_not_mutate_ledger_or_synthesize_events,
+)

@@ -241,3 +241,21 @@ def test_egress_refuses_a_socket_like_boundary_reporting_partial_completion():
     assert output.material == b"hell"
     assert raised.value.reported_count == 4
     assert raised.value.error is None
+
+
+PYTEST_ADMISSION = (
+    test_operator_emission_boundary_binds_stream_boundary_and_locality,
+    test_operator_emission_boundary_refuses_inferred_or_empty_coordinates,
+    test_operator_emission_boundary_requires_one_exact_writable_boundary,
+    test_operator_emission_boundary_refuses_a_later_lost_write_capability,
+    test_egress_writes_exact_bytes_without_decoding,
+    test_egress_refuses_non_bytes,
+    test_egress_refuses_a_short_write,
+    test_egress_refuses_a_short_write_reported_by_a_linux_pipe,
+    test_egress_does_not_infer_a_count_from_a_write_returning_none,
+    test_egress_preserves_a_write_exception_without_inventing_a_count,
+    test_exact_write_acceptance_does_not_claim_or_invoke_a_later_flush,
+    test_egress_does_not_recast_process_death_as_a_boundary_result,
+    test_egress_carries_exact_bytes_to_a_socket_like_boundary,
+    test_egress_refuses_a_socket_like_boundary_reporting_partial_completion,
+)

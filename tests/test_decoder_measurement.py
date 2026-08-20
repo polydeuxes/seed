@@ -91,3 +91,13 @@ def test_an_accepted_sequence_is_not_thereby_meaningful():
     assert accepts("utf-8", (0xC2, 0xA9))
     assert not accepts("utf-8", (0xC2,))
     assert not accepts("utf-8", (0xA9,))
+
+
+PYTEST_ADMISSION = (
+    test_one_implementation_function_places_every_byte_exactly_once,
+    test_the_boundaries_the_implementation_function_refused_at,
+    test_the_only_admissible_followers_are_one_contiguous_range,
+    test_a_second_implementation_function_places_the_same_bytes_differently,
+    test_the_implementation_function_refuses_more_than_a_leading_bit_rule_predicts,
+    test_an_accepted_sequence_is_not_thereby_meaningful,
+)

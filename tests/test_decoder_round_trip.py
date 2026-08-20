@@ -77,3 +77,13 @@ def test_the_disagreement_is_a_minority_and_is_exact():
     assert 5 < len(uneven) < 20
     assert "mac_arabic" in uneven
     assert "ascii" not in uneven
+
+
+PYTEST_ADMISSION = (
+    test_bytes_the_decoder_refuses_are_not_asked_about,
+    test_named_decoders_write_back_what_they_read,
+    test_several_byte_sequences_may_read_as_one_thing,
+    test_a_decoder_may_read_what_it_will_not_write,
+    test_a_decoder_may_never_write_back_what_it_read,
+    test_the_disagreement_is_a_minority_and_is_exact,
+)

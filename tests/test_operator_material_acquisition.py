@@ -912,3 +912,31 @@ def test_durable_material_contains_no_later_control_words():
 
     for absent in ("session", "exit", "quit", "stop"):
         assert absent not in durable
+
+
+PYTEST_ADMISSION = (
+    test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result,
+    test_empty_boundary_leaves_assignment_and_act_without_result_or_yield,
+    test_console_empty_input_records_one_unfinished_boundary_occurrence,
+    test_console_records_one_fresh_occurrence_per_read_including_final_empty_read,
+    test_ordinary_operator_material_is_the_exact_acquisition_measurement_source,
+    test_operator_result_kind_without_source_g_physiology_is_not_acquisition,
+    test_exact_acquisition_families_merge_only_their_append_order,
+    test_equal_raw_results_keep_distinct_occurrences_and_scopes,
+    test_one_acquire_act_cannot_yield_twice,
+    test_assignment_refuses_different_locality_and_changed_cut,
+    test_assignment_refuses_cross_locality_and_reversed_standing_boundaries,
+    test_assignment_refuses_a_corrupted_standing_boundary,
+    test_addressed_representation_can_be_the_exact_standing_boundary,
+    test_act_refuses_assignment_not_carried_by_supplied_standing,
+    test_changed_assignment_coordinates_are_refused,
+    test_changed_result_coordinates_are_refused,
+    test_locality_relation_refuses_each_changed_coordinate,
+    test_locality_relation_refuses_a_different_or_corrupted_evidence_occurrence,
+    test_a_self_reference_without_o1_physiology_is_not_locality_evidence,
+    test_prior_acquire_act_carrier_must_remain_an_identity_dictionary,
+    test_prior_acquire_locality_relations_must_remain_an_identity_dictionary,
+    test_assignment_and_act_survive_a_durable_restart_before_raw_result,
+    test_assignment_survives_alone_and_a_later_carried_cut_can_record_its_act,
+    test_durable_material_contains_no_later_control_words,
+)

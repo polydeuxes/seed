@@ -191,3 +191,14 @@ def test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted(tmp_path):
 
     with pytest.raises(InvalidStoredMaterial, match="not available"):
         SQLiteEventLedger(path)
+
+
+PYTEST_ADMISSION = (
+    test_equal_material_has_one_physical_reference_and_distinct_occurrences,
+    test_absent_empty_and_distinct_exact_material_have_distinct_storage,
+    test_an_exact_material_identity_collision_does_not_move_the_ledger_boundary,
+    test_exact_material_storage_refuses_revision_and_removal,
+    test_changed_exact_material_is_detected_through_every_reference,
+    test_changed_event_pointer_is_not_a_changed_occurrence_material,
+    test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted,
+)

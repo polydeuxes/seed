@@ -347,3 +347,22 @@ def test_live_entry_has_only_help_and_database_flags():
         ("-h", "--help"),
         ("--db",),
     ]
+
+
+PYTEST_ADMISSION = (
+    test_project_script_uses_the_live_process_entry,
+    test_live_entry_accepts_the_database_coordinate,
+    test_live_entry_does_not_emit_operator_material_back_to_stdout,
+    test_primordial_slash_frame_is_the_existing_eof_boundary,
+    test_primordial_slash_preserves_prior_occurrences_and_ends_input,
+    test_other_slash_material_remains_exact_operator_material,
+    test_host_escape_preserves_non_bytes_and_bytes_subclass_boundaries,
+    test_host_escape_does_not_decode_or_reframe_other_bytes,
+    test_host_escape_latches_without_consuming_later_buffered_material,
+    test_reopened_live_process_allocates_a_new_locality,
+    test_live_process_preserves_host_witness_material_without_emitting_it,
+    test_live_process_acquisition_results_each_supplied_pytest_occurrence,
+    test_live_process_does_not_emit_witness_material_by_provider_classification,
+    test_live_process_preserves_the_exact_pytest_measurement_result,
+    test_live_entry_has_only_help_and_database_flags,
+)

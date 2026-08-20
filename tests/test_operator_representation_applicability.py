@@ -286,6 +286,18 @@ def test_applicability_standing_survives_durable_reopen(tmp_path):
         reopened.close()
 
 
+PYTEST_ADMISSION = (
+    test_admission_applicability_participation_and_emission_remain_distinct,
+    test_emitter_refuses_applicability_absent_from_current_standing,
+    test_applicability_refuses_a_destination_that_lost_write_capability,
+    test_applicability_refuses_a_distinct_destination_boundary_rule,
+    test_applicability_for_another_admission_cannot_participate,
+    test_one_applicability_act_cannot_yield_twice,
+    test_applicability_refuses_corrupted_yield_evidence,
+    test_applicability_standing_survives_durable_reopen,
+)
+
+
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
         test_admission_applicability_participation_and_emission_remain_distinct,

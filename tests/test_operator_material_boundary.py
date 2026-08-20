@@ -41,3 +41,11 @@ def test_eof_is_derived_from_exact_bytes():
     assert operator_boundary_material(BytesIO()).eof is True
     assert operator_boundary_material(BytesIO(b"a\r\n")).exact_bytes == b"a\r\n"
     assert operator_boundary_material(BytesIO(b"a")).exact_bytes == b"a"
+
+
+PYTEST_ADMISSION = (
+    test_binary_boundary_preserves_every_byte_without_text_conversion,
+    test_stream_encoding_metadata_does_not_change_exact_bytes,
+    test_programmatic_text_stream_is_refused_at_the_boundary,
+    test_eof_is_derived_from_exact_bytes,
+)

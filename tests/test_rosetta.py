@@ -188,3 +188,17 @@ def test_rosetta_admission_carries_no_unused_words():
 
 def test_rosetta_admission_detects_an_unadmitted_word_without_naming_it():
     assert _unadmitted_rosetta_words("unadmittedword") == {"unadmittedword"}
+
+
+PYTEST_ADMISSION = (
+    test_rosetta_follows_witness_grammar_relation_order,
+    test_rosetta_reversed_relation_is_detected,
+    test_rosetta_implementation_references_resolve,
+    test_rosetta_participant_decompresses_to_the_participation_relation,
+    test_rosetta_book_decompresses_to_language_clauses_and_lexicon,
+    test_rosetta_admission_does_not_establish_a_clause,
+    test_rosetta_missing_implementation_reference_is_detected,
+    test_rosetta_proper_is_within_rosetta_admission,
+    test_rosetta_admission_carries_no_unused_words,
+    test_rosetta_admission_detects_an_unadmitted_word_without_naming_it,
+)

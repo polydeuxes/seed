@@ -603,3 +603,22 @@ def test_act_evidence_cannot_cite_another_exact_assignment():
             ledger,
             responsible_act_evidence_event_identity=first.identity,
         )
+
+
+PYTEST_ADMISSION = (
+    test_three_stage_continuation_records_exact_direct_relation_without_copying_standing,
+    test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it,
+    test_act_refuses_an_assignment_that_its_supplied_standing_does_not_carry,
+    test_durable_continuation_material_contains_no_operator_shorthand,
+    test_later_source_occurrences_do_not_move_the_exact_source_cut,
+    test_exact_empty_source_boundary_remains_empty,
+    test_continuation_is_direct_and_does_not_carry_an_earlier_relation,
+    test_one_continuation_act_cannot_yield_or_record_twice,
+    test_missing_different_or_changed_source_coordinates_are_refused,
+    test_changed_result_coordinates_are_refused,
+    test_equal_source_cuts_keep_distinct_occurrences_and_destinations,
+    test_incomplete_act_evidence_is_not_carried_as_a_relation,
+    test_prior_relation_carrier_must_remain_one_identity_dictionary,
+    test_changed_responsibility_assignment_coordinates_are_refused,
+    test_act_evidence_cannot_cite_another_exact_assignment,
+)

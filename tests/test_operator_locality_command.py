@@ -38,3 +38,11 @@ def test_locality_without_an_argument_creates_one():
 def test_locality_command_refuses_non_exact_identity(arguments):
     with pytest.raises(ValueError):
         request_operator_locality(_command(arguments))
+
+
+PYTEST_ADMISSION = (
+    test_locality_command_preserves_one_exact_identity,
+    test_locality_word_list_is_one_literal_identity,
+    test_locality_without_an_argument_creates_one,
+    test_locality_command_refuses_non_exact_identity,
+)

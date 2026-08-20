@@ -390,3 +390,17 @@ def test_memory_availability_does_not_move_source_material_into_the_destination(
             locality_standing=point["standing"],
             source_occurrence_reference=source_occurrence_identity,
         )
+
+
+PYTEST_ADMISSION = (
+    test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it,
+    test_memory_makes_one_prior_boundary_available_without_copying_its_standing,
+    test_checkout_resolves_the_checkpoint_cut_not_either_later_branch,
+    test_an_exact_reference_is_not_globally_available_by_identity,
+    test_empty_recorded_boundary_reads_exactly_empty_standing,
+    test_the_read_adds_no_applicability_admission_or_compare_coordinate,
+    test_unrelated_occurrences_do_not_change_the_recorded_read,
+    test_recorded_standing_reference_survives_durable_reopen,
+    test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitted,
+    test_memory_availability_does_not_move_source_material_into_the_destination,
+)

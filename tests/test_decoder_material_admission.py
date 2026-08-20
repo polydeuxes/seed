@@ -102,3 +102,14 @@ def test_decoder_functions_establish_different_admission_counts():
     assert counts["utf-8"] == 2
     assert counts["big5hkscs"] == 2
     assert len(admit("big5hkscs")[-1]) == 114
+
+
+PYTEST_ADMISSION = (
+    test_one_material_occurrence_cannot_testify_for_every_equal_result,
+    test_equal_earlier_results_with_disagreeing_material_are_reported_mixed,
+    test_admission_stops_exactly_where_nothing_is_mixed,
+    test_admission_separates_only_where_material_behaved_apart,
+    test_every_admission_carries_the_same_material,
+    test_each_admission_uses_the_one_before_it,
+    test_decoder_functions_establish_different_admission_counts,
+)

@@ -140,3 +140,15 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
         "process-local, so if any reaches a durable material it restarts at one "
         f"in every process: {undeclared}"
     )
+
+
+PYTEST_ADMISSION = (
+    test_append_records_reality_in_order,
+    test_get_returns_appended_event_by_identity,
+    test_event_ledger_rejects_secret_fields_in_materials,
+    test_event_secret_rejection_preserves_boundary_normalization,
+    test_event_secret_rejection_reaches_every_nested_container,
+    test_event_secret_rejection_accepts_large_scalar_lists,
+    test_durable_large_scalar_lists_do_not_repeat_material_traversal,
+    test_every_minted_prefix_is_reserved_or_declared_process_local,
+)

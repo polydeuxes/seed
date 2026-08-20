@@ -478,3 +478,18 @@ def test_candidate_admission_standing_survives_durable_reopen(tmp_path):
         }
     finally:
         reopened.close()
+
+
+PYTEST_ADMISSION = (
+    test_candidate_admission_and_emission_remain_three_distinct_results,
+    test_exact_material_emission_does_not_promote_statement_to_seed_truth,
+    test_admission_refuses_an_undeclared_representation_and_boundary_rule_pair,
+    test_admission_to_one_operator_locality_does_not_admit_another,
+    test_admission_refuses_a_different_invoked_operator_boundary,
+    test_emission_refuses_admission_not_carried_by_current_standing,
+    test_one_admission_participates_in_only_one_emission_attempt,
+    test_structured_representation_may_be_candidate_but_raw_admission_refuses,
+    test_one_candidate_or_admission_act_cannot_yield_twice,
+    test_candidate_and_admission_refuse_corrupted_yield_evidence,
+    test_candidate_admission_standing_survives_durable_reopen,
+)

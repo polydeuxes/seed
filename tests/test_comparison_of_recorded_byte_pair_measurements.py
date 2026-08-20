@@ -1010,3 +1010,31 @@ def test_compare_result_absent_from_standing_is_refused_as_representation_source
             locality_standing=standing,
             source_occurrence_reference=result.identity,
         )
+
+
+PYTEST_ADMISSION = (
+    test_one_console_call_revalidates_only_the_pair_crossing_a_callback,
+    test_changed_pair_crossing_a_callback_cannot_enter_compare_standing,
+    test_operator_acquisition_carries_the_prior_pair_measurement_into_compare,
+    test_witness_provenance_does_not_establish_a_compare_input_relation,
+    test_operator_acquisition_before_the_premise_cannot_supply_compare,
+    test_produced_measurements_enter_one_responsible_compare,
+    test_same_content_finding_labels_do_not_hide_changed_content,
+    test_witness_provenance_does_not_supply_the_carried_compare_rung,
+    test_measurement_availability_without_standing_cannot_supply_compare,
+    test_corrupted_compare_yield_is_refused,
+    test_one_result_read_validates_each_pair_measurement_once,
+    test_result_reader_preserves_its_exact_assignment_and_public_getter_delegates,
+    test_standing_replay_carries_one_validated_assignment_across_comparison_stages,
+    test_standing_replay_carry_refuses_callback_change_and_leaks_no_state,
+    test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings,
+    test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
+    test_later_result_read_revalidates_changed_pair_measurement_evidence,
+    test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
+    test_raw_material_acquisition_does_not_create_a_pair_premise,
+    test_new_raw_acquisition_does_not_replace_one_carried_pair_premise,
+    test_operator_pair_premise_and_compare_survive_reopen,
+    test_zero_pair_premise_comparison_survives_console_and_reopen,
+    test_carried_compare_result_is_one_structured_representation_source,
+    test_compare_result_absent_from_standing_is_refused_as_representation_source,
+)

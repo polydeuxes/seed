@@ -39,7 +39,9 @@ _enclosing_measurement_coordinates: list[
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
 _witness_material_occurrences: list[dict[str, object]] = []
-_PYTEST_DISTINCTION_COORDINATES = pytest.StashKey[dict[str, object] | None]()
+_NO_PYTEST_UPTAKE = object()
+_WITNESS_MATERIAL_UPTAKE = object()
+_PYTEST_UPTAKE = pytest.StashKey[dict[str, object] | object]()
 _active_sql_invocations = threading.local()
 
 
@@ -636,11 +638,21 @@ def _fidelity_distinction_coordinates(
     return coordinates
 
 
-def _pytest_distinction(
+def _pytest_uptake(
     module: object,
     function_under_test: object,
     grammar: dict[str, object],
-) -> dict[str, object] | None:
+) -> dict[str, object] | object:
+    admission = getattr(module, "PYTEST_ADMISSION", None)
+    if type(admission) is not tuple or not admission:
+        raise TypeError("exact pytest admission functions are required")
+    if any(not callable(function) for function in admission):
+        raise TypeError("exact pytest admission functions are required")
+    if len(set(admission)) != len(admission):
+        raise ValueError("pytest function entered admission twice")
+    if function_under_test not in admission:
+        raise ValueError("pytest function has no exact admission")
+
     distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
     witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
     if type(witness_material_tests) is not tuple:
@@ -649,17 +661,17 @@ def _pytest_distinction(
         raise TypeError("exact Witness Material test functions are required")
     if len(set(witness_material_tests)) != len(witness_material_tests):
         raise ValueError("test function entered Witness Material tests twice")
+    admitted = set(admission)
+    if not set(witness_material_tests) <= admitted:
+        raise ValueError("Witness Material uptake requires pytest admission")
     produces_witness_material = function_under_test in witness_material_tests
     if distinctions is None:
         if produces_witness_material:
-            return None
-        raise ValueError(
-            "pytest function has no explicit Fidelity distinction or "
-            "Witness Material declaration"
-        )
+            return _WITNESS_MATERIAL_UPTAKE
+        return _NO_PYTEST_UPTAKE
     if type(distinctions) is not dict or not distinctions:
         raise TypeError("exact Fidelity distinctions are required")
-    matches: list[object] = []
+    matches: list[dict[str, object]] = []
     entered_functions: set[object] = set()
     for distinction_reference, functions in distinctions.items():
         if type(distinction_reference) is not tuple:
@@ -673,22 +685,26 @@ def _pytest_distinction(
                 raise ValueError("test function entered Fidelity distinctions twice")
             entered_functions.add(function)
             if function is function_under_test:
-                matches.append(distinction_reference)
-    if produces_witness_material:
-        if matches:
-            raise ValueError(
-                "test function crossed Fidelity and Witness Material declarations"
-            )
-        return None
-    if not matches:
+                matches.append(
+                    _fidelity_distinction_coordinates(
+                        grammar, distinction_reference
+                    )
+                )
+            else:
+                _fidelity_distinction_coordinates(grammar, distinction_reference)
+    if not entered_functions <= admitted:
+        raise ValueError("Fidelity uptake requires pytest admission")
+    if entered_functions & set(witness_material_tests):
         raise ValueError(
-            "pytest function has no explicit Fidelity distinction or "
-            "Witness Material declaration"
+            "test function crossed Fidelity and Witness Material uptake"
         )
+    if produces_witness_material:
+        return _WITNESS_MATERIAL_UPTAKE
+    if not matches:
+        return _NO_PYTEST_UPTAKE
     if len(matches) != 1:
         raise ValueError("exact Fidelity distinction is required")
-    reference = matches[0]
-    return _fidelity_distinction_coordinates(grammar, reference)
+    return matches[0]
 
 
 @pytest.hookimpl(trylast=True)
@@ -698,19 +714,23 @@ def pytest_collection_modifyitems(
     del session, config
     grammar = _witness_grammar()
     resolved = tuple(
-        _pytest_distinction(item.module, item.function, grammar) for item in items
+        _pytest_uptake(item.module, item.function, grammar) for item in items
     )
-    for item, coordinates in zip(items, resolved):
-        item.stash[_PYTEST_DISTINCTION_COORDINATES] = coordinates
+    for item, uptake in zip(items, resolved):
+        item.stash[_PYTEST_UPTAKE] = uptake
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
-    distinction_coordinates = item.stash[_PYTEST_DISTINCTION_COORDINATES]
+    uptake = item.stash[_PYTEST_UPTAKE]
+    if uptake is _NO_PYTEST_UPTAKE:
+        yield
+        return
+    distinction_coordinates = None if uptake is _WITNESS_MATERIAL_UPTAKE else uptake
     occurrences = (
         _witness_material_occurrences
-        if distinction_coordinates is None
+        if uptake is _WITNESS_MATERIAL_UPTAKE
         else _pytest_occurrences
     )
     occurrence_position = len(occurrences)

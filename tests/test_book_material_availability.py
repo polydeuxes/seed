@@ -43,3 +43,8 @@ def test_book_material_acquisition_keeps_exact_lineage_without_measurement_press
     )
     assert recorded.result_occurrences == ()
     assert ledger.append_boundary() == boundary
+
+
+PYTEST_ADMISSION = (
+    test_book_material_acquisition_keeps_exact_lineage_without_measurement_pressure,
+)

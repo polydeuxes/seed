@@ -114,3 +114,9 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     assert long_pairs.material["completeness_boundary"] != short_pairs.material[
         "completeness_boundary"
     ]
+
+
+PYTEST_ADMISSION = (
+    test_seed_measures_one_bounded_decimal_representation_not_all_of_pi,
+    test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one,
+)

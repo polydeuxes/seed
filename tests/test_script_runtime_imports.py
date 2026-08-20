@@ -35,3 +35,8 @@ def test_each_script_seed_runtime_import_resolves():
                     )
 
     assert unresolved == []
+
+
+PYTEST_ADMISSION = (
+    test_each_script_seed_runtime_import_resolves,
+)

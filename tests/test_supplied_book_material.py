@@ -111,3 +111,9 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
             admissions[0],
             locality_identity="another-locality",
         )
+
+
+PYTEST_ADMISSION = (
+    test_each_supplied_material_carries_the_same_line_count,
+    test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_invocations,
+)

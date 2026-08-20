@@ -215,3 +215,18 @@ def test_witness_grammar_words_in_book_admission():
         return False
 
     assert not contains_host_boolean(grammar)
+
+
+PYTEST_ADMISSION = (
+    test_book_proper_scope_excludes_rosetta,
+    test_admitted_material_reference_subjects_resolve_relative_markdown_links,
+    test_book_and_rosetta_admission_material_are_distinct,
+    test_rosetta_admits_composite_support_relation_terms,
+    test_failure_is_book_material_and_performative_forms_are_rosetta_composites,
+    test_clause_coordinate_tokens_require_explicit_curation,
+    test_standing_requires_the_exact_support_relation,
+    test_composite_is_communication_in_rosetta_not_active_book_grammar,
+    test_book_proper_is_within_book_admission,
+    test_book_admission_carries_no_unused_words,
+    test_witness_grammar_words_in_book_admission,
+)

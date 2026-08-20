@@ -175,3 +175,17 @@ def test_standing_still_records_its_participation_boundary(locality):
     assert standing["through_event_occurrence_identity"] is not None
     assert standing["event_count"] > 0
     assert "input_event_identities" not in standing
+
+
+PYTEST_ADMISSION = (
+    test_no_representation_act_records_a_history_copy,
+    test_no_standing_representation_carries_one,
+    test_recorded_material_size_does_not_grow_with_locality_event_count,
+    test_the_first_representation_act_records_absence_of_a_prior_occurrence,
+    test_each_boundary_reaches_strictly_further_than_the_last,
+    test_the_boundary_still_determines_the_participating_prefix,
+    test_every_boundary_precedes_the_representation_act_that_records_it,
+    test_the_locality_still_projects_deterministically,
+    test_the_console_records_every_interaction_without_authored_output,
+    test_standing_still_records_its_participation_boundary,
+)

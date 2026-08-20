@@ -158,3 +158,16 @@ def test_cross_parser_results_preserve_agreement_and_disagreement():
     columns = tuple(zip(*returned))
     assert any(len(set(column)) == 1 for column in columns)
     assert any(len(set(column)) > 1 for column in columns)
+
+
+PYTEST_ADMISSION = (
+    test_equal_material_keeps_distinct_invocation_occurrences,
+    test_nearby_accepted_material_has_distinct_exact_returned_material,
+    test_one_byte_pressure_is_exact_complete_and_behaviorally_divided,
+    test_non_utf8_source_bytes_reach_the_compiled_function_and_are_refused,
+    test_a_null_byte_is_also_a_refusal_result,
+    test_a_non_byte_input_is_refused_before_invocation,
+    test_exact_bytes_reach_the_compiled_function_without_prior_decoding,
+    test_distinct_compiled_parser_functions_receive_the_same_exact_material,
+    test_cross_parser_results_preserve_agreement_and_disagreement,
+)

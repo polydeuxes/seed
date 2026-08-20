@@ -156,3 +156,18 @@ def test_unregistered_binary_slash_material_is_preserved_exactly():
     ledger = _run(b"/\xff\x00 material\n")
 
     assert _bounded_material_bytes(ledger) == [b"/\xff\x00 material\n"]
+
+
+PYTEST_ADMISSION = (
+    test_non_slash_frames_are_exact_operator_material,
+    test_eof_ends_input_without_establishing_a_material_result,
+    test_slash_frame_invokes_the_exact_registered_implementation_function,
+    test_an_ordinary_command_does_not_divide_locality,
+    test_checkpoint_records_one_boundary_reference,
+    test_checkpoint_does_not_divide_locality,
+    test_repeated_checkpoints_record_distinct_exact_references_without_a_chain,
+    test_unregistered_slash_name_reaches_the_exact_ingress_road,
+    test_exit_is_exact_operator_material,
+    test_exit_does_not_establish_stop,
+    test_unregistered_binary_slash_material_is_preserved_exactly,
+)

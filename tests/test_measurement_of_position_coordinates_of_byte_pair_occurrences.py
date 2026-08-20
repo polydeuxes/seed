@@ -1023,6 +1023,42 @@ def test_result_carries_only_its_declared_measurement_coordinates():
     assert "standing" not in result.material["assertions"]["dimensions"]
 
 
+PYTEST_ADMISSION = (
+    test_each_input_pair_has_first_and_second_exact_position_coordinates,
+    test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b,
+    test_later_assignment_does_not_change_an_earlier_subject_read,
+    test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded,
+    test_unassigned_material_acquisition_read_survives_sqlite_restart,
+    test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,
+    test_material_without_a_byte_pair_yields_an_exact_empty_result,
+    test_empty_witness_material_can_be_measured_but_cannot_acquire_an_assignment,
+    test_assignment_act_yield_and_result_enter_current_standing,
+    test_act_requires_current_standing_that_carries_exact_assignment,
+    test_one_assignment_records_one_act_and_one_result,
+    test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
+    test_result_refuses_changed_assertion_coordinates,
+    test_references_preserve_every_exact_pair_occurrence,
+    test_addressed_references_stop_after_the_last_requested_assertion,
+    test_full_reference_reader_does_not_construct_the_occurrence_population,
+    test_exact_addressed_source_position_reads_only_its_carried_pair_references,
+    test_addressed_source_position_preserves_exact_boundaries,
+    test_addressed_source_position_refuses_a_changed_coordinate,
+    test_equal_byte_material_at_another_position_does_not_supply_the_address,
+    test_addressed_source_position_from_another_exact_result_is_refused,
+    test_result_refuses_an_intact_yield_from_another_exact_family,
+    test_private_same_call_recorders_require_exact_carried_tip_membership,
+    test_assignment_act_and_result_survive_separate_restarts,
+    test_reopened_public_result_refuses_a_second_yield,
+    test_same_call_result_carry_equals_full_standing_replay,
+    test_refused_same_call_result_does_not_change_prior_standing,
+    test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment,
+    test_position_assertion_movement_requires_its_exact_source_after_act_evidence,
+    test_position_assertion_movement_requires_its_exact_source_after_evidence_of_yield_relation,
+    test_position_assertion_movement_requires_its_exact_source_when_carrying_the_result_into_standing,
+    test_result_carries_only_its_declared_measurement_coordinates,
+)
+
+
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_each_input_pair_has_first_and_second_exact_position_coordinates,

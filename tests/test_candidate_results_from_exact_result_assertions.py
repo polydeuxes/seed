@@ -542,3 +542,24 @@ def test_changed_candidate_result_is_refused():
         get_recorded_candidate_result(ledger, yielded.identity)
 
     assert original["relation"] == "Unknown"
+
+
+PYTEST_ADMISSION = (
+    test_source_read_preserves_every_exact_assertion_coordinate_in_order,
+    test_one_candidate_yields_while_required_subjects_remain_unrecorded,
+    test_another_responsibility_can_begin_before_the_first_is_exhausted,
+    test_resuming_one_responsibility_records_every_required_subject_once,
+    test_each_subject_has_its_own_applicability_participation_act_yield_and_result,
+    test_shared_storage_stream_preserves_each_occurrence_book_coordinate,
+    test_generator_rereads_required_subjects_and_results_after_yielding_control,
+    test_same_responsibility_does_not_repeat_required_work_before_append,
+    test_candidate_result_preserves_distinct_source_result_boundaries_and_localities,
+    test_yielded_candidate_is_an_exact_subject_read_at_a_later_source_boundary,
+    test_ordered_pair_responsibility_requires_each_distinct_ordered_pair,
+    test_source_boundary_is_frozen_when_later_sources_arrive,
+    test_candidate_result_is_available_to_bounded_replay_without_positive_standing,
+    test_candidate_assertion_is_independently_readable_from_one_result,
+    test_record_one_candidate_accepts_no_caller_subject_choice,
+    test_sqlite_reopen_preserves_unrecorded_work_and_resumes_it,
+    test_changed_candidate_result_is_refused,
+)

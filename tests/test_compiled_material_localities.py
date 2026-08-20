@@ -571,3 +571,24 @@ def test_added_result_coordinates_establish_more_than_one_admission(
         addition.result_reference for addition in additions
     )
     assert len(admission.admitted_material) > 1
+
+
+PYTEST_ADMISSION = (
+    test_every_measured_byte_reaches_the_compiled_function,
+    test_moved_byte_references_keep_identity_in_one_new_locality,
+    test_moved_byte_references_can_enter_one_new_admission,
+    test_compiled_function_establishes_distinct_raw_coordinates,
+    test_return_admission_does_not_replace_exact_result_material,
+    test_one_byte_material_crosses_the_return_code_boundary,
+    test_each_returned_material_enters_a_fresh_locality,
+    test_each_ordered_material_pair_has_one_exact_addition_occurrence,
+    test_act_occurrence_limit_never_splits_admitted_material,
+    test_addition_cannot_cross_its_exact_admitted_material,
+    test_addition_refuses_another_admitted_reference_position,
+    test_distinct_admission_results_bind_each_addition_input,
+    test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple,
+    test_each_added_result_reaches_the_same_compiled_function,
+    test_exact_addition_occurrence_binds_source_and_result_invocations,
+    test_return_compare_does_not_inherit_provider_material_distinctions,
+    test_added_result_coordinates_establish_more_than_one_admission,
+)

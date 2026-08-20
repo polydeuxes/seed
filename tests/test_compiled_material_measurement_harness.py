@@ -32,3 +32,8 @@ def test_harness_preserves_exact_and_return_admissions_separately():
     assert len(exact.admitted_material) == 3
     assert len(returned.admitted_material) == 1
     assert returned.admitted_material[0] == references[:3]
+
+
+PYTEST_ADMISSION = (
+    test_harness_preserves_exact_and_return_admissions_separately,
+)

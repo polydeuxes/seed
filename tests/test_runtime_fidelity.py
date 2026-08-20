@@ -1251,3 +1251,36 @@ def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
 
     assert "exact addressed Representation" in wording
     assert "exact addressed emission" not in wording
+
+
+PYTEST_ADMISSION = (
+    test_each_runtime_module_participates_in_live_process_imports,
+    test_unresolved_event_material_expansion_remains_visible,
+    test_every_runtime_event_kind_declares_its_witness_grammar_responsibility,
+    test_each_recorded_occurrence_reference_names_a_witness_grammar_clause,
+    test_one_storage_stream_may_carry_several_constitutional_coordinates,
+    test_each_live_assertion_responsibility_has_one_clause_declaration,
+    test_each_assertion_responsibility_names_one_witness_grammar_clause,
+    test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name,
+    test_nested_assertion_responsibility_discovery_refuses_an_opaque_coordinate,
+    test_nested_assertion_clause_declarations_preserve_duplicates,
+    test_nested_assertion_clause_is_not_an_event_kind_responsibility,
+    test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses,
+    test_runtime_record_words_have_constitutional_admission,
+    test_seed_authored_event_material_values_have_lexical_admission,
+    test_authored_value_admission_catches_an_unadmitted_word_without_naming_it,
+    test_authored_value_admission_crosses_a_local_material_function,
+    test_authored_value_admission_binds_local_material_function_arguments,
+    test_opaque_supplied_material_is_not_seed_authored_language,
+    test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates,
+    test_coordinate_substitution_siren_detects_one_shared_reference,
+    test_every_declared_event_occurrence_carries_its_material_to_the_sirens,
+    test_every_relation_occurrence_carries_its_exact_relation_position,
+    test_witness_grammar_declares_the_exact_relations,
+    test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence,
+    test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope,
+    test_recorded_representation_declares_each_exact_evidence_pointer,
+    test_every_event_standing_claim_has_a_declared_grammar_responsibility,
+    test_command_handler_receives_no_constitutional_write_capability,
+    test_checkpoint_names_the_representation_it_addresses_not_an_emission,
+)

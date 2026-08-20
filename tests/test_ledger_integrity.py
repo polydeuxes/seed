@@ -814,3 +814,41 @@ def test_a_stored_material_that_is_not_an_occurrence_is_refused(tmp_path):
 
         with pytest.raises(InvalidStoredMaterial):
             SQLiteEventLedger(path)
+
+
+PYTEST_ADMISSION = (
+    test_an_update_is_refused,
+    test_a_delete_is_refused,
+    test_the_refusal_survives_reopening,
+    test_a_recorded_occurrence_verifies,
+    test_a_rewrite_that_drops_the_guard_is_detected,
+    test_moving_an_occurrence_between_sessions_is_detected,
+    test_every_persisted_field_is_covered,
+    test_exact_material_stored_as_text_is_detected,
+    test_rewriting_the_row_and_both_internal_identities_is_not_detected,
+    test_verified_durable_rehydration_still_rejects_nested_secret_fields,
+    test_screened_durable_rehydration_still_runs_event_validation,
+    test_a_schema_without_occurrence_material_identity_is_refused,
+    test_a_nullable_occurrence_material_identity_is_refused,
+    test_a_current_store_requires_occurrence_material_identity,
+    test_a_new_store_is_born_with_the_integrity_column,
+    test_no_durable_occurrence_is_ever_unverifiable,
+    test_an_in_memory_ledger_reports_unverifiable,
+    test_an_absent_occurrence_is_unverifiable,
+    test_a_nullable_occurrence_material_identity_is_refused_when_populated,
+    test_a_store_with_the_withdrawn_runtime_reference_index_is_refused,
+    test_reservations_are_read_from_the_table_not_from_history,
+    test_a_reopened_store_does_not_reissue_identifiers,
+    test_a_reservation_only_ever_rises,
+    test_the_counter_table_is_not_an_occurrence,
+    test_a_batch_commits_its_reservations_with_its_occurrences,
+    test_a_batch_leaves_no_occurrence_without_its_reservation,
+    test_reservable_identity_numbers_match_a_per_prefix_scan,
+    test_a_reserved_suffix_of_zero_is_not_reserved,
+    test_an_overlapping_prefix_reserves_the_longer_match,
+    test_occurrence_material_identity_does_not_move_when_material_is_compressed,
+    test_compressed_and_uncompressed_stores_verify_alike,
+    test_damaged_compressed_storage_is_corruption_not_a_compressor_error,
+    test_a_compressed_material_altered_to_other_valid_content_is_corrupted,
+    test_a_stored_material_that_is_not_an_occurrence_is_refused,
+)

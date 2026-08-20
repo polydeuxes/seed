@@ -93,3 +93,14 @@ def test_each_ordered_admission_pair_is_read_once(monkeypatch):
 
     assert len(calls) == 6
     assert len(set(calls)) == 6
+
+
+PYTEST_ADMISSION = (
+    test_an_admission_preserves_itself_and_the_one_without_distinctions,
+    test_many_decoder_functions_reach_the_same_admission,
+    test_the_decoder_functions_do_not_share_one_admission,
+    test_the_relation_over_results_is_itself_admitted,
+    test_one_admission_preserves_no_other,
+    test_repeated_comparison_uses_the_exact_prior_admission,
+    test_each_ordered_admission_pair_is_read_once,
+)
