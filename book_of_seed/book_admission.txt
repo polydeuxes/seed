@@ -7,7 +7,6 @@
 # A word absent from this file is refused.
 #
 a
-absence
 acceptance
 accepted
 acquire
@@ -153,8 +152,6 @@ exists
 export
 f
 failure
-families
-family
 fidelity
 fields
 final
@@ -291,9 +288,6 @@ reported
 repository
 representation
 representations
-represented
-representing
-represents
 request
 required
 requirement
