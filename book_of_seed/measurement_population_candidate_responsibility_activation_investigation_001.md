@@ -277,7 +277,7 @@ live road. The live road never calls the reader.
 
 ## Exact stop
 
-The current stop is:
+The exact-result Candidate road stops here:
 
 ```text
 exact current Standing
@@ -286,7 +286,7 @@ exact current Standing
 ├── pair count Assertions
 └── recurrence Assertions
 
-required next coordinate:
+required coordinate for that separate Candidate road:
 exact Candidate Responsibility branch for an exact addressed source result
 
 established:
@@ -301,6 +301,17 @@ the position reader merely to expose 52,199,226,312 ordered subjects. Do not
 make Candidate Applicability discover Responsibilities. Do not optimize the
 reader as a substitute for the missing exact Standing/result boundary.
 
-The next investigation must orient how an exact Candidate Responsibility is a
-branch of current Standing carrying an exact addressed source result, without
-recreating Assignment, caller choice, or a global ledger population.
+This is not the next coordinate of the recursive association experiment. The
+already-demonstrated recursive pair road begins from different exact subjects:
+
+```text
+recurrence Assertion yielded by an earlier pair Measurement
++ later exact material acquisition result
+↓
+recurrent-byte-pair occurrence-position Measurement
+```
+
+The repeated sixteen-book run now supplies those subjects. The second
+acquisition occurrence is distinct even though its exact bytes require no
+repeated base Measurement work. The experiment therefore continues through
+the existing recurrent-pair position Measurement, not through Candidate.
