@@ -57,7 +57,6 @@ carried
 carries
 carry
 carrying
-category
 characterization
 citing
 clause
@@ -69,13 +68,11 @@ comparing
 comparison
 competence
 competent
-compiled
 complete
 completeness
 completion
 composite
 compressions
-conclusion
 concordance
 confidence
 conflicting
@@ -354,8 +351,6 @@ unknown
 unsupported
 until
 use
-usefulness
-validation
 validity
 value
 visibility
