@@ -84,12 +84,14 @@ one test subject and no other subject
 one exact Candidate result for each required subject
 ```
 
-These are unlike the preceding classes. They appear to require an exact
-population, a count or exclusion rule, an occurrence applying that rule, and
-a result. The word `one` supplies none of that physiology.
+These are unlike the preceding classes. The distinction may be real. Its
+current expression through `one` is not an established constitutional
+warrant.
 
-The distinction may be real. Its current expression through `one` is not an
-established constitutional warrant.
+That finding does not require a new cardinality Responsibility or Act. The
+distinction may already belong to an exact rule, Scope, bounded population,
+Responsibility exhaustion, Stopping, or Completion. Each use must resolve to
+its existing owner before the word is removed.
 
 ## Candidate subtraction
 
@@ -132,31 +134,139 @@ refusal is keyed by the required-subject reference, not by the Candidate Act
 occurrence.
 
 The active Book wording and witness grammar say `one exact Candidate result
-for each required subject`. No separate cardinality Responsibility, Act,
-relation occurrence, or result was found that warrants this subject-level
-uniqueness.
+for each required subject`. No exact rule, Scope, Responsibility exhaustion
+coordinate, Stopping rule, Completion occurrence, or relation was found that
+warrants this subject-level uniqueness.
 
 History explains the wording but not the stronger rule. `6fc8c743` replaced
 one aggregate Candidate result with independently movable Candidate results.
 Its purpose was to remove a completion barrier. The change used `one` to name
 the new result unit; it did not recover independent uniqueness physiology.
 
+The compression is active in witness grammar:
+
+```text
+01.Source.E.1.result_boundary
+    one_exact_Candidate_result_for_each_required_subject
+
+01.Source.E.1.result
+    one_exact_Candidate_result
+
+04.Compare.C.responsibility_source
+    current_Standing_carrying_one_exact_Candidate_result
+
+04.Compare.C.completeness_boundary
+    one_exact_Candidate_result
+```
+
+For `01.Source.E.1`, the existing owner of the result edge is the exact
+Candidate Act occurrence and Yield relation, not the required subject alone.
+For `04.Compare.C`, the existing owner is the exact Candidate result carried
+as that Compare Responsibility's subject boundary. Neither machine coordinate
+establishes universal uniqueness.
+
+## Surviving distinctions and existing owners
+
+### Applicability result domain
+
+Active Standing says an Applicability occurrence carries one of:
+
+```text
+applicable
+inapplicable
+conflicting
+Unknown
+```
+
+This is not a population of four subjects from which Seed chooses one. It is
+the result domain of the exact Applicability rule. The existing owner is the
+Applicability Responsibility and its exact rule, Act occurrence, Yield, and
+result coordinate.
+
+The scalar runtime representation can carry an exact result value. Its scalar
+shape does not independently establish an exclusive constitutional
+cardinality rule. The exact Applicability rule must establish the result.
+
+Disposition: `one of` is rule-domain rendering, not a universal cardinality
+distinction.
+
+### Fidelity test subject boundary
+
+Active Source says this Book material-acquisition witness is one test subject
+and no other subject.
+
+The surviving distinction is the exact test-subject population addressed by
+the Fidelity Responsibility. Its existing owners are the Fidelity
+Responsibility subject coordinates and exact Scope. `one` does not establish
+the population, and `no other` cannot establish exclusion without that exact
+Scope.
+
+Disposition: exact Scope and the bounded test-subject population own the
+distinction.
+
+### Candidate bounded work
+
+Candidate Responsibility `R` carries the exact bounded required-subject
+population `P`. That Responsibility remains responsible for every exact
+subject in `P`. Its Scope and source boundary own which required subjects are
+inside the work.
+
+For required subject `Q`, Applicability and Participation may support a
+Candidate Act occurrence `O`; Yield relates `O` to exact result `C`. These
+existing coordinates own that occurrence and result.
+
+They establish neither:
+
+```text
+Q may participate only once
+```
+
+nor:
+
+```text
+Q may have only one result
+```
+
+The current Book contains generic Stopping and Completion grammar. Stopping
+has its own Responsibility, subject, Act occurrence, support, Yield, result,
+Authority, Scope, Locality, and limits. Completion is separately responsible
+work and cannot be inferred from a local exhaustive result or Stop result
+beyond exact Scope.
+
+No active Candidate-specific Stopping Responsibility or Completion road was
+found in witness grammar or runtime. Therefore generic Stopping and Completion
+identify the existing grammar positions that would own a later claim that
+Candidate work stopped or completed; they do not currently supply the exact
+Candidate stopping rule.
+
+Disposition: Candidate bounded work belongs to `R` and its exact Scope.
+Candidate occurrences/results accumulate under `R`. Any later Stop or
+Completion claim belongs to the existing Stopping or Completion grammar and
+requires its own exact subject, Responsibility, Act, and Scope. Subject-level
+uniqueness does not follow.
+
 ## Runtime disposition
 
 Current duplicate refusal must not be promoted as constitutional law.
 
 Removing it immediately would be incomplete. The current exhaustion read uses
-the first result for each required-subject reference to determine which
-required subjects still require a result. Allowing several results without
-first separating fulfillment from cardinality would make that read ambiguous.
+the presence of a result for each required-subject reference to decide whether
+that subject remains in the producer's next read. Allowing several results
+without first separating that implementation traversal from Stopping and
+Completion would leave the producer's stopping condition implicit.
 
-The exact next runtime question is:
+The exact next questions are:
 
 ```text
-What exact result population fulfills Candidate Responsibility R for Q?
+What exact Candidate rule makes another Act occurrence applicable for Q?
+
+What exact Stopping rule addresses R and its bounded required-subject
+population?
+
+What exact Completion Responsibility, if any, later addresses that work?
 ```
 
-This is not the same question as:
+None is the same question as:
 
 ```text
 May Q participate in only one Candidate Act occurrence?
@@ -169,14 +279,15 @@ No active coordinate answers the second question.
 `one` is not one constitutional distinction.
 
 Most active uses are singular rendering removable without loss. Apparent
-cardinality uses require their own exact physiology and cannot receive force
-from the word `one`.
+cardinality uses must resolve to an existing exact rule, Scope, population,
+Responsibility, Stopping, or Completion position and cannot receive force from
+the word `one`.
 
 For Candidate production, the established edge is Act occurrence to exact
 result through Yield. Required-subject-to-unique-result is not established.
 
 Do not remove `one` mechanically from active Book yet. First rewrite the
-singular and exact-coordinate uses, then investigate each surviving
-cardinality claim by its own Responsibility and occurrence. Audit `each`,
-`every`, and `another` only after this boundary is preserved; they must not be
-treated as synonyms for `one`.
+singular and exact-coordinate uses, then resolve each surviving claim onto its
+existing exact rule, Scope, bounded population, Responsibility, Stopping, or
+Completion coordinates. Audit `each`, `every`, and `another` only after this
+boundary is preserved; they must not be treated as synonyms for `one`.
