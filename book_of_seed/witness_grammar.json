@@ -2478,8 +2478,7 @@
         "inapplicable",
         "known",
         "Unknown",
-        "conflicting",
-        "unresolved"
+        "conflicting"
       ],
       "standing_not_established": [
         "fixed_coordinate_count",

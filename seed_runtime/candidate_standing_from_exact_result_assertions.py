@@ -1975,7 +1975,7 @@ def ordered_candidate_yield_relation_beside_represented_relation_coordinates(
         ...,
     ],
 ]:
-    """Read one exact Candidate Yield beside unresolved relation coordinates."""
+    """Read one exact Candidate Yield beside relation coordinates."""
 
     result, act, _applicability, assignment = _read_candidate_result(
         ledger, candidate_standing_result_event_identity
@@ -2087,7 +2087,7 @@ def exact_source_assertion_materials_beside_every_ordered_pair_candidate_represe
     ],
     ...,
 ]:
-    """Read exact sources beside each unresolved represented_relation coordinate."""
+    """Read exact sources beside each represented_relation coordinate."""
 
     return tuple(
         (
@@ -2125,7 +2125,7 @@ def exact_representation_path_pairs_beside_every_ordered_pair_candidate_represen
     ],
     ...,
 ]:
-    """Read one unresolved represented_relation coordinate per Candidate and every nested path pair."""
+    """Read one represented_relation coordinate per Candidate and every nested path pair."""
 
     readings = (
         exact_source_assertion_materials_beside_every_ordered_pair_candidate_represented_relation_coordinate(

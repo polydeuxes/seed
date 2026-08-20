@@ -36,8 +36,7 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 2. The headings beneath it name coordinates and relations; they do not revise Responsibility assignments.
 3. Every instantiated responsibility must carry the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
-5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
-6. Recurrence, headings, witness shape, or completion without a responsible occurrence and Evidence supply neither a branch value nor its identity.
+5. Recurrence, headings, witness shape, or completion without a responsible occurrence and Evidence supply neither a branch value nor its identity.
 
 ### Required branches
 
@@ -66,7 +65,7 @@ Authority
 != Authority carried by an input
 ```
 
-The Authority coordinate carries positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing cannot resolve the Authority coordinate.
+The Authority coordinate carries positively established, conflicting, or responsibly Unknown. Absence of a separate Authorization standing cannot resolve the Authority coordinate.
 
 #### Evidence
 
@@ -211,13 +210,10 @@ Carries any act-local applicability or admission standing required before materi
 
 #### Lawful Stopping
 
-Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. A reason-bearing Responsibility and the exact Act addressed by the Stop establish no relation by identity. Absence of movement, unresolved material, negative Standing, or a preventing Assertion supplies no Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. A reason-bearing Responsibility and the exact Act addressed by the Stop establish no relation by identity. Absence of movement, negative Standing, or a preventing Assertion supplies no Stop by identity.
 
 ```text
 absence of movement
-!= Stop
-
-unresolved material
 != Stop
 
 negative standing
@@ -234,7 +230,6 @@ The Book begins at Standing; current Standing assigns Responsibility. This canno
 
 ```text
 branch present != branch value established
-coordinate unresolved != coordinate Unknown
 same responsible boundary != same act, responsible occurrence, Standing boundary, or exact Act
 same occurrence != same Assertion
 ```
@@ -244,7 +239,7 @@ same occurrence != same Assertion
 > Maintain the constitutional grammar.  
 > this Seed, inspect, and this Witness retain their exact positions. What inspect establishes: Unknown. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
 
-Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new Representation of the same grammar do not require revision.
+Revise the Book when constitutional grammar or a durable distinction is different. Function movement, added fields, different relations, or a new Representation of the same grammar do not require revision.
 
 ## Chapters
 
