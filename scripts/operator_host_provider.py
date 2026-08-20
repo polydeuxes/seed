@@ -14,6 +14,7 @@ import time
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialConsumer,
     SuppliedWitnessMaterialOccurrence,
+    SuppliedWitnessReadOccurrence,
 )
 
 
@@ -135,7 +136,8 @@ def _bounded_invocation(
 
     streams = selectors.DefaultSelector()
     supplied_counts = {"output": 0, "error": 0}
-    supplied_positions = {"output": 0, "error": 0}
+    read_occurrences = {"output": [], "error": []}
+    invocation_read_position = 0
     time_limit_reached = False
     output_limit_reached = False
     error_limit_reached = False
@@ -189,17 +191,18 @@ def _bounded_invocation(
                 )
                 exact = found[:available]
                 if exact:
-                    supply(
-                        SuppliedWitnessMaterialOccurrence(
+                    read_occurrences[key.data].append(
+                        SuppliedWitnessReadOccurrence(
                             exact_bytes=exact,
                             source_boundary=(
-                                f"invocation {key.data} occurrence "
-                                f"{supplied_positions[key.data]}"
+                                f"invocation {key.data} read "
+                                f"{len(read_occurrences[key.data])}"
                             ),
+                            invocation_position=invocation_read_position,
                         )
                     )
                     supplied_counts[key.data] += len(exact)
-                    supplied_positions[key.data] += 1
+                    invocation_read_position += 1
                 if len(found) > available:
                     if key.data == "output":
                         output_limit_reached = True
@@ -216,13 +219,23 @@ def _bounded_invocation(
                 stream.close()
         process.wait()
     for role in ("output", "error"):
-        if supplied_positions[role] == 0:
-            supply(
-                SuppliedWitnessMaterialOccurrence(
-                    exact_bytes=b"",
-                    source_boundary=f"invocation {role} occurrence 0",
-                )
+        occurrences = tuple(read_occurrences[role])
+        supply(
+            SuppliedWitnessMaterialOccurrence(
+                exact_bytes=b"".join(
+                    occurrence.exact_bytes for occurrence in occurrences
+                ),
+                source_boundary=f"invocation {role}",
+                known_loss=(
+                    _LIMIT_LOSS
+                    if time_limit_reached
+                    or (role == "output" and output_limit_reached)
+                    or (role == "error" and error_limit_reached)
+                    else ()
+                ),
+                read_occurrences=occurrences,
             )
+        )
     return time_limit_reached, output_limit_reached, error_limit_reached
 
 

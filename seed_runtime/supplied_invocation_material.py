@@ -15,11 +15,30 @@ from seed_runtime.operator_invocation_locality import (
 
 
 @dataclass(frozen=True, slots=True)
+class SuppliedWitnessReadOccurrence:
+    exact_bytes: bytes
+    source_boundary: str
+    invocation_position: int
+
+    def __post_init__(self) -> None:
+        if type(self.exact_bytes) is not bytes or not self.exact_bytes:
+            raise TypeError("exact nonempty read material required")
+        if type(self.source_boundary) is not str or not self.source_boundary:
+            raise TypeError("exact read source boundary required")
+        if (
+            type(self.invocation_position) is not int
+            or self.invocation_position < 0
+        ):
+            raise TypeError("exact invocation read position required")
+
+
+@dataclass(frozen=True, slots=True)
 class SuppliedWitnessMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
     known_loss: tuple[str, ...] = ()
     provenance_occurrence_positions: tuple[int, ...] = ()
+    read_occurrences: tuple[SuppliedWitnessReadOccurrence, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.exact_bytes) is not bytes:
@@ -40,6 +59,36 @@ class SuppliedWitnessMaterialOccurrence:
             )
         ):
             raise TypeError("exact prior supplied occurrence positions required")
+        if (
+            type(self.read_occurrences) is not tuple
+            or any(
+                type(occurrence) is not SuppliedWitnessReadOccurrence
+                for occurrence in self.read_occurrences
+            )
+            or len(
+                {
+                    occurrence.source_boundary
+                    for occurrence in self.read_occurrences
+                }
+            )
+            != len(self.read_occurrences)
+            or len(
+                {
+                    occurrence.invocation_position
+                    for occurrence in self.read_occurrences
+                }
+            )
+            != len(self.read_occurrences)
+            or (
+                self.read_occurrences
+                and b"".join(
+                    occurrence.exact_bytes
+                    for occurrence in self.read_occurrences
+                )
+                != self.exact_bytes
+            )
+        ):
+            raise TypeError("exact supplied read occurrences required")
 
 
 SuppliedWitnessMaterialConsumer = Callable[
@@ -48,6 +97,25 @@ SuppliedWitnessMaterialConsumer = Callable[
 OperatorInvocationProvider = Callable[
     [bytes, SuppliedWitnessMaterialConsumer], None
 ]
+
+
+def _read_occurrence_coordinates(
+    occurrences: tuple[SuppliedWitnessReadOccurrence, ...],
+) -> tuple[dict[str, object], ...]:
+    coordinates = []
+    start = 0
+    for occurrence in occurrences:
+        end = start + len(occurrence.exact_bytes)
+        coordinates.append(
+            {
+                "source_boundary": occurrence.source_boundary,
+                "invocation_position": occurrence.invocation_position,
+                "start_position": start,
+                "end_position": end,
+            }
+        )
+        start = end
+    return tuple(coordinates)
 
 
 def acquire_supplied_witness_material_occurrence(
@@ -145,4 +213,5 @@ def acquire_supplied_witness_material_occurrence(
                 for position in supplied.provenance_occurrence_positions
             ),
         ),
+        read_occurrences=_read_occurrence_coordinates(supplied.read_occurrences),
     )

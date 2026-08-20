@@ -33,6 +33,59 @@ class WitnessMaterialAcquisitionError(MaterialAcquisitionError):
     """One exact Witness material-acquisition occurrence is malformed."""
 
 
+def _require_read_occurrence_coordinates(
+    exact_bytes: bytes, read_occurrences: tuple[object, ...] | list[object]
+) -> None:
+    """Validate exact mechanical read coordinates carried by one result."""
+
+    if type(read_occurrences) not in (tuple, list):
+        raise WitnessMaterialAcquisitionError(
+            "exact read occurrence population required"
+        )
+    next_start = 0
+    boundaries: set[str] = set()
+    invocation_positions: set[int] = set()
+    for occurrence in read_occurrences:
+        if type(occurrence) is not dict:
+            raise WitnessMaterialAcquisitionError(
+                "read occurrences require exact coordinates"
+            )
+        source = occurrence.get("source_boundary")
+        invocation_position = occurrence.get("invocation_position")
+        start = occurrence.get("start_position")
+        end = occurrence.get("end_position")
+        if (
+            set(occurrence)
+            != {
+                "source_boundary",
+                "invocation_position",
+                "start_position",
+                "end_position",
+            }
+            or type(source) is not str
+            or not source
+            or source in boundaries
+            or type(invocation_position) is not int
+            or invocation_position < 0
+            or invocation_position in invocation_positions
+            or type(start) is not int
+            or type(end) is not int
+            or start != next_start
+            or end <= start
+            or end > len(exact_bytes)
+        ):
+            raise WitnessMaterialAcquisitionError(
+                "read occurrences require exact coordinates"
+            )
+        boundaries.add(source)
+        invocation_positions.add(invocation_position)
+        next_start = end
+    if read_occurrences and next_start != len(exact_bytes):
+        raise WitnessMaterialAcquisitionError(
+            "read occurrences require the complete exact material"
+        )
+
+
 def record_witness_material_acquisition(
     ledger: EventLedger,
     *,
@@ -41,6 +94,7 @@ def record_witness_material_acquisition(
     source_boundary: str,
     known_loss: tuple[str, ...] = (),
     provenance_occurrence_references: tuple[str, ...] = (),
+    read_occurrences: tuple[dict[str, object], ...] = (),
 ) -> Event:
     if type(exact_bytes) is not bytes:
         raise WitnessMaterialAcquisitionError(
@@ -71,6 +125,7 @@ def record_witness_material_acquisition(
         raise WitnessMaterialAcquisitionError(
             "provenance requires exact intact occurrence references"
         )
+    _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
     material_acquisition_act_identity = new_identity("witness_material_acquisition_act")
     act_occurrence_identity = new_identity("witness_material_acquisition_act_occurrence")
@@ -98,6 +153,10 @@ def record_witness_material_acquisition(
         ),
         "locality_relation": locality_relation,
     }
+    if read_occurrences:
+        result["read_occurrences"] = [
+            dict(occurrence) for occurrence in read_occurrences
+        ]
     responsible_act_evidence = ledger.append(
         WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND,
         {
@@ -171,6 +230,7 @@ def _read_witness_material_acquisition_result(
 ) -> Event:
     material = event.material
     provenance = material.get("provenance_occurrence_references")
+    read_occurrences = material.get("read_occurrences", [])
     known_loss = material.get("known_loss")
     unknown = material.get("unknown")
     result_identity = material.get("result_identity")
@@ -212,6 +272,7 @@ def _read_witness_material_acquisition_result(
             or ledger.integrity_of(reference) == CORRUPTED
             for reference in provenance
         )
+        or type(read_occurrences) is not list
         or act_evidence is None
         or act_evidence.kind != WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND
         or act_evidence.locality_identity != event.locality_identity
@@ -242,6 +303,8 @@ def _read_witness_material_acquisition_result(
         "provenance_occurrence_references": provenance,
         "locality_relation": locality_relation,
     }
+    if read_occurrences:
+        result["read_occurrences"] = read_occurrences
     expected_act_evidence = {
         "material_acquisition_act_identity": material_acquisition_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
@@ -279,6 +342,14 @@ def _read_witness_material_acquisition_result(
         raise MaterialAcquisitionError(
             "Witness material-acquisition result is absent or corrupted"
         )
+    try:
+        _require_read_occurrence_coordinates(
+            event.exact_material, read_occurrences
+        )
+    except WitnessMaterialAcquisitionError as error:
+        raise MaterialAcquisitionError(
+            "Witness material acquisition carries malformed read occurrences"
+        ) from error
     try:
         ordered = ledger.occurrences_in_append_order(
             (act_evidence.identity, yield_identity, event.identity),

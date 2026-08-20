@@ -42,7 +42,11 @@ from seed_runtime.operator_representation_admission import (
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
+    SuppliedWitnessReadOccurrence,
     acquire_supplied_witness_material_occurrence,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
@@ -70,12 +74,90 @@ def test_supplied_occurrence_requires_exact_distinct_prior_positions(positions):
         )
 
 
+def test_supplied_occurrence_requires_reads_to_reconstruct_its_material():
+    with pytest.raises(TypeError, match="exact supplied read occurrences"):
+        SuppliedWitnessMaterialOccurrence(
+            b"abcd",
+            "invocation output",
+            read_occurrences=(
+                SuppliedWitnessReadOccurrence(b"ab", "read:0", 0),
+                SuppliedWitnessReadOccurrence(b"ce", "read:1", 1),
+            ),
+        )
+
+
 def _provider(*occurrences):
     def provide(_exact_command, supply):
         for occurrence in occurrences:
             supply(occurrence)
 
     return provide
+
+
+def test_measured_pairs_do_not_depend_on_supplied_read_partition():
+    exact = b"abcdef"
+
+    def run(read_occurrences):
+        ledger = EventLedger()
+        supplied = SuppliedWitnessMaterialOccurrence(
+            exact,
+            "invocation output",
+            read_occurrences=read_occurrences,
+        )
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="locality",
+            input_stream=BytesIO(b"!cat material\n"),
+            output_stream=StringIO(),
+            raw_output_stream=BytesIO(),
+            operator_invocation_provider=_provider(supplied),
+        )
+        relation = next(
+            event
+            for event in ledger.list()
+            if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        )
+        events = ledger.list_locality(
+            relation.material["destination_locality_identity"]
+        )
+        acquisition = next(
+            event
+            for event in events
+            if event.kind == "witness.material.acquire_recorded"
+        )
+        position_result = next(
+            event
+            for event in events
+            if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        )
+        return acquisition, position_result
+
+    one_read = (
+        SuppliedWitnessReadOccurrence(exact, "read:0", 0),
+    )
+    three_reads = (
+        SuppliedWitnessReadOccurrence(b"ab", "read:0", 0),
+        SuppliedWitnessReadOccurrence(b"cd", "read:1", 1),
+        SuppliedWitnessReadOccurrence(b"ef", "read:2", 2),
+    )
+
+    one_acquisition, one_positions = run(one_read)
+    split_acquisition, split_positions = run(three_reads)
+
+    assert one_acquisition.exact_material == split_acquisition.exact_material == exact
+    assert len(one_acquisition.material["read_occurrences"]) == 1
+    assert len(split_acquisition.material["read_occurrences"]) == 3
+    one_assertions = dict(one_positions.material["assertions"])
+    split_assertions = dict(split_positions.material["assertions"])
+    for coordinate in (
+        "source_material_acquisition_occurrence_identity",
+        "source_locality_identity",
+        "completeness_boundary_identity",
+    ):
+        one_assertions.pop(coordinate)
+        split_assertions.pop(coordinate)
+    assert one_assertions == split_assertions
+    assert one_assertions["occurrences"] == len(exact) - 1
 
 
 def test_provider_cannot_append_outside_one_supplied_occurrence():
@@ -428,6 +510,13 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             for event in ledger.list()
             if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
         ]
+    ) == 1
+    assert len(
+        [
+            event
+            for event in ledger.list()
+            if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        ]
     ) == 4
     operator_standing = read_operator_locality_standing(
         ledger, locality_identity="locality"
@@ -645,7 +734,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
         [
             event
             for event in witness_events
-            if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
+            if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
         ]
     ) == 1
 
@@ -861,6 +950,8 @@ def test_supplied_result_refuses_missing_different_or_corrupted_command():
 
 PYTEST_ADMISSION = (
     test_supplied_occurrence_requires_exact_distinct_prior_positions,
+    test_supplied_occurrence_requires_reads_to_reconstruct_its_material,
+    test_measured_pairs_do_not_depend_on_supplied_read_partition,
     test_provider_cannot_append_outside_one_supplied_occurrence,
     test_supplied_result_preserves_one_exact_prior_occurrence_reference,
     test_supplied_result_preserves_function_and_source_occurrence_references,

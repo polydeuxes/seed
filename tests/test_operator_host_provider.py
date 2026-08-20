@@ -229,40 +229,53 @@ def test_cat_preserves_finite_material_across_multiple_pipe_reads(tmp_path):
     path.write_bytes(exact)
 
     supplied = _invoke(b"!cat " + bytes(path) + b"\n")
-    output = tuple(
+    output = next(
         occurrence
         for occurrence in supplied
-        if occurrence.source_boundary.startswith("invocation output occurrence ")
+        if occurrence.source_boundary == "invocation output"
     )
 
-    assert b"".join(occurrence.exact_bytes for occurrence in output) == exact
-    assert tuple(len(occurrence.exact_bytes) for occurrence in output) == (
+    assert output.exact_bytes == exact
+    assert tuple(
+        len(occurrence.exact_bytes)
+        for occurrence in output.read_occurrences
+    ) == (
         65_536,
         65_536,
         65_536,
         21_450,
     )
+    assert b"".join(
+        occurrence.exact_bytes for occurrence in output.read_occurrences
+    ) == exact
+    assert tuple(
+        occurrence.invocation_position
+        for occurrence in output.read_occurrences
+    ) == tuple(sorted(
+        occurrence.invocation_position
+        for occurrence in output.read_occurrences
+    ))
     assert all(occurrence.known_loss == () for occurrence in supplied)
 
 
 def test_host_output_is_bounded_without_returncode_material():
     supplied = _invoke(b"!cat /dev/zero\n")
 
-    output = tuple(
+    output = next(
         occurrence
         for occurrence in supplied
-        if occurrence.source_boundary.startswith("invocation output occurrence ")
+        if occurrence.source_boundary == "invocation output"
     )
-    assert sum(len(occurrence.exact_bytes) for occurrence in output) == (
+    assert len(output.exact_bytes) == (
         operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
     )
     assert tuple(
-        occurrence.source_boundary for occurrence in output
+        occurrence.source_boundary for occurrence in output.read_occurrences
     ) == tuple(
-        f"invocation output occurrence {position}"
-        for position in range(len(output))
+        f"invocation output read {position}"
+        for position in range(len(output.read_occurrences))
     )
-    assert all(occurrence.known_loss == () for occurrence in output)
+    assert output.known_loss
     assert supplied[-1].exact_bytes == b""
     assert supplied[-1].known_loss
 
@@ -391,15 +404,11 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     invocation_output = tuple(
         occurrence
         for occurrence in supplied
-        if occurrence.source_boundary.startswith(
-            ("invocation output occurrence ", "invocation error occurrence ")
-        )
+        if occurrence.source_boundary in ("invocation output", "invocation error")
     )
     assert invocation_output
     assert all(
-        occurrence.source_boundary.startswith(
-            ("invocation output occurrence ", "invocation error occurrence ")
-        )
+        occurrence.source_boundary in ("invocation output", "invocation error")
         for occurrence in invocation_output
     )
     assert {
@@ -410,7 +419,7 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     assert any(
         occurrence.exact_bytes
         for occurrence in invocation_output
-        if occurrence.source_boundary.startswith("invocation output occurrence ")
+        if occurrence.source_boundary == "invocation output"
     )
     catalog_occurrence = by_boundary["implementation function catalog"]
     artifact_occurrence = by_boundary["implementation function measurement"]
