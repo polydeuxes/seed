@@ -29,8 +29,9 @@ earlier recurrence Assertion for b"ab"
 (a at 5, b at 6)
 ```
 
-The test requires both relative orders and distances `1` and `5`. The current
-rule therefore means:
+The test requires both relative orders and distances `1` and `5`. It proves
+that the coordinate space must retain the ability to address those
+distinctions. The current rule realizes that ability as:
 
 ```text
 first byte role at every matching position
@@ -42,7 +43,9 @@ It does not mean only a contiguous occurrence of the two-byte material.
 
 That implementation decision performs exact work: it does not let the caller
 supply direction or distance, and it preserves every possible relative
-position before later comparison.
+position before later comparison. The test does not independently establish
+that every possible position relation must be instantiated for every later
+material result.
 
 The complete product is nevertheless not independently required by active
 Book grammar or by the shared-position consumer. Active `01.Source.D` requires
@@ -94,8 +97,8 @@ earlier source support, but it is not applied by the later finding rule.
 
 ## What the complete product preserves
 
-The complete product preserves distinctions that a narrower implementation
-could otherwise author silently:
+The complete coordinate space preserves distinctions that a narrower
+coordinate space could otherwise author silently:
 
 - which byte occupies the first and second Act-local roles;
 - both relative position orders;
@@ -104,9 +107,11 @@ could otherwise author silently:
 - an exact available count before an applied partial-result bound.
 
 The test `test_pair_occurrence_measurement_finds_exact_positions_without_a_sign`
-proves that these distinctions are deliberate. Removing reverse-order or
-nonadjacent findings would change the current rule and its demonstrated
-result. That cannot be presented as a performance correction.
+proves that these distinctions are addressable and that the current runtime
+instantiates them. Removing their coordinates from the bounded space would
+change the demonstrated result. Declining to instantiate every member before
+an exact later Responsibility addresses it does not make that member or its
+coordinates cease to exist.
 
 What remains unsupported is the stronger statement:
 
@@ -174,6 +179,10 @@ contract. It also shows the compression: the coordinate space itself is not
 given a separately readable result position, so preserving the space and
 recording every member are treated as though they were the same work.
 
+If the exact space is itself preserved and remains addressable, lack of an
+expanded member Assertion does not mean its source coordinates were lost. It
+means no later responsible occurrence has yet instantiated that meeting.
+
 The operator's lineage hypothesis is therefore supported:
 
 ```text
@@ -184,6 +193,70 @@ later addressed meeting retains exact lineage
 
 It does not by itself establish which members may proceed, which relation a
 member carries, or whether later work must exhaust every member.
+
+## The carried relation addresses the later coordinate
+
+The earlier premise does more than divide a completed Cartesian population
+afterward. It carries an exact position relation that can address the second
+coordinate from the first.
+
+For the recurrent adjacent-pair witness:
+
+```text
+R:
+    second position is after first position
+    exact distance is 1
+
+later exact first-byte position p
++ R
+↓
+address q = p + 1
+↓
+determine whether q carries the required second byte
+```
+
+For report orientation, the same relation may be rendered:
+
+```text
+q = p + d
+
+or
+
+q - p = d
+```
+
+These equations are Rosetta rendering of exact position coordinates. They do
+not declare a new numeric Addition or Subtraction Responsibility.
+
+The result boundary is:
+
+```text
+required byte occurs at addressed q
+↓
+exact later relation under R is available
+
+required byte does not occur at addressed q
+↓
+no later relation under R is established at p
+```
+
+The second branch does not establish a negative relation and does not
+establish some other direction or distance. Another exact Responsibility can
+later address another `(p, q)` relation through the preserved coordinate space
+without requiring every possible disagreement to have been precomputed.
+
+This is the decisive population distinction:
+
+```text
+preserve every possible meeting as an addressable bounded space
+!=
+instantiate every possible meeting before applying R
+```
+
+Under the repeated corpus's carried adjacent relation, the addressed road
+reaches 217,511 matching positions. The 39,175,421,423 other members remain
+addressable through the preserved coordinate space but do not become relations
+under `R` merely because both endpoints occur.
 
 ## Earlier association testimony
 
@@ -215,9 +288,10 @@ This is the relevant historical discriminator in Rosetta terms. It is not
 derived from language, meaning, or the desired conclusion. It is carried from
 exact earlier occurrences and compares only exact position coordinates.
 
-The historical witness does **not** solve the population problem by itself.
-Its `exact_occurrences_of_material_pair(...)` function also constructs the
-complete Cartesian population before comparison. It demonstrates the missing
+The historical witness carries the required discriminator but its current
+implementation still applies it late. Its
+`exact_occurrences_of_material_pair(...)` function constructs the complete
+Cartesian population before comparison. It demonstrates the missing
 separation clearly:
 
 ```text
@@ -229,8 +303,8 @@ same relation or different relation
 ```
 
 The durable recurrent-position Measurement currently records the first
-population. It does not apply the second distinction before recording that
-population.
+population. Neither witness uses the carried relation to address `q` directly
+before recording or constructing the Cartesian population.
 
 The archived `GoalOrientationAssociation` district supplies no reusable
 constitutional road here. Its association coordinates were caller-supplied,
@@ -261,11 +335,11 @@ The current product is about 180,109 times the matching population. This
 calculation appended no Seed occurrence; it applies the current pair-count and
 Cartesian formulas directly to the exact corpus bytes.
 
-This does not establish that only the 217,511 matching positions may become
-subjects. The 39,175,421,423 other combinations carry exact relative-order and
-distance differences under the historical comparison rule. It establishes
-that the product is created before the already-demonstrated positional
-distinction is applied.
+This does not establish that only the 217,511 matching positions can ever
+become subjects. The coordinate space preserves exact access to the other
+39,175,421,423 combinations if another Responsibility addresses them. It does
+establish that co-presence of their endpoints is not enough to make them
+relations or required findings under the carried premise relation.
 
 ## What shared-position and ordered-path require
 
@@ -326,12 +400,12 @@ material result. Inside its finding calculation, every distinct ordered pair
 of matching scalar positions becomes a finding without separate Applicability,
 Participation, or comparison against the carried premise relation.
 
-### Which distinction motivates the complete product?
+### Which distinction motivates the complete coordinate space?
 
 The demonstrated motive is to preserve every direction and distance without
-letting the caller provide either. That distinction is real. The choice to
-realize it by durable exhaustive Cartesian findings is an implementation
-shape.
+letting the caller provide either. That distinction is real. Addressability of
+the complete space preserves it. The choice to realize addressability by
+durable exhaustive Cartesian findings is an implementation shape.
 
 ### Is the product merely a discovery strategy?
 
@@ -368,16 +442,16 @@ The exact answer is:
 The current rule defines a legitimate exact coordinate space, then treats
 expansion of its members as the Measurement finding population before the next
 demonstrated exact distinction. The earlier recurrent-pair relation supplies a
-non-semantic positional premise, but current durable Measurement begins
-recording possible role-position combinations before any comparison with that
-premise.
+non-semantic positional premise capable of addressing the later second
+coordinate from the first, but current durable Measurement begins recording
+possible role-position combinations before applying that premise.
 
-No cap correction follows. No runtime deletion follows. Shrinking the
-population to adjacency would remove reverse-order and distance distinctions
-that current tests deliberately preserve. Keeping the full product would
-require recovering an exact Responsibility whose required findings are all
-possible ordered position relations, rather than inferring that requirement
-from the present nested loop.
+No cap correction follows merely from this report. No runtime deletion follows.
+The exact space and its lineage must remain preserved. That does not require
+pre-recording every member. A later runtime correction would have to preserve
+addressability of reverse-order and distance distinctions while applying an
+exact carried relation before relation occurrence, rather than treating
+endpoint co-presence as an edge.
 
 The exact boundary is:
 
@@ -388,15 +462,20 @@ established
     exact premise position relation
     exact later material and scalar positions
     exact finite coordinate space and its member count
+    exact premise relation capable of addressing q from p
     current partial member expansion and bounded known loss
 
 not established
     an active Responsibility requiring every coordinate-space member
     to become a durable finding before the carried premise relation is applied
+    endpoint co-presence as a relation occurrence
 ```
 
-The population question must be resolved before assigning a live numeric
-bound or connecting the recurrent-position road to the corpus.
+The population is now separated: preserve the exact addressable space, then
+instantiate relations warranted by the carried premise. Before assigning a
+live numeric bound or connecting the recurrent-position road to the corpus,
+the remaining question is which existing Responsibility owns that exact
+relation-addressing work and its durable result.
 
 ## Validation
 
