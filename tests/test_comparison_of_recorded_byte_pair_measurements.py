@@ -52,6 +52,10 @@ from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOcc
 
 
 LOCALITY = "recorded-pair-comparison-locality"
+RECURRENT_PAIR_POSITION_RESULT_KIND = (
+    "operator.measurement_of_recurrent_byte_pair_occurrence_position."
+    "recording_occurrence_of_result"
+)
 
 
 def _pair_measurement(ledger):
@@ -748,7 +752,7 @@ def test_later_result_read_revalidates_changed_pair_measurement_evidence():
         get_recorded_pair_measurement_comparison(ledger, result.identity)
 
 
-def test_supplied_local_material_does_not_create_a_pair_premise():
+def test_supplied_local_material_records_pair_measurements_without_compare():
     ledger = EventLedger()
 
     def provider(command, supply):
@@ -777,9 +781,64 @@ def test_supplied_local_material_does_not_create_a_pair_premise():
 
     kinds = tuple(event.kind for event in ledger.list())
     assert kinds.count("operator.measurement.byte_counts_recorded") == 3
-    assert "operator.measurement.byte_position_pair_counts_recorded" not in kinds
+    assert kinds.count("operator.measurement.byte_position_pair_counts_recorded") == 2
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
     assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
+
+
+@pytest.mark.parametrize(
+    ("exact_material", "expected_ab_count", "recurrence_expected"),
+    (
+        (b"ab", 1, False),
+        (b"abxxab", 2, True),
+    ),
+)
+def test_first_exact_material_records_pair_counts_without_prior_pair_measurement(
+    exact_material, expected_ab_count, recurrence_expected
+):
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(exact_material),
+        output_stream=StringIO(),
+    )
+
+    pair_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+    )
+    assert len(pair_measurements) == 1
+    assertions = assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair_measurements[0].identity
+    )
+    ab_assertions = tuple(
+        assertion
+        for assertion in assertions or ()
+        if assertion.representation == (ord("a"), ord("b"))
+    )
+    count_assertion = next(
+        assertion for assertion in ab_assertions if assertion.result == "count"
+    )
+    assert (
+        count_assertion.material["dimensions"]["content"]["count"]
+        == expected_ab_count
+    )
+    assert any(
+        assertion.result == "recurrence" for assertion in ab_assertions
+    ) is recurrence_expected
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+    assert not tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECURRENT_PAIR_POSITION_RESULT_KIND
+    )
 
 
 def test_raw_material_acquisition_does_not_create_a_pair_premise():
@@ -1028,7 +1087,8 @@ PYTEST_ADMISSION = (
     test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings,
     test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
     test_later_result_read_revalidates_changed_pair_measurement_evidence,
-    test_supplied_local_material_does_not_create_a_pair_premise,
+    test_supplied_local_material_records_pair_measurements_without_compare,
+    test_first_exact_material_records_pair_counts_without_prior_pair_measurement,
     test_raw_material_acquisition_does_not_create_a_pair_premise,
     test_new_raw_acquisition_does_not_replace_one_carried_pair_premise,
     test_operator_pair_premise_and_compare_survive_reopen,

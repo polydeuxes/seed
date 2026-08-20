@@ -375,7 +375,7 @@ def _record_pair_measurement(
     byte_measurement_event_identity,
     locality_identity,
 ):
-    """Record one pair Measurement only after an exact consumer relation exists."""
+    """Record the pair Measurement supplied by one exact-byte Measurement."""
 
     pair_measurement, standing = (
         _record_byte_position_pair_count_layer_from_carried_locality_standing(
@@ -386,6 +386,29 @@ def _record_pair_measurement(
         )
     )
     return standing, pair_measurement
+
+
+def _record_pair_measurements_after_declared_measurements(
+    ledger,
+    recorded,
+    *,
+    locality_identity,
+):
+    """Record each pair Measurement whose exact-byte result was just recorded."""
+
+    standing = recorded.bounded_locality_replay
+    pair_measurements = []
+    for byte_measurement in recorded.result_occurrences:
+        if byte_measurement.kind != BYTE_MEASUREMENT_RECORDED_KIND:
+            continue
+        standing, pair_measurement = _record_pair_measurement(
+            ledger,
+            standing,
+            byte_measurement_event_identity=byte_measurement.identity,
+            locality_identity=locality_identity,
+        )
+        pair_measurements.append(pair_measurement)
+    return standing, tuple(pair_measurements)
 
 
 def _latest_carried_pair_premise(
@@ -765,8 +788,12 @@ def run_persistent_operator_console(
                         locality_identity=invocation_locality_identity,
                     )
                 )
-                witness_standing = (
-                    recorded_witness_measurements.bounded_locality_replay
+                witness_standing, _witness_pair_measurements = (
+                    _record_pair_measurements_after_declared_measurements(
+                        ledger,
+                        recorded_witness_measurements,
+                        locality_identity=invocation_locality_identity,
+                    )
                 )
                 provider_boundary = ledger.append_boundary()
 
@@ -1035,6 +1062,12 @@ def run_persistent_operator_console(
                     locality_identity=locality_identity,
                 )
             )
+            locality_standing, later_pair = _record_pair_measurement(
+                ledger,
+                locality_standing,
+                byte_measurement_event_identity=byte_measurement.identity,
+                locality_identity=locality_identity,
+            )
             if pair_premise is None:
                 representation = record_operator_representation(
                     ledger,
@@ -1042,12 +1075,6 @@ def run_persistent_operator_console(
                     locality_standing=locality_standing,
                 )
             else:
-                locality_standing, later_pair = _record_pair_measurement(
-                    ledger,
-                    locality_standing,
-                    byte_measurement_event_identity=byte_measurement.identity,
-                    locality_identity=locality_identity,
-                )
                 locality_standing, comparison = (
                     _record_pair_measurement_comparison(
                         ledger,

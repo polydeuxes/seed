@@ -534,7 +534,18 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     ] == [event.identity for event in acquisition_results[1:]]
     assert operator_standing["admission_result_occurrences"] == {}
     assert witness_standing["admission_result_occurrences"] == {}
-    assert witness_standing["applicability_result_occurrences"] == {}
+    witness_pair_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        and event.locality_identity
+        == relation.material["destination_locality_identity"]
+    )
+    assert len(witness_pair_measurements) == 3
+    assert {
+        event.material["input_applicability_event_identity"]
+        for event in witness_pair_measurements
+    } == set(witness_standing["applicability_result_occurrences"])
     assert all(
         reference["emitted_event_identity"] is None
         for reference in witness_standing["representations"].values()
@@ -798,7 +809,7 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
         in supplied_identities
     ] == []
     kinds = tuple(event.kind for event in ledger.list())
-    assert BYTE_PAIR_MEASUREMENT_RECORDED_KIND not in kinds
+    assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 4
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
     assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
     standing = read_operator_locality_standing(
