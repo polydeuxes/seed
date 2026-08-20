@@ -20,7 +20,7 @@ def book_proper_files() -> tuple[Path, ...]:
     """Return this Book's active prose, excluding its witness grammar."""
 
     chapters = tuple((BOOK / "chapters").glob("*.md"))
-    return chapters + (BOOK / "README.md", BOOK / "concordance.md")
+    return chapters + (BOOK / "README.md",)
 
 
 def book_proper_words() -> dict[str, list[tuple[str, int]]]:

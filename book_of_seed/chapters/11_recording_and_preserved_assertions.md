@@ -16,12 +16,12 @@ A recording boundary creates an exact representation of Events carrying source c
 A recording occurrence establishes that a retrievable record exists and preserves an Assertion carrying source coordinates only within its declared Scope. A later exact Act considers that Assertion only through its own Applicability occurrence. Record existence establishes no represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
 
 ### 05.Recording.C — Preservation and discard of measurements
-No measurement is preserved by this Seed merely by existence. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording preserves an Assertion carrying source coordinates or already established Standing only through its exact preservation occurrence. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
+No Measurement is preserved by this Seed merely by existence. Preservation requires an exact preservation occurrence carrying the Measurement, its source coordinates, and any established Standing retained at that boundary. Record existence establishes neither that Standing nor the Assertion carried by the record and performs no Compare.
 
 ### 05.Recording.D — Exact Standing boundary reference
-Within one current Locality Standing and one intact addressed Representation, active Book assigns this Seed a Responsibility bounded to recording that Representation and its exact Standing boundary as one durable bounded reference in the same Locality. The assignment preserves its own subject, the exact recording Act and occurrence, result identity, source Locality, addressed Representation occurrence, exact Standing boundary, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
+Within one current Locality Standing and one intact addressed occurrence, current Standing exposes one Responsibility bounded to recording that occurrence and its exact Standing boundary as one durable bounded reference in the same Locality. The Responsibility preserves its subject, exact recording Act and occurrence, result, source Locality, addressed occurrence, exact Standing boundary, Scope, Authority, limits, Unknown, and Standing.
 
-The recorded result carries exact assignment, recording-Act, Act-occurrence, Yield, and result references. The recorded reference cannot copy the Standing it references. Record existence establishes no represented relation, Standing revision, movement, Locality relation, Applicability, Participation, Compare, or Authority for another Act. Another recorded reference requires another exact assignment and Act occurrence.
+The recorded result carries exact Responsibility, recording Act, Act occurrence, Yield, and result references. The recorded reference cannot copy the Standing it references. Record existence establishes no relation, Standing revision, movement, Locality relation, Applicability, Participation, Compare, or Authority for another Act. Another recorded reference requires another exact Responsibility and Act occurrence.
 
 
 

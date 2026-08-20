@@ -80,7 +80,7 @@ constitutional because Seed produced it.
 
 ```text
 book_of_seed/       constitutional grammar only
-concordance.md      navigation across live grammar, with aliases
+rosetta/concordance.md navigation across live grammar, with aliases
 rosetta/            translation words and exact mappings
 reports + git       historical testimony, preserved as written
 ```
@@ -93,6 +93,7 @@ to four current terms and to no single one of them.
 ## Files
 
 - [Responsibility spine](roots.md)
+- [Concordance](concordance.md)
 - [Rosetta admission](rosetta_admission.txt)
 - [Book admission](../book_of_seed/book_admission.txt)
 

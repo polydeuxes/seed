@@ -77,6 +77,9 @@ about Seed:
 ```text
 Book           this constitutional language + ordered clause coordinates + this Book's admitted lexicon; Book != lexicon by identity
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
+Composite      one communicative address for several exact coordinates; each coordinate still requires its own responsible physiology
+Name / label / kind / shape ordinary ways to point at material or a grouping; none supplies the subject, relation, Act, occurrence, or Standing it suggests
+Evidence       communicative shorthand that exact material, source and occurrence references, Authority, Scope, limits, and a responsible relation support an Assertion; no separate Evidence coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
@@ -122,6 +125,23 @@ Store / stored / storage implementation material representation in one ledger me
 Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
 Addressability of preserved coordinates
 ```
+
+`Dimensional map` is curator shorthand for a recurring orientation:
+
+```text
+subject / identity
+assertion / content
+standing
+source / provenance
+responsibility
+authority / support
+scope / locality
+occurrence / preservation
+```
+
+This is not a fixed coordinate population, a constitutional hierarchy, or a
+Responsibility. Exact subjects expose only the coordinates established under
+their own responsible boundaries.
 
 ## Connective shorthand
 

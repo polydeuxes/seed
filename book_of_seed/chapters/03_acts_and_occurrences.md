@@ -1,38 +1,30 @@
 # Acts and Occurrences
 
 ## Constitutional subject
-The distinction between exact Acts, their occurrences, and their representations.
+Exact Acts and their occurrences.
 
 ## Core distinction
-What establishes that an Act occurred rather than that an Act-shaped representation exists?
+What exact responsible occurrence establishes that an Act occurred?
 
 ## Bounded resolution
 
 ### 02.Acts.A — Exact Act and occurrence
 
-Validation of an Act-shaped result establishes no Act occurrence. Adoption, narrowing, comparison, or preservation of material carrying source coordinates proves no prior Act occurrence unless the new boundary's own Assertion requires that proof. Participation of exact applicable inputs requires an exact Act occurrence. Establishment or preservation of an exact result requires an evidenced occurrence-to-result relation. Public code, direct instantiation, the same shape, and behavior without mutation establish neither that occurrence nor its relation to the result.
+An exact Act occurrence requires its exact Responsibility, subject, Authority, Scope, limits, applicable inputs, and Participation. An exact result requires the Yield relation from that occurrence. Neither an Act nor a result establishes its occurrence.
 
-Each finding established by an exact declared Measurement Act occurrence is carried by that Measurement result. The result carries separate exact finding, responsible-occurrence, Evidence, and result-boundary references. This establishes no finding for another Act kind.
+Each finding established by an exact declared Measurement Act occurrence is carried by that Measurement result. The result preserves the exact finding, responsible occurrence, and result boundary and establishes no finding for another Act.
 
-**Yield** is the exact evidenced relation from an Act occurrence to its result. Yield preserves the exact Act occurrence identity and result identity. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
+**Yield** is the exact relation from an Act occurrence to its result. Yield != Act, Act occurrence, result, result Standing, locality, or persistence. Act occurrence and result co-presence establishes no Yield.
 
-A Responsibility bounds establishment, preservation, or revision of Standing for its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. Current Standing whose subject is its exact assignment is required to read that Responsibility. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing for a new subject is not revision of Standing for an existing subject, and neither is preservation of existing Standing. Each requires the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
+A Responsibility bounds establishment, preservation, or revision of Standing for its subject and governs one exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing for a new subject, revising Standing, and preserving Standing each require their responsible occurrence, Authority, Scope, and limits. Standing, available material, Responsibility, and exact Act establish no Act occurrence.
 
 ## Important distinctions
 - boundary invocation != assertion-bearing branch != supplied result != effect beyond the boundary
 - successful return != every asserted effect occurred
-- Act occurrence with failure != absence of Act occurrence
-- Act != representation describing an Act
 - proposal != occurrence
-- non-mutating behavior != no constitutional occurrence
-- representation != Act that established it
 - exact Act != Assertion whose subject is that Act
-- coherence validated != carried Assertion established again
 - Standing for a new subject != revision of Standing for a prior subject
 - Act occurrence-to-result relation != Assertion truth
-
-## Counterexamples or failure modes
-- Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
 - [Assertion Source Coordinates](09_assertion_source_coordinates.md)
