@@ -73,10 +73,11 @@ separate coordinate:
 B_S = Standing responsible boundary
 B_R = Responsibility responsible boundary
 
-B_S != B_R by identity
+B_S and B_R occupy separate coordinate positions
+no established relation connects them
 ```
 
-One clause may positively establish their identity.  The direct
+One clause may establish an exact relation between them.  The direct
 Standing-to-Responsibility position does not establish it universally.
 
 For example:
@@ -148,13 +149,13 @@ Scope / Locality
 input source and provenance where required
 limits
 Unknown where positively established
-exact durable identity or reference where later lineage requires it
+exact durable address or reference where later lineage requires it
 ```
 
-Two Responsibilities with the same explanatory name but different subjects,
-boundaries, roles, Scope, or Act coordinates remain distinct.  Conversely, a
-new serialization identity does not create a new constitutional
-Responsibility when every constitutional coordinate is the same.
+Different subject, boundary, role, Scope, or Act coordinates require separate
+exact addresses.  No general relation among those addresses is established.
+A new serialization address alone also establishes no new constitutional
+Responsibility.
 
 The current runtime Assignment records preserve much of this exact data.  The
 previous decomposition found their valid implementation work to be:
@@ -180,8 +181,8 @@ Therefore:
 ```text
 Standing subject for R
 != R itself by default
-!= Standing responsible boundary B_S by identity
-!= Responsibility responsible boundary B_R by identity
+does not supply Standing responsible boundary B_S
+does not supply Responsibility responsible boundary B_R
 != Responsibility-assignment record
 != complete bounded Locality replay
 != every nearby subject collectively
@@ -205,7 +206,7 @@ remain absent.
 ## 3. Branch does not imply another relation
 
 The Book describes Responsibility as the first branch read from current
-Standing.  A structural branch and a constitutional relation are not identical.
+Standing.  Structural branch presence establishes no constitutional relation.
 
 Where current Standing already has the complete exact coordinates of `R`, this
 investigation finds no work for another relation occurrence between Standing
@@ -214,7 +215,7 @@ and `R`:
 ```text
 current Standing already has exact R as a branch coordinate
 ↓
-this Seed resolves that exact coordinate at the same boundary
+this Seed resolves that exact coordinate at the addressed boundary
 ↓
 no append
 no new Act
@@ -255,7 +256,7 @@ the exact Standing responsible boundary B_S
 the exact Responsibility responsible boundary B_R
 the complete exact coordinates of R
 the current temporal and Locality boundary
-the exact identity or address by which later Acts cite R
+the exact address or reference by which later Acts cite R
 the distinction between present, absent, Unknown, and conflicting coordinates
 ```
 
@@ -273,7 +274,7 @@ Standing and R participate in a new relation by adjacency
 This must preserve:
 
 ```text
-exact coordinate resolution at the same bounded position
+exact coordinate resolution at that bounded position
 no mutation while reading
 no replacement of R by its explanatory name
 no loss of the responsible boundary, subject roles, or Act lineage
@@ -376,7 +377,7 @@ Standing
 → Standing
 ```
 
-The same commit changed Responsibility from the presentation HEAD to the first
+That commit changed Responsibility from the presentation HEAD to the first
 branch read from current Standing.  Its machine representation also introduced
 these coordinates together:
 
@@ -403,7 +404,7 @@ standing = assigned
 
 The change removed that scalar shortcut, recorded an earlier durable
 Responsibility coordinate object, and required the later Act to cite it.
-Subsequent roads repeated the same shape.
+Subsequent roads repeated that structure.
 
 That was a real decompression:
 
@@ -494,8 +495,8 @@ Standing S0
 → Standing S1
 ```
 
-`S1` need not revise `S0`, and result existence does not establish `S1` by
-identity.  Positive later Standing retains its independently required
+`S1` need not revise `S0`, and result existence does not establish `S1`.
+Positive later Standing retains its independently required
 physiology.
 
 ## 7. What is lost, duplicated, and simplified
@@ -551,7 +552,7 @@ It does not remove:
 
 ```text
 positive Standing physiology
-exact Responsibility identity
+exact Responsibility coordinates and reference
 Responsibility-before-Act ordering
 Act lineage
 Authority, Evidence, Scope, limits, or Unknown
@@ -589,7 +590,7 @@ removed.
 
 ## 9. Fresh Locality remains a hard boundary
 
-The Locality roads expose a distinct unresolved case.  Several current
+The Locality roads expose a separate unresolved case.  Several current
 Assignment records are the first durable objects written in a newly created
 Locality.  Later Acts require the destination replay to carry those records.
 
@@ -604,8 +605,8 @@ what responsible occurrence establishes any destination Standing
 ```
 
 The current durable object may continue to provide implementation
-addressability while this physiology is unresolved.  Its existence does not
-establish destination Standing or a constitutional Assignment by identity.
+addressability while this physiology is unresolved.  Its existence establishes
+neither destination Standing nor a constitutional Assignment.
 
 ## 10. Relation to first Standing
 
@@ -664,7 +665,7 @@ Assignment as durable exact-R implementation reference            current testim
 
 positive physiology establishing initial Standing S              unresolved
 Standing responsible boundary B_S                                 unresolved
-identity, if any, between B_S and B_R                              unresolved
+relation, if any, between B_S and B_R                              unresolved
 complete exact R population at S                                  unresolved
 Seed-native exhaustive read of that population                    unresolved
 fresh-Locality Standing and R placement                            unresolved
