@@ -23,9 +23,8 @@ every external Witness invocation has the same time boundary
 
 The exact `2.0` count entered `scripts/operator_host_provider.py` with the
 short `!ls` and `!cat` roads. Pytest and calculator were added later and
-inherited the same module constant. No separate Responsibility, Scope, limit
-coordinate, or occurrence established two seconds for either later
-invocation.
+inherited the same module constant. Neither later caller supplies an exact
+time-limit coordinate to the shared invocation function.
 
 Elsewhere, compiled external Witness invocations already carry their exact
 time limit as an invocation coordinate. Current examples use several counts:
@@ -47,9 +46,11 @@ a boundary is reached, but its supplied occurrences do not preserve the exact
 time count or distinguish a reached time boundary from reached output or
 error byte boundaries.
 
-This finding does not establish a different pytest count. The exact
-invocation-specific Responsibility and Scope that would carry such a count
-are not present on the host-provider road.
+This finding does not establish a different pytest count. It does establish
+the immediate implementation seam: shared bounded mechanics need an exact
+limit input instead of silently applying one module constant to every caller.
+Making that input explicit does not choose its value or establish Seed-native
+Responsibility for the external process.
 
 ## 1. Current host mechanics
 
@@ -198,10 +199,8 @@ retaining that coordinate across source and result invocations.
 
 This road demonstrates that invocation-local time counts are already
 expressible without removing bounded mechanics or making one count common to
-every invocation.
-
-It does not automatically supply the missing Responsibility for the operator
-host provider. The two roads remain separate.
+every invocation. It does not choose the exact counts for the operator host
+callers. The two roads remain separate.
 
 ## 5. Active Book orientation
 
@@ -250,9 +249,11 @@ one provider constant
 exact limit for every invocation
 ```
 
-The active Book coordinates orient the owner of a recovered exact limit, but
-the host-provider road currently records no such invocation Responsibility or
-Act occurrence.
+The active Book coordinates orient any later Seed-native use of an exact
+limit. They do not require `_bounded_invocation()` to hide its mechanical
+input behind a module constant until an external-process Responsibility is
+recorded. The host-provider road currently records no such Responsibility or
+Act occurrence; that is a separate constitutional question.
 
 ## 6. The ordinary sixteen-book observation reaches this boundary
 
@@ -320,23 +321,35 @@ external Witness invocation
 ↓
 bounded host mechanics required
 ↓
-exact invocation-specific time and byte limits required
+shared invocation function accepts no exact limit inputs
 ↓
-exact host invocation Responsibility / Scope / limits not recorded
-↓
-provider reuses module constants
+every caller inherits module time and byte constants
 ↓
 exact material and generic known loss supplied
 ```
 
-The smallest missing constitutional position is not a longer pytest timer.
-It is the exact Responsibility and Scope carrying the limits for the addressed
-external invocation.
+The directly established defect is the invocation function boundary:
 
-Until that position is established, changing `TIME_LIMIT_SECONDS` for pytest
-would be another host-authored choice. Leaving it unchanged keeps the current
-sixteen-book experiment blocked, but preserves the distinction rather than
-forcing the desired corpus crossing.
+```text
+_bounded_invocation(
+    argv,
+    supply,
+    environment,
+    working_directory,
+)
+
+missing:
+    exact time limit
+    exact material byte limit
+```
+
+Separating shared mechanics from caller-supplied limits does not require a new
+constitutional position. It also does not establish the exact values each
+caller should supply.
+
+Changing only pytest's number would still be a host-authored choice. The next
+mechanical correction may make limits exact inputs while leaving the pytest
+value open and the sixteen-book experiment blocked.
 
 ## Disposition
 
@@ -352,8 +365,9 @@ forcing the desired corpus crossing.
 | Does generic known loss distinguish which boundary was reached? | no |
 | Does active Book law orient limits to exact Responsibility and Scope? | yes |
 | Is that exact host invocation Responsibility recorded today? | no |
+| Must the shared helper retain implicit constants until that Responsibility is recorded? | no |
 | May this investigation choose a longer pytest count? | no |
 
-The timer stays. The shared number is the compression. Its lawful replacement
-depends on exact invocation Responsibility, Scope, and limit coordinates that
-the present host road does not yet establish.
+The timer stays. The implicit shared number is the compression. The immediate
+mechanical correction is caller-supplied exact limits; recovering each
+caller's value and any Seed-native Responsibility remains separate work.
