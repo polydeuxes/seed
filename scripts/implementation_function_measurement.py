@@ -9,7 +9,6 @@ from functools import lru_cache
 import json
 import os
 from pathlib import Path
-import re
 import sqlite3
 import sys
 import threading
@@ -17,9 +16,6 @@ from types import CodeType
 from typing import Callable
 
 import pytest
-
-from scripts.book_admission import book_admission
-
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
@@ -43,7 +39,7 @@ _enclosing_measurement_coordinates: list[
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
 _witness_material_occurrences: list[dict[str, object]] = []
-_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, object] | None]()
+_PYTEST_DISTINCTION_COORDINATES = pytest.StashKey[dict[str, object] | None]()
 _active_sql_invocations = threading.local()
 
 
@@ -588,140 +584,89 @@ def pytest_sessionstart(session: object) -> None:
     begin()
 
 
-def _fidelity_test_subjects() -> dict[str, dict[str, object]]:
-    grammar = json.loads(
+def _witness_grammar() -> dict[str, object]:
+    return json.loads(
         (ROOT / "book_of_seed" / "witness_grammar.json").read_text(
             encoding="utf-8"
         )
     )
-    fidelity = grammar["clause_coordinates"]["01.Source.C"]
-    relation = fidelity["test_subject_relation"]
-    if relation != {
-        "first_subject": "test_subject",
-        "relation": "witness_for",
-        "second_subject": "this_Fidelity",
-        "first_subject_distinct_from": "this_Witness",
-    }:
-        raise ValueError("exact Fidelity test-subject relation is required")
-    test_subjects = fidelity["test_subjects"]
-    if type(test_subjects) is not list or not test_subjects:
-        raise TypeError("exact Fidelity test subjects are required")
-    declared: dict[str, dict[str, object]] = {}
-    for coordinates in test_subjects:
-        if type(coordinates) is not dict:
-            raise TypeError("exact Fidelity test subject coordinates are required")
-        subject = coordinates.get("subject")
-        if type(subject) is not str or not subject:
-            raise TypeError("one exact Fidelity test subject is required")
-        if subject in declared:
-            raise ValueError("Fidelity test subject entered the grammar twice")
-        for name, value in coordinates.items():
-            if type(name) is not str:
-                raise TypeError("exact Fidelity test subject coordinates are required")
-            if name != "grammar_coordinate_reference":
-                if type(value) is not str:
-                    raise TypeError(
-                        "exact Fidelity test subject coordinates are required"
-                    )
-                continue
-            if (
-                type(value) is not list
-                or not value
-                or any(
-                    not (
-                        (type(part) is str and part)
-                        or (
-                            type(part) is dict
-                            and tuple(part) == (
-                                "identity",
-                                "first_subject",
-                                "relation",
-                                "second_subject",
-                            )
-                            and all(
-                                type(coordinate) is str and coordinate
-                                for coordinate in part.values()
-                            )
-                        )
-                    )
-                    for part in value
-                )
-            ):
-                raise TypeError(
-                    "one exact grammar coordinate reference is required"
-                )
-        declared[subject] = {
-            **coordinates,
-            "witness_for": relation["second_subject"],
-            "distinct_from": relation["first_subject_distinct_from"],
-        }
 
-    admission = book_admission()
-    for subject in declared:
-        subject_words = tuple(
-            word.lower() for word in re.findall(r"[A-Za-z]+", subject)
+
+def _fidelity_distinction_coordinates(
+    grammar: dict[str, object], reference: object
+) -> dict[str, object]:
+    if (
+        type(reference) is not tuple
+        or len(reference) < 2
+        or reference[0] != "book_coordinates"
+        or any(type(part) not in (str, int) for part in reference)
+    ):
+        raise TypeError("exact Fidelity distinction reference is required")
+    coordinate: object = grammar
+    try:
+        for part in reference:
+            if type(part) is int:
+                if type(coordinate) is not list:
+                    raise TypeError
+                coordinate = coordinate[part]
+            else:
+                if type(coordinate) is not dict:
+                    raise TypeError
+                coordinate = coordinate[part]
+    except (IndexError, KeyError, TypeError) as error:
+        raise ValueError(
+            "Fidelity distinction is absent from current book coordinates"
+        ) from error
+
+    coordinates: dict[str, object] = {
+        "fidelity_distinction_reference": list(reference)
+    }
+    if reference == ("book_coordinates", "01.Source.C", "test_subject"):
+        if type(coordinate) is not str or not coordinate:
+            raise TypeError("exact Fidelity test subject is required")
+        material_reference = grammar.get("book_material_reference")
+        if type(material_reference) is not str or not material_reference:
+            raise TypeError("exact Book material reference is required")
+        coordinates.update(
+            {
+                "test_subject": coordinate,
+                "material_reference": material_reference,
+            }
         )
-        if not subject_words or any(word not in admission for word in subject_words):
-            raise ValueError("test subject carries words absent from Book admission")
-    return declared
+    return coordinates
 
 
-def _pytest_subject(
+def _pytest_distinction(
     module: object,
     function_under_test: object,
-    declared: dict[str, dict[str, object]],
+    grammar: dict[str, object],
 ) -> dict[str, object] | None:
-    uniform = getattr(module, "FIDELITY_SUBJECT", None)
-    families = getattr(module, "FIDELITY_SUBJECTS", None)
-    witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
-    if type(witness_material_tests) is not tuple:
-        raise TypeError("exact Witness Material test functions are required")
-    if any(not callable(function) for function in witness_material_tests):
-        raise TypeError("exact Witness Material test functions are required")
-    if len(set(witness_material_tests)) != len(witness_material_tests):
-        raise ValueError("test function entered Witness Material tests twice")
-    produces_witness_material = function_under_test in witness_material_tests
-    if uniform is not None and families is not None:
-        raise ValueError("test module carries two Fidelity subject boundaries")
-    if uniform is not None and witness_material_tests:
-        raise ValueError("uniform Fidelity subject crossed Witness Material tests")
-    if uniform is not None:
-        if type(uniform) is not str:
-            raise TypeError("one exact test subject reference is required")
-        subject = uniform
-    else:
-        if families is None:
-            raise ValueError("one exact test subject is required")
-        if type(families) is not dict:
-            raise TypeError("exact Fidelity subject families are required")
-        if not families:
-            raise ValueError("one exact test subject is required")
-        matches: list[str] = []
-        entered_functions: set[object] = set()
-        for family_subject, functions in families.items():
-            if type(family_subject) is not str or type(functions) is not tuple:
-                raise TypeError("exact Fidelity subject families are required")
-            for function in functions:
-                if not callable(function):
-                    raise TypeError("exact Fidelity subject functions are required")
-                if function in entered_functions:
-                    raise ValueError("test function entered Fidelity subjects twice")
-                entered_functions.add(function)
-                if function is function_under_test:
-                    matches.append(family_subject)
-        if produces_witness_material:
-            if matches:
-                raise ValueError(
-                    "test function crossed Fidelity and Witness Material tests"
-                )
-            return None
-        if len(matches) != 1:
-            raise ValueError("one exact test subject is required")
-        subject = matches[0]
-    try:
-        return declared[subject]
-    except KeyError as error:
-        raise ValueError("test subject is absent from witness grammar") from error
+    distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
+    if distinctions is None:
+        return None
+    if type(distinctions) is not dict or not distinctions:
+        raise TypeError("exact Fidelity distinctions are required")
+    matches: list[object] = []
+    entered_functions: set[object] = set()
+    for distinction_reference, functions in distinctions.items():
+        if type(distinction_reference) is not tuple:
+            raise TypeError("exact Fidelity distinction reference is required")
+        if type(functions) is not tuple:
+            raise TypeError("exact Fidelity distinctions are required")
+        for function in functions:
+            if not callable(function):
+                raise TypeError("exact Fidelity distinction functions are required")
+            if function in entered_functions:
+                raise ValueError("test function entered Fidelity distinctions twice")
+            entered_functions.add(function)
+            if function is function_under_test:
+                matches.append(distinction_reference)
+    if not matches:
+        return None
+    if len(matches) != 1:
+        raise ValueError("exact Fidelity distinction is required")
+    reference = matches[0]
+    return _fidelity_distinction_coordinates(grammar, reference)
 
 
 @pytest.hookimpl(trylast=True)
@@ -729,21 +674,21 @@ def pytest_collection_modifyitems(
     session: object, config: object, items: list[object]
 ) -> None:
     del session, config
-    declared = _fidelity_test_subjects()
+    grammar = _witness_grammar()
     resolved = tuple(
-        _pytest_subject(item.module, item.function, declared) for item in items
+        _pytest_distinction(item.module, item.function, grammar) for item in items
     )
     for item, coordinates in zip(items, resolved):
-        item.stash[_PYTEST_SUBJECT_COORDINATES] = coordinates
+        item.stash[_PYTEST_DISTINCTION_COORDINATES] = coordinates
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
-    subject_coordinates = item.stash[_PYTEST_SUBJECT_COORDINATES]
+    distinction_coordinates = item.stash[_PYTEST_DISTINCTION_COORDINATES]
     occurrences = (
         _witness_material_occurrences
-        if subject_coordinates is None
+        if distinction_coordinates is None
         else _pytest_occurrences
     )
     occurrence_position = len(occurrences)
@@ -762,7 +707,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
-            **({} if subject_coordinates is None else subject_coordinates),
+            **({} if distinction_coordinates is None else distinction_coordinates),
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

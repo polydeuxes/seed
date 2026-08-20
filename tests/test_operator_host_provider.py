@@ -8,8 +8,6 @@ import time
 
 import pytest
 
-FIDELITY_SUBJECT = "supplied_function_invocation"
-
 from scripts import operator_host_provider
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
@@ -317,9 +315,13 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
         nodeid.decode("ascii")
     ]
-    assert artifact["pytest"][0]["subject"] == "compiled_function_reference"
-    assert artifact["pytest"][0]["witness_for"] == "this_Fidelity"
-    assert artifact["pytest"][0]["distinct_from"] == "this_Witness"
+    assert artifact["pytest"][0]["fidelity_distinction_reference"] == [
+        "book_coordinates",
+        "01.Source.C",
+    ]
+    assert "test_subject" not in artifact["pytest"][0]
+    assert "witness_for" not in artifact["pytest"][0]
+    assert "distinct_from" not in artifact["pytest"][0]
     implementation_positions = {
         coordinate["implementation_function_position"]
         for coordinate in artifact["pytest"][0]["python"]

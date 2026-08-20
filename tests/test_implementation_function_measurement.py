@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 from pathlib import Path
 import sqlite3
 import sys
@@ -109,7 +108,7 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     assert complete["sql"] == {"SELECT 1": 1, "SELECT 2": 1, "SELECT 3": 1}
 
 
-def test_one_pytest_occurrence_keeps_its_exact_witness_measurement():
+def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
     def exact_function():
         pass
 
@@ -117,7 +116,9 @@ def test_one_pytest_occurrence_keeps_its_exact_witness_measurement():
         nodeid="tests/exact.py::test_one_occurrence",
         stash={},
         module=SimpleNamespace(
-            FIDELITY_SUBJECT="this_book_material_acquisition_witness"
+            FIDELITY_DISTINCTIONS={
+                ("book_coordinates", "01.Source.C"): (exact_function,)
+            }
         ),
         function=exact_function,
     )
@@ -138,8 +139,13 @@ def test_one_pytest_occurrence_keeps_its_exact_witness_measurement():
     occurrence = result["pytest"][0]
     assert occurrence["occurrence_position"] == 0
     assert occurrence["pytest_identity"] == item.nodeid
-    assert occurrence["subject"] == "this_book_material_acquisition_witness"
-    assert occurrence["witness_for"] == "this_Fidelity"
+    assert occurrence["fidelity_distinction_reference"] == [
+        "book_coordinates",
+        "01.Source.C",
+    ]
+    assert "test_subject" not in occurrence
+    assert "witness_for" not in occurrence
+    assert "distinct_from" not in occurrence
     assert occurrence["first_sql_occurrence_position"] == 0
     assert occurrence["sql_occurrence_count"] == 1
     assert result["sql_occurrences"] == ("SELECT 9",)
@@ -170,123 +176,89 @@ def test_one_pytest_occurrence_keeps_its_exact_witness_measurement():
     assert all(unit < 128 for unit in measured._json_material(observation))
 
 
-def test_pytest_subject_refuses_missing_crossed_or_unadmitted_families():
+def test_pytest_distinction_refuses_duplicate_or_invalid_references():
     def first():
         pass
 
     def second():
         pass
 
+    grammar = measured._witness_grammar()
     empty = SimpleNamespace()
-    uniform = SimpleNamespace(
-        FIDELITY_SUBJECT="this_book_material_acquisition_witness"
-    )
-    crossed = SimpleNamespace(
-        FIDELITY_SUBJECT="this_book_material_acquisition_witness",
-        FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": (first,)},
+    exact = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): (first,)
+        }
     )
     repeated = SimpleNamespace(
-        FIDELITY_SUBJECTS={
-            "this_book_material_acquisition_witness": (first,),
-            "another_subject": (first, second),
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): (first,),
+            ("book_coordinates", "02.Acts.A"): (first, second),
         }
     )
-    uncurated = SimpleNamespace(FIDELITY_SUBJECT="uncurated_subject_word")
-    list_family = SimpleNamespace(
-        FIDELITY_SUBJECTS=[("this_book_material_acquisition_witness", (first,))]
+    missing = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "missing"): (first,)
+        }
+    )
+    scalar = SimpleNamespace(FIDELITY_DISTINCTIONS={"01.Source.C": (first,)})
+    list_distinctions = SimpleNamespace(
+        FIDELITY_DISTINCTIONS=[
+            (("book_coordinates", "01.Source.C"), (first,))
+        ]
     )
     functions_list = SimpleNamespace(
-        FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": [first]}
-    )
-    nonfunction_family = SimpleNamespace(
-        FIDELITY_SUBJECTS={"this_book_material_acquisition_witness": ("first",)}
-    )
-    witness_material_tests = SimpleNamespace(
-        FIDELITY_SUBJECTS={
-            "this_book_material_acquisition_witness": (first,),
-        },
-        WITNESS_MATERIAL_TESTS=(second,),
-    )
-    crossed_witness_material_test = SimpleNamespace(
-        FIDELITY_SUBJECTS={
-            "this_book_material_acquisition_witness": (first,),
-        },
-        WITNESS_MATERIAL_TESTS=(first,),
-    )
-    repeated_witness_material_test = SimpleNamespace(
-        FIDELITY_SUBJECTS={
-            "this_book_material_acquisition_witness": (first,),
-        },
-        WITNESS_MATERIAL_TESTS=(second, second),
-    )
-    witness_material_test_list = SimpleNamespace(
-        FIDELITY_SUBJECTS={
-            "this_book_material_acquisition_witness": (first,),
-        },
-        WITNESS_MATERIAL_TESTS=[second],
-    )
-    uniform_witness_material_test = SimpleNamespace(
-        FIDELITY_SUBJECT="this_book_material_acquisition_witness",
-        WITNESS_MATERIAL_TESTS=(second,),
-    )
-
-    declared = measured._fidelity_test_subjects()
-    with pytest.raises(ValueError, match="one exact test subject"):
-        measured._pytest_subject(empty, first, declared)
-    assert (
-        measured._pytest_subject(uniform, first, declared)
-        == {
-            "subject": "this_book_material_acquisition_witness",
-            "material_reference": "this_Book",
-            "witness_for": "this_Fidelity",
-            "distinct_from": "this_Witness",
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): [first]
         }
     )
-    with pytest.raises(ValueError, match="two Fidelity subject boundaries"):
-        measured._pytest_subject(crossed, first, declared)
-    with pytest.raises(ValueError, match="entered Fidelity subjects twice"):
-        measured._pytest_subject(repeated, first, declared)
-    with pytest.raises(ValueError, match="absent from witness grammar"):
-        measured._pytest_subject(uncurated, first, declared)
-    with pytest.raises(TypeError, match="exact Fidelity subject families"):
-        measured._pytest_subject(list_family, first, declared)
-    with pytest.raises(TypeError, match="exact Fidelity subject families"):
-        measured._pytest_subject(functions_list, first, declared)
-    with pytest.raises(TypeError, match="exact Fidelity subject functions"):
-        measured._pytest_subject(nonfunction_family, first, declared)
-    assert measured._pytest_subject(
-        witness_material_tests, second, declared
-    ) is None
-    with pytest.raises(
-        ValueError,
-        match="crossed Fidelity and Witness Material tests",
-    ):
-        measured._pytest_subject(crossed_witness_material_test, first, declared)
-    with pytest.raises(ValueError, match="entered Witness Material tests twice"):
-        measured._pytest_subject(repeated_witness_material_test, second, declared)
-    with pytest.raises(TypeError, match="exact Witness Material test functions"):
-        measured._pytest_subject(witness_material_test_list, second, declared)
-    with pytest.raises(
-        ValueError,
-        match="uniform Fidelity subject crossed Witness Material tests",
-    ):
-        measured._pytest_subject(uniform_witness_material_test, second, declared)
+    nonfunction_distinction = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): ("first",)
+        }
+    )
+    unreferenced = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): (first,)
+        }
+    )
+    assert measured._pytest_distinction(empty, first, grammar) is None
+    assert measured._pytest_distinction(exact, first, grammar) == {
+        "fidelity_distinction_reference": [
+            "book_coordinates",
+            "01.Source.C",
+        ]
+    }
+    with pytest.raises(ValueError, match="entered Fidelity distinctions twice"):
+        measured._pytest_distinction(repeated, first, grammar)
+    with pytest.raises(ValueError, match="absent from current book coordinates"):
+        measured._pytest_distinction(missing, first, grammar)
+    with pytest.raises(TypeError, match="exact Fidelity distinction reference"):
+        measured._pytest_distinction(scalar, first, grammar)
+    with pytest.raises(TypeError, match="exact Fidelity distinctions"):
+        measured._pytest_distinction(list_distinctions, first, grammar)
+    with pytest.raises(TypeError, match="exact Fidelity distinctions"):
+        measured._pytest_distinction(functions_list, first, grammar)
+    with pytest.raises(TypeError, match="exact Fidelity distinction functions"):
+        measured._pytest_distinction(nonfunction_distinction, first, grammar)
+    assert measured._pytest_distinction(unreferenced, second, grammar) is None
 
 
-def test_pytest_subject_collection_is_complete_before_any_test_occurrence():
-    def item(subject):
+def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence():
+    def item(reference):
+        function = (
+            test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence
+        )
         return SimpleNamespace(
-            module=SimpleNamespace(FIDELITY_SUBJECT=subject),
-            function=(
-                test_pytest_subject_collection_is_complete_before_any_test_occurrence
-            ),
+            module=SimpleNamespace(FIDELITY_DISTINCTIONS={reference: (function,)}),
+            function=function,
             stash={},
         )
 
-    valid = item("this_book_material_acquisition_witness")
-    invalid = item("uncurated_subject_word")
+    valid = item(("book_coordinates", "01.Source.C"))
+    invalid = item(("book_coordinates", "missing"))
 
-    with pytest.raises(ValueError, match="absent from witness grammar"):
+    with pytest.raises(ValueError, match="absent from current book coordinates"):
         measured.pytest_collection_modifyitems(None, None, [valid, invalid])
 
     assert valid.stash == invalid.stash == {}
@@ -297,18 +269,17 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
     item = SimpleNamespace(
         nodeid="tests/material.py::test_one_witness_material_occurrence",
         module=SimpleNamespace(
-            FIDELITY_SUBJECTS={
-                "this_book_material_acquisition_witness": (
-                    test_pytest_subject_collection_is_complete_before_any_test_occurrence,
+            FIDELITY_DISTINCTIONS={
+                ("book_coordinates", "01.Source.C"): (
+                    test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
                 ),
-            },
-            WITNESS_MATERIAL_TESTS=(function,),
+            }
         ),
         function=function,
         stash={},
     )
     measured.pytest_collection_modifyitems(None, None, [item])
-    assert item.stash[measured._PYTEST_SUBJECT_COORDINATES] is None
+    assert item.stash[measured._PYTEST_DISTINCTION_COORDINATES] is None
 
     measured.begin()
     try:
@@ -329,7 +300,8 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
     occurrence = result["witness_material"][-1]
     assert occurrence["pytest_identity"] == item.nodeid
     assert not {
-        "subject",
+        "fidelity_distinction_reference",
+        "test_subject",
         "witness_for",
         "distinct_from",
     } & set(occurrence)
@@ -344,7 +316,8 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
     output_occurrence = observation["witness_material"][-1]
     assert output_occurrence["pytest_identity"] == item.nodeid
     assert not {
-        "subject",
+        "fidelity_distinction_reference",
+        "test_subject",
         "witness_for",
         "distinct_from",
     } & set(output_occurrence)
@@ -457,135 +430,52 @@ def test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts()
     assert result["sql_statement_invocations"] == (0, 0, 0, 0, 0)
 
 
-def test_fidelity_witness_subjects_cover_each_test_function_exactly_once():
-    subjects: set[str] = set()
-    for path in (ROOT / "tests").glob("test_*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        test_functions = {
-            node.name
-            for node in tree.body
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-            and node.name.startswith("test_")
+def test_fidelity_distinctions_resolve_current_book_coordinates():
+    grammar = measured._witness_grammar()
+    assert measured._fidelity_distinction_coordinates(
+        grammar,
+        ("book_coordinates", "01.Source.C", "test_subject"),
+    ) == {
+        "fidelity_distinction_reference": [
+            "book_coordinates",
+            "01.Source.C",
+            "test_subject",
+        ],
+        "test_subject": "this_book_material_acquisition_witness",
+        "material_reference": "this_Book",
+    }
+    entered: list[object] = []
+    for reference, functions in FIDELITY_DISTINCTIONS.items():
+        assert measured._fidelity_distinction_coordinates(grammar, reference) == {
+            "fidelity_distinction_reference": list(reference)
         }
-        constants = {
-            target.id: node.value.value
-            for node in tree.body
-            if isinstance(node, ast.Assign)
-            and isinstance(node.value, ast.Constant)
-            and type(node.value.value) is str
-            for target in node.targets
-            if isinstance(target, ast.Name)
-        }
-        uniform = []
-        families = []
-        witness_material_tests = []
-        for node in tree.body:
-            if not isinstance(node, ast.Assign):
-                continue
-            assigned = {
-                target.id
-                for target in node.targets
-                if isinstance(target, ast.Name)
-            }
-            if "FIDELITY_SUBJECT" in assigned:
-                uniform.append(node.value)
-            if "FIDELITY_SUBJECTS" in assigned:
-                families.append(node.value)
-            if "WITNESS_MATERIAL_TESTS" in assigned:
-                witness_material_tests.append(node.value)
+        entered.extend(functions)
 
-        assert len(uniform) + len(families) == 1, path
-        assert len(witness_material_tests) <= 1, path
-        witness_material_functions: list[str] = []
-        if witness_material_tests:
-            witness_material_collection = witness_material_tests[0]
-            assert isinstance(witness_material_collection, ast.Tuple)
-            witness_material_functions.extend(
-                element.id
-                for element in witness_material_collection.elts
-                if isinstance(element, ast.Name)
-            )
-            assert len(witness_material_functions) == len(
-                witness_material_collection.elts
-            ), path
-            assert len(witness_material_functions) == len(
-                set(witness_material_functions)
-            ), path
-            assert set(witness_material_functions) <= test_functions, path
-        if uniform:
-            assert not witness_material_functions, path
-            value = uniform[0]
-            subject = (
-                value.value
-                if isinstance(value, ast.Constant)
-                else constants[value.id]
-            )
-            assert type(subject) is str and subject
-            subjects.add(subject)
-            continue
-
-        family = families[0]
-        assert isinstance(family, ast.Dict) and family.keys
-        entered: list[str] = []
-        for key, value in zip(family.keys, family.values):
-            assert isinstance(key, ast.Constant) and type(key.value) is str
-            assert isinstance(value, ast.Tuple)
-            subjects.add(key.value)
-            entered.extend(
-                element.id for element in value.elts if isinstance(element, ast.Name)
-            )
-        assert not set(entered) & set(witness_material_functions), path
-        assert set(entered) | set(witness_material_functions) == test_functions, path
-        assert len(entered) + len(witness_material_functions) == len(
-            test_functions
-        ), path
-
-    declared = measured._fidelity_test_subjects()
-    assert set(declared) == subjects
-    assert next(iter(declared)).lower().count("standing") == 1
-    assert tuple(declared)[-1] == "fidelity_witness_subject_completeness"
+    test_functions = {
+        function
+        for name, function in globals().items()
+        if name.startswith("test_") and callable(function)
+    }
+    assert set(entered) == test_functions
+    assert len(entered) == len(test_functions)
 
 
-FIDELITY_SUBJECTS = {
-    "measurement_occurrence_order": (
-        test_observed_measurement_preserves_observation_order_without_sorting,
-    ),
-    "measurement_occurrence_boundary": (
-        test_one_measurement_does_not_replace_an_active_measurement,
-    ),
-    "compiled_function_reference": (
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.C"): (
         test_compiled_code_supplies_exact_identities,
-        test_uninvoked_compiled_identity_remains_unobserved,
-    ),
-    "function_invocation_occurrence": (
+        test_observed_measurement_preserves_observation_order_without_sorting,
         test_python_invocation_occurrence_is_measured,
-    ),
-    "function_reference_measurement_distinction": (
-        test_stable_catalog_is_separate_from_sparse_observation,
-    ),
-    "reference_pair_measurement": (
-        test_reference_pair_measurement_contains_each_preserved_function,
-    ),
-    "exact_supplied_material_occurrence": (
-        test_sql_occurrence_preserves_exact_statement_material,
-    ),
-    "supplied_function_invocation": (
-        test_existing_sql_trace_callback_receives_the_same_statement,
-    ),
-    "compiled_function_invocation_witness": (
-        test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
-    ),
-    "fidelity_witness_occurrence": (
-        test_one_pytest_occurrence_keeps_its_exact_witness_measurement,
+        test_uninvoked_compiled_identity_remains_unobserved,
+        test_one_measurement_does_not_replace_an_active_measurement,
+        test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction,
+        test_pytest_distinction_refuses_duplicate_or_invalid_references,
+        test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
         test_witness_material_occurrence_has_no_fidelity_uptake,
-    ),
-    "fidelity_witness_subject": (
-        test_pytest_subject_refuses_missing_crossed_or_unadmitted_families,
-    ),
-    "fidelity_witness_collection_boundary": (
-        test_pytest_subject_collection_is_complete_before_any_test_occurrence,
-    ),
-    "fidelity_witness_subject_completeness": (
-        test_fidelity_witness_subjects_cover_each_test_function_exactly_once,
-    ),
+        test_stable_catalog_is_separate_from_sparse_observation,
+        test_reference_pair_measurement_contains_each_preserved_function,
+        test_sql_occurrence_preserves_exact_statement_material,
+        test_existing_sql_trace_callback_receives_the_same_statement,
+        test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
+        test_fidelity_distinctions_resolve_current_book_coordinates,
+    )
 }

@@ -100,7 +100,6 @@ from scripts.book_admission import (  # noqa: E402
 THIS_BOOK_MATERIAL_ACQUISITION_WITNESS = (
     "this_book_material_acquisition_witness"
 )
-FIDELITY_SUBJECT = THIS_BOOK_MATERIAL_ACQUISITION_WITNESS
 
 
 def test_book_material_acquisition_witness_has_one_admitted_subject():
@@ -116,21 +115,10 @@ def test_book_material_acquisition_witness_has_one_admitted_subject():
         )
     )
 
-    fidelity = grammar["clause_coordinates"]["01.Source.C"]
+    fidelity = grammar["book_coordinates"]["01.Source.C"]
 
-    assert fidelity["test_subject_relation"] == {
-        "first_subject": "test_subject",
-        "relation": "witness_for",
-        "second_subject": "this_Fidelity",
-        "first_subject_distinct_from": "this_Witness",
-    }
-    assert {
-        coordinates["subject"]: coordinates
-        for coordinates in fidelity["test_subjects"]
-    }[THIS_BOOK_MATERIAL_ACQUISITION_WITNESS] == {
-        "subject": THIS_BOOK_MATERIAL_ACQUISITION_WITNESS,
-        "material_reference": "this_Book",
-    }
+    assert fidelity["test_subject"] == THIS_BOOK_MATERIAL_ACQUISITION_WITNESS
+    assert grammar["book_material_reference"] == "this_Book"
     assert subject_words <= book_admission()
 
 
@@ -971,3 +959,10 @@ def test_book_admission_recomputes_from_its_exact_invocation_results(
                 *admission.invocation_result_references[1:],
             ),
         )
+
+
+FIDELITY_DISTINCTIONS = {
+    ("book_coordinates", "01.Source.C", "test_subject"): (
+        test_book_material_acquisition_witness_has_one_admitted_subject,
+    )
+}
