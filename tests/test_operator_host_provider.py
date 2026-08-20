@@ -218,13 +218,51 @@ def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
     )
 
 
+def test_host_material_boundary_is_one_mebibyte():
+    assert operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT == 1_048_576
+
+
+def test_cat_preserves_finite_material_across_multiple_pipe_reads(tmp_path):
+    exact = (bytes(range(256)) * 851) + bytes(range(256))[:202]
+    assert len(exact) == 218_058
+    path = tmp_path / "multiple-pipe-reads"
+    path.write_bytes(exact)
+
+    supplied = _invoke(b"!cat " + bytes(path) + b"\n")
+    output = tuple(
+        occurrence
+        for occurrence in supplied
+        if occurrence.source_boundary.startswith("invocation output occurrence ")
+    )
+
+    assert b"".join(occurrence.exact_bytes for occurrence in output) == exact
+    assert tuple(len(occurrence.exact_bytes) for occurrence in output) == (
+        65_536,
+        65_536,
+        65_536,
+        21_450,
+    )
+    assert all(occurrence.known_loss == () for occurrence in supplied)
+
+
 def test_host_output_is_bounded_without_returncode_material():
     supplied = _invoke(b"!cat /dev/zero\n")
 
-    assert len(supplied[0].exact_bytes) == (
+    output = tuple(
+        occurrence
+        for occurrence in supplied
+        if occurrence.source_boundary.startswith("invocation output occurrence ")
+    )
+    assert sum(len(occurrence.exact_bytes) for occurrence in output) == (
         operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
     )
-    assert supplied[0].known_loss == ()
+    assert tuple(
+        occurrence.source_boundary for occurrence in output
+    ) == tuple(
+        f"invocation output occurrence {position}"
+        for position in range(len(output))
+    )
+    assert all(occurrence.known_loss == () for occurrence in output)
     assert supplied[-1].exact_bytes == b""
     assert supplied[-1].known_loss
 
@@ -533,6 +571,8 @@ PYTEST_ADMISSION = (
     test_calculator_provider_preserves_supplied_material_and_completion,
     test_cat_preserves_exact_posix_path_and_material,
     test_ls_preserves_a_non_utf8_posix_path,
+    test_host_material_boundary_is_one_mebibyte,
+    test_cat_preserves_finite_material_across_multiple_pipe_reads,
     test_host_output_is_bounded_without_returncode_material,
     test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer,
     test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out,
