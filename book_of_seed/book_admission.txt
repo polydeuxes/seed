@@ -65,8 +65,6 @@ comparison
 complete
 completeness
 completion
-composite
-concordance
 conflicting
 conflicts
 considered
@@ -113,7 +111,6 @@ effects
 emission
 enclosure
 emitted
-entry
 erase
 erasure
 error
@@ -159,11 +156,7 @@ invocation
 is
 it
 its
-kind
 known
-label
-labelled
-labels
 later
 law
 lawful
@@ -185,9 +178,6 @@ movement
 multiplicity
 must
 mutation
-name
-named
-names
 negation
 negative
 new
@@ -279,8 +269,6 @@ seed
 separate
 separately
 set
-shape
-shaped
 shared
 single
 source
