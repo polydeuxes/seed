@@ -64,14 +64,11 @@ collective
 compare
 comparing
 comparison
-competence
-competent
 complete
 completeness
 completion
 composite
 concordance
-confidence
 conflicting
 conflicts
 considered
@@ -85,7 +82,6 @@ coordinates
 copy
 copying
 correction
-corroboration
 count
 counting
 counts
@@ -171,7 +167,6 @@ inspection
 instantiation
 intact
 into
-invalidity
 invocation
 is
 it
@@ -191,11 +186,9 @@ local
 localities
 locality
 loss
-macro
 make
 mandatory
 material
-mathematically
 measured
 measurement
 measurements
@@ -253,8 +246,6 @@ prior
 prohibition
 proposed
 provenance
-public
-ratification
 read
 record
 recorded
@@ -341,7 +332,6 @@ unknown
 unsupported
 until
 use
-validity
 value
 visibility
 what
