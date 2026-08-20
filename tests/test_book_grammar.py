@@ -141,7 +141,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
         "subject": "Candidate",
         "Responsibility": "compare_Candidate_coordinates",
         "responsibility_source": (
-            "current_Standing_carrying_complete_Candidate_result"
+            "current_Standing_carrying_one_exact_Candidate_result"
         ),
         "exact_Act": "Compare",
         "rule": "compare_first_and_second_source_Assertion_coordinates",
@@ -151,9 +151,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
             "first_source_role",
             "second_source_role",
         ],
-        "completeness_boundary": (
-            "every_Candidate_in_complete_Candidate_result"
-        ),
+        "completeness_boundary": "one_exact_Candidate_result",
         "input": [
             "Applicability_result",
             "exact_Admission_occurrence",
@@ -172,6 +170,60 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
     assert candidate_compare["Participation"]["subject"] == candidate_compare[
         "subject"
     ]
+
+
+def test_candidate_production_owns_completeness_without_a_result_barrier():
+    grammar = _grammar()
+    candidate = grammar["book_coordinates"]["01.Source.E.1"]
+    standing = grammar["book_coordinates"]["01.Standing.D"]
+
+    assert candidate == {
+        "subject": "required_source_Assertion_or_ordered_source_Assertion_pair",
+        "Responsibility": "exhaustive_Candidate_for_bounded_subject_set",
+        "exact_Act": "Candidate",
+        "input": [
+            "Applicability_result",
+            "participation_relation_occurrence",
+        ],
+        "completeness_boundary": "Responsibility_bounded_subject_set",
+        "relations": ["participation", "yield"],
+        "result_boundary": (
+            "one_exact_Candidate_result_for_each_required_subject"
+        ),
+        "later_Standing": "requires_no_bounded_subject_set_completion",
+        "result": "one_exact_Candidate_result",
+    }
+    assert standing["responsibility_subject_set"] == (
+        "exhaustive_bounded_subject_set"
+    )
+    assert standing["establishes_no"] == [
+        "order_for_another_Responsibility",
+        "Applicability_for_another_Responsibility",
+        "completion_for_another_Responsibility",
+    ]
+
+    candidate_book = (
+        CHAPTERS / "07_measurement_and_candidates.md"
+    ).read_text(encoding="utf-8")
+    standing_book = (
+        CHAPTERS / "01_constitutional_standing.md"
+    ).read_text(encoding="utf-8")
+    compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
+    assert (
+        "Each Responsibility is exhaustive\n"
+        "for its bounded subject set."
+    ) in candidate_book
+    assert (
+        "One Candidate result requires\n"
+        "no completion of other required subjects carried by that Responsibility for\n"
+        "later Standing."
+    ) in candidate_book
+    assert (
+        "An exhaustive bounded subject set for one Responsibility establishes no order,\n"
+        "Applicability, or completion for another Responsibility."
+    ) in standing_book
+    assert "one complete Candidate result" not in compare_book
+    assert "every Candidate in the complete Candidate result" not in compare_book
 
 
 def test_candidate_compare_book_refuses_source_participation_and_relation_promotion():
@@ -356,6 +408,9 @@ FIDELITY_SUBJECTS = {
     "candidate_compare_subject_coordinate_distinction": (
         test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
         test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
+    ),
+    "responsibility_exhaustion_without_completion_barrier": (
+        test_candidate_production_owns_completeness_without_a_result_barrier,
     ),
     "responsibility_exact_anatomy": (
         test_responsibility_coordinates_are_anatomy_not_assignment,

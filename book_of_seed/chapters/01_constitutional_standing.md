@@ -18,6 +18,11 @@ Multiplicity of subjects, Assertions, results, or Responsibility branches establ
 collective subject, relation, Act, result, or Standing. Each exact relation
 requires its exact subjects and responsible occurrence.
 
+An exhaustive bounded subject set for one Responsibility establishes no order,
+Applicability, or completion for another Responsibility. One result from one
+required subject requires no completion of the other required subjects for
+later Standing or another Responsibility.
+
 ### 01.Standing.D.1 — Assertion coordinates
 
 An Assertion is exact content as one subject. It carries its source,

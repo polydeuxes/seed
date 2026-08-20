@@ -49,14 +49,22 @@ Standing.
 
 ### 01.Source.E.1 — Candidate results from exact results
 
-One Candidate Act carries each exact source Assertion separately as subject.
-Another Candidate Act carries each distinct ordered source Assertion pair as
-subject. Each Act occurrence and result requires one Yield relation. The result carries
-every Candidate required by its exact source set and boundary.
+One Candidate Responsibility carries every exact source Assertion separately
+as one required subject through one exact boundary. Another Candidate
+Responsibility carries every distinct ordered source Assertion pair as one
+required subject through one exact boundary. Each Responsibility is exhaustive
+for its bounded subject set.
 
-Every source Assertion carries its exact Act-local role through
-Participation. Each Candidate preserves its source Assertion references and
-coordinates. A relation requires a responsible relation occurrence.
+Each required subject requires its exact Applicability result and Participation
+relation to one Candidate Act occurrence. Each required Admission requires its
+exact occurrence prior to Participation. One exact Yield relation carries each
+Candidate Act occurrence as first subject and one exact Candidate result as
+second subject.
+
+Each result preserves one Candidate with its exact source Assertion reference
+or references, coordinates, and Act-local roles. One Candidate result requires
+no completion of other required subjects carried by that Responsibility for
+later Standing. A relation requires a responsible relation occurrence.
 
 ## References
 
