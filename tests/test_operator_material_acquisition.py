@@ -200,7 +200,9 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     assert replayed["operator_material_acquire_act_occurrences"] == {
         act_evidence.identity: None
     }
-    assert replayed["exact_result_occurrences"][result.identity] is None
+    assert replayed["exact_result_occurrences"][result.identity] == (
+        act_evidence.material["responsibility_assignment_reference"]
+    )
     assert replayed["material_locality_relation_occurrences"] == {
         result.identity: {
             "locality_relation": deepcopy(recorded["locality_relation"]),

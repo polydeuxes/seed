@@ -682,6 +682,7 @@ def run_persistent_operator_console(
         )
         locality_standing = (
             _carry_operator_material_acquisition_occurrence_into_standing(
+                ledger,
                 locality_standing,
                 acquire_assignment,
                 prior_through_event_occurrence_identity=representation[
@@ -698,6 +699,7 @@ def run_persistent_operator_console(
         )
         locality_standing = (
             _carry_operator_material_acquisition_occurrence_into_standing(
+                ledger,
                 locality_standing,
                 acquire_act_evidence,
                 prior_through_event_occurrence_identity=(
@@ -720,6 +722,7 @@ def run_persistent_operator_console(
         )
         locality_standing = (
             _carry_operator_material_acquisition_occurrence_into_standing(
+                ledger,
                 locality_standing,
                 acquired_material,
                 prior_through_event_occurrence_identity=(

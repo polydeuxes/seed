@@ -671,6 +671,17 @@ def _assertion_locality_movement_occurrence_coordinates(
     }
 
 
+_REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES = frozenset(
+    {
+        "recorded_occurrence_identity",
+        "assignment_identity",
+        "assignment_subject_identity",
+        "book_clause_identity",
+        "result_boundary_identity",
+    }
+)
+
+
 def _carries_exact_result(ledger: EventLedger, event) -> bool:
     """Whether this exact occurrence's intact Yield carries exact result bytes."""
 
@@ -690,6 +701,44 @@ def _carries_exact_result(ledger: EventLedger, event) -> bool:
         ),
     )
     return all(requirements.values())
+
+
+def _responsibility_ownership_of_exact_result(
+    ledger: EventLedger, event
+) -> dict[str, Any] | None:
+    """The exact Responsibility ownership this admitted result already carries.
+
+    01.Standing.A.1 makes the exact result one coordinate of Standing for the
+    exact subject of its Responsibility branch.  The responsible Act evidence
+    the result already names carries that branch, its subject, and the Book
+    clause, so the ownership is read from there and never composed here.
+
+    ``None`` is the exact absence of a recoverable ownership.  A result whose
+    responsible Act evidence records no exact reference is still admitted on
+    the unchanged membership rule; no owner is supplied for it.
+    """
+
+    act_evidence_identity = event.material.get("responsible_act_evidence_identity")
+    if type(act_evidence_identity) is not str or not act_evidence_identity:
+        return None
+    act_evidence = ledger.get(act_evidence_identity)
+    if act_evidence is None or ledger.integrity_of(act_evidence.identity) == CORRUPTED:
+        return None
+    reference = act_evidence.material.get("responsibility_assignment_reference")
+    if type(reference) is not dict:
+        return None
+    if not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference):
+        return None
+    if any(type(value) is not str or not value for value in reference.values()):
+        return None
+    recorded = ledger.get(reference["recorded_occurrence_identity"])
+    if (
+        recorded is None
+        or recorded.locality_identity != event.locality_identity
+        or ledger.integrity_of(recorded.identity) == CORRUPTED
+    ):
+        return None
+    return deepcopy(reference)
 
 
 def _shared_position_assignment_reading(
@@ -1206,7 +1255,9 @@ def advance_operator_locality_standing(
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
             if _carries_exact_result(ledger, event):
-                exact_result_occurrences[event.identity] = None
+                exact_result_occurrences[event.identity] = (
+                    _responsibility_ownership_of_exact_result(ledger, event)
+                )
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
             continue
         pair_prior_standing = {
@@ -1323,7 +1374,9 @@ def advance_operator_locality_standing(
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
             if _carries_exact_result(ledger, event):
-                exact_result_occurrences[event.identity] = None
+                exact_result_occurrences[event.identity] = (
+                    _responsibility_ownership_of_exact_result(ledger, event)
+                )
             continue
         if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
             _read_byte_measurement_responsibility_assignment(
@@ -3039,6 +3092,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
 
 
 def _carry_operator_material_acquisition_occurrence_into_standing(
+    ledger: EventLedger,
     locality_standing: dict[str, Any],
     event,
     *,
@@ -3121,7 +3175,9 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
     elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
         acts[event.identity] = None
     else:
-        exact_results[event.identity] = None
+        exact_results[event.identity] = _responsibility_ownership_of_exact_result(
+            ledger, event
+        )
         locality_relations[event.identity] = {
             "locality_relation": deepcopy(event.material["locality_relation"]),
         }
