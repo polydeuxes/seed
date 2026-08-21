@@ -532,14 +532,42 @@ context-boundary validation carefully before committing.
 Task: profile/fix the >60-second
 `tests/test_comparison_of_ordered_relation_path_with_recorded_pair_findings.py`.
 
-No result had arrived when this handoff was written.
+Stopped at session transition with one uncommitted runtime diff:
+
+- `seed_runtime/comparison_of_ordered_relation_path_with_recorded_pair_findings.py`
+- 71 insertions / 3 deletions
+- call-bounded `ContextVar` cache around five public current-Standing
+  subject/lifecycle operations
+- cache resets after each public operation
+- one serial-assignment test: 9.32 seconds → 6.68 seconds
+- cProfile: 31.54 seconds → 22.31 seconds; 73.8m → 54.3m calls
+- `git diff --check`: clean
+
+This is **not ready to commit**. It has no focused cache/mutation tests and the
+full named file has not passed with the patch. The residual bottleneck is
+operator Standing/source replay. Review or revert explicitly; do not call it a
+completed fix.
 
 ### `egress_provenance`
 
 Task: profile/fix the >60-second
 `tests/test_comparison_of_recorded_byte_pair_measurements.py`.
 
-No result had arrived when this handoff was written.
+Stopped at session transition with an uncommitted two-file partial cut:
+
+- `seed_runtime/comparison_of_recorded_byte_pair_measurements.py`
+- `tests/test_comparison_of_recorded_byte_pair_measurements.py`
+- 17 insertions / 9 deletions
+- passes exact current `locality_standing` into the existing assignment reader
+  for the just-carried later pair, avoiding one historical Standing replay
+- three focused validation/mutation witnesses passed in 1.39 seconds
+- `git diff --check`: clean
+
+This is **not ready to commit as a bottleneck fix**. The principal reopen test
+still exceeds 60 seconds. It moved past the first replay hotspot and now stalls
+when Representation rereads the just-carried Compare result through complete
+pair histories. Preserve as an explicitly partial slice or revert; do not claim
+the file is fixed.
 
 Use `collaboration.list_agents` and read their messages before proceeding.
 
