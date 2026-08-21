@@ -1,9 +1,9 @@
-"""Observe how current Standing arrives at each Responsibility that reads it.
+"""Observe each current Standing supplied to a Responsibility that reads it.
 
-This asks one question of Seed's own runtime: when a Responsibility receives a
+This asks one question of Seed's own runtime: when a Responsibility is supplied a
 Standing, what exact coordinates does that Standing carry, and does anything
-observable distinguish a Standing that arrived along a live road from one
-supplied at a public boundary?
+observable distinguish a Standing carried along a live road from one supplied
+at a public boundary?
 
 The observer is given no discriminator.  It never reads the `carried` control
 flag, and it never reads the name of the validator that ran.  It records the
@@ -16,7 +16,7 @@ The calling function's name is recorded but held aside.  It is written to a
 separate section of the artifact so a comparison against it can only be made
 after the coordinate populations are frozen.
 
-Set ``SEED_STANDING_ARRIVAL`` to an output path when invoking pytest.
+Set ``SEED_SUPPLIED_STANDING`` to an output path when invoking pytest.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 import seed_runtime.operator_locality_standing as standing_module
 
-OUTPUT_ENVIRONMENT_COORDINATE = "SEED_STANDING_ARRIVAL"
+OUTPUT_ENVIRONMENT_COORDINATE = "SEED_SUPPLIED_STANDING"
 
 STANDING_PARAMETERS = (
     "locality_standing",
@@ -47,7 +47,7 @@ STANDING_PARAMETERS = (
 )
 
 _appended: dict[str, int] = {}
-_arrivals: list[dict[str, Any]] = []
+_supplied: list[dict[str, Any]] = []
 _reconstructions: ContextVar[list | None] = ContextVar(
     "standing_reconstructions", default=None
 )
@@ -131,7 +131,7 @@ def _wrap_recorder(module: Any, name: str, function: Any) -> None:
             _depth["value"] -= 1
             rebuilt = _reconstructions.get() or []
             _reconstructions.reset(token)
-            _arrivals.append(
+            _supplied.append(
                 {
                     "standing_parameter": parameter_name,
                     "standing_shape": shape,
@@ -214,14 +214,14 @@ def pytest_unconfigure(config: object) -> None:
 
 def _analyze() -> dict[str, Any]:
     populations: dict[tuple, list[dict[str, Any]]] = defaultdict(list)
-    for arrival in _arrivals:
-        shape = arrival["standing_shape"]
+    for supplied_standing in _supplied:
+        shape = supplied_standing["standing_shape"]
         key = (
             shape["through_occurrence_was_appended_in_this_run"],
             shape["through_occurrence_is_latest_append"],
-            arrival["reconstructions_inside_call"] > 0,
+            supplied_standing["reconstructions_inside_call"] > 0,
         )
-        populations[key].append(arrival)
+        populations[key].append(supplied_standing)
 
     rows = []
     for key, members in sorted(populations.items(), key=lambda item: str(item[0])):
@@ -232,7 +232,7 @@ def _analyze() -> dict[str, Any]:
                 "through_occurrence_was_appended_in_this_run": appended_here,
                 "through_occurrence_is_latest_append": is_latest,
                 "reconstructed_inside_call": reconstructed,
-                "arrival_count": len(members),
+                "supplied_standing_count": len(members),
                 "distinct_coordinate_name_sets": len(
                     {
                         _digest(member["standing_shape"]["coordinate_names"])
@@ -244,17 +244,17 @@ def _analyze() -> dict[str, Any]:
         )
 
     coordinate_sets = {
-        _digest(arrival["standing_shape"]["coordinate_names"]): arrival[
+        _digest(supplied_standing["standing_shape"]["coordinate_names"]): supplied_standing[
             "standing_shape"
         ]["coordinate_names"]
-        for arrival in _arrivals
+        for supplied_standing in _supplied
     }
     return {
         "observer": (
-            "how current Standing arrives; the observer reads no control flag "
+            "each current Standing supplied to a Responsibility; the observer reads no control flag "
             "and no validator name when separating populations"
         ),
-        "arrival_count": len(_arrivals),
+        "supplied_standing_count": len(_supplied),
         "appended_occurrence_count": len(_appended),
         "distinct_supplied_coordinate_sets": len(coordinate_sets),
         "populations": rows,
@@ -272,6 +272,6 @@ def pytest_sessionfinish(session: object, exitstatus: int) -> None:
     path = Path(output)
     path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(
-        f"\nSTANDING ARRIVALS {path} arrivals={result['arrival_count']} "
+        f"\nSUPPLIED STANDING {path} supplied={result['supplied_standing_count']} "
         f"populations={len(result['populations'])}"
     )
