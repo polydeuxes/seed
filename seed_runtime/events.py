@@ -442,6 +442,12 @@ class EventLedger:
             return True
         return False
 
+    def latest_locality_event(self, locality_identity: str) -> Event | None:
+        """Return the latest exact occurrence in a Locality, if present."""
+
+        events = self._by_locality.get(locality_identity, ())
+        return events[-1] if events else None
+
     def iter_locality_kind(
         self,
         locality_identity: str,
@@ -1018,6 +1024,16 @@ class SQLiteEventLedger(EventLedger):
             args,
         ).fetchone()
         return row is not None
+
+    def latest_locality_event(self, locality_identity: str) -> Event | None:
+        """Return the latest exact occurrence in a Locality, if present."""
+
+        row = self._connection.execute(
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.locality_identity = ? ORDER BY events.rowid DESC LIMIT 1",
+            (locality_identity,),
+        ).fetchone()
+        return None if row is None else self._row_to_event(row)
 
     def iter_locality_kind(
         self,

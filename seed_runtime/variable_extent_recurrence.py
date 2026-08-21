@@ -376,10 +376,10 @@ def _record_yielded_result(
     result_payload: dict[str, Any],
     identity_prefix: str,
 ) -> tuple[Event, Event]:
-    locality_events = ledger.list_locality(locality_identity)
-    if not locality_events:
+    latest_locality_event = ledger.latest_locality_event(locality_identity)
+    if latest_locality_event is None:
         raise ValueError("variable extent work requires an exact Locality boundary")
-    standing_boundary_occurrence_reference = locality_events[-1].identity
+    standing_boundary_occurrence_reference = latest_locality_event.identity
     act_identity = new_identity(identity_prefix + "_act")
     act_occurrence_identity = new_identity(identity_prefix + "_act_occurrence")
     result_identity = new_identity(identity_prefix + "_result")
@@ -558,8 +558,8 @@ def _pair_subject(
     return {
         "first_role": first_role,
         "second_role": second_role,
-        "first_source_position_coordinate": deepcopy(coordinates[first_role]),
-        "second_source_position_coordinate": deepcopy(coordinates[second_role]),
+        "first_source_position_coordinate": coordinates[first_role],
+        "second_source_position_coordinate": coordinates[second_role],
     }
 
 
@@ -575,10 +575,10 @@ def _record_compare(
     locality_identity = coordinates[0]["locality_identity"]
     applicability_subject = {
         "direct_position_result_occurrence": direct_result_event_identity,
-        "ordered_coordinates": deepcopy(list(coordinates)),
+        "ordered_coordinates": list(coordinates),
         "ordered_role_pair": list(pair),
-        "compare_subject": deepcopy(subject),
-        "prior_result_reference": deepcopy(prior_result_reference),
+        "compare_subject": subject,
+        "prior_result_reference": prior_result_reference,
     }
     _applicability_act, applicability = _record_yielded_result(
         ledger,
@@ -589,9 +589,9 @@ def _record_compare(
         book_reference="01.Standing.E.1",
         occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         locality_identity=locality_identity,
-        act_payload={"subject": deepcopy(applicability_subject)},
+        act_payload={"subject": applicability_subject},
         result_payload={
-            "subject": deepcopy(applicability_subject),
+            "subject": applicability_subject,
             "applicability": "applicable",
         },
         identity_prefix="ordered_coordinate_set_compare_applicability",
@@ -609,7 +609,7 @@ def _record_compare(
         else "difference"
     )
     compare_subject = {
-        **deepcopy(applicability_subject),
+        **applicability_subject,
         "applicability_result_reference": _result_reference(applicability),
     }
     _compare_act, result = _record_yielded_result(
@@ -622,20 +622,16 @@ def _record_compare(
         occurrence_boundary=COMPARE_BOUNDARY,
         locality_identity=locality_identity,
         act_payload={
-            "subject": deepcopy(compare_subject),
+            "subject": compare_subject,
             "participation_relations": [
                 {
-                    "first_subject": deepcopy(
-                        subject["first_source_position_coordinate"]
-                    ),
+                    "first_subject": subject["first_source_position_coordinate"],
                     "relation": "participation",
                     "second_subject": {"role": pair[0]},
                     "relation_occurrence_reference": first_participation_identity,
                 },
                 {
-                    "first_subject": deepcopy(
-                        subject["second_source_position_coordinate"]
-                    ),
+                    "first_subject": subject["second_source_position_coordinate"],
                     "relation": "participation",
                     "second_subject": {"role": pair[1]},
                     "relation_occurrence_reference": second_participation_identity,
@@ -643,13 +639,13 @@ def _record_compare(
             ],
         },
         result_payload={
-            "subject": deepcopy(compare_subject),
+            "subject": compare_subject,
             "finding": {
                 "finding_reference": _digest(
                     "ordered-coordinate-set-compare",
                     {"subject": subject, "result": finding},
                 ),
-                "subject": deepcopy(subject),
+                "subject": subject,
                 "result": finding,
             },
         },
@@ -842,7 +838,7 @@ def _record_extent_result(
     payload = {
         "direct_position_result_occurrence": direct_result_event_identity,
         "coordinate_count": len(coordinates),
-        "source_position_coordinates": deepcopy(list(coordinates)),
+        "source_position_coordinates": list(coordinates),
         "compare_result_references": [
             _result_reference(event) for event in compare_results
         ],
@@ -861,7 +857,7 @@ def _record_extent_result(
         book_reference="01.Source.D",
         occurrence_boundary=EXTENT_MEASUREMENT_BOUNDARY,
         locality_identity=coordinates[0]["locality_identity"],
-        act_payload={"subject": deepcopy(payload)},
+        act_payload={"subject": payload},
         result_payload=payload,
         identity_prefix="ordered_coordinate_set_measurement",
     )
@@ -1089,7 +1085,7 @@ def _record_recurrence_measurement(
         book_reference="01.Source.D",
         occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
         locality_identity=locality_identity,
-        act_payload={"subject": deepcopy(payload)},
+        act_payload={"subject": payload},
         result_payload=payload,
         identity_prefix="ordered_coordinate_set_recurrence_measurement",
     )
@@ -1447,9 +1443,7 @@ def _record_corresponding_coordinate_material_measurements(
                 "result_reference": recurrence["result_identity"],
             },
             "source_recurrence_finding_reference": group["finding_reference"],
-            "support_result_references": deepcopy(
-                group["support_result_references"]
-            ),
+            "support_result_references": group["support_result_references"],
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
             ],
@@ -1466,7 +1460,7 @@ def _record_corresponding_coordinate_material_measurements(
             book_reference="01.Source.D.1",
             occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
             locality_identity=locality_identity,
-            act_payload={"subject": deepcopy(payload)},
+            act_payload={"subject": payload},
             result_payload=payload,
             identity_prefix="recurrence_ordered_coordinate_material_measurement",
         )
