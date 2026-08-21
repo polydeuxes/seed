@@ -202,8 +202,14 @@ def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str,
 
 
 def _direct_coordinates(
-    ledger: EventLedger, direct_result_event_identity: str
+    ledger: EventLedger,
+    direct_result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[dict[str, Any], ...]:
+    cache_key = ("direct_coordinates", direct_result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
     coordinates = tuple(
         source_position_coordinate_references_of_recorded_position_measurement(
             ledger, direct_result_event_identity
@@ -226,6 +232,8 @@ def _direct_coordinates(
             != completeness_boundary
         ):
             raise ValueError("direct result carries no exact ordered source population")
+    if _validated is not None:
+        _validated[cache_key] = coordinates
     return coordinates
 
 
@@ -651,8 +659,14 @@ def _record_compare(
 
 
 def get_recorded_ordered_coordinate_set_compare(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
+    cache_key = ("compare_result", result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
     result = _event(
         ledger,
         result_event_identity,
@@ -672,7 +686,9 @@ def get_recorded_ordered_coordinate_set_compare(
     if type(subject) is not dict:
         raise ValueError("variable extent Compare carries no exact subject")
     direct_identity = subject.get("direct_position_result_occurrence")
-    direct_coordinates = _direct_coordinates(ledger, direct_identity)
+    direct_coordinates = _direct_coordinates(
+        ledger, direct_identity, _validated=_validated
+    )
     coordinates = subject.get("ordered_coordinates")
     pair = subject.get("ordered_role_pair")
     if (
@@ -720,7 +736,9 @@ def get_recorded_ordered_coordinate_set_compare(
         exact_prior = len(coordinate_tuple) == 2
     elif type(prior_reference) is dict:
         prior = get_recorded_variable_extent(
-            ledger, prior_reference.get("recorded_occurrence_reference")
+            ledger,
+            prior_reference.get("recorded_occurrence_reference"),
+            _validated=_validated,
         )
         exact_prior = (
             prior_reference.get("result_reference") == prior["result_identity"]
@@ -773,7 +791,10 @@ def get_recorded_ordered_coordinate_set_compare(
         )
     ):
         raise ValueError("variable extent Compare result is not exact")
-    return {**deepcopy(result.material), **deepcopy(result_coordinates)}
+    reading = {**deepcopy(result.material), **deepcopy(result_coordinates)}
+    if _validated is not None:
+        _validated[cache_key] = reading
+    return reading
 
 
 def _complete_pairs(length: int) -> tuple[tuple[int, int], ...]:
@@ -794,9 +815,12 @@ def _record_extent_result(
     compare_results: tuple[Event, ...],
     newly_introduced_compare_results: tuple[Event, ...],
     prior_extent_result: Event | None,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     readings = tuple(
-        get_recorded_ordered_coordinate_set_compare(ledger, event.identity)
+        get_recorded_ordered_coordinate_set_compare(
+            ledger, event.identity, _validated=_validated
+        )
         for event in compare_results
     )
     pairs = tuple(tuple(reading["subject"]["ordered_role_pair"]) for reading in readings)
@@ -845,8 +869,14 @@ def _record_extent_result(
 
 
 def get_recorded_variable_extent(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
+    cache_key = ("extent_result", result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
     result = _event(
         ledger,
         result_event_identity,
@@ -863,7 +893,9 @@ def get_recorded_variable_extent(
     )
     material = _coordinates(result.material)
     direct_coordinates = _direct_coordinates(
-        ledger, material.get("direct_position_result_occurrence")
+        ledger,
+        material.get("direct_position_result_occurrence"),
+        _validated=_validated,
     )
     coordinates = material.get("source_position_coordinates")
     references = material.get("compare_result_references")
@@ -891,7 +923,9 @@ def get_recorded_variable_extent(
         if type(reference) is not dict:
             raise ValueError("variable extent result carries no exact Compare reference")
         reading = get_recorded_ordered_coordinate_set_compare(
-            ledger, reference.get("recorded_occurrence_reference")
+            ledger,
+            reference.get("recorded_occurrence_reference"),
+            _validated=_validated,
         )
         if reference.get("result_reference") != reading["result_identity"]:
             raise ValueError("variable extent result carries no exact Compare reference")
@@ -913,7 +947,9 @@ def get_recorded_variable_extent(
         if type(prior_reference) is not dict:
             raise ValueError("variable extent result carries no exact prior result")
         prior_material = get_recorded_variable_extent(
-            ledger, prior_reference.get("recorded_occurrence_reference")
+            ledger,
+            prior_reference.get("recorded_occurrence_reference"),
+            _validated=_validated,
         )
         if (
             prior_reference.get("result_reference") != prior_material["result_identity"]
@@ -945,7 +981,10 @@ def get_recorded_variable_extent(
         }
     ):
         raise ValueError("variable extent result is not exact")
-    return {**deepcopy(result.material), **deepcopy(material)}
+    reading = {**deepcopy(result.material), **deepcopy(material)}
+    if _validated is not None:
+        _validated[cache_key] = reading
+    return reading
 
 
 def _extent_events_at_boundary(
@@ -955,6 +994,7 @@ def _extent_events_at_boundary(
     coordinate_count: int,
     boundary: EventLedgerBoundary,
     locality_identity: str,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[Event, ...]:
     events = []
     for event in ledger.list(through=boundary):
@@ -967,7 +1007,9 @@ def _extent_events_at_boundary(
             == direct_result_event_identity
             and _coordinates(event.material).get("coordinate_count") == coordinate_count
         ):
-            get_recorded_variable_extent(ledger, event.identity)
+            get_recorded_variable_extent(
+                ledger, event.identity, _validated=_validated
+            )
             events.append(event)
     return tuple(events)
 
@@ -1017,6 +1059,7 @@ def _record_recurrence_measurement(
     direct_result_event_identity: str,
     coordinate_count: int,
     locality_identity: str,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     boundary = ledger.append_boundary()
     extents = _extent_events_at_boundary(
@@ -1025,6 +1068,7 @@ def _record_recurrence_measurement(
         coordinate_count=coordinate_count,
         boundary=boundary,
         locality_identity=locality_identity,
+        _validated=_validated,
     )
     if not extents:
         raise ValueError("recurrence Measurement requires exact extent results")
@@ -1053,8 +1097,14 @@ def _record_recurrence_measurement(
 
 
 def get_recorded_variable_extent_recurrence(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
+    cache_key = ("recurrence_result", result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
     result = _event(
         ledger,
         result_event_identity,
@@ -1081,6 +1131,7 @@ def get_recorded_variable_extent_recurrence(
         coordinate_count=material.get("coordinate_count"),
         boundary=EventLedgerBoundary(boundary_identity),
         locality_identity=result.locality_identity,
+        _validated=_validated,
     )
     expected_payload = {
         "direct_position_result_occurrence": material[
@@ -1111,7 +1162,10 @@ def get_recorded_variable_extent_recurrence(
         or _coordinates(act.material).get("subject") != expected_payload
     ):
         raise ValueError("variable extent recurrence result is not exact")
-    return {**deepcopy(result.material), **deepcopy(material)}
+    reading = {**deepcopy(result.material), **deepcopy(material)}
+    if _validated is not None:
+        _validated[cache_key] = reading
+    return reading
 
 
 def _extend_recurrent_extents(
@@ -1119,9 +1173,10 @@ def _extend_recurrent_extents(
     *,
     recurrence_result: Event,
     direct_coordinates: tuple[dict[str, Any], ...],
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[Event, ...]:
     recurrence = get_recorded_variable_extent_recurrence(
-        ledger, recurrence_result.identity
+        ledger, recurrence_result.identity, _validated=_validated
     )
     extended = []
     for finding in recurrence["findings"]:
@@ -1134,7 +1189,9 @@ def _extend_recurrent_extents(
                 kind=EXTENT_MEASUREMENT_RESULT_KIND,
                 message="recurrence carries no exact producing extent",
             )
-            prior = get_recorded_variable_extent(ledger, prior_event.identity)
+            prior = get_recorded_variable_extent(
+                ledger, prior_event.identity, _validated=_validated
+            )
             if reference["result_reference"] != prior["result_identity"]:
                 raise ValueError("recurrence carries no exact producing extent")
             prior_coordinates = tuple(prior["source_position_coordinates"])
@@ -1173,6 +1230,7 @@ def _extend_recurrent_extents(
                     compare_results=(*prior_compare_events, *new_results),
                     newly_introduced_compare_results=new_results,
                     prior_extent_result=prior_event,
+                    _validated=_validated,
                 )
             )
     return tuple(extended)
@@ -1190,7 +1248,10 @@ def _record_variable_extent_steps(
         raise TypeError("variable extent recording requires an EventLedger")
     if type(extension_count) is not int or extension_count < 0:
         raise ValueError("variable extent recording requires a nonnegative extension count")
-    direct_coordinates = _direct_coordinates(ledger, direct_result_event_identity)
+    validated: dict[tuple[str, str], Any] = {}
+    direct_coordinates = _direct_coordinates(
+        ledger, direct_result_event_identity, _validated=validated
+    )
     locality_identity = direct_coordinates[0]["locality_identity"]
     standing = _require_current_measurement_subject(
         ledger,
@@ -1219,6 +1280,7 @@ def _record_variable_extent_steps(
                 compare_results=(compare,),
                 newly_introduced_compare_results=(compare,),
                 prior_extent_result=None,
+                _validated=validated,
             )
         )
     recurrence = _record_recurrence_measurement(
@@ -1226,6 +1288,7 @@ def _record_variable_extent_steps(
         direct_result_event_identity=direct_result_event_identity,
         coordinate_count=2,
         locality_identity=locality_identity,
+        _validated=validated,
     )
     steps.append(
         VariableExtentStep(2, tuple(minimal), recurrence, len(ledger.list()) - before)
@@ -1237,6 +1300,7 @@ def _record_variable_extent_steps(
             ledger,
             recurrence_result=recurrence,
             direct_coordinates=direct_coordinates,
+            _validated=validated,
         )
         if not extents:
             break
@@ -1246,6 +1310,7 @@ def _record_variable_extent_steps(
             direct_result_event_identity=direct_result_event_identity,
             coordinate_count=coordinate_count,
             locality_identity=locality_identity,
+            _validated=validated,
         )
         steps.append(
             VariableExtentStep(
@@ -1280,12 +1345,17 @@ def record_variable_extent_steps(
 
 
 def _coordinate_findings(
-    ledger: EventLedger, recurrence_group: dict[str, Any]
+    ledger: EventLedger,
+    recurrence_group: dict[str, Any],
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> list[dict[str, Any]]:
     productions = []
     for reference in recurrence_group["support_result_references"]:
         material = get_recorded_variable_extent(
-            ledger, reference["recorded_occurrence_reference"]
+            ledger,
+            reference["recorded_occurrence_reference"],
+            _validated=_validated,
         )
         if reference["result_reference"] != material["result_identity"]:
             raise ValueError("coordinate Measurement carries no exact production")
@@ -1363,8 +1433,9 @@ def _record_corresponding_coordinate_material_measurements(
         locality_standing=locality_standing,
     )
     locality_event_count = len(ledger.list_locality(locality_identity))
+    validated: dict[tuple[str, str], Any] = {}
     recurrence = get_recorded_variable_extent_recurrence(
-        ledger, recurrence_result_event_identity
+        ledger, recurrence_result_event_identity, _validated=validated
     )
     recorded = []
     for group in recurrence["findings"]:
@@ -1382,7 +1453,9 @@ def _record_corresponding_coordinate_material_measurements(
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
             ],
-            "findings": _coordinate_findings(ledger, group),
+            "findings": _coordinate_findings(
+                ledger, group, _validated=validated
+            ),
         }
         _act, result = _record_yielded_result(
             ledger,
@@ -1424,8 +1497,14 @@ def record_corresponding_coordinate_material_measurements(
 
 
 def get_recorded_corresponding_coordinate_material_measurement(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
+    cache_key = ("coordinate_result", result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
     result = _event(
         ledger,
         result_event_identity,
@@ -1445,7 +1524,9 @@ def get_recorded_corresponding_coordinate_material_measurement(
     if type(source_reference) is not dict:
         raise ValueError("coordinate Measurement carries no exact recurrence result")
     recurrence = get_recorded_variable_extent_recurrence(
-        ledger, source_reference.get("recorded_occurrence_reference")
+        ledger,
+        source_reference.get("recorded_occurrence_reference"),
+        _validated=_validated,
     )
     if source_reference.get("result_reference") != recurrence["result_identity"]:
         raise ValueError("coordinate Measurement carries no exact recurrence result")
@@ -1468,7 +1549,9 @@ def get_recorded_corresponding_coordinate_material_measurement(
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"
         ],
-        "findings": _coordinate_findings(ledger, group),
+        "findings": _coordinate_findings(
+            ledger, group, _validated=_validated
+        ),
     }
     carried_payload = {
         key: deepcopy(value)
@@ -1487,11 +1570,17 @@ def get_recorded_corresponding_coordinate_material_measurement(
     }
     if carried_payload != payload or _coordinates(act.material).get("subject") != payload:
         raise ValueError("corresponding-coordinate Measurement result is not exact")
-    return {**deepcopy(result.material), **deepcopy(material)}
+    reading = {**deepcopy(result.material), **deepcopy(material)}
+    if _validated is not None:
+        _validated[cache_key] = reading
+    return reading
 
 
 def validate_variable_extent_event(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     """Validate every occurrence exposed by the variable-extent proof road."""
 
@@ -1499,17 +1588,23 @@ def validate_variable_extent_event(
     if event is None or event.kind not in EVENT_KIND_RESPONSIBILITIES:
         raise ValueError("variable extent occurrence is not exact")
     if event.kind == COMPARE_RESULT_KIND:
-        get_recorded_ordered_coordinate_set_compare(ledger, event.identity)
+        get_recorded_ordered_coordinate_set_compare(
+            ledger, event.identity, _validated=_validated
+        )
         return event
     if event.kind == EXTENT_MEASUREMENT_RESULT_KIND:
-        get_recorded_variable_extent(ledger, event.identity)
+        get_recorded_variable_extent(
+            ledger, event.identity, _validated=_validated
+        )
         return event
     if event.kind == RECURRENCE_MEASUREMENT_RESULT_KIND:
-        get_recorded_variable_extent_recurrence(ledger, event.identity)
+        get_recorded_variable_extent_recurrence(
+            ledger, event.identity, _validated=_validated
+        )
         return event
     if event.kind == COORDINATE_MEASUREMENT_RESULT_KIND:
         get_recorded_corresponding_coordinate_material_measurement(
-            ledger, event.identity
+            ledger, event.identity, _validated=_validated
         )
         return event
     result_readings = {
@@ -1541,7 +1636,9 @@ def validate_variable_extent_event(
         ):
             raise ValueError("variable extent Applicability result is not exact")
         direct = _direct_coordinates(
-            ledger, subject.get("direct_position_result_occurrence")
+            ledger,
+            subject.get("direct_position_result_occurrence"),
+            _validated=_validated,
         )
         extent = subject.get("ordered_coordinates")
         pair = subject.get("ordered_role_pair")

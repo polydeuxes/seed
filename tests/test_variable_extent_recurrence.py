@@ -15,6 +15,7 @@ from seed_runtime.variable_extent_recurrence import (
     record_corresponding_coordinate_material_measurements,
     record_variable_extent_steps,
 )
+import seed_runtime.variable_extent_recurrence as variable_extent_recurrence
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
@@ -249,6 +250,43 @@ def test_changed_extent_coordinate_is_refused():
         raise AssertionError("changed extent coordinate was accepted")
 
 
+def test_bounded_variable_extent_recording_reuses_validated_direct_coordinates(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="variable-extent-bounded-validation",
+        exact=b"2+2=\n3+3=\n4+4=",
+    )
+    calls = 0
+    exact_reader = (
+        variable_extent_recurrence.source_position_coordinate_references_of_recorded_position_measurement
+    )
+
+    def counted_reader(ledger, result_event_identity):
+        nonlocal calls
+        calls += 1
+        return exact_reader(ledger, result_event_identity)
+
+    monkeypatch.setattr(
+        variable_extent_recurrence,
+        "source_position_coordinate_references_of_recorded_position_measurement",
+        counted_reader,
+    )
+
+    record_variable_extent_steps(
+        ledger,
+        direct_result_event_identity=direct.identity,
+        extension_count=2,
+    )
+
+    # The recording boundary and its bounded Standing advance each validate
+    # the direct result. Sibling Compare/Measurement results reuse those exact
+    # validated coordinates instead of reconstructing the source population.
+    assert calls == 2
+
+
 def test_variable_extent_results_and_coordinate_measurements_survive_restart(tmp_path):
     database = tmp_path / "variable-extent.sqlite"
     ledger = SQLiteEventLedger(str(database))
@@ -306,5 +344,6 @@ PYTEST_ADMISSION = (
     test_two_extensions_reuse_prior_compare_work_and_expose_literal_recurrence,
     test_same_internal_surface_does_not_create_varying_literal_recurrence,
     test_changed_extent_coordinate_is_refused,
+    test_bounded_variable_extent_recording_reuses_validated_direct_coordinates,
     test_variable_extent_results_and_coordinate_measurements_survive_restart,
 )

@@ -1145,6 +1145,13 @@ def advance_operator_locality_standing(
         }
     )
 
+    # Variable-extent events in this exact advance share the same immutable
+    # direct result and frequently refer to the same prior results. Validate
+    # each referenced occurrence fully on first encounter, then reuse that
+    # validated reading for the remainder of this bounded advance. The cache
+    # does not survive the call, so a later replay still detects mutation.
+    variable_extent_validated: dict[tuple[str, str], Any] = {}
+
     for event in events:
         if event.locality_identity != locality_identity:
             continue
@@ -1890,7 +1897,11 @@ def advance_operator_locality_standing(
                 comparison_result_occurrences[event.identity] = None
             continue
         if event.kind in _VARIABLE_EXTENT_KINDS:
-            validate_variable_extent_event(ledger, event.identity)
+            validate_variable_extent_event(
+                ledger,
+                event.identity,
+                _validated=variable_extent_validated,
+            )
             if event.kind == VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND:
                 applicability_result_occurrences[event.identity] = None
             elif event.kind == VARIABLE_EXTENT_COMPARE_RESULT_KIND:
