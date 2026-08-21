@@ -184,9 +184,123 @@ Removal coordinate populations:
 The parser functions strongly distinguish serialization fragments. They do not
 distinguish the source positions of Seed's relation grammar.
 
-## Provenance of the nine-group witness
+## Upstream evidence chronology
 
-The remembered nine-group machine surface was located exactly.
+The machine-witness encoding is the final local stage, not the origin of the
+pressure that made its distinctions expensive to collapse.
+
+### Source-selected pressure
+
+Commit `435b19bb` asked whether source structure could supply the segmentation
+needed by a relation-shaped question without a developer choosing its
+occupants. In Brown's parsing entries, the source supplied a delimited first
+coordinate. The representation immediately following that source-constrained
+position was enumerated:
+
+```text
+141  is
+  5  or
+  4  .
+  3  which
+  3  ;
+  1  to
+```
+
+Nothing requested `is`. The experiment nevertheless preserved strict limits:
+
+- the section anchor and delimiter had been selected by a human observer;
+- only two of the proposed three boundaries were obtainable;
+- co-presence established no relation;
+- `is` acquired no meaning, grammatical role, truth, or relation Standing.
+
+Thus the result did not establish a relation grammar. It established that
+occupant pressure need not begin with a developer-selected expected occupant.
+
+Commit `62789c6d` removed the delimiter, selected representation, and expected
+occupant. Candidates were enumerated from material across eight independently
+bounded scopes. Thirteen of 180 candidates produced the same downstream
+occupant across every scope. Among them:
+
+```text
+it  → is
+It  → is
+```
+
+The same material reappeared from ordinary prose under an independently formed
+aperture. A character n-gram control retained separation without a supplied
+word boundary. The report still refused meaning, grammar, relation, and truth,
+and recorded that source extent, scope division, and measurement family
+remained observer choices.
+
+This is source/evidence-selected pressure. The ordinary rendering `is` lets a
+human discuss the observed bytes; it is not what caused them to recur.
+
+### Recognition and naming
+
+The coordinate name `the relation assertion` and its unresolved occupancy were
+already under constitutional investigation before `435b19bb`. Reports
+`#2379` through `#2384` had established a question, not an answer:
+
+```text
+exact source material and bounded Representation exist
++
+relation assertion is a named coordinate
+!=
+source material occupies that coordinate
+```
+
+The source-selected `is` experiments therefore did not originate the relation
+question. They supplied independent evidence bearing on the objection that a
+developer would always have to choose the segmentation and expected occupant.
+Human investigators could recognize and name the pressure while the recorded
+finding remained exact uninterpreted material.
+
+The subsequent measurement campaign continued to remove supplied apertures,
+exhaust recorded findings, compare ordered material with shuffled controls,
+and distinguish pair subjects from Candidates. In particular:
+
+```text
+6ccdc256
+recurrent exact pair material
+↓
+exact pair subject, not Candidate
+
+d32e1b38
+exact pair premise and exact current occurrence
+↓
+named exact comparison relations
+```
+
+These later changes did not establish that `is` means a relation. They made
+the separation among source subject, neutral Candidate carriage, and an exact
+relation occurrence increasingly explicit in active mechanics and vocabulary.
+
+Repository history does not establish the stronger causal claim:
+
+```text
+the `is` finding by itself
+→ subject / Candidate / Participation relation
+```
+
+It does establish the campaign boundary:
+
+```text
+source-selected unresolved material pressure
+↓
+human recognition and careful naming
+↓
+grammar-bounded separation in later physiology
+↓
+machine-witness encoding
+```
+
+That is materially different from inventing grammar coordinates without prior
+evidence pressure.
+
+## Machine-witness encoding of the nine-group distinction
+
+The remembered nine-group machine surface was located exactly at its encoding
+stage.
 
 Commit `df75bc36` added a machine-grammar object whose base was supplied as:
 
@@ -209,7 +323,7 @@ Participation_relation   → candidate
 
 That gives three exact coordinate groups plus six directed-pair groups.
 
-The proving tests did not derive the base of three from raw material. They:
+The proving tests did not re-derive the base of three from raw material. They:
 
 - resolved `role_distinctions` from the machine grammar;
 - required the exact three supplied coordinate names;
@@ -219,8 +333,9 @@ The proving tests did not derive the base of three from raw material. They:
   Standing and required the machine-witness comparison to refuse the change.
 
 The substitutions were mutation sirens over an already-declared grammar
-surface. They demonstrated preservation of the supplied distinction; they did
-not discover the three coordinates or six directions.
+surface. They demonstrated preservation of distinctions recovered and named
+upstream; they did not independently discover the three coordinate names or
+six directions inside this test.
 
 Commit `f956b6fd` removed `role_distinctions` while restructuring the active
 Book around exact relations. The current machine grammar has no such object.
@@ -229,24 +344,37 @@ sirens rather than active discovery testimony.
 
 ## Exact distinction
 
-Two historical roads had been compressed together in recollection:
+Several stages had been compressed together in recollection:
 
 ```text
+source/evidence-selected pressure
+├── source structure bounds an aperture
+├── candidate occupants are enumerated rather than requested
+└── uninterpreted material reappears under independent apertures
+
+recognition and naming
+├── human observer discusses the exact finding
+├── active grammar questions bound what may be claimed
+└── meaning, role, relation, and truth remain refused
+
 compiled-format substitution
 ├── changes exact material
 ├── invokes independent implementation functions
 └── discovers recurrence of exact returned coordinates
 
-nine-group role distinction
+machine-witness encoding
 ├── receives three coordinates from machine grammar
 ├── receives all six directed pairs from machine grammar
 └── mutates that declared surface to prove collapse is refused
 ```
 
-The first road genuinely discovers a behavioral recurrence, but its parser
-surface does not discriminate the current Book/grammar joints. The second road
-proves an exact supplied grammar matrix, but is not a blind source-discovery
-road.
+The source experiments establish that evidence can select an unresolved
+occupant without a human requesting its value. Curator recognition supplies
+ordinary names for discussing the resulting pressure but does not retroactively
+cause the finding. The compiled-format road genuinely discovers behavioral
+recurrence, but its parser surface does not discriminate the current
+Book/grammar joints. The machine witness proves an exact encoded grammar matrix
+without pretending to discover its own coordinate names.
 
 Restoring either road as though it solved the other would inject the answer:
 
@@ -259,6 +387,11 @@ declared role matrix
 !=
 recovered role matrix
 ```
+
+The local statement that `df75bc36` received its coordinate names from machine
+grammar is mechanically exact. Treating that local fact as the complete
+provenance of the campaign would erase the earlier source-selected pressure and
+the intervening recognition/recovery work.
 
 ## Stopping boundary
 
