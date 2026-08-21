@@ -627,66 +627,6 @@ def _require_current_standing(
     source_material_acquisition_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
-    )
-
-    if type(locality_standing) is not dict:
-        raise ValueError(
-            "byte-pair position-coordinate Measurement requires current Locality Standing"
-        )
-    current = read_operator_locality_standing(
-        ledger, locality_identity=locality_identity
-    )
-    boundary = locality_standing.get("through_event_occurrence_identity")
-    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
-    carried_acquisition_results = {
-        occurrence.get("result_occurrence_identity")
-        for occurrence in acquisition_results or ()
-        if type(occurrence) is dict
-    }
-    source_has_exact_locality = bool(
-        source_material_acquisition_occurrence_identity is None
-        or _has_exact_material_locality_to_this_seed(
-            ledger, source_material_acquisition_occurrence_identity
-        )
-    )
-    if (
-        locality_standing != current
-        or locality_standing.get("locality_identity") != locality_identity
-        or type(boundary) is not str
-        or not boundary
-        or (
-            source_material_acquisition_occurrence_identity is not None
-            and (
-                source_material_acquisition_occurrence_identity
-                not in carried_acquisition_results
-                or not source_has_exact_locality
-            )
-        )
-        or (
-            assignment_identity is not None
-            and (
-                type(assignments) is not dict
-                or assignments.get(assignment_identity, object()) is not None
-            )
-        )
-    ):
-        raise ValueError(
-            "byte-pair position-coordinate Measurement requires current Locality Standing"
-        )
-    return boundary
-
-
-def _require_carried_replay_at_current_boundary(
-    ledger: EventLedger,
-    *,
-    locality_identity: str,
-    locality_standing: dict[str, Any],
-    source_material_acquisition_occurrence_identity: str | None = None,
-    assignment_identity: str | None = None,
-) -> str:
     """Validate a carried replay at the current event in its Locality."""
 
     if type(locality_standing) is not dict:
@@ -821,7 +761,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     *,
     source_material_acquisition_occurrence_identity: str,
     locality_standing: dict[str, Any],
-    carried: bool,
 ) -> Event:
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
@@ -831,7 +770,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
         finding=finding,
         locality_standing=locality_standing,
-        carried=carried,
     )
 
 
@@ -840,15 +778,9 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     *,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     locality_standing: dict[str, Any],
-    carried: bool,
 ) -> Event:
     _validate_finding(finding)
-    require_standing = (
-        _require_carried_replay_at_current_boundary
-        if carried
-        else _require_current_standing
-    )
-    standing_boundary_identity = require_standing(
+    standing_boundary_identity = _require_current_standing(
         ledger,
         locality_identity=finding.source_locality_identity,
         locality_standing=locality_standing,
@@ -920,7 +852,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         ledger,
         finding=finding,
         locality_standing=locality_standing,
-        carried=True,
     )
 
 
@@ -1007,7 +938,6 @@ def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
         source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         locality_standing=locality_standing,
-        carried=False,
     )
 
 
@@ -1023,7 +953,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         ledger,
         source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         locality_standing=locality_standing,
-        carried=True,
     )
 
 
@@ -1212,17 +1141,11 @@ def _record_byte_pair_occurrence_position_measurement_act_evidence(
     *,
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
-    carried: bool,
 ) -> Event:
     assignment, finding = _read_assignment(
         ledger, responsibility_assignment_event_identity
     )
-    require_standing = (
-        _require_carried_replay_at_current_boundary
-        if carried
-        else _require_current_standing
-    )
-    require_standing(
+    _require_current_standing(
         ledger,
         locality_identity=assignment.locality_identity,
         locality_standing=responsibility_assignment_standing,
@@ -1257,7 +1180,6 @@ def record_byte_pair_occurrence_position_measurement_act_evidence(
             responsibility_assignment_event_identity
         ),
         responsibility_assignment_standing=responsibility_assignment_standing,
-        carried=False,
     )
 
 
@@ -1275,7 +1197,6 @@ def _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_
             responsibility_assignment_event_identity
         ),
         responsibility_assignment_standing=responsibility_assignment_standing,
-        carried=True,
     )
 
 
@@ -1293,7 +1214,7 @@ def _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_
         responsibility_assignment=responsibility_assignment,
         finding=finding,
     )
-    _require_carried_replay_at_current_boundary(
+    _require_current_standing(
         ledger,
         locality_identity=responsibility_assignment.locality_identity,
         locality_standing=responsibility_assignment_standing,

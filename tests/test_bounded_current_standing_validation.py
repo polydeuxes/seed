@@ -18,6 +18,7 @@ from copy import deepcopy
 
 import pytest
 
+import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as position_module
 import seed_runtime.operator_locality_standing as standing_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     AddressedByteOccurrenceReferenceDeterminationError,
@@ -26,9 +27,27 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.events import EventLedger
 
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from tests.test_addressed_byte_occurrence_reference_determination import (
     _through_applicability,
 )
+
+
+def _position_material():
+    """One exact source and the current Standing that carries it."""
+
+    ledger = EventLedger()
+    source = record_operator_material_occurrence(
+        ledger,
+        locality_identity="entrance-witness",
+        exact=b"2+2=5\n",
+        source_boundary="exact supplied material boundary",
+    )
+    return ledger, source, standing_module.read_operator_locality_standing(
+        ledger, locality_identity="entrance-witness"
+    )
 
 
 def test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated():
@@ -164,7 +183,67 @@ def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch)
     assert calls == []
 
 
+def test_both_position_assignment_entrances_validate_the_same_way():
+    """No entrance is trusted differently from another.
+
+    The two entrances take the same exact source and the same current
+    Standing.  Seed observed no coordinate distinguishing them and no earlier
+    physiology separated them, so neither may be validated against a rebuilt
+    Locality while the other is validated against its consumed coordinates.
+    """
+
+    forged = deepcopy(_position_material()[2])
+    forged["through_event_occurrence_identity"] = "evt_absent"
+
+    refusals = []
+    for entrance in (
+        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+        position_module._record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    ):
+        ledger, source, _standing = _position_material()
+        try:
+            entrance(
+                ledger,
+                source_material_acquisition_occurrence_identity=source.identity,
+                locality_standing=deepcopy(forged),
+            )
+        except Exception as error:
+            refusals.append(type(error).__name__)
+        else:
+            refusals.append("recorded")
+
+    assert refusals[0] == refusals[1] != "recorded"
+
+
+def test_no_entrance_authenticates_an_unread_branch_of_the_supplied_standing():
+    """Neither entrance rebuilds the Locality, so neither notices a sibling.
+
+    A rebuilding entrance would refuse here while a bounded one records, so
+    this witnesses that the two are validated alike without reading how either
+    reaches its validation.
+    """
+
+    recorded = []
+    for entrance in (
+        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+        position_module._record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    ):
+        ledger, source, standing = _position_material()
+        unread = deepcopy(standing)
+        unread["representations"] = {"an unread sibling branch": None}
+        assignment = entrance(
+            ledger,
+            source_material_acquisition_occurrence_identity=source.identity,
+            locality_standing=unread,
+        )
+        recorded.append(assignment.kind)
+
+    assert recorded[0] == recorded[1]
+
+
 PYTEST_ADMISSION = (
+    test_both_position_assignment_entrances_validate_the_same_way,
+    test_no_entrance_authenticates_an_unread_branch_of_the_supplied_standing,
     test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated,
     test_a_substituted_through_occurrence_is_refused,
     test_a_stale_standing_is_refused_at_the_append_tip,
