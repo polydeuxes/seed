@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import defaultdict
 from hashlib import sha256
 import json
 from pathlib import Path
-import re
+import sys
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.observe_relation_holes import OBSERVER_STATEMENT  # noqa: E402
 
 
 def _digest(value: object) -> str:
@@ -26,7 +30,7 @@ def _family_key(family: dict[str, Any]) -> tuple[object, ...]:
         tuple(family["reference_path"]),
         family["source_book_reference"],
         family["destination_book_reference"],
-        family["relation_bearing_reference"],
+        family["recorded_relation"],
     )
 
 
@@ -36,15 +40,6 @@ def _vacancy_key(family: dict[str, Any]) -> tuple[object, ...]:
         family["book_reference"],
         tuple(family["coordinate_path"]),
     )
-
-
-def _coordinate_material(path: list[object]) -> list[str]:
-    words = []
-    for part in path:
-        if not isinstance(part, str) or part == "#":
-            continue
-        words.extend(re.findall(r"[A-Za-z]+", part.replace("_", " ").lower()))
-    return words
 
 
 def main() -> int:
@@ -58,10 +53,7 @@ def main() -> int:
         if path.name == "manifest.json" or path == arguments.output:
             continue
         value = json.loads(path.read_text(encoding="utf-8"))
-        if value.get("observer") != (
-            "exact append-order occurrence references; bare handoffs are "
-            "questions and establish no relation"
-        ):
+        if value.get("observer") != OBSERVER_STATEMENT:
             continue
         artifacts.append((path, value))
 
@@ -73,7 +65,6 @@ def main() -> int:
     ] = defaultdict(list)
     missing_content_groups = defaultdict(list)
     unrendered_groups = defaultdict(list)
-    coordinate_words: Counter[str] = Counter()
     for path, artifact in artifacts:
         for family in artifact["reference_transition_families"]:
             transition_key = (
@@ -85,13 +76,10 @@ def main() -> int:
             transition_groups[transition_key].append((path, family))
         for family in artifact["repeated_bare_handoff_families"]:
             reference_groups[_family_key(family)].append((path, family))
-            coordinate_words.update(_coordinate_material(family["reference_path"]))
         for family in artifact["relation_coordinate_missing_content_families"]:
             missing_content_groups[_vacancy_key(family)].append((path, family))
-            coordinate_words.update(_coordinate_material(family["coordinate_path"]))
         for family in artifact["unrendered_relation_occurrence_families"]:
             unrendered_groups[_vacancy_key(family)].append((path, family))
-            coordinate_words.update(_coordinate_material(family["coordinate_path"]))
 
     def merged_references():
         result = []
@@ -106,9 +94,7 @@ def main() -> int:
                     "destination_book_reference": first[
                         "destination_book_reference"
                     ],
-                    "relation_bearing_reference": first[
-                        "relation_bearing_reference"
-                    ],
+                    "recorded_relation": first["recorded_relation"],
                     "source_file_count": len(members),
                     "occurrence_count": sum(
                         member["occurrence_count"] for _path, member in members
@@ -178,8 +164,16 @@ def main() -> int:
     transition_rows = []
     for key, members in transition_groups.items():
         source_kind, destination_kind, source_book, destination_book = key
-        bearing = [member for _path, member in members if member["relation_bearing_reference"]]
-        bare = [member for _path, member in members if not member["relation_bearing_reference"]]
+        carried = [
+            member
+            for _path, member in members
+            if member["recorded_relation"] != "no_recorded_relation"
+        ]
+        uncarried = [
+            member
+            for _path, member in members
+            if member["recorded_relation"] == "no_recorded_relation"
+        ]
         transition_rows.append(
             {
                 "source_kind": source_kind,
@@ -187,30 +181,31 @@ def main() -> int:
                 "source_book_reference": source_book,
                 "destination_book_reference": destination_book,
                 "source_file_count": len({path.name for path, _member in members}),
-                "bare_occurrence_pair_count": sum(
-                    member["occurrence_pair_count"] for member in bare
+                "no_recorded_relation_occurrence_pair_count": sum(
+                    member["occurrence_pair_count"] for member in uncarried
                 ),
-                "relation_bearing_occurrence_pair_count": sum(
-                    member["occurrence_pair_count"] for member in bearing
+                "recorded_relation_occurrence_pair_count": sum(
+                    member["occurrence_pair_count"] for member in carried
                 ),
-                "bare_samples": [
+                "no_recorded_relation_samples": [
                     {"artifact": path.name, **member["samples"][0]}
                     for path, member in members
-                    if not member["relation_bearing_reference"]
+                    if member["recorded_relation"] == "no_recorded_relation"
                     and member["samples"]
                 ][:3],
-                "relation_bearing_samples": [
+                "recorded_relation_samples": [
                     {"artifact": path.name, **member["samples"][0]}
                     for path, member in members
-                    if member["relation_bearing_reference"] and member["samples"]
+                    if member["recorded_relation"] != "no_recorded_relation"
+                    and member["samples"]
                 ][:3],
             }
         )
     transition_rows.sort(
         key=lambda item: (
-            bool(item["relation_bearing_occurrence_pair_count"]),
+            bool(item["recorded_relation_occurrence_pair_count"]),
             -item["source_file_count"],
-            -item["bare_occurrence_pair_count"],
+            -item["no_recorded_relation_occurrence_pair_count"],
             item["source_kind"],
             item["destination_kind"],
         )
@@ -236,12 +231,6 @@ def main() -> int:
         "unrendered_relation_occurrence_families": merged_vacancies(
             unrendered_groups
         ),
-        "opaque_coordinate_material": [
-            {"material": word, "occurrence_count": count}
-            for word, count in sorted(
-                coordinate_words.items(), key=lambda item: (-item[1], item[0])
-            )
-        ],
     }
     result["structural_digest"] = _digest(result)
     arguments.output.write_text(json.dumps(result, indent=2), encoding="utf-8")

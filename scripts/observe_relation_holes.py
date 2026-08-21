@@ -28,6 +28,11 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_RELATION_HOLE_OBSERVATION"
 CONSEQUENCE_RUNG_LIMIT = 8
+OBSERVER_STATEMENT = (
+    "exact append-order occurrence references; a reference carries no "
+    "relation unless a recorded relation carries both occurrences as "
+    "its first and second subjects"
+)
 
 _current_test: ContextVar[str | None] = ContextVar(
     "relation_hole_test", default=None
@@ -208,6 +213,167 @@ def _path_within(path: tuple[object, ...], parent: tuple[object, ...]) -> bool:
     return len(path) >= len(parent) and path[: len(parent)] == parent
 
 
+def _subject_occurrences(value: object, known: set[str]) -> set[str]:
+    """Exact recorded occurrences a relation subject carries.
+
+    A subject is not always the occurrence itself.  Observed material carries a
+    coordinate whose value is the exact occurrence, so the occurrence is
+    collected wherever it is recorded within the subject.  A string that is not
+    a captured occurrence is not an occurrence and is not collected.
+    """
+
+    return {
+        carried
+        for _path, carried in _string_paths(value)
+        if carried in known
+    } | ({value} if isinstance(value, str) and value in known else set())
+
+
+def _recorded_relations(
+    events: list[dict[str, Any]],
+    known: set[str],
+) -> list[dict[str, Any]]:
+    """Every relation coordinate recorded anywhere in this ledger population."""
+
+    population = []
+    for index, event in enumerate(events):
+        for relation in _relation_coordinates(event["material"]):
+            first = _subject_occurrences(relation["first_subject"], known)
+            second = _subject_occurrences(relation["second_subject"], known)
+            population.append(
+                {
+                    "recorded_by_index": index,
+                    "recorded_by_occurrence": event["identity"],
+                    "path": relation["path"],
+                    "relation": relation["relation"],
+                    "relation_content_present": relation[
+                        "relation_content_present"
+                    ],
+                    "first_subject_occurrences": first,
+                    "second_subject_occurrences": second,
+                    "first_subject_occurrence_count": len(first),
+                    "second_subject_occurrence_count": len(second),
+                }
+            )
+    return population
+
+
+def _relation_subject_positions(
+    population: list[dict[str, Any]],
+) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
+    first_index: dict[str, list[int]] = defaultdict(list)
+    second_index: dict[str, list[int]] = defaultdict(list)
+    for position, relation in enumerate(population):
+        for identity in relation["first_subject_occurrences"]:
+            first_index[identity].append(position)
+        for identity in relation["second_subject_occurrences"]:
+            second_index[identity].append(position)
+    return first_index, second_index
+
+
+def _recorded_relation_record(
+    relation: dict[str, Any],
+    subject_order: str,
+    destination_index: int,
+) -> dict[str, Any]:
+    rendered = relation["recorded_by_index"]
+    if rendered == destination_index:
+        position = "same_recorded_occurrence"
+    elif rendered < destination_index:
+        position = "earlier_recorded_occurrence"
+    else:
+        position = "later_recorded_occurrence"
+    return {
+        "subject_order": subject_order,
+        "relation": relation["relation"],
+        "relation_content_present": relation["relation_content_present"],
+        "recorded_by_occurrence": relation["recorded_by_occurrence"],
+        "recorded_position": position,
+        "relation_path": [str(part) for part in relation["path"]],
+    }
+
+
+RECORDED_RELATION_ORDER = (
+    "no_recorded_relation",
+    "second_and_first_subject",
+    "first_and_second_subject",
+)
+
+
+def _relation_for_occurrence_pair(values: Iterable[str]) -> str:
+    """The strongest relation recorded for any reference joining one pair.
+
+    Several reference paths can join the same two occurrences.  One recorded
+    relation whose subjects are that pair covers the pair, so the pair carries
+    no recorded relation only when every one of its references carries none.
+    """
+
+    return max(
+        values,
+        key=RECORDED_RELATION_ORDER.index,
+        default="no_recorded_relation",
+    )
+
+
+def _recorded_relation_for_pair(
+    source_identity: str,
+    destination_identity: str,
+    destination_index: int,
+    population: list[dict[str, Any]],
+    first_index: dict[str, list[int]],
+    second_index: dict[str, list[int]],
+) -> tuple[str, list[dict[str, Any]], bool]:
+    """Whether a recorded relation carries these two occurrences as subjects.
+
+    The question is only whether the two occurrences are the first and second
+    subjects of some recorded relation.  Being carried within a relation
+    coordinate is not the same, and a relation recorded in a third occurrence
+    carries the pair just as well as one recorded beside the reference.  Both
+    subject orders are searched separately because the grammar orders its
+    subjects.
+
+    Both occurrences carried inside one subject is reported separately and is
+    not a weaker carriage of the pair.  A subject that carries two occurrences
+    is one compound coordinate, so neither occurrence is established as the
+    other's counterpart.
+    """
+
+    records: list[dict[str, Any]] = []
+    forward = set(first_index.get(source_identity, ())) & set(
+        second_index.get(destination_identity, ())
+    )
+    reverse = set(first_index.get(destination_identity, ())) & set(
+        second_index.get(source_identity, ())
+    )
+    for position in sorted(forward):
+        records.append(
+            _recorded_relation_record(
+                population[position], "first_and_second", destination_index
+            )
+        )
+    for position in sorted(reverse):
+        records.append(
+            _recorded_relation_record(
+                population[position], "second_and_first", destination_index
+            )
+        )
+    within_one_subject = bool(
+        (
+            set(first_index.get(source_identity, ()))
+            & set(first_index.get(destination_identity, ()))
+        )
+        or (
+            set(second_index.get(source_identity, ()))
+            & set(second_index.get(destination_identity, ()))
+        )
+    )
+    if forward:
+        return "first_and_second_subject", records, within_one_subject
+    if reverse:
+        return "second_and_first_subject", records, within_one_subject
+    return "no_recorded_relation", records, within_one_subject
+
+
 def _event_shape(event: dict[str, Any]) -> dict[str, Any]:
     material = event["material"]
     relations = list(_relation_coordinates(material))
@@ -252,9 +418,7 @@ def _consequence_traces(
                 destination = edge["destination_index"]
                 branch = {
                     "reference_path": edge["reference_path"],
-                    "relation_bearing_reference": edge[
-                        "relation_bearing_reference"
-                    ],
+                    "recorded_relation": edge["recorded_relation"],
                     "destination_shape": event_shapes[destination],
                 }
                 if prior_depth_digest[destination] is not None:
@@ -346,6 +510,11 @@ def _analyze() -> dict[str, Any]:
                         "event_identity": event["identity"],
                     }
                 )
+        known_identities = {event["identity"] for event in events}
+        relation_population = _recorded_relations(
+            events, known_identities
+        )
+        first_index, second_index = _relation_subject_positions(relation_population)
         by_identity: dict[str, int] = {}
         edges_from: dict[int, list[dict[str, Any]]] = defaultdict(list)
         pending: list[dict[str, Any]] = []
@@ -355,9 +524,21 @@ def _analyze() -> dict[str, Any]:
                 source = by_identity.get(value)
                 if source is None:
                     continue
-                relation_bearing = any(
+                reference_within_relation = any(
                     _path_within(path, relation["path"])
                     for relation in relations
+                )
+                (
+                    recorded_relation,
+                    records,
+                    within_one_subject,
+                ) = _recorded_relation_for_pair(
+                    events[source]["identity"],
+                    event["identity"],
+                    destination,
+                    relation_population,
+                    first_index,
+                    second_index,
                 )
                 source_shape = event_shapes[source]
                 destination_shape = event_shapes[destination]
@@ -368,7 +549,7 @@ def _analyze() -> dict[str, Any]:
                     normalized_path,
                     str(source_shape["book_reference"]),
                     str(destination_shape["book_reference"]),
-                    relation_bearing,
+                    recorded_relation,
                 )
                 edge = {
                     "ledger": ledger,
@@ -378,7 +559,10 @@ def _analyze() -> dict[str, Any]:
                     "source_identity": events[source]["identity"],
                     "destination_identity": event["identity"],
                     "reference_path": list(normalized_path),
-                    "relation_bearing_reference": relation_bearing,
+                    "recorded_relation": recorded_relation,
+                    "recorded_relations": records,
+                    "reference_within_relation_coordinate": reference_within_relation,
+                    "both_occurrences_within_one_subject": within_one_subject,
                     "source_shape": source_shape,
                     "destination_shape": destination_shape,
                     "source_material_digest": events[source]["material_digest"],
@@ -405,15 +589,15 @@ def _analyze() -> dict[str, Any]:
             first = pair_edges[0]
             source_shape = first["source_shape"]
             destination_shape = first["destination_shape"]
-            bearing = any(
-                edge["relation_bearing_reference"] for edge in pair_edges
+            recorded_relation = _relation_for_occurrence_pair(
+                edge["recorded_relation"] for edge in pair_edges
             )
             transition_key = (
                 source_shape["kind"],
                 destination_shape["kind"],
                 str(source_shape["book_reference"]),
                 str(destination_shape["book_reference"]),
-                bearing,
+                recorded_relation,
             )
             transition_members[transition_key].append(
                 {
@@ -427,7 +611,7 @@ def _analyze() -> dict[str, Any]:
                             for edge in pair_edges
                         }
                     ),
-                    "relation_bearing_reference": bearing,
+                    "recorded_relation": recorded_relation,
                     "source_shape": source_shape,
                     "destination_shape": destination_shape,
                     "source_material_digest": first["source_material_digest"],
@@ -440,7 +624,14 @@ def _analyze() -> dict[str, Any]:
 
     families = []
     for key, members in family_members.items():
-        source_kind, destination_kind, path, source_book, destination_book, bearing = key
+        (
+            source_kind,
+            destination_kind,
+            path,
+            source_book,
+            destination_book,
+            recorded_relation,
+        ) = key
         consequence_vectors = {
             tuple(
                 (rung["immediate_reference_count"], rung["shape_digest"])
@@ -461,7 +652,7 @@ def _analyze() -> dict[str, Any]:
                 "destination_book_reference": (
                     None if destination_book == "None" else destination_book
                 ),
-                "relation_bearing_reference": bearing,
+                "recorded_relation": recorded_relation,
                 "occurrence_count": len(members),
                 "test_count": len({member["test"] for member in members}),
                 "ledger_count": len({member["ledger"] for member in members}),
@@ -487,7 +678,7 @@ def _analyze() -> dict[str, Any]:
         )
     families.sort(
         key=lambda item: (
-            item["relation_bearing_reference"],
+            RECORDED_RELATION_ORDER.index(item["recorded_relation"]),
             -item["test_count"],
             -item["occurrence_count"],
             item["source_kind"],
@@ -499,14 +690,20 @@ def _analyze() -> dict[str, Any]:
     repeated_bare = [
         family
         for family in families
-        if not family["relation_bearing_reference"]
+        if family["recorded_relation"] == "no_recorded_relation"
         and family["occurrence_count"] > 1
         and family["distinct_source_material_count"] > 1
     ]
 
     transition_families = []
     for key, members in transition_members.items():
-        source_kind, destination_kind, source_book, destination_book, bearing = key
+        (
+            source_kind,
+            destination_kind,
+            source_book,
+            destination_book,
+            recorded_relation,
+        ) = key
         transition_families.append(
             {
                 "source_kind": source_kind,
@@ -517,7 +714,7 @@ def _analyze() -> dict[str, Any]:
                 "destination_book_reference": (
                     None if destination_book == "None" else destination_book
                 ),
-                "relation_bearing_reference": bearing,
+                "recorded_relation": recorded_relation,
                 "occurrence_pair_count": len(members),
                 "test_count": len({member["test"] for member in members}),
                 "ledger_count": len({member["ledger"] for member in members}),
@@ -539,7 +736,7 @@ def _analyze() -> dict[str, Any]:
         )
     transition_families.sort(
         key=lambda item: (
-            item["relation_bearing_reference"],
+            RECORDED_RELATION_ORDER.index(item["recorded_relation"]),
             -item["test_count"],
             -item["occurrence_pair_count"],
             item["source_kind"],
@@ -549,7 +746,7 @@ def _analyze() -> dict[str, Any]:
     repeated_bare_transitions = [
         family
         for family in transition_families
-        if not family["relation_bearing_reference"]
+        if family["recorded_relation"] == "no_recorded_relation"
         and family["occurrence_pair_count"] > 1
         and family["distinct_source_material_count"] > 1
     ]
@@ -582,15 +779,31 @@ def _analyze() -> dict[str, Any]:
 
     missing_content_rows = vacancy_rows(missing_relation_content)
     unrendered_rows = vacancy_rows(unrendered_relation_occurrences)
+    recorded_relation_counts = Counter(
+        edge["recorded_relation"] for edge in all_edges
+    )
+    carried_within_only = sum(
+        edge["reference_within_relation_coordinate"]
+        and edge["recorded_relation"] == "no_recorded_relation"
+        for edge in all_edges
+    )
+    subjects_without_carriage = sum(
+        not edge["reference_within_relation_coordinate"]
+        and edge["recorded_relation"]
+        in ("first_and_second_subject", "second_and_first_subject")
+        for edge in all_edges
+    )
     return {
-        "observer": (
-            "exact append-order occurrence references; bare handoffs are "
-            "questions and establish no relation"
-        ),
+        "observer": OBSERVER_STATEMENT,
         "captured_test_count": len({event["test"] for event in _captured}),
         "ledger_count": len(by_ledger),
         "event_count": len(_captured),
         "reference_edge_count": len(all_edges),
+        "recorded_relation_counts": dict(sorted(recorded_relation_counts.items())),
+        "reference_carried_within_relation_coordinate_only_count": (
+            carried_within_only
+        ),
+        "relation_subjects_without_carriage_count": subjects_without_carriage,
         "reference_family_count": len(families),
         "reference_transition_family_count": len(transition_families),
         "repeated_bare_handoff_family_count": len(repeated_bare),
