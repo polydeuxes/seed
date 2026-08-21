@@ -23,8 +23,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     RESULT_KIND,
     _recorded_position_assertion_coordinate_population_for_locality_movement,
     _recorded_position_assertion_coordinates_for_locality_movement,
-    _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_standing,
-    _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    record_byte_pair_occurrence_position_measurement_act_evidence,
+    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     carried_position_measurement_result_reading,
     get_byte_pair_occurrence_position_measurement_act_evidence,
     get_byte_pair_occurrence_position_measurement_responsibility_assignment,
@@ -896,7 +896,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
         standing_replay_is_not_available,
     )
     assignment = (
-        _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
+        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
             source_material_acquisition_occurrence_identity=source.identity,
             locality_standing=carried_source,
@@ -909,7 +909,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
     carried_assignment["through_event_occurrence_identity"] = assignment.identity
     carried_assignment["event_count"] += 1
 
-    act = _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_standing(
+    act = record_byte_pair_occurrence_position_measurement_act_evidence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=carried_assignment,
@@ -922,7 +922,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
     stale_source = deepcopy(carried_source)
     stale_source["material_acquisition_result_occurrences"] = []
     with pytest.raises(ValueError, match="current Locality Standing"):
-        _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
+        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
             source_material_acquisition_occurrence_identity=source.identity,
             locality_standing=stale_source,

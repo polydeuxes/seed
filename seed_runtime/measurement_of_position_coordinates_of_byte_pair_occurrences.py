@@ -941,21 +941,6 @@ def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     )
 
 
-def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
-    ledger: EventLedger,
-    *,
-    source_material_acquisition_occurrence_identity: str,
-    locality_standing: dict[str, Any],
-) -> Event:
-    """Assign the exact source already carried at the current append boundary."""
-
-    return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
-        ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
-        locality_standing=locality_standing,
-    )
-
-
 def _read_assignment(
     ledger: EventLedger, assignment_event_identity: str
 ) -> tuple[Event, FindingOfPositionCoordinatesOfBytePairOccurrences]:
@@ -1174,23 +1159,6 @@ def record_byte_pair_occurrence_position_measurement_act_evidence(
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
-    return _record_byte_pair_occurrence_position_measurement_act_evidence(
-        ledger,
-        responsibility_assignment_event_identity=(
-            responsibility_assignment_event_identity
-        ),
-        responsibility_assignment_standing=responsibility_assignment_standing,
-    )
-
-
-def _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_standing(
-    ledger: EventLedger,
-    *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
-) -> Event:
-    """Record the Act beside its just-carried exact assignment occurrence."""
-
     return _record_byte_pair_occurrence_position_measurement_act_evidence(
         ledger,
         responsibility_assignment_event_identity=(

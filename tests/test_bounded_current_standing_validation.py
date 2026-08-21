@@ -183,67 +183,42 @@ def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch)
     assert calls == []
 
 
-def test_both_position_assignment_entrances_validate_the_same_way():
-    """No entrance is trusted differently from another.
-
-    The two entrances take the same exact source and the same current
-    Standing.  Seed observed no coordinate distinguishing them and no earlier
-    physiology separated them, so neither may be validated against a rebuilt
-    Locality while the other is validated against its consumed coordinates.
-    """
-
-    forged = deepcopy(_position_material()[2])
+def test_the_position_assignment_refuses_a_forged_standing_boundary():
+    ledger, source, standing = _position_material()
+    forged = deepcopy(standing)
     forged["through_event_occurrence_identity"] = "evt_absent"
 
-    refusals = []
-    for entrance in (
-        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment,
-        position_module._record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
-    ):
-        ledger, source, _standing = _position_material()
-        try:
-            entrance(
-                ledger,
-                source_material_acquisition_occurrence_identity=source.identity,
-                locality_standing=deepcopy(forged),
-            )
-        except Exception as error:
-            refusals.append(type(error).__name__)
-        else:
-            refusals.append("recorded")
-
-    assert refusals[0] == refusals[1] != "recorded"
-
-
-def test_no_entrance_authenticates_an_unread_branch_of_the_supplied_standing():
-    """Neither entrance rebuilds the Locality, so neither notices a sibling.
-
-    A rebuilding entrance would refuse here while a bounded one records, so
-    this witnesses that the two are validated alike without reading how either
-    reaches its validation.
-    """
-
-    recorded = []
-    for entrance in (
-        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment,
-        position_module._record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
-    ):
-        ledger, source, standing = _position_material()
-        unread = deepcopy(standing)
-        unread["representations"] = {"an unread sibling branch": None}
-        assignment = entrance(
+    with pytest.raises(ValueError):
+        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
             source_material_acquisition_occurrence_identity=source.identity,
-            locality_standing=unread,
+            locality_standing=forged,
         )
-        recorded.append(assignment.kind)
 
-    assert recorded[0] == recorded[1]
+
+def test_the_position_assignment_authenticates_no_unread_branch():
+    """One entrance, and it rebuilds no Locality to notice a sibling.
+
+    A rebuilding entrance refuses here.  This records, so the validation reads
+    only the coordinates the Responsibility consumes.
+    """
+
+    ledger, source, standing = _position_material()
+    unread = deepcopy(standing)
+    unread["representations"] = {"an unread sibling branch": None}
+
+    assignment = position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        source_material_acquisition_occurrence_identity=source.identity,
+        locality_standing=unread,
+    )
+
+    assert assignment.identity
 
 
 PYTEST_ADMISSION = (
-    test_both_position_assignment_entrances_validate_the_same_way,
-    test_no_entrance_authenticates_an_unread_branch_of_the_supplied_standing,
+    test_the_position_assignment_refuses_a_forged_standing_boundary,
+    test_the_position_assignment_authenticates_no_unread_branch,
     test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated,
     test_a_substituted_through_occurrence_is_refused,
     test_a_stale_standing_is_refused_at_the_append_tip,
