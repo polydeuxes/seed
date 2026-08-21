@@ -12,6 +12,16 @@ availability establish no Standing. Standing for one exact subject
 requires an exact Responsibility, Act occurrence, Yield, Authority, Scope,
 limits, and result for that subject.
 
+### 01.Standing.A.1 — The Responsibility branch carries its result
+
+For one exact Responsibility branch of current Standing, its exact result is
+one coordinate of Standing for the exact subject of that Responsibility.
+
+The result establishes no Standing.
+
+The result as one coordinate of that Responsibility branch establishes no
+Standing for the result as another subject, and no later Standing occurrence.
+
 ### 01.Standing.D — Multiplicity establishes no collective relation
 
 Multiplicity of subjects, Assertions, results, or Responsibility branches establishes no
