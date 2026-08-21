@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
@@ -250,6 +252,33 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
     ) == ("difference", "same-content", "difference")
 
 
+def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
+    ledger = EventLedger()
+    locality = "changed-ordered-path-source-prefix"
+    direct = _direct_position_result(ledger, locality=locality, exact=b"2+2=5\n")
+    source = ledger.list(
+        through=ledger.append_boundary_through_occurrence(direct.identity)
+    )[0]
+    original_material = deepcopy(source.material)
+    continuations = yield_ordered_path_source_position_continuations(
+        ledger,
+        direct_result_event_identity=direct.identity,
+        locality_standing=_standing(ledger, locality),
+    )
+
+    first = next(continuations)
+    source.material["unknown"] = ["changed after first continuation"]
+    with pytest.raises(
+        ValueError,
+        match="source changed during its bounded continuation",
+    ):
+        next(continuations)
+
+    assert first.source_position_coordinate["position"] == 0
+    source.material.clear()
+    source.material.update(original_material)
+
+
 def test_one_path_pair_yields_before_its_sibling_pairs():
     ledger = EventLedger()
     locality = "ordered-path-pair-independent-continuations"
@@ -278,5 +307,6 @@ PYTEST_ADMISSION = (
     test_path_pair_comparison_refuses_a_changed_path_coordinate,
     test_path_pair_comparisons_survive_sqlite_restart,
     test_each_exact_source_position_continues_without_a_chosen_subject,
+    test_a_changed_prefix_is_refused_before_another_continuation_is_exposed,
     test_one_path_pair_yields_before_its_sibling_pairs,
 )

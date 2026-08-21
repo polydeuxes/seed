@@ -56,12 +56,31 @@ class _PositionResultReadingContext(NamedTuple):
         "FindingOfPositionCoordinatesOfBytePairOccurrences",
         dict[str, Any],
     ]
+    result_snapshot: Event
     prefix_snapshot: tuple[Event, ...]
 
 
 _POSITION_RESULT_READING_CONTEXT: ContextVar[
     _PositionResultReadingContext | None
 ] = ContextVar("position_result_reading_context", default=None)
+
+
+def _require_carried_position_measurement_source_unchanged() -> None:
+    """Refuse a changed exact prefix before one continuation becomes visible."""
+
+    context = _POSITION_RESULT_READING_CONTEXT.get()
+    if context is None:
+        return
+    if any(
+        context.ledger.get(expected.identity) != expected
+        or context.ledger.integrity_of(expected.identity) == CORRUPTED
+        for expected in context.prefix_snapshot
+    ):
+        raise ValueError(
+            "byte-pair position-coordinate source changed during its bounded continuation"
+        )
+
+
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
 RESPONSIBILITY = (
     "Measurement of the position coordinates of each exact byte-pair occurrence "
@@ -1724,16 +1743,15 @@ def _read_result(
         and context.ledger is ledger
         and context.result_event_identity == result_event_identity
     ):
-        if any(
-            ledger.get(expected.identity) != expected
-            or ledger.integrity_of(expected.identity) == CORRUPTED
-            for expected in context.prefix_snapshot
+        if (
+            ledger.get(context.result_snapshot.identity) != context.result_snapshot
+            or ledger.integrity_of(context.result_snapshot.identity) == CORRUPTED
         ):
             raise ValueError(
                 "byte-pair position-coordinate source changed during its bounded continuation"
             )
         event, finding, assertions = context.reading
-        return event, finding, deepcopy(assertions)
+        return event, finding, assertions
     event = ledger.get(result_event_identity)
     if (
         event is None
@@ -1810,13 +1828,17 @@ def carried_position_measurement_result_reading(
             ledger,
             result_event_identity,
             reading,
+            deepcopy(reading[0]),
             snapshot,
         )
     )
     try:
         yield
     finally:
-        _POSITION_RESULT_READING_CONTEXT.reset(token)
+        try:
+            _require_carried_position_measurement_source_unchanged()
+        finally:
+            _POSITION_RESULT_READING_CONTEXT.reset(token)
 
 
 def get_recorded_byte_pair_occurrence_position_measurement(

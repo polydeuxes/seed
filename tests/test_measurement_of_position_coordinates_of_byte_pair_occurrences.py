@@ -25,6 +25,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _recorded_position_assertion_coordinates_for_locality_movement,
     _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_standing,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    carried_position_measurement_result_reading,
     get_byte_pair_occurrence_position_measurement_act_evidence,
     get_byte_pair_occurrence_position_measurement_responsibility_assignment,
     get_recorded_byte_pair_occurrence_position_measurement,
@@ -106,6 +107,31 @@ def _record(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
         responsible_act_evidence_event_identity=act.identity,
     )
     return source, assignment, act, result
+
+
+def test_carried_result_reading_refuses_a_source_changed_during_its_continuation():
+    ledger = EventLedger()
+    _source_event, _assignment, _act, result = _record(ledger)
+    original_material = deepcopy(result.material)
+
+    with pytest.raises(
+        ValueError,
+        match="source changed during its bounded continuation",
+    ):
+        with carried_position_measurement_result_reading(ledger, result.identity):
+            assert (
+                get_recorded_byte_pair_occurrence_position_measurement(
+                    ledger, result.identity
+                ).exact_material
+                == b"2+2=5\n"
+            )
+            result.material["unknown"] = ["changed during continuation"]
+            get_recorded_byte_pair_occurrence_position_measurement(
+                ledger, result.identity
+            )
+
+    result.material.clear()
+    result.material.update(original_material)
 
 
 def test_each_input_pair_has_first_and_second_exact_position_coordinates():
@@ -1110,6 +1136,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
 
 
 PYTEST_ADMISSION = (
+    test_carried_result_reading_refuses_a_source_changed_during_its_continuation,
     test_each_input_pair_has_first_and_second_exact_position_coordinates,
     test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b,
     test_later_assignment_does_not_change_an_earlier_subject_read,

@@ -17,6 +17,7 @@ from seed_runtime.evidence_of_yield_relation import (
 )
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    _require_carried_position_measurement_source_unchanged,
     carried_position_measurement_result_reading,
     source_position_coordinate_references_of_recorded_position_measurement,
 )
@@ -276,8 +277,10 @@ def yield_ordered_path_source_position_continuations(
     with carried_position_measurement_result_reading(
         ledger, direct_result_event_identity
     ):
-        yield from _yield_ordered_path_source_position_continuations(
+        for continuation in _yield_ordered_path_source_position_continuations(
             ledger,
             direct_result_event_identity=direct_result_event_identity,
             locality_standing=locality_standing,
-        )
+        ):
+            _require_carried_position_measurement_source_unchanged()
+            yield continuation
