@@ -282,19 +282,23 @@ def _current_standing(
     source_result: Event,
     locality_standing: dict[str, Any],
 ) -> dict[str, Any]:
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    """Validate the exact current-Standing coordinates this Responsibility reads.
 
-    current = read_operator_locality_standing(
-        ledger, locality_identity=source_result.locality_identity
-    )
-    if locality_standing != current:
+    This Responsibility consumes the exact source Measurement result, the
+    Locality it is carried in, the Standing boundary, and the through
+    occurrence.  Each of those is validated against the ledger itself, so a
+    forged or stale coordinate is refused without authenticating every sibling
+    branch of Standing that this Responsibility never reads.
+    """
+
+    if type(locality_standing) is not dict:
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination requires exact current Standing"
         )
-    boundary = current.get("through_event_occurrence_identity")
+    boundary = locality_standing.get("through_event_occurrence_identity")
     _standing_carries_source(
         ledger,
-        standing=current,
+        standing=locality_standing,
         source_result=source_result,
         required_boundary_identity=boundary,
     )
@@ -302,13 +306,14 @@ def _current_standing(
     if (
         boundary_event is None
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
+        or boundary_event.locality_identity != source_result.locality_identity
         or ledger.append_boundary_through_occurrence(boundary_event.identity)
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires Standing at the append tip"
+            "determination requires current Standing at the append tip"
         )
-    return current
+    return locality_standing
 
 
 def _require_intact_recorded_occurrence(
