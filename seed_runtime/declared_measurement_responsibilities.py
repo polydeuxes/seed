@@ -39,6 +39,13 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
+# The variable-extent proof remains explicitly invoked. Importing its exact
+# producer and consumer keeps the current runtime road reachable without
+# pretending they are automatic declarations in the registry below.
+from seed_runtime.variable_extent_recurrence import (
+    record_corresponding_coordinate_material_measurements,
+    record_variable_extent_steps,
+)
 
 
 @dataclass(frozen=True)

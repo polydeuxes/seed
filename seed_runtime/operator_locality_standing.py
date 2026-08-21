@@ -210,6 +210,19 @@ from seed_runtime.comparison_of_ordered_path_source_position_material import (
     COMPARE_RESULT_KIND as ORDERED_PATH_SOURCE_POSITION_COMPARE_RESULT_KIND,
     validate_ordered_path_source_position_material_comparison_event,
 )
+from seed_runtime.variable_extent_recurrence import (
+    COMPARE_APPLICABILITY_ACT_KIND as VARIABLE_EXTENT_COMPARE_APPLICABILITY_ACT_KIND,
+    COMPARE_APPLICABILITY_RESULT_KIND as VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND,
+    COMPARE_ACT_KIND as VARIABLE_EXTENT_COMPARE_ACT_KIND,
+    COMPARE_RESULT_KIND as VARIABLE_EXTENT_COMPARE_RESULT_KIND,
+    EXTENT_MEASUREMENT_ACT_KIND as VARIABLE_EXTENT_MEASUREMENT_ACT_KIND,
+    EXTENT_MEASUREMENT_RESULT_KIND as VARIABLE_EXTENT_MEASUREMENT_RESULT_KIND,
+    RECURRENCE_MEASUREMENT_ACT_KIND as VARIABLE_EXTENT_RECURRENCE_MEASUREMENT_ACT_KIND,
+    RECURRENCE_MEASUREMENT_RESULT_KIND as VARIABLE_EXTENT_RECURRENCE_MEASUREMENT_RESULT_KIND,
+    COORDINATE_MEASUREMENT_ACT_KIND as RECURRENT_EXTENT_COORDINATE_MEASUREMENT_ACT_KIND,
+    COORDINATE_MEASUREMENT_RESULT_KIND as RECURRENT_EXTENT_COORDINATE_MEASUREMENT_RESULT_KIND,
+    validate_variable_extent_event,
+)
 from seed_runtime.candidate_results_from_exact_result_assertions import (
     APPLICABILITY_ACT as CANDIDATE_APPLICABILITY_ACT,
     APPLICABILITY_RESPONSIBILITY as CANDIDATE_APPLICABILITY_RESPONSIBILITY,
@@ -532,6 +545,18 @@ _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS = {
     ORDERED_PATH_SOURCE_POSITION_COMPARE_ACT_KIND,
     ORDERED_PATH_SOURCE_POSITION_COMPARE_RESULT_KIND,
 }
+_VARIABLE_EXTENT_KINDS = {
+    VARIABLE_EXTENT_COMPARE_APPLICABILITY_ACT_KIND,
+    VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND,
+    VARIABLE_EXTENT_COMPARE_ACT_KIND,
+    VARIABLE_EXTENT_COMPARE_RESULT_KIND,
+    VARIABLE_EXTENT_MEASUREMENT_ACT_KIND,
+    VARIABLE_EXTENT_MEASUREMENT_RESULT_KIND,
+    VARIABLE_EXTENT_RECURRENCE_MEASUREMENT_ACT_KIND,
+    VARIABLE_EXTENT_RECURRENCE_MEASUREMENT_RESULT_KIND,
+    RECURRENT_EXTENT_COORDINATE_MEASUREMENT_ACT_KIND,
+    RECURRENT_EXTENT_COORDINATE_MEASUREMENT_RESULT_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -551,6 +576,7 @@ _SUPPORTED_KINDS = {
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
+    *_VARIABLE_EXTENT_KINDS,
     CANDIDATE_OCCURRENCE_STREAM,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -1154,6 +1180,7 @@ def advance_operator_locality_standing(
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
             or event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS
+            or event.kind in _VARIABLE_EXTENT_KINDS
             or event.kind == CANDIDATE_OCCURRENCE_STREAM
         ):
             continue
@@ -1861,6 +1888,31 @@ def advance_operator_locality_standing(
                 applicability_result_occurrences[event.identity] = None
             elif event.kind == ORDERED_PATH_SOURCE_POSITION_COMPARE_RESULT_KIND:
                 comparison_result_occurrences[event.identity] = None
+            continue
+        if event.kind in _VARIABLE_EXTENT_KINDS:
+            validate_variable_extent_event(ledger, event.identity)
+            if event.kind == VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND:
+                applicability_result_occurrences[event.identity] = None
+            elif event.kind == VARIABLE_EXTENT_COMPARE_RESULT_KIND:
+                comparison_result_occurrences[event.identity] = None
+            elif event.kind in {
+                VARIABLE_EXTENT_MEASUREMENT_RESULT_KIND,
+                VARIABLE_EXTENT_RECURRENCE_MEASUREMENT_RESULT_KIND,
+                RECURRENT_EXTENT_COORDINATE_MEASUREMENT_RESULT_KIND,
+            }:
+                measurement_occurrences[event.identity] = {
+                    "recorded_occurrence_identity": event.identity,
+                    "result_identity": event.material["result_identity"],
+                    "act_occurrence_identity": event.material[
+                        "act_occurrence_identity"
+                    ],
+                    "responsible_act_evidence_identity": event.material[
+                        "responsible_act_evidence_identity"
+                    ],
+                    "evidence_of_yield_relation_identity": event.material[
+                        "evidence_of_yield_relation_identity"
+                    ],
+                }
             continue
         if event.kind == CANDIDATE_OCCURRENCE_STREAM:
             candidate_coordinates = event.material
