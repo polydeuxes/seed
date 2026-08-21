@@ -713,31 +713,55 @@ def _responsibility_ownership_of_exact_result(
     the result already names carries that branch, its subject, and the Book
     clause, so the ownership is read from there and never composed here.
 
-    ``None`` is the exact absence of a recoverable ownership.  A result whose
-    responsible Act evidence records no exact reference is still admitted on
-    the unchanged membership rule; no owner is supplied for it.
+    ``None`` is the exact absence of an established ownership, and only that.
+    A result whose responsible Act evidence records no reference is still
+    admitted on the unchanged membership rule; no owner is supplied for it.
+
+    A reference that is recorded must be exact.  Ownership that is present but
+    malformed, incomplete, or in disagreement with the assignment it names is
+    refused rather than reduced to absence, so a substituted branch, subject,
+    clause, or boundary can never be read as a result that simply has no owner.
     """
 
     act_evidence_identity = event.material.get("responsible_act_evidence_identity")
     if type(act_evidence_identity) is not str or not act_evidence_identity:
         return None
     act_evidence = ledger.get(act_evidence_identity)
-    if act_evidence is None or ledger.integrity_of(act_evidence.identity) == CORRUPTED:
+    if act_evidence is None:
         return None
-    reference = act_evidence.material.get("responsibility_assignment_reference")
-    if type(reference) is not dict:
+    if "responsibility_assignment_reference" not in act_evidence.material:
         return None
-    if not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference):
-        return None
-    if any(type(value) is not str or not value for value in reference.values()):
-        return None
-    recorded = ledger.get(reference["recorded_occurrence_identity"])
+    if ledger.integrity_of(act_evidence.identity) == CORRUPTED:
+        raise ValueError(
+            "recorded Responsibility ownership requires intact Act evidence"
+        )
+    reference = act_evidence.material["responsibility_assignment_reference"]
     if (
-        recorded is None
-        or recorded.locality_identity != event.locality_identity
-        or ledger.integrity_of(recorded.identity) == CORRUPTED
+        type(reference) is not dict
+        or not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference)
+        or any(type(value) is not str or not value for value in reference.values())
     ):
-        return None
+        raise ValueError(
+            "recorded Responsibility ownership requires its exact coordinates"
+        )
+    assignment = ledger.get(reference["recorded_occurrence_identity"])
+    if (
+        assignment is None
+        or assignment.locality_identity != event.locality_identity
+        or ledger.integrity_of(assignment.identity) == CORRUPTED
+    ):
+        raise ValueError(
+            "recorded Responsibility ownership requires its exact assignment"
+        )
+    for coordinate, carried in reference.items():
+        if coordinate == "recorded_occurrence_identity":
+            continue
+        if coordinate not in assignment.material:
+            continue
+        if assignment.material[coordinate] != carried:
+            raise ValueError(
+                "recorded Responsibility ownership disagrees with its assignment"
+            )
     return deepcopy(reference)
 
 

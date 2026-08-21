@@ -18,6 +18,7 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_locality_standing import (
     _carry_operator_material_acquisition_occurrence_into_standing,
+    _responsibility_ownership_of_exact_result,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
@@ -265,6 +266,109 @@ def test_live_incremental_carry_and_complete_replay_agree():
     )
 
 
+def _ownership_of(ledger: EventLedger, result):
+    return _responsibility_ownership_of_exact_result(ledger, result)
+
+
+def _mutate_act_evidence(ledger: EventLedger, result, change):
+    stored = ledger.get(result.material["responsible_act_evidence_identity"])
+    material = deepcopy(stored.material)
+    change(material)
+    object.__setattr__(stored, "material", material)
+    return stored
+
+
+def test_ownership_present_but_incomplete_is_refused_not_read_as_absent():
+    """A recorded reference missing a coordinate is not a result without owner."""
+
+    ledger = EventLedger()
+    result = _acquired(ledger)
+    _mutate_act_evidence(
+        ledger,
+        result,
+        lambda material: material["responsibility_assignment_reference"].pop(
+            "assignment_subject_identity"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="exact coordinates"):
+        _ownership_of(ledger, result)
+
+
+def test_ownership_that_is_not_a_coordinate_mapping_is_refused():
+    ledger = EventLedger()
+    result = _acquired(ledger)
+    _mutate_act_evidence(
+        ledger,
+        result,
+        lambda material: material.__setitem__(
+            "responsibility_assignment_reference", "not a mapping"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="exact coordinates"):
+        _ownership_of(ledger, result)
+
+
+def test_ownership_naming_an_absent_assignment_is_refused():
+    ledger = EventLedger()
+    result = _acquired(ledger)
+    _mutate_act_evidence(
+        ledger,
+        result,
+        lambda material: material["responsibility_assignment_reference"].__setitem__(
+            "recorded_occurrence_identity", "evt_absent"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="exact assignment"):
+        _ownership_of(ledger, result)
+
+
+@pytest.mark.parametrize(
+    "coordinate",
+    [
+        "assignment_identity",
+        "assignment_subject_identity",
+        "book_clause_identity",
+        "result_boundary_identity",
+    ],
+)
+def test_ownership_disagreeing_with_its_assignment_is_refused(coordinate):
+    """A syntactically whole reference cannot substitute a branch or subject.
+
+    The named assignment owns these coordinates, so a carried value that does
+    not agree with the recorded assignment is refused rather than preserved.
+    """
+
+    ledger = EventLedger()
+    result = _acquired(ledger)
+    _mutate_act_evidence(
+        ledger,
+        result,
+        lambda material: material["responsibility_assignment_reference"].__setitem__(
+            coordinate, "substituted-but-well-formed"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="disagrees with its assignment"):
+        _ownership_of(ledger, result)
+
+
+def test_a_result_with_no_recorded_reference_is_still_no_owner_not_a_refusal():
+    """Absence stays absence; only a recorded reference must be exact."""
+
+    ledger = EventLedger()
+    result = _acquired(ledger)
+    _mutate_act_evidence(
+        ledger,
+        result,
+        lambda material: material.pop("responsibility_assignment_reference"),
+    )
+
+    assert _ownership_of(ledger, result) is None
+
+
 def test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject():
     ledger = EventLedger()
     result = _acquired(ledger)
@@ -288,5 +392,10 @@ PYTEST_ADMISSION = (
     test_a_substituted_ownership_coordinate_is_refused,
     test_a_result_whose_evidence_records_no_reference_keeps_no_owner,
     test_live_incremental_carry_and_complete_replay_agree,
+    test_ownership_present_but_incomplete_is_refused_not_read_as_absent,
+    test_ownership_that_is_not_a_coordinate_mapping_is_refused,
+    test_ownership_naming_an_absent_assignment_is_refused,
+    test_ownership_disagreeing_with_its_assignment_is_refused,
+    test_a_result_with_no_recorded_reference_is_still_no_owner_not_a_refusal,
     test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject,
 )
