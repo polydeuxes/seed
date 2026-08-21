@@ -2139,6 +2139,33 @@ def _recorded_position_assertion_coordinates_for_locality_movement(
     )
 
 
+def _recorded_position_assertion_coordinate_population_for_locality_movement(
+    ledger: EventLedger,
+    *,
+    result_event_identity: str,
+) -> Iterator[dict[str, Any]]:
+    """Yield every position Assertion after one exact bounded result read.
+
+    The population is reconstructed from the validated finding. Reading it
+    records no movement and grants no later relation or Standing.
+    """
+
+    _event, finding, _assertion_population_read = _read_result(
+        ledger, result_event_identity
+    )
+    return (
+        _assertion(
+            finding,
+            exact_pair=finding.exact_material[
+                first_position : first_position + 2
+            ],
+            first_position=first_position,
+            second_position=first_position + 1,
+        )
+        for first_position in range(len(finding.exact_material) - 1)
+    )
+
+
 def move_recorded_position_assertion_to_locality(
     ledger: EventLedger,
     *,

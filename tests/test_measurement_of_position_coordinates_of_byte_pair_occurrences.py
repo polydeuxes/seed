@@ -21,6 +21,8 @@ from tests.operator_material_acquisition_test_witness import (
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     RESULT_KIND,
+    _recorded_position_assertion_coordinate_population_for_locality_movement,
+    _recorded_position_assertion_coordinates_for_locality_movement,
     _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_standing,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
     get_byte_pair_occurrence_position_measurement_act_evidence,
@@ -487,6 +489,91 @@ def test_references_preserve_every_exact_pair_occurrence():
         and reference.recorded_occurrence_identity == result.identity
         for reference in references
     )
+
+
+def test_one_bounded_position_assertion_population_equals_each_addressed_read():
+    ledger = EventLedger()
+    _source_event, _assignment, _act, result = _record(ledger, b"abcdef")
+    references = (
+        references_to_recorded_position_coordinates_of_byte_pair_occurrences(
+            ledger, result.identity
+        )
+    )
+
+    population = tuple(
+        _recorded_position_assertion_coordinate_population_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+        )
+    )
+
+    assert population == tuple(
+        _recorded_position_assertion_coordinates_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+            assertion_identity=reference.assertion_identity,
+        )
+        for reference in references
+    )
+    assert tuple(
+        assertion["dimensions"]["identity"] for assertion in population
+    ) == tuple(reference.assertion_identity for reference in references)
+
+
+def test_bounded_position_assertion_population_reads_once_and_hashes_each_position_once(
+    monkeypatch,
+):
+    ledger = EventLedger()
+    _source_event, _assignment, _act, result = _record(ledger, b"abcdef")
+    result_reads = 0
+    identity_reads = []
+    original_result_read = direct_position_module._read_result
+    original_assertion_identity = direct_position_module._assertion_identity
+
+    def counted_result_read(*args, **kwargs):
+        nonlocal result_reads
+        result_reads += 1
+        return original_result_read(*args, **kwargs)
+
+    def counted_assertion_identity(*args, **kwargs):
+        identity_reads.append(kwargs["first_position"])
+        return original_assertion_identity(*args, **kwargs)
+
+    monkeypatch.setattr(direct_position_module, "_read_result", counted_result_read)
+    monkeypatch.setattr(
+        direct_position_module, "_assertion_identity", counted_assertion_identity
+    )
+
+    population = tuple(
+        _recorded_position_assertion_coordinate_population_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+        )
+    )
+
+    assert len(population) == 5
+    assert result_reads == 1
+    assert identity_reads == [0, 1, 2, 3, 4]
+
+
+def test_bounded_position_assertion_population_refuses_changed_result():
+    ledger = EventLedger()
+    _source_event, _assignment, _act, result = _record(ledger, b"abcdef")
+    unchanged = tuple(
+        _recorded_position_assertion_coordinate_population_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+        )
+    )
+    result.material["unknown"] = ["changed before the bounded population read"]
+
+    with pytest.raises(ValueError, match="coordinates are not exact"):
+        _recorded_position_assertion_coordinate_population_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+        )
+
+    assert len(unchanged) == 5
 
 
 def test_addressed_references_stop_after_the_last_requested_assertion(monkeypatch):

@@ -12,8 +12,7 @@ from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    _recorded_position_assertion_coordinates_for_locality_movement,
-    references_to_recorded_position_coordinates_of_byte_pair_occurrences,
+    _recorded_position_assertion_coordinate_population_for_locality_movement,
 )
 
 
@@ -223,22 +222,22 @@ def _references_carried_by_result(
         raise ValueError("Candidate production requires exact result Assertions")
 
     if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
-        for position, reference in enumerate(
-            references_to_recorded_position_coordinates_of_byte_pair_occurrences(
-                ledger, event.identity
-            )
-        ):
-            assertion = _recorded_position_assertion_coordinates_for_locality_movement(
+        for position, assertion in enumerate(
+            _recorded_position_assertion_coordinate_population_for_locality_movement(
                 ledger,
                 result_event_identity=event.identity,
-                assertion_identity=reference.assertion_identity,
+            )
+        ):
+            assertion_address = _assertion_address(
+                assertion,
+                "Candidate production requires one exact position Assertion",
             )
             references.append(
                 _source_assertion_reference(
                     event,
                     replay_coordinate=replay_coordinate,
                     assertion_coordinate=f"position_assertions/{position}",
-                    assertion_address=reference.assertion_identity,
+                    assertion_address=assertion_address,
                     source_assertion_coordinates=_source_coordinates(event, assertion),
                     source_replay_through_event_occurrence_address=(
                         source_replay_through_event_occurrence_address
