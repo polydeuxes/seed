@@ -627,7 +627,13 @@ def _require_current_standing(
     source_material_acquisition_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
-    """Validate a carried replay at the current event in its Locality."""
+    """Validate the exact current Standing coordinates this Responsibility reads.
+
+    The source Measurement result, the Locality, the Standing boundary, and the
+    through occurrence are each validated against the ledger.  No branch of the
+    supplied Standing that this Responsibility never reads is authenticated,
+    and no entrance is validated differently from another.
+    """
 
     if type(locality_standing) is not dict:
         raise ValueError(
@@ -636,7 +642,7 @@ def _require_current_standing(
     boundary = locality_standing.get("through_event_occurrence_identity")
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
-    carried_acquisition_results = {
+    standing_acquisition_results = {
         occurrence.get("result_occurrence_identity")
         for occurrence in acquisition_results or ()
         if type(occurrence) is dict
@@ -655,7 +661,7 @@ def _require_current_standing(
             source_material_acquisition_occurrence_identity is not None
             and (
                 source_material_acquisition_occurrence_identity
-                not in carried_acquisition_results
+                not in standing_acquisition_results
                 or not source_has_exact_locality
             )
         )
@@ -846,7 +852,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one finding produced beside the exact carried replay boundary."""
+    """Assign one finding already produced at the current Standing boundary."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
         ledger,
