@@ -225,11 +225,12 @@
       "result": "Standing_for_exact_subject"
     },
     "01.Standing.A.1": {
-      "subject": "exact_result_of_Responsibility_branch",
+      "subject": "exact_subject_of_Responsibility_branch",
       "Responsibility": "establish_Standing_for_exact_subject",
       "exact_Act": "establish_Standing",
+      "carried_coordinates": ["exact_result"],
       "establishes_no": ["Standing_for_result_as_another_subject", "later_Standing_occurrence"],
-      "result": "result_as_one_coordinate_of_Standing_for_exact_subject"
+      "result": "Standing_for_exact_subject"
     },
     "01.Standing.D": {
       "subject": "multiplicity",
