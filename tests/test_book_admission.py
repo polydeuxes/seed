@@ -47,7 +47,7 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     )
     declared_references = {
         (reference["subject"], reference["coordinate"])
-        for reference in grammar["declared_subjects"]
+        for reference in grammar["machine_addresses"]
     }
     subjects = (
         (BOOK, "this_Book", "book_material", book_admission()),

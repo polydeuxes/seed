@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -45,11 +46,23 @@ def book_admission() -> set[str]:
     }
 
 
+MACHINE_ONLY = ("machine_addresses",)
+
+
 def witness_grammar_words() -> set[str]:
+    """Return the words the Grammar uses to project this Book.
+
+    `machine_addresses` maps a name used inside this file to the coordinate it
+    addresses. It is metalanguage: it states no Responsibility, Act, relation or
+    coordinate, and holding it to the Book's admitted words would make Fidelity
+    read an address table as a coordinate population.
+    """
+
+    grammar = json.loads((BOOK / "witness_grammar.json").read_text(encoding="utf-8"))
+    for key in MACHINE_ONLY:
+        grammar.pop(key, None)
     return {
         word
-        for line in (BOOK / "witness_grammar.json")
-        .read_text(encoding="utf-8")
-        .split("\n")
+        for line in json.dumps(grammar, indent=2).split("\n")
         for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
     }

@@ -60,29 +60,30 @@ def test_witness_grammar_has_no_retired_scaffolding():
 
 
 def test_current_standing_precedes_responsibility_without_assignment():
+    """Standing carries its first coordinates and its later physiology.
+
+    What Standing requires is stated once, by 01.Standing.A. The top-level
+    block carried a second list that named Standing among Standing's own
+    requirements and omitted Yield, Authority, Scope and limits.
+    """
+
     assert _grammar()["standing"] == {
-        "current": {
-            "subject": "this_Seed",
-            "coordinates": [],
-        },
-        "requires": [
-            "Standing",
-            "Responsibility",
-            "exact_Act",
-            "Act_occurrence",
-            "result",
-        ],
+        "current": {"subject": "this_Seed", "coordinates": []},
         "later_Standing": {
+            "subject": "prior_result",
             "requires": [
                 "Responsibility",
                 "exact_Act",
+                "Authority",
+                "Scope",
+                "Locality",
+                "limits",
                 "Act_occurrence",
-                "Yield_relation",
+                "Yield",
                 "result",
-            ]
+            ],
         },
     }
-
 
 def test_empty_standing_is_only_the_first_current_standing():
     active_book = _active_book()
@@ -313,33 +314,48 @@ def test_yield_has_no_interposed_node():
     assert yield_relation["relation"] == "yield"
 
 
-def test_witness_grammar_relation_population_is_empty():
-    assert _grammar()["witness_grammar"] == {
-        "subject": "this_Grammar",
-        "relations": [],
-    }
+def test_the_grammar_declares_no_block_for_itself():
+    """An empty relation list distinguishes nothing from an absent one."""
 
+    assert "witness_grammar" not in _grammar()
+    assert any(
+        address["subject"] == "this_Grammar"
+        for address in _grammar()["machine_addresses"]
+    )
 
-def test_each_book_coordinate_has_exact_responsibility_and_act():
-    coordinates_by_reference = {
-        reference: coordinates
-        for reference, coordinates in _grammar()["book_coordinates"].items()
-        # 01.Standing.E.1 states Applicability, Admission and Participation and
-        # names no single Act. 01.Standing.D requires each exact relation to
-        # carry its subjects and occurrence and likewise names no Act. Requiring
-        # one here is what supplies a name the Book never gave.
-        # These clauses state a requirement and name no Act. Demanding one
-        # here is what supplies a name the Book never gave.
-        if reference not in ("01.Standing.E.1", "01.Standing.D", "01.Standing.A")
+def test_only_clauses_naming_an_Act_project_one():
+    """A clause that names no Act must not be given one.
+
+    Demanding a Responsibility and an exact_Act of every coordinate is what
+    supplied eighteen Act names the Book never gave. The population is pinned
+    positively instead, so a coordinate gaining or losing an Act has to be
+    argued against its clause.
+    """
+
+    coordinates = _grammar()["book_coordinates"]
+    naming_no_Act = {
+        reference
+        for reference, body in coordinates.items()
+        if "exact_Act" not in body
     }
-    incomplete = {
-        reference: sorted(
-            {"subject", "Responsibility", "exact_Act"} - set(coordinates)
-        )
-        for reference, coordinates in coordinates_by_reference.items()
-        if {"subject", "Responsibility", "exact_Act"} - set(coordinates)
+    assert naming_no_Act == {
+        "01.Standing.A",
+        "01.Standing.A.1",
+        "01.Standing.D",
+        "01.Standing.D.1",
+        "01.Standing.D.2",
+        "01.Standing.E",
+        "01.Standing.E.1",
     }
-    assert incomplete == {}
+    naming_no_Responsibility = {
+        reference
+        for reference, body in coordinates.items()
+        if "Responsibility" not in body
+    }
+    assert naming_no_Responsibility == naming_no_Act | {"01.Source.C"}
+
+    for reference, body in coordinates.items():
+        assert "subject" in body or "subjects" in body, reference
 
 
 def test_declared_relation_references_resolve():
@@ -360,7 +376,7 @@ def test_declared_relation_references_resolve():
 
 
 def test_source_references_are_exact_and_distinct():
-    references = _grammar()["declared_subjects"]
+    references = _grammar()["machine_addresses"]
     assert len(references) == len(
         {(reference["subject"], reference["coordinate"]) for reference in references}
     )
@@ -377,11 +393,25 @@ def test_source_references_are_exact_and_distinct():
 
 def test_fidelity_preserves_the_book_material_witness_subject():
     assert _grammar()["book_coordinates"]["01.Source.C"] == {
-        "subject": "Fidelity",
-        "Responsibility": "compare_this_Seed_occurrence_with_this_Grammar",
         "exact_Act": "Compare",
+        "subjects": [
+            "this_Seed_exact_occurrence",
+            "this_Grammar",
+            "this_book_material_acquisition_witness",
+        ],
+        "carried_coordinates": [
+            "exact_declared_distinction",
+            "source",
+            "provenance",
+            "Authority",
+            "Scope",
+            "Locality",
+            "limits",
+            "conflicts",
+            "loss",
+            "Unknown",
+        ],
     }
-
 
 def test_machine_grammar_contains_no_host_boolean():
     def contains_boolean(value: object) -> bool:
@@ -408,8 +438,8 @@ PYTEST_ADMISSION = (
     test_responsibility_coordinates_are_anatomy_not_assignment,
     test_exact_relations_are_direct,
     test_yield_has_no_interposed_node,
-    test_witness_grammar_relation_population_is_empty,
-    test_each_book_coordinate_has_exact_responsibility_and_act,
+    test_the_grammar_declares_no_block_for_itself,
+    test_only_clauses_naming_an_Act_project_one,
     test_declared_relation_references_resolve,
     test_source_references_are_exact_and_distinct,
     test_fidelity_preserves_the_book_material_witness_subject,

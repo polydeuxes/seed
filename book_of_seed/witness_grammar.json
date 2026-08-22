@@ -1,29 +1,23 @@
 {
-  "witness_grammar": {
-    "subject": "this_Grammar",
-    "relations": []
-  },
   "standing": {
     "current": {
       "subject": "this_Seed",
       "coordinates": []
     },
     "later_Standing": {
+      "subject": "prior_result",
       "requires": [
         "Responsibility",
         "exact_Act",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
         "Act_occurrence",
-        "Yield_relation",
+        "Yield",
         "result"
       ]
-    },
-    "requires": [
-      "Standing",
-      "Responsibility",
-      "exact_Act",
-      "Act_occurrence",
-      "result"
-    ]
+    }
   },
   "responsibility": {
     "subject": "Responsibility",
@@ -128,9 +122,24 @@
       ]
     },
     "01.Source.C": {
-      "subject": "Fidelity",
-      "Responsibility": "compare_this_Seed_occurrence_with_this_Grammar",
-      "exact_Act": "Compare"
+      "exact_Act": "Compare",
+      "subjects": [
+        "this_Seed_exact_occurrence",
+        "this_Grammar",
+        "this_book_material_acquisition_witness"
+      ],
+      "carried_coordinates": [
+        "exact_declared_distinction",
+        "source",
+        "provenance",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "conflicts",
+        "loss",
+        "Unknown"
+      ]
     },
     "01.Source.D": {
       "subject": "declared_Measurement",
@@ -210,12 +219,9 @@
     },
     "01.Standing.A.1": {
       "subject": "exact_subject_of_Responsibility_branch",
-      "Responsibility": "establish_Standing_for_exact_subject",
-      "exact_Act": "establish_Standing",
       "carried_coordinates": [
         "exact_result"
-      ],
-      "result": "Standing_for_exact_subject"
+      ]
     },
     "01.Standing.D": {
       "subject": "exact_relation",
@@ -226,21 +232,38 @@
     },
     "01.Standing.D.1": {
       "subject": "Assertion",
-      "Responsibility": "preserve_exact_Assertion_coordinates",
-      "exact_Act": "preserve_exact_Assertion_coordinates",
-      "result": "Assertion_with_exact_coordinates"
+      "carried_coordinates": [
+        "source",
+        "provenance",
+        "Authority",
+        "Scope",
+        "Locality",
+        "conflicts",
+        "limits",
+        "Unknown",
+        "Standing"
+      ]
     },
     "01.Standing.D.2": {
       "subject": "later_Assertion",
-      "Responsibility": "Applicability_for_exact_Act",
-      "exact_Act": "Applicability",
-      "result": "Applicability_result"
+      "Applicability_subject_for": "one_exact_Act"
     },
     "01.Standing.E": {
       "subject": "relation_Assertion",
-      "Responsibility": "establish_Standing_for_exact_relation",
-      "exact_Act": "establish_relation_Standing",
-      "result": "relation_Standing"
+      "carried_coordinates": [
+        "first_subject",
+        "exact_relation_content",
+        "second_subject"
+      ],
+      "requires": [
+        "exact_relation_occurrence",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "conflicts",
+        "Unknown"
+      ]
     },
     "01.Standing.E.1": {
       "subject": "subject_to_Act_position",
@@ -262,7 +285,7 @@
     },
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
-      "Responsibility": "exact_Act",
+      "Responsibility": "exact_Responsibility",
       "exact_Act": "exact_Act",
       "relations": [
         "participation",
@@ -273,8 +296,21 @@
     },
     "03.Movement.A": {
       "subject": "exact_movement",
-      "Responsibility": "exact_movement",
+      "Responsibility": "movement",
       "exact_Act": "movement",
+      "carried_coordinates": [
+        "exact_subject",
+        "source_coordinates",
+        "destination_coordinates",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "Unknown"
+      ],
+      "relations": [
+        "yield"
+      ],
       "result": "exact_movement_result"
     },
     "04.Compare": {
@@ -416,7 +452,7 @@
       "result": "exact_input_support"
     }
   },
-  "declared_subjects": [
+  "machine_addresses": [
     {
       "subject": "this_Witness",
       "coordinate": "witness"
