@@ -10,6 +10,15 @@ records which predicates stop holding.  A Book coordinate whose change no
 predicate notices is not established by this gate, whatever either side calls
 it.
 
+Every reading here is taken from an in-memory ledger, which reports every
+occurrence's integrity as unverifiable and hands the reader the stored
+occurrence itself.  So a predicate asking whether an occurrence is not
+corrupted holds throughout, and a change reached by holding an occurrence is
+not a change a durable ledger permits: it refuses to revise a recorded
+occurrence at all.  These readings say what the predicates read from the
+material given to them, never that a state constructed here is reachable.
+See scripts/observe_ledger_verification_boundary.py.
+
 Usage:
     .venv/bin/python scripts/observe_yield_requirement_reach.py
 """
