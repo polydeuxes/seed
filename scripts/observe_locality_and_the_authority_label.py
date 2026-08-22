@@ -5,9 +5,10 @@ answer to the occurrence that carries it.  The question here is not what that
 coordinate is called.  It is whether anything it holds separates two
 occurrences that a Locality does not already separate.
 
-Lawful occurrences are recorded across distinct Localities with the production
-shape otherwise held constant, and each coordinate is read for whether it moved
-with them.
+Lawful occurrences are recorded across distinct Localities through the same
+production shape, and each coordinate is read for whether it moved with them.
+They are distinct occurrences, so identities and recording moments differ of
+necessity; Locality is what was varied deliberately.
 
 This disposes nothing about what either coordinate is.  A coordinate that does
 not move may still be preserving a distinction that these recordings do not
@@ -74,8 +75,11 @@ def main() -> int:
         )
 
     print(
-        f"  {len(LOCALITIES)} occurrences of one exact Act, one exact material,\n"
-        f"  differing only in the Locality they were recorded in.\n"
+        f"  {len(LOCALITIES)} occurrences of one exact Act over one exact\n"
+        f"  material, produced through the same shape, with the Locality\n"
+        f"  deliberately varied.  Each is its own occurrence, so identities and\n"
+        f"  recording moments differ too; the Locality is what was varied on\n"
+        f"  purpose.\n"
     )
 
     # keyed by kind and path so one occurrence carrying two of a coordinate is
