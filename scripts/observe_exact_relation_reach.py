@@ -6,8 +6,8 @@ asked is its reach over the material each occurrence carries.
 
 This enumerates leaves of ``event.material`` only.  The predicates also read
 each occurrence's envelope -- its existence, kind, Locality, exact material and
-integrity -- and those are perturbed separately at the end rather than counted
-in the material surface.  A count from this file is a count of carried-material
+integrity -- and each of those is perturbed separately at the end rather than
+counted in the material surface.  A count from this file is a count of carried-material
 coordinates, never of everything a predicate can observe.
 
 Each leaf coordinate carried by the recorded result, the Yield evidence and the
@@ -129,7 +129,45 @@ ENVELOPE = [
     )
     for holder in ("result", "evidence", "act_evidence")
     for coordinate in ("locality_identity", "kind", "exact_material", "identity")
+] + [
+    (
+        f"{holder}.integrity",
+        holder,
+        lambda ledger, event: _report_corrupted(ledger, event),
+    )
+    for holder in ("result", "evidence", "act_evidence")
+] + [
+    (
+        f"{holder}.existence",
+        holder,
+        lambda ledger, event: _withdraw(ledger, event),
+    )
+    for holder in ("result", "evidence", "act_evidence")
 ]
+
+
+def _report_corrupted(ledger, event) -> None:
+    """Have the ledger report this one occurrence as corrupted."""
+
+    from seed_runtime.events import CORRUPTED
+
+    original = ledger.integrity_of
+
+    def integrity_of(identity, _original=original, _identity=event.identity):
+        return CORRUPTED if identity == _identity else _original(identity)
+
+    object.__setattr__(ledger, "integrity_of", integrity_of)
+
+
+def _withdraw(ledger, event) -> None:
+    """Make this one occurrence absent to any reader that resolves it."""
+
+    original = ledger.get
+
+    def get(identity, _original=original, _identity=event.identity):
+        return None if identity == _identity else _original(identity)
+
+    object.__setattr__(ledger, "get", get)
 
 
 def main() -> int:
