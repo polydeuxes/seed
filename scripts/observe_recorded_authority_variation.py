@@ -1,12 +1,13 @@
-"""Observe how much an Authority coordinate varies across recorded occurrences.
+"""Observe whether an Authority coordinate changes between occurrences.
 
 A gate that never compares a coordinate may be failing to check it, or the
-coordinate may carry nothing to check.  Those are different, and which one
-holds is measurable: record lawful occurrences, collect every Authority
-coordinate they carry, and count the distinct values.
+coordinate may hold nothing that separates one occurrence from another.  Which
+holds is measurable, but only if one question is not mistaken for another.
 
-A coordinate taking one value across every occurrence that records it
-distinguishes no occurrence from another, whatever the reader does with it.
+Several Authority-shaped coordinates sit at different paths inside a single
+occurrence.  Collecting them by occurrence kind alone makes one occurrence
+carrying two of them look like two occurrences disagreeing.  So each exact path
+is kept apart, and variation is read across occurrences at the same path.
 
 Usage:
     .venv/bin/python scripts/observe_recorded_authority_variation.py
@@ -15,8 +16,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import defaultdict
 from hashlib import sha256
+import inspect
 import json
 from pathlib import Path
 import sys
@@ -25,6 +27,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
+import seed_runtime.operator_material_acquisition as acquisition
 
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
@@ -33,7 +36,7 @@ from seed_runtime.witness_material_acquisition import (
     record_witness_material_acquisition,
 )
 
-COORDINATES = ("authority", "scope", "responsibility", "responsible_boundary")
+COORDINATES = ("authority", "scope")
 
 
 def _digest(value: object) -> str:
@@ -42,21 +45,19 @@ def _digest(value: object) -> str:
     ).hexdigest()[:12]
 
 
-def _carried(value: Any, coordinate: str, found: list):
+def _paths(value: Any, coordinate: str, path: tuple[str, ...] = ()):
     if isinstance(value, dict):
         for key, nested in value.items():
             if key == coordinate:
-                found.append(nested)
+                yield path + (key,), nested
             else:
-                _carried(nested, coordinate, found)
+                yield from _paths(nested, coordinate, path + (str(key),))
     elif isinstance(value, list):
-        for nested in value:
-            _carried(nested, coordinate, found)
+        for position, nested in enumerate(value):
+            yield from _paths(nested, coordinate, path + (str(position),))
 
 
-def main() -> int:
-    argparse.ArgumentParser(description=__doc__).parse_args()
-
+def _recorded() -> EventLedger:
     ledger = EventLedger()
     for index, material in enumerate((b"2+2=5\n", b"ab", b"\x00\xff", b"a longer one")):
         record_operator_material_occurrence(
@@ -72,39 +73,58 @@ def main() -> int:
             exact_bytes=material,
             source_boundary="exact supplied material boundary",
         )
+    return ledger
 
+
+def main() -> int:
+    argparse.ArgumentParser(description=__doc__).parse_args()
+
+    ledger = _recorded()
     occurrences = ledger.list()
-    print(f"  lawful occurrences recorded: {len(occurrences)}")
-    print(f"  distinct occurrence kinds:   {len({e.kind for e in occurrences})}\n")
+    print(f"  lawful occurrences: {len(occurrences)}, "
+          f"kinds: {len({e.kind for e in occurrences})}\n")
 
     for coordinate in COORDINATES:
-        values: list[Any] = []
-        by_kind: dict[str, set] = defaultdict(set)
+        # keyed by the exact occurrence kind and the exact path, so one
+        # occurrence carrying two of them is never read as two disagreeing.
+        seen: dict[tuple[str, tuple[str, ...]], dict[str, str]] = defaultdict(dict)
         for event in occurrences:
-            found: list = []
-            _carried(event.material, coordinate, found)
-            for value in found:
-                values.append(value)
-                by_kind[event.kind].add(_digest(value))
-        distinct = Counter(_digest(value) for value in values)
-        carriers = len([k for k, v in by_kind.items() if v])
-        varies_within_kind = [k for k, v in by_kind.items() if len(v) > 1]
+            for path, value in _paths(event.material, coordinate):
+                seen[(event.kind, path)][event.identity] = _digest(value)
+
+        changing = 0
+        print(f"  {coordinate} by exact kind and path:\n")
+        for (kind, path), by_occurrence in sorted(seen.items(), key=lambda i: str(i[0])):
+            distinct = len(set(by_occurrence.values()))
+            changes = distinct > 1
+            changing += changes
+            mark = "CHANGES" if changes else "same   "
+            print(
+                f"    {mark} {len(by_occurrence):2} occurrences, "
+                f"{distinct} distinct   {kind}  .{'.'.join(path)}"
+            )
         print(
-            f"    {coordinate:22} recorded {len(values):3} times across "
-            f"{carriers:2} occurrence kinds, {len(distinct):2} distinct values, "
-            f"varying within {len(varies_within_kind)} kind(s)"
+            f"\n    {changing} of {len(seen)} kind/path pairs change between "
+            f"occurrences of that kind\n"
         )
 
+    print("  the Authority producer this Yield reads, and what can change it:\n")
+    producer = acquisition._authority
+    signature = inspect.signature(producer)
+    print(f"    {producer.__module__.split('.')[-1]}._authority{signature}")
+    print(f"    parameters: {list(signature.parameters) or 'none'}")
+    print(f"    two separate calls agree: {producer() == producer()}")
     print(
-        "\n  A coordinate that never varies within an occurrence kind is settled\n"
-        "  by that kind.  It separates one kind from another and no occurrence\n"
-        "  from another occurrence of its kind, so a reader that already resolved\n"
-        "  the kind learns nothing further by comparing it."
+        "\n    With no parameter there is no input that changes it, so the\n"
+        "    recorded result and the responsible Act evidence of one Yield do\n"
+        "    not take an Authority from each other.  Each call builds its own,\n"
+        "    and they agree because the same literal is built twice."
     )
     print(
-        "\n  What this does not establish: whether the value ought to vary, or\n"
-        "  what occurrence would establish it if it did.  Only that across these\n"
-        "  lawful recordings it does not."
+        "\n  What this does not establish: whether Authority ought to vary, what\n"
+        "  occurrence would establish it if it did, or that a comparison is\n"
+        "  unnecessary.  A comparison that refuses nothing today would still\n"
+        "  refuse a disagreement a different producer could record."
     )
     return 0
 
