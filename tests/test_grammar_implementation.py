@@ -3454,7 +3454,6 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
     preserved = movement.material.get("preserved_coordinates")
     exact_preserved = preserved == [
         "Evidence",
-        "Authority",
         "Scope",
         "Unknown",
         "limits",
@@ -3709,7 +3708,6 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "preserves": [
             "Evidence",
             "provenance",
-            "Authority",
             "Scope",
             "conflicts",
             "Unknown",
@@ -4517,7 +4515,6 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "applicable_source_role",
             "Representation_Act_occurrence",
             "Scope",
-            "Authority",
             "provenance",
             "Unknown",
         ],
@@ -4617,7 +4614,6 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "applicable_source_role",
             "Representation_Act_occurrence",
             "Scope",
-            "Authority",
             "provenance",
             "Unknown",
         ],
@@ -4641,7 +4637,6 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "destination_operator_Locality",
             "emission_Act",
             "Scope",
-            "Authority",
             "limits",
         ],
     }
@@ -5888,7 +5883,6 @@ def test_addressed_byte_occurrence_reference_determination_keeps_exact_bounds():
             "Locality",
             "completeness_boundary",
             "Scope",
-            "Authority",
             "limits",
             "Unknown",
         ],

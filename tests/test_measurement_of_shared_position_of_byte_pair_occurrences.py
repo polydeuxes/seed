@@ -415,19 +415,9 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         first.assertion_reference,
         second.assertion_reference,
     ]
-    assert reading["authority"] == {
-        "source": "this Book",
-        "book_clause_identity": "01.Source.D",
-        "authority_limit": "bounded",
-        "act": (
-            "determine one exact shared position-coordinate reference and Yield "
-            "one ordered relation path"
-        ),
-        "negative_authority": (
-            "establish no represented relation and no emission"
-        ),
-    }
-    assert reading["authority"] != reading["scope"]
+    assert reading["negative_authority"] == (
+        "establish no represented relation and no emission"
+    )
     assert result.exact_material is None
     assert result.identity in _standing(ledger, locality)["measurement_occurrences"]
 

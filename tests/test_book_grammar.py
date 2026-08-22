@@ -264,7 +264,6 @@ def test_responsibility_coordinates_are_anatomy_not_assignment():
             "responsible_boundary",
             "subject",
             "exact_Act",
-            "Authority",
             "Scope",
             "Locality",
             "limits",

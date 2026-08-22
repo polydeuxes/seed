@@ -448,7 +448,6 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
         {
             "dimensions": {
                 "identity": "preserved material",
-                "authority": "unestablished",
             },
             "source_role": "this Witness",
             "unknown": [],
@@ -645,7 +644,6 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
                 {
                     "dimensions": {
                         "identity": "first",
-                        "authority": "unestablished",
                     },
                     "source_role": "this Witness",
                 },
@@ -656,7 +654,6 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
                 {
                     "dimensions": {
                         "identity": "second",
-                        "authority": "unestablished",
                     },
                     "source_role": "this Witness",
                 },
@@ -680,7 +677,6 @@ def test_an_advance_refuses_an_occurrence_from_another_locality():
         {
             "dimensions": {
                 "identity": "elsewhere",
-                "authority": "unestablished",
             },
             "source_role": "this Witness",
         },

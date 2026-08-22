@@ -236,9 +236,6 @@ def test_each_subject_has_its_own_applicability_participation_act_yield_and_resu
         APPLICABILITY_RESPONSIBILITY
     )
     assert candidate_act.material["responsibility"] != APPLICABILITY_RESPONSIBILITY
-    assert applicability_act.material["authority"] != candidate_act.material[
-        "authority"
-    ]
     assert applicability_act.material["scope"] != candidate_act.material["scope"]
     assert set(result["required_subject"]) == {
         "required_subject_address",
@@ -352,7 +349,6 @@ def test_candidate_result_preserves_distinct_source_result_boundaries_and_locali
     ]
     assert source_reference["source_locality_identity"] == "source"
     assert yielded.locality_identity == "candidate locality"
-    assert result["candidate_assertion"]["Authority"] == result["authority"]
     assert result["candidate_assertion"]["Authority"] != source_reference[
         "source_assertion_coordinates"
     ]["Authority"]

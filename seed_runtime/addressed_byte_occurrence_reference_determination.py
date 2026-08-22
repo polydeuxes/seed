@@ -224,19 +224,6 @@ def _scope(
     }
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "this Book",
-        "book_clause_identity": BOOK_CLAUSE,
-        "authority_limit": "bounded",
-        "act": DETERMINATION_ACT,
-        "negative_authority": (
-            "establish no recurrence, shared position relation, represented "
-            "relation or other relation"
-        ),
-    }
-
-
 def _standing_carries_source(
     ledger: EventLedger,
     *,
@@ -400,7 +387,6 @@ def _assignment_material(
             coordinate_reference=coordinate_reference,
             standing_boundary_identity=standing_boundary_identity,
         ),
-        "authority": _authority(),
         "limits": list(LIMITS),
         "unknown": list(UNKNOWN),
     }
@@ -664,7 +650,6 @@ def _applicability_act_material(
             "determination_act_identity"
         ],
         "scope": deepcopy(assignment.material["scope"]),
-        "authority": deepcopy(assignment.material["authority"]),
         "evidence_scope": "Evidence for this exact Applicability Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
@@ -863,7 +848,6 @@ def _applicability_result_material(
             assignment=assignment, source_result=source_result
         ),
         "scope": deepcopy(assignment.material["scope"]),
-        "authority": deepcopy(assignment.material["authority"]),
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
@@ -1012,7 +996,6 @@ def _recorded_applicability_result_material(
         "determination_rule": material["determination_rule"],
         "applicability_finding": deepcopy(material["applicability_finding"]),
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "responsible_act_evidence_identity": act.identity,
@@ -1269,7 +1252,6 @@ def _determination_act_material(
         "determination_rule": DETERMINATION_RULE,
         "result_identity": assignment.material["determination_result_identity"],
         "scope": deepcopy(assignment.material["scope"]),
-        "authority": deepcopy(assignment.material["authority"]),
         "evidence_scope": "Evidence for this exact declared Measurement Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),

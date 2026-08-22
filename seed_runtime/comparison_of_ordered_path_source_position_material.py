@@ -113,15 +113,6 @@ def _result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "this Book",
-        "book_clause_identity": BOOK_CLAUSE,
-        "standing": "bounded",
-        "limit": "this exact Compare occurrence and result boundary",
-    }
-
-
 def _path_input(
     ledger: EventLedger,
     path_result_event_identity: Any,
@@ -299,7 +290,6 @@ def _applicability_act_material(
             ],
             "standing_boundary_identity": boundary,
         },
-        "authority": _authority(),
         "limits": [
             "the result establishes no position occurrence relation",
             "the result establishes no material carried by the path",
@@ -386,7 +376,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             "source_provenance": "exact ordered relation path source coordinates",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": deepcopy(material["authority"]),
             "scope": deepcopy(material["scope"]),
         },
         "act": APPLICABILITY_ACT,
@@ -429,7 +418,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
@@ -488,7 +476,6 @@ def _recorded_applicability_result_material(
         "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
@@ -520,7 +507,6 @@ def _recorded_compare_result_material(
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
@@ -647,7 +633,6 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
         ],
         "comparison_rule": RULE,
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
@@ -703,7 +688,6 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "result": result,
         "source_provenance": "exact ordered relation path source coordinates",
         "scope": {"locality_identity": inputs["locality_identity"]},
-        "authority": _authority(),
         "limits": [
             "the finding establishes no position occurrence relation",
             "the finding establishes no material carried by the path",
@@ -738,7 +722,6 @@ def _compare_result_material(
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],

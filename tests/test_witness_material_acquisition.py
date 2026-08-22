@@ -62,7 +62,6 @@ def test_witness_material_preserves_exact_raw_bytes():
         "identity",
         "source_provenance",
         "responsibility",
-        "authority",
         "evidence_scope",
         "scope_locality",
         "occurrence_preservation",
@@ -140,7 +139,6 @@ def test_durable_witness_acquisition_preserves_raw_material_and_evidence_of_yiel
             "act_occurrence_identity",
             "responsibility",
             "responsible_boundary",
-            "authority",
         }
         assert read_requirements_of_yield_relation(
             reopened,

@@ -193,15 +193,6 @@ def _source_standing_reference_from_carried_representation(
     }
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "active Book",
-        "book_clause_identity": OPERATOR_MATERIAL_ACQUIRE_BOOK_CLAUSE,
-        "standing": "bounded",
-        "limit": "preservation bounded to this exact boundary result",
-    }
-
-
 def _scope(
     *,
     scope_identity: str,
@@ -243,7 +234,6 @@ def _assignment_material(
         "evidence_occurrence_reference": source_standing_reference[
             "addressed_representation_event_identity"
         ],
-        "authority": _authority(),
         "limits": [
             "this assignment is bounded to one exact boundary occurrence",
             (
@@ -286,7 +276,6 @@ def _act_evidence_material(assignment: Event) -> dict[str, Any]:
         ),
         "scope": deepcopy(material["scope"]),
         "result_boundary_identity": material["result_boundary_identity"],
-        "authority": _authority(),
         "evidence_scope": (
             "Evidence bounded to this exact operator material boundary occurrence"
         ),
@@ -327,7 +316,6 @@ def _result_material(
         },
         "locality_evidence_identity": recorded_result_event_identity,
         "known_loss": list(boundary_material.known_loss),
-        "authority": _authority(),
         "standing": "preserved",
         "limits": [
             "exact material establishes no represented relation",
@@ -363,7 +351,6 @@ def _recorded_result_material(
             "locality_evidence_identity"
         ],
         "known_loss": result_material["known_loss"],
-        "authority": result_material["authority"],
         "standing": result_material["standing"],
         "limits": result_material["limits"],
         "unknown": result_material["unknown"],
@@ -373,7 +360,6 @@ def _recorded_result_material(
             "identity": result_material["result_identity"],
             "source_provenance": result_material["source_boundary"],
             "responsibility": result_material["responsibility"],
-            "authority": result_material["authority"],
             "evidence_scope": (
                 "bounded to this exact operator material boundary occurrence "
                 "and exact material result"

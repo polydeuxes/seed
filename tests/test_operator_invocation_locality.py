@@ -86,11 +86,6 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
             "relation_occurrence_identity"
         ],
     }
-    assert recorded["authority"] == {
-        "standing": "operator Authority",
-        "source_occurrence_reference": command.identity,
-        "limit": "this exact operator material occurrence",
-    }
     assert recorded["negative_authority"] == [
         "the relation carries no operator Standing into the destination Locality",
         "the relation establishes no enclosure or hierarchy",

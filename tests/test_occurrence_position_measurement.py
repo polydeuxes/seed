@@ -223,7 +223,6 @@ def test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relat
     assert act_evidence.material["responsibility_assignment_evidence"] == (
         recorded.material["responsibility_assignment_evidence"]
     )
-    assert act_evidence.material["authority"] == "bounded repository authority"
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=recorded.identity,

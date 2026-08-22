@@ -283,7 +283,6 @@ def test_one_relation_act_cannot_yield_twice():
         "participation",
         "responsibility_assignment_reference",
         "scope",
-        "authority",
         "limits",
         "unknown",
         "evidence_of_yield_relation_identity",

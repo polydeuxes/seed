@@ -144,15 +144,6 @@ def _source_reference(
     }
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "active Book",
-        "book_clause_identity": STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE,
-        "standing": "bounded",
-        "limit": "bounded to this exact record",
-    }
-
-
 def _assignment_material(
     *,
     assignment_identity: str,
@@ -180,7 +171,6 @@ def _assignment_material(
         "evidence_occurrence_reference": source_reference[
             "addressed_representation_event_identity"
         ],
-        "authority": _authority(),
         "limits": [
             "record existence establishes no represented relation or Standing revision",
             "this record establishes no movement or Locality relation",
@@ -214,7 +204,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "source_reference": deepcopy(assignment.material["source_reference"]),
         "scope": deepcopy(assignment.material["scope"]),
         "result_identity": assignment.material["result_identity"],
-        "authority": _authority(),
         "evidence_scope": "Evidence bounded to this exact record occurrence",
     }
 
@@ -232,7 +221,6 @@ def _result_material(act_evidence: Event) -> dict[str, Any]:
         ),
         "source_reference": deepcopy(act_evidence.material["source_reference"]),
         "scope": deepcopy(act_evidence.material["scope"]),
-        "authority": _authority(),
         "standing": "recorded",
         "limits": [
             "record existence establishes no represented relation or Standing revision",
@@ -262,7 +250,6 @@ def _recorded_result_material(
         ),
         "source_reference": deepcopy(result_material["source_reference"]),
         "scope": deepcopy(result_material["scope"]),
-        "authority": deepcopy(result_material["authority"]),
         "standing": result_material["standing"],
         "limits": list(result_material["limits"]),
         "unknown": list(result_material["unknown"]),

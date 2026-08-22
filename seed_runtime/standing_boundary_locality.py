@@ -114,15 +114,6 @@ def _resolve_one_carried_anchor(
     return deepcopy(relation["standing_boundary_reference"])
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "active Book",
-        "book_clause_identity": RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE,
-        "standing": "bounded",
-        "limit": "bounded to this exact direct Locality relation",
-    }
-
-
 def _assignment_material(
     *,
     assignment_identity: str,
@@ -155,7 +146,6 @@ def _assignment_material(
         "evidence_occurrence_reference": standing_boundary_reference[
             "recorded_occurrence_identity"
         ],
-        "authority": _authority(),
         "limits": [
             "this assignment is bounded to one direct Locality relation",
             "the relation carries no addressed Standing",
@@ -210,7 +200,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             material["standing_boundary_reference"],
             material["act_occurrence_identity"],
         ),
-        "authority": _authority(),
         "evidence_scope": "Evidence bounded to this exact direct Locality relation",
     }
 
@@ -243,7 +232,6 @@ def _result_material(act: Event) -> dict[str, Any]:
                 "locality_relation_occurrence_identity"
             ],
         },
-        "authority": _authority(),
         "standing": "preserved",
         "limits": [
             "this direct Locality relation carries no other Locality relation",
@@ -283,7 +271,6 @@ def _recorded_result_material(
         "scope": deepcopy(result_material["scope"]),
         "participation": deepcopy(result_material["participation"]),
         "locality_relation": deepcopy(result_material["locality_relation"]),
-        "authority": deepcopy(result_material["authority"]),
         "standing": result_material["standing"],
         "limits": list(result_material["limits"]),
         "unknown": list(result_material["unknown"]),

@@ -220,7 +220,6 @@ def _assignment_material(
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": finding.completeness_boundary.identity,
         },
-        "authority": OCCURRENCE_POSITION_AUTHORITY,
         "limits": [
             "assignment is bounded to this exact Locality and completeness boundary"
         ],
@@ -277,7 +276,6 @@ def _position_assertions(
                         "complete exact Locality through one boundary"
                     ),
                     "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                    "authority": "unestablished",
                     "evidence_scope": (
                         "exact occurrence position Measurement Evidence"
                     ),
@@ -362,7 +360,6 @@ def _occurrence_position_act_evidence_material(
         "responsible_boundary": "this Seed",
         "responsibility_assignment_evidence": _responsibility_assignment(finding),
         "responsibility_assignment_reference": _assignment_reference(assignment),
-        "authority": OCCURRENCE_POSITION_AUTHORITY,
         "evidence_scope": (
             "Evidence bounded to this exact occurrence position Measurement "
             "occurrence"

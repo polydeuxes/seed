@@ -127,11 +127,6 @@ def _assignment_material(
             "destination_locality_identity": destination_locality_identity,
             "operator_material_occurrence_reference": command.identity,
         },
-        "authority": {
-            "standing": "operator Authority",
-            "source_occurrence_reference": command.identity,
-            "limit": "this exact operator material occurrence",
-        },
         "limits": [
             "one operator material occurrence establishes one new destination Locality",
             "the relation carries no operator Standing into the destination Locality",
@@ -316,7 +311,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             "relation_occurrence_identity"
         ],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "evidence_scope": "Evidence bounded to one direct operator invocation Locality relation",
     }
 
@@ -418,7 +412,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "relation_occurrence_identity": material["relation_occurrence_identity"],
         "locality_relation": relation,
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "standing": "established",
         "known_loss": [],
         "conflicts": [],
@@ -470,7 +463,6 @@ def _recorded_result_material(
         ],
         "locality_relation": deepcopy(result["locality_relation"]),
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "standing": result["standing"],
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),

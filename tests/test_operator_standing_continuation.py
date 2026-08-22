@@ -563,7 +563,6 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         "source_standing_reference",
         "destination_locality_identity",
         "evidence_occurrence_reference",
-        "authority",
         "scope",
         "result_boundary_identity",
         "standing",

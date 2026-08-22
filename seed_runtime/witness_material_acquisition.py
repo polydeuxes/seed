@@ -165,7 +165,6 @@ def record_witness_material_acquisition(
             "act": "Acquire exact material supplied by this Witness",
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to this exact Witness material-acquisition "
                 "occurrence"
@@ -179,7 +178,6 @@ def record_witness_material_acquisition(
             "identity": result_identity,
             "source_provenance": source_boundary,
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
-            "authority": "unestablished",
             "evidence_scope": (
                 "bounded to this exact Witness material-acquisition occurrence "
                 "and exact material result; represented relation Unknown"
@@ -311,7 +309,6 @@ def _read_witness_material_acquisition_result(
         "act": "Acquire exact material supplied by this Witness",
         "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "authority": "unestablished",
         "evidence_scope": (
             "Evidence bounded to this exact Witness material-acquisition occurrence"
         ),
@@ -322,7 +319,6 @@ def _read_witness_material_acquisition_result(
             "identity": result_identity,
             "source_provenance": source_boundary,
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
-            "authority": "unestablished",
             "evidence_scope": (
                 "bounded to this exact Witness material-acquisition occurrence "
                 "and exact material result; represented relation Unknown"

@@ -117,15 +117,6 @@ def _operator_acquisition_for_material_result(
     return acquired_event, acquired
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "this Book",
-        "book_clause_identity": RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE,
-        "standing": "bounded",
-        "limit": "this exact comparison occurrence and result boundary",
-    }
-
-
 def _measurement_reference(event: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
@@ -812,7 +803,6 @@ def _assignment_material(
                 "operator_locality_identity"
             ],
         },
-        "authority": _authority(),
         "limits": [
             "comparison establishes no source relation",
             "comparison establishes no represented relation",
@@ -1079,7 +1069,6 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "authority": _authority(),
         "evidence_scope": "Evidence for this exact input-to-Compare relation set",
     }
 
@@ -1171,7 +1160,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(act.material["scope"]),
-        "authority": _authority(),
         "standing": "applicable",
         "limits": [
             "Applicability establishes no Participation or comparison result"
@@ -1200,7 +1188,6 @@ def _recorded_applicability_result_material(
         ),
         "comparison_rule": material["comparison_rule"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "standing": material["standing"],
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
@@ -1374,7 +1361,6 @@ def _comparison_act_material(assignment: Event, applicability: Event) -> dict[st
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "authority": _authority(),
         "evidence_scope": "Evidence for this exact Compare occurrence",
     }
 
@@ -1576,7 +1562,6 @@ def _comparison_result_material(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
         "scope": deepcopy(act.material["scope"]),
-        "authority": _authority(),
         "limits": [
             "matching content establishes no corroboration or truth",
             "difference establishes no causal source relation or meaning",
@@ -1613,7 +1598,6 @@ def _recorded_comparison_result_material(
         "comparison_rule": material["comparison_rule"],
         "findings": deepcopy(material["findings"]),
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "responsible_act_evidence_identity": act_identity,

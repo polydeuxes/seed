@@ -1277,7 +1277,6 @@ def test_console_material_acquisition_adds_only_its_exact_occurrences():
         set(occurrence)
         == {
             "subject_reference",
-            "authority",
             "result_occurrence_identity",
             "source_role",
         }

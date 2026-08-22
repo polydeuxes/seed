@@ -172,13 +172,6 @@ def _assignment_material(
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
         "evidence_occurrence_reference": addressed_representation,
-        "authority": {
-            "source": "active Book",
-            "book_clause_identity": (
-                STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE
-            ),
-            "standing": "bounded",
-        },
         "scope": {
             "source_locality_identity": source_standing_reference[
                 "source_locality_identity"
@@ -241,7 +234,6 @@ def _act_evidence_material(
             source_standing_reference,
             act_occurrence_identity=act_occurrence_identity,
         ),
-        "authority": "unestablished",
         "evidence_scope": (
             "Evidence bounded to this exact direct Standing Locality continuation "
             "occurrence"
@@ -285,7 +277,6 @@ def _result_material(
             "relation_occurrence_identity": locality_relation_occurrence_identity,
         },
         "standing": "preserved",
-        "authority": "unestablished",
         "unknown": [
             "Applicability of every carried subject to another Act: Unknown"
         ],
@@ -328,7 +319,6 @@ def _recorded_result_material(
         "participation": result_material["participation"],
         "locality_relation": result_material["locality_relation"],
         "standing": result_material["standing"],
-        "authority": result_material["authority"],
         "unknown": result_material["unknown"],
         "limits": result_material["limits"],
         "responsible_act_evidence_identity": responsible_act_evidence_identity,

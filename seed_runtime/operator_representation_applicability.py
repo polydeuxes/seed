@@ -172,7 +172,6 @@ def _act_material(
         ),
         "standing_boundary_identity": standing_boundary_identity,
         "scope": deepcopy(admission["scope"]),
-        "authority": deepcopy(admission["authority"]),
         "evidence_scope": (
             "Evidence bounded to this exact admitted Representation input-to-emission-Act relation"
         ),
@@ -367,7 +366,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         ),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "participants_and_roles": [
             {
                 "subject": material["representation_reference"][
@@ -453,7 +451,6 @@ def _recorded_result_material(
         ),
         "standing_boundary_identity": result["standing_boundary_identity"],
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "participants_and_roles": deepcopy(result["participants_and_roles"]),
         "provenance_occurrence_references": list(
             result["provenance_occurrence_references"]

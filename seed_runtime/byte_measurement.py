@@ -1517,7 +1517,6 @@ def _movement_result_material(
         },
         "preserved_coordinates": [
             "Evidence",
-            "Authority",
             "Scope",
             "Unknown",
             "limits",

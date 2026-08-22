@@ -533,21 +533,6 @@ def _inputs_from_assignment_material(
     )
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "this Book",
-        "book_clause_identity": BOOK_CLAUSE,
-        "authority_limit": "bounded",
-        "act": (
-            "determine one exact shared position-coordinate reference and Yield "
-            "one ordered relation path"
-        ),
-        "negative_authority": (
-            "establish no represented relation and no emission"
-        ),
-    }
-
-
 def _require_standing(
     ledger: EventLedger,
     *,
@@ -654,7 +639,6 @@ def _assignment_material(
             ),
             "standing_boundary_identity": standing_boundary_identity,
         },
-        "authority": _authority(),
         "limits": [
             "pair counts establish no shared position",
             "relation path Standing from exact source material is not_established",
@@ -1112,7 +1096,6 @@ def _applicability_act_material(
             },
         ],
         "scope": assignment.material["scope"],
-        "authority": assignment.material["authority"],
         "evidence_scope": "this exact Applicability Act occurrence",
         "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
@@ -1238,7 +1221,6 @@ def _applicability_result_material(
             "source_provenance": "exact recorded position Assertions",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": assignment.material["authority"],
             "scope": assignment.material["scope"],
         },
         "exact_act": APPLICABILITY_ACT,
@@ -1269,7 +1251,6 @@ def _applicability_result_material(
         "measurement_rule": MEASUREMENT_RULE,
         "applicability": standing,
         "scope": assignment.material["scope"],
-        "authority": assignment.material["authority"],
         "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
@@ -1395,7 +1376,6 @@ def _recorded_applicability_result_material(
         "measurement_rule": result["measurement_rule"],
         "applicability": result["applicability"],
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
@@ -1534,7 +1514,6 @@ def _measurement_act_material(
             },
         ],
         "scope": assignment.material["scope"],
-        "authority": assignment.material["authority"],
         "evidence_scope": "this exact Measurement Act occurrence",
         "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
@@ -1697,7 +1676,6 @@ def _path_assertion(
             "content": content,
             "source_provenance": "exact recorded pair position Assertions",
             "responsibility": SHARED_POSITION_ASSERTION_RESPONSIBILITY,
-            "authority": "unestablished",
             "evidence_scope": "this exact shared-position Measurement result",
         },
         "subject_kind": "assertion",
@@ -1745,7 +1723,6 @@ def _measurement_result_material(
             "source_provenance": "exact recorded pair position Assertions",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": assignment.material["authority"],
             "scope": assignment.material["scope"],
         },
         "exact_act": MEASUREMENT_ACT,
@@ -1789,7 +1766,6 @@ def _measurement_result_material(
         "second_position_assertion": _reference_material(inputs.second),
         "assertions": [assertion],
         "scope": assignment.material["scope"],
-        "authority": assignment.material["authority"],
         "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
@@ -1873,7 +1849,6 @@ def _recorded_measurement_result_material(
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "assertions": deepcopy(result["assertions"]),
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,

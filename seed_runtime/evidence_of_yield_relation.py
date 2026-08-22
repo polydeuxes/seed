@@ -391,7 +391,6 @@ def _record_evidence_of_yield_relation(
                 "act_occurrence_identity": act_occurrence_identity,
                 "responsibility": responsibility,
                 "responsible_boundary": responsible_boundary,
-                "authority": "unestablished",
             },
             "coordinates_of_carried_result": list(result_content),
             "result": deepcopy(result_content),

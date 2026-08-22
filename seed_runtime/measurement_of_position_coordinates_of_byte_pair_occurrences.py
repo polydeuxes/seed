@@ -609,7 +609,6 @@ def _assignment_material(
             ),
             "recording_standing_boundary_identity": standing_boundary_identity,
         },
-        "authority": AUTHORITY,
         "limits": [
             "assignment is bounded to this exact material acquisition result and source boundary"
         ],
@@ -1120,7 +1119,6 @@ def _act_material(
             finding,
             act_occurrence_identity=assignment.material["act_occurrence_identity"],
         ),
-        "authority": AUTHORITY,
         "evidence_scope": (
             "Evidence bounded to this exact byte-pair position-coordinate Measurement occurrence"
         ),
@@ -1369,7 +1367,6 @@ def _assertion(
             "content": content,
             "source_provenance": "one exact material acquisition occurrence and source boundary",
             "responsibility": ASSERTION_RESPONSIBILITY,
-            "authority": "unestablished",
             "evidence_scope": (
                 "exact byte-pair position-coordinate Measurement Evidence"
             ),
@@ -1443,7 +1440,6 @@ def _assertion_population(
                 ),
             },
             "responsibility": ASSERTION_RESPONSIBILITY,
-            "authority": "unestablished",
         },
         "unknown": [
             "Participation or representation of each measured byte pair: Unknown"

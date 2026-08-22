@@ -738,18 +738,6 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
     )
 
 
-def _authority() -> dict[str, str]:
-    return {
-        "source": "this Book",
-        "book_clause_identity": BOOK_CLAUSE,
-        "standing": "bounded",
-        "act": COMPARE_ACT,
-        "negative_authority": (
-            "establish no source relation, represented relation, or recurrence"
-        ),
-    }
-
-
 def _require_input_standing(
     ledger: EventLedger, inputs: dict[str, Any], standing: Any
 ) -> str:
@@ -902,7 +890,6 @@ def _assignment_material(
             "locality_identity": inputs["locality_identity"],
             "standing_boundary_identity": boundary,
         },
-        "authority": _authority(),
         "limits": [
             "one exact pair subject under each input establishes no source relation",
             "exact result carries recorded comparison findings",
@@ -1068,7 +1055,6 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "comparison_rule": COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "evidence_scope": "Evidence for this exact Applicability occurrence",
     }
 
@@ -1146,7 +1132,6 @@ def _applicability_result_material(
             "source_provenance": "exact yielded path and comparison results",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": deepcopy(assignment.material["authority"]),
             "scope": deepcopy(assignment.material["scope"]),
         },
         "exact_act": APPLICABILITY_ACT,
@@ -1172,7 +1157,6 @@ def _applicability_result_material(
         "comparison_rule": COMPARISON_RULE,
         "applicability": standing,
         "scope": deepcopy(assignment.material["scope"]),
-        "authority": deepcopy(assignment.material["authority"]),
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
@@ -1207,7 +1191,6 @@ def _recorded_applicability_result_material(
         "comparison_rule": result["comparison_rule"],
         "applicability": result["applicability"],
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "evidence_of_yield_relation_identity": evidence_identity,
@@ -1411,7 +1394,6 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
         ],
         "comparison_rule": COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "evidence_scope": "Evidence for this exact Compare occurrence",
     }
 
@@ -1537,7 +1519,6 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             "exact yielded ordered path and recorded comparison findings"
         ),
         "scope": {"locality_identity": inputs["locality_identity"]},
-        "authority": _authority(),
         "limits": [
             "recorded Standing carries comparison findings",
             "the relation establishes no source relation or recurrence",
@@ -1571,7 +1552,6 @@ def _compare_result_material(
         "comparison_rule": COMPARISON_RULE,
         "finding": _comparison_finding(inputs),
         "scope": deepcopy(assignment.material["scope"]),
-        "authority": deepcopy(assignment.material["authority"]),
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
         "responsible_act_evidence_identity": act.identity,
@@ -1603,7 +1583,6 @@ def _recorded_compare_result_material(
         "comparison_rule": result["comparison_rule"],
         "finding": deepcopy(result["finding"]),
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "responsible_act_evidence_identity": result[

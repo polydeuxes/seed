@@ -130,7 +130,6 @@ def _exact_material_acquisition_result_availability_coordinates(
     dimensions = event.material["dimensions"]
     occurrence = {
         "subject_reference": dimensions["identity"],
-        "authority": dimensions["authority"],
         "result_occurrence_identity": event.identity,
         "source_role": event.material["source_role"],
     }
@@ -616,9 +615,6 @@ def _responsibility_assignment_material(
             ),
             "occurrence_limit": finding.occurrence_limit,
         },
-        "authority": (
-            AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
-        ),
         "limits": [
             "assignment is bounded to the exact pair Assertion, material acquisition result, "
             "completeness boundary, and occurrence limit"
@@ -989,7 +985,6 @@ def _material_of_evidence_of_act_occurrence(
             finding,
             act_occurrence_identity=act_occurrence_identity,
         ),
-        "authority": AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "evidence_scope": (
             "Evidence bounded to this exact pair occurrence Measurement"
         ),
@@ -1147,7 +1142,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                         "the exact Yield-carried pair Assertion and later material acquisition result"
                     ),
                     "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_ASSERTION,
-                    "authority": "unestablished",
                     "evidence_scope": EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
                 },
                 "subject_kind": "assertion",
@@ -1196,7 +1190,6 @@ def _material_of_result_of_measurement(
                 "one recurrence Assertion carried by Evidence of Yield relation and one later "
                 "exact material acquisition result"
             ),
-            "authority": "unestablished",
             "evidence_scope": EVIDENCE_SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         },
         "exact_act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,

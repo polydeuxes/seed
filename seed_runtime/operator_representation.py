@@ -115,7 +115,7 @@ _STRUCTURED_RESULT_READERS = {
 
 
 def _dimensions(
-    *, identity, content, source, responsibility, authority, scope, occurrence,
+    *, identity, content, source, responsibility, scope, occurrence,
     evidence_scope=None,
 ):
     dimensions = {
@@ -123,7 +123,6 @@ def _dimensions(
         "content": content,
         "source_provenance": source,
         "responsibility": responsibility,
-        "authority": authority,
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }
@@ -253,7 +252,6 @@ def _record_operator_representation(
             "act": "bounded Representation Act",
             "responsibility": REPRESENTATION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to this exact Representation Act occurrence"
             ),
@@ -280,7 +278,6 @@ def _record_operator_representation(
             "act_occurrence_identity": act_occurrence_identity,
             "content_kind": "bounded Representation",
             "carried_content": result_material,
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to this exact Representation-to-occurrence Locality"
             ),
@@ -297,7 +294,6 @@ def _record_operator_representation(
                 content=content,
                 source=through_event_occurrence_identity,
                 responsibility=REPRESENTATION_RESPONSIBILITY,
-                authority="unestablished",
                 evidence_scope=(
                     "bounded to this Representation Act occurrence; establishes no input "
                     "support or response treatment"
@@ -790,7 +786,6 @@ def emit_operator_representation_material(
                 content="exact Representation for the declared emission boundary",
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
-                authority="unestablished",
                 evidence_scope=(
                     "bounded to this attempt occurrence; establishes no output-boundary "
                     "acceptance or effect at another boundary"
@@ -818,7 +813,6 @@ def emit_operator_representation_material(
         {
             "representation_reference": representation["representation_identity"],
             "attempt_event_identity": attempt_event.identity,
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to the exact Representation-to-emission-attempt Locality"
             ),
@@ -934,7 +928,6 @@ def emit_operator_representation_material(
             "destination_operator_locality_identity": admission[
                 "destination_operator_locality_identity"
             ],
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to this exact emission Act occurrence and "
                 "the Representation participating in its exact input role; establishes no other role"
@@ -951,7 +944,6 @@ def emit_operator_representation_material(
                 "representation_event_identity"
             ],
             "locality_relation": locality_relation,
-            "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to the exact Representation-to-emission-occurrence Locality"
             ),
@@ -983,7 +975,6 @@ def emit_operator_representation_material(
                 content="exact Representation emitted at the declared boundary",
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
-                authority="unestablished",
                 evidence_scope=(
                     "bounded to this emission occurrence; effects beyond the output "
                     "boundary require separate Evidence"
@@ -1079,7 +1070,6 @@ def _record_exact_material_boundary_failure(
             content="Representation boundary failure occurrence",
             source=attempt_event_identity,
             responsibility=REPRESENTATION_BOUNDARY_FAILURE_RESPONSIBILITY,
-            authority="unestablished",
             evidence_scope=(
                 "bounded to this failure occurrence; establishes no effect at another boundary "
                 "and no acceptance beyond the reported result"
@@ -1105,7 +1095,6 @@ def _record_exact_material_boundary_failure(
             "act": "Representation boundary failure after exact write invocation",
             "responsibility": REPRESENTATION_BOUNDARY_FAILURE_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "authority": "unestablished",
             "evidence_scope": (
                 "bounded to this exact Representation boundary failure occurrence"
             ),

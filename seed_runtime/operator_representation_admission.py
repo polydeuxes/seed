@@ -91,15 +91,6 @@ def _require_identity(value: Any, message: str) -> str:
     return value
 
 
-def _authority(book_clause_identity: str, limit: str) -> dict[str, str]:
-    return {
-        "source": "active Book",
-        "book_clause_identity": book_clause_identity,
-        "standing": "bounded",
-        "limit": limit,
-    }
-
-
 def _representation_reference(
     ledger: EventLedger,
     *,
@@ -314,10 +305,6 @@ def _candidate_assignment_material(
         "evidence_occurrence_reference": representation_reference[
             "representation_event_identity"
         ],
-        "authority": _authority(
-            REPRESENTATION_CANDIDATE_BOOK_CLAUSE,
-            "preservation bounded to this candidate and emission Act",
-        ),
         "limits": [
             "candidate identity establishes no Admission",
             "candidate identity establishes no Participation or emission",
@@ -530,7 +517,6 @@ def _candidate_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "input_role": material["input_role"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "evidence_scope": "Evidence bounded to this exact Candidate occurrence",
     }
 
@@ -641,7 +627,6 @@ def _candidate_result_material(act: Event) -> dict[str, Any]:
         ],
         "input_role": material["input_role"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "standing": "candidate",
         "limits": [
             "Candidate is not Admission",
@@ -692,7 +677,6 @@ def _recorded_candidate_result_material(
         ],
         "input_role": result["input_role"],
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "standing": result["standing"],
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
@@ -859,10 +843,6 @@ def _admission_assignment_material(
             "admission_result_boundary_identity": admission_result_boundary_identity,
         },
         "evidence_occurrence_reference": candidate_event.identity,
-        "authority": _authority(
-            REPRESENTATION_ADMISSION_BOOK_CLAUSE,
-            "Admission bounded to this candidate and destination operator Locality",
-        ),
         "limits": [
             "Admission establishes no Participation by identity",
             "Admission to one operator Locality is not Admission to another",
@@ -1022,7 +1002,6 @@ def _admission_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "input_role": material["input_role"],
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "evidence_scope": "Evidence bounded to this exact Admission occurrence",
     }
 
@@ -1144,7 +1123,6 @@ def _admission_result_material(act: Event) -> dict[str, Any]:
             "second_subject": boundary_rule,
         },
         "scope": deepcopy(material["scope"]),
-        "authority": deepcopy(material["authority"]),
         "standing": "admitted",
         "limits": [
             "Admission establishes no Participation by identity",
@@ -1194,7 +1172,6 @@ def _recorded_admission_result_material(
             result["representation_rule_to_boundary_rule_relation"]
         ),
         "scope": deepcopy(result["scope"]),
-        "authority": deepcopy(result["authority"]),
         "standing": result["standing"],
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),

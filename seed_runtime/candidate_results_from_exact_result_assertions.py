@@ -138,18 +138,12 @@ def _source_coordinates(event: Event, assertion: dict[str, Any] | None) -> dict[
     if assertion is None:
         return {
             "Yield": event.material.get("yield_relation_occurrence_identity"),
-            "Authority": deepcopy(event.material.get("authority")),
             "Scope": deepcopy(event.material.get("scope")),
             "limits": deepcopy(event.material.get("limits")),
             "Unknown": deepcopy(event.material.get("unknown")),
         }
     dimensions = assertion.get("dimensions")
     return {
-        "Authority": deepcopy(
-            dimensions.get("authority")
-            if type(dimensions) is dict
-            else assertion.get("Authority")
-        ),
         "Scope": deepcopy(
             assertion.get("assertion_scope")
             if "assertion_scope" in assertion
@@ -366,24 +360,6 @@ def source_assertion_references_through_boundary(
     )
 
 
-def _authority(responsibility: str) -> dict[str, Any]:
-    return {
-        "source": "this Book",
-        "book_reference": BOOK_CLAUSE,
-        "responsible_boundary": "this Seed",
-        "scope": _candidate_responsibility(responsibility),
-    }
-
-
-def _applicability_authority() -> dict[str, Any]:
-    return {
-        "source": "this Book",
-        "book_reference": APPLICABILITY_BOOK_CLAUSE,
-        "responsible_boundary": "this Seed",
-        "scope": APPLICABILITY_RESPONSIBILITY,
-    }
-
-
 def _responsibility_reference(responsibility: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": responsibility.identity,
@@ -483,7 +459,6 @@ def _responsibility_material(
             "recording_locality_identity": recording_locality,
             "source_ledger_boundary_identity": source_boundary.identity,
         },
-        "authority": _authority(responsibility),
         "limits": [
             "Each Responsibility is exhaustive for its bounded subject set"
         ],
@@ -656,7 +631,6 @@ def _applicability_responsibility_material(
         "exact_act": APPLICABILITY_ACT,
         "scope": _applicability_scope(responsibility, subject, addresses),
         "Locality": responsibility.locality_identity,
-        "authority": _applicability_authority(),
         "limits": [
             "Applicability establishes the exact subject-to-Act position"
         ],
@@ -691,7 +665,6 @@ def _applicability_act_material(
         "candidate_act": position["candidate_act"],
         "scope": deepcopy(applicability_responsibility.material["scope"]),
         "Locality": applicability_responsibility.material["Locality"],
-        "authority": deepcopy(applicability_responsibility.material["authority"]),
         "limits": list(applicability_responsibility.material["limits"]),
         "unknown": list(applicability_responsibility.material["unknown"]),
     }
@@ -710,7 +683,6 @@ def _yield_relation_material(
         "relation": "yield",
         "second_subject": {"result": result_address, "name": result_name},
         "responsibility_reference": _responsibility_reference(responsibility),
-        "authority": deepcopy(responsibility.material["authority"]),
         "scope": deepcopy(responsibility.material["scope"]),
         "limits": list(responsibility.material["limits"]),
         "unknown": list(responsibility.material["unknown"]),
@@ -746,7 +718,6 @@ def _applicability_result_material(
         "yield_relation_occurrence_identity": yield_relation.identity,
         "scope": deepcopy(applicability_responsibility.material["scope"]),
         "Locality": applicability_responsibility.material["Locality"],
-        "authority": deepcopy(applicability_responsibility.material["authority"]),
         "limits": list(applicability_responsibility.material["limits"]),
         "unknown": list(applicability_responsibility.material["unknown"]),
     }
@@ -769,7 +740,6 @@ def _participation_material(
         },
         "responsibility_reference": _responsibility_reference(responsibility),
         "applicability_result_occurrence_identity": applicability.identity,
-        "authority": _applicability_authority(),
         "scope": {
             "recording_locality": responsibility.locality_identity,
             "required_subject_address": subject["required_subject_address"],
@@ -801,7 +771,6 @@ def _candidate_act_material(
         "applicability_result_occurrence_identity": applicability.identity,
         "participation_relation_occurrence_identity": participation.identity,
         "scope": deepcopy(responsibility.material["scope"]),
-        "authority": deepcopy(responsibility.material["authority"]),
         "limits": list(responsibility.material["limits"]),
         "unknown": list(responsibility.material["unknown"]),
     }
@@ -834,7 +803,6 @@ def _candidate_assertion(
         "subject_address": candidate_subject_address,
         "content": content,
         "source": deepcopy(references),
-        "Authority": deepcopy(responsibility.material["authority"]),
         "Scope": deepcopy(responsibility.material["scope"]),
         "Locality": responsibility.locality_identity,
         "responsible_boundary": "this recorded Assertion",
@@ -876,7 +844,6 @@ def _candidate_result_material(
         ],
         "yield_relation_occurrence_identity": yield_relation.identity,
         "scope": deepcopy(responsibility.material["scope"]),
-        "authority": deepcopy(responsibility.material["authority"]),
         "limits": list(responsibility.material["limits"]),
         "unknown": list(responsibility.material["unknown"]),
     }

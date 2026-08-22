@@ -2286,7 +2286,6 @@ def advance_operator_locality_standing(
         ]
         occurrence = {
             "subject_reference": material_acquisition_reference,
-            "authority": source_result.material["dimensions"]["authority"],
             "result_occurrence_identity": source_result.identity,
             "source_role": source_result.material["source_role"],
         }
@@ -3208,7 +3207,6 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         material_acquisition_result_occurrences.append(
             {
                 "subject_reference": event.material["dimensions"]["identity"],
-                "authority": event.material["dimensions"]["authority"],
                 "result_occurrence_identity": event.identity,
                 "source_role": event.material["source_role"],
             }

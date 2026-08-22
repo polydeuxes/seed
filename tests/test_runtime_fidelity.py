@@ -1114,7 +1114,6 @@ def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurre
     required = {
         "responsibility",
         "responsible_boundary",
-        "authority",
         "evidence_scope",
     }
     incomplete = []
