@@ -14,11 +14,14 @@ its Locality, its limits.
 Nothing is proposed.  A branch that holds everything it needs is not thereby
 work Seed will do, and a branch missing something is not thereby a defect.
 
-A recorded corpus is read where the current reader can read it.  Three durable
-corpora in this repository cannot be: their representation occurrences carry no
-locality_standing_through_event_occurrence_identity, so the reader refuses them.
-History is immutable and the reader moved, which is worth knowing and is not
-what this measures.  With no corpus given, one road is recorded and read.
+Three durable corpora in this repository are addressable as recorded material
+and are refused by the current Standing reader: their representation
+occurrences carry no locality_standing_through_event_occurrence_identity, which
+current Standing requires.  Those records remain retrievable and preserve what
+their own recording boundary established; what is refused is projecting them
+into current Standing, which they never established.  Refusing looks correct,
+and fabricating the missing boundary would not.  With no corpus given, one road
+is recorded and read.
 
 Usage:
     .venv/bin/python scripts/observe_standing_responsibility_branches.py [DB...]
@@ -87,6 +90,20 @@ def main() -> int:
                 print(f"      branches carrying an exact subject: {subjects}")
                 for coordinate, count in held.most_common():
                     print(f"        {count:3}  {coordinate}")
+                named = Counter()
+                subject_values = set()
+                for identity in branches:
+                    occurrence = ledger.get(identity)
+                    if occurrence is None:
+                        continue
+                    named[str(occurrence.material.get("responsibility"))[:58]] += 1
+                    subject_values.add(
+                        str(occurrence.material.get("assignment_subject_identity"))
+                    )
+                print(f"      distinct subjects among them: {len(subject_values)}")
+                print(f"      distinct Responsibilities named: {len(named)}")
+                for name, count in named.most_common(6):
+                    print(f"        {count:3}  {name}")
 
     for corpus in arguments.corpus:
         if not corpus.exists():
