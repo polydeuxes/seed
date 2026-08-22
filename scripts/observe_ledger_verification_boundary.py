@@ -62,9 +62,13 @@ def main() -> int:
         f"{ledger.get(act_evidence.identity) is act_evidence}"
     )
     print(
-        "\n    A predicate asking whether an occurrence is not corrupted holds\n"
-        "    here for every occurrence, changed or not, so such a predicate is\n"
-        "    never exercised by a reading taken from this ledger."
+        "\n    A predicate asking whether an occurrence is not corrupted passes\n"
+        "    here for every occurrence it is asked about, changed or not.  That\n"
+        "    is this ledger's ordinary answer, and it is not the whole story:\n"
+        "    observe_exact_relation_reach.py substitutes the reading, making the\n"
+        "    ledger report one occurrence corrupted, and does exercise the\n"
+        "    predicate's response to that value without reproducing the durable\n"
+        "    boundary below."
     )
 
     with tempfile.TemporaryDirectory() as directory:

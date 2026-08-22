@@ -15,13 +15,19 @@ responsible Act evidence is changed one at a time, and the predicates are read
 again.  The reach is then set beside the coordinates the Book states for this
 relation, so coverage and over-coupling are counted rather than argued.
 
-Every reading here is taken from an in-memory ledger, which reports every
-occurrence's integrity as unverifiable and hands the reader the stored
-occurrence itself.  So a predicate asking whether an occurrence is not
-corrupted holds throughout, and a change reached by holding an occurrence is
-not a change a durable ledger permits: it refuses to revise a recorded
-occurrence at all.  These readings say what the predicates read from the
-material given to them, never that a state constructed here is reachable.
+Every reading here is taken from an in-memory ledger, and three things stay
+separate.  That ledger reports an occurrence's integrity as unverifiable and
+hands the reader the stored occurrence itself, so a predicate asking whether an
+occurrence is not corrupted passes for every occurrence it is asked about here.
+Separately, observe_exact_relation_reach.py substitutes that reading, making
+the ledger report one occurrence corrupted, and the predicate's response to
+that value is exercised there.  A durable ledger answers differently again: it
+verifies a recorded occurrence, returns a fresh one to each reader, and refuses
+to revise or remove a recorded occurrence at all.
+
+So a change reached here by holding an occurrence is not a change a durable
+ledger permits.  These readings say what the predicates read from the material
+given to them, never that a state constructed here is reachable.
 See scripts/observe_ledger_verification_boundary.py.
 
 Usage:
