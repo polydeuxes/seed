@@ -1,0 +1,197 @@
+"""Carry exact Witness Grammar bytes through one external JSON result boundary.
+
+The external function occurrence remains Witness Material. Its exact stdout
+enters Seed only through a later material-acquisition Act. Acquisition
+availability establishes no declared Measurement pressure, JSON structure,
+word positions, or relation Standing.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+import pytest
+
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+)
+from seed_runtime.events import EventLedger
+from seed_runtime.material_acquisition import (
+    read_exact_material_acquisition_result,
+)
+from seed_runtime.witness_material_acquisition import (
+    WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+    record_witness_material_acquisition,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from compiled_material_invocation import (  # noqa: E402
+    MaterialImplementationFunction,
+    material_acquisition_result_reference,
+    reference_occurrences_across,
+)
+
+
+WITNESS_GRAMMAR = ROOT / "book_of_seed" / "witness_grammar.json"
+SOURCE_LOCALITY = "witness-grammar-external-json-source"
+RESULT_LOCALITY = "witness-grammar-external-json-result"
+EXTERNAL_JSON_FUNCTION = MaterialImplementationFunction(
+    identity="material-witness-cpython-json-tool-compact",
+    invocation=(sys.executable, "-m", "json.tool", "--compact"),
+)
+EXTERNAL_JSON_KNOWN_LOSS = (
+    "source byte positions and source lexical formatting are not preserved",
+)
+
+
+@pytest.fixture(scope="module")
+def witness_grammar_external_json_observation():
+    ledger = EventLedger()
+    exact_source = WITNESS_GRAMMAR.read_bytes()
+    source = record_witness_material_acquisition(
+        ledger,
+        locality_identity=SOURCE_LOCALITY,
+        exact_bytes=exact_source,
+        source_boundary="exact Witness Grammar file bytes",
+    )
+    source_reference = material_acquisition_result_reference(ledger, source.identity)
+
+    before_external_invocation = ledger.append_boundary()
+    invocation = reference_occurrences_across(
+        (source_reference,),
+        boundary_identity="witness-grammar-external-json-invocation",
+        implementation_functions=(EXTERNAL_JSON_FUNCTION,),
+        max_workers=1,
+        time_limit_second_count=5.0,
+        material_byte_count_limit=262144,
+    )[0][0]
+    after_external_invocation = ledger.append_boundary()
+
+    if (
+        not invocation.returned
+        or invocation.returncode != 0
+        or type(invocation.stdout_bytes) is not bytes
+        or type(invocation.stderr_bytes) is not bytes
+    ):
+        pytest.fail("external JSON witness did not return exact result material")
+
+    result = record_witness_material_acquisition(
+        ledger,
+        locality_identity=RESULT_LOCALITY,
+        exact_bytes=invocation.stdout_bytes,
+        source_boundary="external JSON stdout occurrence 0",
+        known_loss=EXTERNAL_JSON_KNOWN_LOSS,
+        provenance_occurrence_references=(source.identity,),
+    )
+    return {
+        "ledger": ledger,
+        "exact_source": exact_source,
+        "source": source,
+        "source_reference": source_reference,
+        "before_external_invocation": before_external_invocation,
+        "after_external_invocation": after_external_invocation,
+        "invocation": invocation,
+        "result": result,
+    }
+
+
+def test_exact_witness_grammar_acquisition_result_reaches_the_external_json_function(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    source = observation["source"]
+    source_reference = observation["source_reference"]
+    invocation = observation["invocation"]
+
+    assert read_exact_material_acquisition_result(
+        observation["ledger"], source.identity
+    ) == source
+    assert source_reference.recorded_occurrence_identity == source.identity
+    assert source_reference.exact_material == observation["exact_source"]
+    assert invocation.source_reference == source_reference
+    assert invocation.exact_material == observation["exact_source"]
+    assert invocation.implementation_function == EXTERNAL_JSON_FUNCTION
+    assert invocation.input_boundary_accepted_byte_count == len(
+        observation["exact_source"]
+    )
+
+
+def test_external_json_invocation_appends_no_seed_occurrence(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+
+    assert observation["before_external_invocation"] == observation[
+        "after_external_invocation"
+    ]
+
+
+def test_external_json_output_enters_seed_only_as_exact_provenanced_material(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    ledger = observation["ledger"]
+    source = observation["source"]
+    invocation = observation["invocation"]
+    result = observation["result"]
+
+    assert result.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+    assert read_exact_material_acquisition_result(ledger, result.identity) == result
+    assert result.exact_material == invocation.stdout_bytes
+    assert result.material["provenance_occurrence_references"] == [
+        source.identity
+    ]
+    assert result.material["known_loss"] == list(EXTERNAL_JSON_KNOWN_LOSS)
+    assert result.material["unknown"] == [
+        "represented_relation",
+        "source_relation",
+    ]
+    assert "implementation_function_identity" not in result.material
+    assert "external_invocation_occurrence_identity" not in result.material
+
+
+def test_external_output_acquisition_availability_records_no_declared_measurement(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    ledger = observation["ledger"]
+    result = observation["result"]
+
+    assert read_exact_material_acquisition_result(ledger, result.identity) == result
+    assert not tuple(
+        event
+        for event in ledger.list_locality(RESULT_LOCALITY)
+        if event.kind
+        in {
+            BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+            BYTE_MEASUREMENT_RECORDED_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        }
+    )
+
+
+def test_external_output_provenance_does_not_supply_measurement_pressure(
+    witness_grammar_external_json_observation,
+):
+    observation = witness_grammar_external_json_observation
+    ledger = observation["ledger"]
+    result = observation["result"]
+    boundary = ledger.append_boundary()
+
+    assert result.material["provenance_occurrence_references"] == [
+        observation["source"].identity
+    ]
+    assert not tuple(
+        event
+        for event in ledger.list_locality(RESULT_LOCALITY)
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
+    assert ledger.append_boundary() == boundary

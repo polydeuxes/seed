@@ -1,0 +1,410 @@
+"""Admission under every exact implementation-function pair."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+import material_admission  # noqa: E402
+from decoder_measurement import accepts, first_admission  # noqa: E402
+
+
+def test_complete_pair_coverage_separates_in_one_admission():
+    ordered = material_admission.admit(material_admission.one_admission(range(16)), lambda a, b: a < b)
+    assert material_admission.admission_counts(ordered) == [1, 16]
+
+
+def test_a_nonrepresentative_pair_cannot_hide_inside_a_final_admission():
+    material = ("a", "b", "c", "d")
+
+    def implementation_function(first, second):
+        return (first, second) == ("b", "d")
+
+    admissions = material_admission.admit([("a", "b"), ("c", "d")], implementation_function)
+
+    assert material_admission.admission_counts(admissions) == [2, 4]
+    for firsts in admissions[-1]:
+        for seconds in admissions[-1]:
+            assert len({implementation_function(a, b) for a in firsts for b in seconds}) == 1
+
+
+def test_admission_invokes_each_ordered_pair_once_in_source_order():
+    material = ("a", "b", "c")
+    invocations = []
+
+    def implementation_function(first, second):
+        invocations.append((first, second))
+        return first == second
+
+    material_admission.admit([material], implementation_function)
+
+    assert invocations == [
+        (first, second)
+        for first in material
+        for second in material
+    ]
+
+
+def test_the_same_admission_uses_a_decoder_witness():
+    read = first_admission("utf-8", 4)
+    first = [tuple(material) for material in read.values()]
+
+    admissions = material_admission.admit(first, lambda a, b: accepts("utf-8", (a, b)))
+
+    assert material_admission.admission_counts(admissions) == [5, 6]
+    assert sorted(len(material) for material in admissions[-1]) == [5, 13, 16, 30, 64, 128]
+
+
+def test_every_admission_carries_the_same_material():
+    read = first_admission("utf-8", 4)
+    admissions = material_admission.admit(
+        [tuple(m) for m in read.values()], lambda a, b: accepts("utf-8", (a, b))
+    )
+
+    for admission in admissions:
+        assert sorted(b for material in admission for b in material) == list(range(256))
+
+
+def test_preserves_uses_no_pairwise_subset_call():
+    class ExactMaterial(frozenset):
+        calls = 0
+
+        def __le__(self, other):
+            type(self).calls += 1
+            return super().__le__(other)
+
+    first = tuple(ExactMaterial((position,)) for position in range(256))
+    second = tuple(reversed(first))
+
+    assert material_admission.preserves(first, second)
+    assert ExactMaterial.calls == 0
+
+
+def test_equal_admission_results_keep_distinct_act_occurrences():
+    first = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="first-admission",
+    )
+    second = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="second-admission",
+    )
+
+    assert first.act_occurrence_identity != second.act_occurrence_identity
+    assert first.result_identity != second.result_identity
+    assert first.result_reference.admitted_material == (
+        second.result_reference.admitted_material
+    )
+
+
+def test_admission_result_hash_uses_its_exact_result_identity():
+    class ExactMaterial:
+        hash_count = 0
+
+        def __hash__(self):
+            type(self).hash_count += 1
+            return id(self)
+
+    first_material = ExactMaterial()
+    second_material = ExactMaterial()
+    admission = material_admission.admission_occurrence(
+        ((first_material,), (second_material,)),
+        boundary_identity="hash-admission",
+    )
+    ExactMaterial.hash_count = 0
+
+    assert hash(admission.result_reference) == hash(admission.result_identity)
+    assert ExactMaterial.hash_count == 0
+
+
+def test_admission_validates_each_exact_material_set_once():
+    class ExactMaterial:
+        hash_count = 0
+
+        def __hash__(self):
+            type(self).hash_count += 1
+            return id(self)
+
+    material = tuple(ExactMaterial() for _ in range(8))
+
+    admission = material_admission.admission_occurrence(
+        (material,),
+        boundary_identity="one-validation-admission",
+    )
+
+    assert admission.source_material == material
+    assert ExactMaterial.hash_count == 2 * len(material)
+
+
+def test_admission_direct_construction_retains_exact_tuple_and_uniqueness_checks():
+    class TupleSubclass(tuple):
+        pass
+
+    with pytest.raises(TypeError, match="exact admitted material tuples"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="subclass-admitted-material",
+            occurrence_position=0,
+            source_material=("a",),
+            admitted_material=TupleSubclass((("a",),)),
+        )
+
+    with pytest.raises(ValueError, match="differs from its exact source"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="subclass-source-material",
+            occurrence_position=0,
+            source_material=TupleSubclass(("a",)),
+            admitted_material=(("a",),),
+        )
+
+    with pytest.raises(ValueError, match="more than once"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="duplicate-admitted-material",
+            occurrence_position=0,
+            source_material=("a",),
+            admitted_material=(("a", "a"),),
+        )
+
+
+def test_admission_compare_preserves_both_results_and_its_exact_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+
+    forward = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="forward-compare",
+    )
+    reverse = material_admission.compare_admission_results(
+        broad.result_reference,
+        fine.result_reference,
+        boundary_identity="reverse-compare",
+    )
+
+    assert forward.first_reference == fine.result_reference
+    assert forward.second_reference == broad.result_reference
+    assert forward.result is True
+    assert reverse.first_reference == broad.result_reference
+    assert reverse.second_reference == fine.result_reference
+    assert reverse.result is False
+    assert forward.act_occurrence_identity != reverse.act_occurrence_identity
+    assert forward.result_identity != reverse.result_identity
+    assert forward.result_reference.act_occurrence_identity == (
+        forward.act_occurrence_identity
+    )
+    assert forward.result_reference.result_identity == forward.result_identity
+    assert forward.result_reference.first_reference == fine.result_reference
+    assert forward.result_reference.second_reference == broad.result_reference
+    assert forward.result_reference.result is True
+
+
+def test_equal_compare_results_keep_distinct_result_references():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+    first = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="first-compare",
+    )
+    second = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="second-compare",
+    )
+
+    assert first.result_reference.result is second.result_reference.result is True
+    assert first.result_reference.act_occurrence_identity != (
+        second.result_reference.act_occurrence_identity
+    )
+    assert first.result_reference.result_identity != (
+        second.result_reference.result_identity
+    )
+
+
+def test_compare_result_reference_refuses_something_other_than_its_occurrence():
+    with pytest.raises(TypeError, match="exact Act occurrence"):
+        material_admission.AdmissionCompareResultReference(object())
+
+
+def test_admission_compare_refuses_different_material_occurrences():
+    first = material_admission.admission_occurrence(
+        (("a",),),
+        boundary_identity="first-admission",
+    )
+    second = material_admission.admission_occurrence(
+        (("b",),),
+        boundary_identity="second-admission",
+    )
+
+    with pytest.raises(ValueError, match="same exact material occurrences"):
+        material_admission.compare_admission_results(
+            first.result_reference,
+            second.result_reference,
+            boundary_identity="compare",
+        )
+
+
+def test_admission_compare_refuses_a_changed_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+
+    with pytest.raises(ValueError, match="differs from its exact Admission results"):
+        material_admission.AdmissionCompareOccurrence(
+            boundary_identity="compare",
+            occurrence_position=0,
+            first_reference=fine.result_reference,
+            second_reference=broad.result_reference,
+            result=False,
+        )
+
+
+def test_admission_compare_refuses_coordinates_from_another_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+    wrong = material_admission._AdmissionMaterialPositions(
+        fine.result_reference.admitted_material
+    )
+
+    with pytest.raises(ValueError, match="coordinates differ"):
+        material_admission.AdmissionCompareOccurrence(
+            boundary_identity="compare",
+            occurrence_position=0,
+            first_reference=fine.result_reference,
+            second_reference=broad.result_reference,
+            result=True,
+            _second_material_positions=wrong,
+        )
+
+
+def test_every_ordered_admission_result_pair_has_one_compare_occurrence():
+    admissions = tuple(
+        material_admission.admission_occurrence(
+            admission,
+            boundary_identity="pair-admission",
+            occurrence_position=position,
+        )
+        for position, admission in enumerate(
+            (
+                (("a", "b"),),
+                (("a",), ("b",)),
+                (("a",), ("b",)),
+            )
+        )
+    )
+
+    comparisons = material_admission.compare_admission_result_pairs(
+        tuple(admission.result_reference for admission in admissions),
+        boundary_identity="admission-result-pairs",
+    )
+
+    assert len(comparisons) == len(admissions) * (len(admissions) - 1)
+    assert {
+        (comparison.first_reference, comparison.second_reference)
+        for comparison in comparisons
+    } == {
+        (first.result_reference, second.result_reference)
+        for first in admissions
+        for second in admissions
+        if first is not second
+    }
+    assert len({comparison.act_occurrence_identity for comparison in comparisons}) == len(
+        comparisons
+    )
+
+
+def test_admission_result_pairs_read_each_second_admission_once(monkeypatch):
+    admissions = tuple(
+        material_admission.admission_occurrence(
+            admission,
+            boundary_identity="read-once-admission",
+            occurrence_position=position,
+        )
+        for position, admission in enumerate(
+            (
+                (("a", "b", "c"),),
+                (("a",), ("b", "c")),
+                (("a",), ("b",), ("c",)),
+            )
+        )
+    )
+    original = material_admission._AdmissionMaterialPositions
+    read_material = []
+
+    def measured(admitted_material):
+        read_material.append(admitted_material)
+        return original(admitted_material)
+
+    monkeypatch.setattr(material_admission, "_AdmissionMaterialPositions", measured)
+
+    comparisons = material_admission.compare_admission_result_pairs(
+        tuple(admission.result_reference for admission in admissions),
+        boundary_identity="read-once-pairs",
+    )
+
+    assert len(comparisons) == 6
+    assert read_material == [
+        admission.result_reference.admitted_material for admission in admissions
+    ]
+
+
+def test_admission_result_pair_compare_refuses_one_result_twice():
+    admission = material_admission.admission_occurrence(
+        (("a",),),
+        boundary_identity="one-admission",
+    )
+
+    with pytest.raises(ValueError, match="entered Compare twice"):
+        material_admission.compare_admission_result_pairs(
+            (admission.result_reference, admission.result_reference),
+            boundary_identity="repeated-admission-result",
+        )
+
+
+PYTEST_ADMISSION = (
+    test_complete_pair_coverage_separates_in_one_admission,
+    test_a_nonrepresentative_pair_cannot_hide_inside_a_final_admission,
+    test_admission_invokes_each_ordered_pair_once_in_source_order,
+    test_the_same_admission_uses_a_decoder_witness,
+    test_every_admission_carries_the_same_material,
+    test_preserves_uses_no_pairwise_subset_call,
+    test_equal_admission_results_keep_distinct_act_occurrences,
+    test_admission_result_hash_uses_its_exact_result_identity,
+    test_admission_validates_each_exact_material_set_once,
+    test_admission_direct_construction_retains_exact_tuple_and_uniqueness_checks,
+    test_admission_compare_preserves_both_results_and_its_exact_result,
+    test_equal_compare_results_keep_distinct_result_references,
+    test_compare_result_reference_refuses_something_other_than_its_occurrence,
+    test_admission_compare_refuses_different_material_occurrences,
+    test_admission_compare_refuses_a_changed_result,
+    test_admission_compare_refuses_coordinates_from_another_result,
+    test_every_ordered_admission_result_pair_has_one_compare_occurrence,
+    test_admission_result_pairs_read_each_second_admission_once,
+    test_admission_result_pair_compare_refuses_one_result_twice,
+)

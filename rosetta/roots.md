@@ -1,191 +1,295 @@
-# The two roots
+# Standing and Responsibility spine
 
-Translation testimony. **No entry here carries constitutional Authority**, and
-nothing here is citable as law — see [README](README.md). Where this file names
-a clause, the clause is the authority and this is the gloss.
+Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
+the authority; this file has none.
 
-A *root* is one of the two directions across Seed's boundary, named in ordinary
-English so a person can hold the whole shape in mind before reading any grammar.
+Rosetta follows the Book ordering:
 
 ```text
-                        the boundary
-
-    world  ── Examination ──>  Seed
-    world  <─ Presentation ──  Seed
-```
-
-Everything else in this directory hangs beneath one of these two, or beneath
-neither and is simply a retired word.
-
-Two roots and not three: **Emission is not a root.** It is the outward
-occurrence of sending something already formed, and the Book keeps it strictly
-apart from the forming — *"Forming a representation is not an emission
-occurrence"* (`06.Representations`). A person sees a Presentation; the sending
-of it is a separate event in Seed's account of itself.
-
-Two roots and not one: the directions are not mirror images. The outward
-direction has a clause that names the whole responsibility. The inward
-direction does not. That asymmetry is recorded below rather than smoothed over,
-because the symmetry is attractive enough to invent.
-
----
-
-## Presentation
-
-```text
-role            root — the outward face
-book standing   none as a responsibility. `presentation` appears in active law
-                as rendering vocabulary, as closed-choice machinery, and as an
-                ordinary verb
-maps to         06.Representations (forming) · 08.Emission (sending)
-```
-
-### What a person means by it
-
-What Seed shows you. You typed something, Seed answered, and the answer you are
-looking at is the Presentation.
-
-### What Seed is actually doing
-
-Two established things, in order, owned separately.
-
-```text
-a responsible occurrence forms a bounded representation
-    from exact source material, for a declared purpose
+current Standing
+└── exact Responsibility
+    ├── responsible boundary
+    ├── subject or material
+    ├── exact Act
+    ├── Authority
+    ├── Scope / Locality / limits
+    ├── source / provenance where required
+    └── exact support relations where required
         ↓
-that representation carries only the Standing warranted by
-    its source, responsible formation, purpose, Scope, Evidence,
-    provenance, Authority limits, conflicts, limits, and
-    responsibly established Unknowns
-        ↓
-emission occurs, separately, as its own occurrence
+    Act occurrence
+        ↓ Yield
+    exact result
+
+later Standing
+    separate Responsibility + Act occurrence + Yield + result
 ```
 
-The middle line is the whole of what people mean when they say Seed should be
-honest. It is not a disposition or an intention. It is a bound on what the thing
-you are looking at is permitted to carry.
-
-This is why a fluent answer can be a failure and an awkward one can be correct.
-If Seed has met a word twice and says something that would only be warranted by
-meeting it ten thousand times, the Presentation carries standing its formation
-does not supply — regardless of how well it reads.
-
-### What it must not become
-
-`presentation` is a crowded word in the repository, and most of what it names
-is not this.
+Relations recur across live implementation roads:
 
 ```text
-not the closed-choice machinery   twenty of the word's thirty-five uses in
-                                  active law are presented alternatives and
-                                  bounded presentation C, which belong to
-                                  operator-goal establishment, not here
-not session Standing              a current implementation projects Standing
-                                  "for a session"; that is not what a person
-                                  sees, and no clause warrants it
-not Emission                      forming and sending are separate occurrences
-not receipt                       that you saw it is not part of Seed's act
-not a UI                          rendering is a surface over the formation
-                                  payload, and a rendered label is expressly
-                                  not the represented meaning
+exact subject and role ── Participation → exact Act occurrence
+exact content ── Carriage → exact Act occurrence
+exact Act occurrence ── Yield → exact result
+exact subject ── Locality → exact subject
+exact subject ── Support → exact input to Act position
 ```
 
-### Where the mapping is Unknown
+The endpoints do not supply a relation by co-presence. Each relation requires
+its exact responsible occurrence, Authority, Scope, Locality, limits, and
+Unknown. These are not every relation about which Seed may carry an Assertion
+or Standing.
 
-`06.Representations` closes with: *"Whether forming a representation names an
-Act distinct from the exact Act that forms it remains **Unknown** unless
-separately established."*
+## Live implementation references
 
-So the Book declines to say that forming-outward is its own Act. This root is a
-human word for a direction, and does not settle that question.
-
----
-
-## Examination
+These references are representative witnesses, not a runtime inventory. They
+do not define grammar. An acquisition Act or result does not enter Rosetta
+unless an ordinary word needs translation to an exact Seed
+distinction.
 
 ```text
-role            root — the inward face
-book standing   none. `examination` was retired from active law 2026-08-03 and
-                stands at zero occurrences; see retired-vocabulary.md
-maps to         no single clause. several bounded responsibilities
+Measurement Responsibility / Act / occurrence / Assertions
+    seed_runtime.byte_measurement::record_byte_measurement_responsible_act_evidence
+    seed_runtime.byte_measurement::record_byte_measurement_result
+    seed_runtime.byte_measurement::record_byte_position_pair_count_layer
+
+Evidence of Yield relation
+    seed_runtime.evidence_of_yield_relation::_record_evidence_of_yield_relation
+
+Assertion addressability and locality movement
+    seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
+    seed_runtime.byte_measurement::_move_byte_assertion_to_locality
+
+Applicability
+    seed_runtime.byte_measurement::get_recorded_pair_input_applicability
+
+Emission Locality / Participation / Yield
+    seed_runtime.operator_representation::emit_operator_representation_material
+
+Witness-grammar Fidelity
+    tests/test_grammar_implementation.py
 ```
 
-### What a person means by it
+## Directional shorthand
 
-Seed encountering something from outside and coming to hold it — a book, a line
-you typed, a file, a program's output. The word covers the whole inward trip
-from *there is something out there* to *Seed has something it can work with*.
+`Examination` describes movement from presented material toward bounded Seed
+Assertions. `Presentation` describes movement from bounded Seed Assertions
+toward an emitted representation. Neither is a root, Act, or
+occurrence. They are directions across the Responsibility spine.
 
-### What Seed is actually doing
+## Translation shorthand
 
-Not one thing, and this is the honest part of the entry.
+The following words are ordinary compression. Expand them before reasoning
+about Seed:
 
 ```text
-material arrives and is preserved as an occurrence, attributed to
-    its origin — operator, this Seed, or system
-        ↓
-external material may become addressable as source-attributed material
-    without becoming constitutional grammar          (01.External.B)
-        ↓
-a declared measurement may produce bounded findings — equality, count,
-    recurrence, prefix occurrence, a declared predicate, adjacency —
-    disclosing what was measured, the rule of sameness, and the bounded
-    scope                                            (01.External:28)
-        ↓
-none of that establishes meaning                     (01.External.E)
+Book           this constitutional language + ordered clause coordinates + this Book's admitted lexicon; Book != lexicon by identity
+Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
+Composite      one communicative address for several exact coordinates; each coordinate still requires its own responsible physiology
+Name / label / kind / shape ordinary ways to point at material or a grouping; none supplies the subject, relation, Act, occurrence, or Standing it suggests
+Evidence       communicative shorthand that exact material, source and occurrence references, Authority, Scope, limits, and a responsible relation support an Assertion; no separate Evidence coordinate
+Producer       Act occurrence + Yield + result
+Consumer       subject + role + Applicability + Participation
+Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
+Consumption    Participation in an exact Act occurrence
+Uptake         availability + Applicability + Participation
+Handoff        movement, or an exact Responsibility/Authority change
+Memory         addressed prior Locality Standing boundary + Book-bounded Responsibility assignment + direct Standing Locality continuation + new Locality; availability != Applicability; another exact Act required
+Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, Standing, temporal relation, or result
+Checkout       exact recorded Standing boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
+Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence, Standing, or Evidence equality
+Lineage        ordered source and occurrence references beneath Provenance
+Artifact       exact representation, record, Assertion, or result
+Projection     exact Act occurrence + representation + its carried coordinates
+Comparison of material-result references exact selected material-result references + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
+Comparison point carried recorded-reference occurrence + source Locality identity + exact Standing boundary occurrence + addressed Representation; transient read only; no Standing copy; availability != Applicability
+View           exact Act occurrence + representation + its carried coordinates
+Formation      exact Act occurrence + Yield + representation
+Constructor    callable implementation mechanism; no Authority by identity
+Owner          responsible boundary bearing an exact Responsibility
+Ownership      Assertion concerning that Responsibility assignment
+Claim          asserted content
+Fact           Assertion described through its bounded Standing
+Testimony      asserted content with carried source coordinates
+Attribution    Assertion concerning a source relation
+Warrant        exact support relation from Evidence + Authority + Scope + preserved limits to one Assertion or assignment; composite only, no new relation by identity
+Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
+Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
+Purpose        the exact Act's other carried coordinates
+Meaning        Assertion concerning an exact represented relation
+Capability     exact Act / Authority / Constraints / Evidence
+Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
+Gap            bounded Compare result
+Goal           locality-bound material concerning a desired result
+Demand         shorthand that a bounded result is absent
+Reliance       Assertion that an exact input supports an exact result
+Continuum      earlier Standing + later occurrence + Compare of preserved coordinates
+Closure        bounded Fidelity claim across the exact admitted coordinates
+Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
+Exposure       exact address / reference resolution + intact occurrence / boundary validation + returned exact coordinates, or availability at an exact Locality, or an emitted Representation; no carrying, uptake, Participation, occurrence, or Standing by identity; resolve the exact Act, occurrence, and relation
+Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
+Replay         exact recorded Locality occurrences in recorded order + Standing read from no prior Standing; a recorded Act does not occur
+Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, Standing, or relation
+Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
+Addressability of preserved coordinates
 ```
 
-Four separate boundaries, no single act joining them. A person saying
-"Seed examined the book" is compressing all of it, which is what ordinary
-English is for and what the Book cannot afford.
-
-### Why this word is not in the Book
-
-It was, and it was removed. The chapter now called Inquiry was
-`inquiry-and-examination` until the noun came out on 2026-08-03, because it had
-compressed several responsibilities — comparison, applicability determination,
-and relation establishment among them — into one word that sounded like an act.
-
-That is precisely the property that makes it a good root here and a bad clause
-there. As a root it says *this direction, all of it*. As law it would claim
-there is one act where there are several.
-
-The verb survives in active law, with applicability as the thing doing the
-examining. The noun does not.
-
-### What it must not become
+`Dimensional map` is curator shorthand for a recurring orientation:
 
 ```text
-not an Act                    nothing performs an Examination
-not a stage                   the responsibilities beneath it have no
-                              required order
-not meaning-making            measurement and recurrence establish no
-                              meaning, which is a titled clause
-not admission                 material arriving is not material admitted
-not a return path to law      the noun is retired. a lexical gate that would
-                              guard against its return is proposed and not yet
-                              merged, so nothing currently prevents the drift
-                              except attention
+subject / identity
+assertion / content
+standing
+source / provenance
+responsibility
+authority / support
+scope / locality
+occurrence / preservation
 ```
 
-### Where the mapping is Unknown
+This is not a fixed coordinate population, a constitutional hierarchy, or a
+Responsibility. Exact subjects expose only the coordinates established under
+their own responsible boundaries.
 
-Whether the inward direction has a single responsibility at all. The outward
-direction has one clause that names the whole of it; the inward direction has
-four boundaries and no clause joining them.
+## Connective shorthand
 
-That may be a gap, or it may be the true shape — one mouth and many senses is
-an ordinary way for an organism to be built. Nothing recovered so far decides
-it, and this entry does not either.
+A connective noun does not establish a Seed relation. Translation resolves the
+exact coordinates doing the work:
 
----
+### May / sufficient / possible / allowed / capable
 
-## On using these words
+These words are ordinary compression. Expand each into its exact subject,
+relation, Responsibility, Authority, Applicability, Participation, Act
+occurrence, Evidence, Scope, limits, Unknown, result, and Standing coordinates.
+The word alone establishes none of them.
 
-They are for talking to people, including ourselves at speed. They carry no
-standing, they name no act, and an argument that turns on one of them has not
-yet reached the grammar.
+### Fail / fails / failed
 
-The test that keeps them honest: **if a sentence about Seed would change
-meaning when the root word is replaced by the clauses beneath it, the sentence
-was resting on the English.**
+These forms compress one exact Act occurrence plus a bounded failure Assertion
+or result, Evidence, Authority, Scope, and preserved limits. They do not mean
+absence of an Act occurrence, Stop, or completion by identity.
+
+### Shared
+
+`Shared` is an auxiliary composite only. For exact named subjects and one
+exact named coordinate, occurrence, boundary, or label, each subject carries
+one exact reference of that subject through its own exact relation, Evidence,
+Authority, Scope, and limits. The word alone establishes no identity,
+equality, sameness, Locality, Participation, Applicability, Standing,
+represented relation, or Act.
+
+### Identify / identifies / identifying
+
+These forms compress one exact address or reference, or material asserting one
+exact relation from X to Y. An address or reference carries coordinates and
+establishes no constitutional relation. Material asserting the relation
+requires one responsible occurrence, Evidence, Authority, Scope, provenance,
+limits, and Unknown before Standing. The forms alone establish no identity,
+equality, sameness, subject, occurrence, represented relation, or truth.
+
+### Does
+
+`Does` is an ordinary auxiliary relation-carrier when it carries negation,
+emphasis, or a question for one named relation; it neither names nor performs
+that relation. Its performative use instead asserts that an exact subject
+performs an exact Act. That use requires the exact Act occurrence and Evidence;
+the word alone establishes neither the occurrence nor the relation.
+
+```text
+exact subject or material
+    ↓
+exact Act + Responsibility + Authority + Scope
+    ↓
+Act occurrence + Evidence + Participation
+    ↓
+Yield or exact Locality relation
+    ↓
+exact result + Standing
+    ↓
+Compare
+```
+
+Material acquisition currently gives a concrete example:
+
+```text
+measured source Assertion reference
+    + measured material Assertion reference
+    ↓
+addition Act occurrence at an exact position
+    ↓
+exact material result identity
+
+source implementation-function invocation occurrence
+    + addition Act occurrence
+    + result implementation-function invocation occurrence
+    ↓
+Compare occurrence
+```
+
+A composite preserves the same crossings:
+
+```text
+removal Act occurrence
+    ↓
+exact removal result reference
+    ↓
+addition Act occurrence
+```
+
+A connective composite receives no Act, relation, Evidence, Authority, or
+Standing by identity.
+
+### Increment
+
+`Increment` is a composite relation only: one exact earlier count, one exact
+later count, and exact Evidence that the later count carries one additional
+exact counted occurrence within the same Scope and boundary. The word alone
+establishes no later count relation or count by identity.
+
+### Counted
+
+`Counted` is an auxiliary composite only: one exact occurrence reference in
+one exact count finding with Evidence, Scope, and limits. The word alone
+establishes no change of occurrence or identity.
+
+`Grammar distinctions` are bounded discriminators:
+
+```text
+exact material result reference
+    + implementation function invocation occurrence
+    + complete result coordinates
+    + Admission occurrence
+```
+
+Same result coordinates do not establish same material, occurrence, identity,
+grammar, or Standing. Different result coordinates establish only the bounded
+distinction. Neither result establishes what either material represents, and
+Admission grouping does not establish language or a represented relation.
+
+## This
+
+`This` is not discarded as connective material and does not establish
+currentness or identity by itself. Keep the coordinates that can discriminate
+its represented relation:
+
+```text
+exact material occurrence
+    + Representation occurrence
+    + exact addressed subject
+    + Locality
+    + occurrence boundary
+    + represented-relation Evidence or Unknown
+```
+
+The same material under another occurrence or Locality does not preserve the
+addressed subject by identity. Different material at the same occurrence does
+not establish a different addressed subject by identity. Acquisition compares
+both directions before a bounded represented relation receives Standing.
+
+None of these shorthands adds a constitutional subject, relation, occurrence,
+or Standing. If the expansion loses a distinction, read the missing exact
+coordinate rather than restoring the compressed noun.
+
+## Use
+
+Rosetta is for translation. An argument that depends on a shorthand has not
+yet reached Seed grammar.

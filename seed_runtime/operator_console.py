@@ -1,132 +1,1190 @@
-"""Process-local repetition around bounded operator ingress and Presentation."""
+"""Operator material acquisition, slash commands, Representation, and emission."""
 
 from __future__ import annotations
 
-from typing import TextIO
+from typing import BinaryIO, Mapping, TextIO
 
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    _record_byte_position_pair_count_layer_from_carried_locality_standing,
+    assertions_of_recorded_byte_measurement,
+    get_byte_position_pair_measurement_responsibility_assignment,
+)
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    _record_recorded_pair_measurement_comparison_from_carried_measurements,
+)
+from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_ingress import run_operator_ingress_attempt
-from seed_runtime.operator_ingress_representation import capture_stdin_material
-from seed_runtime.operator_presentation import (
-    emit_operator_presentation,
-    form_operator_presentation,
+from seed_runtime.identities import new_identity
+from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    operator_emission_boundary,
 )
-from seed_runtime.operator_session_standing import (
-    advance_operator_session_standing,
-    project_operator_session_standing,
+from seed_runtime.operator_material_boundary import operator_boundary_material
+from seed_runtime.operator_material_acquisition import (
+    _record_operator_material_acquire_responsibility_assignment_from_carried_representation,
+    _record_operator_material_acquire_responsible_act_evidence_from_assignment,
+    record_operator_material_acquire_result,
+)
+from seed_runtime.operator_command import (
+    OperatorCommandHandler,
+    is_slash_command,
+    run_operator_command,
+)
+from seed_runtime.operator_checkpoint import (
+    OperatorCheckpointRequest,
+    record_standing_boundary_reference_responsibility_assignment,
+    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_result,
+    request_operator_checkpoint,
+)
+from seed_runtime.operator_checkout import (
+    OperatorCheckoutRequest,
+    request_operator_checkout,
+)
+from seed_runtime.operator_memory_command import (
+    OperatorMemoryRequest,
+    request_operator_memory,
+)
+from seed_runtime.operator_locality_command import (
+    OperatorLocalityRequest,
+    request_operator_locality,
+)
+from seed_runtime.operator_representation import (
+    _record_operator_representation_from_recorded_pair_measurement,
+    emit_operator_representation_material,
+    read_operator_representation,
+    record_operator_representation,
+)
+from seed_runtime.operator_representation_admission import (
+    record_representation_candidate_responsibility_assignment,
+    record_representation_candidate_act_evidence,
+    record_representation_candidate_result,
+    record_exact_material_representation_admission_responsibility_assignment,
+    record_exact_material_representation_admission_act_evidence,
+    record_exact_material_representation_admission_result,
+    exact_material_representation_admission_occurrence_references,
+)
+from seed_runtime.operator_representation_applicability import (
+    record_representation_emission_applicability_act_evidence,
+    record_representation_emission_applicability_result,
+    representation_emission_applicability_occurrence_references,
+)
+from seed_runtime.operator_standing_continuation import (
+    record_standing_locality_continuation_responsibility_assignment,
+    record_standing_locality_continuation_responsible_act_evidence,
+    record_standing_locality_continuation_result,
+)
+from seed_runtime.operator_invocation_locality import (
+    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_result,
+)
+from seed_runtime.standing_boundary_locality import (
+    record_recorded_standing_boundary_locality_responsibility_assignment,
+    record_recorded_standing_boundary_locality_responsible_act_evidence,
+    record_recorded_standing_boundary_locality_result,
+)
+from seed_runtime.operator_locality_standing import (
+    _carry_occurrence_position_measurement_assignment_into_standing,
+    _carry_occurrence_position_measurement_result_into_standing,
+    _carry_operator_material_acquisition_occurrence_into_standing,
+    advance_operator_locality_standing,
+    read_operator_locality_standing,
+)
+from seed_runtime.occurrence_position_measurement import (
+    _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+    _record_occurrence_position_measurement_responsible_act_evidence_from_carried_standing,
+    _record_occurrence_position_measurement_result_from_carried_act_evidence,
+    measure_occurrence_position,
+)
+from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+    BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+)
+from seed_runtime.ordered_path_source_position_continuation import (
+    yield_ordered_path_source_position_continuations,
+)
+from seed_runtime.declared_measurement_responsibilities import (
+    _record_declared_measurements_from_carried_bounded_locality_replay,
+)
+from seed_runtime.supplied_invocation_material import (
+    OperatorInvocationProvider,
+    SuppliedWitnessMaterialOccurrence,
+    acquire_supplied_witness_material_occurrence,
 )
 
 
-def _is_console_exit(material: bytes, encoding: str | None) -> bool:
-    command = material.removesuffix(b"\n").removesuffix(b"\r")
-    try:
-        return command == "exit".encode(encoding or "utf-8", errors="strict")
-    except LookupError:
-        return False
-
-
-def _advance_over(ledger, standing, event_ids, *, workspace_id, session_id):
+def _advance_over(ledger, standing, event_identities, *, locality_identity):
     """Advance carried Standing over occurrences a responsible act just recorded.
 
-    The identifiers come from the act that recorded them, so nothing here
+    The identities come from the act that recorded them, so nothing here
     searches the ledger for what happened; the events are retrieved by exact
-    identifier.
+    identity.
     """
 
-    return advance_operator_session_standing(
-        [ledger.get(event_id) for event_id in event_ids],
-        workspace_id=workspace_id,
-        session_id=session_id,
+    return advance_operator_locality_standing(
+        ledger,
+        event_identities,
+        locality_identity=locality_identity,
         prior=standing,
     )
+
+
+def _advance_over_representation(ledger, standing, representation):
+    """Advance over the exact occurrences returned by one Representation act."""
+
+    return _advance_over(
+        ledger,
+        standing,
+        representation["recorded_occurrence_references"],
+        locality_identity=representation["locality_identity"],
+    )
+
+
+def _record_representation_candidate(
+    ledger,
+    standing,
+    representation,
+    *,
+    destination_operator_boundary,
+):
+    """Carry one addressed Representation into Candidate Standing."""
+
+    locality_identity = representation["locality_identity"]
+    candidate_assignment = (
+        record_representation_candidate_responsibility_assignment(
+            ledger,
+            representation_event_identity=representation[
+                "representation_event_identity"
+            ],
+            locality_standing=standing,
+            destination_operator_boundary=destination_operator_boundary,
+        )
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (candidate_assignment.identity,),
+        locality_identity=locality_identity,
+    )
+    candidate_act = record_representation_candidate_act_evidence(
+        ledger,
+        assignment_event_identity=candidate_assignment.identity,
+        locality_standing=standing,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (candidate_act.identity,),
+        locality_identity=locality_identity,
+    )
+    candidate = record_representation_candidate_result(
+        ledger,
+        responsible_act_evidence_event_identity=candidate_act.identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (
+            candidate.material["evidence_of_yield_relation_identity"],
+            candidate.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    return standing, candidate
+
+
+def _record_exact_material_representation_admission_and_applicability(
+    ledger,
+    standing,
+    representation,
+    *,
+    destination_operator_boundary,
+):
+    """Carry one exact-material Candidate through Admission Standing."""
+
+    locality_identity = representation["locality_identity"]
+    standing, candidate = _record_representation_candidate(
+        ledger,
+        standing,
+        representation,
+        destination_operator_boundary=destination_operator_boundary,
+    )
+    admission_assignment = (
+        record_exact_material_representation_admission_responsibility_assignment(
+            ledger,
+            candidate_result_event_identity=candidate.identity,
+            locality_standing=standing,
+        )
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (admission_assignment.identity,),
+        locality_identity=locality_identity,
+    )
+    admission_act = record_exact_material_representation_admission_act_evidence(
+        ledger,
+        assignment_event_identity=admission_assignment.identity,
+        locality_standing=standing,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (admission_act.identity,),
+        locality_identity=locality_identity,
+    )
+    admission = record_exact_material_representation_admission_result(
+        ledger,
+        responsible_act_evidence_event_identity=admission_act.identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (
+            admission.material["evidence_of_yield_relation_identity"],
+            admission.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    applicability_act = record_representation_emission_applicability_act_evidence(
+        ledger,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        destination_operator_boundary=destination_operator_boundary,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (applicability_act.identity,),
+        locality_identity=locality_identity,
+    )
+    applicability = record_representation_emission_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (
+            applicability.material["evidence_of_yield_relation_identity"],
+            applicability.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    return standing, admission, applicability
+
+
+def _record_occurrence_position_measurement(
+    ledger, standing, *, locality_identity
+):
+    """Record the explicitly triggered position population of this Locality."""
+
+    position_finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity=locality_identity,
+    )
+    position_measurement_assignment = (
+        _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
+            ledger,
+            recording_locality_identity=locality_identity,
+            finding=position_finding,
+            locality_standing=standing,
+        )
+    )
+    standing = _carry_occurrence_position_measurement_assignment_into_standing(
+        ledger,
+        standing,
+        position_measurement_assignment,
+        position_finding,
+        prior_through_event_occurrence_identity=standing[
+            "through_event_occurrence_identity"
+        ],
+    )
+    position_measurement_act_evidence = (
+        _record_occurrence_position_measurement_responsible_act_evidence_from_carried_standing(
+            ledger,
+            responsibility_assignment=position_measurement_assignment,
+            finding=position_finding,
+            responsibility_assignment_standing=standing,
+        )
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (position_measurement_act_evidence.identity,),
+        locality_identity=locality_identity,
+    )
+    position_measurement = (
+        _record_occurrence_position_measurement_result_from_carried_act_evidence(
+            ledger,
+            responsible_act_evidence=position_measurement_act_evidence,
+            responsibility_assignment=position_measurement_assignment,
+            finding=position_finding,
+        )
+    )
+    standing = _carry_occurrence_position_measurement_result_into_standing(
+        ledger,
+        standing,
+        position_measurement,
+        responsible_act_evidence=position_measurement_act_evidence,
+        responsibility_assignment=position_measurement_assignment,
+        finding=position_finding,
+    )
+    return standing
+
+
+def _record_occurrence_position_after_declared_measurements(
+    ledger, recorded, *, locality_identity
+):
+    byte_measurements = tuple(
+        event
+        for event in recorded.result_occurrences
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+    )
+    if len(byte_measurements) != 1:
+        raise ValueError(
+            "one exact-byte Measurement is required after this responsible boundary"
+        )
+    standing = recorded.bounded_locality_replay
+    direct_measurements = tuple(
+        event
+        for event in recorded.result_occurrences
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+    )
+    for direct_measurement in direct_measurements:
+        for continuation in yield_ordered_path_source_position_continuations(
+            ledger,
+            direct_result_event_identity=direct_measurement.identity,
+            locality_standing=standing,
+        ):
+            standing = continuation.locality_standing
+    standing = _record_occurrence_position_measurement(
+        ledger,
+        standing,
+        locality_identity=locality_identity,
+    )
+    return standing, byte_measurements[0]
+
+
+def _record_measurements_from_bounded_locality_replay(
+    ledger,
+    bounded_locality_replay,
+    *,
+    locality_identity,
+):
+    """Record declared Measurements, then the explicit Locality road."""
+
+    recorded = _record_declared_measurements_from_carried_bounded_locality_replay(
+        ledger,
+        bounded_locality_replay,
+        locality_identity=locality_identity,
+    )
+    return _record_occurrence_position_after_declared_measurements(
+        ledger,
+        recorded,
+        locality_identity=locality_identity,
+    )
+
+
+def _record_pair_measurement(
+    ledger,
+    standing,
+    *,
+    byte_measurement_event_identity,
+    locality_identity,
+):
+    """Record the pair Measurement supplied by one exact-byte Measurement."""
+
+    pair_measurement, standing = (
+        _record_byte_position_pair_count_layer_from_carried_locality_standing(
+            ledger,
+            source_measurement_event_identity=byte_measurement_event_identity,
+            recording_locality_identity=locality_identity,
+            locality_standing=standing,
+        )
+    )
+    return standing, pair_measurement
+
+
+def _record_pair_measurements_after_declared_measurements(
+    ledger,
+    recorded,
+    *,
+    locality_identity,
+):
+    """Record each pair Measurement whose exact-byte result was just recorded."""
+
+    standing = recorded.bounded_locality_replay
+    pair_measurements = []
+    for byte_measurement in recorded.result_occurrences:
+        if byte_measurement.kind != BYTE_MEASUREMENT_RECORDED_KIND:
+            continue
+        standing, pair_measurement = _record_pair_measurement(
+            ledger,
+            standing,
+            byte_measurement_event_identity=byte_measurement.identity,
+            locality_identity=locality_identity,
+        )
+        pair_measurements.append(pair_measurement)
+    return standing, tuple(pair_measurements)
+
+
+def _recorded_byte_measurement_material_references(ledger):
+    """Recover exact-material storage references already measured by this Seed."""
+
+    references = set()
+    for event in ledger.list():
+        if event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
+            continue
+        assertions = assertions_of_recorded_byte_measurement(ledger, event.identity)
+        source = next(
+            (
+                assertion
+                for assertion in assertions or ()
+                if assertion.result == "exact_source_material_set"
+            ),
+            None,
+        )
+        if source is None:
+            raise ValueError("recorded byte Measurement carries no exact source")
+        source_material = source.material["dimensions"]["content"].get(
+            "source_material"
+        )
+        if type(source_material) is not list:
+            raise ValueError("recorded byte Measurement source is malformed")
+        for occurrence_reference in source_material:
+            occurrence_identity = (
+                occurrence_reference.get("material_acquisition_occurrence_identity")
+                if type(occurrence_reference) is dict
+                else None
+            )
+            reference = (
+                ledger._exact_material_reference(occurrence_identity)
+                if type(occurrence_identity) is str
+                else None
+            )
+            if reference is None:
+                raise ValueError("recorded byte Measurement source has no exact material")
+            references.add(reference)
+    return references
+
+
+def _material_measurement_reference(ledger, acquisition_result):
+    reference = ledger._exact_material_reference(acquisition_result.identity)
+    if reference is None:
+        raise ValueError("material acquisition result has no exact material")
+    return reference
+
+
+def _latest_carried_pair_premise(
+    ledger,
+    standing,
+    *,
+    locality_identity,
+):
+    """Address the latest exact pair Measurement already carried here."""
+
+    from seed_runtime.material_acquisition import (
+        read_material_acquisition_locality_relation_requirements,
+    )
+
+    for event_identity in reversed(tuple(standing["measurement_occurrences"])):
+        event = ledger.get(event_identity)
+        if (
+            event is None
+            or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+            or event.locality_identity != locality_identity
+        ):
+            continue
+        reference = (
+            event.material.get("responsibility_assignment_reference")
+            if type(event.material) is dict
+            else None
+        )
+        try:
+            assignment = get_byte_position_pair_measurement_responsibility_assignment(
+                ledger,
+                reference.get("recorded_occurrence_identity")
+                if type(reference) is dict
+                else None,
+            )
+        except (TypeError, ValueError):
+            assignment = None
+        source_occurrence_references = (
+            assignment.material.get("source_occurrence_references")
+            if assignment is not None
+            else None
+        )
+        if (
+            type(source_occurrence_references) is list
+            and source_occurrence_references
+            and all(
+                type(source_reference) is dict
+                and type(
+                    source_reference.get(
+                        "material_acquisition_occurrence_identity"
+                    )
+                )
+                is str
+                for source_reference in source_occurrence_references
+            )
+            and all(
+                all(
+                    read_material_acquisition_locality_relation_requirements(
+                        ledger,
+                        recorded_result_event_identity=source_reference[
+                            "material_acquisition_occurrence_identity"
+                        ],
+                    ).values()
+                )
+                for source_reference in source_occurrence_references
+            )
+        ):
+            return standing, event
+    return standing, None
+
+
+def _representation_source_for_pair_premise(ledger, standing, pair_premise):
+    """Recover the Compare that names this exact pair premise, where carried."""
+
+    if pair_premise is None:
+        return None
+    for comparison_identity in reversed(
+        tuple(standing["comparison_result_occurrences"])
+    ):
+        comparison = ledger.get(comparison_identity)
+        assignment_reference = (
+            comparison.material.get("responsibility_assignment_reference")
+            if comparison is not None
+            else None
+        )
+        assignment = (
+            ledger.get(assignment_reference.get("recorded_occurrence_identity"))
+            if type(assignment_reference) is dict
+            else None
+        )
+        later_measurement_reference = (
+            assignment.material.get("later_measurement_reference")
+            if assignment is not None
+            else None
+        )
+        if (
+            type(later_measurement_reference) is dict
+            and later_measurement_reference.get("recorded_occurrence_identity")
+            == pair_premise.identity
+        ):
+            return comparison_identity
+    return pair_premise.identity
+
+
+def _record_pair_measurement_comparison(
+    ledger,
+    standing,
+    *,
+    earlier_pair_measurement,
+    later_pair_measurement,
+    locality_identity,
+):
+    """Carry first and second produced pair results into their responsible Compare."""
+
+    if (
+        type(earlier_pair_measurement) is not Event
+        or type(later_pair_measurement) is not Event
+        or earlier_pair_measurement.locality_identity != locality_identity
+        or later_pair_measurement.locality_identity != locality_identity
+    ):
+        raise ValueError("pair Compare requires first and second carried Measurements")
+    result, standing = (
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
+            ledger,
+            earlier_measurement=earlier_pair_measurement,
+            later_measurement=later_pair_measurement,
+            locality_standing=standing,
+        )
+    )
+    return standing, result
 
 
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
-    workspace_id: str,
-    session_id: str,
-    input_stream: TextIO,
+    locality_identity: str,
+    input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
-    process_boundary_escape: bool = True,
+    command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
+    raw_output_stream: BinaryIO | None = None,
+    operator_invocation_provider: OperatorInvocationProvider | None = None,
 ) -> None:
-    """Own process-local repetition around bounded operator interactions."""
-    # A console that declined to install the escape does not announce it.
-    if process_boundary_escape:
-        output_stream.write("Seed console: `exit` exits.\n")
-        output_stream.flush()
-    # Standing is carried through the session rather than re-projected before
-    # each interaction. Each responsible act returns the occurrences it
-    # recorded, so the console advances over exactly those occurrences.
-    session_standing = project_operator_session_standing(
-        ledger, workspace_id=workspace_id, session_id=session_id
+    """Repeat exact-byte material acquisition and slash-command occurrences."""
+    if operator_invocation_provider is not None and raw_output_stream is None:
+        raise ValueError("exact output boundary required")
+    operator_egress_boundary_identity = (
+        new_identity("operator_egress_boundary")
+        if raw_output_stream is not None
+        else None
     )
-    presentation = form_operator_presentation(
+
+    handlers = dict(command_handlers or {})
+    handlers[b"checkpoint"] = request_operator_checkpoint
+    handlers[b"checkout"] = request_operator_checkout
+    handlers[b"memory"] = request_operator_memory
+    handlers[b"locality"] = request_operator_locality
+    # Each produced result enters the current Locality Standing.  This
+    # Standing is the input of the next interaction.
+    locality_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    measured_material_references = _recorded_byte_measurement_material_references(
+        ledger
+    )
+    locality_standing, pair_premise = _latest_carried_pair_premise(
         ledger,
-        workspace_id=workspace_id,
-        session_id=session_id,
-        session_standing=session_standing,
+        locality_standing,
+        locality_identity=locality_identity,
     )
-    presentation = emit_operator_presentation(
-        ledger, presentation=presentation, output_stream=output_stream
+    representation_source = _representation_source_for_pair_premise(
+        ledger, locality_standing, pair_premise
     )
-    session_standing = _advance_over(
-        ledger,
-        session_standing,
-        (presentation["formed_event_id"], presentation["emitted_event_id"]),
-        workspace_id=workspace_id,
-        session_id=session_id,
+    if (
+        pair_premise is not None
+        and representation_source == pair_premise.identity
+        and locality_standing["through_event_occurrence_identity"]
+        == pair_premise.identity
+    ):
+        representation = (
+            _record_operator_representation_from_recorded_pair_measurement(
+                ledger,
+                locality_identity=locality_identity,
+                locality_standing=locality_standing,
+                pair_measurement=pair_premise,
+            )
+        )
+    else:
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=locality_standing,
+            source_occurrence_reference=representation_source,
+        )
+    locality_standing = _advance_over_representation(
+        ledger, locality_standing, representation
     )
     while True:
-        captured_ingress = capture_stdin_material(input_stream)
-        # `exit` is a surrounding process escape, not operator ingress. The
-        # switch is bootstrap scaffolding for non-interactive acquisition:
-        # without the escape installed, exact material named `exit` is
-        # preserved and termination comes from EOF.
-        if captured_ingress.eof:
-            return
-        if process_boundary_escape and _is_console_exit(
-            captured_ingress.exact_bytes, captured_ingress.encoding_testimony
-        ):
-            return
-        # No Presentation is attached to this capture. Selecting one by
-        # recency would assert a relation no occurrence determined.
-        attempt_view = run_operator_ingress_attempt(
-            ledger=ledger,
-            workspace_id=workspace_id,
-            session_id=session_id,
-            captured_ingress=captured_ingress,
-            output_stream=output_stream,
-            session_standing=(
-                session_standing if session_standing["event_count"] else None
-            ),
-        )
-        session_standing = _advance_over(
-            ledger,
-            session_standing,
-            attempt_view["event_ids"],
-            workspace_id=workspace_id,
-            session_id=session_id,
-        )
-        if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            # The produced Presentation is preserved independently. No Compare
-            # or Identification is inferred merely from temporal proximity.
-            presentation = form_operator_presentation(
+        acquire_assignment = (
+            _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
                 ledger,
-                workspace_id=workspace_id,
-                session_id=session_id,
-                session_standing=session_standing,
+                locality_identity=locality_identity,
+                representation=representation,
+                locality_standing=locality_standing,
             )
-            presentation = emit_operator_presentation(
-                ledger, presentation=presentation, output_stream=output_stream
-            )
-            session_standing = _advance_over(
+        )
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
                 ledger,
-                session_standing,
-                (
-                    presentation["formed_event_id"],
-                    presentation["emitted_event_id"],
+                locality_standing,
+                acquire_assignment,
+                prior_through_event_occurrence_identity=representation[
+                    "representation_event_identity"
+                ],
+            )
+        )
+        acquire_act_evidence = (
+            _record_operator_material_acquire_responsible_act_evidence_from_assignment(
+                ledger,
+                responsibility_assignment=acquire_assignment,
+                responsibility_assignment_standing=locality_standing,
+            )
+        )
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                ledger,
+                locality_standing,
+                acquire_act_evidence,
+                prior_through_event_occurrence_identity=(
+                    acquire_assignment.identity
                 ),
-                workspace_id=workspace_id,
-                session_id=session_id,
+            )
+        )
+        input_boundary = ledger.append_boundary()
+        boundary_material = operator_boundary_material(input_stream)
+        if ledger.append_boundary() != input_boundary:
+            raise ValueError(
+                "operator boundary invocation appended an occurrence before its result"
+            )
+        if boundary_material.eof:
+            return
+        acquired_material = record_operator_material_acquire_result(
+            ledger,
+            responsible_act_evidence_event_identity=acquire_act_evidence.identity,
+            boundary_material=boundary_material,
+        )
+        locality_standing = (
+            _carry_operator_material_acquisition_occurrence_into_standing(
+                ledger,
+                locality_standing,
+                acquired_material,
+                prior_through_event_occurrence_identity=(
+                    acquire_act_evidence.identity
+                ),
+            )
+        )
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=locality_standing,
+            source_occurrence_reference=acquired_material.identity,
+        )
+        locality_standing = _advance_over_representation(
+            ledger, locality_standing, representation
+        )
+        if (
+            operator_invocation_provider is not None
+            and boundary_material.exact_bytes.startswith(b"!")
+        ):
+            operator_locality_identity = locality_identity
+            with ledger.batched():
+                command_occurrence_reference = acquired_material.identity
+                command_material_reference = _material_measurement_reference(
+                    ledger, acquired_material
+                )
+                if command_material_reference not in measured_material_references:
+                    locality_standing, _byte_measurement = (
+                        _record_measurements_from_bounded_locality_replay(
+                            ledger,
+                            locality_standing,
+                            locality_identity=locality_identity,
+                        )
+                    )
+                    measured_material_references.add(command_material_reference)
+                command_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                    source_occurrence_reference=command_occurrence_reference,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, command_representation
+                )
+                command_material = read_operator_representation(
+                    ledger,
+                    command_representation["representation_event_identity"],
+                )["exact_material"]
+                relation_assignment = (
+                    record_operator_invocation_locality_responsibility_assignment(
+                        ledger,
+                        operator_material_occurrence_reference=(
+                            command_occurrence_reference
+                        ),
+                        operator_locality_standing=locality_standing,
+                    )
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=operator_locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                invocation_locality_identity = relation_assignment.material[
+                    "destination_locality_identity"
+                ]
+                witness_standing = read_operator_locality_standing(
+                    ledger, locality_identity=invocation_locality_identity
+                )
+                relation_act = record_operator_invocation_locality_act_evidence(
+                    ledger,
+                    responsibility_assignment_event_identity=(
+                        relation_assignment.identity
+                    ),
+                    responsibility_assignment_standing=witness_standing,
+                )
+                witness_standing = _advance_over(
+                    ledger,
+                    witness_standing,
+                    (relation_act.identity,),
+                    locality_identity=invocation_locality_identity,
+                )
+                relation_result = record_operator_invocation_locality_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=relation_act.identity,
+                )
+                witness_standing = _advance_over(
+                    ledger,
+                    witness_standing,
+                    (
+                        relation_result.material[
+                            "evidence_of_yield_relation_identity"
+                        ],
+                        relation_result.identity,
+                    ),
+                    locality_identity=invocation_locality_identity,
+                )
+            supplied_boundaries: set[str] = set()
+            supplied_occurrence_count = 0
+            supplied_occurrence_references: list[str] = []
+            provider_boundary = ledger.append_boundary()
+
+            def acquire_witness_material(supplied) -> None:
+                nonlocal witness_standing
+                nonlocal supplied_occurrence_count
+                nonlocal provider_boundary
+                if ledger.append_boundary() != provider_boundary:
+                    raise ValueError(
+                        "provider appended an occurrence outside supplied material"
+                    )
+                if type(supplied) is not SuppliedWitnessMaterialOccurrence:
+                    raise TypeError("exact supplied material required")
+                if supplied.source_boundary in supplied_boundaries:
+                    raise ValueError("distinct source boundary required")
+                supplied_boundaries.add(supplied.source_boundary)
+                supplied_occurrence = acquire_supplied_witness_material_occurrence(
+                    ledger,
+                    operator_invocation_locality_result_event_identity=(
+                        relation_result.identity
+                    ),
+                    command_occurrence_reference=command_occurrence_reference,
+                    supplied=supplied,
+                    prior_supplied_occurrence_references=tuple(
+                        supplied_occurrence_references
+                    ),
+                )
+                supplied_occurrence_references.append(supplied_occurrence.identity)
+                supplied_occurrence_count += 1
+                witness_standing = _advance_over(
+                    ledger,
+                    witness_standing,
+                    (supplied_occurrence.identity,),
+                    locality_identity=invocation_locality_identity,
+                )
+                supplied_material_reference = _material_measurement_reference(
+                    ledger, supplied_occurrence
+                )
+                if supplied_material_reference not in measured_material_references:
+                    recorded_witness_measurements = (
+                        _record_declared_measurements_from_carried_bounded_locality_replay(
+                            ledger,
+                            witness_standing,
+                            locality_identity=invocation_locality_identity,
+                        )
+                    )
+                    witness_standing, _witness_pair_measurements = (
+                        _record_pair_measurements_after_declared_measurements(
+                            ledger,
+                            recorded_witness_measurements,
+                            locality_identity=invocation_locality_identity,
+                        )
+                    )
+                    measured_material_references.add(supplied_material_reference)
+                provider_boundary = ledger.append_boundary()
+
+            provider_result = operator_invocation_provider(
+                command_material,
+                acquire_witness_material,
+            )
+            if ledger.append_boundary() != provider_boundary:
+                raise ValueError(
+                    "provider appended an occurrence outside supplied material"
+                )
+            if provider_result is not None or not supplied_occurrence_count:
+                raise TypeError("exact supplied material required")
+            with ledger.batched():
+                witness_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=invocation_locality_identity,
+                    locality_standing=witness_standing,
+                )
+                witness_standing = _advance_over_representation(
+                    ledger, witness_standing, witness_representation
+                )
+            continue
+        if is_slash_command(boundary_material):
+            command_run = run_operator_command(
+                locality_identity=locality_identity,
+                addressed_at_representation_event_identity=representation[
+                    "representation_event_identity"
+                ],
+                material=boundary_material,
+                handlers=handlers,
+            )
+            request = command_run.implementation_result
+            if isinstance(request, OperatorLocalityRequest):
+                if not request.create_new and not ledger.has_locality(
+                    request.locality_identity
+                ):
+                    raise ValueError("/locality requires an existing Locality")
+                locality_identity = request.locality_identity
+                locality_standing = read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                )
+                locality_standing, pair_premise = (
+                    _latest_carried_pair_premise(
+                        ledger,
+                        locality_standing,
+                        locality_identity=locality_identity,
+                    )
+                )
+                representation_source = _representation_source_for_pair_premise(
+                    ledger, locality_standing, pair_premise
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                    source_occurrence_reference=representation_source,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                continue
+            if isinstance(request, OperatorMemoryRequest):
+                assignment = (
+                    record_standing_locality_continuation_responsibility_assignment(
+                        ledger,
+                        source_locality_identity=locality_identity,
+                        addressed_representation_event_identity=representation[
+                            "representation_event_identity"
+                        ],
+                    )
+                )
+                locality_identity = assignment.locality_identity
+                pair_premise = None
+                locality_standing = read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                )
+                assignment_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, assignment_representation
+                )
+                continuation_act_evidence = (
+                    record_standing_locality_continuation_responsible_act_evidence(
+                        ledger,
+                        responsibility_assignment_event_identity=assignment.identity,
+                        responsibility_assignment_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (continuation_act_evidence.identity,),
+                    locality_identity=locality_identity,
+                )
+                act_evidence_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, act_evidence_representation
+                )
+                continuation = record_standing_locality_continuation_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=(
+                        continuation_act_evidence.identity
+                    ),
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        continuation.material["evidence_of_yield_relation_identity"],
+                        continuation.identity,
+                    ),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                continue
+            if isinstance(request, OperatorCheckpointRequest):
+                assignment = (
+                    record_standing_boundary_reference_responsibility_assignment(
+                        ledger,
+                        addressed_command=command_run.addressed,
+                        locality_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (assignment.identity,),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                act_evidence = (
+                    record_standing_boundary_reference_responsible_act_evidence(
+                        ledger,
+                        responsibility_assignment_event_identity=assignment.identity,
+                        responsibility_assignment_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (act_evidence.identity,),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                checkpoint = record_standing_boundary_reference_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=act_evidence.identity,
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        checkpoint.material["evidence_of_yield_relation_identity"],
+                        checkpoint.identity,
+                    ),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                continue
+            if isinstance(request, OperatorCheckoutRequest):
+                assignment = (
+                    record_recorded_standing_boundary_locality_responsibility_assignment(
+                        ledger,
+                        source_locality_standing=locality_standing,
+                    )
+                )
+                locality_identity = assignment.locality_identity
+                pair_premise = None
+                locality_standing = read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                act_evidence = (
+                    record_recorded_standing_boundary_locality_responsible_act_evidence(
+                        ledger,
+                        responsibility_assignment_event_identity=assignment.identity,
+                        responsibility_assignment_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (act_evidence.identity,),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                relation = record_recorded_standing_boundary_locality_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=act_evidence.identity,
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        relation.material["evidence_of_yield_relation_identity"],
+                        relation.identity,
+                    ),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                continue
+            if request is not None or command_run.addressed.frame.name in handlers:
+                continue
+        with ledger.batched():
+            acquired_material_reference = _material_measurement_reference(
+                ledger, acquired_material
+            )
+            if acquired_material_reference in measured_material_references:
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+            else:
+                locality_standing, byte_measurement = (
+                    _record_measurements_from_bounded_locality_replay(
+                        ledger,
+                        locality_standing,
+                        locality_identity=locality_identity,
+                    )
+                )
+                measured_material_references.add(acquired_material_reference)
+                locality_standing, later_pair = _record_pair_measurement(
+                    ledger,
+                    locality_standing,
+                    byte_measurement_event_identity=byte_measurement.identity,
+                    locality_identity=locality_identity,
+                )
+                if pair_premise is None:
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                    )
+                else:
+                    locality_standing, comparison = (
+                        _record_pair_measurement_comparison(
+                            ledger,
+                            locality_standing,
+                            earlier_pair_measurement=pair_premise,
+                            later_pair_measurement=later_pair,
+                            locality_identity=locality_identity,
+                        )
+                    )
+                    pair_premise = later_pair
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                        source_occurrence_reference=comparison.identity,
+                    )
+            locality_standing = _advance_over_representation(
+                ledger, locality_standing, representation
             )

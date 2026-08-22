@@ -1,0 +1,483 @@
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+import pytest
+
+from seed_runtime.events import EventLedger
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
+)
+from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.operator_checkpoint import (
+    record_standing_boundary_reference_responsibility_assignment,
+    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_result,
+)
+from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
+from seed_runtime.operator_locality_standing import (
+    advance_operator_locality_standing,
+    read_carried_recorded_standing,
+    read_operator_locality_standing,
+)
+from seed_runtime.operator_representation import record_operator_representation
+from seed_runtime.declared_measurement_responsibilities import (
+    record_declared_measurements_from_current_bounded_locality_replay,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from compiled_format_invocation import (  # noqa: E402
+    COMPILED_IMPLEMENTATION_FUNCTIONS,
+    compare_compiled_reference_invocations,
+    compiled_reference_invocations,
+)
+from compiled_material_invocation import (  # noqa: E402
+    MATERIAL_IMPLEMENTATION_FUNCTIONS,
+    compare_material_reference_invocations,
+    material_acquisition_result_reference,
+    reference_occurrences_across,
+)
+from tests.book_material_test_witness import (  # noqa: E402
+    MATERIAL_WINDOWS,
+    supplied_book_material,
+)
+from material_pair_investigation import (  # noqa: E402
+    compare_occurrences_of_material_pair,
+    exact_references_to_recurrent_material_pairs,
+    exact_occurrences_of_material_pair,
+    exact_position_premise_of_recurrent_material_pair,
+    exact_subjects_of_recurrent_adjacent_material_pairs,
+)
+
+
+@pytest.fixture(scope="module")
+def exact_material_references_for_comparison():
+    paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
+    if any(not path.is_file() for path in paths):
+        pytest.skip("supplied fixture material is unavailable")
+    books = supplied_book_material(ROOT)
+    ledger = EventLedger()
+    book_occurrences = tuple(
+        record_witness_material_acquisition(
+            ledger,
+            locality_identity="comparison-of-material-references-source-locality",
+            exact_bytes=material,
+            source_boundary=f"supplied book occurrence {position}",
+        )
+        for position, material in enumerate(books)
+    )
+    other_occurrences = tuple(
+        record_witness_material_acquisition(
+            ledger,
+            locality_identity=locality,
+            exact_bytes=material,
+            source_boundary=boundary,
+        )
+        for locality, material, boundary in (
+            (
+                "comparison-of-material-references-source-locality",
+                b"what does this exact material distinguish?\n",
+                "operator material",
+            ),
+            (
+                "comparison-of-material-references-source-locality",
+                b"one bounded session material\n",
+                "today material",
+            ),
+            (
+                "comparison-of-material-references-source-locality",
+                b"one exact earlier lineage material\n",
+                "lineage material",
+            ),
+            (
+                "comparison-of-material-references-unrelated-locality",
+                b"available elsewhere is not applicable here\n",
+                "unrelated Locality material",
+            ),
+        )
+    )
+    book_references = tuple(
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in book_occurrences
+    )
+    (
+        operator_reference,
+        today_reference,
+        lineage_reference,
+        unrelated_locality_reference,
+    ) = tuple(
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in other_occurrences
+    )
+    return (
+        books,
+        book_references,
+        operator_reference,
+        today_reference,
+        lineage_reference,
+        unrelated_locality_reference,
+    )
+
+
+def test_sixteen_books_remain_distinct_exact_occurrences_in_one_locality(
+    exact_material_references_for_comparison,
+):
+    books, book_references, *_ = exact_material_references_for_comparison
+
+    assert len(book_references) == len(MATERIAL_WINDOWS) == 16
+    assert tuple(reference.exact_material for reference in book_references) == books
+    assert len(
+        {reference.recorded_occurrence_identity for reference in book_references}
+    ) == len(book_references)
+    assert {reference.locality_identity for reference in book_references} == {
+        "comparison-of-material-references-source-locality"
+    }
+
+
+def _comparisons_of_implementation_references_against_book_references(
+    subject, books, *, boundary_identity
+):
+    references = (subject, *books)
+    invocations = compiled_reference_invocations(
+        references,
+        boundary_identity=f"{boundary_identity}-invocation",
+    )
+    compiled_comparisons = compare_compiled_reference_invocations(
+        invocations,
+        tuple((subject, book) for book in books),
+        boundary_identity=f"{boundary_identity}-compare",
+    )
+    material_invocations = reference_occurrences_across(
+        references,
+        boundary_identity=f"{boundary_identity}-material-invocation",
+        implementation_functions=MATERIAL_IMPLEMENTATION_FUNCTIONS,
+        max_workers=16,
+        time_limit_second_count=5.0,
+        material_byte_count_limit=4096,
+    )
+    material_comparisons = compare_material_reference_invocations(
+        material_invocations,
+        tuple((subject, book) for book in books),
+        boundary_identity=f"{boundary_identity}-material-compare",
+    )
+    return (
+        references,
+        invocations,
+        compiled_comparisons,
+        material_invocations,
+        material_comparisons,
+    )
+
+
+def _record_standing_boundary_reference(ledger, *, locality_identity):
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=standing,
+    )
+    standing = advance_operator_locality_standing(
+        ledger,
+        representation["recorded_occurrence_references"],
+        locality_identity=locality_identity,
+        prior=standing,
+    )
+    command = AddressedOperatorCommand(
+        command_identity="material-comparison-standing-boundary-command",
+        locality_identity=locality_identity,
+        addressed_at_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
+        frame=OperatorCommandFrame(
+            exact_bytes=b"/checkpoint\n", name=b"checkpoint", arguments=b""
+        ),
+    )
+    assignment = record_standing_boundary_reference_responsibility_assignment(
+        ledger,
+        addressed_command=command,
+        locality_standing=standing,
+    )
+    act = record_standing_boundary_reference_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    return record_standing_boundary_reference_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+
+
+def test_operator_material_compares_against_exact_recorded_corpus_standing(
+    exact_material_references_for_comparison,
+):
+    books = exact_material_references_for_comparison[0]
+    locality_identity = "recorded-standing-material-comparison-locality"
+    ledger = EventLedger()
+    corpus = tuple(
+        record_witness_material_acquisition(
+            ledger,
+            locality_identity=locality_identity,
+            exact_bytes=material,
+            source_boundary=f"supplied book occurrence {position}",
+        )
+        for position, material in enumerate(books)
+    )
+    standing_boundary_reference = _record_standing_boundary_reference(
+        ledger, locality_identity=locality_identity
+    )
+    operator = record_witness_material_acquisition(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"what does this exact material distinguish?\n",
+        source_boundary="operator material",
+    )
+
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity=locality_identity,
+        recorded_occurrence_identity=standing_boundary_reference.identity,
+    )
+    assert [
+        occurrence["result_occurrence_identity"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
+    ] == [occurrence.identity for occurrence in corpus]
+    operator_reference = material_acquisition_result_reference(ledger, operator.identity)
+    book_references = tuple(
+        material_acquisition_result_reference(ledger, occurrence.identity)
+        for occurrence in corpus
+    )
+
+    comparison_rows = (
+        _comparisons_of_implementation_references_against_book_references(
+            operator_reference,
+            book_references,
+            boundary_identity="recorded-standing-operator",
+        )
+    )
+    comparisons = (*comparison_rows[2], *comparison_rows[4])
+
+    assert operator.identity not in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
+    }
+    assert len(comparisons) == 9
+    assert all(len(row) == 16 for row in comparisons)
+    assert all(
+        not hasattr(comparison, "applicability")
+        and not hasattr(comparison, "admitted_material")
+        for row in comparisons
+        for comparison in row
+    )
+
+
+def test_witness_book_material_stops_before_recurrent_pair_measurement():
+    paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
+    if any(not path.is_file() for path in paths):
+        pytest.skip("supplied fixture material is unavailable")
+    books = supplied_book_material(ROOT)
+    locality_identity = "recorded-standing-pair-comparison-locality"
+    ledger = EventLedger()
+    corpus = record_witness_material_acquisition(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"".join(books),
+        source_boundary="sixteen supplied books",
+    )
+    standing_boundary_reference = _record_standing_boundary_reference(
+        ledger, locality_identity=locality_identity
+    )
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity=locality_identity,
+        recorded_occurrence_identity=standing_boundary_reference.identity,
+    )
+    assert [
+        occurrence["result_occurrence_identity"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
+    ] == [corpus.identity]
+    assert point["standing"]["measurement_occurrences"] == {}
+    boundary = ledger.append_boundary()
+    declared = record_declared_measurements_from_current_bounded_locality_replay(
+        ledger, locality_identity=locality_identity
+    )
+    assert declared.result_occurrences == ()
+    assert ledger.append_boundary() == boundary
+
+    operator = record_witness_material_acquisition(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"what does this exact material distinguish?\n",
+        source_boundary="operator material",
+    )
+    assert operator.identity not in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in point["standing"]["material_acquisition_result_occurrences"]
+    }
+    current = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    assert current["operator_material_locality_relation_occurrences"] == {}
+    assert current["measurement_occurrences"] == {}
+
+
+def test_operator_today_and_lineage_material_receive_separate_comparisons(
+    exact_material_references_for_comparison,
+):
+    _, books, operator, today, lineage, _ = exact_material_references_for_comparison
+    comparison_sets = tuple(
+        _comparisons_of_implementation_references_against_book_references(
+            subject, books, boundary_identity=name
+        )
+        for name, subject in (
+            ("operator", operator),
+            ("today", today),
+            ("lineage", lineage),
+        )
+    )
+
+    for (
+        references,
+        invocations,
+        compiled_comparisons,
+        material_invocations,
+        material_comparisons,
+    ), subject in zip(
+        comparison_sets, (operator, today, lineage)
+    ):
+        assert references == (subject, *books)
+        assert len(invocations) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+        assert all(len(row) == 17 for row in invocations)
+        assert len(compiled_comparisons) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+        assert len(material_invocations) == len(MATERIAL_IMPLEMENTATION_FUNCTIONS)
+        assert all(len(row) == 17 for row in material_invocations)
+        assert len(material_comparisons) == len(MATERIAL_IMPLEMENTATION_FUNCTIONS)
+        comparisons = (*compiled_comparisons, *material_comparisons)
+        assert len(comparisons) == 9
+        assert all(len(row) == 16 for row in comparisons)
+        assert all(
+            comparison.first_reference == subject
+            for row in comparisons
+            for comparison in row
+        )
+        assert tuple(
+            comparison.second_reference for comparison in comparisons[0]
+        ) == books
+        assert len(
+            {
+                comparison.occurrence_identity
+                for row in comparisons
+                for comparison in row
+            }
+        ) == (
+            len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+            + len(MATERIAL_IMPLEMENTATION_FUNCTIONS)
+        ) * len(books)
+
+    assert (
+        comparison_sets[0][2][0][0].occurrence_identity
+        != comparison_sets[1][2][0][0].occurrence_identity
+    )
+    assert all(
+        today not in (comparison.first_reference, comparison.second_reference)
+        and lineage not in (comparison.first_reference, comparison.second_reference)
+        for row in (*comparison_sets[0][2], *comparison_sets[0][4])
+        for comparison in row
+    )
+    assert any(
+        comparison.distinction
+        for row in comparison_sets[0][4]
+        for comparison in row
+    )
+
+
+def test_comparison_of_material_references_stops_before_admission_or_applicability(
+    exact_material_references_for_comparison,
+):
+    _, books, operator, *_ = exact_material_references_for_comparison
+    comparison_rows = (
+        _comparisons_of_implementation_references_against_book_references(
+            operator, books, boundary_identity="bounded-operator"
+        )
+    )
+    comparisons = (*comparison_rows[2], *comparison_rows[4])
+
+    assert {
+        comparison.distinction
+        for row in comparisons
+        for comparison in row
+    } <= {False, True}
+    assert all(
+        not hasattr(comparison, "admitted_material")
+        and not hasattr(comparison, "applicability")
+        for row in comparisons
+        for comparison in row
+    )
+
+
+def test_comparison_of_material_references_refuses_coordinate_substitution(
+    exact_material_references_for_comparison,
+):
+    _, book_references, operator, today, _, unrelated = (
+        exact_material_references_for_comparison
+    )
+    references = (operator, *book_references)
+    invocations = compiled_reference_invocations(
+        references,
+        boundary_identity=(
+            "invocation-of-implementation-function-with-material-references"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="absent from its invocation boundary"):
+        compare_compiled_reference_invocations(
+            invocations,
+            ((operator, today),),
+            boundary_identity="absent-material-reference-compare",
+        )
+    with pytest.raises(ValueError, match="entered Compare twice"):
+        compare_compiled_reference_invocations(
+            invocations,
+            ((operator, book_references[0]), (operator, book_references[0])),
+            boundary_identity="duplicate-material-reference-compare",
+        )
+    with pytest.raises(ValueError, match="cannot compare with itself"):
+        compare_compiled_reference_invocations(
+            invocations,
+            ((operator, operator),),
+            boundary_identity="self-material-reference-compare",
+        )
+    distinct_locality_invocations = compiled_reference_invocations(
+        (operator, unrelated),
+        boundary_identity="reference-invocation-with-distinct-localities",
+    )
+    with pytest.raises(ValueError, match="distinct Localities"):
+        compare_compiled_reference_invocations(
+            distinct_locality_invocations,
+            ((operator, unrelated),),
+            boundary_identity="reference-compare-with-distinct-localities",
+        )
+    distinct_locality_material_invocations = reference_occurrences_across(
+        (operator, unrelated),
+        boundary_identity="material-invocation-with-distinct-localities",
+        implementation_functions=(MATERIAL_IMPLEMENTATION_FUNCTIONS[0],),
+        max_workers=2,
+        time_limit_second_count=5.0,
+        material_byte_count_limit=4096,
+    )
+    with pytest.raises(ValueError, match="distinct Localities"):
+        compare_material_reference_invocations(
+            distinct_locality_material_invocations,
+            ((operator, unrelated),),
+            boundary_identity="material-compare-with-distinct-localities",
+        )
