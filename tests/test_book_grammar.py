@@ -13,6 +13,14 @@ GRAMMAR = BOOK / "witness_grammar.json"
 CHAPTERS = BOOK / "chapters"
 
 
+def _addresses():
+    import json
+
+    return json.loads(
+        (BOOK / "witness_addresses.json").read_text(encoding="utf-8")
+    )["witness_addresses"]
+
+
 def _grammar() -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -320,7 +328,7 @@ def test_the_grammar_declares_no_block_for_itself():
     assert "witness_grammar" not in _grammar()
     assert any(
         address["subject"] == "this_Grammar"
-        for address in _grammar()["machine_addresses"]
+        for address in _addresses()
     )
 
 def test_only_clauses_naming_an_Act_project_one():
@@ -376,7 +384,7 @@ def test_declared_relation_references_resolve():
 
 
 def test_source_references_are_exact_and_distinct():
-    references = _grammar()["machine_addresses"]
+    references = _addresses()
     assert len(references) == len(
         {(reference["subject"], reference["coordinate"]) for reference in references}
     )

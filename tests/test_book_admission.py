@@ -13,6 +13,7 @@ from scripts.book_admission import (
     book_admission,
     book_proper_files,
     book_proper_words,
+    witness_addresses,
     scan_active_line,
     witness_grammar_words,
 )
@@ -47,7 +48,7 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     )
     declared_references = {
         (reference["subject"], reference["coordinate"])
-        for reference in grammar["machine_addresses"]
+        for reference in witness_addresses()
     }
     subjects = (
         (BOOK, "this_Book", "book_material", book_admission()),

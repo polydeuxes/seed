@@ -1,0 +1,32 @@
+{
+  "witness_addresses": [
+    {
+      "subject": "this_Witness",
+      "coordinate": "witness"
+    },
+    {
+      "subject": "this_book_material_acquisition_witness",
+      "coordinate": "book_material_acquisition_witness_subject"
+    },
+    {
+      "subject": "this_Grammar",
+      "coordinate": "grammar"
+    },
+    {
+      "subject": "this_Book",
+      "coordinate": "book_material"
+    },
+    {
+      "subject": "this_Seed",
+      "coordinate": "seed_subject"
+    },
+    {
+      "subject": "this_separate_admission_material",
+      "coordinate": "separate_admission_material_reference"
+    },
+    {
+      "subject": "this_Fidelity",
+      "coordinate": "bounded_Fidelity_finding"
+    }
+  ]
+}
