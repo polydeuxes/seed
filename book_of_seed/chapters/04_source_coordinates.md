@@ -14,12 +14,12 @@ carried by that exact material.
 ### 01.Source.C — Fidelity
 
 Fidelity is one declared Compare Act with this Seed exact occurrence and
-this witness grammar as subjects. Each deterministic test carries one exact declared
-distinction and preserves its source, provenance, Authority, Scope, Locality,
-limits, conflicts, loss, and Unknown.
+this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
+one exact declared distinction and preserves its source, provenance, Authority,
+Scope, Locality, limits, conflicts, loss, and Unknown.
 
-This Book material acquisition witness carries this Book as material. It is
-one test subject and no other subject.
+This Book material acquisition witness carries this Book as material and is one
+exact subject of that Compare Act occurrence.
 
 ### 01.Source.F — Material carrying a relation Assertion
 

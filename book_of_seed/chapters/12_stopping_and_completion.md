@@ -11,9 +11,6 @@ Completion is a separate Assertion with its own exact subject,
 Responsibility, Act occurrence, Yield, Authority, Scope, Locality, limits, and
 Standing.
 
-No movement, no applicable input, failure, local exhaustive result, or one Stop result
-establishes completion beyond its exact Scope.
-
 ## References
 
 - [Movement](10_movement.md)

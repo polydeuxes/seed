@@ -65,7 +65,7 @@ def test_current_standing_precedes_responsibility_without_assignment():
             "subject": "this_Seed",
             "coordinates": [],
         },
-        "path": [
+        "requires": [
             "Standing",
             "Responsibility",
             "exact_Act",
@@ -101,11 +101,13 @@ def test_applicability_required_admission_and_participation_remain_separate():
         "exact_Act": "Applicability",
         "result": "Applicability_result",
     }
+    # Admission carries the coordinates that make it exact, so no clause has to
+    # forbid one boundary's Admission from reaching another.
     assert boundary["Admission"] == {
-        "boundary": "required_Admission_boundary",
-        "Responsibility": "Admission",
-        "exact_Act": "Admission",
-        "occurrence": "exact_Admission_occurrence",
+        "boundary": "exact_boundary",
+        "exact_Act": "exact_Act",
+        "subject_to_Act_position": "exact_subject_to_Act_position",
+        "occurrence": "exact_occurrence_prior_to_Participation",
     }
     assert boundary["Participation"] == {
         "relation": "participation",
@@ -114,7 +116,7 @@ def test_applicability_required_admission_and_participation_remain_separate():
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
-        assert compare["input"] == [
+        assert compare["requires"] == [
             "Applicability_result",
             "participation_relation_occurrence",
         ]
@@ -123,7 +125,7 @@ def test_applicability_required_admission_and_participation_remain_separate():
         assert compare["relations"] == ["participation", "yield"]
 
     candidate_compare = grammar["book_coordinates"]["04.Compare.C"]
-    assert candidate_compare["input"] == [
+    assert candidate_compare["requires"] == [
         "Applicability_result",
         "exact_Admission_occurrence",
         "participation_relation_occurrence",
@@ -140,7 +142,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
     assert candidate_compare == {
         "subject": "Candidate",
         "Responsibility": "compare_Candidate_coordinates",
-        "responsibility_source": (
+        "branch_of_current_Standing": (
             "current_Standing_carrying_exact_Candidate_result"
         ),
         "exact_Act": "Compare",
@@ -151,8 +153,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
             "first_source_role",
             "second_source_role",
         ],
-        "subject_boundary": "exact_Candidate_result",
-        "input": [
+        "requires": [
             "Applicability_result",
             "exact_Admission_occurrence",
             "participation_relation_occurrence",
@@ -178,7 +179,7 @@ def test_addressed_position_responsibility_owns_the_bounded_subject_set():
         CHAPTERS / "07_measurement_and_candidates.md"
     ).read_text(encoding="utf-8")
 
-    assert measurement["responsibility_source"] == (
+    assert measurement["branch_of_current_Standing"] == (
         "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
     )
     assert measurement["responsibility_subject_set"] == (
@@ -198,7 +199,7 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
         "subject": "required_source_Assertion_or_ordered_source_Assertion_pair",
         "Responsibility": "exhaustive_Candidate_for_bounded_subject_set",
         "exact_Act": "Candidate",
-        "input": [
+        "requires": [
             "Applicability_result",
             "participation_relation_occurrence",
         ],
@@ -207,13 +208,11 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
         ),
         "completeness_boundary": "Responsibility_bounded_subject_set",
         "relations": ["participation", "yield"],
-        "result_boundary": "Candidate_Act_occurrence_Yield_exact_Candidate_result",
-        "later_Standing": "requires_no_bounded_subject_set_completion",
         "result": "exact_Candidate_result",
     }
-    assert standing["responsibility_subject_set"] == (
-        "exhaustive_bounded_subject_set"
-    )
+    # The bounded subject set belongs to the Responsibilities that carry one,
+    # not to Responsibility in general.
+    assert "responsibility_subject_set" not in standing
 
     candidate_book = (
         CHAPTERS / "07_measurement_and_candidates.md"
@@ -227,9 +226,9 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
         "subject set."
     ) in candidate_book
     assert (
-        "One Responsibility carries one exhaustive bounded subject set. Each required\n"
-        "subject of that set carries its own exact result."
-    ) in standing_book
+        "Each Responsibility is exhaustive for its bounded\n"
+        "subject set."
+    ) in candidate_book
     assert "one complete Candidate result" not in compare_book
     assert "every Candidate in the complete Candidate result" not in compare_book
 
@@ -248,17 +247,15 @@ def test_candidate_compare_book_refuses_source_participation_and_relation_promot
 def test_responsibility_coordinates_are_anatomy_not_assignment():
     assert _grammar()["responsibility"] == {
         "subject": "Responsibility",
-        "book_material_reference": "this_Book",
         "coordinates": [
             "responsible_boundary",
             "subject",
             "exact_Act",
+            "Authority",
             "Scope",
             "Locality",
             "limits",
-            "source",
-            "provenance",
-            "support_relations",
+            "required_relations",
         ],
     }
 
@@ -319,7 +316,6 @@ def test_yield_has_no_interposed_node():
 def test_witness_grammar_relation_population_is_empty():
     assert _grammar()["witness_grammar"] == {
         "subject": "this_Grammar",
-        "book_material_reference": "this_Book",
         "relations": [],
     }
 
@@ -332,7 +328,9 @@ def test_each_book_coordinate_has_exact_responsibility_and_act():
         # names no single Act. 01.Standing.D requires each exact relation to
         # carry its subjects and occurrence and likewise names no Act. Requiring
         # one here is what supplies a name the Book never gave.
-        if reference not in ("01.Standing.E.1", "01.Standing.D")
+        # These clauses state a requirement and name no Act. Demanding one
+        # here is what supplies a name the Book never gave.
+        if reference not in ("01.Standing.E.1", "01.Standing.D", "01.Standing.A")
     }
     incomplete = {
         reference: sorted(
@@ -362,9 +360,9 @@ def test_declared_relation_references_resolve():
 
 
 def test_source_references_are_exact_and_distinct():
-    references = _grammar()["source_references"]
+    references = _grammar()["declared_subjects"]
     assert len(references) == len(
-        {(reference["reference"], reference["coordinate"]) for reference in references}
+        {(reference["subject"], reference["coordinate"]) for reference in references}
     )
     assert {
         ("this_Book", "book_material"),
@@ -372,7 +370,7 @@ def test_source_references_are_exact_and_distinct():
         ("this_Seed", "seed_subject"),
         ("this_Witness", "witness"),
     } <= {
-        (reference["reference"], reference["coordinate"])
+        (reference["subject"], reference["coordinate"])
         for reference in references
     }
 
@@ -382,7 +380,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
         "subject": "Fidelity",
         "Responsibility": "compare_this_Seed_occurrence_with_this_Grammar",
         "exact_Act": "Compare",
-        "test_subject": "this_book_material_acquisition_witness",
     }
 
 

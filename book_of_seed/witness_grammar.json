@@ -1,38 +1,6 @@
 {
-  "book_material_reference": "this_Book",
-  "source_references": [
-    {
-      "reference": "this_Witness",
-      "coordinate": "witness"
-    },
-    {
-      "reference": "this_book_material_acquisition_witness",
-      "coordinate": "book_material_acquisition_witness_subject"
-    },
-    {
-      "reference": "this_Grammar",
-      "coordinate": "grammar"
-    },
-    {
-      "reference": "this_Book",
-      "coordinate": "book_material"
-    },
-    {
-      "reference": "this_Seed",
-      "coordinate": "seed_subject"
-    },
-    {
-      "reference": "this_separate_admission_material",
-      "coordinate": "separate_admission_material_reference"
-    },
-    {
-      "reference": "this_Fidelity",
-      "coordinate": "bounded_Fidelity_finding"
-    }
-  ],
   "witness_grammar": {
     "subject": "this_Grammar",
-    "book_material_reference": "this_Book",
     "relations": []
   },
   "standing": {
@@ -40,13 +8,6 @@
       "subject": "this_Seed",
       "coordinates": []
     },
-    "path": [
-      "Standing",
-      "Responsibility",
-      "exact_Act",
-      "Act_occurrence",
-      "result"
-    ],
     "later_Standing": {
       "requires": [
         "Responsibility",
@@ -55,11 +16,17 @@
         "Yield_relation",
         "result"
       ]
-    }
+    },
+    "requires": [
+      "Standing",
+      "Responsibility",
+      "exact_Act",
+      "Act_occurrence",
+      "result"
+    ]
   },
   "responsibility": {
     "subject": "Responsibility",
-    "book_material_reference": "this_Book",
     "coordinates": [
       "responsible_boundary",
       "subject",
@@ -68,9 +35,7 @@
       "Scope",
       "Locality",
       "limits",
-      "source",
-      "provenance",
-      "support_relations"
+      "required_relations"
     ]
   },
   "relations": {
@@ -158,19 +123,24 @@
       "subject": "cross_boundary_participation",
       "Responsibility": "preserve_exact_source_coordinates_and_limits",
       "exact_Act": "preserve_exact_source_coordinates_and_limits",
-      "relations": ["participation"]
+      "relations": [
+        "participation"
+      ]
     },
     "01.Source.C": {
       "subject": "Fidelity",
       "Responsibility": "compare_this_Seed_occurrence_with_this_Grammar",
-      "exact_Act": "Compare",
-      "test_subject": "this_book_material_acquisition_witness"
+      "exact_Act": "Compare"
     },
     "01.Source.D": {
       "subject": "declared_Measurement",
       "Responsibility": "declared_Measurement",
       "exact_Act": "Measurement",
-      "requires": ["exact_material_result", "Yield_relation", "Locality_relation"],
+      "requires": [
+        "exact_material_result",
+        "Yield_relation",
+        "Locality_relation"
+      ],
       "result": "declared_Measurement_result"
     },
     "01.Source.D.1": {
@@ -182,10 +152,10 @@
     "01.Source.D.2": {
       "subject": "addressed_byte_occurrence_reference",
       "Responsibility": "addressed_byte_occurrence_reference_Measurement",
-      "responsibility_source": "current_Standing_carrying_exact_byte_pair_position_Measurement_result",
       "responsibility_subject_set": "exhaustive_bounded_source_byte_position_reference_set",
       "exact_Act": "Measurement",
-      "result": "addressed_byte_occurrence_reference_result"
+      "result": "addressed_byte_occurrence_reference_result",
+      "branch_of_current_Standing": "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
     },
     "01.Source.E": {
       "subject": "Candidate",
@@ -197,13 +167,17 @@
       "subject": "required_source_Assertion_or_ordered_source_Assertion_pair",
       "Responsibility": "exhaustive_Candidate_for_bounded_subject_set",
       "exact_Act": "Candidate",
-      "input": ["Applicability_result", "participation_relation_occurrence"],
       "required_Admission": "exact_Admission_occurrence_prior_to_Participation",
       "completeness_boundary": "Responsibility_bounded_subject_set",
-      "relations": ["participation", "yield"],
-      "result_boundary": "Candidate_Act_occurrence_Yield_exact_Candidate_result",
-      "later_Standing": "requires_no_bounded_subject_set_completion",
-      "result": "exact_Candidate_result"
+      "relations": [
+        "participation",
+        "yield"
+      ],
+      "result": "exact_Candidate_result",
+      "requires": [
+        "Applicability_result",
+        "participation_relation_occurrence"
+      ]
     },
     "01.Source.F": {
       "subject": "material_carrying_relation_Assertion",
@@ -215,28 +189,40 @@
       "subject": "operator_material_boundary",
       "Responsibility": "preserve_exact_operator_material",
       "exact_Act": "operator_material_acquisition",
-      "relations": ["yield", "locality"],
+      "relations": [
+        "yield",
+        "locality"
+      ],
       "result": "exact_operator_material_result"
     },
     "01.Standing.A": {
-      "subject": "material_and_result",
-      "Responsibility": "establish_Standing_for_exact_subject",
-      "exact_Act": "establish_Standing",
+      "subject": "exact_subject",
+      "requires": [
+        "Responsibility",
+        "Act_occurrence",
+        "Yield",
+        "Authority",
+        "Scope",
+        "limits",
+        "result_for_that_subject"
+      ],
       "result": "Standing_for_exact_subject"
     },
     "01.Standing.A.1": {
       "subject": "exact_subject_of_Responsibility_branch",
       "Responsibility": "establish_Standing_for_exact_subject",
       "exact_Act": "establish_Standing",
-      "carried_coordinates": ["exact_result"],
-      "establishes_no": ["Standing_for_result_as_another_subject", "later_Standing_occurrence"],
+      "carried_coordinates": [
+        "exact_result"
+      ],
       "result": "Standing_for_exact_subject"
     },
     "01.Standing.D": {
       "subject": "exact_relation",
-      "requires": ["exact_subjects", "responsible_occurrence"],
-      "responsibility_subject_set": "exhaustive_bounded_subject_set",
-      "result": "exact_result_for_each_required_subject"
+      "requires": [
+        "exact_subjects",
+        "responsible_occurrence"
+      ]
     },
     "01.Standing.D.1": {
       "subject": "Assertion",
@@ -264,10 +250,10 @@
         "result": "Applicability_result"
       },
       "Admission": {
-        "boundary": "required_Admission_boundary",
-        "Responsibility": "Admission",
-        "exact_Act": "Admission",
-        "occurrence": "exact_Admission_occurrence"
+        "boundary": "exact_boundary",
+        "exact_Act": "exact_Act",
+        "subject_to_Act_position": "exact_subject_to_Act_position",
+        "occurrence": "exact_occurrence_prior_to_Participation"
       },
       "Participation": {
         "relation": "participation",
@@ -278,7 +264,11 @@
       "subject": "exact_Act_occurrence",
       "Responsibility": "exact_Act",
       "exact_Act": "exact_Act",
-      "relations": ["participation", "carriage", "yield"],
+      "relations": [
+        "participation",
+        "carriage",
+        "yield"
+      ],
       "result": "exact_result"
     },
     "03.Movement.A": {
@@ -291,30 +281,47 @@
       "subject": "exact_Compare_subjects",
       "Responsibility": "compare_exact_subjects_under_exact_rule",
       "exact_Act": "Compare",
-      "input": ["Applicability_result", "participation_relation_occurrence"],
-      "relations": ["participation", "yield"],
-      "result": "exact_Compare_result"
+      "relations": [
+        "participation",
+        "yield"
+      ],
+      "result": "exact_Compare_result",
+      "requires": [
+        "Applicability_result",
+        "participation_relation_occurrence"
+      ]
     },
     "04.Compare.A": {
       "subject": "recorded_pair_findings",
       "Responsibility": "compare_complete_recorded_pair_findings",
       "exact_Act": "Compare",
-      "input": ["Applicability_result", "participation_relation_occurrence"],
-      "relations": ["participation", "yield"],
-      "result": "recorded_pair_finding_Compare_result"
+      "relations": [
+        "participation",
+        "yield"
+      ],
+      "result": "recorded_pair_finding_Compare_result",
+      "requires": [
+        "Applicability_result",
+        "participation_relation_occurrence"
+      ]
     },
     "04.Compare.B": {
       "subject": "ordered_relation_path_and_pair_findings",
       "Responsibility": "compare_ordered_relation_path_and_pair_findings",
       "exact_Act": "Compare",
-      "input": ["Applicability_result", "participation_relation_occurrence"],
-      "relations": ["participation", "yield"],
-      "result": "ordered_relation_path_Compare_result"
+      "relations": [
+        "participation",
+        "yield"
+      ],
+      "result": "ordered_relation_path_Compare_result",
+      "requires": [
+        "Applicability_result",
+        "participation_relation_occurrence"
+      ]
     },
     "04.Compare.C": {
       "subject": "Candidate",
       "Responsibility": "compare_Candidate_coordinates",
-      "responsibility_source": "current_Standing_carrying_exact_Candidate_result",
       "exact_Act": "Compare",
       "rule": "compare_first_and_second_source_Assertion_coordinates",
       "carried_coordinates": [
@@ -323,18 +330,21 @@
         "first_source_role",
         "second_source_role"
       ],
-      "subject_boundary": "exact_Candidate_result",
-      "input": [
-        "Applicability_result",
-        "exact_Admission_occurrence",
-        "participation_relation_occurrence"
-      ],
       "Participation": {
         "subject": "Candidate",
         "role": "Candidate"
       },
-      "relations": ["participation", "yield"],
-      "result": "Candidate_coordinate_Compare_result"
+      "relations": [
+        "participation",
+        "yield"
+      ],
+      "result": "Candidate_coordinate_Compare_result",
+      "requires": [
+        "Applicability_result",
+        "exact_Admission_occurrence",
+        "participation_relation_occurrence"
+      ],
+      "branch_of_current_Standing": "current_Standing_carrying_exact_Candidate_result"
     },
     "05.Recording.A": {
       "subject": "recorded_Assertion",
@@ -352,43 +362,88 @@
       "subject": "Standing_boundary_reference",
       "Responsibility": "record_exact_Standing_boundary_reference",
       "exact_Act": "record_exact_Standing_boundary_reference",
-      "relations": ["yield"],
+      "relations": [
+        "yield"
+      ],
       "result": "Standing_boundary_reference"
     },
     "06.Locality.A": {
       "subject": "Locality_relation",
       "Responsibility": "establish_exact_Locality_relation",
       "exact_Act": "establish_exact_Locality_relation",
-      "relations": ["locality"],
+      "relations": [
+        "locality"
+      ],
       "result": "Locality_relation"
     },
     "06.Locality.B": {
       "subject": "Standing_boundary_at_new_Locality",
       "Responsibility": "preserve_Standing_boundary_at_new_Locality",
       "exact_Act": "preserve_Standing_boundary_at_new_Locality",
-      "relations": ["yield", "locality"],
+      "relations": [
+        "yield",
+        "locality"
+      ],
       "result": "Standing_boundary_at_new_Locality"
     },
     "06.Locality.C": {
       "subject": "recorded_Standing_boundary_reference",
       "Responsibility": "establish_recorded_boundary_Locality_relation",
       "exact_Act": "establish_recorded_boundary_Locality_relation",
-      "relations": ["yield", "locality"],
+      "relations": [
+        "yield",
+        "locality"
+      ],
       "result": "recorded_boundary_Locality_relation"
     },
     "06.Locality.D": {
       "subject": "operator_invocation_Locality",
       "Responsibility": "establish_operator_invocation_Locality",
       "exact_Act": "establish_operator_invocation_Locality",
-      "relations": ["yield", "locality"],
+      "relations": [
+        "yield",
+        "locality"
+      ],
       "result": "operator_invocation_Locality"
     },
     "08.Authority.A": {
       "subject": "exact_input_to_Act_position",
       "Responsibility": "establish_exact_input_support",
       "exact_Act": "establish_exact_input_support",
-      "relations": ["support"],
+      "relations": [
+        "support"
+      ],
       "result": "exact_input_support"
     }
-  }
+  },
+  "declared_subjects": [
+    {
+      "subject": "this_Witness",
+      "coordinate": "witness"
+    },
+    {
+      "subject": "this_book_material_acquisition_witness",
+      "coordinate": "book_material_acquisition_witness_subject"
+    },
+    {
+      "subject": "this_Grammar",
+      "coordinate": "grammar"
+    },
+    {
+      "subject": "this_Book",
+      "coordinate": "book_material"
+    },
+    {
+      "subject": "this_Seed",
+      "coordinate": "seed_subject"
+    },
+    {
+      "subject": "this_separate_admission_material",
+      "coordinate": "separate_admission_material_reference"
+    },
+    {
+      "subject": "this_Fidelity",
+      "coordinate": "bounded_Fidelity_finding"
+    }
+  ]
 }

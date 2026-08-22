@@ -46,8 +46,8 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
         (BOOK / "witness_grammar.json").read_text(encoding="utf-8")
     )
     declared_references = {
-        (reference["reference"], reference["coordinate"])
-        for reference in grammar["source_references"]
+        (reference["subject"], reference["coordinate"])
+        for reference in grammar["declared_subjects"]
     }
     subjects = (
         (BOOK, "this_Book", "book_material", book_admission()),

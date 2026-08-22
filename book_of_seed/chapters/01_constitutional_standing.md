@@ -19,9 +19,6 @@ one coordinate of Standing for the exact subject of that Responsibility.
 
 Each exact relation requires its exact subjects and responsible occurrence.
 
-One Responsibility carries one exhaustive bounded subject set. Each required
-subject of that set carries its own exact result.
-
 ### 01.Standing.D.1 — Assertion coordinates
 
 An Assertion is exact content as one subject. It carries its source,
