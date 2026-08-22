@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter
+import json
 from pathlib import Path
 import sys
 
@@ -91,6 +92,24 @@ def main() -> int:
     print("\n  modules carrying it onward:")
     for module, count in Counter(w.split(":")[0] for w in conveyed).most_common(8):
         print(f"    {count:3}  {module}")
+
+    grammar = json.loads(
+        (Path(__file__).resolve().parents[1] / "book_of_seed" / "witness_grammar.json")
+        .read_text(encoding="utf-8")
+    )
+    relations = grammar["relations"]
+    requiring = [
+        name for name, spec in relations.items() if "Authority" in spec["requires"]
+    ]
+    print(
+        f"\n  relations the active grammar states an Authority requirement for: "
+        f"{len(requiring)} of {len(relations)}"
+    )
+    print(f"    {', '.join(sorted(requiring))}")
+    print(
+        "\n  So every relation the grammar states requires an Authority, and no\n"
+        "  reader of a recorded Authority decides anything by it."
+    )
 
     print(
         "\n  A coordinate only carried onward is preserved and never consulted,\n"
