@@ -47,7 +47,6 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.measurement.byte_position_pair_responsibility_assignment_recorded"
 )
 BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact byte-position-pair count Measurement results"
-RESPONSIBILITY_UNESTABLISHED = "unestablished"
 BYTE_OCCURRENCE_PRESERVATION = (
     "byte Measurement results recorded after Yield"
 )
@@ -173,15 +172,9 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "source material within its Scope, provenance, occurrence references, "
     "Authority, Unknown, and limits"
 )
-BYTE_PAIR_MEASUREMENT_AUTHORITY = "bounded repository authority"
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine Applicability of one exact source-material-set Assertion to one "
     "exact byte-position-pair Measurement Act"
-)
-BYTE_PAIR_APPLICABILITY_AUTHORITY = (
-    "determine Applicability of this exact proposed input to this exact addressed "
-    "Act; establishes no Applicability for another Act; the resulting Standing, "
-    "not this authority, determines participation"
 )
 BYTE_PAIR_UNKNOWN = (
     "what this ordered byte position pair participates in or represents: Unknown",
@@ -639,7 +632,6 @@ def _pair_input_applicability_from_exact_source(
         basis = "the input carries no recognized Evidence scope for this exact source-material use"
         applicability_scope = scope
         source_provenance = material["dimensions"]["source_provenance"]
-        input_authority = material["dimensions"]["authority"]
         input_unknown = material["unknown"]
         input_limits = material["limits"]
         negative_authority = {
@@ -652,7 +644,6 @@ def _pair_input_applicability_from_exact_source(
         basis = "exact bounded source material matches this Act and result boundary"
         applicability_scope = scope
         source_provenance = material["dimensions"]["source_provenance"]
-        input_authority = material["dimensions"]["authority"]
         input_unknown = material["unknown"]
         input_limits = material["limits"]
         negative_authority = {
@@ -676,7 +667,6 @@ def _pair_input_applicability_from_exact_source(
             "content": content,
             "standing": standing,
             "source_provenance": source_provenance,
-            "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "result": "input_applicability",
         "input_assertion_reference": source.reference,
@@ -700,7 +690,6 @@ def _pair_input_applicability_from_exact_source(
         "measurement_locality": measurement_locality_identity,
         "scope_locality": applicability_scope,
         "input_standing": input_standing,
-        "input_authority": input_authority,
         "input_unknown": input_unknown,
         "input_limits": input_limits,
         "conflicts": [basis] if standing == "conflicting" else [],
@@ -887,17 +876,6 @@ def _source_assertion_reference(
     if type(source) is RecordedByteAssertion:
         return source.reference
     return source.assertion_reference
-
-
-def _source_assertion_authority(
-    source: _AssertionLocalityMovementSource,
-) -> Any:
-    if type(source) is RecordedByteAssertion:
-        return source.material["dimensions"]["authority"]
-    coordinates = source.source_assertion_coordinates
-    if type(source) is _RecordedPositionAssertionForLocalityMovement:
-        return coordinates["dimensions"]["authority"]
-    return coordinates["authority"]
 
 
 def _source_assertion_coordinates(
@@ -1114,7 +1092,6 @@ def _movement_assignment_material(
                 destination_standing_boundary_identity
             ),
         },
-        "authority": _source_assertion_authority(source),
         "limits": [
             "assignment is bounded to the exact source Assertion and source and "
             "destination Standing boundaries"
@@ -1391,7 +1368,6 @@ def _movement_act_material(assignment: Event) -> dict[str, Any]:
                 "movement_act_occurrence_identity"
             ],
         },
-        "authority": assignment.material["authority"],
         "evidence_scope": "Evidence for this exact Assertion Locality movement",
     }
 
@@ -1547,7 +1523,6 @@ def _movement_result_material(
             "limits",
             "Standing",
         ],
-        "authority": assignment.material["authority"],
         "movement_scope": (
             "Locality movement bounded to this exact Assertion; establishes no "
             "different identity or Standing"
@@ -2172,7 +2147,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                     "complete declared material acquisition through one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": "unestablished",
                 "evidence_scope": SOURCE_SET_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
@@ -2215,7 +2189,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "content": content,
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
@@ -2358,7 +2331,6 @@ def _byte_measurement_assignment_material(
             "source_localities": list(source_localities),
             "completeness_boundary_identity": completeness_boundary_identity,
         },
-        "authority": "unestablished",
         "limits": [
             "assignment is bounded to the exact declared source Localities, "
             "material acquisition occurrences, and completeness boundary"
@@ -2859,7 +2831,6 @@ def _byte_measurement_act_evidence_material(
             _byte_measurement_assignment_reference(assignment)
         ),
         "source_localities": list(assignment.material["source_localities"]),
-        "authority": "unestablished",
         "evidence_scope": (
             "Evidence bounded to this exact responsible Measurement "
             "occurrence; establishes no responsibility"
@@ -3044,7 +3015,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                     "exact source-material-set, byte count, and recurrence Assertions"
                 ),
                 "source_provenance": "complete declared material acquisition through one boundary",
-                "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
         "exact_act": "declared exact-byte Measurement",
@@ -3223,7 +3193,6 @@ def _assertions_of_recorded_byte_measurement(
             "source_provenance": (
                 "complete declared material acquisition through one boundary"
             ),
-            "authority": "unestablished",
             "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         }
     ):
@@ -3263,7 +3232,6 @@ def _assertions_of_recorded_byte_measurement(
             "responsibility_assignment_reference"
         ],
         "source_localities": material["source_localities"],
-        "authority": "unestablished",
         "evidence_scope": (
             "Evidence bounded to this exact responsible Measurement "
             "occurrence; establishes no responsibility"
@@ -3382,7 +3350,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "content": content,
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": "unestablished",
                 "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
@@ -3485,8 +3452,6 @@ def _pair_measurement_assignment_material(
                 "identity"
             ],
         },
-        "authority": BYTE_PAIR_MEASUREMENT_AUTHORITY,
-        "input_authority": source.material["dimensions"]["authority"],
         "limits": [
             "assignment is bounded to the exact source Assertion, Locality, "
             "completeness boundary, rule, Applicability, and Measurement result"
@@ -3854,7 +3819,6 @@ def _pair_applicability_act_material(
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": assignment.material["measurement_act_identity"],
-        "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         "evidence_scope": (
             "Evidence for this exact input Applicability determination occurrence"
         ),
@@ -3920,7 +3884,6 @@ def _pair_applicability_result_material(
             "content": "exact source-Assertion to addressed-Act Applicability",
             "standing": applicability_assertion["dimensions"]["standing"],
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
-            "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "exact_act": "input Applicability determination",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -4206,7 +4169,6 @@ def _pair_measurement_act_material(
         "input_applicability_event_identity": applicability_event.identity,
         "input_assertion_reference": source.reference,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "authority": BYTE_PAIR_MEASUREMENT_AUTHORITY,
         "evidence_scope": (
             "Evidence bounded to this exact responsible Measurement occurrence; "
             "establishes no responsibility or authority for another Act"
@@ -4370,7 +4332,6 @@ def _pair_measurement_result_material(
             "identity": "byte-position-pair-count-measurement-occurrence",
             "content": "byte-position-pair count and recurrence Assertions",
             "source_provenance": "the recorded source-material-set Assertion",
-            "authority": "unestablished",
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
         "exact_act": "declared byte-position-pair Measurement",
@@ -5058,7 +5019,6 @@ def _validated_recorded_byte_position_pair_measurement(
             "byte-position-pair count and recurrence Assertions"
         ),
         "source_provenance": "the recorded source-material-set Assertion",
-        "authority": "unestablished",
         "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
     }
     if (
@@ -5229,7 +5189,6 @@ def _validated_recorded_byte_position_pair_measurement(
                     "content",
                     "source_provenance",
                     "responsibility",
-                    "authority",
                     "evidence_scope",
                 }
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY

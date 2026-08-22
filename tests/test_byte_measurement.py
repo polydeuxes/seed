@@ -21,7 +21,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_MEASUREMENT_RULE,
     ByteMeasurementError,
-    RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _record_assertion_locality_movement_act_from_carried_standing,
@@ -1174,7 +1173,6 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "source_localities": ["source"],
     }
     assert count.material["dimensions"]["source_provenance"]
-    assert count.material["dimensions"]["authority"] == "unestablished"
     assert count.material["dimensions"]["evidence_scope"]
     assert count.material["unknown"]
     assert count.material["conflicts"] == "Unknown"
