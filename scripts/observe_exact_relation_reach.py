@@ -234,8 +234,18 @@ def main() -> int:
     )
     print(f"  stated coordinates reached: {sorted(covered)}")
     print(
-        f"  stated coordinates changed with every predicate still holding: "
+        f"  stated coordinates changed with every predicate still holding, "
+        f"at the carrier reached first: "
         f"{sorted({r['stated_yield_coordinate'] for r in missed}) or 'none'}"
+    )
+    print(
+        "\n  read that line narrowly.  One coordinate name is recorded by more\n"
+        "  than one occurrence and answers differently at each.  Authority and\n"
+        "  Scope are noticed where the recorded result carries them and not\n"
+        "  noticed where the responsible Act evidence records its own, so a name\n"
+        "  appearing above is a statement about one carrier, never about the\n"
+        "  coordinate.  scripts/observe_broad_yield_predicate.py asks each\n"
+        "  carrier separately."
     )
     print("\n  a sample of the over-coupled surface:")
     for row in over[:12]:
