@@ -6,10 +6,12 @@ coordinates.  Whether the runtime records one thing under that name is not
 settled by the name.
 
 The same recorder is called both ways it permits, with a source result and
-without one, and what each records is read.
+without one.  What each records is read, and so is the Responsibility each Act
+evidence claims, because a difference in what a function was passed is not a
+difference in what an occurrence is responsible for.
 
-Nothing here says which mode is right, that either should change, or what
-Representation ought to be.
+Nothing here says either call is wrong, that Representation names too much, or
+what a Representation Act ought to require.
 
 Usage:
     .venv/bin/python scripts/observe_representation_act_modes.py
@@ -49,7 +51,20 @@ def _recorded(source: bool):
         locality_standing=standing,
         source_occurrence_reference=acquired.identity if source else None,
     )
-    return ledger.get(recorded["representation_event_identity"]), acquired
+    event = ledger.get(recorded["representation_event_identity"])
+    _LEDGERS[event.identity] = ledger
+    return event, acquired
+
+
+def _act_evidence(event):
+    from seed_runtime.events import EventLedger  # noqa: F401
+
+    return _LEDGERS[event.identity].get(
+        event.material["responsible_act_evidence_identity"]
+    ).material
+
+
+_LEDGERS: dict = {}
 
 
 def main() -> int:
@@ -81,14 +96,27 @@ def main() -> int:
             f"{str(event.material.get('representation_result'))[:64]!r}\n"
         )
 
+    sourced, _ = _recorded(True)
+    sourceless, _ = _recorded(False)
+    import seed_runtime.events as _  # noqa: F401
+
+    print("  the Responsibility each Act evidence claims:\n")
+    for label, event in (("with a source", sourced), ("without one", sourceless)):
+        evidence = _act_evidence(event)
+        print(f"    {label:16} {evidence.get('responsibility')!r}")
+        print(f"    {'':16} act: {evidence.get('act')!r}")
     print(
-        "  One recorder, two modes.  Called with a source result it preserves\n"
-        "  that result's exact material and names the occurrence it came from.\n"
-        "  Called without one it records neither, and what it does record under\n"
-        "  representation_result is the same sentence either way.\n"
-        "\n  So the sentence the Book states describes one of the two.  This does\n"
-        "  not say the other is wrong, that Representation names too much, or\n"
-        "  what a Representation Act with no source result establishes."
+        "\n  Both claim one Responsibility and one Act, and their Act evidence\n"
+        "  differs in no coordinate.  So these are two invocation shapes and not\n"
+        "  two Responsibilities: what a caller passed is not what an occurrence\n"
+        "  is responsible for.\n"
+        "\n  The claimed Responsibility yields a Representation from carried\n"
+        "  Locality coordinates.  The Book's Representation Act preserves exact\n"
+        "  material from one exact source result.  Those are not the same\n"
+        "  requirement, and the call carrying no source result satisfies the\n"
+        "  first while meeting nothing the second states.\n"
+        "\n  What Responsibility that occurrence witnesses is not established\n"
+        "  here, and no second Representation is invented to hold it."
     )
     return 0
 
