@@ -19,9 +19,6 @@ one coordinate of Standing for the exact subject of that Responsibility.
 
 The result establishes no Standing.
 
-The result as one coordinate of that Responsibility branch establishes no
-Standing for the result as another subject, and no later Standing occurrence.
-
 ### 01.Standing.D — Multiplicity establishes no collective relation
 
 Multiplicity of subjects, Assertions, results, or Responsibility branches establishes no
@@ -64,9 +61,6 @@ establishes no relation occurrence.
 Applicability carries one exact subject-to-Act position. Its responsible
 occurrence carries the subject, Act, Authority, Scope, Locality, limits, and
 one of `applicable`, `inapplicable`, `conflicting`, or `Unknown`.
-
-Applicability establishes no Admission, Participation, Act occurrence, result,
-or Standing for a result.
 
 Participation is the exact relation from one subject and role to one Act
 occurrence. Participation requires its own relation occurrence and the

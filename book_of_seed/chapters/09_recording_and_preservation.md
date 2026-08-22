@@ -28,9 +28,7 @@ carrying that occurrence in the same Locality.
 
 One exact Yield relation carries the recording Act occurrence as first subject
 and one result as second subject. The result preserves the addressed occurrence, Standing boundary reference, Responsibility, Act occurrence,
-Authority, Scope, Locality, limits, and Unknown. The reference establishes no copy of
-Standing and establishes no Locality relation, Applicability, Participation,
-Compare result, movement, or Authority for another Act.
+Authority, Scope, Locality, limits, and Unknown.
 
 ## References
 

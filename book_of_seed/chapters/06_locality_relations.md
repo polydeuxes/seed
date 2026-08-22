@@ -19,9 +19,7 @@ destination Locality, exact Act, Authority, Scope, limits, and Unknown.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
-preserves the prior boundary reference and its new Locality relation. It
-establishes no copy of Standing and no
-Applicability, Participation, Compare result, or relation beyond its Scope.
+preserves the prior boundary reference and its new Locality relation.
 
 ### 06.Locality.C — Recorded boundary relation
 
@@ -30,7 +28,7 @@ result to one new Locality is a branch of current Standing carrying one exact
 recorded Standing boundary reference.
 The result preserves the recorded reference, destination Locality, relation
 occurrence, Responsibility, Act occurrence, Yield, Authority, Scope, limits,
-and Unknown. It establishes no copy of addressed Standing.
+and Unknown.
 
 ### 06.Locality.D — Operator invocation Locality
 
@@ -43,8 +41,7 @@ Locality, relation occurrence, Responsibility, Act occurrence, Yield,
 Authority, Scope, limits, and Unknown.
 
 Material later supplied at the invocation Locality preserves exact provenance
-to the operator occurrence and relation result. That provenance establishes no
-Applicability, Participation, or operator Standing copy.
+to the operator occurrence and relation result.
 
 ## References
 

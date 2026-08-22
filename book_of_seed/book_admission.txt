@@ -56,7 +56,6 @@ constitutional
 content
 coordinate
 coordinates
-copy
 copying
 count
 cross
