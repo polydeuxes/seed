@@ -632,8 +632,7 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     if (
-        material["dimensions"].get("authority") != "unestablished"
-        or material["dimensions"].get("evidence_scope")
+        material["dimensions"].get("evidence_scope")
         != SOURCE_SET_EVIDENCE_SCOPE
     ):
         standing = "Unknown"
@@ -5234,7 +5233,6 @@ def _validated_recorded_byte_position_pair_measurement(
                     "evidence_scope",
                 }
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or dimensions.get("authority") != "unestablished"
             or dimensions.get("evidence_scope") != PAIR_MEASUREMENT_EVIDENCE_SCOPE
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
             or assertion.get("limits")
