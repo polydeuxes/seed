@@ -1,8 +1,14 @@
-"""Observe the whole surface the blanket Yield predicate is sensitive to.
+"""Observe the carried-material surface the blanket Yield predicate reaches.
 
 `exact_relation` stops holding when a coordinate the Yield grammar never names
 is changed, so it cannot say which coordinate it establishes.  What it can be
-asked is its reach: every coordinate whose change it notices.
+asked is its reach over the material each occurrence carries.
+
+This enumerates leaves of ``event.material`` only.  The predicates also read
+each occurrence's envelope -- its existence, kind, Locality, exact material and
+integrity -- and those are perturbed separately at the end rather than counted
+in the material surface.  A count from this file is a count of carried-material
+coordinates, never of everything a predicate can observe.
 
 Each leaf coordinate carried by the recorded result, the Yield evidence and the
 responsible Act evidence is changed one at a time, and the predicates are read
@@ -107,6 +113,25 @@ def _substitute(material: dict[str, Any], path: tuple[str, ...]) -> None:
         holder[int(last)] = changed
 
 
+ENVELOPE = [
+    (
+        f"{holder}.{coordinate}",
+        holder,
+        (
+            lambda ledger, event, coordinate=coordinate: object.__setattr__(
+                event,
+                coordinate,
+                b"substituted"
+                if coordinate == "exact_material"
+                else "substituted",
+            )
+        ),
+    )
+    for holder in ("result", "evidence", "act_evidence")
+    for coordinate in ("locality_identity", "kind", "exact_material", "identity")
+]
+
+
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
@@ -163,7 +188,7 @@ def main() -> int:
         r for r in unnoticed if r["stated_yield_coordinate"] is not None
     ]
 
-    print(f"\n  changed one leaf coordinate at a time: {total}")
+    print(f"\n  changed one carried-material leaf at a time: {total}")
     print(f"    noticed by some predicate   {len(noticed)}")
     print(f"    noticed by none             {len(unnoticed)}")
     print(
@@ -177,6 +202,24 @@ def main() -> int:
     print("\n  a sample of the over-coupled surface:")
     for row in over[:12]:
         print(f"    {'.'.join(row['coordinate_path'])[:74]}")
+    print("\n  envelope coordinates, which are not carried material:\n")
+    for label, holder_name, change in ENVELOPE:
+        ledger, result, evidence, act_evidence = _material()
+        target = {
+            "result": result,
+            "evidence": evidence,
+            "act_evidence": act_evidence,
+        }[holder_name]
+        try:
+            change(ledger, target)
+        except Exception as error:
+            print(f"    {'refused at once':22} {label}  ({type(error).__name__})")
+            continue
+        after = _requirements(ledger, result)
+        stopped = sorted(k for k, v in baseline.items() if v and not after[k])
+        mark = "noticed" if stopped else "NOT NOTICED"
+        print(f"    {mark:22} {label}  {', '.join(stopped) or 'every predicate still holds'}")
+
     Path("exact_relation_reach.json").write_text(
         json.dumps(
             {"noticed": noticed, "unnoticed": unnoticed}, indent=1
