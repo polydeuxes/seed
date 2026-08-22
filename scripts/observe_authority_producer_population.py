@@ -15,6 +15,31 @@ Each is disposed only by what its change reached:
 A producer this sequence never calls is disposed as unreached rather than as
 passive, because nothing here asked it anything.
 
+Disposition after five roads, recorded here with the evidence rather than
+apart from it:
+
+    the context-free producers tested
+        No independent responsibility was recovered for what they emit.  On
+        every road reaching one, changing the value changed the material
+        recorded and changed nothing the road produced.  Together with their
+        taking no occurrence-specific input, and with the boundedness that does
+        move with an occurrence being carried by Scope, what they emit is
+        described as a written label rather than as a recovered Authority.
+
+    the context-free producers no road here reaches
+        Unknown, each on its own.  They resemble the tested ones in shape, and
+        resemblance has been wrong often enough on this branch that it decides
+        nothing.  The resemblance is a reason to look, never a disposition.
+
+    the producers taking an input
+        A separate physiology, untouched.  Perturbing them at their source
+        would answer a question nobody asked; they have to be varied at the
+        input that produces the value.
+
+None of this says Authority is absent from the Book's grammar, that these
+labels are Locality, or that recording them is wrong.  It says that on these
+roads nothing established what they emit as Authority, and nothing read it.
+
 Usage:
     .venv/bin/python scripts/observe_authority_producer_population.py
 """
