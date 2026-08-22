@@ -15,18 +15,15 @@ exact material --Locality--> this Seed
 One exact Yield relation carries the Measurement Act occurrence as first
 subject and one result as second subject. The result preserves its exact rule, subjects, source occurrences,
 completeness boundary, findings, Authority,
-Scope, Locality, limits, conflicts, and Unknown. Bounded Locality availability
-establishes no required relation or Standing.
+Scope, Locality, limits, conflicts, and Unknown.
 
 Each exact Measurement Responsibility branch carries one responsible Standing
-boundary. Responsibility branches, the same boundary, and durable recording
-order establish no relation.
+boundary.
 
 ### 01.Source.D.1 — Count findings
 
 One count finding preserves each exact occurrence reference carried by its
-declared rule and completeness boundary. Repetition of a reference establishes no
-other occurrence.
+declared rule and completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
@@ -38,19 +35,13 @@ The bounded subject set is exhaustive.
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
 preserves every exact pair-position reference for that byte occurrence in source occurrence order.
-It preserves no reference for another byte occurrence.
-
-A result for one subject requires no completion of another subject for later
-Responsibility. The exhaustive bounded subject set establishes no order for
-another Responsibility.
 
 ### 01.Source.E — Candidate preservation
 
 One Responsibility to preserve one Candidate is a branch of current Standing
 carrying one exact addressed source result. The Candidate result preserves its
 exact source references, Authority, Scope, Locality, provenance, limits, and
-Unknown. It establishes no source relation, Act occurrence, Compare result, or
-Standing.
+Unknown.
 
 ### 01.Source.E.1 — Candidate results from exact results
 
@@ -69,9 +60,8 @@ Candidate Act occurrence --Yield--> exact Candidate result
 ```
 
 Each result preserves an exact Candidate with its exact source Assertion
-reference or references, coordinates, and Act-local roles. A Candidate result
-requires no completion of other required subjects under that Responsibility
-for later Standing. A relation requires a responsible relation occurrence.
+reference or references, coordinates, and Act-local roles. A relation requires
+a responsible relation occurrence.
 
 ## References
 

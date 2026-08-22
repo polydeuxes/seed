@@ -233,16 +233,10 @@
       "result": "Standing_for_exact_subject"
     },
     "01.Standing.D": {
-      "subject": "multiplicity",
-      "Responsibility": "establish_exact_collective_relation",
-      "exact_Act": "establish_exact_collective_relation",
+      "subject": "exact_relation",
+      "requires": ["exact_subjects", "responsible_occurrence"],
       "responsibility_subject_set": "exhaustive_bounded_subject_set",
-      "establishes_no": [
-        "order_for_another_Responsibility",
-        "Applicability_for_another_Responsibility",
-        "completion_for_another_Responsibility"
-      ],
-      "result": "exact_collective_relation"
+      "result": "exact_result_for_each_required_subject"
     },
     "01.Standing.D.1": {
       "subject": "Assertion",

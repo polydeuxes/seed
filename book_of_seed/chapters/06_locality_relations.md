@@ -6,9 +6,7 @@ Locality is one exact relation with first and second exact subjects. It requires
 relation occurrence, Responsibility, Act, Authority, Scope, limits, and
 Unknown.
 
-The subjects, temporal order, multiplicity, source coordinates, or shared
-Locality coordinate establish no Locality relation. Each Locality relation
-requires a separate relation occurrence.
+Each Locality relation requires a separate relation occurrence.
 
 ### 06.Locality.B — Standing boundary at a new Locality
 

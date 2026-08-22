@@ -6,13 +6,10 @@ One responsible Act occurrence preserves the supplied material, source role,
 source occurrence, provenance, Authority, Scope, Locality, known loss, limits,
 conflicts, and Unknown carried at its boundary.
 
-Preservation establishes no source relation, Applicability, Admission,
-Participation, Compare result, or Standing.
-
 ### 01.Source.B — Cross-boundary participation
 
 Participation by supplied material preserves every source coordinate and limit
-carried by that exact material. It establishes no other coordinate.
+carried by that exact material.
 
 ### 01.Source.C — Fidelity
 
@@ -27,8 +24,7 @@ one test subject and no other subject.
 ### 01.Source.F — Material carrying a relation Assertion
 
 Supplied material carrying an Assertion carries one exact relation as its
-relation. Carriage preserves the Assertion and its source coordinates. It
-establishes no relation occurrence.
+relation. Carriage preserves the Assertion and its source coordinates.
 
 ### 01.Source.G — Operator material acquisition
 

@@ -10,9 +10,7 @@ to Participation.
 
 One exact Yield relation carries the Compare Act occurrence as first subject
 and one result as second subject. The result preserves distinctions established
-under the declared rule and completeness boundary. A
-difference, same-content finding, conflicts, or Unknown establishes no movement, revision,
-Standing, or completion.
+under the declared rule and completeness boundary.
 
 ### 04.Compare.A — Recorded pair findings
 
@@ -26,8 +24,6 @@ The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references, the added occurrence, provenance,
 Authority, Scope, Locality, limits, conflicts, and Unknown.
 
-Witness provenance establishes no Compare input relation.
-
 ### 04.Compare.B — Ordered relation path and pair findings
 
 Current Standing carrying one exact ordered relation-path Assertion and one
@@ -39,7 +35,7 @@ Each required Admission requires its exact occurrence prior to Participation.
 
 The result preserves each source reference, ordered path roles, pair subjects,
 complete finding references, Authority, Scope, Locality, limits, conflicts,
-and Unknown. Shared subjects establish no recurrence or source relation.
+and Unknown.
 
 ### 04.Compare.C — Candidate coordinates
 
@@ -49,7 +45,7 @@ coordinates carried by that Candidate.
 
 The Candidate is the exact Compare subject. The first and second source
 Assertion references, roles, and coordinates are coordinates carried by that
-Candidate. A source Assertion reference is no other Compare subject.
+Candidate.
 
 Each Candidate requires its exact Applicability result. This Compare boundary
 requires its exact Admission occurrence prior to Participation. Each admitted
@@ -65,9 +61,6 @@ Compare Act occurrence --Yield--> exact result
 
 The result preserves the distinctions established under the exact rule and
 Candidate result boundary.
-
-Candidate Participation, source references, shared coordinates, or a Compare
-result establishes no source Assertion relation and no later Standing.
 
 ## References
 

@@ -156,8 +156,8 @@ def test_standing_requires_the_exact_support_relation():
         encoding="utf-8"
     )
     assert (
-        "Preservation of an Assertion establishes no support relation,\n"
-        "Applicability, Participation, revision, or Standing for that Assertion."
+        "Standing for one exact subject requires an exact Responsibility, Act\n"
+        "occurrence, Yield, Authority, Scope, limits, and result for that subject."
     ) in chapter
 
 

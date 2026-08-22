@@ -4,10 +4,6 @@ One exact Yield relation carries a recording Act occurrence as first subject
 and one exact retrievable record as second subject. The result preserves the material, source coordinates, Authority, Scope, Locality,
 limits, and Unknown established at that recording boundary.
 
-Record existence establishes no recorded source occurrence, relation,
-Applicability, Participation, renewed occurrence, movement, or
-Standing.
-
 ### 05.Recording.A — Recorded Assertion
 
 One recording occurrence preserves one exact Assertion and its source
@@ -17,8 +13,7 @@ through its own exact Applicability and Participation relations.
 ### 05.Recording.C — Recorded Measurement
 
 One preservation occurrence preserves one exact Measurement result and its
-source coordinates. Measurement-result existence establishes no preservation
-by this Seed and no Compare.
+source coordinates.
 
 ### 05.Recording.D — Standing boundary reference
 

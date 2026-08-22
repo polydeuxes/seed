@@ -214,11 +214,6 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
     assert standing["responsibility_subject_set"] == (
         "exhaustive_bounded_subject_set"
     )
-    assert standing["establishes_no"] == [
-        "order_for_another_Responsibility",
-        "Applicability_for_another_Responsibility",
-        "completion_for_another_Responsibility",
-    ]
 
     candidate_book = (
         CHAPTERS / "07_measurement_and_candidates.md"
@@ -232,13 +227,8 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
         "subject set."
     ) in candidate_book
     assert (
-        "A Candidate result\n"
-        "requires no completion of other required subjects under that Responsibility\n"
-        "for later Standing."
-    ) in candidate_book
-    assert (
-        "An exhaustive bounded subject set for one Responsibility establishes no order,\n"
-        "Applicability, or completion for another Responsibility."
+        "One Responsibility carries one exhaustive bounded subject set. Each required\n"
+        "subject of that set carries its own exact result."
     ) in standing_book
     assert "one complete Candidate result" not in compare_book
     assert "every Candidate in the complete Candidate result" not in compare_book
@@ -247,12 +237,11 @@ def test_candidate_production_owns_completeness_without_a_result_barrier():
 def test_candidate_compare_book_refuses_source_participation_and_relation_promotion():
     compare = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
 
+    assert "The Candidate is the exact Compare subject." in compare
     assert (
-        "A source Assertion reference is no other Compare subject."
-    ) in compare
-    assert (
-        "Candidate Participation, source references, shared coordinates, or a Compare\n"
-        "result establishes no source Assertion relation and no later Standing."
+        "Each admitted\n"
+        "Candidate requires its exact Participation relation to its Compare Act\n"
+        "occurrence under the exact Candidate role."
     ) in compare
 
 
@@ -339,7 +328,11 @@ def test_each_book_coordinate_has_exact_responsibility_and_act():
     coordinates_by_reference = {
         reference: coordinates
         for reference, coordinates in _grammar()["book_coordinates"].items()
-        if reference != "01.Standing.E.1"
+        # 01.Standing.E.1 states Applicability, Admission and Participation and
+        # names no single Act. 01.Standing.D requires each exact relation to
+        # carry its subjects and occurrence and likewise names no Act. Requiring
+        # one here is what supplies a name the Book never gave.
+        if reference not in ("01.Standing.E.1", "01.Standing.D")
     }
     incomplete = {
         reference: sorted(

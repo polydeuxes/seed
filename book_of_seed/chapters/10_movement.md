@@ -8,11 +8,7 @@ and Unknown.
 
 One exact Yield relation carries the movement Act occurrence as first subject
 and one result as second subject. The result preserves the exact subject and one exact source-to-destination
-relation. It establishes no mutation, copying,
-revision, Authority movement, other relation, or later Standing.
-
-Recording, different Standing, different coordinates, or temporal order establishes
-no movement occurrence.
+relation.
 
 ## References
 

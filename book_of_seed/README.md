@@ -47,10 +47,8 @@ Act occurrence ── Yield ─────────> result
 
 Participation, Carriage, and Yield each requires exact subjects, relation,
 responsible occurrence, Authority, Scope, Locality, limits, and Unknown.
-Multiplicity establishes no relation.
 
 The result carries the exact coordinates established by its Act occurrence.
-Result existence establishes no Standing.
 
 ## Later Standing
 
@@ -68,8 +66,6 @@ current Standing
     └── Standing Act occurrence
             └── Yield ──> Standing for prior result
 ```
-
-The prior Act occurrence and result establish no later Standing occurrence.
 
 ## References
 
