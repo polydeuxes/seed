@@ -22,9 +22,13 @@ apart from it:
         No independent responsibility was recovered for what they emit.  On
         every road reaching one, changing the value changed the material
         recorded and changed nothing the road produced.  Together with their
-        taking no occurrence-specific input, and with the boundedness that does
-        move with an occurrence being carried by Scope, what they emit is
-        described as a written label rather than as a recovered Authority.
+        taking no occurrence-specific input, what they emit is described as a
+        written label rather than as a recovered Authority.
+
+        On one road examined beside this population, moving an occurrence
+        between Localities moved the coordinates carried under Scope and left
+        the authority-labelled value unmoved.  That was measured on that road,
+        and nothing here shows Scope doing the same work on the other four.
 
     the context-free producers no road here reaches
         Unknown, each on its own.  They resemble the tested ones in shape, and
@@ -38,7 +42,10 @@ apart from it:
 
 None of this says Authority is absent from the Book's grammar, that these
 labels are Locality, or that recording them is wrong.  It says that on these
-roads nothing established what they emit as Authority, and nothing read it.
+roads nothing established what they emit as Authority, and that no outcome
+observed on them depended on its value.  The value is read in many places and
+copied onward; being read is not being consulted, and that distinction is the
+whole of the finding.
 
 Usage:
     .venv/bin/python scripts/observe_authority_producer_population.py
