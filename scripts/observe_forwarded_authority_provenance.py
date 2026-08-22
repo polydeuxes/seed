@@ -12,6 +12,9 @@ one the chain terminates in.
 If no substitution reaches it, the chain terminates somewhere this road does
 not exercise, and that is reported rather than guessed.
 
+The list below is shorter than the full producer census, so a result here is
+about the producers tried and never about every origin a value could have.
+
 Usage:
     .venv/bin/python scripts/observe_forwarded_authority_provenance.py
 """
