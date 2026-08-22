@@ -26,15 +26,30 @@ RUNTIME = Path(__file__).resolve().parents[1] / "seed_runtime"
 COORDINATE = "authority"
 
 
-def _reads_authority(node: ast.AST) -> bool:
-    """Whether this expression reads a coordinate named for Authority."""
+def _names_authority(value: object) -> bool:
+    return isinstance(value, str) and value.lower().endswith(COORDINATE)
 
-    return (
-        isinstance(node, ast.Subscript)
-        and isinstance(node.slice, ast.Constant)
-        and isinstance(node.slice.value, str)
-        and node.slice.value.lower().endswith(COORDINATE)
-    )
+
+def _reads_authority(node: ast.AST) -> bool:
+    """Whether this expression reads a coordinate named for Authority.
+
+    A coordinate is reached by subscript and by ``get``, and counting only the
+    first misses every reader that asks for it without insisting it is there.
+    """
+
+    if isinstance(node, ast.Subscript):
+        return isinstance(node.slice, ast.Constant) and _names_authority(
+            node.slice.value
+        )
+    if isinstance(node, ast.Call):
+        called = getattr(node.func, "attr", None)
+        return (
+            called == "get"
+            and bool(node.args)
+            and isinstance(node.args[0], ast.Constant)
+            and _names_authority(node.args[0].value)
+        )
+    return False
 
 
 def _consulted(parent: ast.AST, child: ast.AST) -> bool:
