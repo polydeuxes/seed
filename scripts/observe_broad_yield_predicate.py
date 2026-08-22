@@ -68,20 +68,40 @@ def _requirements(ledger, result) -> dict[str, bool]:
     )
 
 
-def _substitute_everywhere(value: Any, coordinate: str, replacement: Any) -> int:
-    """Change one coordinate wherever it is recorded.  Returns how many sites."""
+def _read(value: Any, coordinate: str) -> Any:
+    if isinstance(value, dict):
+        if coordinate in value:
+            return value[coordinate]
+        for nested in value.values():
+            found = _read(nested, coordinate)
+            if found is not None:
+                return found
+    return None
+
+
+def _substitute_value(value: Any, existing: Any, replacement: Any) -> int:
+    """Change every site holding this exact value, whatever key records it.
+
+    Substituting by key name leaves the same value standing wherever another
+    key records it, and the predicate then refuses a disagreement this control
+    created rather than the coordinate it meant to test.
+    """
 
     changed = 0
     if isinstance(value, dict):
         for key in list(value):
-            if key == coordinate:
+            if value[key] == existing:
                 value[key] = replacement
                 changed += 1
             else:
-                changed += _substitute_everywhere(value[key], coordinate, replacement)
+                changed += _substitute_value(value[key], existing, replacement)
     elif isinstance(value, list):
-        for item in value:
-            changed += _substitute_everywhere(item, coordinate, replacement)
+        for position, item in enumerate(value):
+            if item == existing:
+                value[position] = replacement
+                changed += 1
+            else:
+                changed += _substitute_value(item, existing, replacement)
     return changed
 
 
@@ -104,22 +124,30 @@ def main() -> int:
     baseline = _requirements(ledger, result)
     print(f"  baseline: {baseline}\n")
 
-    print("  the coordinate substituted in every occurrence that records it:\n")
+    print("  every site holding the value substituted, in all three occurrences:\n")
     for stated, coordinate, replacement in CONSISTENT:
         ledger, result, evidence, act_evidence = _material()
+        existing = _read(result.material, coordinate)
         sites = 0
         for event in (result, evidence, act_evidence):
             material = deepcopy(event.material)
-            sites += _substitute_everywhere(material, coordinate, replacement)
+            sites += _substitute_value(material, existing, replacement)
             object.__setattr__(event, "material", material)
         after = _requirements(ledger, result)
         held = all(after.values())
         stopped = sorted(k for k, v in baseline.items() if v and not after[k])
-        mark = "SATISFIED WHILE FALSE" if held else "refused"
+        mark = "ACCEPTED AFTER SUBSTITUTION" if held else "refused"
         print(
-            f"    {mark:22} {stated:15} changed at {sites} recorded sites"
+            f"    {mark:28} {stated:15} changed at {sites} sites"
             f"   {'' if held else 'stopped: ' + ', '.join(stopped)}"
         )
+    print(
+        "\n    Acceptance here establishes that agreement among the compared\n"
+        "    records is enough for this predicate.  It does not establish that\n"
+        "    the substituted coordinate is false: no anchor outside these\n"
+        "    occurrences was consulted, so this may be another internally\n"
+        "    agreeing result rather than a wrong one."
+    )
 
     print("\n  the same coordinate, substituted at each occurrence recording it:\n")
     for coordinate in CARRIED_IN_SEVERAL:
@@ -149,26 +177,42 @@ def main() -> int:
     )
 
     print(
-        "\n  the one envelope coordinate the broad predicate depends on,"
-        "\n  varied alone with the occurrence identity held:\n"
+        "\n  a distinct intact occurrence of another kind addressed as the\n"
+        "  relation witness, with no occurrence rewritten:\n"
     )
     ledger, result, evidence, act_evidence = _material()
-    original_kind = evidence.kind
-    other_kind = act_evidence.kind
-    object.__setattr__(evidence, "kind", other_kind)
+    material = deepcopy(result.material)
+    material["evidence_of_yield_relation_identity"] = act_evidence.identity
+    object.__setattr__(result, "material", material)
     after = _requirements(ledger, result)
     stopped = sorted(k for k, v in baseline.items() if v and not after[k])
-    print(f"    Yield evidence recorded as {original_kind}")
-    print(f"    read instead as            {other_kind}")
+    print(f"    proposed witness kind: {act_evidence.kind}")
+    print(f"    lawful witness kind:   {evidence.kind}")
+    print(f"    predicates that stopped: {', '.join(stopped) or 'none'}")
     print(
-        f"    predicates that stopped:   {', '.join(stopped) or 'none'}"
-        f"   ({len(stopped)} of {len(baseline)})"
+        "\n    This occurrence was recorded by its own lawful recorder and is\n"
+        "    intact.  It is refused, but it also carries different material, so\n"
+        "    this does not establish that its kind is what refused it."
     )
+
     print(
-        "\n    every other observed coordinate of that occurrence is unchanged,"
-        "\n    so this is the case the dependency refuses: an occurrence whose"
-        "\n    recorded material agrees throughout, standing as the relation"
-        "\n    occurrence while recorded as something else."
+        "\n  whether kind alone decides, with the same occurrence identity held\n"
+        "  and only the envelope read differently:\n"
+    )
+    ledger, result, evidence, act_evidence = _material()
+    object.__setattr__(evidence, "kind", act_evidence.kind)
+    after = _requirements(ledger, result)
+    stopped = sorted(k for k, v in baseline.items() if v and not after[k])
+    print(f"    predicates that stopped: {', '.join(stopped) or 'none'}")
+    print(
+        "\n    Reaching this case needed an occurrence's recorded envelope to be\n"
+        "    rewritten, which no lawful interface permits.  So the adversary the\n"
+        "    kind dependency refuses is not an independently recorded wrong-kind\n"
+        "    occurrence; constructing one with otherwise matching material is not\n"
+        "    reachable through the recorders, because each sets its own kind and\n"
+        "    the material it carries with it.  The dependency is reported here as\n"
+        "    sensitivity to kind, and no claim is made that kind is the sole\n"
+        "    discriminator for an adversary that cannot be built."
     )
     return 0
 
