@@ -241,6 +241,7 @@ def main() -> int:
     for row in over[:12]:
         print(f"    {'.'.join(row['coordinate_path'])[:74]}")
     print("\n  envelope coordinates, which are not carried material:\n")
+    envelope_rows = []
     for label, holder_name, change in ENVELOPE:
         ledger, result, evidence, act_evidence = _material()
         target = {
@@ -255,8 +256,37 @@ def main() -> int:
             continue
         after = _requirements(ledger, result)
         stopped = sorted(k for k, v in baseline.items() if v and not after[k])
+        envelope_rows.append((label, holder_name, stopped))
         mark = "noticed" if stopped else "NOT NOTICED"
         print(f"    {mark:22} {label}  {', '.join(stopped) or 'every predicate still holds'}")
+
+    # The three predicates are held apart here by position only.  Each is
+    # described by the coordinates whose change it notices, so nothing in this
+    # section rests on what its implementation calls it.
+    order = sorted(baseline)
+    signature = {name: [] for name in order}
+    for row in noticed:
+        for name in row["predicates_that_stopped_holding"]:
+            signature[name].append(
+                f"{row['carried_in']}:{'.'.join(row['coordinate_path'])}"
+            )
+    for label, holder_name, stopped in envelope_rows:
+        for name in stopped:
+            signature[name].append(f"envelope:{label}")
+
+    print("\n  each predicate by what it is sensitive to, named by position:\n")
+    for position, name in enumerate(order, start=1):
+        print(f"    predicate {position}: notices {len(signature[name])} coordinates")
+
+    shared = set.intersection(*(set(v) for v in signature.values()))
+    print(f"    coordinates every predicate notices: {len(shared)}")
+    print(
+        "\n  which stated Yield coordinate each predicate establishes is not read\n"
+        "  from these sets.  Matching a path fragment against a coordinate name\n"
+        "  reported Authority, Scope and Locality as reached, and changing each of\n"
+        "  them directly stopped no predicate.  The per-coordinate experiment is\n"
+        "  the measurement; this section counts sensitivity only."
+    )
 
     Path("exact_relation_reach.json").write_text(
         json.dumps(
