@@ -108,9 +108,54 @@ def _reading(ledger: EventLedger, refusal) -> dict[str, Any]:
     }
 
 
+def _ordered_path_sequence() -> dict[str, Any]:
+    from tests.test_comparison_of_ordered_path_source_position_material import (
+        _comparisons,
+    )
+
+    ledger = EventLedger()
+    try:
+        _comparisons(ledger, locality="producer-population", exact=b"aba")
+        refusal = None
+    except Exception as error:
+        refusal = f"{type(error).__name__}: {error}"
+    return _reading(ledger, refusal)
+
+
+def _standing_boundary_sequence() -> dict[str, Any]:
+    from tests.test_operator_checkpoint import _act, _assignment, _context
+
+    ledger = EventLedger()
+    try:
+        standing, _representation, command = _context(ledger)
+        assignment = _assignment(ledger, standing, command)
+        _act(ledger, assignment)
+        refusal = None
+    except Exception as error:
+        refusal = f"{type(error).__name__}: {error}"
+    return _reading(ledger, refusal)
+
+
+def _shared_position_sequence() -> dict[str, Any]:
+    from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
+        _fixture,
+    )
+
+    ledger = EventLedger()
+    try:
+        _fixture(ledger=ledger, locality="producer-population")
+        refusal = None
+    except Exception as error:
+        refusal = f"{type(error).__name__}: {error}"
+    return _reading(ledger, refusal)
+
+
 SEQUENCES: list[tuple[str, Callable[[], dict[str, Any]]]] = [
     ("acquisition", _acquisition_sequence),
     ("determination", _determination_sequence),
+    ("ordered path comparison", _ordered_path_sequence),
+    ("standing boundary reference", _standing_boundary_sequence),
+    ("shared position", _shared_position_sequence),
 ]
 
 
