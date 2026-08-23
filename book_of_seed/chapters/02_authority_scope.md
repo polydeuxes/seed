@@ -1,13 +1,14 @@
 # Authority and Scope
 
+### 08.Authority.B — Authority coordinates
+
 Authority carries one exact source, Responsibility, subject, Act, occurrence,
 result, Scope, and limits.
 
+### 08.Scope.A — Scope bounds one Responsibility
+
 Scope bounds the subjects, relations, Acts, occurrences, results, Localities,
 and limits addressed by one exact Responsibility.
-
-Authority movement and Scope movement requires an exact responsible
-occurrence.
 
 ### 08.Authority.A — Input support is bounded
 

@@ -510,12 +510,48 @@
     },
     "08.Authority.A": {
       "subject": "exact_input_to_Act_position",
-      "Responsibility": "establish_exact_input_support",
-      "exact_Act": "establish_exact_input_support",
+      "requires": [
+        "subject",
+        "relation",
+        "Act",
+        "responsible_boundary",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "responsible_occurrence"
+      ],
       "relations": [
         "support"
+      ]
+    },
+    "08.Authority.B": {
+      "subject": "Authority",
+      "carried_coordinates": [
+        "source",
+        "Responsibility",
+        "subject",
+        "Act",
+        "occurrence",
+        "result",
+        "Scope",
+        "limits"
+      ]
+    },
+    "08.Scope.A": {
+      "subject": "Scope",
+      "bounds": [
+        "subjects",
+        "relations",
+        "Acts",
+        "occurrences",
+        "results",
+        "Localities",
+        "limits"
       ],
-      "result": "exact_input_support"
+      "carried_coordinates": [
+        "one_exact_Responsibility"
+      ]
     }
   }
 }
