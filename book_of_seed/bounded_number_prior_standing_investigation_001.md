@@ -42,6 +42,44 @@ multiplication, infinity, HEAD, parser, or evaluator is supplied.
 
 This report changes no Book chapter, machine grammar, runtime, script, or test.
 
+## Amendment after boundary review
+
+The first version compressed Recording, Admission, and Standing establishment
+into the phrase `prior-Standing testimony admission`.  That phrase is
+withdrawn.
+
+Recording preserves that one exact testimony or Assertion exists with its
+source coordinates.  Required Admission is a separate boundary before
+Participation.  Neither makes the recorded content Standing by identity.
+
+The repository already has the boundary skeleton needed for responsible work
+over new material:
+
+```text
+exact source/current-Standing address through B
++ one exact recorded testimony T
+-> Responsibility-specific source rule R
+-> exact bounded input surface
+-> Applicability / required Admission / Participation where required
+-> responsible Act occurrence under Authority and Scope
+-> Yield
+-> result through later boundary C
+-> replay validates every coordinate owed relative to B and T
+```
+
+`C Complete` is report orientation for that last replay property, not an active
+constitutional object.  `B` is an immutable append-prefix address, not
+Standing or a source-population rule by identity.  `R` determines what through
+`B` belongs to this Responsibility.  A new testimony appended after `B` also
+requires its own exact reference; chronology cannot read it backward into B.
+
+The missing owner is therefore not a generic recorder or an operation that
+promotes supplied material automatically.  It is one generic responsible
+Standing-establishment crossing that consumes already-recorded bounded
+testimony relative to an exact prior boundary, determines Applicability under
+Authority and Scope, and yields the exact result that current Standing may
+carry for the Responsibility's exact subject.
+
 ## Direct finding
 
 The active Book can describe the proposed prior testimony without a Number or
@@ -59,12 +97,12 @@ Math species:
 - generic `04.Compare` can constitutionally compare exact subjects under an
   exact rule.
 
-The live runtime cannot yet admit that prior Standing through one generic
-bounded testimony road.  Current relation and Compare writers are
-family-specific.  There is no recorder that accepts an exact testimony source,
-its opaque subjects, origin Assertion, exact relation occurrences, Authority,
-Scope, Locality, limits, and `Unknown`, and yields current Standing carrying
-those coordinates.
+The live runtime can record family-specific Assertions and results, but it
+cannot yet establish Standing from bounded prior-domain testimony through one
+generic responsible road.  There is no Responsibility that consumes one exact
+recorded testimony source relative to an exact prior boundary, performs its
+Applicability/Participation work under Authority and Scope, and yields a result
+carrying warranted Standing coordinates for the testimony's exact subject.
 
 There is a second downstream vacancy: no active generic operation establishes
 an arbitrarily bounded ordered path from already-standing relation occurrences.
@@ -77,9 +115,14 @@ by the granted origin/equality structure.
 The first missing capability is earlier than path comparison:
 
 ```text
-exact bounded prior-Standing testimony
--> generic responsible admission/recording occurrence
--> current Standing carrying its exact subjects and relation occurrences
+exact recorded bounded testimony T
++ exact prior boundary B
+-> exact Standing-establishment Responsibility
+-> Applicability / Participation
+-> responsible Act occurrence
+-> Yield
+-> result through C, complete relative to B, T, and its exact rule
+-> current Standing carries that result for the Responsibility's exact subject
 ```
 
 Without that occurrence, a test fixture containing Python dictionaries would
@@ -90,26 +133,89 @@ Disposition:
 
 ```text
 one exact generic capability is missing
--> admit one bounded prior-Standing testimony surface under existing grammar
+-> responsibly establish Standing from one recorded bounded testimony surface
 -> STOP
 ```
 
 Do not build the successor-path consequence until that input boundary exists.
 
+## Existing B-to-C physiology
+
+The recovered Candidate-production road gives the most complete witness:
+
+```text
+B = exact immutable source append boundary
+R = exact source-Assertion enumeration rule
+S(B) = exact source surface R reads through B
+G = exact formation rule
+E = every coordinate G requires from S(B)
+
+C = later production-result boundary
+A = exact ordered coordinates actually recorded through C
+
+complete result
+iff
+E and A agree under G's identity, order, role, duplicate, and integrity rules
+```
+
+The result must preserve enough coordinates to recover both B and C.  A later
+append cannot enter `S(B)`.  An occurrence merely present through B does not
+enter `S(B)` unless R addresses it.
+
+The declared-Measurement road independently demonstrates that several
+Responsibilities can take exact subjects from one frozen B while recording
+their lifecycles in either durable order.  Each assignment preserves the same
+responsible Standing boundary.  The exact-byte Measurement separately
+preserves B as its completeness boundary.  Durable append order does not make
+one Measurement an input of the other.
+
+The byte-position source reader makes the refusal explicit:
+
+```text
+availability through B
+!= required Locality relation
+!= assignment subject
+!= Responsibility assignment
+!= Applicability
+!= Standing
+```
+
+Thus B/C supplies the honest stable comparison surface and replayable
+completeness mechanism.  It does not remove the need for the exact
+Responsibility and Act that interpret recorded testimony as an input to a
+Standing-establishing result.
+
+For a new testimony `T`, two lawful arrangements remain mechanically possible
+until the responsible road is recovered:
+
+```text
+prior Standing through B
++ separately addressed later testimony T
+
+or
+
+one later frozen input boundary B_T whose rule R addresses T
+```
+
+They are not interchangeable by chronology.  The missing Responsibility must
+state which boundary is its prior Standing, which occurrence is its testimony,
+and which exact population its rule owes.  This report does not choose the
+shape from implementation convenience.
+
 ## 1. Capability inventory
 
 | Required capability | Active owner | Runtime testimony | Disposition |
 | --- | --- | --- | --- |
-| Exact opaque subject | `01.Standing.A`, `01.Standing.D.1` | Many families preserve exact subject references | Constitutionally usable; no generic prior-testimony admission |
-| Standing concerning the subject | `01.Standing.A`, `01.Standing.A.1` | Locality readers carry results under exact Responsibility ownership | Constitutionally usable; no generic external domain-Standing writer |
-| Distinguished origin | one exact Assertion under `01.Standing.D.1` and a responsible recording occurrence under `05.Recording.A` | Assertion recorders are embedded in source-specific result families | No new constitutional species required; generic admission missing |
+| Exact opaque subject | `01.Standing.A`, `01.Standing.D.1` | Many families preserve exact subject references | Constitutionally usable; no generic testimony-to-Standing Responsibility |
+| Standing concerning the subject | `01.Standing.A`, `01.Standing.A.1` | Locality readers carry results under exact Responsibility ownership | Constitutionally usable; generic Standing-establishment owner missing |
+| Distinguished origin | one exact Assertion under `01.Standing.D.1` and a responsible recording occurrence under `05.Recording.A` | Assertion recorders are embedded in source-specific result families | Recording preserves the testimony; separate Standing-establishment work is missing |
 | Exact binary successor relation | `01.Standing.D`, `01.Standing.E` | Participation, Carriage, Yield, Locality, Support, and several measurement relations each have dedicated writers | Generic relation anatomy exists; no generic testimony relation recorder |
 | Exact sameness/equality | explicit exact relation testimony under `01.Standing.E`, or exact subject comparison under `04.Compare` | Live same-content findings compare byte/material coordinates inside specialized families | No number-specific species required; live generic subject comparison absent |
 | Relation occurrence and Evidence | `01.Standing.D`, `01.Standing.E`, `02.Acts.A` | Every active family records its own Responsibility, Act Evidence, occurrence, Yield Evidence, and result | Shape is established; no family-independent input road |
 | Bounded Scope and Unknown | `08.Scope.A`, `08.Authority.B` | Active families preserve their family-local bounds | Usable if the testimony road carries the exact finite subject/edge population and refuses a universal terminal claim |
 | Ordered relation path | consumed by `04.Compare.B`; byte-specific production under `01.Source.D` | shared byte-position Measurement creates one two-edge, three-position path | Too specialized and fixed in extent |
 | Compare exact path structure | generic `04.Compare` | path Compare implementations require byte-position paths, pair findings, or source-position material | Constitutional rule is generic; live owners are specialized |
-| Preserve a derived ternary relation | `01.Standing.E` can carry first subject, exact relation content, and second subject | no generic relation-result writer | Representable without an arithmetic kind; producer absent |
+| Preserve a later derived relation | `01.Standing.E` carries first subject, exact relation content, and second subject | no generic relation-result writer | Exact representation must be recovered after path work; do not assign `B` to relation content yet |
 
 ## 2. The proposed prior Standing does not require number grammar
 
@@ -241,8 +347,8 @@ limits
 Unknown
 ```
 
-This report does not add that law because the earlier prior-testimony admission
-is not live yet.
+This report does not add that law because the earlier testimony-to-Standing
+Responsibility is not live yet.
 
 ## 4. The bounded structural consequence
 
@@ -261,17 +367,12 @@ the two paths carry the same bounded relation-path structure
 exact endpoint of the origin path whose structure is compared with the path
 from `A`.
 
-The derived relation can use active relation-Assertion anatomy:
-
-```text
-first subject          A
-exact relation content exact B/path-structure coordinate
-second subject         C
-```
-
-The responsible occurrence must preserve both exact path references and the
-comparison finding.  The three coordinates alone do not establish the
-relation.
+The observer may report the consequence as `(A, B, C)`.  That tuple does not
+decide the constitutional relation representation.  In particular, this
+investigation does not establish that `B`, a path reference, or a compound of
+both belongs in `exact relation content`.  The generic path and comparison work
+must first establish what exact result is produced and which later
+Responsibility, if any, can preserve it as a relation Assertion.
 
 Only after freezing that population may an observer say that it corresponds
 to bounded addition.
@@ -415,11 +516,12 @@ number subject
 
 ## 8. Smallest missing coordinate and stop
 
-The proposed prior Standing is presently representable in active grammar but
-not enterable through live generic physiology.
+The proposed testimony and later Standing are separately representable in
+active grammar, but no live generic physiology owns the responsible crossing
+between them.
 
-The smallest missing runtime coordinate is one exact result of one responsible
-admission/recording occurrence carrying:
+The smallest missing runtime physiology begins with one already-recorded exact
+testimony occurrence carrying:
 
 ```text
 testimony source occurrence
@@ -433,9 +535,17 @@ limits
 Unknown beyond the experimental boundary
 ```
 
-That result must become a coordinate of current Standing for the exact subjects
-of its Responsibility branch.  It must not be a `NumberStanding` object, a
-fixture dictionary treated as truth, or a global relation registry.
+One separate exact Responsibility must then address that testimony relative to
+the exact prior boundary B, establish Applicability and Participation, perform
+its exact Act, and Yield a result through C.  Replay must recover the source
+surface owed by the rule through B, validate the testimony reference, and
+refuse missing, additional, substituted, repeated, or reordered result
+coordinates.  Only that result may become a coordinate of current Standing for
+the exact subject of its Responsibility branch.
+
+This must not be a `NumberStanding` object, a fixture dictionary treated as
+truth, a global relation registry, or a rule that every recorded Assertion
+automatically gains Standing.
 
 After that boundary exists, the next separate investigation can recover the
 smallest generic bounded ordered-path operation, including zero-edge and
@@ -445,7 +555,7 @@ Final disposition:
 
 ```text
 one exact generic capability is missing
--> bounded prior-Standing testimony admission under existing grammar
+-> responsible Standing establishment from recorded testimony relative to B
 -> name no arithmetic consequence yet
 -> STOP
 ```
