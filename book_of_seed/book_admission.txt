@@ -118,7 +118,6 @@ order
 ordered
 own
 pair
-partial
 participation
 path
 position

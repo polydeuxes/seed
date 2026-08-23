@@ -474,7 +474,7 @@
       "Responsibility": "emission",
       "exact_Act": "emission",
       "carried_coordinates": [
-        "destination_operator_boundary",
+        "exact_destination_boundary_within_the_invocation_Locality",
         "Authority",
         "Scope",
         "Locality",
@@ -501,12 +501,18 @@
         "accepted_material",
         "reported_count"
       ],
-      "separate_occurrences": [
+      "one_occurrence": [
+        "emission_Act_occurrence",
         "attempt",
-        "partial_write",
-        "failure",
-        "accepted_write",
-        "emission"
+        "accepted_write"
+      ],
+      "separate_occurrence": "failure"
+    },
+    "07.Emission.D": {
+      "subject": "material_supplied_by_the_addressed_boundary",
+      "requires": [
+        "exact_acquisition_Responsibility",
+        "exact_Act_occurrence"
       ]
     },
     "08.Authority.A": {

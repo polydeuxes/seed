@@ -350,6 +350,7 @@ def test_only_clauses_naming_an_Act_project_one():
         "01.Source.I",
         "07.Emission.B",
         "07.Emission.C",
+        "07.Emission.D",
         "01.Standing.A",
         "01.Standing.A.1",
         "01.Standing.D",

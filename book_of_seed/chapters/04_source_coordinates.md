@@ -28,15 +28,8 @@ relation. Carriage preserves the Assertion and its source coordinates.
 
 ### 01.Source.G — Operator material acquisition
 
-One Responsibility to preserve exact material supplied at the operator
-boundary is a branch of current Standing carrying the exact boundary
-coordinates. The Responsibility carries the operator boundary, material subject,
-exact acquisition Act, Authority, Scope, Locality, limits, and Unknown.
-
-One exact Yield relation carries the acquisition Act occurrence as first
-subject and one exact material result as second subject. That result
-preserves the exact material, operator boundary, acquisition occurrence,
-Yield, source coordinates, known loss, and limits.
+One material-acquisition Responsibility for the operator boundary is a branch
+of current Standing carrying the exact boundary coordinates.
 
 The same occurrence establishes this Locality relation under its exact
 Responsibility and coordinates:
@@ -51,6 +44,19 @@ Scope, Locality, limits, and Unknown.
 
 Supplied material is required for one material result. Another operator boundary
 occurrence requires another exact Responsibility and Act occurrence.
+
+### 01.Source.H — Material acquisition
+
+One material-acquisition Responsibility bounds one exact source boundary and
+one acquisition Act. One exact Yield relation carries the Act occurrence as
+first subject and one exact material result as second subject. The result
+preserves its source role, source boundary, provenance, Authority, Scope,
+Locality, known loss, limits, and Unknown.
+
+### 01.Source.I — Separate source branches
+
+Material supplied by this operator and material supplied by this Witness have
+separate source Responsibility branches and occurrences.
 
 ## References
 
