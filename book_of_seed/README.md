@@ -80,4 +80,3 @@ current Standing
 - [Recording and preservation](chapters/09_recording_and_preservation.md)
 - [Movement](chapters/10_movement.md)
 - [Emission](chapters/11_emission.md)
-- [Stopping and completion](chapters/12_stopping_and_completion.md)

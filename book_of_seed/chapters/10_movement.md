@@ -13,4 +13,3 @@ relation.
 ## References
 
 - [Locality](06_locality_relations.md)
-- [Stopping and completion](12_stopping_and_completion.md)

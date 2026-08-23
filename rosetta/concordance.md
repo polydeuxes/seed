@@ -15,4 +15,3 @@ Navigation entries do not establish constitutional identity or Standing.
 | Locality relation | [Locality](../book_of_seed/chapters/06_locality_relations.md) |
 | Authority | [Authority and Scope](../book_of_seed/chapters/02_authority_scope.md) |
 | representation and emission | [Representation and emission](../book_of_seed/chapters/11_emission.md) |
-| stopping | [Stopping and completion](../book_of_seed/chapters/12_stopping_and_completion.md) |
