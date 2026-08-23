@@ -214,6 +214,34 @@ The one-time monolith-to-shard proving conversion remains slow because it must
 read and rewrite the retired monolithic representation.  Future observations
 write the shards directly.
 
+A separate mechanics correction then refused reconstruction for any recurrent
+surface that carried fewer than two recurrent exact productions.  Such a
+surface can only contribute to the measured zero-position count; rebuilding
+its exact starts and coordinate classes cannot change that result.
+
+The correction preserves every source artifact byte-for-byte.  On Franklin:
+
+```text
+before mechanics: 47.764 seconds
+after mechanics:  33.948 seconds
+source SHA-256:    305215850fb61dae0c7e82be20e768f2d2828df28e8658a5aefd25fa100e3638
+```
+
+Starting the largest exact source windows first further removes parallel tail
+latency without changing manifest order or findings.  The complete 17-source,
+14-process run then recorded:
+
+```text
+wall time:   66.556 seconds
+known loss:  none
+```
+
+All 17 source artifact digests equal the frozen complete population.  The
+aggregate observation remains 6.556 seconds above the desired one-minute
+mechanics boundary, but no individual source mechanics exceeded its 55-second
+exact bound.  The earlier 147.750-second monolithic road is no longer the live
+observer shape.
+
 ## Why direction still does not follow
 
 The prior observation stopped because every recovered frame had one varying

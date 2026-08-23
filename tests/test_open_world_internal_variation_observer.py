@@ -30,7 +30,7 @@ def _variation(materials: tuple[str, ...]):
 def test_source_population_establishes_zero_one_or_many_varying_positions():
     no_variation, productions, _materials = _variation(("ab", "cd"))
     assert no_variation == ()
-    assert len(productions) == 2
+    assert productions == ()
 
     one_variation, _productions, _materials = _variation(("ab", "ac"))
     assert tuple(

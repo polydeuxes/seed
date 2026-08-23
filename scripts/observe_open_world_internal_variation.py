@@ -130,9 +130,8 @@ def _variation_positions(
     if len(recurrent_productions) < 2:
         return (), ()
 
-    start_index = {start: index for index, start in enumerate(starts)}
     production_values: list[tuple[str, ...]] = []
-    production_records = []
+    production_material_indexes = []
     for material, found_starts in recurrent_productions:
         values = tuple(
             material[positions[0]] for positions in coordinate_classes
@@ -140,18 +139,13 @@ def _variation_positions(
         if len(values) != len(set(values)):
             raise AssertionError("two equality classes carry the same source value")
         production_values.append(values)
-        production_records.append(
-            {
-                "coordinate_material_indexes": [
-                    _scalar_material_index(
-                        scalar_materials, scalar_indexes_by_value, value
-                    )
-                    for value in values
-                ],
-                "support_start_indexes": [
-                    start_index[start] for start in found_starts
-                ],
-            }
+        production_material_indexes.append(
+            [
+                _scalar_material_index(
+                    scalar_materials, scalar_indexes_by_value, value
+                )
+                for value in values
+            ]
         )
 
     variation_positions = []
@@ -174,6 +168,20 @@ def _variation_positions(
                     "recurrent_substitution_frames": recurrent_frames,
                 }
             )
+    if not variation_positions:
+        return (), ()
+    start_index = {start: index for index, start in enumerate(starts)}
+    production_records = [
+        {
+            "coordinate_material_indexes": material_indexes,
+            "support_start_indexes": [
+                start_index[start] for start in found_starts
+            ],
+        }
+        for material_indexes, (_material, found_starts) in zip(
+            production_material_indexes, recurrent_productions
+        )
+    ]
     return tuple(variation_positions), tuple(production_records)
 
 
@@ -270,6 +278,12 @@ def _observe_source(
         finding_count_before = len(findings)
         for surface_id in recurrent_surface_ids.tolist():
             surface_index = int(np.searchsorted(surface_ids, surface_id))
+            recurrent_productions = tuple(
+                sorted(recurrent_productions_by_surface.get(surface_index, ()))
+            )
+            if len(recurrent_productions) < 2:
+                varying_surface_count_by_position_count[0] += 1
+                continue
             occurrence_indexes = surface_occurrence_order[
                 surface_occurrence_offsets[surface_index] :
                 surface_occurrence_offsets[surface_index + 1]
@@ -280,9 +294,7 @@ def _observe_source(
             variation_positions, productions = _variation_positions(
                 surface=surface,
                 starts=starts,
-                recurrent_productions=tuple(
-                    sorted(recurrent_productions_by_surface.get(surface_index, ()))
-                ),
+                recurrent_productions=recurrent_productions,
                 scalar_materials=scalar_materials,
                 scalar_indexes_by_value=scalar_indexes_by_value,
             )
@@ -458,6 +470,13 @@ def main() -> int:
         for source in aperture["sources"]
         if not arguments.source or source["source"] in arguments.source
     ]
+    # Larger exact windows generally carry the longest mechanics.  Starting
+    # them first reduces parallel tail latency; manifest order remains the
+    # frozen source order and findings do not depend on scheduling.
+    execution_sources = sorted(
+        selected_sources,
+        key=lambda source: (-source["scalar_count"], source["source"]),
+    )
     payloads = [
         (
             source,
@@ -465,7 +484,7 @@ def main() -> int:
             str(arguments.source_output_directory),
             arguments.profile_slow_extents,
         )
-        for source in selected_sources
+        for source in execution_sources
     ]
     if arguments.jobs < 1:
         raise ValueError("jobs must be a positive exact process count")
@@ -476,16 +495,11 @@ def main() -> int:
         observed_sources = executor.map(_observe_source_with_limit, payloads)
 
     try:
+        observed_by_source = {}
         for source, (source_artifact, stopped) in zip(
-            selected_sources, observed_sources
+            execution_sources, observed_sources
         ):
-            sources.append(
-                {
-                    key: value
-                    for key, value in source_artifact.items()
-                    if key != "wall_seconds"
-                }
-            )
+            observed_by_source[source["source"]] = (source_artifact, stopped)
             print(
                 f"{source['source']:48} "
                 f"surfaces={source_artifact['recurrent_surface_count']:7} "
@@ -497,6 +511,14 @@ def main() -> int:
                 flush=True,
             )
             stopped_at_time_boundary |= stopped
+        sources = [
+            {
+                key: value
+                for key, value in observed_by_source[source["source"]][0].items()
+                if key != "wall_seconds"
+            }
+            for source in selected_sources
+        ]
     finally:
         if arguments.jobs != 1:
             executor.shutdown()
