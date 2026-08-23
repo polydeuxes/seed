@@ -347,6 +347,9 @@ def test_only_clauses_naming_an_Act_project_one():
         if "exact_Act" not in body
     }
     assert naming_no_Act == {
+        "01.Source.I",
+        "07.Emission.B",
+        "07.Emission.C",
         "01.Standing.A",
         "01.Standing.A.1",
         "01.Standing.D",

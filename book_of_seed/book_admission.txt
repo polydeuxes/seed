@@ -1,11 +1,9 @@
-# Book admission -- every word carried by active law.
-# Rosetta admission: ../rosetta/rosetta_admission.txt
-#
-# This file alone governs Book proper. The Rosetta reference imports no
-# Rosetta admission into active law.
 #
 # A word absent from this file is refused.
-#
+# Book admission -- every word carried by active law.
+# Rosetta admission into active law.
+# Rosetta admission: ../rosetta/rosetta_admission.txt
+# This file alone governs Book proper. The Rosetta reference imports no
 a
 accepted
 acquisition
@@ -87,7 +85,9 @@ for
 from
 g
 grammar
+h
 have
+i
 in
 inapplicable
 input
@@ -136,7 +136,6 @@ references
 relation
 relations
 reported
-representation
 required
 requires
 responsibility

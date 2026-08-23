@@ -204,6 +204,33 @@
       ],
       "result": "exact_operator_material_result"
     },
+    "01.Source.H": {
+      "subject": "supplied_material",
+      "Responsibility": "material_acquisition",
+      "exact_Act": "acquisition",
+      "relations": [
+        "yield"
+      ],
+      "result": "exact_material_result",
+      "carried_coordinates": [
+        "source_role",
+        "source_boundary",
+        "provenance",
+        "Authority",
+        "Scope",
+        "Locality",
+        "known_loss",
+        "limits",
+        "Unknown"
+      ]
+    },
+    "01.Source.I": {
+      "subject": "operator_supplied_and_Witness_supplied_material",
+      "carried_coordinates": [
+        "separate_source_Responsibility_branch",
+        "separate_occurrence"
+      ]
+    },
     "01.Standing.A": {
       "subject": "exact_subject",
       "requires": [
@@ -441,6 +468,46 @@
         "locality"
       ],
       "result": "operator_invocation_Locality"
+    },
+    "07.Emission.A": {
+      "subject": "exact_source_material_result",
+      "Responsibility": "emission",
+      "exact_Act": "emission",
+      "carried_coordinates": [
+        "destination_operator_boundary",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "conflicts",
+        "known_loss",
+        "Unknown"
+      ]
+    },
+    "07.Emission.B": {
+      "subject": "source_result_to_destination_position",
+      "required_Admission": "exact_occurrence_establishing_the_position",
+      "relations": [
+        "participation",
+        "carriage",
+        "yield"
+      ],
+      "result": "exact_destination_boundary_result"
+    },
+    "07.Emission.C": {
+      "subject": "exact_material_boundary_write",
+      "result": "accepted_material_and_reported_count",
+      "carried_coordinates": [
+        "accepted_material",
+        "reported_count"
+      ],
+      "separate_occurrences": [
+        "attempt",
+        "partial_write",
+        "failure",
+        "accepted_write",
+        "emission"
+      ]
     },
     "08.Authority.A": {
       "subject": "exact_input_to_Act_position",
