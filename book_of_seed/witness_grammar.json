@@ -485,11 +485,10 @@
       ]
     },
     "07.Emission.B": {
-      "subject": "source_result_to_destination_position",
-      "required_Admission": "exact_occurrence_establishing_the_position",
+      "subject": "exact_subject_to_Act_position_of_the_source_material_result",
+      "required_Admission": "exact_occurrence_prior_to_Participation",
       "relations": [
         "participation",
-        "carriage",
         "yield"
       ],
       "result": "exact_destination_boundary_result"

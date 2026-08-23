@@ -67,11 +67,9 @@ each
 earlier
 effects
 emission
-emitted
 establish
 established
 establishes
-establishing
 every
 exact
 exhaustive

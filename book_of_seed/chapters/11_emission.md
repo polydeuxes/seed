@@ -8,13 +8,13 @@ Authority, Scope, Locality, limits, conflicts, known loss, and Unknown.
 
 ### 07.Emission.B — Admission and Participation at the destination
 
-Required Admission carries one exact occurrence establishing the
-source-result-to-destination position for that emission Act.
+Required Admission carries its exact destination boundary, the emission Act,
+the exact subject-to-Act position of that source material result, and one exact
+occurrence prior to Participation.
 
 The admitted source material result requires one exact Participation relation
 to the emission Act occurrence. That occurrence and the exact destination
-boundary result are the first and second subjects of one Yield relation. The
-occurrence carries the emitted material.
+boundary result are the first and second subjects of one Yield relation.
 
 ### 07.Emission.C — Exact-material boundary write
 
