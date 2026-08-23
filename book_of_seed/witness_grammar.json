@@ -409,6 +409,12 @@
       ],
       "branch_of_current_Standing": "current_Standing_carrying_exact_Candidate_result"
     },
+    "05.Provenance.A": {
+      "subject": "provenance",
+      "carried_coordinates": [
+        "exact_occurrence_references"
+      ]
+    },
     "05.Recording.A": {
       "subject": "recorded_Assertion",
       "Responsibility": "record_exact_Assertion",

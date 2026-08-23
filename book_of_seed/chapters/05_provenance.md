@@ -1,12 +1,8 @@
 # Provenance
 
-Provenance is the exact ordered source and occurrence reference path preserved
-with material.
+### 05.Provenance.A — Provenance
 
-Each reference carries one exact source or occurrence.
-
-Use of each addressed subject requires the exact Responsibility, Authority,
-Scope, Locality, limits, and responsible occurrence required by that use.
+Provenance is the exact occurrence references preserved with material.
 
 ## References
 
