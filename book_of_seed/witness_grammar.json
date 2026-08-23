@@ -2,7 +2,8 @@
   "standing": {
     "current": {
       "subject": "this_Seed",
-      "coordinates": []
+      "coordinates": [],
+      "book_reference": "01.Standing.G"
     },
     "later_Standing": {
       "subject": "prior_result",
@@ -416,25 +417,52 @@
       ]
     },
     "05.Recording.A": {
-      "subject": "recorded_Assertion",
-      "Responsibility": "record_exact_Assertion",
-      "exact_Act": "record_exact_Assertion",
-      "result": "recorded_Assertion"
+      "subject": "exact_Assertion",
+      "carried_coordinates": [
+        "source_coordinates"
+      ]
     },
     "05.Recording.C": {
-      "subject": "recorded_Measurement",
-      "Responsibility": "preserve_exact_Measurement_result",
-      "exact_Act": "preserve_exact_Measurement_result",
-      "result": "recorded_Measurement_result"
+      "subject": "exact_Measurement_result",
+      "carried_coordinates": [
+        "source_coordinates"
+      ]
     },
     "05.Recording.D": {
-      "subject": "Standing_boundary_reference",
-      "Responsibility": "record_exact_Standing_boundary_reference",
-      "exact_Act": "record_exact_Standing_boundary_reference",
+      "subject": "exact_addressed_occurrence_and_its_exact_Standing_boundary",
+      "exact_Act": "recording",
+      "branch_of_current_Standing": "current_Standing_carrying_that_occurrence",
       "relations": [
         "yield"
       ],
-      "result": "Standing_boundary_reference"
+      "result": "one_reference",
+      "carried_coordinates": [
+        "addressed_occurrence",
+        "Standing_boundary_reference",
+        "Responsibility",
+        "Act_occurrence",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "Unknown"
+      ]
+    },
+    "05.Recording.E": {
+      "subject": "exact_record",
+      "exact_Act": "recording",
+      "relations": [
+        "yield"
+      ],
+      "carried_coordinates": [
+        "material",
+        "source_coordinates",
+        "Authority",
+        "Scope",
+        "Locality",
+        "limits",
+        "Unknown"
+      ]
     },
     "06.Locality.A": {
       "subject": "Locality_relation",

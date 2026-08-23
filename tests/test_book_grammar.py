@@ -48,7 +48,21 @@ def _book_coordinates() -> set[str]:
 
 
 def test_book_and_witness_grammar_have_the_same_coordinates():
-    assert set(_grammar()["book_coordinates"]) == _book_coordinates()
+    """Every identified clause is projected, by a coordinate or by a surface.
+
+    01.Standing.G states what this Seed's first current Standing carries, and
+    the standing surface is where that is projected. Giving it a coordinate as
+    well would state one law in two places.
+    """
+
+    grammar = _grammar()
+    by_surface = {
+        value["book_reference"]
+        for value in grammar["standing"].values()
+        if isinstance(value, dict) and "book_reference" in value
+    }
+    assert set(grammar["book_coordinates"]) | by_surface == _book_coordinates()
+    assert not set(grammar["book_coordinates"]) & by_surface
 
 
 def test_witness_grammar_has_no_retired_scaffolding():
@@ -76,7 +90,11 @@ def test_current_standing_precedes_responsibility_without_assignment():
     """
 
     assert _grammar()["standing"] == {
-        "current": {"subject": "this_Seed", "coordinates": []},
+        "current": {
+            "subject": "this_Seed",
+            "coordinates": [],
+            "book_reference": "01.Standing.G",
+        },
         "later_Standing": {
             "subject": "prior_result",
             "requires": [
@@ -348,6 +366,8 @@ def test_only_clauses_naming_an_Act_project_one():
     }
     assert naming_no_Act == {
         "01.Source.I",
+        "05.Recording.A",
+        "05.Recording.C",
         "05.Provenance.A",
         "08.Authority.A",
         "08.Authority.B",
@@ -367,7 +387,14 @@ def test_only_clauses_naming_an_Act_project_one():
         for reference, body in coordinates.items()
         if "Responsibility" not in body
     }
-    assert naming_no_Responsibility == naming_no_Act | {"01.Source.C"}
+    # 01.Source.C names the Compare Act and no Responsibility. 05.Recording.D
+    # and .E name a recording Act, and D describes its Responsibility rather
+    # than naming one.
+    assert naming_no_Responsibility == naming_no_Act | {
+        "01.Source.C",
+        "05.Recording.D",
+        "05.Recording.E",
+    }
 
     for reference, body in coordinates.items():
         assert "subject" in body or "subjects" in body, reference

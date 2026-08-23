@@ -1,7 +1,9 @@
 """Report the Book law that carries no clause identifier.
 
-Law stated without an identifier cannot be projected, cited or enforced,
-whatever it requires. This counts what remains in that state.
+Law without an identifier can be projected: the first current Standing law was
+projected by the top-level standing surface while carrying no identifier at all.
+What it cannot be is independently addressed, so no clause can cite it and no
+projection can say which law it carries. That is what this counts.
 
 The earlier form of this file carried a hand-written inventory of thirty-eight
 distinctions recovered from unnumbered prose. Every chapter it described has
@@ -55,8 +57,15 @@ def main() -> int:
             unnumbered[path.name] = loose
 
     print(f"  chapters: {len(list((BOOK / 'chapters').glob('*.md')))}")
-    print(f"  clauses carrying an identifier: {len(declared)}")
+    identified = {
+        match
+        for path in sorted((BOOK / "chapters").glob("*.md"))
+        for match in CLAUSE.findall(path.read_text(encoding="utf-8"))
+    }
+    print(f"  clauses carrying an identifier: {len(identified)}")
     print(f"  coordinates the grammar declares: {len(declared)}")
+    print(f"  identified clauses no coordinate declares: "
+          f"{sorted(identified - set(declared))}")
     print(f"  Book body lines: {total}")
     print(f"  body lines carrying no clause identifier: {loose_total}\n")
     for name, loose in unnumbered.items():
@@ -64,10 +73,21 @@ def main() -> int:
     if not unnumbered:
         print("    none")
 
+    surfaces = {
+        key: value["book_reference"]
+        for key, value in json.loads(
+            (BOOK / "witness_grammar.json").read_text(encoding="utf-8")
+        )["standing"].items()
+        if isinstance(value, dict) and "book_reference" in value
+    }
+    print(f"\n  clauses projected by a top-level surface rather than a coordinate:")
+    for key, reference in surfaces.items():
+        print(f"    standing.{key:22} carries {reference}")
+
     print(
-        "\n  A clause with an identifier can be projected, cited and enforced.\n"
-        "  This counts identifiers and lines. It does not say unnumbered law is\n"
-        "  wrong, or that any line should be numbered."
+        "\n  An identified clause can be cited, and a projection can say which\n"
+        "  law it carries. This counts identifiers and lines, and does not say\n"
+        "  unnumbered law is wrong or that any line should be numbered."
     )
     return 0
 

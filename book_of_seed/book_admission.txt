@@ -60,7 +60,6 @@ direct
 distinct
 distinction
 distinctions
-durable
 e
 each
 earlier
@@ -138,7 +137,6 @@ responsibility
 responsible
 result
 results
-retrievable
 role
 roles
 rule

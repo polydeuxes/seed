@@ -1,9 +1,8 @@
 # Standing
 
-This Seed first current Standing carries no coordinates.
+### 01.Standing.G — This Seed first current Standing
 
-Each exact Responsibility carried by current Standing is one branch of that
-Standing.
+This Seed first current Standing carries no coordinates.
 
 ### 01.Standing.A — Standing requires its exact Responsibility
 
