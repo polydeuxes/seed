@@ -110,6 +110,30 @@ recorded bounded relation testimony T
 This report does not name or propose Act X. A separate owner audit is recorded
 in `recorded_relation_testimony_act_owner_investigation_001.md`.
 
+## Amendment after Standing-subject recovery
+
+The last line of the owner-review topology—`later Standing could move`—is
+withdrawn. `standing_subject_current_boundary_investigation_001.md` establishes
+no generic Standing movement and no independently warranted `Later Standing`
+species or `Standing Act`.
+
+The exact desired premise is instead:
+
+```text
+current Standing through exact boundary B
+├── Responsibility branch whose subject is origin Assertion O
+│   └── exact yielded result is a coordinate concerning O
+├── Responsibility branch whose subject is successor relation Assertion T0
+│   └── exact yielded relation result is a coordinate concerning T0
+└── ...
+```
+
+If a yielded result later becomes another Responsibility's subject, that is an
+ordinary new subject-relative branch under `01.Standing.A/A.1`; chronology does
+not create it. The number road therefore needs exact declaration subjects and
+substantive producing Responsibilities, not a Standing-establishment crossing
+after production.
+
 ## Direct finding
 
 The active Book can describe the proposed prior testimony without a Number or

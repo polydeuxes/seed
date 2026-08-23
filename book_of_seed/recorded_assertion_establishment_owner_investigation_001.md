@@ -52,6 +52,33 @@ It traces the coordinate shape through active Book, machine grammar, runtime,
 and history. It changes no active law, machine grammar, runtime, script, or
 test.
 
+## Amendment after Standing-subject recovery
+
+`standing_subject_current_boundary_investigation_001.md` recovers a more exact
+reading of the historical phrase `establish the bounded Standing of its own
+result` used below.
+
+An ordinary Act does not first produce a result and then perform generic
+Standing work on it. Its yielded result is one coordinate of Standing for the
+exact subject already carried by its Responsibility branch:
+
+```text
+Responsibility subject S
+-> substantive Act occurrence
+-> Yield result R
+-> R is one Standing coordinate concerning S
+```
+
+If R is itself to become the subject of Standing, another exact Responsibility
+must positively carry R as its subject. Ordinary `01.Standing.A/A.1` then
+applies. The retained README `Later Standing` / `exact Standing Act` surface is
+blacklist-shaped residue, not an independently recovered owner for that case.
+
+Accordingly, every `Standing-bearing result` or `Standing of its own result`
+phrase below must be read as historical owner testimony subject to this exact
+branch-subject correction. It does not warrant a universal Establishment Act,
+a generic Standing Act, or automatic result re-subjecting.
+
 ## Direct finding
 
 Establishment is a recovered **kind-specific production possibility**, not an
