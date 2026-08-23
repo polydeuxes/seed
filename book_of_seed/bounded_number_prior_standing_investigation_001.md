@@ -73,12 +73,36 @@ Standing or a source-population rule by identity.  `R` determines what through
 `B` belongs to this Responsibility.  A new testimony appended after `B` also
 requires its own exact reference; chronology cannot read it backward into B.
 
-The missing owner is therefore not a generic recorder or an operation that
-promotes supplied material automatically.  It is one generic responsible
-Standing-establishment crossing that consumes already-recorded bounded
-testimony relative to an exact prior boundary, determines Applicability under
-Authority and Scope, and yields the exact result that current Standing may
-carry for the Responsibility's exact subject.
+## Amendment after exact-Act owner review
+
+The phrase `generic responsible Standing-establishment crossing` in the prior
+version is withdrawn. It compressed three independently owned positions:
+
+```text
+Applicability
+!= substantive Act and result
+!= Standing movement warranted by that result
+```
+
+Historical commit `ac16af3` made this refusal explicit, and the current active
+grammar still preserves it. Applicability carries one exact subject-to-Act
+position. It cannot discover, select, or manufacture the Responsibility and
+Act to which an input might be applicable.
+
+The earlier vacancy is therefore:
+
+```text
+recorded bounded relation testimony T
++ exact boundary B
+-> [no active Responsibility assignment condition addresses T
+    as input to one exact substantive Act X]
+-> no subject-to-X position exists for Applicability
+-> Participation and X cannot follow
+-> no result exists from which later Standing could move
+```
+
+This report does not name or propose Act X. A separate owner audit is recorded
+in `recorded_relation_testimony_act_owner_investigation_001.md`.
 
 ## Direct finding
 
@@ -97,12 +121,12 @@ Math species:
 - generic `04.Compare` can constitutionally compare exact subjects under an
   exact rule.
 
-The live runtime can record family-specific Assertions and results, but it
-cannot yet establish Standing from bounded prior-domain testimony through one
-generic responsible road.  There is no Responsibility that consumes one exact
-recorded testimony source relative to an exact prior boundary, performs its
-Applicability/Participation work under Authority and Scope, and yields a result
-carrying warranted Standing coordinates for the testimony's exact subject.
+The live runtime can record family-specific Assertions and results, but no
+active Responsibility assignment condition addresses bounded prior-domain
+relation testimony as input to a substantive Act that could warrant or refuse
+that exact relation under its Authority and Scope. Because that Act is not
+addressed, Applicability cannot begin. This is earlier than any question of how
+an ordinary result later bears on Standing.
 
 There is a second downstream vacancy: no active generic operation establishes
 an arbitrarily bounded ordered path from already-standing relation occurrences.
@@ -117,9 +141,9 @@ The first missing capability is earlier than path comparison:
 ```text
 exact recorded bounded testimony T
 + exact prior boundary B
--> exact Standing-establishment Responsibility
--> Applicability / Participation
--> responsible Act occurrence
+-> exact kind-specific Responsibility / substantive Act X: absent
+-> therefore no addressed Applicability / Participation
+-> therefore no X occurrence
 -> Yield
 -> result through C, complete relative to B, T, and its exact rule
 -> current Standing carries that result for the Responsibility's exact subject
@@ -132,8 +156,8 @@ invalidate the experiment.
 Disposition:
 
 ```text
-one exact generic capability is missing
--> responsibly establish Standing from one recorded bounded testimony surface
+one exact owner is absent before Applicability
+-> no active kind-specific Act accepts recorded bounded relation testimony
 -> STOP
 ```
 
@@ -181,9 +205,10 @@ availability through B
 ```
 
 Thus B/C supplies the honest stable comparison surface and replayable
-completeness mechanism.  It does not remove the need for the exact
-Responsibility and Act that interpret recorded testimony as an input to a
-Standing-establishing result.
+completeness mechanism. It does not identify the exact Responsibility and Act
+whose declared subject shape and rule accept recorded testimony. That owner
+must exist before an Applicability position can be formed; its ordinary result
+and any later Standing movement remain downstream and separately owned.
 
 For a new testimony `T`, two lawful arrangements remain mechanically possible
 until the responsible road is recovered:
@@ -206,9 +231,9 @@ shape from implementation convenience.
 
 | Required capability | Active owner | Runtime testimony | Disposition |
 | --- | --- | --- | --- |
-| Exact opaque subject | `01.Standing.A`, `01.Standing.D.1` | Many families preserve exact subject references | Constitutionally usable; no generic testimony-to-Standing Responsibility |
-| Standing concerning the subject | `01.Standing.A`, `01.Standing.A.1` | Locality readers carry results under exact Responsibility ownership | Constitutionally usable; generic Standing-establishment owner missing |
-| Distinguished origin | one exact Assertion under `01.Standing.D.1` and a responsible recording occurrence under `05.Recording.A` | Assertion recorders are embedded in source-specific result families | Recording preserves the testimony; separate Standing-establishment work is missing |
+| Exact opaque subject | `01.Standing.A`, `01.Standing.D.1` | Many families preserve exact subject references | Constitutionally usable; no active kind-specific Act accepts the testimony |
+| Standing concerning the subject | `01.Standing.A`, `01.Standing.A.1` | Locality readers carry results under exact Responsibility ownership | Constitutionally usable after a substantive result exists; not the first vacancy |
+| Distinguished origin | one exact Assertion under `01.Standing.D.1` and a responsible recording occurrence under `05.Recording.A` | Assertion recorders are embedded in source-specific result families | Recording preserves testimony; no active substantive Act position accepts it |
 | Exact binary successor relation | `01.Standing.D`, `01.Standing.E` | Participation, Carriage, Yield, Locality, Support, and several measurement relations each have dedicated writers | Generic relation anatomy exists; no generic testimony relation recorder |
 | Exact sameness/equality | explicit exact relation testimony under `01.Standing.E`, or exact subject comparison under `04.Compare` | Live same-content findings compare byte/material coordinates inside specialized families | No number-specific species required; live generic subject comparison absent |
 | Relation occurrence and Evidence | `01.Standing.D`, `01.Standing.E`, `02.Acts.A` | Every active family records its own Responsibility, Act Evidence, occurrence, Yield Evidence, and result | Shape is established; no family-independent input road |
@@ -347,8 +372,8 @@ limits
 Unknown
 ```
 
-This report does not add that law because the earlier testimony-to-Standing
-Responsibility is not live yet.
+This report does not add that law because the earlier substantive Act position
+for recorded relation testimony is not addressed yet.
 
 ## 4. The bounded structural consequence
 
@@ -517,8 +542,8 @@ number subject
 ## 8. Smallest missing coordinate and stop
 
 The proposed testimony and later Standing are separately representable in
-active grammar, but no live generic physiology owns the responsible crossing
-between them.
+active grammar, but that fact does not establish one crossing between them.
+The owner audit finds the first missing coordinate before Applicability.
 
 The smallest missing runtime physiology begins with one already-recorded exact
 testimony occurrence carrying:
@@ -535,13 +560,19 @@ limits
 Unknown beyond the experimental boundary
 ```
 
-One separate exact Responsibility must then address that testimony relative to
-the exact prior boundary B, establish Applicability and Participation, perform
-its exact Act, and Yield a result through C.  Replay must recover the source
-surface owed by the rule through B, validate the testimony reference, and
-refuse missing, additional, substituted, repeated, or reordered result
-coordinates.  Only that result may become a coordinate of current Standing for
-the exact subject of its Responsibility branch.
+An exact active Responsibility assignment condition would first have to
+address that testimony relative to the exact prior boundary B as input to its
+already-defined substantive Act. Only then could separate Applicability and
+Participation occur, followed by that Act and its result through C. Replay
+would have to recover the source surface owed by the rule through B, validate
+the testimony reference, and refuse missing, additional, substituted,
+repeated, or reordered result coordinates. Only the ordinary result of that
+Act could later become a coordinate of current Standing for the exact subject
+of its Responsibility branch.
+
+No such active kind-specific Act and assignment condition were found. This is
+not evidence that one new generic Act should absorb testimony evaluation,
+Applicability, and Standing movement.
 
 This must not be a `NumberStanding` object, a fixture dictionary treated as
 truth, a global relation registry, or a rule that every recorded Assertion
@@ -554,8 +585,9 @@ arbitrary finite extents, and then test path-structure comparison.
 Final disposition:
 
 ```text
-one exact generic capability is missing
--> responsible Standing establishment from recorded testimony relative to B
+one exact active owner is absent
+-> recorded relation testimony does not address a substantive Act position
+-> Applicability cannot begin
 -> name no arithmetic consequence yet
 -> STOP
 ```
