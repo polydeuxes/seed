@@ -484,17 +484,12 @@
         "Unknown"
       ]
     },
-    "07.Emission.B": {
-      "subject": "exact_subject_to_Act_position_of_the_source_material_result",
-      "required_Admission": "exact_occurrence_prior_to_Participation",
+    "07.Emission.C": {
+      "subject": "exact_material_boundary_write",
       "relations": [
         "yield"
       ],
-      "result": "exact_destination_boundary_result"
-    },
-    "07.Emission.C": {
-      "subject": "exact_material_boundary_write",
-      "result": "accepted_material_and_reported_count",
+      "result": "exact_destination_boundary_result",
       "carried_coordinates": [
         "accepted_material",
         "reported_count"

@@ -6,19 +6,12 @@ One emission Responsibility carries one exact source material result, one
 exact destination boundary within its invocation Locality, one emission Act,
 Authority, Scope, Locality, limits, conflicts, known loss, and Unknown.
 
-### 07.Emission.B — Admission and Participation at the destination
-
-Required Admission carries its exact destination boundary, the emission Act,
-the exact subject-to-Act position of that source material result, and one exact
-occurrence prior to Participation.
-
-That emission Act occurrence and the exact destination boundary result are the
-first and second subjects of one Yield relation.
-
 ### 07.Emission.C — Exact-material boundary write
 
-For an exact-material boundary write, the result preserves the exact material
-accepted by the boundary and its reported count. That count is reported by the
+That emission Act occurrence and the exact destination boundary result are the
+first and second subjects of one Yield relation. For an exact-material boundary
+write, the result preserves the exact material accepted by the boundary and its
+reported count. That count is reported by the
 destination boundary.
 
 The emission Act occurrence, its attempt, and its accepted write are one
