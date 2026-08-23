@@ -488,7 +488,6 @@
       "subject": "exact_subject_to_Act_position_of_the_source_material_result",
       "required_Admission": "exact_occurrence_prior_to_Participation",
       "relations": [
-        "participation",
         "yield"
       ],
       "result": "exact_destination_boundary_result"
