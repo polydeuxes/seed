@@ -89,6 +89,12 @@ grammar still preserves it. Applicability carries one exact subject-to-Act
 position. It cannot discover, select, or manufacture the Responsibility and
 Act to which an input might be applicable.
 
+`recorded_assertion_establishment_owner_investigation_001.md` further recovers
+that this need not be an independent evaluator of the granted relation.
+History permits either a warranted producing Act to establish bounded Standing
+for its own result or an explicitly named separate establishment Act. Neither
+owner is active for the proposed bounded domain declaration.
+
 The earlier vacancy is therefore:
 
 ```text
@@ -560,15 +566,16 @@ limits
 Unknown beyond the experimental boundary
 ```
 
-An exact active Responsibility assignment condition would first have to
-address that testimony relative to the exact prior boundary B as input to its
-already-defined substantive Act. Only then could separate Applicability and
-Participation occur, followed by that Act and its result through C. Replay
-would have to recover the source surface owed by the rule through B, validate
-the testimony reference, and refuse missing, additional, substituted,
-repeated, or reordered result coordinates. Only the ordinary result of that
-Act could later become a coordinate of current Standing for the exact subject
-of its Responsibility branch.
+An exact active Responsibility and occurrence would first have to produce the
+bounded attributed Assertion as a Standing-bearing result or explicitly own a
+separate establishment of that result. Only then could a later exact consumer
+address it as premise-relative input, determine Applicability, and record
+Participation. Replay would have to recover the source surface owed by the
+rule through B, validate the testimony reference, and refuse missing,
+additional, substituted, repeated, or reordered result coordinates. The
+granted relation need not first be reproved from manifestations, but its result
+must remain bounded to the declaring Authority, Scope, provenance, limits, and
+Unknown.
 
 No such active kind-specific Act and assignment condition were found. This is
 not evidence that one new generic Act should absorb testimony evaluation,
@@ -586,7 +593,8 @@ Final disposition:
 
 ```text
 one exact active owner is absent
--> recorded relation testimony does not address a substantive Act position
+-> bounded prior-domain testimony has no active producing or separately
+   assigned establishment owner
 -> Applicability cannot begin
 -> name no arithmetic consequence yet
 -> STOP

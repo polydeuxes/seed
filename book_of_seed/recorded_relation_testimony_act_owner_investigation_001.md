@@ -34,8 +34,8 @@ be warranted?
 The search proceeds by exact subject coordinates, not names. A module is not a
 candidate owner because its filename contains `standing`, `relation`,
 `compare`, or `applicability`. It is a candidate only if the recorded testimony
-can satisfy its declared input position and its rule bears on the testified
-relation.
+can satisfy its declared input position and the exact Act either produces or
+separately establishes the bounded claim it is assigned to establish.
 
 This report changes no active Book chapter, Witness Grammar, runtime, script,
 or test.
@@ -168,7 +168,8 @@ How does T move Standing?
 It must begin at:
 
 ```text
-Which substantive Act has T as an exact proposed input?
+Which exact producing or separately assigned establishment Act, if any, has T
+or its attributed declaration as an exact proposed input?
 ```
 
 ## 2. Exact owner pressure
@@ -196,7 +197,8 @@ sable --R--> fern
 ```
 
 only once that relation Assertion is already supplied as such. It cannot be the
-substantive Act whose result decides what Standing that testimony warrants.
+producing or separately assigned establishment Act whose result carries the
+bounded Standing warranted for that testimony.
 
 ### 2.2 Candidate: a neutral continuation, not warrant
 
@@ -459,8 +461,9 @@ The exact active vacancy is:
 
 ```text
 For one recorded bounded relation testimony T at boundary B,
-no active Responsibility assignment condition identifies T as an exact input
-to a substantive Act whose declared rule bears on the testified relation.
+no active exact Responsibility/Act produces or separately establishes T as a
+Standing-bearing bounded attributed Assertion under its exact Authority,
+Scope, provenance, limits, and Unknown.
 ```
 
 Therefore:
@@ -474,12 +477,15 @@ exact Act owner absent
 -> later Standing movement is not yet the active question
 ```
 
-This finding does not establish what that Act should be. It may ultimately be
-a recovered kind-specific Compare, another already-existing Act whose subject
-surface has not yet been connected, or a genuinely missing responsibility.
-Choosing among those possibilities requires an exact rule and evidence that
-bear on the relation. The finite testimony population and developer intent do
-not supply them.
+This finding does not establish what that Act should be. History permits a
+warranted producing Act to establish the bounded Standing of its own result,
+or an explicitly named separate establishment Responsibility to control that
+work. It does not establish one universal `Establishment` Act. Choosing between
+those shapes requires an exact owner, occurrence, Authority, Scope, and claim
+boundary; implementation convenience and the English verb `establish` do not
+supply them. This does not require Seed to prove the granted bounded domain
+relation independently from manifestations before it may be used as attributed
+premise testimony.
 
 Disposition:
 
