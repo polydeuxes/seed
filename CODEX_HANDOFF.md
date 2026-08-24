@@ -8,10 +8,10 @@ commit it unless the operator explicitly requests that.
 
 - Repository: `/home/user/seed`
 - Branch: `agent/adjacent-byte-pair-acquisition`
-- Pushed runtime tip before the handoff/tooling commit: `17fc9cc9`
-- Tip title: `Bound repeated position continuation validation`
-- Prior performance commit: `194e3d6e Reuse validated position assertion populations`
-- Preceding pushed observer commit: `5394cfe5 Observe downstream substitution consequences`
+- Pushed tip before the current vocabulary correction: `4139becc`
+- Tip title: `Yield recurrent bounded literal results`
+- Preceding Standing ownership commits: `d2a37bc5`, `8d31f042`
+- Preceding source-position continuation commit: `85e5a430`
 - Shared worktree: other agents can edit the same files immediately. Always run
   `git status --short` and `git diff --stat` before editing or staging.
 - Preserve every unrelated untracked file. There are many operator-owned files
@@ -42,6 +42,59 @@ repeated unwitnessed handoff = a structural hole, not a named relation
 
 The operator suspects roughly ten relation distinctions may still be unknown.
 They might not be admitted words. This is a hypothesis, not a target count.
+
+## Current source-position staircase
+
+The live road is now:
+
+```text
+exact source positions
+↓
+Compare every exact pair required for consecutive positions
+↓
+Measurement carrying all Compare results
+↓
+recurrence of those findings
+↓
+corresponding exact material across the exact recurrent results
+↓
+Measurement yielding reusable exact material
+```
+
+Current files:
+
+```text
+seed_runtime/source_position_recurrence.py
+tests/test_source_position_recurrence.py
+book_of_seed/recurrent_result_exact_material_measurement_implementation_001.md
+```
+
+Removed without compatibility names:
+
+```text
+BoundedLiteralMeasurement
+coordinate_role as an ordinal
+ordered_coordinate_set
+variable extent
+VariableExtentRun
+```
+
+The material findings need no ordinal. Each one carries exact source-position
+coordinates through exact result references. The only `role` values remaining
+in this road are the genuine Act-local Compare Participation roles `first
+subject` and `second subject`.
+
+The positive witness `a+aa+a` yields exact material `a+a` without the caller
+naming that material, its coordinate count, a source position, or `+`. The
+control `a+aa-a` yields no common exact material for the same same/different
+findings. All eleven focused proofs pass when invoked in one- or two-test
+commands below the one-minute boundary.
+
+The slow-test trick is important: do not reconstruct complete Locality when a
+proof asks only for exact addressed results. Pass one `_validated` dictionary
+through related exact readers. The dictionary ends with the read; a later read
+still detects mutation. This reduced the SQLite reader proof from the
+55-second cutoff to 15.28 seconds.
 
 ## Navigate by coordinates, never by names
 
@@ -278,13 +331,13 @@ env SEED_RELATION_HOLE_OBSERVATION=/tmp/seed_relation_holes_standing.json \
 
 Observed: 33 passed in 0.68 seconds before the newest occurrence-pair addition.
 
-One variable-extent witness:
+One source-position recurrence witness:
 
 ```bash
 env SEED_RELATION_HOLE_OBSERVATION=/tmp/seed_relation_holes_small.json \
   timeout 60 .venv/bin/pytest -q \
   -p scripts.observe_relation_holes \
-  tests/test_variable_extent_recurrence.py::test_two_extensions_reuse_prior_compare_work_and_expose_literal_recurrence
+  tests/test_source_position_recurrence.py::test_recurrence_exhausts_source_and_reuses_prior_compare_work
 ```
 
 Observed before occurrence-pair addition: 1 passed in 6.67 seconds, 558 events,
@@ -441,7 +494,7 @@ PID 1716296
 elapsed 13h41m
 99.9% CPU
 .venv/bin/pytest -q
-  tests/test_variable_extent_recurrence.py
+  tests/test_source_position_recurrence.py
   tests/test_comparison_of_ordered_path_source_position_material.py
   tests/test_carried_locality_standing.py
 ```

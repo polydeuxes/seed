@@ -160,7 +160,7 @@ uptake or self-continuing elevator is claimed.
 ## Verification
 
 ```text
-tests/test_variable_extent_recurrence.py
+tests/test_source_position_recurrence.py
 4 passed in 49.16s
 
 Book admission and grammar

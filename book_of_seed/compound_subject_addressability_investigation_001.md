@@ -276,7 +276,9 @@ glyph occurrences                        not established
 
 ### 3.5 Variable extents are results, not yet compound-representation Assertions
 
-`seed_runtime/variable_extent_recurrence.py` preserves for one exact extent:
+At this checkpoint, the road now located at
+`seed_runtime/source_position_recurrence.py` preserved for consecutive source
+positions:
 
 ```text
 ordered source-position coordinates

@@ -1,7 +1,7 @@
-"""Record the complete declared Measurement subject population through B.
+"""Record all declared Measurement subjects through B.
 
 Each declaration names one existing Book-assigned Measurement Responsibility.
-The complete subject population is recovered once from one exact bounded
+All subjects are recovered once from one exact bounded
 Locality replay.  Each assignment preserves that same responsible boundary;
 durable writes remain serial without making an earlier Measurement lifecycle
 an input to a later assignment.
@@ -39,12 +39,12 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-# The variable-extent proof remains explicitly invoked. Importing its exact
-# producer and consumer keeps the current runtime road reachable without
+# The source-position proof remains explicitly invoked. Importing its first and
+# later Measurements keeps the current runtime road reachable without
 # pretending they are automatic declarations in the registry below.
-from seed_runtime.variable_extent_recurrence import (
+from seed_runtime.source_position_recurrence import (
     record_corresponding_coordinate_material_measurements,
-    record_variable_extent_steps,
+    record_source_position_measurements,
 )
 
 
@@ -413,7 +413,7 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         responsibility_boundary_replay,
         locality_identity=locality_identity,
     )
-    complete_subject_population = tuple(
+    complete_subjects = tuple(
         (declaration, subject)
         for declaration in DECLARED_MEASUREMENT_RESPONSIBILITIES
         for subject in declaration.discover(
@@ -422,7 +422,7 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
             locality_identity,
         )
     )
-    for declaration, subject in complete_subject_population:
+    for declaration, subject in complete_subjects:
         _require_current_replay_boundary(
             ledger,
             recording_replay,
@@ -446,7 +446,7 @@ def record_declared_measurements_from_current_bounded_locality_replay(
     *,
     locality_identity: str,
 ) -> RecordedDeclaredMeasurements:
-    """Read one bounded Locality replay and record its complete subject population."""
+    """Read one bounded Locality replay and record all exact subjects."""
 
     bounded_locality_replay = read_operator_locality_standing(
         ledger,

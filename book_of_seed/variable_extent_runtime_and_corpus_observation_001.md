@@ -251,7 +251,7 @@ Even with constant-time coordinate access and bounded validation reuse, writing
 Focused variable-extent tests after both runtime corrections:
 
 ```text
-tests/test_variable_extent_recurrence.py
+tests/test_source_position_recurrence.py
 5 passed in 18.23s
 ```
 
