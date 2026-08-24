@@ -692,14 +692,25 @@ _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES = frozenset(
 )
 
 
-def _carries_exact_result(ledger: EventLedger, event) -> bool:
-    """Whether this exact occurrence's intact Yield carries exact result bytes."""
+_NO_RESULT_COORDINATE = object()
 
-    if (
-        type(event.exact_material) is not bytes
-        or ledger.integrity_of(event.identity) == CORRUPTED
-    ):
-        return False
+
+def _result_responsibility_coordinate(
+    ledger: EventLedger, event
+) -> dict[str, Any] | None | object:
+    """Return one exact A.1 ownership coordinate, or its exact absence.
+
+    Whether a result carries exact bytes or structured coordinates does not
+    determine branch membership.  Any intact result with an exact Yield and
+    exact Responsibility ownership is carried directly beside that owner.  The
+    historical raw-byte road also preserves yielded-result availability as
+    ``None`` where no owner was recorded; that legacy absence is not positive
+    subject-relative Standing.  A structured result without an owner is not
+    added to the generic A.1 projection.
+    """
+
+    if ledger.integrity_of(event.identity) == CORRUPTED:
+        return _NO_RESULT_COORDINATE
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
@@ -710,7 +721,30 @@ def _carries_exact_result(ledger: EventLedger, event) -> bool:
             "responsible_act_evidence_identity"
         ),
     )
-    return all(requirements.values())
+    if not all(requirements.values()):
+        return _NO_RESULT_COORDINATE
+    if type(event.exact_material) is not bytes:
+        act_evidence = ledger.get(
+            event.material.get("responsible_act_evidence_identity")
+        )
+        reference = (
+            act_evidence.material.get("responsibility_assignment_reference")
+            if act_evidence is not None
+            and type(act_evidence.material) is dict
+            else None
+        )
+        if (
+            type(reference) is not dict
+            or not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES
+            <= set(reference)
+        ):
+            return _NO_RESULT_COORDINATE
+    ownership = _responsibility_ownership_of_exact_result(ledger, event)
+    if ownership is not None:
+        return ownership
+    if type(event.exact_material) is bytes:
+        return None
+    return _NO_RESULT_COORDINATE
 
 
 def _responsibility_ownership_of_exact_result(
@@ -1288,10 +1322,9 @@ def advance_operator_locality_standing(
             ):
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
-            if _carries_exact_result(ledger, event):
-                exact_result_occurrences[event.identity] = (
-                    _responsibility_ownership_of_exact_result(ledger, event)
-                )
+            result_coordinate = _result_responsibility_coordinate(ledger, event)
+            if result_coordinate is not _NO_RESULT_COORDINATE:
+                exact_result_occurrences[event.identity] = result_coordinate
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
             continue
         pair_prior_standing = {
@@ -1407,10 +1440,9 @@ def advance_operator_locality_standing(
             ):
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
-            if _carries_exact_result(ledger, event):
-                exact_result_occurrences[event.identity] = (
-                    _responsibility_ownership_of_exact_result(ledger, event)
-                )
+            result_coordinate = _result_responsibility_coordinate(ledger, event)
+            if result_coordinate is not _NO_RESULT_COORDINATE:
+                exact_result_occurrences[event.identity] = result_coordinate
             continue
         if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
             _read_byte_measurement_responsibility_assignment(

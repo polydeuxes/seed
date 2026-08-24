@@ -108,6 +108,8 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert tuple(step.coordinate_count for step in run.steps[:2]) == (2, 3)
     assert run.exhausted is True
     assert all(step.new_event_count > 0 for step in run.steps)
+    assert direct.identity in run.locality_standing["measurement_occurrences"]
+    assert direct.identity not in run.locality_standing["exact_result_occurrences"]
 
     final_recurrence = get_recorded_variable_extent_recurrence(
         ledger, run.steps[-1].recurrence_result_occurrence.identity
@@ -135,6 +137,9 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         act = ledger.get(result.material["responsible_act_evidence_identity"])
         reference = act.material["responsibility_assignment_reference"]
         assignment = ledger.get(reference["recorded_occurrence_identity"])
+        assert run.locality_standing["exact_result_occurrences"][result.identity] == (
+            reference
+        )
         assert (
             run.locality_standing["responsibility_assignment_occurrences"].get(
                 assignment.identity, object()
@@ -202,6 +207,17 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert all(
         measurement.result_occurrence.identity
         in coordinate_run.locality_standing["measurement_occurrences"]
+        for measurement in measurements
+    )
+    assert all(
+        coordinate_run.locality_standing["exact_result_occurrences"][
+            measurement.result_occurrence.identity
+        ]
+        == ledger.get(
+            measurement.result_occurrence.material[
+                "responsible_act_evidence_identity"
+            ]
+        ).material["responsibility_assignment_reference"]
         for measurement in measurements
     )
     assert all(
@@ -310,6 +326,23 @@ def test_changed_extent_coordinate_is_refused():
     else:
         raise AssertionError("changed Responsibility ownership was accepted")
     assignment.material["result_boundary_identity"] = exact_result_boundary
+
+    yielded = ledger.get(result.material["evidence_of_yield_relation_identity"])
+    exact_yield_occurrence = yielded.material["dimensions"][
+        "act_occurrence_identity"
+    ]
+    yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
+    try:
+        read_operator_locality_standing(
+            ledger, locality_identity="variable-extent-integrity"
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed Yield was accepted into current Standing")
+    yielded.material["dimensions"][
+        "act_occurrence_identity"
+    ] = exact_yield_occurrence
 
     result.material["coordinates"]["source_position_coordinates"][0][
         "exact_material"
@@ -421,6 +454,9 @@ def test_variable_extent_results_and_coordinate_measurements_survive_restart(tmp
         get_recorded_corresponding_coordinate_material_measurement(ledger, identity)
         for identity in measurement_identities
     )
+    expected_ownership = coordinate_run.locality_standing[
+        "exact_result_occurrences"
+    ]
     ledger.close()
 
     reopened = SQLiteEventLedger(str(database))
@@ -436,6 +472,9 @@ def test_variable_extent_results_and_coordinate_measurements_survive_restart(tmp
             )
             for identity in measurement_identities
         ) == expected_measurements
+        assert read_operator_locality_standing(
+            reopened, locality_identity="variable-extent-restart"
+        )["exact_result_occurrences"] == expected_ownership
     finally:
         reopened.close()
 
