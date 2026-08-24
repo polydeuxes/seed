@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    record_byte_pair_occurrence_position_measurement_act_evidence,
+    record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     record_byte_pair_occurrence_position_measurement_result,
 )
@@ -41,7 +41,7 @@ def _direct_result(ledger, *, locality, exact):
             locality_standing=standing,
         )
     )
-    act = record_byte_pair_occurrence_position_measurement_act_evidence(
+    act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -50,7 +50,7 @@ def _direct_result(ledger, *, locality, exact):
     )
     return record_byte_pair_occurrence_position_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
 
 
@@ -160,7 +160,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert recording.exhausted is True
     assert all(step.new_event_count > 0 for step in recording.steps)
     assert direct.identity in recording.locality_standing["measurement_occurrences"]
-    direct_act = ledger.get(direct.material["responsible_act_evidence_identity"])
+    direct_act = ledger.get(direct.material["act_occurrence_event_identity"])
     assert recording.locality_standing["exact_result_occurrences"][direct.identity] == (
         direct_act.material["responsibility_assignment_reference"]
     )
@@ -188,7 +188,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     )
     assert produced_results
     for result in produced_results:
-        act = ledger.get(result.material["responsible_act_evidence_identity"])
+        act = ledger.get(result.material["act_occurrence_event_identity"])
         reference = act.material["responsibility_assignment_reference"]
         assignment = ledger.get(reference["recorded_occurrence_identity"])
         assert recording.locality_standing["exact_result_occurrences"][result.identity] == (
@@ -273,7 +273,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         ]
         == ledger.get(
             measurement.result_occurrence.material[
-                "responsible_act_evidence_identity"
+                "act_occurrence_event_identity"
             ]
         ).material["responsibility_assignment_reference"]
         for measurement in measurements
@@ -282,7 +282,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         ledger.get(
             ledger.get(
                 measurement.result_occurrence.material[
-                    "responsible_act_evidence_identity"
+                    "act_occurrence_event_identity"
                 ]
             ).material["responsibility_assignment_reference"][
                 "recorded_occurrence_identity"
@@ -366,7 +366,7 @@ def test_changed_source_position_coordinate_is_refused():
         direct_result_event_identity=direct.identity,
     )
     result = ledger.get(recording.steps[0].source_position_result_occurrences[0].identity)
-    act = ledger.get(result.material["responsible_act_evidence_identity"])
+    act = ledger.get(result.material["act_occurrence_event_identity"])
     assignment = ledger.get(
         act.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"
@@ -382,7 +382,7 @@ def test_changed_source_position_coordinate_is_refused():
         raise AssertionError("changed Responsibility ownership was accepted")
     assignment.material["result_boundary_identity"] = exact_result_boundary
 
-    yielded = ledger.get(result.material["evidence_of_yield_relation_identity"])
+    yielded = ledger.get(result.material["yield_relation_identity"])
     exact_yield_occurrence = yielded.material["dimensions"][
         "act_occurrence_identity"
     ]
@@ -578,7 +578,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
         for support in reading["support_occurrences"]
     )
 
-    act = ledger.get(event.material["responsible_act_evidence_identity"])
+    act = ledger.get(event.material["act_occurrence_event_identity"])
     ownership = act.material["responsibility_assignment_reference"]
     assignment = ledger.get(ownership["recorded_occurrence_identity"])
     assert standing["measurement_occurrences"][event.identity][
@@ -689,7 +689,7 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         raise AssertionError("changed coordinate sequence was accepted")
     event.material["coordinates"]["coordinate_material_findings"] = findings
 
-    act = ledger.get(event.material["responsible_act_evidence_identity"])
+    act = ledger.get(event.material["act_occurrence_event_identity"])
     assignment = ledger.get(
         act.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"
@@ -724,7 +724,7 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         raise AssertionError("missing Responsibility rule was accepted")
     assignment.material["rule"] = rule
 
-    yielded = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    yielded = ledger.get(event.material["yield_relation_identity"])
     act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
     yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
     try:
@@ -766,7 +766,7 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         event = ledger.get(event_identity)
         assert event.exact_material == b"a+a"
         act = ledger.get(
-            event.material["responsible_act_evidence_identity"]
+            event.material["act_occurrence_identity"]
         )
         assert act.material["responsibility_assignment_reference"] == (
             expected_ownership

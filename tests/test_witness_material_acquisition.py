@@ -20,7 +20,7 @@ from seed_runtime.witness_material_acquisition import (
     record_witness_material_acquisition,
     read_witness_material_acquire_locality_relation_requirements,
 )
-from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND, read_requirements_of_yield_relation
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT, read_requirements_of_yield_relation
 
 
 def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
@@ -62,7 +62,6 @@ def test_witness_material_preserves_exact_raw_bytes():
         "identity",
         "source_provenance",
         "responsibility",
-        "evidence_scope",
         "scope_locality",
         "occurrence_preservation",
     }
@@ -107,12 +106,12 @@ def test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_
         )
 
 
-def test_durable_witness_acquisition_preserves_raw_material_and_evidence_of_yield_relation(tmp_path):
+def test_durable_witness_acquisition_preserves_raw_material_and_yield_relation(tmp_path):
     path = str(tmp_path / "material.db")
     exact = b"\x00\xffraw material\n"
     ledger = SQLiteEventLedger(path)
     occurred = _preserve(ledger, exact)
-    evidence_identity = occurred.material["evidence_of_yield_relation_identity"]
+    yield_relation_identity = occurred.material["yield_relation_identity"]
     occurred_identity = occurred.identity
     ledger.close()
 
@@ -130,10 +129,10 @@ def test_durable_witness_acquisition_preserves_raw_material_and_evidence_of_yiel
     reopened = SQLiteEventLedger(path)
     try:
         read = reopened.get(occurred_identity)
-        evidence = reopened.get(evidence_identity)
-        assert read is not None and evidence is not None
-        assert read.exact_material == evidence.exact_material == exact
-        assert set(evidence.material["dimensions"]) == {
+        yield_relation = reopened.get(yield_relation_identity)
+        assert read is not None and yield_relation is not None
+        assert read.exact_material == yield_relation.exact_material == exact
+        assert set(yield_relation.material["dimensions"]) == {
             "identity",
             "exact_act",
             "act_occurrence_identity",
@@ -143,9 +142,9 @@ def test_durable_witness_acquisition_preserves_raw_material_and_evidence_of_yiel
         assert read_requirements_of_yield_relation(
             reopened,
             recorded_result_event_identity=occurred_identity,
-            evidence_of_yield_relation_event_identity=evidence_identity,
-            responsible_act_evidence_event_identity=read.material[
-                "responsible_act_evidence_identity"
+            yield_relation_event_identity=yield_relation_identity,
+            act_occurrence_event_identity=read.material[
+                "act_occurrence_identity"
             ],
         )["exact_relation"] is True
     finally:
@@ -223,25 +222,25 @@ def test_witness_material_locality_relation_refuses_mismatched_coordinates():
         read_exact_material_acquisition_result(ledger, forged.identity)
 
 
-def test_material_acquisition_event_binds_exact_act_and_evidence_of_yield_relation():
+def test_material_acquisition_event_binds_exact_act_and_yield_relation():
     ledger = EventLedger()
     acquisition_result = _preserve(ledger)
 
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=acquisition_result.identity,
-        evidence_of_yield_relation_event_identity=acquisition_result.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=acquisition_result.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=acquisition_result.material["yield_relation_identity"],
+        act_occurrence_event_identity=acquisition_result.material[
+            "act_occurrence_identity"
         ],
     ) == {
         "exact_relation": True,
         "occurrence_witness": True,
-        "intact_evidence": True,
+        "intact_occurrence": True,
     }
 
 
-def test_changed_record_witness_material_acquisition_cannot_borrow_its_evidence_of_yield_relation():
+def test_changed_record_witness_material_acquisition_cannot_borrow_its_yield_relation():
     ledger = EventLedger()
     acquisition_result = _preserve(ledger, b"first")
     changed = ledger.append(
@@ -254,26 +253,29 @@ def test_changed_record_witness_material_acquisition_cannot_borrow_its_evidence_
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=changed.identity,
-        evidence_of_yield_relation_event_identity=changed.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=changed.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=changed.material["yield_relation_identity"],
+        act_occurrence_event_identity=changed.material[
+            "act_occurrence_identity"
         ],
     )["exact_relation"] is False
 
 
-def test_evidence_of_yield_relation_without_exact_material_cannot_certify_an_acquire():
+def test_yield_relation_without_exact_material_cannot_certify_an_acquire():
     ledger = EventLedger()
     acquisition_result = _preserve(ledger, b"material")
-    evidence = ledger.get(acquisition_result.material["evidence_of_yield_relation_identity"])
-    assert evidence is not None
-    incomplete_evidence = ledger.append(
-        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-        dict(evidence.material),
-        locality_identity=evidence.locality_identity,
+    yield_relation = ledger.get(acquisition_result.material["yield_relation_identity"])
+    assert yield_relation is not None
+    incomplete_yield_relation = ledger.append(
+        RECORDED_YIELD_RELATION_EVENT,
+        dict(yield_relation.material),
+        locality_identity=yield_relation.locality_identity,
     )
     carried = ledger.append(
         WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-        {**acquisition_result.material, "evidence_of_yield_relation_identity": incomplete_evidence.identity},
+        {
+            **acquisition_result.material,
+            "yield_relation_identity": incomplete_yield_relation.identity,
+        },
         exact_material=acquisition_result.exact_material,
         locality_identity=acquisition_result.locality_identity,
     )
@@ -281,9 +283,9 @@ def test_evidence_of_yield_relation_without_exact_material_cannot_certify_an_acq
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=carried.identity,
-        evidence_of_yield_relation_event_identity=incomplete_evidence.identity,
-        responsible_act_evidence_event_identity=carried.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=incomplete_yield_relation.identity,
+        act_occurrence_event_identity=carried.material[
+            "act_occurrence_identity"
         ],
     )["exact_relation"] is False
 
@@ -296,18 +298,18 @@ def test_equal_material_has_distinct_material_acquisition_result_occurrences_res
     assert acquired_material_bytes(first) == acquired_material_bytes(second)
     assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
     assert first.material["result_identity"] != second.material["result_identity"]
-    assert first.material["evidence_of_yield_relation_identity"] != second.material["evidence_of_yield_relation_identity"]
+    assert first.material["yield_relation_identity"] != second.material["yield_relation_identity"]
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=first.identity,
-        evidence_of_yield_relation_event_identity=second.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=first.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=second.material["yield_relation_identity"],
+        act_occurrence_event_identity=first.material[
+            "act_occurrence_identity"
         ],
     ) == {
         "exact_relation": False,
         "occurrence_witness": False,
-        "intact_evidence": True,
+        "intact_occurrence": True,
     }
 
 
@@ -356,8 +358,8 @@ def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
                 identity=ledger.allocate_event_identity(),
                 kind=WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
                 material={
-                    "responsible_act_evidence_identity": act.identity,
-                    "evidence_of_yield_relation_identity": yielded.identity,
+                    "act_occurrence_event_identity": act.identity,
+                    "yield_relation_identity": yielded.identity,
                 },
                 exact_material=b"not admitted",
                 locality_identity="s",
@@ -424,11 +426,11 @@ def test_witness_material_identity_is_reserved_across_reopen(tmp_path):
 PYTEST_ADMISSION = (
     test_witness_material_preserves_exact_raw_bytes,
     test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_references,
-    test_durable_witness_acquisition_preserves_raw_material_and_evidence_of_yield_relation,
+    test_durable_witness_acquisition_preserves_raw_material_and_yield_relation,
     test_witness_material_acquisition_fixes_its_exact_source_subject,
-    test_material_acquisition_event_binds_exact_act_and_evidence_of_yield_relation,
-    test_changed_record_witness_material_acquisition_cannot_borrow_its_evidence_of_yield_relation,
-    test_evidence_of_yield_relation_without_exact_material_cannot_certify_an_acquire,
+    test_material_acquisition_event_binds_exact_act_and_yield_relation,
+    test_changed_record_witness_material_acquisition_cannot_borrow_its_yield_relation,
+    test_yield_relation_without_exact_material_cannot_certify_an_acquire,
     test_equal_material_has_distinct_material_acquisition_result_occurrences_results_and_yields,
     test_witness_material_requires_only_material_boundary_and_locality,
     test_empty_witness_material_is_exact_material,

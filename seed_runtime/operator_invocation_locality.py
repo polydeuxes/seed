@@ -9,9 +9,9 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.material_acquisition import read_exact_material_acquisition_result
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 
@@ -19,8 +19,8 @@ from seed_runtime.evidence_of_yield_relation import (
 OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.invocation_locality_responsibility_assignment_recorded"
 )
-OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND = (
-    "operator.invocation_locality_act_evidenced"
+OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT = (
+    "operator.invocation_locality_act_occurrence_recorded"
 )
 OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND = "operator.invocation_locality_recorded"
 OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
@@ -38,7 +38,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
         "06.Locality.D"
     ),
-    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND: "06.Locality.A",
 }
 
@@ -76,11 +76,11 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=event.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=event.material.get(
-            "responsible_act_evidence_identity"
+        act_occurrence_event_identity=event.material.get(
+            "act_occurrence_identity"
         ),
     )
     if not all(requirements.values()):
@@ -97,7 +97,7 @@ def _assignment_material(
     assignment_identity: str,
     assignment_subject_identity: str,
     operator_invocation_locality_act_identity: str,
-    act_occurrence_identity: str,
+    act_occurrence_event_identity: str,
     relation_occurrence_identity: str,
     result_identity: str,
     destination_locality_identity: str,
@@ -113,7 +113,7 @@ def _assignment_material(
         "operator_invocation_locality_act_identity": (
             operator_invocation_locality_act_identity
         ),
-        "act_occurrence_identity": act_occurrence_identity,
+        "act_occurrence_event_identity": act_occurrence_event_identity,
         "relation_occurrence_identity": relation_occurrence_identity,
         "result_boundary_identity": result_identity,
         "operator_material_occurrence_reference": command.identity,
@@ -311,11 +311,10 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             "relation_occurrence_identity"
         ],
         "scope": deepcopy(material["scope"]),
-        "evidence_scope": "Evidence bounded to one direct operator invocation Locality relation",
     }
 
 
-def record_operator_invocation_locality_act_evidence(
+def record_operator_invocation_locality_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -341,26 +340,26 @@ def record_operator_invocation_locality_act_evidence(
             "invocation Locality Act requires its carried assignment"
         )
     return ledger.append(
-        OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+        OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
         _act_material(assignment),
         locality_identity=assignment.material["destination_locality_identity"],
     )
 
 
-def get_operator_invocation_locality_act_evidence(
+def get_operator_invocation_locality_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     event = ledger.get(
-        _identity(event_identity, "invocation Locality requires Act Evidence")
+        _identity(event_identity, "invocation Locality requires Act occurrence")
     )
     if (
         event is None
-        or event.kind != OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND
+        or event.kind != OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise OperatorInvocationLocalityError(
-            "invocation Locality Act Evidence is absent or corrupted"
+            "invocation Locality Act occurrence is absent or corrupted"
         )
     assignment = get_operator_invocation_locality_responsibility_assignment(
         ledger, event.material.get("responsibility_assignment_event_identity")
@@ -370,7 +369,7 @@ def get_operator_invocation_locality_act_evidence(
         or event.locality_identity
         != assignment.material.get("destination_locality_identity")
     ):
-        raise OperatorInvocationLocalityError("invocation Locality Act Evidence is not exact")
+        raise OperatorInvocationLocalityError("invocation Locality Act occurrence is not exact")
     try:
         ledger.occurrences_in_append_order(
             (assignment.identity, event.identity),
@@ -424,10 +423,10 @@ def _result_material(act: Event) -> dict[str, Any]:
 
 
 def _refuse_second_yield(ledger: EventLedger, act: Event) -> None:
-    for evidence in ledger.iter_locality_kind(
-        act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+    for yield_relation in ledger.iter_locality_kind(
+        act.locality_identity, RECORDED_YIELD_RELATION_EVENT
     ):
-        if evidence.material.get("responsible_act_evidence_identity") == act.identity:
+        if yield_relation.material.get("act_occurrence_event_identity") == act.identity:
             raise OperatorInvocationLocalityError(
                 "invocation Locality Act already carries a Yield"
             )
@@ -436,8 +435,8 @@ def _refuse_second_yield(ledger: EventLedger, act: Event) -> None:
 def _recorded_result_material(
     result: dict[str, Any],
     *,
-    responsible_act_evidence_identity: str,
-    evidence_of_yield_relation_identity: str,
+    act_occurrence_identity: str,
+    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -468,27 +467,27 @@ def _recorded_result_material(
         "conflicts": list(result["conflicts"]),
         "unknown": list(result["unknown"]),
         "negative_authority": list(result["negative_authority"]),
-        "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "evidence_of_yield_relation_identity": (
-            evidence_of_yield_relation_identity
+        "act_occurrence_identity": act_occurrence_identity,
+        "yield_relation_identity": (
+            yield_relation_identity
         ),
     }
 
 
 def record_operator_invocation_locality_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
+    ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
-    act = get_operator_invocation_locality_act_evidence(
-        ledger, responsible_act_evidence_event_identity
+    act = get_operator_invocation_locality_act_occurrence(
+        ledger, act_occurrence_event_identity
     )
     _refuse_second_yield(ledger, act)
     result = _result_material(act)
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=OPERATOR_INVOCATION_LOCALITY_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=OPERATOR_INVOCATION_LOCALITY_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
@@ -500,8 +499,8 @@ def record_operator_invocation_locality_result(
         OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
             result,
-            responsible_act_evidence_identity=act.identity,
-            evidence_of_yield_relation_identity=evidence.identity,
+            act_occurrence_event_identity=act.identity,
+            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=act.locality_identity,
     )
@@ -522,15 +521,15 @@ def get_recorded_operator_invocation_locality(
         raise OperatorInvocationLocalityError(
             "invocation Locality result is absent or corrupted"
         )
-    act = get_operator_invocation_locality_act_evidence(
-        ledger, event.material.get("responsible_act_evidence_identity")
+    act = get_operator_invocation_locality_act_occurrence(
+        ledger, event.material.get("act_occurrence_identity")
     )
     result = _result_material(act)
     exact_result_material = _recorded_result_material(
         result,
-        responsible_act_evidence_identity=act.identity,
-        evidence_of_yield_relation_identity=event.material.get(
-            "evidence_of_yield_relation_identity"
+        act_occurrence_event_identity=act.identity,
+        yield_relation_identity=event.material.get(
+            "yield_relation_identity"
         ),
     )
     if (
@@ -541,10 +540,10 @@ def get_recorded_operator_invocation_locality(
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material[
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=event.material[
+            "yield_relation_identity"
         ],
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
     if not all(requirements.values()):
         raise OperatorInvocationLocalityError("invocation Locality result carries no exact Yield")
@@ -557,8 +556,8 @@ def operator_invocation_locality_occurrence_references(
     event = ledger.get(event_identity)
     result = get_recorded_operator_invocation_locality(ledger, event_identity)
     identities = (
-        result["responsible_act_evidence_identity"],
-        result["evidence_of_yield_relation_identity"],
+        result["act_occurrence_identity"],
+        result["yield_relation_identity"],
         event.identity,
     )
     ledger.occurrences_in_append_order(

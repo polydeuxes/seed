@@ -12,13 +12,13 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     DETERMINATION_RESULT_KIND,
     DETERMINATION_YIELD_RESULT_KIND,
     AddressedByteOccurrenceReferenceDeterminationError,
-    get_addressed_byte_occurrence_reference_determination_act_evidence,
-    get_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
+    get_addressed_byte_occurrence_reference_determination_act_occurrence,
+    get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
     get_addressed_byte_occurrence_reference_determination_responsibility_assignment,
     get_recorded_addressed_byte_occurrence_reference_determination,
     get_recorded_addressed_byte_occurrence_reference_determination_applicability,
-    record_addressed_byte_occurrence_reference_determination_act_evidence,
-    record_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
+    record_addressed_byte_occurrence_reference_determination_act_occurrence,
+    record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_result,
     record_addressed_byte_occurrence_reference_determination_responsibility_assignment,
     record_addressed_byte_occurrence_reference_determination_result,
@@ -30,7 +30,7 @@ from tests.operator_material_acquisition_test_witness import (
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
-    record_byte_pair_occurrence_position_measurement_act_evidence,
+    record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
     record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
@@ -76,14 +76,14 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, assignment)
-    act = record_byte_pair_occurrence_position_measurement_act_evidence(
+    act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
     )
     standing = _advance(ledger, standing, act)
     result = record_byte_pair_occurrence_position_measurement_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
     standing = _advance(ledger, standing, result)
     return source, result, standing
@@ -113,7 +113,7 @@ def _through_applicability(
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, assignment)
-    applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+    applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
@@ -121,7 +121,7 @@ def _through_applicability(
     standing = _advance(ledger, standing, applicability_act)
     applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
     standing = _advance(ledger, standing, applicability)
     return {
@@ -137,7 +137,7 @@ def _through_applicability(
 
 def _record(ledger, exact=b"2+2=5\n", position=3, locality="addressed-byte"):
     recorded = _through_applicability(ledger, exact, position, locality)
-    determination_act = record_addressed_byte_occurrence_reference_determination_act_evidence(
+    determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=recorded["applicability"].identity,
         applicability_standing=recorded["standing"],
@@ -145,7 +145,7 @@ def _record(ledger, exact=b"2+2=5\n", position=3, locality="addressed-byte"):
     standing = _advance(ledger, recorded["standing"], determination_act)
     result = record_addressed_byte_occurrence_reference_determination_result(
         ledger,
-        determination_act_evidence_event_identity=determination_act.identity,
+        determination_act_occurrence_event_identity=determination_act.identity,
     )
     standing = _advance(ledger, standing, result)
     return {
@@ -211,8 +211,8 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "ordered_assertion_references",
         "limits",
         "unknown",
-        "responsible_act_evidence_identity",
-        "evidence_of_yield_relation_identity",
+        "act_occurrence_identity",
+        "yield_relation_identity",
     }
     assert not {"exact_pair", "first_position", "second_position"} & set(material)
 
@@ -302,7 +302,7 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
 
     recorded["assignment"].material["scope"]["locality_identity"] = "changed"
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        get_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+        get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
             ledger, recorded["applicability_act"].identity
         )
 
@@ -316,7 +316,7 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
         ),
         (
             "applicability_act",
-            get_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
+            get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
         ),
         (
             "applicability",
@@ -324,7 +324,7 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
         ),
         (
             "determination_act",
-            get_addressed_byte_occurrence_reference_determination_act_evidence,
+            get_addressed_byte_occurrence_reference_determination_act_occurrence,
         ),
         (
             "result",
@@ -353,11 +353,11 @@ def test_each_recorded_occurrence_refuses_its_corruption(
 def test_applicability_refuses_wrong_yield_kind_or_boundary(boundary, result_kind):
     ledger = EventLedger()
     recorded = _record(ledger)
-    evidence = ledger.get(
-        recorded["applicability"].material["evidence_of_yield_relation_identity"]
+    yield_relation = ledger.get(
+        recorded["applicability"].material["yield_relation_identity"]
     )
-    evidence.material["occurrence_boundary"] = boundary
-    evidence.material["result_kind"] = result_kind
+    yield_relation.material["occurrence_boundary"] = boundary
+    yield_relation.material["result_kind"] = result_kind
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError, match="exact Yield"
     ):
@@ -376,11 +376,11 @@ def test_applicability_refuses_wrong_yield_kind_or_boundary(boundary, result_kin
 def test_determination_refuses_wrong_yield_kind_or_boundary(boundary, result_kind):
     ledger = EventLedger()
     recorded = _record(ledger)
-    evidence = ledger.get(
-        recorded["result"].material["evidence_of_yield_relation_identity"]
+    yield_relation = ledger.get(
+        recorded["result"].material["yield_relation_identity"]
     )
-    evidence.material["occurrence_boundary"] = boundary
-    evidence.material["result_kind"] = result_kind
+    yield_relation.material["occurrence_boundary"] = boundary
+    yield_relation.material["result_kind"] = result_kind
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError, match="exact Yield"
     ):
@@ -399,7 +399,7 @@ def test_one_act_cannot_append_a_second_yield_or_result():
     ):
         record_addressed_byte_occurrence_reference_determination_result(
             ledger,
-            determination_act_evidence_event_identity=recorded[
+            determination_act_occurrence_event_identity=recorded[
                 "determination_act"
             ].identity,
         )
@@ -651,13 +651,13 @@ def test_act_requires_intact_retained_assignment_during_duplicate_iterator():
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
             responsibility_assignment_standing=standing,
         )
     assert not any(
-        event.kind == determination_module.APPLICABILITY_ACT_EVIDENCE_KIND
+        event.kind == determination_module.APPLICABILITY_ACT_OCCURRENCE_EVENT
         for event in ledger.list()
     )
     assert standing == prior
@@ -674,7 +674,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, assignment)
-    act = record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+    act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
@@ -684,7 +684,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     before_yields = tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     )
     ledger.callback = lambda: ledger.append(
         "test.callback.unrelated",
@@ -697,7 +697,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         match="append tip",
     ):
         record_addressed_byte_occurrence_reference_determination_applicability_result(
-            ledger, applicability_act_evidence_event_identity=act.identity
+            ledger, applicability_act_occurrence_event_identity=act.identity
         )
     assert not any(
         event.kind == determination_module.APPLICABILITY_RESULT_KIND
@@ -706,7 +706,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
     assert tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert standing == prior
     assert read_operator_locality_standing(
@@ -723,7 +723,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded[
                 "applicability"
@@ -731,7 +731,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
             applicability_standing=recorded["standing"],
         )
     assert not any(
-        event.kind == determination_module.DETERMINATION_ACT_EVIDENCE_KIND
+        event.kind == determination_module.DETERMINATION_ACT_OCCURRENCE_EVENT
         for event in ledger.list()
     )
     assert recorded["standing"] == prior
@@ -740,7 +740,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
 def test_determination_result_refuses_iterator_append_without_yield():
     ledger = CallbackEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
-    act = record_addressed_byte_occurrence_reference_determination_act_evidence(
+    act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=recorded["applicability"].identity,
         applicability_standing=recorded["standing"],
@@ -750,7 +750,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
     before_yields = tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     )
     ledger.callback = lambda: ledger.append(
         "test.callback.unrelated",
@@ -763,7 +763,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
         match="append tip",
     ):
         record_addressed_byte_occurrence_reference_determination_result(
-            ledger, determination_act_evidence_event_identity=act.identity
+            ledger, determination_act_occurrence_event_identity=act.identity
         )
     assert not any(
         event.kind == determination_module.DETERMINATION_RESULT_KIND
@@ -772,7 +772,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
     assert tuple(
         event.identity
         for event in ledger.list()
-        if event.kind == determination_module.RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert standing == prior
     assert read_operator_locality_standing(

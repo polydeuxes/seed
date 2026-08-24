@@ -14,9 +14,9 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
@@ -31,17 +31,17 @@ RESPONSIBILITY_ASSIGNMENT_KIND = (
     "operator.addressed_byte_occurrence_reference_determination."
     "responsibility_assignment_recorded"
 )
-APPLICABILITY_ACT_EVIDENCE_KIND = (
+APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.addressed_byte_occurrence_reference_determination."
-    "applicability_act_evidenced"
+    "applicability_act_occurrence_recorded"
 )
 APPLICABILITY_RESULT_KIND = (
     "operator.addressed_byte_occurrence_reference_determination."
     "applicability_recorded"
 )
-DETERMINATION_ACT_EVIDENCE_KIND = (
+DETERMINATION_ACT_OCCURRENCE_EVENT = (
     "operator.addressed_byte_occurrence_reference_determination."
-    "determination_measurement_act_evidenced"
+    "determination_measurement_act_occurrence_recorded"
 )
 DETERMINATION_RESULT_KIND = (
     "operator.addressed_byte_occurrence_reference_determination."
@@ -89,9 +89,9 @@ UNKNOWN = [
 
 EVENT_KIND_RESPONSIBILITIES = {
     RESPONSIBILITY_ASSIGNMENT_KIND: "01.Source.D.2",
-    APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
-    DETERMINATION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    DETERMINATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     DETERMINATION_RESULT_KIND: "01.Source.D.2",
 }
 
@@ -111,11 +111,11 @@ def _direct_result_reference(event: Event) -> dict[str, str]:
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -129,11 +129,11 @@ def _determination_result_reference(event: Event) -> dict[str, str]:
         "act_occurrence_identity": event.material[
             "determination_act_occurrence_identity"
         ],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -159,11 +159,11 @@ def _applicability_result_reference(event: Event) -> dict[str, str]:
         "applicability_act_occurrence_identity": event.material[
             "applicability_act_occurrence_identity"
         ],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -666,13 +666,12 @@ def _applicability_act_material(
             "determination_act_identity"
         ],
         "scope": deepcopy(assignment.material["scope"]),
-        "evidence_scope": "Evidence for this exact Applicability Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
 
-def record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+def record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -692,7 +691,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_e
     _refuse_existing_act(
         ledger,
         assignment=assignment,
-        kind=APPLICABILITY_ACT_EVIDENCE_KIND,
+        kind=APPLICABILITY_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
     source_read, _references_read = _source(
@@ -726,7 +725,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_e
         message="Applicability Act assignment left the append tip",
     )
     return ledger.append(
-        APPLICABILITY_ACT_EVIDENCE_KIND,
+        APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
             assignment=assignment, source_result=source_result
         ),
@@ -748,12 +747,12 @@ def _read_applicability_act(
     event = ledger.get(event_identity)
     if (
         event is None
-        or event.kind != APPLICABILITY_ACT_EVIDENCE_KIND
+        or event.kind != APPLICABILITY_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability Act Evidence is absent or corrupted"
+            "determination Applicability Act occurrence is absent or corrupted"
         )
     reference = event.material.get("responsibility_assignment_reference")
     assignment_identity = (
@@ -778,7 +777,7 @@ def _read_applicability_act(
         )
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Applicability Act Evidence is not exact"
+            "determination Applicability Act occurrence is not exact"
         )
     try:
         ledger.occurrences_in_append_order(
@@ -792,7 +791,7 @@ def _read_applicability_act(
     return event, assignment, source_result, references
 
 
-def get_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+def get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _read_applicability_act(ledger, event_identity)[0]
@@ -893,10 +892,10 @@ def _refuse_existing_result(
 ) -> None:
     occurrence_identity = act.material[occurrence_coordinate]
     for event in ledger.iter_locality_kind(
-        act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        act.locality_identity, RECORDED_YIELD_RELATION_EVENT
     ):
         if (
-            event.material.get("responsible_act_evidence_identity") == act.identity
+            event.material.get("act_occurrence_event_identity") == act.identity
             or event.material.get("dimensions", {}).get("act_occurrence_identity")
             == occurrence_identity
         ):
@@ -905,7 +904,7 @@ def _refuse_existing_result(
             )
     for event in ledger.iter_locality_kind(act.locality_identity, result_kind):
         if (
-            event.material.get("responsible_act_evidence_identity") == act.identity
+            event.material.get("act_occurrence_event_identity") == act.identity
             or event.material.get(occurrence_coordinate) == occurrence_identity
         ):
             raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -932,33 +931,33 @@ def _prepare_result_yield(
         )
 
 
-def _require_yield_at_append_tip(ledger: EventLedger, evidence: Event) -> None:
+def _require_yield_at_append_tip(ledger: EventLedger, yield_relation: Event) -> None:
     if (
-        ledger.get(evidence.identity) != evidence
-        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or ledger.integrity_of(evidence.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(evidence.identity)
+        ledger.get(yield_relation.identity) != yield_relation
+        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
+        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(yield_relation.identity)
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result requires exact Yield Evidence at the append tip"
+            "determination result requires exact Yield relation at the append tip"
         )
 
 
-def _record_applicability_yield_evidence(
+def _record_applicability_yield_relation(
     ledger: EventLedger,
     *,
     act: Event,
     material: dict[str, Any],
 ) -> Event:
-    return _record_evidence_of_yield_relation(
+    return _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=APPLICABILITY_ACT,
         act_occurrence_identity=act.material[
             "applicability_act_occurrence_identity"
         ],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=APPLICABILITY_YIELD_RESULT_KIND,
         result_identity=material["result_identity"],
         result_content=material,
@@ -973,20 +972,20 @@ def _record_applicability_yield_evidence(
     )
 
 
-def _record_determination_yield_evidence(
+def _record_determination_yield_relation(
     ledger: EventLedger,
     *,
     act: Event,
     material: dict[str, Any],
 ) -> Event:
-    return _record_evidence_of_yield_relation(
+    return _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=DETERMINATION_ACT,
         act_occurrence_identity=act.material[
             "determination_act_occurrence_identity"
         ],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=DETERMINATION_YIELD_RESULT_KIND,
         result_identity=material["result_identity"],
         result_content=material,
@@ -1000,7 +999,7 @@ def _record_determination_yield_evidence(
 
 
 def _recorded_applicability_result_material(
-    material: dict[str, Any], *, act: Event, evidence: Event
+    material: dict[str, Any], *, act: Event, yield_relation: Event
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1029,18 +1028,18 @@ def _recorded_applicability_result_material(
         "scope": deepcopy(material["scope"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
-        "responsible_act_evidence_identity": act.identity,
-        "evidence_of_yield_relation_identity": evidence.identity,
+        "act_occurrence_event_identity": act.identity,
+        "yield_relation_identity": yield_relation.identity,
     }
 
 
 def record_addressed_byte_occurrence_reference_determination_applicability_result(
     ledger: EventLedger,
     *,
-    applicability_act_evidence_event_identity: str,
+    applicability_act_occurrence_event_identity: str,
 ) -> Event:
     act, assignment, source_result, _references = _read_applicability_act(
-        ledger, applicability_act_evidence_event_identity
+        ledger, applicability_act_occurrence_event_identity
     )
     material = _applicability_result_material(
         act=act, assignment=assignment, source_result=source_result
@@ -1061,7 +1060,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         (
             act,
             act_read,
-            APPLICABILITY_ACT_EVIDENCE_KIND,
+            APPLICABILITY_ACT_OCCURRENCE_EVENT,
             act_material,
             "Applicability Yield requires an intact exact Act",
         ),
@@ -1092,7 +1091,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     _require_stage_at_append_tip(
         ledger, event=act, message="Applicability Act left the append tip"
     )
-    evidence = _record_applicability_yield_evidence(
+    yield_relation = _record_applicability_yield_relation(
         ledger,
         act=act,
         material=material,
@@ -1111,7 +1110,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     for recorded, kind, material_read, message in (
         (
             act,
-            APPLICABILITY_ACT_EVIDENCE_KIND,
+            APPLICABILITY_ACT_OCCURRENCE_EVENT,
             act_material,
             "Applicability result requires an intact exact Act",
         ),
@@ -1135,11 +1134,11 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             material=material_read,
             message=message,
         )
-    _require_yield_at_append_tip(ledger, evidence)
+    _require_yield_at_append_tip(ledger, yield_relation)
     return ledger.append(
         APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
-            material, act=act, evidence=evidence
+            material, act=act, yield_relation=yield_relation
         ),
         locality_identity=act.locality_identity,
     )
@@ -1154,26 +1153,26 @@ def _require_yield(
     occurrence_boundary: str,
     result_kind: str,
 ) -> None:
-    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
-    evidence = ledger.get(evidence_identity)
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    yield_relation = ledger.get(yield_relation_identity)
     try:
         requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=event.identity,
-            evidence_of_yield_relation_event_identity=evidence_identity,
-            responsible_act_evidence_event_identity=act.identity,
+            yield_relation_event_identity=yield_relation_identity,
+            act_occurrence_event_identity=act.identity,
             recorded_result_occurrence_coordinate=occurrence_coordinate,
             responsible_act_occurrence_coordinate=occurrence_coordinate,
         )
     except (TypeError, ValueError):
         requirements = {}
     if (
-        evidence is None
-        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or evidence.locality_identity != event.locality_identity
-        or ledger.integrity_of(evidence.identity) == CORRUPTED
-        or evidence.material.get("occurrence_boundary") != occurrence_boundary
-        or evidence.material.get("result_kind") != result_kind
+        yield_relation is None
+        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
+        or yield_relation.locality_identity != event.locality_identity
+        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
+        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
+        or yield_relation.material.get("result_kind") != result_kind
         or not all(requirements.values())
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -1181,7 +1180,7 @@ def _require_yield(
         )
     try:
         ordered = ledger.occurrences_in_append_order(
-            (act.identity, evidence.identity, event.identity),
+            (act.identity, yield_relation.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
@@ -1190,7 +1189,7 @@ def _require_yield(
         ) from error
     if tuple(item.identity for item in ordered) != (
         act.identity,
-        evidence.identity,
+        yield_relation.identity,
         event.identity,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -1222,16 +1221,16 @@ def _read_applicability_result(
         )
     act, assignment, source_result, references = _read_applicability_act(
         ledger,
-        event.material.get("responsible_act_evidence_identity"),
+        event.material.get("act_occurrence_event_identity"),
         prior_standing=prior_standing,
     )
     expected = {
         **_applicability_result_material(
             act=act, assignment=assignment, source_result=source_result
         ),
-        "responsible_act_evidence_identity": act.identity,
-        "evidence_of_yield_relation_identity": event.material.get(
-            "evidence_of_yield_relation_identity"
+        "act_occurrence_event_identity": act.identity,
+        "yield_relation_identity": event.material.get(
+            "yield_relation_identity"
         ),
     }
     if event.locality_identity != act.locality_identity or event.material != expected:
@@ -1288,13 +1287,12 @@ def _determination_act_material(
         "determination_rule": DETERMINATION_RULE,
         "result_identity": assignment.material["determination_result_identity"],
         "scope": deepcopy(assignment.material["scope"]),
-        "evidence_scope": "Evidence for this exact declared Measurement Act occurrence",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
 
-def record_addressed_byte_occurrence_reference_determination_act_evidence(
+def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     ledger: EventLedger,
     *,
     applicability_result_event_identity: str,
@@ -1317,7 +1315,7 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
     _refuse_existing_act(
         ledger,
         assignment=assignment,
-        kind=DETERMINATION_ACT_EVIDENCE_KIND,
+        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="determination_act_occurrence_identity",
     )
     (
@@ -1338,7 +1336,7 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
         (
             app_act,
             app_act_read,
-            APPLICABILITY_ACT_EVIDENCE_KIND,
+            APPLICABILITY_ACT_OCCURRENCE_EVENT,
             app_act_material,
             "determination Measurement Act requires an intact exact Applicability Act",
         ),
@@ -1372,7 +1370,7 @@ def record_addressed_byte_occurrence_reference_determination_act_evidence(
         message="determination Measurement Applicability left the append tip",
     )
     return ledger.append(
-        DETERMINATION_ACT_EVIDENCE_KIND,
+        DETERMINATION_ACT_OCCURRENCE_EVENT,
         _determination_act_material(
             assignment=assignment,
             source_result=source_result,
@@ -1397,12 +1395,12 @@ def _read_determination_act(
     event = ledger.get(event_identity)
     if (
         event is None
-        or event.kind != DETERMINATION_ACT_EVIDENCE_KIND
+        or event.kind != DETERMINATION_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Act Evidence is absent or corrupted"
+            "determination Act occurrence is absent or corrupted"
         )
     applicability_reference = event.material.get("applicability_result_reference")
     applicability_identity = (
@@ -1426,7 +1424,7 @@ def _read_determination_act(
         )
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination Act Evidence coordinates are not exact"
+            "determination Act occurrence coordinates are not exact"
         )
     try:
         ledger.occurrences_in_append_order(
@@ -1440,7 +1438,7 @@ def _read_determination_act(
     return event, applicability, assignment, source_result, references
 
 
-def get_addressed_byte_occurrence_reference_determination_act_evidence(
+def get_addressed_byte_occurrence_reference_determination_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _read_determination_act(ledger, event_identity)[0]
@@ -1497,7 +1495,7 @@ def _determination_result_material(
 
 
 def _recorded_determination_result_material(
-    material: dict[str, Any], *, act: Event, evidence: Event
+    material: dict[str, Any], *, act: Event, yield_relation: Event
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1527,19 +1525,19 @@ def _recorded_determination_result_material(
         ),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
-        "responsible_act_evidence_identity": act.identity,
-        "evidence_of_yield_relation_identity": evidence.identity,
+        "act_occurrence_event_identity": act.identity,
+        "yield_relation_identity": yield_relation.identity,
     }
 
 
 def record_addressed_byte_occurrence_reference_determination_result(
     ledger: EventLedger,
     *,
-    determination_act_evidence_event_identity: str,
+    determination_act_occurrence_event_identity: str,
 ) -> Event:
     act, applicability, assignment, source_result, references = (
         _read_determination_act(
-            ledger, determination_act_evidence_event_identity
+            ledger, determination_act_occurrence_event_identity
         )
     )
     material = _determination_result_material(
@@ -1570,7 +1568,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
         (
             act,
             act_read,
-            DETERMINATION_ACT_EVIDENCE_KIND,
+            DETERMINATION_ACT_OCCURRENCE_EVENT,
             act_material,
             "determination Measurement Yield requires an intact exact Act",
         ),
@@ -1610,7 +1608,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
         event=act,
         message="determination Measurement Act left the append tip",
     )
-    evidence = _record_determination_yield_evidence(
+    yield_relation = _record_determination_yield_relation(
         ledger,
         act=act,
         material=material,
@@ -1634,7 +1632,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
     for recorded, kind, material_read, message in (
         (
             act,
-            DETERMINATION_ACT_EVIDENCE_KIND,
+            DETERMINATION_ACT_OCCURRENCE_EVENT,
             act_material,
             "determination Measurement result requires an intact exact Act",
         ),
@@ -1664,11 +1662,11 @@ def record_addressed_byte_occurrence_reference_determination_result(
             material=material_read,
             message=message,
         )
-    _require_yield_at_append_tip(ledger, evidence)
+    _require_yield_at_append_tip(ledger, yield_relation)
     return ledger.append(
         DETERMINATION_RESULT_KIND,
         _recorded_determination_result_material(
-            material, act=act, evidence=evidence
+            material, act=act, yield_relation=yield_relation
         ),
         locality_identity=act.locality_identity,
     )
@@ -1700,7 +1698,7 @@ def _read_determination_result(
     act, applicability, assignment, source_result, references = (
         _read_determination_act(
             ledger,
-            event.material.get("responsible_act_evidence_identity"),
+            event.material.get("act_occurrence_event_identity"),
             prior_standing=prior_standing,
         )
     )
@@ -1712,9 +1710,9 @@ def _read_determination_result(
             source_result=source_result,
             references=references,
         ),
-        "responsible_act_evidence_identity": act.identity,
-        "evidence_of_yield_relation_identity": event.material.get(
-            "evidence_of_yield_relation_identity"
+        "act_occurrence_event_identity": act.identity,
+        "yield_relation_identity": event.material.get(
+            "yield_relation_identity"
         ),
     }
     if event.locality_identity != act.locality_identity or event.material != expected:
@@ -1877,7 +1875,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
                 event.material.get("standing_boundary_identity") == prior
                 and event.identity not in assignments
             )
-        elif event.kind == APPLICABILITY_ACT_EVIDENCE_KIND:
+        elif event.kind == APPLICABILITY_ACT_OCCURRENCE_EVENT:
             lawful = (
                 event.material["responsibility_assignment_reference"][
                     "recorded_occurrence_identity"
@@ -1887,14 +1885,14 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             )
         elif event.kind == APPLICABILITY_RESULT_KIND:
             lawful = (
-                event.material.get("responsible_act_evidence_identity") == prior
+                event.material.get("act_occurrence_event_identity") == prior
                 and event.material["responsibility_assignment_reference"][
                     "recorded_occurrence_identity"
                 ]
                 in assignments
                 and event.identity not in applicability_results
             )
-        elif event.kind == DETERMINATION_ACT_EVIDENCE_KIND:
+        elif event.kind == DETERMINATION_ACT_OCCURRENCE_EVENT:
             lawful = (
                 event.material["applicability_result_reference"][
                     "recorded_occurrence_identity"
@@ -1904,7 +1902,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             )
         elif event.kind == DETERMINATION_RESULT_KIND:
             lawful = (
-                event.material.get("responsible_act_evidence_identity") == prior
+                event.material.get("act_occurrence_event_identity") == prior
                 and event.identity not in measurements
             )
         else:
@@ -1964,7 +1962,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     _refuse_existing_act(
         ledger,
         assignment=assignment,
-        kind=APPLICABILITY_ACT_EVIDENCE_KIND,
+        kind=APPLICABILITY_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
     applicability_act_material = _applicability_act_material(
@@ -1972,7 +1970,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     )
     require_prior_at_tip(assignment)
     applicability_act = ledger.append(
-        APPLICABILITY_ACT_EVIDENCE_KIND,
+        APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
             assignment=assignment,
             source_result=source_result,
@@ -1982,7 +1980,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     exact_stage_material.append(
         (
             applicability_act,
-            APPLICABILITY_ACT_EVIDENCE_KIND,
+            APPLICABILITY_ACT_OCCURRENCE_EVENT,
             applicability_act_material,
         )
     )
@@ -2001,31 +1999,31 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         result_event_kind=APPLICABILITY_RESULT_KIND,
     )
     require_prior_at_tip(applicability_act)
-    applicability_evidence = _record_applicability_yield_evidence(
+    applicability_yield_relation = _record_applicability_yield_relation(
         ledger,
         act=applicability_act,
         material=applicability_material,
     )
     exact_stage_material.append(
         (
-            applicability_evidence,
-            RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-            deepcopy(applicability_evidence.material),
+            applicability_yield_relation,
+            RECORDED_YIELD_RELATION_EVENT,
+            deepcopy(applicability_yield_relation.material),
         )
     )
     require_intact()
-    _require_yield_at_append_tip(ledger, applicability_evidence)
+    _require_yield_at_append_tip(ledger, applicability_yield_relation)
     applicability_recorded = _recorded_applicability_result_material(
         applicability_material,
         act=applicability_act,
-        evidence=applicability_evidence,
+        yield_relation=applicability_yield_relation,
     )
     applicability = ledger.append(
         APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
             applicability_material,
             act=applicability_act,
-            evidence=applicability_evidence,
+            yield_relation=applicability_yield_relation,
         ),
         locality_identity=locality_identity,
     )
@@ -2038,7 +2036,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     _refuse_existing_act(
         ledger,
         assignment=assignment,
-        kind=DETERMINATION_ACT_EVIDENCE_KIND,
+        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="determination_act_occurrence_identity",
     )
     act_material = _determination_act_material(
@@ -2048,7 +2046,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     )
     require_prior_at_tip(applicability)
     act = ledger.append(
-        DETERMINATION_ACT_EVIDENCE_KIND,
+        DETERMINATION_ACT_OCCURRENCE_EVENT,
         _determination_act_material(
             assignment=assignment,
             source_result=source_result,
@@ -2057,7 +2055,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         locality_identity=locality_identity,
     )
     exact_stage_material.append(
-        (act, DETERMINATION_ACT_EVIDENCE_KIND, act_material)
+        (act, DETERMINATION_ACT_OCCURRENCE_EVENT, act_material)
     )
     require_intact()
     carry(act, prior=applicability.identity)
@@ -2076,31 +2074,31 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         result_event_kind=DETERMINATION_RESULT_KIND,
     )
     require_prior_at_tip(act)
-    evidence = _record_determination_yield_evidence(
+    yield_relation = _record_determination_yield_relation(
         ledger,
         act=act,
         material=result_material,
     )
     exact_stage_material.append(
         (
-            evidence,
-            RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-            deepcopy(evidence.material),
+            yield_relation,
+            RECORDED_YIELD_RELATION_EVENT,
+            deepcopy(yield_relation.material),
         )
     )
     require_intact()
-    _require_yield_at_append_tip(ledger, evidence)
+    _require_yield_at_append_tip(ledger, yield_relation)
     result_recorded = _recorded_determination_result_material(
         result_material,
         act=act,
-        evidence=evidence,
+        yield_relation=yield_relation,
     )
     result = ledger.append(
         DETERMINATION_RESULT_KIND,
         _recorded_determination_result_material(
             result_material,
             act=act,
-            evidence=evidence,
+            yield_relation=yield_relation,
         ),
         locality_identity=locality_identity,
     )

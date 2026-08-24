@@ -9,9 +9,9 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_checkpoint import get_recorded_standing_boundary_reference
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 
@@ -19,8 +19,8 @@ from seed_runtime.evidence_of_yield_relation import (
 RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.recorded_standing_boundary_locality_responsibility_assignment_recorded"
 )
-RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND = (
-    "operator.recorded_standing_boundary_locality_act_evidenced"
+RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT = (
+    "operator.recorded_standing_boundary_locality_act_occurrence_recorded"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND = (
     "operator.recorded_standing_boundary_locality_recorded"
@@ -40,7 +40,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
         "06.Locality.C"
     ),
-    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND: "06.Locality.A",
 }
 
@@ -144,7 +144,7 @@ def _assignment_material(
             "standing_boundary_reference": deepcopy(standing_boundary_reference),
             "destination_locality_identity": destination_locality_identity,
         },
-        "evidence_occurrence_reference": standing_boundary_reference[
+        "standing_boundary_occurrence_reference": standing_boundary_reference[
             "recorded_occurrence_identity"
         ],
         "limits": [
@@ -204,7 +204,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             material["standing_boundary_reference"],
             material["act_occurrence_identity"],
         ),
-        "evidence_scope": "Evidence bounded to this exact direct Locality relation",
     }
 
 
@@ -250,8 +249,8 @@ def _result_material(act: Event) -> dict[str, Any]:
 
 def _recorded_result_material(
     result_material: dict[str, Any],
-    *, responsible_act_evidence_identity: str,
-    evidence_of_yield_relation_identity: str,
+    *, act_occurrence_event_identity: str,
+    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
@@ -278,8 +277,8 @@ def _recorded_result_material(
         "standing": result_material["standing"],
         "limits": list(result_material["limits"]),
         "unknown": list(result_material["unknown"]),
-        "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
+        "act_occurrence_event_identity": act_occurrence_event_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -391,7 +390,7 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
     return event
 
 
-def record_recorded_standing_boundary_locality_responsible_act_evidence(
+def record_recorded_standing_boundary_locality_act_occurrence(
     ledger: EventLedger,
     *, responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
@@ -416,25 +415,25 @@ def record_recorded_standing_boundary_locality_responsible_act_evidence(
             "recorded boundary relation Act requires its carried assignment"
         )
     return ledger.append(
-        RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+        RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
         _act_material(assignment),
         locality_identity=assignment.locality_identity,
     )
 
 
-def get_recorded_standing_boundary_locality_act_evidence(
+def get_recorded_standing_boundary_locality_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
-    _require_identity(event_identity, "recorded boundary relation requires Act Evidence")
+    _require_identity(event_identity, "recorded boundary relation requires Act occurrence")
     event = ledger.get(event_identity)
     if (
         event is None
-        or event.kind != RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND
+        or event.kind != RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act Evidence is absent or corrupted"
+            "recorded boundary relation Act occurrence is absent or corrupted"
         )
     reference = event.material.get("responsibility_assignment_reference")
     if type(reference) is not dict:
@@ -450,7 +449,7 @@ def get_recorded_standing_boundary_locality_act_evidence(
         or event.material != _act_material(assignment)
     ):
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act Evidence is not exact"
+            "recorded boundary relation Act occurrence is not exact"
         )
     try:
         ledger.occurrences_in_append_order(
@@ -466,23 +465,23 @@ def get_recorded_standing_boundary_locality_act_evidence(
 
 def record_recorded_standing_boundary_locality_result(
     ledger: EventLedger,
-    *, responsible_act_evidence_event_identity: str,
+    *, act_occurrence_event_identity: str,
 ) -> Event:
-    act = get_recorded_standing_boundary_locality_act_evidence(
-        ledger, responsible_act_evidence_event_identity
+    act = get_recorded_standing_boundary_locality_act_occurrence(
+        ledger, act_occurrence_event_identity
     )
-    for evidence in ledger.iter_locality_kind(act.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND):
-        if evidence.material.get("responsible_act_evidence_identity") == act.identity:
+    for yield_relation in ledger.iter_locality_kind(act.locality_identity, RECORDED_YIELD_RELATION_EVENT):
+        if yield_relation.material.get("act_occurrence_event_identity") == act.identity:
             raise RecordedStandingBoundaryLocalityError(
                 "recorded boundary relation Act already carries a Yield"
             )
     result_material = _result_material(act)
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=RECORDED_STANDING_BOUNDARY_LOCALITY_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=RECORDED_STANDING_BOUNDARY_LOCALITY_RESULT_KIND,
         result_identity=result_material["result_identity"],
         result_content=result_material,
@@ -494,8 +493,8 @@ def record_recorded_standing_boundary_locality_result(
         RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
             result_material,
-            responsible_act_evidence_identity=act.identity,
-            evidence_of_yield_relation_identity=evidence.identity,
+            act_occurrence_event_identity=act.identity,
+            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=act.locality_identity,
     )
@@ -515,14 +514,14 @@ def get_recorded_standing_boundary_locality(
         raise RecordedStandingBoundaryLocalityError(
             "recorded boundary relation result is absent or corrupted"
         )
-    act = get_recorded_standing_boundary_locality_act_evidence(
-        ledger, event.material.get("responsible_act_evidence_identity")
+    act = get_recorded_standing_boundary_locality_act_occurrence(
+        ledger, event.material.get("act_occurrence_identity")
     )
     expected_result = _result_material(act)
     expected = _recorded_result_material(
         expected_result,
-        responsible_act_evidence_identity=act.identity,
-        evidence_of_yield_relation_identity=event.material.get("evidence_of_yield_relation_identity"),
+        act_occurrence_event_identity=act.identity,
+        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise RecordedStandingBoundaryLocalityError(
@@ -531,8 +530,8 @@ def get_recorded_standing_boundary_locality(
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=act.identity,
+        yield_relation_event_identity=event.material["yield_relation_identity"],
+        act_occurrence_event_identity=act.identity,
     )
     if not all(requirements.values()):
         raise RecordedStandingBoundaryLocalityError(

@@ -12,7 +12,7 @@ from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
     record_occurrence_position_measurement_responsibility_assignment,
-    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
@@ -78,8 +78,8 @@ def acquired_source_attributed_witness_material():
             ),
         )
     )
-    position_act_evidence = (
-        record_occurrence_position_measurement_responsible_act_evidence(
+    position_act_occurrence = (
+        record_occurrence_position_measurement_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=position_assignment.identity,
             responsibility_assignment_standing=read_operator_locality_standing(
@@ -89,7 +89,7 @@ def acquired_source_attributed_witness_material():
     )
     position_result = record_occurrence_position_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=position_act_evidence.identity,
+        act_occurrence_event_identity=position_act_occurrence.identity,
     )
     return (
         exact_material,

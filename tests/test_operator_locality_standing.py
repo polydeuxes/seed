@@ -9,14 +9,14 @@ import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
     get_byte_position_pair_measurement_responsibility_assignment,
     record_byte_measurement_responsibility_assignment,
-    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
@@ -30,7 +30,7 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
     record_occurrence_position_measurement_responsibility_assignment,
-    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -55,7 +55,7 @@ def _record_byte_measurement(
             ledger, locality_identity=recording_locality_identity
         ),
     )
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -64,7 +64,7 @@ def _record_byte_measurement(
     )
     return record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
     )
 
 
@@ -123,14 +123,14 @@ def _record_measurement(ledger, measurement_kind):
         finding=finding,
         locality_standing=_standing(ledger),
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+    act_occurrence = record_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=_standing(ledger),
     )
     return record_occurrence_position_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
     )
 
 
@@ -150,23 +150,23 @@ def _measurement_coordinates(event):
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_identity": event.material[
+            "act_occurrence_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
+        "yield_relation_identity": event.material["yield_relation_identity"],
     }
 
 
 def _pair_lifecycle(ledger):
     result = _record_measurement(ledger, BYTE_PAIR_MEASUREMENT_RECORDED_KIND)
     measurement_act = ledger.get(
-        result.material["responsible_act_evidence_identity"]
+        result.material["act_occurrence_identity"]
     )
     applicability = ledger.get(
         result.material["input_applicability_event_identity"]
     )
     applicability_act = ledger.get(
-        applicability.material["responsible_act_evidence_identity"]
+        applicability.material["act_occurrence_identity"]
     )
     assignment = ledger.get(
         result.material["responsibility_assignment_reference"][
@@ -205,9 +205,9 @@ def test_pair_standing_replay_reads_one_assignment_per_complete_lifecycle(
 @pytest.mark.parametrize(
     ("phase_kind", "changed_coordinate"),
     (
-        (BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND, "assignment_occurrence"),
+        (BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT, "assignment_occurrence"),
         (BYTE_PAIR_APPLICABILITY_RECORDED_KIND, "applicability_act_occurrence"),
-        (BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND, "applicability_result_occurrence"),
+        (BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT, "applicability_result_occurrence"),
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, "measurement_act_occurrence"),
     ),
 )
@@ -370,8 +370,8 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
             "recorded_occurrence_identity",
             "result_identity",
             "act_occurrence_identity",
-            "responsible_act_evidence_identity",
-            "evidence_of_yield_relation_identity",
+            "act_occurrence_identity",
+            "yield_relation_identity",
         }
         for occurrence in standing["measurement_occurrences"].values()
     )
@@ -426,9 +426,9 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
 
     standing = _standing(ledger)
 
-    source_act = ledger.get(source.material["responsible_act_evidence_identity"])
+    source_act = ledger.get(source.material["act_occurrence_identity"])
     measurement_act = ledger.get(
-        measurement.material["responsible_act_evidence_identity"]
+        measurement.material["act_occurrence_identity"]
     )
     assert standing["exact_result_occurrences"] == {
         source.identity: source_act.material["responsibility_assignment_reference"],
@@ -459,8 +459,8 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
         exact_bytes=b"other result",
         source_boundary="test boundary",
     )
-    source.material["evidence_of_yield_relation_identity"] = other.material[
-        "evidence_of_yield_relation_identity"
+    source.material["yield_relation_identity"] = other.material[
+        "yield_relation_identity"
     ]
 
     with pytest.raises(MaterialAcquisitionError):
@@ -492,11 +492,11 @@ def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "evidence_coordinate",
-    ("responsible_act_evidence_identity", "evidence_of_yield_relation_identity"),
+    "required_occurrence_coordinate",
+    ("act_occurrence_event_identity", "yield_relation_identity"),
 )
-def test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation(
-    monkeypatch, evidence_coordinate
+def test_locality_standing_refuses_corrupted_raw_yield_relation(
+    monkeypatch, required_occurrence_coordinate
 ):
     ledger = EventLedger()
     source = record_witness_material_acquisition(
@@ -505,7 +505,7 @@ def test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation(
         exact_bytes=b"raw result",
         source_boundary="test boundary",
     )
-    corrupted_identity = source.material[evidence_coordinate]
+    corrupted_identity = source.material[required_occurrence_coordinate]
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -566,7 +566,7 @@ def test_locality_standing_refuses_measurement_with_missing_yield(
 ):
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
-    measurement.material["evidence_of_yield_relation_identity"] = None
+    measurement.material["yield_relation_identity"] = None
 
     with pytest.raises(error_type, match="Yield|yield"):
         _standing(ledger)
@@ -586,8 +586,8 @@ def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
     other = _record_measurement(ledger, measurement_kind)
-    measurement.material["evidence_of_yield_relation_identity"] = other.material[
-        "evidence_of_yield_relation_identity"
+    measurement.material["yield_relation_identity"] = other.material[
+        "yield_relation_identity"
     ]
 
     with pytest.raises(error_type, match="Yield|yield"):
@@ -607,7 +607,7 @@ def test_locality_standing_refuses_corrupted_measurement_yield(
 ):
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
-    yield_identity = measurement.material["evidence_of_yield_relation_identity"]
+    yield_identity = measurement.material["yield_relation_identity"]
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -766,7 +766,7 @@ PYTEST_ADMISSION = (
     test_locality_standing_carries_only_exact_yielded_result_identities,
     test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield,
     test_locality_standing_refuses_corrupted_raw_result,
-    test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation,
+    test_locality_standing_refuses_corrupted_raw_yield_relation,
     test_locality_standing_refuses_a_corrupted_measurement,
     test_locality_standing_refuses_measurement_with_missing_yield,
     test_locality_standing_refuses_yield_from_another_measurement_occurrence,

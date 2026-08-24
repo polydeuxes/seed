@@ -12,8 +12,8 @@ from seed_runtime.comparison_of_ordered_path_source_position_material import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.evidence_of_yield_relation import (
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    _record_yield_relation,
 )
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -74,11 +74,11 @@ def _advance(
                 "recorded_occurrence_identity": event.identity,
                 "result_identity": event.material["result_identity"],
                 "act_occurrence_identity": event.material["act_occurrence_identity"],
-                "responsible_act_evidence_identity": event.material[
-                    "responsible_act_evidence_identity"
+                "act_occurrence_event_identity": event.material[
+                    "act_occurrence_event_identity"
                 ],
-                "evidence_of_yield_relation_identity": event.material[
-                    "evidence_of_yield_relation_identity"
+                "yield_relation_identity": event.material[
+                    "yield_relation_identity"
                 ],
             }
         for key, values in additions.items():
@@ -108,7 +108,7 @@ def _record_shared_path(
     )
     standing = _advance(ledger, standing, assignment)
     applicability_act = ledger.append(
-        shared_position.SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+        shared_position.SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         shared_position._applicability_act_material(
             assignment=assignment,
             inputs=inputs,
@@ -124,20 +124,20 @@ def _record_shared_path(
         assignment=assignment,
         inputs=inputs,
     )
-    applicability_yield = _record_evidence_of_yield_relation(
+    applicability_yield = _record_yield_relation(
         ledger,
         locality_identity=assignment.locality_identity,
         exact_act=shared_position.APPLICABILITY_ACT,
         act_occurrence_identity=applicability_act.material[
             "applicability_act_occurrence_identity"
         ],
-        responsible_act_evidence_identity=applicability_act.identity,
+        act_occurrence_event_identity=applicability_act.identity,
         result_kind=shared_position.APPLICABILITY_RESULT_KIND,
         result_identity=applicability_material["result_identity"],
         result_content={
             coordinate: value
             for coordinate, value in applicability_material.items()
-            if coordinate != "responsible_act_evidence_identity"
+            if coordinate != "act_occurrence_identity"
         },
         responsibility=shared_position.RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_applicability",
@@ -150,7 +150,7 @@ def _record_shared_path(
         shared_position.SHARED_POSITION_APPLICABILITY_RESULT_KIND,
         shared_position._recorded_applicability_result_material(
             applicability_material,
-            evidence_of_yield_relation_identity=applicability_yield.identity,
+            yield_relation_identity=applicability_yield.identity,
         ),
         locality_identity=assignment.locality_identity,
     )
@@ -158,7 +158,7 @@ def _record_shared_path(
         ledger, standing, applicability_yield, applicability
     )
     measurement_act = ledger.append(
-        shared_position.SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+        shared_position.SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         shared_position._measurement_act_material(
             assignment=assignment,
             inputs=inputs,
@@ -176,20 +176,20 @@ def _record_shared_path(
         applicability=applicability,
         inputs=inputs,
     )
-    path_yield = _record_evidence_of_yield_relation(
+    path_yield = _record_yield_relation(
         ledger,
         locality_identity=assignment.locality_identity,
         exact_act=shared_position.MEASUREMENT_ACT,
         act_occurrence_identity=measurement_act.material[
             "act_occurrence_identity"
         ],
-        responsible_act_evidence_identity=measurement_act.identity,
+        act_occurrence_event_identity=measurement_act.identity,
         result_kind=shared_position.MEASUREMENT_RESULT_KIND,
         result_identity=result_material["result_identity"],
         result_content={
             coordinate: value
             for coordinate, value in result_material.items()
-            if coordinate != "responsible_act_evidence_identity"
+            if coordinate != "act_occurrence_identity"
         },
         responsibility=shared_position.RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_measurement",
@@ -199,7 +199,7 @@ def _record_shared_path(
         shared_position.SHARED_POSITION_MEASUREMENT_RESULT_KIND,
         shared_position._recorded_measurement_result_material(
             result_material,
-            evidence_of_yield_relation_identity=path_yield.identity,
+            yield_relation_identity=path_yield.identity,
         ),
         locality_identity=assignment.locality_identity,
     )

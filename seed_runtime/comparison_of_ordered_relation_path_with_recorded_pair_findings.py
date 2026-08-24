@@ -18,9 +18,9 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
@@ -33,14 +33,14 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND = (
     "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.responsibility_assignment_recorded"
 )
-COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND = (
-    "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.applicability_act_evidenced"
+COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
+    "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.applicability_act_occurrence_recorded"
 )
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND = (
     "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.applicability_recorded"
 )
-COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND = (
-    "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.compare_act_evidenced"
+COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT = (
+    "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.compare_act_occurrence_recorded"
 )
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND = "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.recorded"
 
@@ -70,9 +70,9 @@ COMPARE_RESULT_KIND = (
 
 EVENT_KIND_RESPONSIBILITIES = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND: "04.Compare.B",
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND: "04.Compare.B",
 }
 
@@ -100,9 +100,9 @@ class RecordedOrderedPathPairFindingCompareApplicability(NamedTuple):
     applicability_result_occurrences: tuple[Event, ...]
 
 
-class RecordedOrderedPathPairFindingCompareActEvidence(NamedTuple):
+class RecordedOrderedPathPairFindingCompareActOccurrence(NamedTuple):
     locality_standing: dict[str, Any]
-    compare_act_evidence_occurrences: tuple[Event, ...]
+    compare_act_occurrence_occurrences: tuple[Event, ...]
 
 
 class RecordedOrderedPathPairFindingCompareResults(NamedTuple):
@@ -160,11 +160,11 @@ def _result_reference(event: Event) -> dict[str, str]:
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -261,7 +261,7 @@ def _comparison_finding_references(
             )
         for position, entry in enumerate(entries):
             subject = entry.get("subject") if type(entry) is dict else None
-            pair = subject.get("representation") if type(subject) is dict else None
+            pair = subject.get("content") if type(subject) is dict else None
             if (
                 type(subject) is not dict
                 or type(subject.get("result")) is not str
@@ -325,7 +325,7 @@ def _path_relation_findings(
     return tuple(
         reference
         for reference in references
-        if tuple(reference["subject"]["representation"]) == pair
+        if tuple(reference["subject"]["content"]) == pair
     )
 
 
@@ -531,14 +531,14 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
     acts_by_assignment: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     ):
         act, assignment, _inputs_reading = _read_applicability_act(
             ledger, occurrence.identity
         )
         if assignment.identity in acts_by_assignment:
             raise ValueError(
-                "ordered-path Compare assignment carries repeated Applicability Evidence"
+                "ordered-path Compare assignment carries repeated Applicability Act occurrence"
             )
         acts_by_assignment[assignment.identity] = act
 
@@ -562,7 +562,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             continue
         act = acts_by_assignment.get(assignment.identity)
         if act is None:
-            act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+            act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
                 ledger,
                 responsibility_assignment_event_identity=assignment.identity,
                 locality_standing=standing,
@@ -576,7 +576,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             )
         result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
             ledger,
-            responsible_act_evidence_event_identity=act.identity,
+            act_occurrence_event_identity=act.identity,
         )
         results_by_assignment[assignment.identity] = result
         recorded.append(result)
@@ -584,7 +584,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             ledger,
             standing,
             (
-                result.material["evidence_of_yield_relation_identity"],
+                result.material["yield_relation_identity"],
                 result.identity,
             ),
             locality_identity=locality_identity,
@@ -596,10 +596,10 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
     )
 
 
-def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_current_standing(
+def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
     ledger: EventLedger, *, locality_identity: str
-) -> RecordedOrderedPathPairFindingCompareActEvidence:
-    """Record Compare Act Evidence and Participation for each applicable result."""
+) -> RecordedOrderedPathPairFindingCompareActOccurrence:
+    """Record Compare Act occurrence and Participation for each applicable result."""
 
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
@@ -629,14 +629,14 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
     acts_by_applicability: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     ):
         act, _assignment, applicability, _inputs_reading = _read_compare_act(
             ledger, occurrence.identity
         )
         if applicability.identity in acts_by_applicability:
             raise ValueError(
-                "ordered-path Compare Applicability carries repeated Compare Act Evidence"
+                "ordered-path Compare Applicability carries repeated Compare Act occurrence"
             )
         acts_by_applicability[applicability.identity] = act
 
@@ -650,7 +650,7 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
             continue
         if applicability.identity in acts_by_applicability:
             continue
-        act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+        act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
             applicability_result_event_identity=applicability.identity,
@@ -665,16 +665,16 @@ def record_applicable_ordered_path_pair_finding_compare_act_evidence_from_curren
             locality_identity=locality_identity,
         )
 
-    return RecordedOrderedPathPairFindingCompareActEvidence(
+    return RecordedOrderedPathPairFindingCompareActOccurrence(
         locality_standing=standing,
-        compare_act_evidence_occurrences=tuple(recorded),
+        compare_act_occurrence_occurrences=tuple(recorded),
     )
 
 
 def record_ordered_path_pair_finding_compare_results_from_current_standing(
     ledger: EventLedger, *, locality_identity: str
 ) -> RecordedOrderedPathPairFindingCompareResults:
-    """Record one Yield and result for each exact current Compare Act Evidence."""
+    """Record one Yield and result for each exact current Compare Act occurrence."""
 
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
@@ -686,7 +686,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
     acts = []
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     ):
         act, _assignment, _applicability, _inputs_reading = _read_compare_act(
             ledger, occurrence.identity
@@ -701,14 +701,14 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
         get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
             ledger, occurrence.identity
         )
-        act_identity = occurrence.material.get("responsible_act_evidence_identity")
+        act_identity = occurrence.material.get("act_occurrence_identity")
         if type(act_identity) is not str or not act_identity:
             raise ValueError(
-                "ordered-path Compare result carries no exact Act Evidence"
+                "ordered-path Compare result carries no exact Act occurrence"
             )
         if act_identity in results_by_act:
             raise ValueError(
-                "ordered-path Compare Act Evidence carries repeated results"
+                "ordered-path Compare Act occurrence carries repeated results"
             )
         results_by_act[act_identity] = occurrence
 
@@ -718,7 +718,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
             continue
         result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
             ledger,
-            responsible_act_evidence_event_identity=act.identity,
+            act_occurrence_event_identity=act.identity,
         )
         results_by_act[act.identity] = result
         recorded.append(result)
@@ -726,7 +726,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_standing(
             ledger,
             standing,
             (
-                result.material["evidence_of_yield_relation_identity"],
+                result.material["yield_relation_identity"],
                 result.identity,
             ),
             locality_identity=locality_identity,
@@ -1063,11 +1063,10 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "comparison_rule": COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "evidence_scope": "Evidence for this exact Applicability occurrence",
     }
 
 
-def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -1080,7 +1079,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     )
     _require_assignment_standing(assignment, locality_standing)
     return ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(assignment),
         locality_identity=assignment.locality_identity,
     )
@@ -1095,8 +1094,8 @@ def _read_applicability_act(
     event = _event(
         ledger,
         event_identity,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
-        message="comparison of ordered relation path with recorded pair findings requires exact Applicability Evidence",
+        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
+        message="comparison of ordered relation path with recorded pair findings requires exact Applicability Act occurrence",
     )
     reference = event.material.get("responsibility_assignment_reference")
     assignment_identity = (
@@ -1112,11 +1111,11 @@ def _read_applicability_act(
         or event.locality_identity != assignment.locality_identity
         or event.material != _applicability_act_material(assignment)
     ):
-        raise ValueError("comparison of ordered relation path with recorded pair findings Applicability Evidence is not exact")
+        raise ValueError("comparison of ordered relation path with recorded pair findings Applicability Act occurrence is not exact")
     return event, assignment, inputs
 
 
-def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     return deepcopy(_read_applicability_act(ledger, event_identity)[0].material)
@@ -1163,7 +1162,7 @@ def _applicability_result_material(
                 "applicability_result_identity"
             ],
         ),
-        "responsible_act_evidence_identity": act.identity,
+        "act_occurrence_event_identity": act.identity,
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
@@ -1176,7 +1175,7 @@ def _applicability_result_material(
 
 
 def _recorded_applicability_result_material(
-    result: dict[str, Any], *, evidence_identity: str
+    result: dict[str, Any], *, yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1195,8 +1194,8 @@ def _recorded_applicability_result_material(
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),
-        "responsible_act_evidence_identity": result[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": result[
+            "act_occurrence_event_identity"
         ],
         "applicability_of_input_to_compare": deepcopy(
             result["applicability_of_input_to_compare"]
@@ -1206,7 +1205,7 @@ def _recorded_applicability_result_material(
         "scope": deepcopy(result["scope"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -1216,10 +1215,10 @@ def _refuse_result(ledger: EventLedger, act: Event, result_kind: str) -> None:
         or act.material.get("act_occurrence_identity")
     )
     for occurrence in ledger.list_locality(act.locality_identity):
-        if occurrence.kind not in {result_kind, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND}:
+        if occurrence.kind not in {result_kind, RECORDED_YIELD_RELATION_EVENT}:
             continue
         if (
-            occurrence.material.get("responsible_act_evidence_identity") == act.identity
+            occurrence.material.get("act_occurrence_event_identity") == act.identity
             or occurrence.material.get("act_occurrence_identity") == act_occurrence
             or occurrence.material.get("applicability_act_occurrence_identity")
             == act_occurrence
@@ -1228,10 +1227,10 @@ def _refuse_result(ledger: EventLedger, act: Event, result_kind: str) -> None:
 
 
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
+    ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
     act, assignment, inputs = _read_applicability_act(
-        ledger, responsible_act_evidence_event_identity
+        ledger, act_occurrence_event_identity
     )
     result = _applicability_result_material(act, assignment, inputs)
     _refuse_result(
@@ -1239,20 +1238,20 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
         act,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     )
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=APPLICABILITY_ACT,
         act_occurrence_identity=act.material[
             "applicability_act_occurrence_identity"
         ],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=APPLICABILITY_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content={
             key: value
             for key, value in result.items()
-            if key != "responsible_act_evidence_identity"
+            if key != "act_occurrence_identity"
         },
         responsibility=RESPONSIBILITY,
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
@@ -1264,7 +1263,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
-            result, evidence_identity=evidence.identity
+            result, yield_relation_identity=yield_relation.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1282,30 +1281,30 @@ def _read_yielded(
     occurrence_coordinate: str = "act_occurrence_identity",
 ) -> Event:
     event = _event(ledger, event_identity, kind=kind, message="yielded result is absent")
-    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
+    yield_relation_identity = event.material.get("yield_relation_identity")
     carried = {
         key: value
         for key, value in event.material.items()
-        if key != "evidence_of_yield_relation_identity"
+        if key != "yield_relation_identity"
     }
-    evidence = ledger.get(evidence_identity) if type(evidence_identity) is str else None
+    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=evidence_identity,
-        responsible_act_evidence_event_identity=act.identity,
+        yield_relation_event_identity=yield_relation_identity,
+        act_occurrence_event_identity=act.identity,
         recorded_result_occurrence_coordinate=occurrence_coordinate,
         responsible_act_occurrence_coordinate=occurrence_coordinate,
     )
     if (
         event.locality_identity != act.locality_identity
         or carried != expected
-        or evidence is None
-        or evidence.material.get("occurrence_boundary") != occurrence_boundary
-        or evidence.material.get("result_kind") != result_name
+        or yield_relation is None
+        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
+        or yield_relation.material.get("result_kind") != result_name
         or not all(requirements.values())
     ):
-        raise ValueError("yielded result carries no exact Evidence of Yield relation")
+        raise ValueError("yielded result carries no exact Yield relation")
     return event
 
 
@@ -1317,7 +1316,7 @@ def _read_applicability_result(
 ) -> tuple[Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
-        candidate.material.get("responsible_act_evidence_identity")
+        candidate.material.get("act_occurrence_identity")
         if candidate is not None and type(candidate.material) is dict
         else None
     )
@@ -1410,11 +1409,10 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
         ],
         "comparison_rule": COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "evidence_scope": "Evidence for this exact Compare occurrence",
     }
 
 
-def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -1442,7 +1440,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_e
         raise ValueError("relation-path input is not applicable to Compare")
     _require_compare_standing(assignment, applicability, locality_standing)
     return ledger.append(
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
         _compare_act_material(assignment, applicability),
         locality_identity=assignment.locality_identity,
     )
@@ -1454,8 +1452,8 @@ def _read_compare_act(
     event = _event(
         ledger,
         event_identity,
-        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
-        message="comparison of ordered relation path with recorded pair findings requires exact Compare Evidence",
+        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
+        message="comparison of ordered relation path with recorded pair findings requires exact Compare Act occurrence",
     )
     reference = event.material.get("responsibility_assignment_reference")
     assignment_reading = _read_assignment(
@@ -1482,11 +1480,11 @@ def _read_compare_act(
         or event.locality_identity != assignment.locality_identity
         or event.material != _compare_act_material(assignment, applicability)
     ):
-        raise ValueError("comparison of ordered relation path with recorded pair findings Compare Evidence is not exact")
+        raise ValueError("comparison of ordered relation path with recorded pair findings Compare Act occurrence is not exact")
     return event, assignment, applicability, inputs
 
 
-def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     return deepcopy(_read_compare_act(ledger, event_identity)[0].material)
@@ -1523,12 +1521,12 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             inputs["comparison"]["reference"]
         ),
     }
-    canonical = json.dumps(
+    exact = json.dumps(
         {"subject": subject, "roles": roles}, separators=(",", ":")
     ).encode("utf-8")
     return {
         "identity": "ordered-relation-path-pair-finding-comparison:"
-        + hashlib.sha256(canonical).hexdigest(),
+        + hashlib.sha256(exact).hexdigest(),
         "subject": subject,
         "relation_findings": roles,
         "source_provenance": (
@@ -1575,12 +1573,12 @@ def _compare_result_material(
         "scope": deepcopy(assignment.material["scope"]),
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
-        "responsible_act_evidence_identity": act.identity,
+        "act_occurrence_event_identity": act.identity,
     }
 
 
 def _recorded_compare_result_material(
-    result: dict[str, Any], *, evidence_identity: str
+    result: dict[str, Any], *, yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1606,18 +1604,18 @@ def _recorded_compare_result_material(
         "scope": deepcopy(result["scope"]),
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
-        "responsible_act_evidence_identity": result[
-            "responsible_act_evidence_identity"
+        "act_occurrence_identity": result[
+            "act_occurrence_identity"
         ],
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
+    ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
     act, assignment, applicability, inputs = _read_compare_act(
-        ledger, responsible_act_evidence_event_identity
+        ledger, act_occurrence_event_identity
     )
     result = _compare_result_material(act, assignment, applicability, inputs)
     _refuse_result(
@@ -1625,18 +1623,18 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
         act,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     )
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=COMPARE_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=COMPARE_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content={
             key: value
             for key, value in result.items()
-            if key != "responsible_act_evidence_identity"
+            if key != "act_occurrence_identity"
         },
         responsibility=RESPONSIBILITY,
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
@@ -1645,7 +1643,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
         _recorded_compare_result_material(
-            result, evidence_identity=evidence.identity
+            result, yield_relation_identity=yield_relation.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1656,7 +1654,7 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
 ) -> dict[str, Any]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
-        candidate.material.get("responsible_act_evidence_identity")
+        candidate.material.get("act_occurrence_identity")
         if candidate is not None and type(candidate.material) is dict
         else None
     )
@@ -1855,7 +1853,7 @@ def recorded_distinction_pins_from_current_standing(
                     or type(reference.get("finding_position")) is not int
                     or reference["finding_position"] < 0
                     or type(reference.get("subject")) is not dict
-                    or reference["subject"].get("representation")
+                    or reference["subject"].get("content")
                     != pair_subject
                 ):
                     raise ValueError("recorded distinction pin reference is not exact")

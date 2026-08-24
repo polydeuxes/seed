@@ -8,14 +8,14 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,
+    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
     STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OperatorCheckpointError,
     get_recorded_standing_boundary_reference,
     get_standing_boundary_reference_responsibility_assignment,
     record_standing_boundary_reference_responsibility_assignment,
-    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_act_occurrence,
     record_standing_boundary_reference_result,
     request_operator_checkpoint,
 )
@@ -26,17 +26,14 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_representation import record_operator_representation
-from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 
-def _command(locality_identity: str, representation: dict) -> AddressedOperatorCommand:
+def _command(locality_identity: str, boundary_identity: str) -> AddressedOperatorCommand:
     return AddressedOperatorCommand(
         command_identity="fixture-command",
         locality_identity=locality_identity,
-        addressed_at_representation_event_identity=representation[
-            "representation_event_identity"
-        ],
+        addressed_at_standing_boundary_event_identity=boundary_identity,
         frame=OperatorCommandFrame(
             exact_bytes=b"/checkpoint\n",
             name=b"checkpoint",
@@ -49,18 +46,16 @@ def _context(ledger, locality_identity="source"):
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    representation = record_operator_representation(
+    boundary = record_witness_material_acquisition(
         ledger,
         locality_identity=locality_identity,
-        locality_standing=standing,
+        exact_bytes=b"checkpoint boundary",
+        source_boundary="checkpoint source boundary",
     )
-    standing = advance_operator_locality_standing(
-        ledger,
-        representation["recorded_occurrence_references"],
-        locality_identity=locality_identity,
-        prior=standing,
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
     )
-    return standing, representation, _command(locality_identity, representation)
+    return standing, boundary, _command(locality_identity, boundary.identity)
 
 
 def _assignment(ledger, standing, command):
@@ -75,7 +70,7 @@ def _act(ledger, assignment):
     standing = read_operator_locality_standing(
         ledger, locality_identity=assignment.locality_identity
     )
-    return record_standing_boundary_reference_responsible_act_evidence(
+    return record_standing_boundary_reference_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
@@ -84,12 +79,12 @@ def _act(ledger, assignment):
 
 def test_three_stages_record_one_exact_bounded_reference_without_movement():
     ledger = EventLedger()
-    standing, representation, command = _context(ledger)
+    standing, boundary, command = _context(ledger)
     assignment = _assignment(ledger, standing, command)
     after_assignment = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    act = record_standing_boundary_reference_responsible_act_evidence(
+    act = record_standing_boundary_reference_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=after_assignment,
@@ -98,22 +93,19 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
         ledger, locality_identity="source"
     )
     result = record_standing_boundary_reference_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
     recorded = get_recorded_standing_boundary_reference(ledger, result.identity)
 
     assert assignment.kind == (
         STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
     )
-    assert act.kind == STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND
+    assert act.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT
     assert result.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     assert {event.locality_identity for event in ledger.list()} == {"source"}
     assert recorded["source_reference"] == {
         "source_locality_identity": "source",
-        "addressed_representation_event_identity": representation[
-            "representation_event_identity"
-        ],
-        "standing_boundary_event_identity": None,
+        "standing_boundary_event_identity": boundary.identity,
     }
     assert len(
         {
@@ -126,22 +118,22 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
             assignment.material["scope"]["scope_identity"],
             act.identity,
             result.identity,
-            result.material["evidence_of_yield_relation_identity"],
+            result.material["yield_relation_identity"],
         }
     ) == 10
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=act.identity,
+        yield_relation_event_identity=result.material["yield_relation_identity"],
+        act_occurrence_event_identity=act.identity,
     ) == {
         "exact_relation": True,
         "occurrence_witness": True,
-        "intact_evidence": True,
+        "intact_occurrence": True,
     }
     carried = advance_operator_locality_standing(
         ledger,
-        (result.material["evidence_of_yield_relation_identity"], result.identity),
+        (result.material["yield_relation_identity"], result.identity),
         locality_identity="source",
         prior=before_result,
     )
@@ -170,12 +162,10 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
         if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     recorded = get_recorded_standing_boundary_reference(ledger, result.identity)
-    representation = ledger.get(
-        recorded["source_reference"]["addressed_representation_event_identity"]
+    boundary = ledger.get(
+        recorded["source_reference"]["standing_boundary_event_identity"]
     )
-    assert recorded["source_reference"][
-        "standing_boundary_event_identity"
-    ] == representation.material["locality_standing_through_event_occurrence_identity"]
+    assert boundary is not None
     assert read_operator_locality_standing(
         ledger, locality_identity="source"
     )["recorded_standing_boundary_references"] == {result.identity: None}
@@ -186,7 +176,7 @@ def test_checkpoint_operator_shorthand_refuses_payload(exact):
     command = AddressedOperatorCommand(
         command_identity="command",
         locality_identity="source",
-        addressed_at_representation_event_identity="representation",
+        addressed_at_standing_boundary_event_identity="boundary",
         frame=OperatorCommandFrame(
             exact_bytes=exact,
             name=b"checkpoint",
@@ -199,10 +189,10 @@ def test_checkpoint_operator_shorthand_refuses_payload(exact):
 
 def test_recorded_reference_does_not_drift_when_the_source_advances():
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     result = record_standing_boundary_reference_result(
         ledger,
-        responsible_act_evidence_event_identity=_act(
+        act_occurrence_event_identity=_act(
             ledger, _assignment(ledger, standing, command)
         ).identity,
     )
@@ -218,10 +208,10 @@ def test_recorded_reference_does_not_drift_when_the_source_advances():
 
 def test_act_requires_the_exact_carried_assignment():
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     assignment = _assignment(ledger, standing, command)
     with pytest.raises(OperatorCheckpointError, match="carried assignment"):
-        record_standing_boundary_reference_responsible_act_evidence(
+        record_standing_boundary_reference_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
             responsibility_assignment_standing=standing,
@@ -230,14 +220,14 @@ def test_act_requires_the_exact_carried_assignment():
 
 def test_one_recording_act_cannot_yield_twice():
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     act = _act(ledger, _assignment(ledger, standing, command))
     record_standing_boundary_reference_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
     with pytest.raises(OperatorCheckpointError, match="already carries a Yield"):
         record_standing_boundary_reference_result(
-            ledger, responsible_act_evidence_event_identity=act.identity
+            ledger, act_occurrence_event_identity=act.identity
         )
 
 
@@ -258,7 +248,7 @@ def test_one_recording_act_cannot_yield_twice():
 )
 def test_changed_assignment_coordinates_are_refused(coordinate):
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     assignment = _assignment(ledger, standing, command)
     changed = ledger.get(assignment.identity)
     if coordinate in {
@@ -280,14 +270,14 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
 def test_assignment_and_act_survive_restart_before_result(tmp_path):
     path = tmp_path / "checkpoint.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     assignment = _assignment(ledger, standing, command)
     act = _act(ledger, assignment)
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
     result = record_standing_boundary_reference_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
     replayed = read_operator_locality_standing(
         ledger, locality_identity="source"
@@ -300,10 +290,10 @@ def test_assignment_and_act_survive_restart_before_result(tmp_path):
 
 def test_durable_values_do_not_import_operator_shorthand():
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     result = record_standing_boundary_reference_result(
         ledger,
-        responsible_act_evidence_event_identity=_act(
+        act_occurrence_event_identity=_act(
             ledger, _assignment(ledger, standing, command)
         ).identity,
     )
@@ -313,8 +303,8 @@ def test_durable_values_do_not_import_operator_shorthand():
             for event in ledger.list()
             if event.identity in {
                 result.identity,
-                result.material["responsible_act_evidence_identity"],
-                result.material["evidence_of_yield_relation_identity"],
+                result.material["act_occurrence_identity"],
+                result.material["yield_relation_identity"],
             }
             or "standing_boundary_reference" in event.kind
         ]
@@ -326,10 +316,10 @@ def test_durable_values_do_not_import_operator_shorthand():
 
 def test_prior_record_carrier_must_remain_an_identity_dictionary():
     ledger = EventLedger()
-    standing, _representation, command = _context(ledger)
+    standing, _boundary, command = _context(ledger)
     result = record_standing_boundary_reference_result(
         ledger,
-        responsible_act_evidence_event_identity=_act(
+        act_occurrence_event_identity=_act(
             ledger, _assignment(ledger, standing, command)
         ).identity,
     )

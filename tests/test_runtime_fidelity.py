@@ -1073,14 +1073,14 @@ def test_witness_grammar_declares_the_exact_relations():
     }
 
 
-def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
+def test_every_recorded_yield_result_names_its_occurrence_and_exact_occurrence():
     required = {
-        "responsible_act_evidence_identity",
-        "evidence_of_yield_relation_identity",
+        "act_occurrence_identity",
+        "yield_relation_identity",
     }
     incomplete = []
     for path, line, _name, value, keys in _event_materials():
-        if "evidence_of_yield_relation_identity" not in keys:
+        if "yield_relation_identity" not in keys:
             continue
         occurrence_identities = {
             key
@@ -1097,60 +1097,6 @@ def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
         f"{path}:{line} {kind} lacks {missing}"
         for path, line, kind, missing in incomplete
     )
-
-
-def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope():
-    required = {
-        "responsibility",
-        "responsible_boundary",
-        "evidence_scope",
-    }
-    incomplete = []
-    for path, line, name, value, keys in _event_materials():
-        if not (name.endswith("ACT_EVIDENCE_KIND") or value.endswith("act_evidenced")):
-            continue
-        act_identities = {
-            key for key in keys if key == "addressed_act_identity" or key.endswith("_act_identity")
-        }
-        occurrence_identities = {
-            key
-            for key in keys
-            if key == "act_occurrence_identity" or key.endswith("_act_occurrence_identity")
-        }
-        missing = sorted(required - keys)
-        if not act_identities:
-            missing.append("exact Act identity")
-        if not occurrence_identities:
-            missing.append("exact Act occurrence identity")
-        if missing:
-            incomplete.append((path.name, line, value, missing))
-
-    assert incomplete == [], "\n" + "\n".join(
-        f"{path}:{line} {kind} lacks {missing}"
-        for path, line, kind, missing in incomplete
-    )
-
-
-def test_recorded_representation_declares_each_exact_evidence_pointer():
-    required = {
-        "result_identity",
-        "representation_act_identity",
-        "act_occurrence_identity",
-        "responsible_act_evidence_identity",
-        "locality_evidence_identity",
-        "evidence_of_yield_relation_identity",
-    }
-    records = [
-        (path.name, line, keys)
-        for path, line, _name, value, keys in _event_materials()
-        if value == "operator.representation.recorded"
-    ]
-    assert records
-    assert [
-        (path, line, sorted(required - keys))
-        for path, line, keys in records
-        if required - keys
-    ] == []
 
 
 def _standing_values(node) -> list[str]:
@@ -1227,18 +1173,9 @@ def test_command_handler_receives_no_constitutional_write_capability():
     assert names == {
         "command_identity",
         "locality_identity",
-        "addressed_at_representation_event_identity",
+        "addressed_at_standing_boundary_event_identity",
         "frame",
     }
-
-
-def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
-    wording = inspect.getdoc(
-        record_standing_boundary_reference_responsibility_assignment
-    ) or ""
-
-    assert "exact addressed Representation" in wording
-    assert "exact addressed emission" not in wording
 
 
 PYTEST_ADMISSION = (
@@ -1264,10 +1201,7 @@ PYTEST_ADMISSION = (
     test_every_declared_event_occurrence_carries_its_material_to_the_sirens,
     test_every_relation_occurrence_carries_its_exact_relation_position,
     test_witness_grammar_declares_the_exact_relations,
-    test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence,
-    test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope,
-    test_recorded_representation_declares_each_exact_evidence_pointer,
+    test_every_recorded_yield_result_names_its_occurrence_and_exact_occurrence,
     test_every_event_standing_claim_has_a_declared_grammar_responsibility,
     test_command_handler_receives_no_constitutional_write_capability,
-    test_checkpoint_names_the_representation_it_addresses_not_an_emission,
 )

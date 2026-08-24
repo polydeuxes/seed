@@ -46,12 +46,12 @@ def main() -> int:
 
     ledger = EventLedger()
     result = _record(ledger)
-    act_evidence = ledger.get(result.material["responsible_act_evidence_identity"])
-    before = ledger.integrity_of(act_evidence.identity)
-    material = deepcopy(act_evidence.material)
+    act_occurrence = ledger.get(result.material["act_occurrence_identity"])
+    before = ledger.integrity_of(act_occurrence.identity)
+    material = deepcopy(act_occurrence.material)
     material["authority"] = "substituted"
-    object.__setattr__(act_evidence, "material", material)
-    after = ledger.integrity_of(act_evidence.identity)
+    object.__setattr__(act_occurrence, "material", material)
+    after = ledger.integrity_of(act_occurrence.identity)
 
     print("  in-memory ledger")
     print(f"    integrity before a change: {before}")
@@ -59,7 +59,7 @@ def main() -> int:
     print(f"    reports corrupted:         {after == CORRUPTED}")
     print(
         f"    the reader returns the stored occurrence itself: "
-        f"{ledger.get(act_evidence.identity) is act_evidence}"
+        f"{ledger.get(act_occurrence.identity) is act_occurrence}"
     )
     print(
         "\n    A predicate asking whether an occurrence is not corrupted passes\n"
@@ -75,7 +75,7 @@ def main() -> int:
         database = str(Path(directory) / "boundary.sqlite")
         durable = SQLiteEventLedger(database)
         result = _record(durable)
-        identity = result.material["responsible_act_evidence_identity"]
+        identity = result.material["act_occurrence_identity"]
         stored = durable.get(identity)
         print("\n  durable ledger")
         print(f"    integrity of a recorded occurrence: {durable.integrity_of(identity)}")

@@ -9,9 +9,9 @@ from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
@@ -104,11 +104,11 @@ def _result_reference(event: Event) -> dict[str, str]:
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -242,9 +242,6 @@ def _applicability_act_material(
         "second_source_position_coordinate": deepcopy(inputs["second"]),
         "standing_boundary_identity": boundary,
         "act_identity": identities["applicability_act_identity"],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": identities["compare_act_identity"],
         "addressed_act_occurrence_identity": identities[
@@ -408,7 +405,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         ),
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsible_act_evidence_identity": act.identity,
+        "act_occurrence_event_identity": act.identity,
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
@@ -425,13 +422,13 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
 
 
 def _recorded_result_material(
-    material: dict[str, Any], evidence_identity: str
+    material: dict[str, Any], yield_relation_identity: str
 ) -> dict[str, Any]:
-    return {**deepcopy(material), "evidence_of_yield_relation_identity": evidence_identity}
+    return {**deepcopy(material), "yield_relation_identity": yield_relation_identity}
 
 
 def _recorded_applicability_result_material(
-    material: dict[str, Any], evidence_identity: str
+    material: dict[str, Any], yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -464,8 +461,8 @@ def _recorded_applicability_result_material(
         ),
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
-        "responsible_act_evidence_identity": material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": material[
+            "act_occurrence_event_identity"
         ],
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
@@ -479,12 +476,12 @@ def _recorded_applicability_result_material(
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
 def _recorded_compare_result_material(
-    material: dict[str, Any], evidence_identity: str
+    material: dict[str, Any], yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -510,10 +507,10 @@ def _recorded_compare_result_material(
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
-        "responsible_act_evidence_identity": material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_identity": material[
+            "act_occurrence_identity"
         ],
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -531,22 +528,22 @@ def _read_yielded(
     event = _event(
         ledger, event_identity, event_kind=event_kind, message="result is not exact"
     )
-    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
-    evidence = ledger.get(evidence_identity) if type(evidence_identity) is str else None
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=evidence_identity,
-        responsible_act_evidence_event_identity=act.identity,
+        yield_relation_event_identity=yield_relation_identity,
+        act_occurrence_event_identity=act.identity,
         recorded_result_occurrence_coordinate=occurrence_coordinate,
         responsible_act_occurrence_coordinate=occurrence_coordinate,
     )
     if (
         event.locality_identity != act.locality_identity
-        or event.material != _recorded_result_material(expected, evidence_identity)
-        or evidence is None
-        or evidence.material.get("occurrence_boundary") != occurrence_boundary
-        or evidence.material.get("result_kind") != result_kind
+        or event.material != _recorded_result_material(expected, yield_relation_identity)
+        or yield_relation is None
+        or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
+        or yield_relation.material.get("result_kind") != result_kind
         or not all(requirements.values())
     ):
         raise ValueError("result carries no exact Yield relation")
@@ -563,7 +560,7 @@ def _read_applicability_result(
     if act_reading is None:
         act_reading = _read_applicability_act(
             ledger,
-            candidate.material.get("responsible_act_evidence_identity")
+            candidate.material.get("act_occurrence_identity")
             if candidate is not None
             else None,
         )
@@ -676,14 +673,14 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "first_source_position_coordinate": deepcopy(first),
         "second_source_position_coordinate": deepcopy(second),
     }
-    canonical = json.dumps(
+    exact = json.dumps(
         {"subject": subject, "result": result},
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
     return {
         "identity": "ordered-path-source-position-material:"
-        + hashlib.sha256(canonical).hexdigest(),
+        + hashlib.sha256(exact).hexdigest(),
         "subject": subject,
         "result": result,
         "source_provenance": "exact ordered relation path source coordinates",
@@ -725,7 +722,7 @@ def _compare_result_material(
         "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
-        "responsible_act_evidence_identity": act.identity,
+        "act_occurrence_event_identity": act.identity,
     }
 
 
@@ -735,7 +732,7 @@ def _read_compare_result(
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act, applicability, inputs = _read_compare_act(
         ledger,
-        candidate.material.get("responsible_act_evidence_identity")
+        candidate.material.get("act_occurrence_identity")
         if candidate is not None
         else None,
     )
@@ -791,18 +788,18 @@ def _yield_result(
     occurrence_boundary: str,
     occurrence_coordinate: str,
 ) -> Event:
-    return _record_evidence_of_yield_relation(
+    return _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=exact_act,
         act_occurrence_identity=act.material[occurrence_coordinate],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=result_kind,
         result_identity=result_identity,
         result_content={
             key: value
             for key, value in result_content.items()
-            if key != "responsible_act_evidence_identity"
+            if key != "act_occurrence_identity"
         },
         responsibility=RESPONSIBILITY,
         occurrence_boundary=occurrence_boundary,

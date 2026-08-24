@@ -13,15 +13,15 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_invocation_locality import (
-    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OperatorInvocationLocalityError,
-    get_operator_invocation_locality_act_evidence,
+    get_operator_invocation_locality_act_occurrence,
     get_operator_invocation_locality_responsibility_assignment,
     get_recorded_operator_invocation_locality,
     operator_invocation_locality_occurrence_references,
-    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_act_occurrence,
     record_operator_invocation_locality_responsibility_assignment,
     record_operator_invocation_locality_result,
 )
@@ -47,7 +47,7 @@ def _relation(ledger, command):
             ledger, locality_identity=command.locality_identity
         ),
     )
-    act = record_operator_invocation_locality_act_evidence(
+    act = record_operator_invocation_locality_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -56,7 +56,7 @@ def _relation(ledger, command):
     )
     result = record_operator_invocation_locality_result(
         ledger,
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
     return assignment, act, result
 
@@ -73,7 +73,7 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
     assert assignment.locality_identity == recorded[
         "destination_locality_identity"
     ]
-    assert act.kind == OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND
+    assert act.kind == OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     assert act.locality_identity == result.locality_identity
     assert act.locality_identity == assignment.locality_identity
@@ -94,7 +94,7 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
         ledger, result.identity
     ) == (
         act.identity,
-        result.material["evidence_of_yield_relation_identity"],
+        result.material["yield_relation_identity"],
         result.identity,
     )
 
@@ -215,7 +215,7 @@ def test_one_invocation_locality_act_cannot_yield_twice():
             ledger, locality_identity="operator"
         ),
     )
-    act = record_operator_invocation_locality_act_evidence(
+    act = record_operator_invocation_locality_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -223,11 +223,11 @@ def test_one_invocation_locality_act_cannot_yield_twice():
         ),
     )
     record_operator_invocation_locality_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
     with pytest.raises(OperatorInvocationLocalityError, match="already carries a Yield"):
         record_operator_invocation_locality_result(
-            ledger, responsible_act_evidence_event_identity=act.identity
+            ledger, act_occurrence_event_identity=act.identity
         )
 
 
@@ -244,7 +244,7 @@ def test_corrupted_assignment_act_and_result_are_refused_independently():
                 get_operator_invocation_locality_responsibility_assignment,
                 assignment.identity,
             ),
-            "act": (get_operator_invocation_locality_act_evidence, act.identity),
+            "act": (get_operator_invocation_locality_act_occurrence, act.identity),
             "result": (get_recorded_operator_invocation_locality, result.identity),
         }[coordinate]
         with pytest.raises(OperatorInvocationLocalityError):
@@ -273,7 +273,7 @@ def test_invocation_locality_act_requires_assignment_standing_in_destination():
         destination_standing_without_assignment,
     ):
         with pytest.raises(OperatorInvocationLocalityError, match="carried assignment"):
-            record_operator_invocation_locality_act_evidence(
+            record_operator_invocation_locality_act_occurrence(
                 ledger,
                 responsibility_assignment_event_identity=assignment.identity,
                 responsibility_assignment_standing=standing,
@@ -290,7 +290,7 @@ def test_carried_witness_standing_equals_full_replay():
         (
             _assignment.identity,
             act.identity,
-            relation.material["evidence_of_yield_relation_identity"],
+            relation.material["yield_relation_identity"],
             relation.identity,
         ),
         locality_identity=locality,

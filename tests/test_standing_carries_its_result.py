@@ -5,8 +5,8 @@ Current Standing recorded only that a result occurrence was admitted.  The
 Responsibility that yielded it, its exact subject, and the Book clause
 governing it were all resolved at the admission gate and
 then discarded.  These witness that the ownership already carried by the
-responsible Act evidence is preserved beside the result instead, and that a
-result whose Act evidence records no such reference keeps no composed owner.
+responsible Act occurrence is preserved beside the result instead, and that a
+result whose Act occurrence records no such reference keeps no composed owner.
 """
 
 from __future__ import annotations
@@ -29,12 +29,10 @@ from seed_runtime.witness_material_acquisition import (
 from seed_runtime.operator_material_acquisition import (
     OperatorMaterialAcquireError,
     record_operator_material_acquire_responsibility_assignment,
-    record_operator_material_acquire_responsible_act_evidence,
+    record_operator_material_acquire_act_occurrence,
     record_operator_material_acquire_result,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-from seed_runtime.operator_representation import record_operator_representation
-
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
@@ -66,11 +64,11 @@ def test_the_admitted_result_carries_its_exact_Responsibility_ownership():
     result = _acquired(ledger)
 
     carried = _ownership(ledger, "probe", result.identity)
-    act_evidence = ledger.get(
-        result.material["responsible_act_evidence_identity"]
+    act_occurrence = ledger.get(
+        result.material["act_occurrence_event_identity"]
     )
 
-    assert carried == act_evidence.material["responsibility_assignment_reference"]
+    assert carried == act_occurrence.material["responsibility_assignment_reference"]
     assert REQUIRED <= set(carried)
 
 
@@ -126,7 +124,7 @@ def test_a_complete_replay_produces_the_same_ownership():
     assert replayed["exact_result_occurrences"][result.identity] is not None
 
 
-def test_the_ownership_survives_a_sqlite_close_and_reopen(tmp_path):
+def test_the_ownership_is_recovered_after_a_sqlite_close_and_reopen(tmp_path):
     database = tmp_path / "standing-carries-result.sqlite"
     ledger = SQLiteEventLedger(str(database))
     try:
@@ -147,16 +145,16 @@ def test_the_ownership_survives_a_sqlite_close_and_reopen(tmp_path):
 
 @pytest.mark.parametrize("coordinate", sorted(REQUIRED))
 def test_a_substituted_ownership_coordinate_is_refused(coordinate):
-    """Substitution is refused where the Act evidence is read, not preserved.
+    """Substitution is refused where the Act occurrence is read, not preserved.
 
-    The ownership is never repaired into Standing: the responsible Act evidence
+    The ownership is never repaired into Standing: the responsible Act occurrence
     stops being exact, so the Standing read refuses before any coordinate is
     carried beside the result.
     """
 
     ledger = EventLedger()
     result = _acquired(ledger)
-    stored = ledger.get(result.material["responsible_act_evidence_identity"])
+    stored = ledger.get(result.material["act_occurrence_event_identity"])
 
     mutated = deepcopy(stored.material)
     mutated["responsibility_assignment_reference"][coordinate] = "substituted"
@@ -166,7 +164,7 @@ def test_a_substituted_ownership_coordinate_is_refused(coordinate):
         _ownership(ledger, "probe", result.identity)
 
 
-def test_a_result_whose_evidence_records_no_reference_has_no_A1_coordinate():
+def test_a_result_whose_act_occurrence_records_no_reference_has_no_A1_coordinate():
     """Absence of an owner is no positive A.1 coordinate, never ``None``."""
 
     ledger = EventLedger()
@@ -197,32 +195,18 @@ def test_live_incremental_carry_and_complete_replay_agree():
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
-    representation = record_operator_representation(
-        ledger, locality_identity=locality, locality_standing=standing
-    )
-    standing = advance_operator_locality_standing(
-        ledger,
-        representation["recorded_occurrence_references"],
-        locality_identity=locality,
-        prior=standing,
-    )
     assignment = record_operator_material_acquire_responsibility_assignment(
         ledger,
         locality_identity=locality,
-        addressed_representation_event_identity=representation[
-            "representation_event_identity"
-        ],
         locality_standing=standing,
     )
     standing = _carry_operator_material_acquisition_occurrence_into_standing(
         ledger,
         standing,
         assignment,
-        prior_through_event_occurrence_identity=representation[
-            "representation_event_identity"
-        ],
+        prior_through_event_occurrence_identity=None,
     )
-    act_evidence = record_operator_material_acquire_responsible_act_evidence(
+    act_occurrence = record_operator_material_acquire_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -232,12 +216,12 @@ def test_live_incremental_carry_and_complete_replay_agree():
     standing = _carry_operator_material_acquisition_occurrence_into_standing(
         ledger,
         standing,
-        act_evidence,
+        act_occurrence,
         prior_through_event_occurrence_identity=assignment.identity,
     )
     result = record_operator_material_acquire_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
         boundary_material=OperatorBoundaryMaterial(
             exact_bytes=b"incremental",
             eof=False,
@@ -249,7 +233,7 @@ def test_live_incremental_carry_and_complete_replay_agree():
         ledger,
         standing,
         result,
-        prior_through_event_occurrence_identity=act_evidence.identity,
+        prior_through_event_occurrence_identity=act_occurrence.identity,
     )
 
     replayed = read_operator_locality_standing(
@@ -261,7 +245,7 @@ def test_live_incremental_carry_and_complete_replay_agree():
         == replayed["exact_result_occurrences"]
     )
     assert carried["exact_result_occurrences"][result.identity] == (
-        act_evidence.material["responsibility_assignment_reference"]
+        act_occurrence.material["responsibility_assignment_reference"]
     )
 
 
@@ -269,8 +253,8 @@ def _ownership_of(ledger: EventLedger, result):
     return _responsibility_ownership_of_exact_result(ledger, result)
 
 
-def _mutate_act_evidence(ledger: EventLedger, result, change):
-    stored = ledger.get(result.material["responsible_act_evidence_identity"])
+def _mutate_act_occurrence(ledger: EventLedger, result, change):
+    stored = ledger.get(result.material["act_occurrence_event_identity"])
     material = deepcopy(stored.material)
     change(material)
     object.__setattr__(stored, "material", material)
@@ -282,7 +266,7 @@ def test_ownership_present_but_incomplete_is_refused_not_read_as_absent():
 
     ledger = EventLedger()
     result = _acquired(ledger)
-    _mutate_act_evidence(
+    _mutate_act_occurrence(
         ledger,
         result,
         lambda material: material["responsibility_assignment_reference"].pop(
@@ -297,7 +281,7 @@ def test_ownership_present_but_incomplete_is_refused_not_read_as_absent():
 def test_ownership_that_is_not_a_coordinate_mapping_is_refused():
     ledger = EventLedger()
     result = _acquired(ledger)
-    _mutate_act_evidence(
+    _mutate_act_occurrence(
         ledger,
         result,
         lambda material: material.__setitem__(
@@ -312,7 +296,7 @@ def test_ownership_that_is_not_a_coordinate_mapping_is_refused():
 def test_ownership_naming_an_absent_assignment_is_refused():
     ledger = EventLedger()
     result = _acquired(ledger)
-    _mutate_act_evidence(
+    _mutate_act_occurrence(
         ledger,
         result,
         lambda material: material["responsibility_assignment_reference"].__setitem__(
@@ -342,7 +326,7 @@ def test_ownership_disagreeing_with_its_assignment_is_refused(coordinate):
 
     ledger = EventLedger()
     result = _acquired(ledger)
-    _mutate_act_evidence(
+    _mutate_act_occurrence(
         ledger,
         result,
         lambda material: material["responsibility_assignment_reference"].__setitem__(
@@ -359,7 +343,7 @@ def test_a_result_with_no_recorded_reference_is_still_no_owner_not_a_refusal():
 
     ledger = EventLedger()
     result = _acquired(ledger)
-    _mutate_act_evidence(
+    _mutate_act_occurrence(
         ledger,
         result,
         lambda material: material.pop("responsibility_assignment_reference"),
@@ -387,9 +371,9 @@ PYTEST_ADMISSION = (
     test_the_carried_ownership_answers_subject_and_clause_directly,
     test_one_Responsibility_carries_each_admitted_result,
     test_a_complete_replay_produces_the_same_ownership,
-    test_the_ownership_survives_a_sqlite_close_and_reopen,
+    test_the_ownership_is_recovered_after_a_sqlite_close_and_reopen,
     test_a_substituted_ownership_coordinate_is_refused,
-    test_a_result_whose_evidence_records_no_reference_has_no_A1_coordinate,
+    test_a_result_whose_act_occurrence_records_no_reference_has_no_A1_coordinate,
     test_live_incremental_carry_and_complete_replay_agree,
     test_ownership_present_but_incomplete_is_refused_not_read_as_absent,
     test_ownership_that_is_not_a_coordinate_mapping_is_refused,

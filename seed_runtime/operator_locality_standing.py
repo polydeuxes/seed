@@ -19,15 +19,15 @@ from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITI
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RESULT_KIND,
     BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
     RecordedAssertionCarriedByLocalityMovement,
@@ -42,13 +42,13 @@ from seed_runtime.byte_measurement import (
     _source_assertion_reference,
     _findings_of_recorded_byte_position_pair_measurement,
     _read_assertion_locality_movement_responsibility_assignment,
-    _read_assertion_locality_movement_act_evidence,
+    _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_assignment_and_source,
     _read_byte_measurement_responsibility_assignment,
     _read_pair_measurement_responsibility_assignment,
-    _read_pair_applicability_act_evidence,
+    _read_pair_applicability_act_occurrence,
     _read_recorded_pair_input_applicability,
-    _read_pair_measurement_act_evidence,
+    _read_pair_measurement_act_occurrence,
     _require_exact_pair_measurement_assignment_event,
     _require_exact_pair_applicability_act_event,
     _require_exact_pair_applicability_result_event,
@@ -61,7 +61,7 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
-    OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -71,31 +71,31 @@ from seed_runtime.occurrence_position_measurement import (
     get_occurrence_position_measurement_responsibility_assignment,
     get_recorded_occurrence_position_measurement,
 )
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
     _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
-    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _require_carried_byte_pair_occurrence_position_assignment,
     get_byte_pair_occurrence_position_measurement_responsibility_assignment,
-    get_byte_pair_occurrence_position_measurement_act_evidence,
+    get_byte_pair_occurrence_position_measurement_act_occurrence,
     get_recorded_byte_pair_occurrence_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
-    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     _read_assignment as _read_shared_position_assignment,
     _read_applicability_act as _read_shared_position_applicability_act,
@@ -108,9 +108,9 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 )
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     RESPONSIBILITY_ASSIGNMENT_KIND as ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND,
-    APPLICABILITY_ACT_EVIDENCE_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    APPLICABILITY_ACT_OCCURRENCE_EVENT as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     APPLICABILITY_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
-    DETERMINATION_ACT_EVIDENCE_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND,
+    DETERMINATION_ACT_OCCURRENCE_EVENT as ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
     _read_assignment as _read_addressed_byte_reference_assignment,
     _read_applicability_act as _read_addressed_byte_reference_applicability_act,
@@ -120,69 +120,49 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _determination_result_reference as _addressed_byte_reference_determination_coordinates,
 )
 from seed_runtime.operator_standing_continuation import (
-    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     get_recorded_standing_locality_continuation,
     get_standing_locality_continuation_responsibility_assignment,
 )
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,
+    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
     STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     get_recorded_standing_boundary_reference,
-    get_standing_boundary_reference_act_evidence,
+    get_standing_boundary_reference_act_occurrence,
     get_standing_boundary_reference_responsibility_assignment,
 )
 from seed_runtime.standing_boundary_locality import (
-    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
     RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     get_recorded_standing_boundary_locality,
-    get_recorded_standing_boundary_locality_act_evidence,
+    get_recorded_standing_boundary_locality_act_occurrence,
     get_recorded_standing_boundary_locality_responsibility_assignment,
 )
 from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    get_operator_material_acquire_act_evidence,
+    get_operator_material_acquire_act_occurrence,
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     get_operator_invocation_locality_responsibility_assignment,
-    get_operator_invocation_locality_act_evidence,
+    get_operator_invocation_locality_act_occurrence,
     get_recorded_operator_invocation_locality,
-)
-from seed_runtime.operator_representation_admission import (
-    REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
-    REPRESENTATION_CANDIDATE_RECORDED_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
-    get_representation_candidate_responsibility_assignment,
-    get_representation_candidate_act_evidence,
-    get_recorded_representation_candidate,
-    get_exact_material_representation_admission_responsibility_assignment,
-    get_exact_material_representation_admission_act_evidence,
-    get_recorded_exact_material_representation_admission,
-)
-from seed_runtime.operator_representation_applicability import (
-    REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND,
-    get_representation_emission_applicability_act_evidence,
-    get_recorded_representation_emission_applicability,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND,
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     _assignment_reading as _recorded_pair_comparison_assignment_reading,
@@ -193,14 +173,14 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
@@ -233,18 +213,6 @@ from seed_runtime.source_position_recurrence import (
 )
 # The writer declares the storage-routing values. A reader declaring another
 # copy would create a second contract free to drift from the first.
-from seed_runtime.operator_representation import (
-    REPRESENTATION_RECORDED_KIND as _REPRESENTATION_RECORDED_KIND,
-    REPRESENTATION_ACT_EVIDENCE_KIND as _REPRESENTATION_ACT_EVIDENCE_KIND,
-    REPRESENTATION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_ATTEMPT_KIND as _REPRESENTATION_EMISSION_ATTEMPT_KIND,
-    REPRESENTATION_EMITTED_KIND as _REPRESENTATION_EMITTED_KIND,
-    REPRESENTATION_BOUNDARY_FAILURE_KIND as _REPRESENTATION_BOUNDARY_FAILURE_KIND,
-    REPRESENTATION_BOUNDARY_FAILURE_ACT_EVIDENCE_KIND as _REPRESENTATION_BOUNDARY_FAILURE_ACT_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
-)
 
 
 _OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
@@ -433,11 +401,11 @@ def _operator_standing_validation_context(
 _SUBJECT_BY_KIND = {
     WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND: "material_acquisition_result_occurrence",
 }
-_MEASUREMENT_ACT_EVIDENCE_KINDS = {
-    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
-    OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
-    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    BYTE_PAIR_OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+_MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+    OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
+    RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
+    BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
 }
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -457,79 +425,67 @@ _MEASUREMENT_RECORDED_KINDS = {
 }
 _ASSERTION_LOCALITY_MOVEMENT_KINDS = {
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
 }
 _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
     BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
 }
 _STANDING_BOUNDARY_REFERENCE_KINDS = {
     STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,
+    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
 }
 _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
 }
 _OPERATOR_MATERIAL_ACQUIRE_KINDS = {
     OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 }
 _OPERATOR_INVOCATION_LOCALITY_KINDS = {
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-}
-_REPRESENTATION_CANDIDATE_ADMISSION_KINDS = {
-    REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
-    REPRESENTATION_CANDIDATE_RECORDED_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
-    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
-}
-_REPRESENTATION_EMISSION_APPLICABILITY_KINDS = {
-    REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND,
 }
 _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND,
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 }
 _SHARED_POSITION_MEASUREMENT_KINDS = {
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
-    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 }
 _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
     ADDRESSED_BYTE_REFERENCE_RESPONSIBILITY_ASSIGNMENT_KIND,
-    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND,
+    ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
-    ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND,
+    ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
 }
 _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
-    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 }
 _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS = {
@@ -560,7 +516,7 @@ _SOURCE_POSITION_RECURRENCE_KINDS = {
 }
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
-    *_MEASUREMENT_ACT_EVIDENCE_KINDS,
+    *_MEASUREMENT_ACT_OCCURRENCE_EVENTS,
     *_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
     *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
@@ -570,24 +526,12 @@ _SUPPORTED_KINDS = {
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
     *_OPERATOR_INVOCATION_LOCALITY_KINDS,
-    *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
-    *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
-    _REPRESENTATION_RECORDED_KIND,
-    _REPRESENTATION_ACT_EVIDENCE_KIND,
-    _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_ATTEMPT_KIND,
-    _REPRESENTATION_EMITTED_KIND,
-    _REPRESENTATION_BOUNDARY_FAILURE_KIND,
-    _REPRESENTATION_BOUNDARY_FAILURE_ACT_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
 }
 
 
@@ -630,10 +574,10 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+    "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
+        "yield_relation_identity": event.material["yield_relation_identity"],
     }
 
 
@@ -659,14 +603,14 @@ def _assertion_locality_movement_occurrence_coordinates(
             "source_standing_boundary_identity"
         ],
         "responsibility_assignment_reference": deepcopy(assignment_reference),
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_identity": event.material[
+            "act_occurrence_identity"
         ],
         "movement_act_occurrence_identity": event.material[
             "movement_act_occurrence_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -703,11 +647,11 @@ def _result_responsibility_coordinate(
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=event.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=event.material.get(
-            "responsible_act_evidence_identity"
+        act_occurrence_event_identity=event.material.get(
+            "act_occurrence_event_identity"
         ),
     )
     if not all(requirements.values()):
@@ -724,8 +668,8 @@ def _responsibility_ownership_of_exact_result(
     """The exact Responsibility ownership this yielded result already carries.
 
     01.Standing.A.1 makes the exact result one coordinate of Standing for the
-    exact subject of its Responsibility.  The responsible Act evidence the
-    result already names carries that Responsibility, its subject, and the Book
+    exact subject of its Responsibility.  The Act occurrence named by the
+    result carries that Responsibility, its subject, and the Book
     clause, so the ownership is read from there and never composed here.
 
     ``None`` is returned only to report that no ownership was recorded.  The
@@ -737,19 +681,19 @@ def _responsibility_ownership_of_exact_result(
     clause, or boundary can never be read as a result that simply has no owner.
     """
 
-    act_evidence_identity = event.material.get("responsible_act_evidence_identity")
-    if type(act_evidence_identity) is not str or not act_evidence_identity:
+    act_occurrence_event_identity = event.material.get("act_occurrence_event_identity")
+    if type(act_occurrence_event_identity) is not str or not act_occurrence_event_identity:
         return None
-    act_evidence = ledger.get(act_evidence_identity)
-    if act_evidence is None:
+    act_occurrence = ledger.get(act_occurrence_event_identity)
+    if act_occurrence is None:
         return None
-    if "responsibility_assignment_reference" not in act_evidence.material:
+    if "responsibility_assignment_reference" not in act_occurrence.material:
         return None
-    if ledger.integrity_of(act_evidence.identity) == CORRUPTED:
+    if ledger.integrity_of(act_occurrence.identity) == CORRUPTED:
         raise ValueError(
-            "recorded Responsibility ownership requires intact Act evidence"
+            "recorded Responsibility ownership requires its intact Act occurrence"
         )
-    reference = act_evidence.material["responsibility_assignment_reference"]
+    reference = act_occurrence.material["responsibility_assignment_reference"]
     if (
         type(reference) is not dict
         or not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference)
@@ -925,9 +869,6 @@ def _source_reference_from_checkpoint(
         "source_standing_through_event_occurrence_identity": source[
             "standing_boundary_event_identity"
         ],
-        "addressed_representation_event_identity": source[
-            "addressed_representation_event_identity"
-        ],
     }
 
 
@@ -1026,10 +967,6 @@ def read_carried_recorded_standing(
         source_reference.get("source_locality_identity"),
         "recorded Standing reference carries no exact source Locality",
     )
-    _require_recorded_standing_identity(
-        source_reference.get("addressed_representation_event_identity"),
-        "recorded Standing reference carries no addressed Representation",
-    )
     through_event_occurrence_identity = source_reference.get(
         "source_standing_through_event_occurrence_identity"
     )
@@ -1068,7 +1005,7 @@ def advance_operator_locality_standing(
 
     The caller supplies exact identities from the responsible Act that recorded
     them. The ledger resolves those identities rather than accepting supplied
-    occurrence representations.
+    occurrence copies.
 
     Every accumulator the live event kinds read is seeded from `prior`, and the
     per-event paths and refusals below are the same ones replay uses. Those
@@ -1080,7 +1017,7 @@ def advance_operator_locality_standing(
     earlier Standing to stay as it was must read it again; there is no
     snapshot here.
 
-    That is not defensive weakness, it is the point. Standing grows with the
+    That is not defensive weakness. Standing grows with the
     Locality, so copying it per advance would cost the Locality event count every
     time and reinstate the quadratic this replaced. The console holds one
     Standing, hands it forward, and keeps no earlier one.
@@ -1089,7 +1026,7 @@ def advance_operator_locality_standing(
     from the ledger and is not itself recorded: it returns only standings,
     limits, and Unknown the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    No Yield is established for represented relation candidates here; each preserved acquisition_result keeps
+    No Yield is established for relation Candidates here; each preserved acquisition_result keeps
     the authority its own event recorded.
     """
     events = ledger.occurrences_in_append_order(
@@ -1101,7 +1038,6 @@ def advance_operator_locality_standing(
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
-    representations: dict[str, dict[str, Any]] = {}
     recorded_relation_Standing: dict[str, None] = {}
     recorded_standing_boundary_references: dict[str, None] = {}
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
@@ -1152,7 +1088,6 @@ def advance_operator_locality_standing(
                 "prior Locality Standing requires exact Assertion Locality movement occurrences"
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
-        representations = prior["representations"]
         recorded_relation_Standing = prior["recorded_relation_Standing"]
         if type(recorded_relation_Standing) is not dict:
             raise ValueError(
@@ -1276,8 +1211,7 @@ def advance_operator_locality_standing(
         )
         if not (
             event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
-            or event.kind.startswith("operator.representation.")
-            or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
+            or event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS
             or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
@@ -1287,8 +1221,6 @@ def advance_operator_locality_standing(
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
             or event.kind in _OPERATOR_INVOCATION_LOCALITY_KINDS
-            or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
-            or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
@@ -1314,7 +1246,7 @@ def advance_operator_locality_standing(
             result_coordinate = _result_responsibility_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
-        if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+        if event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS:
             continue
         pair_prior_standing = {
             "locality_identity": locality_identity,
@@ -1386,8 +1318,8 @@ def advance_operator_locality_standing(
                         pair_measurement_replay_readings.pop(
                             assignment_identity, None
                         )
-                elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND:
-                    _read_pair_applicability_act_evidence(
+                elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT:
+                    _read_pair_applicability_act_occurrence(
                         ledger,
                         event.identity,
                         prior_standing=pair_prior_standing,
@@ -1399,8 +1331,8 @@ def advance_operator_locality_standing(
                         prior_standing=pair_prior_standing,
                     )
                     applicability_result_occurrences[event.identity] = None
-                elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND:
-                    _read_pair_measurement_act_evidence(
+                elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT:
+                    _read_pair_measurement_act_occurrence(
                         ledger,
                         event.identity,
                         prior_standing=pair_prior_standing,
@@ -1465,8 +1397,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND:
-            _read_assertion_locality_movement_act_evidence(
+        if event.kind == ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT:
+            _read_assertion_locality_movement_act_occurrence(
                 ledger,
                 event.identity,
                 prior_destination_standing={
@@ -1540,8 +1472,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND:
-            get_standing_boundary_reference_act_evidence(ledger, event.identity)
+        if event.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT:
+            get_standing_boundary_reference_act_occurrence(ledger, event.identity)
             continue
         if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND:
             get_recorded_standing_boundary_reference(ledger, event.identity)
@@ -1556,8 +1488,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND:
-            get_recorded_standing_boundary_locality_act_evidence(
+        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT:
+            get_recorded_standing_boundary_locality_act_occurrence(
                 ledger, event.identity
             )
             continue
@@ -1574,8 +1506,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
-            get_operator_material_acquire_act_evidence(ledger, event.identity)
+        if event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
+            get_operator_material_acquire_act_occurrence(ledger, event.identity)
             operator_material_acquire_act_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
@@ -1594,58 +1526,12 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_ACT_EVIDENCE_KIND:
-            get_operator_invocation_locality_act_evidence(ledger, event.identity)
+        if event.kind == OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT:
+            get_operator_invocation_locality_act_occurrence(ledger, event.identity)
             continue
         if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND:
             get_recorded_operator_invocation_locality(ledger, event.identity)
             operator_invocation_locality_relations[event.identity] = None
-            continue
-        if event.kind in {
-            REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-            EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        }:
-            if (
-                event.kind
-                == REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-            ):
-                get_representation_candidate_responsibility_assignment(
-                    ledger, event.identity
-                )
-            else:
-                get_exact_material_representation_admission_responsibility_assignment(
-                    ledger, event.identity
-                )
-            responsibility_assignment_occurrences[event.identity] = None
-            continue
-        if event.kind == REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND:
-            get_representation_candidate_act_evidence(ledger, event.identity)
-            continue
-        if event.kind == REPRESENTATION_CANDIDATE_RECORDED_KIND:
-            get_recorded_representation_candidate(ledger, event.identity)
-            candidate_result_occurrences[event.identity] = None
-            continue
-        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND:
-            get_exact_material_representation_admission_act_evidence(
-                ledger, event.identity
-            )
-            continue
-        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND:
-            get_recorded_exact_material_representation_admission(
-                ledger, event.identity
-            )
-            admission_result_occurrences[event.identity] = None
-            continue
-        if event.kind == REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND:
-            get_representation_emission_applicability_act_evidence(
-                ledger, event.identity
-            )
-            continue
-        if event.kind == REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND:
-            get_recorded_representation_emission_applicability(
-                ledger, event.identity
-            )
-            applicability_result_occurrences[event.identity] = None
             continue
         addressed_byte_reference_prior_standing = {
             "locality_identity": locality_identity,
@@ -1669,7 +1555,7 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_EVIDENCE_KIND:
+        if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT:
             _read_addressed_byte_reference_applicability_act(
                 ledger,
                 event.identity,
@@ -1684,7 +1570,7 @@ def advance_operator_locality_standing(
             )
             applicability_result_occurrences[event.identity] = None
             continue
-        if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_EVIDENCE_KIND:
+        if event.kind == ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT:
             _read_addressed_byte_reference_determination_act(
                 ledger,
                 event.identity,
@@ -1704,7 +1590,7 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND:
+        if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
             assignment_identity = _shared_position_assignment_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
@@ -1761,7 +1647,7 @@ def advance_operator_locality_standing(
                 raise
             applicability_result_occurrences[event.identity] = None
             continue
-        if event.kind == SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND:
+        if event.kind == SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT:
             assignment_identity = _shared_position_assignment_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
@@ -1805,7 +1691,7 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND
+            == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT
         ):
             assignment_identity = _recorded_pair_comparison_assignment_identity(
                 event
@@ -1888,7 +1774,7 @@ def advance_operator_locality_standing(
                 raise
             applicability_result_occurrences[event.identity] = None
             continue
-        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND:
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT:
             assignment_identity = _recorded_pair_comparison_assignment_identity(
                 event
             )
@@ -1970,8 +1856,8 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
                 ledger, event.identity
             )
             continue
@@ -1981,8 +1867,8 @@ def advance_operator_locality_standing(
             )
             applicability_result_occurrences[event.identity] = None
             continue
-        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
                 ledger, event.identity
             )
             continue
@@ -2035,11 +1921,11 @@ def advance_operator_locality_standing(
                     "act_occurrence_identity": event.material[
                         "act_occurrence_identity"
                     ],
-                    "responsible_act_evidence_identity": event.material[
-                        "responsible_act_evidence_identity"
+                    "act_occurrence_event_identity": event.material[
+                        "act_occurrence_event_identity"
                     ],
-                    "evidence_of_yield_relation_identity": event.material[
-                        "evidence_of_yield_relation_identity"
+                    "yield_relation_identity": event.material[
+                        "yield_relation_identity"
                     ],
                 }
             continue
@@ -2052,7 +1938,7 @@ def advance_operator_locality_standing(
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND:
+        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT:
             continue
         if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND:
             get_recorded_standing_locality_continuation(ledger, event.identity)
@@ -2153,120 +2039,6 @@ def advance_operator_locality_standing(
                 _addressed_byte_reference_determination_coordinates(event)
             )
             continue
-        if event.kind in {
-            _REPRESENTATION_ACT_EVIDENCE_KIND,
-            _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-        }:
-            continue
-        if event.kind == _REPRESENTATION_RECORDED_KIND:
-            material = event.material
-            if material["result_identity"] in representations:
-                raise ValueError(
-                    "duplicate Representation identity: "
-                    f"{material['result_identity']}"
-                )
-            representations[material["result_identity"]] = {
-                "representation_identity": material["result_identity"],
-                "representation_event_identity": event.identity,
-                "source_occurrence_reference": material[
-                    "source_occurrence_reference"
-                ],
-                "emission_attempt_event_identity": None,
-                "emission_attempt_locality_evidence_identity": None,
-                "boundary_failure_event_identity": None,
-                "emitted_event_identity": None,
-                "representation_result": material["representation_result"],
-                "locality_standing_through_event_occurrence_identity": material[
-                    "locality_standing_through_event_occurrence_identity"
-                ],
-                "scope": material["dimensions"]["scope_locality"],
-                "provenance": material["dimensions"]["source_provenance"],
-                "known_loss": material["known_loss"],
-                "unknown": material["unknown"],
-                "conflicts": material["conflicts"],
-            }
-            continue
-        if event.kind in {
-            _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-            _REPRESENTATION_BOUNDARY_FAILURE_ACT_EVIDENCE_KIND,
-            _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
-        }:
-            # These Events preserve exact relation Evidence. They do not add or
-            # revise Locality Standing by identity.
-            continue
-        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_KIND:
-            representation_reference = event.material["representation_reference"]
-            if representation_reference not in representations:
-                raise ValueError(
-                    "representation emission attempt without recorded representation event: "
-                    f"{representation_reference}"
-                )
-            representations[representation_reference]["emission_attempt_event_identity"] = event.identity
-            continue
-        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND:
-            representation_reference = event.material["representation_reference"]
-            if representation_reference not in representations:
-                raise ValueError(
-                    "emission-attempt Locality Evidence without recorded Representation: "
-                    f"{representation_reference}"
-                )
-            if event.material["attempt_event_identity"] != representations[
-                representation_reference
-            ]["emission_attempt_event_identity"]:
-                raise ValueError(
-                    "emission-attempt Locality Evidence names another attempt"
-                )
-            representations[representation_reference][
-                "emission_attempt_locality_evidence_identity"
-            ] = event.identity
-            continue
-        if event.kind == _REPRESENTATION_EMITTED_KIND:
-            representation_reference = event.material["representation_reference"]
-            if representation_reference not in representations:
-                raise ValueError(
-                    "representation emission without recorded representation event: "
-                    f"{representation_reference}"
-                )
-            if (
-                event.material["representation_event_identity"]
-                != representations[representation_reference]["representation_event_identity"]
-            ):
-                raise ValueError(
-                    "representation emission does not name its recorded "
-                    "representation Act occurrence"
-                )
-            if (
-                event.material["attempt_reference"]
-                != representations[representation_reference]["emission_attempt_event_identity"]
-            ):
-                raise ValueError(
-                    "representation emission does not name its recorded attempt"
-                )
-            representations[representation_reference]["emitted_event_identity"] = event.identity
-            continue
-        if event.kind == _REPRESENTATION_BOUNDARY_FAILURE_KIND:
-            representation_reference = event.material["representation_reference"]
-            if representation_reference not in representations:
-                raise ValueError(
-                    "representation boundary failure without recorded representation event: "
-                    f"{representation_reference}"
-                )
-            if (
-                event.material["attempt_reference"]
-                != representations[representation_reference]["emission_attempt_event_identity"]
-            ):
-                raise ValueError(
-                    "representation boundary failure does not name its recorded attempt"
-                )
-            emitted_event_identity = event.material["emitted_event_identity"]
-            if emitted_event_identity is not None and emitted_event_identity != representations[
-                representation_reference
-            ]["emitted_event_identity"]:
-                raise ValueError(
-                    "representation boundary failure does not name its accepted emission"
-                )
-            representations[representation_reference]["boundary_failure_event_identity"] = event.identity
-            continue
         source_result = read_exact_material_acquisition_result(
             ledger, event.identity
         )
@@ -2305,11 +2077,6 @@ def advance_operator_locality_standing(
             assertion_locality_movement_occurrences
         ),
         "exact_result_occurrences": exact_result_occurrences,
-        "representations": representations,
-        # No Representation is designated current.  `representations` retains
-        # Representation Act and emission occurrences in append order; naming
-        # one of them current would assert present relevance that no occurrence
-        # establishes.
         # Exactly the relation standings recorded by Locality events;
         # emptiness is absence of record only.
         "recorded_relation_Standing": recorded_relation_Standing,
@@ -2541,7 +2308,7 @@ def _carry_assertion_locality_movement_act_into_standing(
         or ledger.get(responsibility_assignment.identity)
         != responsibility_assignment
         or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED
-        or event.kind != ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND
+        or event.kind != ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
         or event.locality_identity != responsibility_assignment.locality_identity
@@ -2575,7 +2342,7 @@ def _carry_assertion_locality_movement_result_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    responsible_act_evidence,
+    act_occurrence,
     responsibility_assignment,
     source: _AssertionLocalityMovementSource,
 ) -> tuple[
@@ -2599,8 +2366,8 @@ def _carry_assertion_locality_movement_result_into_standing(
         if type(locality_standing) is dict
         else None
     )
-    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
-    evidence = ledger.get(evidence_identity) if type(evidence_identity) is str else None
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     try:
         current_source, current_source_event = _source_assertion_from_reference(
             ledger, _source_assertion_reference(source)
@@ -2608,21 +2375,21 @@ def _carry_assertion_locality_movement_result_into_standing(
         expected_act = _movement_act_material(responsibility_assignment)
         expected = {
             **_movement_result_material(responsibility_assignment),
-            "responsible_act_evidence_identity": responsible_act_evidence.identity,
-            "evidence_of_yield_relation_identity": evidence_identity,
+            "act_occurrence_event_identity": act_occurrence.identity,
+            "yield_relation_identity": yield_relation_identity,
         }
         requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=event.identity,
-            evidence_of_yield_relation_event_identity=evidence_identity,
-            responsible_act_evidence_event_identity=responsible_act_evidence.identity,
+            yield_relation_event_identity=yield_relation_identity,
+            act_occurrence_event_identity=act_occurrence.identity,
             recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
             responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         )
         ledger.occurrences_in_append_order(
             (
-                responsible_act_evidence.identity,
-                evidence_identity,
+                act_occurrence.identity,
+                yield_relation_identity,
                 event.identity,
             ),
             locality_identity=event.locality_identity,
@@ -2639,11 +2406,11 @@ def _carry_assertion_locality_movement_result_into_standing(
         or current_source != source
         or current_source_event is None
         or ledger.integrity_of(current_source_event.identity) == CORRUPTED
-        or responsible_act_evidence.kind
-        != ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND
-        or ledger.get(responsible_act_evidence.identity) != responsible_act_evidence
-        or ledger.integrity_of(responsible_act_evidence.identity) == CORRUPTED
-        or responsible_act_evidence.material != expected_act
+        or act_occurrence.kind
+        != ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
+        or ledger.get(act_occurrence.identity) != act_occurrence
+        or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
+        or act_occurrence.material != expected_act
         or event.kind != ASSERTION_LOCALITY_MOVEMENT_KIND
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
@@ -2653,18 +2420,18 @@ def _carry_assertion_locality_movement_result_into_standing(
         != _source_assertion_reference(source)
         or event.material.get("source_assertion_reference")
         != _source_assertion_reference(source)
-        or evidence is None
-        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or evidence.locality_identity != event.locality_identity
-        or ledger.integrity_of(evidence.identity) == CORRUPTED
-        or evidence.material.get("result_kind")
+        or yield_relation is None
+        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
+        or yield_relation.locality_identity != event.locality_identity
+        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
+        or yield_relation.material.get("result_kind")
         != ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND
-        or evidence.material.get("occurrence_boundary")
+        or yield_relation.material.get("occurrence_boundary")
         != "assertion_locality_movement"
         or not all(requirements.values())
         or locality_standing.get("locality_identity") != event.locality_identity
         or locality_standing.get("through_event_occurrence_identity")
-        != responsible_act_evidence.identity
+        != act_occurrence.identity
         or type(assignments) is not dict
         or assignments.get(responsibility_assignment.identity, object()) is not None
         or type(movements) is not dict
@@ -2748,7 +2515,7 @@ def _carry_occurrence_position_measurement_result_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    responsible_act_evidence,
+    act_occurrence,
     responsibility_assignment,
     finding,
 ) -> dict[str, Any]:
@@ -2777,19 +2544,19 @@ def _carry_occurrence_position_measurement_result_into_standing(
     )
     expected = {
         **result_material,
-        "responsible_act_evidence_identity": responsible_act_evidence.identity,
-        "evidence_of_yield_relation_identity": event.material.get(
-            "evidence_of_yield_relation_identity"
+        "act_occurrence_event_identity": act_occurrence.identity,
+        "yield_relation_identity": event.material.get(
+            "yield_relation_identity"
         ),
     }
-    evidence_identity = event.material.get("evidence_of_yield_relation_identity")
-    evidence = ledger.get(evidence_identity) if type(evidence_identity) is str else None
+    yield_relation_identity = event.material.get("yield_relation_identity")
+    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
     try:
         requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=event.identity,
-            evidence_of_yield_relation_event_identity=evidence_identity,
-            responsible_act_evidence_event_identity=responsible_act_evidence.identity,
+            yield_relation_event_identity=yield_relation_identity,
+            act_occurrence_event_identity=act_occurrence.identity,
         )
     except (TypeError, ValueError):
         requirements = {}
@@ -2799,17 +2566,17 @@ def _carry_occurrence_position_measurement_result_into_standing(
         or event.material != expected
         or locality_standing.get("locality_identity") != event.locality_identity
         or locality_standing.get("through_event_occurrence_identity")
-        != responsible_act_evidence.identity
+        != act_occurrence.identity
         or type(measurements) is not dict
         or event.identity in measurements
         or type(assignments) is not dict
         or responsibility_assignment.identity not in assignments
-        or evidence is None
-        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or evidence.material.get("occurrence_boundary")
+        or yield_relation is None
+        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
+        or yield_relation.material.get("occurrence_boundary")
         != "occurrence_position_measurement"
-        or evidence.material.get("result_kind") != OCCURRENCE_POSITION_RESULT_KIND
-        or ledger.integrity_of(evidence.identity) == CORRUPTED
+        or yield_relation.material.get("result_kind") != OCCURRENCE_POSITION_RESULT_KIND
+        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
         or not all(requirements.values())
         or ledger.integrity_of(event.identity) == CORRUPTED
         or ledger.append_boundary_through_occurrence(event.identity)
@@ -2935,7 +2702,7 @@ def _carry_pair_applicability_result_into_standing(
     *,
     assignment,
     source,
-    applicability_act_evidence,
+    applicability_act_occurrence,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_applicability_result_event(
@@ -2943,7 +2710,7 @@ def _carry_pair_applicability_result_into_standing(
         event,
         assignment=assignment,
         source=source,
-        applicability_act_evidence=applicability_act_evidence,
+        applicability_act_occurrence=applicability_act_occurrence,
     )
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
@@ -2962,7 +2729,7 @@ def _carry_pair_measurement_act_into_standing(
     assignment,
     source,
     applicability_event,
-    applicability_act_evidence,
+    applicability_act_occurrence,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_measurement_act_event(
@@ -2971,7 +2738,7 @@ def _carry_pair_measurement_act_into_standing(
         assignment=assignment,
         source=source,
         applicability_event=applicability_event,
-        applicability_act_evidence=applicability_act_evidence,
+        applicability_act_occurrence=applicability_act_occurrence,
     )
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
@@ -2987,21 +2754,21 @@ def _carry_pair_measurement_result_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    responsible_act_evidence,
+    act_occurrence,
     assignment,
     source,
     applicability_event,
-    applicability_act_evidence,
+    applicability_act_occurrence,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_measurement_result_event(
         ledger,
         event,
-        responsible_act_evidence=responsible_act_evidence,
+        act_occurrence=act_occurrence,
         assignment=assignment,
         source=source,
         applicability_event=applicability_event,
-        applicability_act_evidence=applicability_act_evidence,
+        applicability_act_occurrence=applicability_act_occurrence,
     )
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
@@ -3089,14 +2856,14 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         or type(acquisition_results) is not list
         or type(assignment) is not dict
         or assignment.get("recorded_occurrence_identity") not in assignments
-        or event.material.get("responsible_act_evidence_identity")
-        != prior_through_event_occurrence_identity
+        or event.material.get("act_occurrence_event_identity")
+            != prior_through_event_occurrence_identity
         or not any(
             type(occurrence) is dict
             and occurrence.get("result_occurrence_identity") == source_identity
             for occurrence in acquisition_results
         )
-        or type(event.material.get("evidence_of_yield_relation_identity"))
+        or type(event.material.get("yield_relation_identity"))
         is not str
         or type(event.material.get("assertions")) is not dict
         or event.identity in measurements
@@ -3155,22 +2922,14 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         raise ValueError("operator material acquisition Standing is not exact")
     if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
         source = event.material.get("source_standing_reference")
-        representations = locality_standing.get("representations")
         if (
             type(source) is not dict
-            or type(representations) is not dict
-            or source.get("locality_standing_through_event_occurrence_identity")
+            or source.get("standing_boundary_event_identity")
             != prior_through_event_occurrence_identity
-            or not any(
-                reference.get("representation_event_identity")
-                == source.get("addressed_representation_event_identity")
-                for reference in representations.values()
-                if type(reference) is dict
-            )
             or event.identity in assignments
         ):
             raise ValueError("operator material acquisition assignment is not exact")
-    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
+    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
         assignment = event.material.get("responsibility_assignment_reference")
         if (
             type(assignment) is not dict
@@ -3182,10 +2941,10 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
             raise ValueError("operator material acquisition Act is not exact")
     else:
         if (
-            event.material.get("responsible_act_evidence_identity")
+            event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
             or prior_through_event_occurrence_identity not in acts
-            or type(event.material.get("evidence_of_yield_relation_identity"))
+            or type(event.material.get("yield_relation_identity"))
             is not str
             or type(event.exact_material) is not bytes
             or event.identity in exact_results
@@ -3199,7 +2958,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
     )
     if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
         assignments[event.identity] = None
-    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
+    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
         acts[event.identity] = None
     else:
         exact_results[event.identity] = _responsibility_ownership_of_exact_result(
@@ -3267,7 +3026,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
             or event.identity in assignments
         ):
             raise ValueError("recorded pair comparison assignment is not exact")
-    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND:
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT:
         assignment = event.material.get("responsibility_assignment_reference")
         if (
             type(assignment) is not dict
@@ -3283,13 +3042,13 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
         if (
             type(assignment) is not dict
             or assignment.get("recorded_occurrence_identity") not in assignments
-            or event.material.get("responsible_act_evidence_identity")
+            or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
             or event.material.get("standing") != "applicable"
             or event.identity in applicability
         ):
             raise ValueError("recorded pair comparison Applicability is not exact")
-    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND:
+    elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT:
         assignment = event.material.get("responsibility_assignment_reference")
         if (
             type(assignment) is not dict
@@ -3304,7 +3063,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
         if (
             type(assignment) is not dict
             or assignment.get("recorded_occurrence_identity") not in assignments
-            or event.material.get("responsible_act_evidence_identity")
+            or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
             or event.material.get("applicability_result_event_identity")
             not in applicability

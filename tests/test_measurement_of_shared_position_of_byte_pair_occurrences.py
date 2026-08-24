@@ -11,8 +11,8 @@ import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as re
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position_module
 import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    record_addressed_byte_occurrence_reference_determination_act_evidence,
-    record_addressed_byte_occurrence_reference_determination_applicability_act_evidence,
+    record_addressed_byte_occurrence_reference_determination_act_occurrence,
+    record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_result,
     record_addressed_byte_occurrence_reference_determination_responsibility_assignment,
     record_addressed_byte_occurrence_reference_determination_result,
@@ -20,7 +20,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
-    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
@@ -32,34 +32,34 @@ from seed_runtime.witness_material_acquisition import record_witness_material_ac
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
     record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
-    record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
+    record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
-    record_byte_pair_occurrence_position_measurement_act_evidence,
+    record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
-    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
-    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
     SharedPairPositionError,
     get_shared_position_responsibility_assignment,
-    get_shared_position_applicability_act_evidence,
+    get_shared_position_applicability_act_occurrence,
     get_recorded_shared_position_applicability,
-    get_shared_position_measurement_act_evidence,
+    get_shared_position_measurement_act_occurrence,
     get_recorded_shared_position_measurement,
     ordered_relation_path_assertion_beside_input_position_assertion_coordinates,
     ordered_source_position_coordinates_beside_ordered_relation_path_assertion,
-    record_shared_position_applicability_act_evidence,
+    record_shared_position_applicability_act_occurrence,
     record_shared_position_applicability_result,
-    record_shared_position_measurement_act_evidence,
+    record_shared_position_measurement_act_occurrence,
     record_shared_position_measurement_result,
     record_shared_position_responsibility_assignment,
     record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result,
@@ -67,10 +67,6 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
-)
-from seed_runtime.operator_representation import (
-    read_operator_representation,
-    record_operator_representation,
 )
 
 
@@ -100,14 +96,14 @@ def _direct_d2(
             locality_standing=_standing(ledger, locality),
         )
     )
-    direct_act = record_byte_pair_occurrence_position_measurement_act_evidence(
+    direct_act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=direct_assignment.identity,
         responsibility_assignment_standing=_standing(ledger, locality),
     )
     direct_result = record_byte_pair_occurrence_position_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=direct_act.identity,
+        act_occurrence_event_identity=direct_act.identity,
     )
     coordinate = _source_position_coordinate_reference(
         source_material_acquisition_occurrence_identity=source.identity,
@@ -124,23 +120,23 @@ def _direct_d2(
         addressed_source_byte_position_coordinate_reference=coordinate,
         locality_standing=_standing(ledger, locality),
     )
-    applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_evidence(
+    applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=determination_assignment.identity,
         responsibility_assignment_standing=_standing(ledger, locality),
     )
     applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    determination_act = record_addressed_byte_occurrence_reference_determination_act_evidence(
+    determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         applicability_standing=_standing(ledger, locality),
     )
     determination_result = record_addressed_byte_occurrence_reference_determination_result(
         ledger,
-        determination_act_evidence_event_identity=determination_act.identity,
+        determination_act_occurrence_event_identity=determination_act.identity,
     )
     return source, direct_result, determination_result
 
@@ -167,7 +163,7 @@ def _fixture(
             ledger, locality_identity=locality
         ),
     )
-    byte_act = record_byte_measurement_responsible_act_evidence(
+    byte_act = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=byte_assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -176,7 +172,7 @@ def _fixture(
     )
     byte_result = record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=byte_act.identity,
+        act_occurrence_event_identity=byte_act.identity,
     )
     pair_result = record_byte_position_pair_count_layer(
         ledger,
@@ -220,7 +216,7 @@ def _fixture(
             finding=finding,
             locality_standing=_standing(ledger, locality),
         )
-        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
             responsibility_assignment_standing=_standing(ledger, locality),
@@ -228,7 +224,7 @@ def _fixture(
         results.append(
             record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
                 ledger,
-                responsible_act_evidence_event_identity=act.identity,
+                act_occurrence_event_identity=act.identity,
             )
         )
     references = tuple(
@@ -264,7 +260,7 @@ def _assignment(ledger, locality, first, second):
 
 def _recurrent_result_coordinates(ledger, reference):
     result = ledger.get(reference.recorded_occurrence_identity)
-    act = ledger.get(result.material["responsible_act_evidence_identity"])
+    act = ledger.get(result.material["act_occurrence_identity"])
     assignment = ledger.get(
         act.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"
@@ -272,14 +268,14 @@ def _recurrent_result_coordinates(ledger, reference):
     )
     pair = ledger.get(reference.pair_measurement_occurrence_identity)
     source = ledger.get(reference.source_material_acquisition_occurrence_identity)
-    evidence_of_yield = ledger.get(
-        result.material["evidence_of_yield_relation_identity"]
+    yield_relation = ledger.get(
+        result.material["yield_relation_identity"]
     )
     return {
         "result": result,
         "act": act,
         "assignment": assignment,
-        "evidence_of_yield": evidence_of_yield,
+        "yield_relation": yield_relation,
         "pair": pair,
         "source": source,
     }
@@ -287,23 +283,23 @@ def _recurrent_result_coordinates(ledger, reference):
 
 def _record_path(ledger, locality, first, second):
     assignment = _assignment(ledger, locality, first, second)
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    measurement_act = record_shared_position_measurement_act_evidence(
+    measurement_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger, locality),
     )
     result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=measurement_act.identity,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
     )
     return assignment, applicability_act, applicability, measurement_act, result
 
@@ -314,23 +310,23 @@ def _record_d2_shared_path(ledger, locality, determination_result):
         determination_result_event_identity=determination_result.identity,
         locality_standing=_standing(ledger, locality),
     )
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    measurement_act = record_shared_position_measurement_act_evidence(
+    measurement_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger, locality),
     )
     result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=measurement_act.identity,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
     )
     return assignment, applicability_act, applicability, measurement_act, result
 
@@ -387,7 +383,7 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
 
     assert result.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
     assert "standing" not in reading["dimensions"]
-    assert "standing" not in reading["responsibility_assignment_evidence"]
+    assert "standing" not in reading["responsibility_assignment"]
     assert reading["responsibility_assignment_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
         "assignment_identity": assignment.material["assignment_identity"],
@@ -936,23 +932,23 @@ def test_direct_position_coordinate_assertions_compose_without_recurrence_suppor
         determination_result_event_identity=determination_result.identity,
         locality_standing=_standing(ledger, locality),
     )
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    measurement_act = record_shared_position_measurement_act_evidence(
+    measurement_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger, locality),
     )
     result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=measurement_act.identity,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
     )
     assert result_reads
     assert set(result_reads) == {direct_result.identity}
@@ -1094,7 +1090,7 @@ def test_d2_result_corruption_invalidates_shared_assignment_reader():
         determination_result_event_identity=determination_result.identity,
         locality_standing=_standing(ledger, locality),
     )
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
@@ -1105,7 +1101,7 @@ def test_d2_result_corruption_invalidates_shared_assignment_reader():
     with pytest.raises(SharedPairPositionError):
         get_shared_position_responsibility_assignment(ledger, assignment.identity)
     with pytest.raises(SharedPairPositionError):
-        get_shared_position_applicability_act_evidence(
+        get_shared_position_applicability_act_occurrence(
             ledger, applicability_act.identity
         )
 
@@ -1200,23 +1196,23 @@ def test_later_direct_occurrence_read_requires_assignment_carried_exact_coordina
         "references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences",
         raw_direct_resolver_is_not_needed,
     )
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    measurement_act = record_shared_position_measurement_act_evidence(
+    measurement_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger, locality),
     )
     result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=measurement_act.identity,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
     )
 
     assert get_recorded_shared_position_measurement(ledger, result.identity)[
@@ -1229,21 +1225,21 @@ def test_later_direct_occurrence_read_requires_assignment_carried_exact_coordina
 def test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate():
     ledger, locality, _source, first, second = _fixture(current=b"ab--bc")
     assignment = _assignment(ledger, locality, first, second)
-    act = record_shared_position_applicability_act_evidence(
+    act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     result = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=act.identity,
+        applicability_act_occurrence_event_identity=act.identity,
     )
 
     assert get_recorded_shared_position_applicability(ledger, result.identity)[
         "applicability"
     ] == "inapplicable"
     with pytest.raises(SharedPairPositionError):
-        record_shared_position_measurement_act_evidence(
+        record_shared_position_measurement_act_occurrence(
             ledger,
             applicability_result_event_identity=result.identity,
             locality_standing=_standing(ledger, locality),
@@ -1253,20 +1249,20 @@ def test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate():
 def test_one_act_cannot_yield_two_shared_position_results():
     ledger, locality, _source, first, second = _fixture()
     assignment = _assignment(ledger, locality, first, second)
-    act = record_shared_position_applicability_act_evidence(
+    act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=act.identity,
+        applicability_act_occurrence_event_identity=act.identity,
     )
 
     with pytest.raises(SharedPairPositionError):
         record_shared_position_applicability_result(
             ledger,
-            applicability_act_evidence_event_identity=act.identity,
+            applicability_act_occurrence_event_identity=act.identity,
         )
 
 
@@ -1302,7 +1298,7 @@ def test_each_new_elevator_crossing_is_read_from_its_exact_occurrences():
         ),
         (
             applicability_act,
-            lambda: get_shared_position_applicability_act_evidence(
+            lambda: get_shared_position_applicability_act_occurrence(
                 ledger,
                 applicability_act.identity,
             ),
@@ -1315,7 +1311,7 @@ def test_each_new_elevator_crossing_is_read_from_its_exact_occurrences():
         ),
         (
             measurement_act,
-            lambda: get_shared_position_measurement_act_evidence(
+            lambda: get_shared_position_measurement_act_occurrence(
                 ledger, measurement_act.identity
             ),
         ),
@@ -1338,14 +1334,14 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
 ):
     ledger, locality, _source, first, second = _fixture()
     assignment = _assignment(ledger, locality, first, second)
-    applicability_act = record_shared_position_applicability_act_evidence(
+    applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=applicability_act.identity,
+        applicability_act_occurrence_event_identity=applicability_act.identity,
     )
     standing = _standing(ledger, locality)
     original = shared_position_module._inputs
@@ -1365,7 +1361,7 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
     )
     independently_read_call = (*expected_call[:-1], None)
 
-    measurement_act = record_shared_position_measurement_act_evidence(
+    measurement_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
@@ -1374,11 +1370,11 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
 
     result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=measurement_act.identity,
+        measurement_act_occurrence_event_identity=measurement_act.identity,
     )
     assert calls == [expected_call, independently_read_call]
 
-    get_shared_position_measurement_act_evidence(ledger, measurement_act.identity)
+    get_shared_position_measurement_act_occurrence(ledger, measurement_act.identity)
     assert calls == [expected_call, independently_read_call, independently_read_call]
 
     get_recorded_shared_position_measurement(ledger, result.identity)
@@ -1410,13 +1406,13 @@ def test_corrupted_shared_position_yield_relations_are_refused():
     )
 
     for event, read in crossings:
-        evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
-        assert evidence is not None
-        result_identity = evidence.material["result_identity"]
-        evidence.material["result_identity"] = "crossed-result"
+        yield_relation = ledger.get(event.material["yield_relation_identity"])
+        assert yield_relation is not None
+        result_identity = yield_relation.material["result_identity"]
+        yield_relation.material["result_identity"] = "crossed-result"
         with pytest.raises(SharedPairPositionError):
             read(ledger, event.identity)
-        evidence.material["result_identity"] = result_identity
+        yield_relation.material["result_identity"] = result_identity
 
 
 def test_shared_position_result_survives_sqlite_restart(tmp_path):
@@ -1509,8 +1505,8 @@ _EXACT_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING = (
     ("source_occurrences", "source"),
     ("pair_measurement_result_occurrences", "pair"),
     ("responsibility_assignment_occurrences", "recurrent_assignment"),
-    ("act_evidence_occurrences", "recurrent_act"),
-    ("evidence_of_yield_relation_occurrences", "recurrent_yield"),
+    ("act_occurrence_occurrences", "recurrent_act"),
+    ("yield_relation_occurrences", "recurrent_yield"),
 )
 
 
@@ -1530,7 +1526,7 @@ def test_carried_standing_requires_each_exact_occurrence_coordinate_intact(
         nonlocal changed
         if (
             not changed
-            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
+            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT
         ):
             recurrent = _recurrent_result_coordinates(ledger, first)
             identities = {
@@ -1539,7 +1535,7 @@ def test_carried_standing_requires_each_exact_occurrence_coordinate_intact(
                 "pair": first.pair_measurement_occurrence_identity,
                 "recurrent_assignment": recurrent["assignment"].identity,
                 "recurrent_act": recurrent["act"].identity,
-                "recurrent_yield": recurrent["evidence_of_yield"].identity,
+                "recurrent_yield": recurrent["yield_relation"].identity,
             }
             target = next(
                 occurrence
@@ -1573,7 +1569,7 @@ def test_carried_standing_requires_its_shared_assignment_occurrence_intact(
         nonlocal changed
         if (
             not changed
-            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND
+            and event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT
         ):
             reading.assignment_occurrence.event.material[
                 "changed_between_shared_replay_occurrences"
@@ -1598,7 +1594,7 @@ _LATER_SHARED_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING = (
         "applicability_act_occurrence",
     ),
     (
-        SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+        SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         "applicability_result_occurrence",
     ),
     (
@@ -1742,26 +1738,6 @@ def test_carried_standing_matches_replay_for_the_whole_new_elevator():
     assert carried == _standing(ledger, locality)
 
 
-def test_structured_path_can_be_addressed_but_is_not_raw_emission_material():
-    ledger, locality, _source, first, second = _fixture()
-    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
-        _record_path(ledger, locality, first, second)
-    )
-    representation = record_operator_representation(
-        ledger,
-        locality_identity=locality,
-        locality_standing=_standing(ledger, locality),
-        source_occurrence_reference=result.identity,
-    )
-    recorded = ledger.get(representation["representation_event_identity"])
-
-    reading = read_operator_representation(ledger, recorded.identity)
-    assert reading["representation_event_identity"] == recorded.identity
-    assert reading["source_occurrence_reference"] == result.identity
-    assert recorded.exact_material is None
-    assert "representation_rule" not in recorded.material
-
-
 PYTEST_ADMISSION = (
     test_exact_yielded_pair_relations_compose_at_one_shared_position,
     test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
@@ -1801,7 +1777,6 @@ PYTEST_ADMISSION = (
     test_operator_shared_replay_starts_fresh_after_exception,
     test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
     test_carried_standing_matches_replay_for_the_whole_new_elevator,
-    test_structured_path_can_be_addressed_but_is_not_raw_emission_material,
 )
 
 

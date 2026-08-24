@@ -31,7 +31,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.evidence_of_yield_relation import (
+from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 
@@ -111,11 +111,11 @@ def main() -> int:
         requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=result.identity,
-            evidence_of_yield_relation_event_identity=result.material.get(
-                "evidence_of_yield_relation_identity"
+            yield_relation_event_identity=result.material.get(
+                "yield_relation_identity"
             ),
-            responsible_act_evidence_event_identity=result.material.get(
-                "responsible_act_evidence_identity"
+            act_occurrence_event_identity=result.material.get(
+                "act_occurrence_identity"
             ),
         )
         readings.add(tuple(sorted(requirements.items())))

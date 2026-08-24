@@ -5,8 +5,8 @@ from __future__ import annotations
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.evidence_of_yield_relation import (
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.material_acquisition import (
@@ -17,12 +17,12 @@ from seed_runtime.material_acquisition import (
 
 
 WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND = "witness.material.acquire_recorded"
-WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND = (
-    "witness.material.acquire_act_evidenced"
+WITNESS_MATERIAL_ACQUISITION_ACT_OCCURRENCE_EVENT = (
+    "witness.material.acquire_act_occurrence_recorded"
 )
 EVENT_KIND_RESPONSIBILITIES = {
     WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND: "02.Acts.A",
-    WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    WITNESS_MATERIAL_ACQUISITION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
 }
 WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY = (
     "preserve exact material supplied by this Witness at one source boundary"
@@ -157,18 +157,14 @@ def record_witness_material_acquisition(
         result["read_occurrences"] = [
             dict(occurrence) for occurrence in read_occurrences
         ]
-    responsible_act_evidence = ledger.append(
-        WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND,
+    act_occurrence = ledger.append(
+        WITNESS_MATERIAL_ACQUISITION_ACT_OCCURRENCE_EVENT,
         {
             "material_acquisition_act_identity": material_acquisition_act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "act": "Acquire exact material supplied by this Witness",
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "evidence_scope": (
-                "Evidence bounded to this exact Witness material-acquisition "
-                "occurrence"
-            ),
         },
         locality_identity=locality_identity,
     )
@@ -178,22 +174,18 @@ def record_witness_material_acquisition(
             "identity": result_identity,
             "source_provenance": source_boundary,
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
-            "evidence_scope": (
-                "bounded to this exact Witness material-acquisition occurrence "
-                "and exact material result; represented relation Unknown"
-            ),
             "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material-acquisition occurrence recorded"
             ),
         },
     }
-    evidence_of_yield_relation = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act="Acquire exact material supplied by this Witness",
         act_occurrence_identity=act_occurrence_identity,
-        responsible_act_evidence_identity=responsible_act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
         result_kind="exact material",
         result_identity=result_identity,
         result_content=result,
@@ -210,11 +202,11 @@ def record_witness_material_acquisition(
             kind=WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
             material={
                 **material,
-                "responsible_act_evidence_identity": (
-                    responsible_act_evidence.identity
+                "act_occurrence_event_identity": (
+                    act_occurrence.identity
                 ),
-                "evidence_of_yield_relation_identity": (
-                    evidence_of_yield_relation.identity
+                "yield_relation_identity": (
+                    yield_relation.identity
                 ),
             },
             exact_material=exact_bytes,
@@ -234,14 +226,14 @@ def _read_witness_material_acquisition_result(
     result_identity = material.get("result_identity")
     material_acquisition_act_identity = material.get("material_acquisition_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
+    act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_role = material.get("source_role")
     source_boundary = material.get("source_boundary")
-    act_evidence_identity = material.get("responsible_act_evidence_identity")
-    yield_identity = material.get("evidence_of_yield_relation_identity")
+    yield_identity = material.get("yield_relation_identity")
     locality_relation = material.get("locality_relation")
-    act_evidence = (
-        ledger.get(act_evidence_identity)
-        if type(act_evidence_identity) is str
+    act_occurrence = (
+        ledger.get(act_occurrence_event_identity)
+        if type(act_occurrence_event_identity) is str
         else None
     )
     if (
@@ -271,11 +263,11 @@ def _read_witness_material_acquisition_result(
             for reference in provenance
         )
         or type(read_occurrences) is not list
-        or act_evidence is None
-        or act_evidence.kind != WITNESS_MATERIAL_ACQUISITION_ACT_EVIDENCE_KIND
-        or act_evidence.locality_identity != event.locality_identity
-        or act_evidence.exact_material is not None
-        or ledger.integrity_of(act_evidence.identity) == CORRUPTED
+        or act_occurrence is None
+        or act_occurrence.kind != WITNESS_MATERIAL_ACQUISITION_ACT_OCCURRENCE_EVENT
+        or act_occurrence.locality_identity != event.locality_identity
+        or act_occurrence.exact_material is not None
+        or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
         or locality_relation
         != {
             "first_subject": {
@@ -303,15 +295,12 @@ def _read_witness_material_acquisition_result(
     }
     if read_occurrences:
         result["read_occurrences"] = read_occurrences
-    expected_act_evidence = {
+    expected_act_occurrence = {
         "material_acquisition_act_identity": material_acquisition_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "act": "Acquire exact material supplied by this Witness",
         "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "evidence_scope": (
-            "Evidence bounded to this exact Witness material-acquisition occurrence"
-        ),
     }
     expected_material = {
         **result,
@@ -319,20 +308,16 @@ def _read_witness_material_acquisition_result(
             "identity": result_identity,
             "source_provenance": source_boundary,
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
-            "evidence_scope": (
-                "bounded to this exact Witness material-acquisition occurrence "
-                "and exact material result; represented relation Unknown"
-            ),
             "scope_locality": f"locality:{event.locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material-acquisition occurrence recorded"
             ),
         },
-        "responsible_act_evidence_identity": act_evidence.identity,
-        "evidence_of_yield_relation_identity": yield_identity,
+        "act_occurrence_event_identity": act_occurrence.identity,
+        "yield_relation_identity": yield_identity,
     }
     if (
-        act_evidence.material != expected_act_evidence
+        act_occurrence.material != expected_act_occurrence
         or material != expected_material
     ):
         raise MaterialAcquisitionError(
@@ -348,21 +333,21 @@ def _read_witness_material_acquisition_result(
         ) from error
     try:
         ordered = ledger.occurrences_in_append_order(
-            (act_evidence.identity, yield_identity, event.identity),
+            (act_occurrence.identity, yield_identity, event.identity),
             locality_identity=event.locality_identity,
         )
         requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=event.identity,
-            evidence_of_yield_relation_event_identity=yield_identity,
-            responsible_act_evidence_event_identity=act_evidence.identity,
+            yield_relation_event_identity=yield_identity,
+            act_occurrence_event_identity=act_occurrence.identity,
         )
     except (TypeError, ValueError) as error:
         raise MaterialAcquisitionError(
             "Witness material acquisition carries no intact Act and Yield"
         ) from error
     if [occurrence.identity for occurrence in ordered] != [
-        act_evidence.identity,
+        act_occurrence.identity,
         yield_identity,
         event.identity,
     ] or not all(requirements.values()):

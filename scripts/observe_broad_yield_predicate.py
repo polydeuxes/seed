@@ -43,7 +43,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.evidence_of_yield_relation import (
+from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 
@@ -65,8 +65,8 @@ def _material():
     return (
         ledger,
         result,
-        ledger.get(result.material["evidence_of_yield_relation_identity"]),
-        ledger.get(result.material["responsible_act_evidence_identity"]),
+        ledger.get(result.material["yield_relation_identity"]),
+        ledger.get(result.material["act_occurrence_identity"]),
     )
 
 
@@ -74,11 +74,11 @@ def _requirements(ledger, result) -> dict[str, bool]:
     return read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        evidence_of_yield_relation_event_identity=result.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=result.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=result.material.get(
-            "responsible_act_evidence_identity"
+        act_occurrence_event_identity=result.material.get(
+            "act_occurrence_identity"
         ),
     )
 
@@ -135,16 +135,16 @@ CONSISTENT = [
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
-    ledger, result, evidence, act_evidence = _material()
+    ledger, result, yield_relation, act_occurrence = _material()
     baseline = _requirements(ledger, result)
     print(f"  baseline: {baseline}\n")
 
     print("  every site holding the value substituted, in all three occurrences:\n")
     for stated, coordinate, replacement in CONSISTENT:
-        ledger, result, evidence, act_evidence = _material()
+        ledger, result, yield_relation, act_occurrence = _material()
         existing = _read(result.material, coordinate)
         sites = 0
-        for event in (result, evidence, act_evidence):
+        for event in (result, yield_relation, act_occurrence):
             material = deepcopy(event.material)
             sites += _substitute_value(material, existing, replacement)
             object.__setattr__(event, "material", material)
@@ -166,12 +166,12 @@ def main() -> int:
 
     print("\n  the same coordinate, substituted at each occurrence recording it:\n")
     for coordinate in CARRIED_IN_SEVERAL:
-        for holder_name in ("result", "evidence", "act_evidence"):
-            ledger, result, evidence, act_evidence = _material()
+        for holder_name in ("result", "yield_relation", "act_occurrence"):
+            ledger, result, yield_relation, act_occurrence = _material()
             target = {
                 "result": result,
-                "evidence": evidence,
-                "act_evidence": act_evidence,
+                "yield_relation": yield_relation,
+                "act_occurrence": act_occurrence,
             }[holder_name]
             if coordinate not in target.material:
                 print(f"    {'not recorded here':22} {coordinate:10} {holder_name}")
@@ -186,8 +186,8 @@ def main() -> int:
 
     print(
         "\n    The result carries a copy of these coordinates and the responsible"
-        "\n    Act evidence records its own.  The copy is compared; the record is"
-        "\n    not.  A result carrying one Authority while its Act evidence records"
+        "\n    Act yield_relation records its own.  The copy is compared; the record is"
+        "\n    not.  A result carrying one Authority while its Act yield_relation records"
         "\n    another is admitted."
     )
 
@@ -195,14 +195,14 @@ def main() -> int:
         "\n  a distinct intact occurrence of another kind addressed as the\n"
         "  relation witness, with no occurrence rewritten:\n"
     )
-    ledger, result, evidence, act_evidence = _material()
+    ledger, result, yield_relation, act_occurrence = _material()
     material = deepcopy(result.material)
-    material["evidence_of_yield_relation_identity"] = act_evidence.identity
+    material["yield_relation_identity"] = act_occurrence.identity
     object.__setattr__(result, "material", material)
     after = _requirements(ledger, result)
     stopped = sorted(k for k, v in baseline.items() if v and not after[k])
-    print(f"    proposed witness kind: {act_evidence.kind}")
-    print(f"    lawful witness kind:   {evidence.kind}")
+    print(f"    proposed witness kind: {act_occurrence.kind}")
+    print(f"    lawful witness kind:   {yield_relation.kind}")
     print(f"    predicates that stopped: {', '.join(stopped) or 'none'}")
     print(
         "\n    This occurrence was recorded by its own lawful recorder and is\n"
@@ -214,8 +214,8 @@ def main() -> int:
         "\n  whether kind alone decides, with the same occurrence identity held\n"
         "  and only the envelope read differently:\n"
     )
-    ledger, result, evidence, act_evidence = _material()
-    object.__setattr__(evidence, "kind", act_evidence.kind)
+    ledger, result, yield_relation, act_occurrence = _material()
+    object.__setattr__(yield_relation, "kind", act_occurrence.kind)
     after = _requirements(ledger, result)
     stopped = sorted(k for k, v in baseline.items() if v and not after[k])
     print(f"    predicates that stopped: {', '.join(stopped) or 'none'}")

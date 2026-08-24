@@ -33,9 +33,9 @@ def test_equal_material_has_one_physical_reference_and_distinct_occurrences(tmp_
     first = _acquire(ledger, first_material, 0)
     second = _acquire(ledger, second_material, 1)
     exact_occurrences = (
-        ledger.get(first.material["evidence_of_yield_relation_identity"]),
+        ledger.get(first.material["yield_relation_identity"]),
         ledger.get(first.identity),
-        ledger.get(second.material["evidence_of_yield_relation_identity"]),
+        ledger.get(second.material["yield_relation_identity"]),
         ledger.get(second.identity),
     )
     references = tuple(

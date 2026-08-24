@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
 )
 
 
-MATERIAL_RESULT_UNKNOWN = ("represented_relation", "source_relation")
+MATERIAL_RESULT_UNKNOWN = ("source_relation",)
 
 
 class MaterialAcquisitionError(ValueError):
@@ -27,29 +27,29 @@ def _append_exact_material_result_occurrence(
         raise TypeError("exact material result requires one EventLedger")
     if type(result_event) is not Event:
         raise MaterialAcquisitionError("exact material result occurrence required")
-    responsible_act_evidence_identity = result_event.material.get(
-        "responsible_act_evidence_identity"
+    act_occurrence_event_identity = result_event.material.get(
+        "act_occurrence_event_identity"
     )
-    evidence_of_yield_relation_identity = result_event.material.get(
-        "evidence_of_yield_relation_identity"
+    yield_relation_identity = result_event.material.get(
+        "yield_relation_identity"
     )
     if (
         type(result_event.exact_material) is not bytes
         or type(result_event.locality_identity) is not str
         or not result_event.locality_identity
-        or type(responsible_act_evidence_identity) is not str
-        or not responsible_act_evidence_identity
-        or type(evidence_of_yield_relation_identity) is not str
-        or not evidence_of_yield_relation_identity
+        or type(act_occurrence_event_identity) is not str
+        or not act_occurrence_event_identity
+        or type(yield_relation_identity) is not str
+        or not yield_relation_identity
     ):
         raise MaterialAcquisitionError("exact material result occurrence required")
-    responsible_act_evidence = ledger.get(responsible_act_evidence_identity)
-    evidence_of_yield_relation = ledger.get(
-        evidence_of_yield_relation_identity
+    act_occurrence = ledger.get(act_occurrence_event_identity)
+    yield_relation = ledger.get(
+        yield_relation_identity
     )
     yield_material = (
-        evidence_of_yield_relation.material
-        if evidence_of_yield_relation is not None
+        yield_relation.material
+        if yield_relation is not None
         else None
     )
     yield_dimensions = (
@@ -75,23 +75,23 @@ def _append_exact_material_result_occurrence(
                 continue
             break
     if (
-        responsible_act_evidence is None
-        or evidence_of_yield_relation is None
-        or evidence_of_yield_relation.kind
-        != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
-        or responsible_act_evidence.locality_identity
+        act_occurrence is None
+        or yield_relation is None
+        or yield_relation.kind
+        != RECORDED_YIELD_RELATION_EVENT
+        or act_occurrence.locality_identity
         != result_event.locality_identity
-        or evidence_of_yield_relation.locality_identity
+        or yield_relation.locality_identity
         != result_event.locality_identity
-        or ledger.integrity_of(responsible_act_evidence.identity) == CORRUPTED
-        or ledger.integrity_of(evidence_of_yield_relation.identity) == CORRUPTED
+        or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
+        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
         or type(yield_material) is not dict
         or type(yield_dimensions) is not dict
-        or yield_material.get("responsible_act_evidence_identity")
-        != responsible_act_evidence.identity
-        or responsible_act_evidence.material.get("act_occurrence_identity")
+        or yield_material.get("act_occurrence_event_identity")
+        != act_occurrence.identity
+        or act_occurrence.material.get("act_occurrence_identity")
         != yield_dimensions.get("act_occurrence_identity")
-        or evidence_of_yield_relation.exact_material
+        or yield_relation.exact_material
         != result_event.exact_material
         or carried_result != yield_material.get("result")
     ):
@@ -101,8 +101,8 @@ def _append_exact_material_result_occurrence(
     try:
         ledger.occurrences_in_append_order(
             (
-                responsible_act_evidence.identity,
-                evidence_of_yield_relation.identity,
+                act_occurrence.identity,
+                yield_relation.identity,
             ),
             locality_identity=result_event.locality_identity,
         )
@@ -264,5 +264,5 @@ def read_material_acquisition_locality_relation_requirements(
     return {
         "exact_relation": operator_requirements["exact_relation"],
         "relation_occurrence": operator_requirements["occurrence_witness"],
-        "responsible_acquisition": operator_requirements["intact_evidence"],
+        "responsible_acquisition": operator_requirements["intact_occurrence"],
     }

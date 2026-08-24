@@ -12,7 +12,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
-    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
@@ -30,7 +30,7 @@ def _record_byte_measurement(
             ledger, locality_identity=recording_locality_identity
         ),
     )
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -39,7 +39,7 @@ def _record_byte_measurement(
     )
     return record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
     )
 
 
@@ -169,7 +169,7 @@ def acquired_book_relations(acquired_book_material):
     ledger, _, acquisition_results, _, _, _, book_admission = acquired_book_material
     pytest.skip(
         "book Witness material stops before declared Measurement until its "
-        "material-to-this-Seed Locality occurrence and Evidence exist"
+        "material-to-this-Seed Locality relation exists"
     )
     byte_measurement = _record_byte_measurement(
         ledger,
@@ -262,7 +262,7 @@ def complete_book_admission_acts(acquired_book_material):
     ledger, _, _, _, _, book_invocation_rows, book_admission = acquired_book_material
     pytest.skip(
         "book Witness material stops before declared Measurement until its "
-        "material-to-this-Seed Locality occurrence and Evidence exist"
+        "material-to-this-Seed Locality relation exists"
     )
     byte_measurement = _record_byte_measurement(
         ledger,

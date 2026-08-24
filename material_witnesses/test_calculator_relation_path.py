@@ -24,16 +24,16 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     move_recorded_path_comparison_finding_assertion_to_locality,
     recorded_distinction_pins_from_current_standing,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
-    record_recorded_pair_measurement_comparison_act_evidence,
-    record_recorded_pair_measurement_comparison_applicability_act_evidence,
+    record_recorded_pair_measurement_comparison_act_occurrence,
+    record_recorded_pair_measurement_comparison_applicability_act_occurrence,
     record_recorded_pair_measurement_comparison_applicability_result,
     record_recorded_pair_measurement_comparison_responsibility_assignment,
     record_recorded_pair_measurement_comparison_result,
@@ -53,9 +53,9 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     get_recorded_shared_position_measurement,
-    record_shared_position_applicability_act_evidence,
+    record_shared_position_applicability_act_occurrence,
     record_shared_position_applicability_result,
-    record_shared_position_measurement_act_evidence,
+    record_shared_position_measurement_act_occurrence,
     record_shared_position_measurement_result,
     record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result,
 )
@@ -109,23 +109,23 @@ def _pair_comparison(ledger, earlier, later):
         later_result_event_identity=later.identity,
         locality_standing=_standing(ledger),
     )
-    applicability_act = record_recorded_pair_measurement_comparison_applicability_act_evidence(
+    applicability_act = record_recorded_pair_measurement_comparison_applicability_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger),
     )
     applicability = record_recorded_pair_measurement_comparison_applicability_result(
         ledger,
-        responsible_act_evidence_event_identity=applicability_act.identity,
+        act_occurrence_event_identity=applicability_act.identity,
     )
-    act = record_recorded_pair_measurement_comparison_act_evidence(
+    act = record_recorded_pair_measurement_comparison_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger),
     )
     return record_recorded_pair_measurement_comparison_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
 
 
@@ -136,23 +136,23 @@ def _path_comparison(ledger, path, pair_comparison):
         comparison_result_event_identity=pair_comparison.identity,
         locality_standing=_standing(ledger),
     )
-    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         locality_standing=_standing(ledger),
     )
     applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
         ledger,
-        responsible_act_evidence_event_identity=applicability_act.identity,
+        act_occurrence_event_identity=applicability_act.identity,
     )
-    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         applicability_result_event_identity=applicability.identity,
         locality_standing=_standing(ledger),
     )
     return record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
 
 
@@ -209,7 +209,7 @@ def _claim_path(ledger):
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, shared_assignment)
-    shared_applicability_act = record_shared_position_applicability_act_evidence(
+    shared_applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=shared_assignment.identity,
         locality_standing=standing,
@@ -217,10 +217,10 @@ def _claim_path(ledger):
     standing = _advance(ledger, standing, shared_applicability_act)
     shared_applicability = record_shared_position_applicability_result(
         ledger,
-        applicability_act_evidence_event_identity=shared_applicability_act.identity,
+        applicability_act_occurrence_event_identity=shared_applicability_act.identity,
     )
     standing = _advance(ledger, standing, shared_applicability)
-    shared_act = record_shared_position_measurement_act_evidence(
+    shared_act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=shared_applicability.identity,
         locality_standing=standing,
@@ -228,7 +228,7 @@ def _claim_path(ledger):
     standing = _advance(ledger, standing, shared_act)
     shared_result = record_shared_position_measurement_result(
         ledger,
-        measurement_act_evidence_event_identity=shared_act.identity,
+        measurement_act_occurrence_event_identity=shared_act.identity,
     )
     standing = _advance(ledger, standing, shared_result)
     path_comparison = _path_comparison(ledger, shared_result, pair_comparison)
@@ -289,7 +289,7 @@ def calculator_boundary_witness():
 def calculator_relation_witness(calculator_boundary_witness):
     pytest.skip(
         "calculator Witness material stops before Measurement until its "
-        "material-to-this-Seed Locality occurrence and Evidence exist"
+        "material-to-this-Seed Locality relation and Act occurrence exist"
     )
 
 
@@ -587,15 +587,15 @@ def test_position_assertion_coordinates_stay_distinct_from_movement_coordinates(
     assert tuple(
         source_result.material[coordinate]
         for coordinate in (
-            "responsible_act_evidence_identity",
-            "evidence_of_yield_relation_identity",
+            "act_occurrence_identity",
+            "yield_relation_identity",
         )
     ) == (
         witness["stdout_result"].material[
-            "responsible_act_evidence_identity"
+            "act_occurrence_identity"
         ],
         witness["stdout_result"].material[
-            "evidence_of_yield_relation_identity"
+            "yield_relation_identity"
         ],
     )
 

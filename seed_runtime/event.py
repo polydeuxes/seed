@@ -21,7 +21,7 @@ _SCREENED_EVENT_MATERIAL_TOKEN = object()
 
 
 class _ScreenedEventMaterial(dict[str, Any]):
-    """Runtime-local evidence that durable JSON keys were screened."""
+    """Runtime-local yield_relation that durable JSON keys were screened."""
 
     def __init__(self, material: dict[str, Any], token: object) -> None:
         if token is not _SCREENED_EVENT_MATERIAL_TOKEN:

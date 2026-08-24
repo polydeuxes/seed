@@ -1,4 +1,4 @@
-"""Exact material acquisition Evidence from an empty ledger."""
+"""Exact material acquisition from an empty ledger."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from seed_runtime.material_acquisition import (
     iter_exact_material_acquisition_results,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import read_requirements_of_yield_relation
 from tests.binary_input import binary_input
 
 
@@ -33,7 +33,7 @@ def run_null_start() -> list:
     return ledger.list()
 
 
-def represent_null_start_evidence(events=None) -> str:
+def exact_null_start_occurrences(events=None) -> str:
     lines = []
     for position, event in enumerate(
         run_null_start() if events is None else events,
@@ -81,39 +81,32 @@ def test_each_material_acquisition_preserves_exact_bytes(ledger):
     assert (E3 + "\n").encode() not in exact
 
 
-def test_each_material_acquisition_binds_its_exact_act_and_evidence_of_yield_relation(ledger):
+def test_each_material_acquisition_binds_its_exact_act_and_yield_relation(ledger):
     for acquisition_result in _acquisition_results(ledger):
         assert all(
             read_requirements_of_yield_relation(
                 ledger,
                 recorded_result_event_identity=acquisition_result.identity,
-                evidence_of_yield_relation_event_identity=acquisition_result.material["evidence_of_yield_relation_identity"],
-                responsible_act_evidence_event_identity=acquisition_result.material[
-                    "responsible_act_evidence_identity"
+                yield_relation_event_identity=acquisition_result.material["yield_relation_identity"],
+                act_occurrence_event_identity=acquisition_result.material[
+                    "act_occurrence_event_identity"
                 ],
             ).values()
         )
 
 
-def test_material_acquisition_does_not_assert_a_represented_relation(ledger):
+def test_material_acquisition_does_not_assert_a_source_relation(ledger):
     for acquisition_result in _acquisition_results(ledger):
-        assert "represented_material" not in acquisition_result.material
-        assert acquisition_result.material["unknown"] == [
-            "represented_relation",
-            "source_relation",
-        ]
+        assert acquisition_result.material["unknown"] == ["source_relation"]
         assert acquisition_result.material["provenance_occurrence_references"] == []
-        assert "exact material result" in acquisition_result.material["dimensions"][
-            "evidence_scope"
-        ]
 
 
-def test_material_acquisition_evidence_is_inspectable(ledger):
-    represented = represent_null_start_evidence(ledger.list())
+def test_material_acquisition_occurrences_are_exactly_addressable(ledger):
+    occurrences = exact_null_start_occurrences(ledger.list())
 
-    assert "operator.material.acquire_recorded" in represented
-    assert "responsible_act_evidence_identity" in represented
-    assert "evidence_of_yield_relation_identity" in represented
+    assert "operator.material.acquire_recorded" in occurrences
+    assert "act_occurrence_identity" in occurrences
+    assert "yield_relation_identity" in occurrences
 
 
 def test_material_acquisition_exact_material_is_inspectable(ledger):
@@ -125,15 +118,15 @@ def test_material_acquisition_exact_material_is_inspectable(ledger):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    print(represent_null_start_evidence())
+    print(exact_null_start_occurrences())
 
 
 PYTEST_ADMISSION = (
     test_one_acquisition_result_occurs_for_each_delivered_line,
     test_each_material_acquisition_carries_the_operator_role,
     test_each_material_acquisition_preserves_exact_bytes,
-    test_each_material_acquisition_binds_its_exact_act_and_evidence_of_yield_relation,
-    test_material_acquisition_does_not_assert_a_represented_relation,
-    test_material_acquisition_evidence_is_inspectable,
+    test_each_material_acquisition_binds_its_exact_act_and_yield_relation,
+    test_material_acquisition_does_not_assert_a_source_relation,
+    test_material_acquisition_occurrences_are_exactly_addressable,
     test_material_acquisition_exact_material_is_inspectable,
 )

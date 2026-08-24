@@ -114,7 +114,7 @@ def test_a_recorded_occurrence_verifies(ledger):
 
 
 def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
-    """The guard is removable. What it leaves behind is evidence."""
+    """The guard is removable. The changed recorded material remains detectable."""
     event = ledger.append("k", {"a": 1})
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")

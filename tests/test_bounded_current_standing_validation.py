@@ -23,7 +23,7 @@ import seed_runtime.operator_locality_standing as standing_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     AddressedByteOccurrenceReferenceDeterminationError,
     _current_standing,
-    record_addressed_byte_occurrence_reference_determination_act_evidence,
+    record_addressed_byte_occurrence_reference_determination_act_occurrence,
 )
 from seed_runtime.events import EventLedger
 
@@ -65,7 +65,7 @@ def test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated():
     unrelated["representations"] = {"an unread sibling branch": None}
 
     determination_act = (
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=unrelated,
@@ -83,7 +83,7 @@ def test_a_substituted_through_occurrence_is_refused():
     forged["through_event_occurrence_identity"] = recorded["assignment"].identity
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=forged,
@@ -100,7 +100,7 @@ def test_a_stale_standing_is_refused_at_the_append_tip():
     ].identity
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=stale,
@@ -115,7 +115,7 @@ def test_a_substituted_source_measurement_result_is_refused():
     forged["measurement_occurrences"] = {"forged occurrence": {"not": "exact"}}
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=forged,
@@ -130,7 +130,7 @@ def test_a_wrong_locality_in_the_supplied_standing_is_refused():
     forged["locality_identity"] = "another-locality"
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=forged,
@@ -142,7 +142,7 @@ def test_a_standing_that_is_no_mapping_is_refused():
     recorded = _through_applicability(ledger)
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_act_evidence(
+        record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
             applicability_standing=["not", "a", "mapping"],

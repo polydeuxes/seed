@@ -27,8 +27,8 @@ from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.evidence_of_yield_relation import (
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
@@ -231,7 +231,7 @@ class RecurrentResultMaterialMeasurements(NamedTuple):
     locality_standing: dict[str, Any]
 
 
-def _canonical(value: Any) -> str:
+def _exact_json(value: Any) -> str:
     return json.dumps(
         value,
         ensure_ascii=False,
@@ -241,7 +241,7 @@ def _canonical(value: Any) -> str:
 
 
 def _digest(prefix: str, value: Any) -> str:
-    return prefix + ":" + hashlib.sha256(_canonical(value).encode("utf-8")).hexdigest()
+    return prefix + ":" + hashlib.sha256(_exact_json(value).encode("utf-8")).hexdigest()
 
 
 def _identity(value: Any, message: str) -> str:
@@ -392,14 +392,14 @@ def _preserved_result_material(material):
         "result_identity": material["result_identity"],
         "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": material[
+            "act_occurrence_event_identity"
         ],
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
         "coordinates": deepcopy(material["coordinates"]),
-        "evidence_of_yield_relation_identity": material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": material[
+            "yield_relation_identity"
         ],
     }
 
@@ -690,17 +690,17 @@ def _record_yielded_result(
         "result_identity": result_identity,
         "act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "responsible_act_evidence_identity": act.identity,
+        "act_occurrence_event_identity": act.identity,
         "responsibility": responsibility,
         "responsible_boundary": "this Seed",
         "coordinates": deepcopy(result_payload),
     }
-    yielded = _record_evidence_of_yield_relation(
+    yielded = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act=exact_act,
         act_occurrence_identity=act_occurrence_identity,
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind=result_kind,
         result_identity=result_identity,
         result_content=content,
@@ -711,7 +711,7 @@ def _record_yielded_result(
     )
     result = _EVENT_APPENDERS[result_kind](
         ledger,
-        {**content, "evidence_of_yield_relation_identity": yielded.identity},
+        {**content, "yield_relation_identity": yielded.identity},
         locality_identity,
     )
     return act, result
@@ -728,19 +728,19 @@ def _require_yield(
 ) -> Event:
     act = _event(
         ledger,
-        result.material.get("responsible_act_evidence_identity"),
+        result.material.get("act_occurrence_event_identity"),
         kind=act_kind,
         message="recorded result carries no exact responsible Act occurrence",
     )
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        evidence_of_yield_relation_event_identity=result.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=result.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
-    yielded = ledger.get(result.material.get("evidence_of_yield_relation_identity"))
+    yielded = ledger.get(result.material.get("yield_relation_identity"))
     if (
         result.locality_identity != act.locality_identity
         or act.material.get("act") != exact_act
@@ -1367,10 +1367,10 @@ def get_recorded_source_position_measurement(
                 "result_identity",
                 "act_identity",
                 "act_occurrence_identity",
-                "responsible_act_evidence_identity",
+                "act_occurrence_identity",
                 "responsibility",
                 "responsible_boundary",
-                "evidence_of_yield_relation_identity",
+                "yield_relation_identity",
             }
         }
     ):
@@ -1414,7 +1414,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
     for event in source_position_results:
         event_coordinates = _coordinates(event.material)
         surface = event_coordinates["complete_compare_findings"]
-        key = _canonical(surface)
+        key = _exact_json(surface)
         grouped.setdefault(key, []).append(event)
         surfaces[key] = surface
     groups = []
@@ -1549,10 +1549,10 @@ def get_recorded_source_position_recurrence(
             "result_identity",
             "act_identity",
             "act_occurrence_identity",
-            "responsible_act_evidence_identity",
+            "act_occurrence_identity",
             "responsibility",
             "responsible_boundary",
-            "evidence_of_yield_relation_identity",
+            "yield_relation_identity",
         }
     }
     if (
@@ -1960,10 +1960,10 @@ def get_recorded_corresponding_coordinate_material_measurement(
             "result_identity",
             "act_identity",
             "act_occurrence_identity",
-            "responsible_act_evidence_identity",
+            "act_occurrence_identity",
             "responsibility",
             "responsible_boundary",
-            "evidence_of_yield_relation_identity",
+            "yield_relation_identity",
         }
     }
     if carried_payload != payload or _coordinates(act.material).get("subject") != payload:

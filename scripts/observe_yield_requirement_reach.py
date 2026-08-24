@@ -41,7 +41,7 @@ from typing import Any, Callable
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.evidence_of_yield_relation import (
+from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 
@@ -53,7 +53,7 @@ LOCALITY = "yield-reach"
 
 
 def _yield_material():
-    """One exact recorded result and the two evidence occurrences it names."""
+    """One exact recorded result and the two yield_relation occurrences it names."""
 
     ledger = EventLedger()
     result = record_operator_material_occurrence(
@@ -62,20 +62,20 @@ def _yield_material():
         exact=b"2+2=5\n",
         source_boundary="exact supplied material boundary",
     )
-    evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
-    act_evidence = ledger.get(result.material["responsible_act_evidence_identity"])
-    return ledger, result, evidence, act_evidence
+    yield_relation = ledger.get(result.material["yield_relation_identity"])
+    act_occurrence = ledger.get(result.material["act_occurrence_identity"])
+    return ledger, result, yield_relation, act_occurrence
 
 
 def _requirements(ledger, result) -> dict[str, bool]:
     return read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        evidence_of_yield_relation_event_identity=result.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=result.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=result.material.get(
-            "responsible_act_evidence_identity"
+        act_occurrence_event_identity=result.material.get(
+            "act_occurrence_identity"
         ),
     )
 
@@ -115,11 +115,11 @@ CHANGES: list[tuple[str, str, Callable]] = [
         "relation_occurrence",
         "result",
         lambda m: m.__setitem__(
-            "evidence_of_yield_relation_identity", "substituted-evidence"
+            "yield_relation_identity", "substituted-yield_relation"
         ),
     ),
-    ("Authority", "act_evidence", lambda m: _set(m, "authority", "substituted")),
-    ("Scope", "act_evidence", lambda m: _set(m, "scope", "substituted")),
+    ("Authority", "act_occurrence", lambda m: _set(m, "authority", "substituted")),
+    ("Scope", "act_occurrence", lambda m: _set(m, "scope", "substituted")),
     ("Locality", "result", lambda m: _set(m, "locality_identity", "substituted")),
     ("limits", "result", lambda m: _set(m, "limits", ["substituted"])),
     ("Unknown", "result", lambda m: _set(m, "unknown", ["substituted"])),
@@ -142,7 +142,7 @@ CHANGES: list[tuple[str, str, Callable]] = [
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
-    ledger, result, evidence, act_evidence = _yield_material()
+    ledger, result, yield_relation, act_occurrence = _yield_material()
     baseline = _requirements(ledger, result)
     print(f"  baseline requirements: {baseline}")
     if not all(baseline.values()):
@@ -151,8 +151,8 @@ def main() -> int:
 
     rows = []
     for coordinate, holder, change in CHANGES:
-        ledger, result, evidence, act_evidence = _yield_material()
-        target = {"result": result, "evidence": evidence, "act_evidence": act_evidence}[
+        ledger, result, yield_relation, act_occurrence = _yield_material()
+        target = {"result": result, "yield_relation": yield_relation, "act_occurrence": act_occurrence}[
             holder
         ]
         present = {"found": False}

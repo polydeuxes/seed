@@ -10,8 +10,8 @@ integrity -- and each of those is perturbed separately at the end rather than
 counted in the material surface.  A count from this file is a count of carried-material
 coordinates, never of everything a predicate can observe.
 
-Each leaf coordinate carried by the recorded result, the Yield evidence and the
-responsible Act evidence is changed one at a time, and the predicates are read
+Each leaf coordinate carried by the recorded result, the Yield yield_relation and the
+responsible Act yield_relation is changed one at a time, and the predicates are read
 again.  The reach is then set beside the coordinates the Book states for this
 relation, so coverage and over-coupling are counted rather than argued.
 
@@ -46,7 +46,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.evidence_of_yield_relation import (
+from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 
@@ -61,10 +61,9 @@ LOCALITY = "exact-relation-reach"
 STATED_YIELD_COORDINATES = {
     "act_occurrence_identity": "first_subject",
     "result_identity": "second_subject",
-    "evidence_of_yield_relation_identity": "relation_occurrence",
+    "yield_relation_identity": "relation_occurrence",
     "authority": "Authority",
     "scope": "Scope",
-    "evidence_scope": "Scope",
     "locality_identity": "Locality",
     "limits": "limits",
     "unknown": "Unknown",
@@ -82,8 +81,8 @@ def _material():
     return (
         ledger,
         result,
-        ledger.get(result.material["evidence_of_yield_relation_identity"]),
-        ledger.get(result.material["responsible_act_evidence_identity"]),
+        ledger.get(result.material["yield_relation_identity"]),
+        ledger.get(result.material["act_occurrence_identity"]),
     )
 
 
@@ -91,11 +90,11 @@ def _requirements(ledger, result) -> dict[str, bool]:
     return read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        evidence_of_yield_relation_event_identity=result.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=result.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=result.material.get(
-            "responsible_act_evidence_identity"
+        act_occurrence_event_identity=result.material.get(
+            "act_occurrence_identity"
         ),
     )
 
@@ -142,7 +141,7 @@ ENVELOPE = [
             )
         ),
     )
-    for holder in ("result", "evidence", "act_evidence")
+    for holder in ("result", "yield_relation", "act_occurrence")
     for coordinate in ("locality_identity", "kind", "exact_material", "identity")
 ] + [
     (
@@ -150,14 +149,14 @@ ENVELOPE = [
         holder,
         lambda ledger, event: _report_corrupted(ledger, event),
     )
-    for holder in ("result", "evidence", "act_evidence")
+    for holder in ("result", "yield_relation", "act_occurrence")
 ] + [
     (
         f"{holder}.existence",
         holder,
         lambda ledger, event: _withdraw(ledger, event),
     )
-    for holder in ("result", "evidence", "act_evidence")
+    for holder in ("result", "yield_relation", "act_occurrence")
 ]
 
 
@@ -188,9 +187,9 @@ def _withdraw(ledger, event) -> None:
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
-    ledger, result, evidence, act_evidence = _material()
+    ledger, result, yield_relation, act_occurrence = _material()
     baseline = _requirements(ledger, result)
-    holders = {"result": result, "evidence": evidence, "act_evidence": act_evidence}
+    holders = {"result": result, "yield_relation": yield_relation, "act_occurrence": act_occurrence}
     paths = {
         name: [path for path, _value in _leaves(event.material)]
         for name, event in holders.items()
@@ -205,11 +204,11 @@ def main() -> int:
     unnoticed: list[dict[str, Any]] = []
     for holder_name, holder_paths in paths.items():
         for path in holder_paths:
-            ledger, result, evidence, act_evidence = _material()
+            ledger, result, yield_relation, act_occurrence = _material()
             target = {
                 "result": result,
-                "evidence": evidence,
-                "act_evidence": act_evidence,
+                "yield_relation": yield_relation,
+                "act_occurrence": act_occurrence,
             }[holder_name]
             material = deepcopy(target.material)
             try:
@@ -257,7 +256,7 @@ def main() -> int:
         "\n  read that line narrowly.  One coordinate name is recorded by more\n"
         "  than one occurrence and answers differently at each.  Authority and\n"
         "  Scope are noticed where the recorded result carries them and not\n"
-        "  noticed where the responsible Act evidence records its own, so a name\n"
+        "  noticed where the responsible Act yield_relation records its own, so a name\n"
         "  appearing above is a statement about one carrier, never about the\n"
         "  coordinate.  scripts/observe_broad_yield_predicate.py asks each\n"
         "  carrier separately."
@@ -268,11 +267,11 @@ def main() -> int:
     print("\n  envelope coordinates, which are not carried material:\n")
     envelope_rows = []
     for label, holder_name, change in ENVELOPE:
-        ledger, result, evidence, act_evidence = _material()
+        ledger, result, yield_relation, act_occurrence = _material()
         target = {
             "result": result,
-            "evidence": evidence,
-            "act_evidence": act_evidence,
+            "yield_relation": yield_relation,
+            "act_occurrence": act_occurrence,
         }[holder_name]
         try:
             change(ledger, target)

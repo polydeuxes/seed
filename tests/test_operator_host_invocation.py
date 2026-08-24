@@ -35,11 +35,8 @@ from seed_runtime.operator_material_acquisition import (
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     record_operator_invocation_locality_responsibility_assignment,
-    record_operator_invocation_locality_act_evidence,
+    record_operator_invocation_locality_act_occurrence,
     record_operator_invocation_locality_result,
-)
-from seed_runtime.operator_representation_admission import (
-    REPRESENTATION_CANDIDATE_RECORDED_KIND,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
@@ -49,7 +46,7 @@ from seed_runtime.supplied_invocation_material import (
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
-from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 
 def _supplied(
@@ -215,7 +212,7 @@ def _operator_invocation_relation(ledger, command):
             ledger, locality_identity=command.locality_identity
         ),
     )
-    act = record_operator_invocation_locality_act_evidence(
+    act = record_operator_invocation_locality_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -223,7 +220,7 @@ def _operator_invocation_relation(ledger, command):
         ),
     )
     return record_operator_invocation_locality_result(
-        ledger, responsible_act_evidence_event_identity=act.identity
+        ledger, act_occurrence_event_identity=act.identity
     )
 
 
@@ -801,18 +798,9 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
         expected_base,
     ]
     assert raw_output.getvalue() == b""
-    supplied_identities = {event.identity for event in supplied_acquisition_results}
-    assert [
-        event.material["source_occurrence_reference"]
-        for event in ledger.list()
-        if event.kind == "operator.representation.recorded"
-        and event.material["source_occurrence_reference"]
-        in supplied_identities
-    ] == []
     kinds = tuple(event.kind for event in ledger.list())
     assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 4
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
-    assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
     standing = read_operator_locality_standing(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
@@ -959,17 +947,17 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     exact = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        evidence_of_yield_relation_event_identity=output.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=output.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=output.material["yield_relation_identity"],
+        act_occurrence_event_identity=output.material[
+            "act_occurrence_identity"
         ],
     )
     substituted = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        evidence_of_yield_relation_event_identity=error.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=output.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=error.material["yield_relation_identity"],
+        act_occurrence_event_identity=output.material[
+            "act_occurrence_identity"
         ],
     )
 
@@ -983,9 +971,9 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     different_command = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        evidence_of_yield_relation_event_identity=output.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=output.material[
-            "responsible_act_evidence_identity"
+        yield_relation_event_identity=output.material["yield_relation_identity"],
+        act_occurrence_event_identity=output.material[
+            "act_occurrence_identity"
         ],
     )
     assert not all(different_command.values())

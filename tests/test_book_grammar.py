@@ -68,9 +68,9 @@ def test_book_and_witness_grammar_have_the_same_coordinates():
 def test_witness_grammar_has_no_retired_scaffolding():
     material = GRAMMAR.read_text(encoding="utf-8").lower()
     retired = {
-        "act_evidence",
-        "evidence_of_yield",
-        "intact_evidence",
+        "act_occurrence",
+        "yield_relation",
+        "intact_occurrence",
         "unestablished",
         "responsibility_assignment",
         "represented_relation",

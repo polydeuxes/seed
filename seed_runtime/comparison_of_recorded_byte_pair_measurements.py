@@ -13,9 +13,9 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
@@ -29,14 +29,14 @@ from seed_runtime.operator_invocation_locality import (
 RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND = (
     "recorded_pair_measurement_comparison.responsibility_assignment_recorded"
 )
-RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND = (
-    "recorded_pair_measurement_comparison.applicability_act_evidenced"
+RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
+    "recorded_pair_measurement_comparison.applicability_act_occurrence_recorded"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND = (
     "recorded_pair_measurement_comparison.applicability_recorded"
 )
-RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND = (
-    "recorded_pair_measurement_comparison.act_evidenced"
+RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT = (
+    "recorded_pair_measurement_comparison.act_occurrence_recorded"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND = (
     "recorded_pair_measurement_comparison.recorded"
@@ -60,9 +60,9 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT = (
 
 EVENT_KIND_RESPONSIBILITIES = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND: "04.Compare.A",
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND: "02.Acts.A",
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND: "04.Compare.A",
 }
 
@@ -122,11 +122,11 @@ def _measurement_reference(event: Event) -> dict[str, str]:
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "responsible_act_evidence_identity": event.material[
-            "responsible_act_evidence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
-        "evidence_of_yield_relation_identity": event.material[
-            "evidence_of_yield_relation_identity"
+        "yield_relation_identity": event.material[
+            "yield_relation_identity"
         ],
     }
 
@@ -193,8 +193,8 @@ def _findings_from_carried_measurement(
         result = assertion.get("result") if type(assertion) is dict else None
         identity = dimensions.get("identity") if type(dimensions) is dict else None
         content = dimensions.get("content") if type(dimensions) is dict else None
-        representation = (
-            subject.get("representation") if type(subject) is dict else None
+        content = (
+            subject.get("content") if type(subject) is dict else None
         )
         local_support = (
             support.get("local_assertion_references")
@@ -205,9 +205,9 @@ def _findings_from_carried_measurement(
             type(identity) is not str
             or not identity
             or identity in identities
-            or type(representation) is not list
-            or len(representation) != 2
-            or any(type(value) is not int for value in representation)
+            or type(content) is not list
+            or len(content) != 2
+            or any(type(value) is not int for value in content)
             or result not in {"count", "recurrence"}
             or type(content) is not dict
             or type(local_support) is not list
@@ -242,7 +242,7 @@ def _findings_from_carried_measurement(
             _RecordedBytePairFinding(
                 assertion_identity=identity,
                 recorded_occurrence_identity=event.identity,
-                representation=tuple(representation),
+                content=tuple(content),
                 result=result,
                 _content_coordinates=content_coordinates,
                 _local_support_assertion_identities=tuple(local_support),
@@ -387,7 +387,7 @@ def _comparison_inputs(
                 ledger,
                 locality_identity=earlier.locality_identity,
                 through_event_occurrence_identity=source_standing_reference.get(
-                    "locality_standing_through_event_occurrence_identity"
+                    "standing_boundary_event_identity"
                 ),
             )
         except (TypeError, ValueError) as error:
@@ -399,19 +399,10 @@ def _comparison_inputs(
             for occurrence in source_standing.get("material_acquisition_result_occurrences", ())
             if type(occurrence) is dict
         }
-        carried_representation_event_identities = {
-            coordinates.get("representation_event_identity")
-            for coordinates in source_standing.get("representations", {}).values()
-            if type(coordinates) is dict
-        }
         if (
             earlier.identity
             not in source_standing.get("measurement_occurrences", {})
             or any(reference not in carried_sources for reference in earlier_sources)
-            or source_standing_reference.get(
-                "addressed_representation_event_identity"
-            )
-            not in carried_representation_event_identities
         ):
             raise RecordedPairMeasurementComparisonError(
                 "operator acquisition carries no exact prior Standing"
@@ -573,12 +564,6 @@ def _comparison_inputs_from_carried_measurements(
         source_standing_reference = acquired_material.get(
             "source_standing_reference"
         )
-        representations = locality_standing.get("representations")
-        represented = (
-            tuple(representations.values())
-            if type(representations) is dict
-            else ()
-        )
         if (
             acquired.locality_identity != earlier.locality_identity
             or acquired.exact_material != added.exact_material
@@ -587,14 +572,6 @@ def _comparison_inputs_from_carried_measurements(
             or type(source_standing_reference) is not dict
             or source_standing_reference.get("locality_identity")
             != earlier.locality_identity
-            or not any(
-                type(reference) is dict
-                and reference.get("representation_event_identity")
-                == source_standing_reference.get(
-                    "addressed_representation_event_identity"
-                )
-                for reference in represented
-            )
         ):
             raise RecordedPairMeasurementComparisonError(
                 "operator acquisition carries no exact prior Standing"
@@ -604,7 +581,7 @@ def _comparison_inputs_from_carried_measurements(
                 (
                     earlier.identity,
                     source_standing_reference[
-                        "addressed_representation_event_identity"
+                        "standing_boundary_event_identity"
                     ],
                 ),
                 locality_identity=earlier.locality_identity,
@@ -1077,11 +1054,10 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "evidence_scope": "Evidence for this exact input-to-Compare relation set",
     }
 
 
-def record_recorded_pair_measurement_comparison_applicability_act_evidence(
+def record_recorded_pair_measurement_comparison_applicability_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -1092,7 +1068,7 @@ def record_recorded_pair_measurement_comparison_applicability_act_evidence(
     )
     _require_assignment_standing(assignment, locality_standing)
     return ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(assignment),
         locality_identity=assignment.locality_identity,
     )
@@ -1104,16 +1080,16 @@ def _applicability_act_reading(
     *,
     assignment_reading: _AssignmentReading | None = None,
 ) -> tuple[Event, _AssignmentReading]:
-    event = ledger.get(_identity(event_identity, "comparison requires Applicability Evidence"))
+    event = ledger.get(_identity(event_identity, "comparison requires Applicability Act occurrence"))
     if (
         event is None
         or event.kind
-        != RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND
+        != RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison Applicability Evidence is absent or corrupted"
+            "comparison Applicability Act occurrence is absent or corrupted"
         )
     reference = event.material.get("responsibility_assignment_reference")
     assignment_identity = (
@@ -1132,7 +1108,7 @@ def _applicability_act_reading(
         or event.material != _applicability_act_material(assignment)
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison Applicability Evidence is not exact"
+            "comparison Applicability Act occurrence is not exact"
         )
     try:
         ledger.occurrences_in_append_order(
@@ -1146,7 +1122,7 @@ def _applicability_act_reading(
     return event, assignment_reading
 
 
-def get_recorded_pair_measurement_comparison_applicability_act_evidence(
+def get_recorded_pair_measurement_comparison_applicability_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _applicability_act_reading(ledger, event_identity)[0]
@@ -1179,7 +1155,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
 
 
 def _recorded_applicability_result_material(
-    material: dict[str, Any], *, act_identity: str, evidence_identity: str
+    material: dict[str, Any], *, act_identity: str, yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1199,16 +1175,16 @@ def _recorded_applicability_result_material(
         "standing": material["standing"],
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
-        "responsible_act_evidence_identity": act_identity,
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "act_occurrence_event_identity": act_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
 def record_recorded_pair_measurement_comparison_applicability_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
+    ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
-    act = get_recorded_pair_measurement_comparison_applicability_act_evidence(
-        ledger, responsible_act_evidence_event_identity
+    act = get_recorded_pair_measurement_comparison_applicability_act_occurrence(
+        ledger, act_occurrence_event_identity
     )
     result = _applicability_result_material(act)
     return _record_applicability_result_from_act(ledger, act=act, result=result)
@@ -1217,12 +1193,12 @@ def record_recorded_pair_measurement_comparison_applicability_result(
 def _record_applicability_result_from_act(
     ledger: EventLedger, *, act: Event, result: dict[str, Any]
 ) -> Event:
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind="recorded pair Measurement comparison Applicability result",
         result_identity=result["result_identity"],
         result_content=result,
@@ -1233,7 +1209,7 @@ def _record_applicability_result_from_act(
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
-            result, act_identity=act.identity, evidence_identity=evidence.identity
+            result, act_identity=act.identity, yield_relation_identity=yield_relation.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1263,22 +1239,22 @@ def _applicability_reading(
     act, assignment_reading = (
         _applicability_act_reading(
             ledger,
-            event.material.get("responsible_act_evidence_identity"),
+            event.material.get("act_occurrence_identity"),
             assignment_reading=assignment_reading,
         )
     )
     expected = _recorded_applicability_result_material(
         _applicability_result_material(act),
         act_identity=act.identity,
-        evidence_identity=event.material.get("evidence_of_yield_relation_identity"),
+        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=event.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
     if (
         event.locality_identity != act.locality_identity
@@ -1372,11 +1348,10 @@ def _comparison_act_material(assignment: Event, applicability: Event) -> dict[st
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
-        "evidence_scope": "Evidence for this exact Compare occurrence",
     }
 
 
-def record_recorded_pair_measurement_comparison_act_evidence(
+def record_recorded_pair_measurement_comparison_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -1411,7 +1386,7 @@ def record_recorded_pair_measurement_comparison_act_evidence(
         assignment, applicability, locality_standing
     )
     return ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
         _comparison_act_material(assignment, applicability),
         locality_identity=assignment.locality_identity,
     )
@@ -1423,15 +1398,15 @@ def _comparison_act_reading(
     *,
     assignment_reading: _AssignmentReading | None = None,
 ) -> tuple[Event, _AssignmentReading, Event]:
-    event = ledger.get(_identity(event_identity, "comparison requires Act Evidence"))
+    event = ledger.get(_identity(event_identity, "comparison requires Act occurrence"))
     if (
         event is None
-        or event.kind != RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND
+        or event.kind != RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison Act Evidence is absent or corrupted"
+            "comparison Act occurrence is absent or corrupted"
         )
     reference = event.material.get("responsibility_assignment_reference")
     if assignment_reading is None:
@@ -1445,7 +1420,7 @@ def _comparison_act_reading(
     applicability = ledger.get(event.material.get("applicability_result_event_identity"))
     if applicability is None:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Act Evidence carries no Applicability"
+            "comparison Act occurrence carries no Applicability"
         )
     _material, applicability, _act, applicability_assignment_reading = (
         _applicability_reading(
@@ -1460,19 +1435,19 @@ def _comparison_act_reading(
         or event.material != _comparison_act_material(assignment, applicability)
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison Act Evidence is not exact"
+            "comparison Act occurrence is not exact"
         )
     return event, assignment_reading, applicability
 
 
-def get_recorded_pair_measurement_comparison_act_evidence(
+def get_recorded_pair_measurement_comparison_act_occurrence(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _comparison_act_reading(ledger, event_identity)[0]
 
 
 def _finding_key(finding: Any) -> tuple[str, tuple[int, int] | None]:
-    return finding.result, finding.representation
+    return finding.result, finding.exact_pair
 
 
 def _finding_content(finding: Any) -> Any:
@@ -1504,7 +1479,7 @@ def _comparison_of_findings(
         second = later_by_key.get(key)
         subject = {
             "result": key[0],
-            "representation": list(key[1]) if key[1] is not None else None,
+            "content": list(key[1]) if key[1] is not None else None,
         }
         first_content = _finding_content(first)
         if second is None:
@@ -1537,7 +1512,7 @@ def _comparison_of_findings(
             {
                 "subject": {
                     "result": key[0],
-                    "representation": list(key[1]) if key[1] is not None else None,
+                    "content": list(key[1]) if key[1] is not None else None,
                 },
                 "later_assertion_reference": second.reference,
                 "later_content": _finding_content(second),
@@ -1590,7 +1565,7 @@ def _comparison_result_material(
 
 
 def _recorded_comparison_result_material(
-    material: dict[str, Any], *, act_identity: str, evidence_identity: str
+    material: dict[str, Any], *, act_identity: str, yield_relation_identity: str
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1616,17 +1591,17 @@ def _recorded_comparison_result_material(
         "scope": deepcopy(material["scope"]),
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
-        "responsible_act_evidence_identity": act_identity,
-        "evidence_of_yield_relation_identity": evidence_identity,
+        "act_occurrence_event_identity": act_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
 def record_recorded_pair_measurement_comparison_result(
-    ledger: EventLedger, *, responsible_act_evidence_event_identity: str
+    ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
     act, assignment_reading, _applicability = (
         _comparison_act_reading(
-            ledger, responsible_act_evidence_event_identity
+            ledger, act_occurrence_event_identity
         )
     )
     result = _comparison_result_material(act, assignment_reading)
@@ -1636,12 +1611,12 @@ def record_recorded_pair_measurement_comparison_result(
 def _record_comparison_result_from_act(
     ledger: EventLedger, *, act: Event, result: dict[str, Any]
 ) -> Event:
-    evidence = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act.locality_identity,
         exact_act=RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
         act_occurrence_identity=act.material["act_occurrence_identity"],
-        responsible_act_evidence_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
         result_kind="recorded pair Measurement comparison result",
         result_identity=result["result_identity"],
         result_content=result,
@@ -1652,7 +1627,7 @@ def _record_comparison_result_from_act(
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
         _recorded_comparison_result_material(
-            result, act_identity=act.identity, evidence_identity=evidence.identity
+            result, act_identity=act.identity, yield_relation_identity=yield_relation.identity
         ),
         locality_identity=act.locality_identity,
     )
@@ -1690,7 +1665,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
     )
     _require_assignment_standing(assignment, locality_standing)
     applicability_act = ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_EVIDENCE_KIND,
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(assignment),
         locality_identity=assignment.locality_identity,
     )
@@ -1712,7 +1687,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         assignment, applicability, locality_standing
     )
     comparison_act = ledger.append(
-        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
         _comparison_act_material(assignment, applicability),
         locality_identity=assignment.locality_identity,
     )
@@ -1755,7 +1730,7 @@ def _recorded_pair_measurement_comparison_reading(
     act, assignment_reading, _applicability = (
         _comparison_act_reading(
             ledger,
-            event.material.get("responsible_act_evidence_identity"),
+            event.material.get("act_occurrence_identity"),
             assignment_reading=assignment_reading,
         )
     )
@@ -1764,15 +1739,15 @@ def _recorded_pair_measurement_comparison_reading(
             act, assignment_reading
         ),
         act_identity=act.identity,
-        evidence_identity=event.material.get("evidence_of_yield_relation_identity"),
+        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material.get(
-            "evidence_of_yield_relation_identity"
+        yield_relation_event_identity=event.material.get(
+            "yield_relation_identity"
         ),
-        responsible_act_evidence_event_identity=act.identity,
+        act_occurrence_event_identity=act.identity,
     )
     if (
         event.locality_identity != act.locality_identity

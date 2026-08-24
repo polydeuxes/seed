@@ -120,7 +120,7 @@ def test_the_materials_own_byte_count_is_not_an_internal_boundary():
 
     A read from byte zero starts where the material starts. Promoting it to
     "a unit also begins here" would take the occurrence's exact byte count as
-    evidence about the occurrence's contents.
+    a relation concerning the occurrence's contents.
     """
 
     raw = block(100)
@@ -129,7 +129,7 @@ def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     assert len(raw) == 1600
 
     # And it is compatible with either supplied phase, which is what makes it
-    # no evidence for one: the material tuples trade places rather than one disagreeing.
+    # no such relation: the material tuples trade places rather than one disagreeing.
     at_zero = position_support(raw, 2, phase=0)
     at_one = position_support(raw, 2, phase=1)
     assert {frozenset(at_zero.values())} == {frozenset(at_one.values())}

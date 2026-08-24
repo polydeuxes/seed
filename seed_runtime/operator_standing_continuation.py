@@ -14,16 +14,15 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.operator_representation import read_operator_representation
-from seed_runtime.evidence_of_yield_relation import (
-    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
-    _record_evidence_of_yield_relation,
+from seed_runtime.yield_relation import (
+    RECORDED_YIELD_RELATION_EVENT,
+    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 
 
-STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND = (
-    "operator.standing.locality_continuation_act_evidenced"
+STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT = (
+    "operator.standing.locality_continuation_act_occurrence_recorded"
 )
 STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.standing.locality_continuation_responsibility_assignment_recorded"
@@ -46,7 +45,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
         "06.Locality.B"
     ),
-    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND: "06.Locality.A",
 }
 STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE = "06.Locality.B"
@@ -66,74 +65,37 @@ def _source_standing_reference(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
-    addressed_representation_event_identity: str,
+    standing_boundary_event_identity: str,
 ) -> dict[str, str | None]:
-    """Resolve the exact source boundary represented by one intact occurrence."""
+    """Resolve one intact exact source Standing boundary."""
 
     _require_identity(
         source_locality_identity,
         "Standing Locality continuation requires one exact source Locality",
     )
     _require_identity(
-        addressed_representation_event_identity,
-        "Standing Locality continuation requires one addressed Representation",
+        standing_boundary_event_identity,
+        "Standing Locality continuation requires one exact Standing boundary",
     )
-    try:
-        representation = read_operator_representation(
-            ledger, addressed_representation_event_identity
-        )
-    except ValueError as error:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation requires one intact addressed Representation"
-        ) from error
-    if representation["locality_identity"] != source_locality_identity:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation has a different source Locality"
-        )
-
-    representation_event = ledger.get(addressed_representation_event_identity)
+    source_boundary = ledger.get(standing_boundary_event_identity)
     if (
-        representation_event is None
-        or "locality_standing_through_event_occurrence_identity"
-        not in representation_event.material
+        source_boundary is None
+        or source_boundary.locality_identity != source_locality_identity
+        or ledger.integrity_of(source_boundary.identity) == CORRUPTED
     ):
         raise StandingLocalityContinuationError(
-            "the addressed Representation carries no exact source boundary"
-        )
-    source_boundary = representation_event.material[
-        "locality_standing_through_event_occurrence_identity"
-    ]
-    if source_boundary is not None and (
-        type(source_boundary) is not str or not source_boundary
-    ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation requires one exact source boundary"
+            "Standing Locality continuation requires one intact source boundary"
         )
     occurrences = ledger.list_locality(source_locality_identity)
     positions = {event.identity: position for position, event in enumerate(occurrences)}
-    representation_position = positions.get(addressed_representation_event_identity)
-    if representation_position is None:
+    if positions.get(standing_boundary_event_identity) is None:
         raise StandingLocalityContinuationError(
-            "the addressed Representation is absent from its source Locality"
+            "the source Standing boundary is absent from its source Locality"
         )
-    if source_boundary is not None:
-        boundary_event = ledger.get(source_boundary)
-        boundary_position = positions.get(source_boundary)
-        if (
-            boundary_event is None
-            or boundary_event.locality_identity != source_locality_identity
-            or boundary_position is None
-            or boundary_position >= representation_position
-            or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        ):
-            raise StandingLocalityContinuationError(
-                "Standing Locality continuation requires its exact prior source boundary"
-            )
     return {
         "source_locality_identity": source_locality_identity,
-        "source_standing_through_event_occurrence_identity": source_boundary,
-        "addressed_representation_event_identity": (
-            addressed_representation_event_identity
+        "source_standing_through_event_occurrence_identity": (
+            standing_boundary_event_identity
         ),
     }
 
@@ -158,8 +120,8 @@ def _assignment_material(
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
-    addressed_representation = source_standing_reference[
-        "addressed_representation_event_identity"
+    standing_boundary = source_standing_reference[
+        "source_standing_through_event_occurrence_identity"
     ]
     return {
         "assignment_identity": assignment_identity,
@@ -171,7 +133,7 @@ def _assignment_material(
         "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
-        "evidence_occurrence_reference": addressed_representation,
+        "standing_boundary_occurrence_reference": standing_boundary,
         "scope": {
             "source_locality_identity": source_standing_reference[
                 "source_locality_identity"
@@ -179,7 +141,6 @@ def _assignment_material(
             "source_standing_through_event_occurrence_identity": source_standing_reference[
                 "source_standing_through_event_occurrence_identity"
             ],
-            "addressed_representation_event_identity": addressed_representation,
             "destination_locality_identity": destination_locality_identity,
         },
         "result_boundary_identity": result_boundary_identity,
@@ -207,7 +168,7 @@ def _assignment_reference(assignment: Event) -> dict[str, str]:
     }
 
 
-def _act_evidence_material(
+def _act_occurrence_material(
     *,
     continuation_act_identity: str,
     act_occurrence_identity: str,
@@ -233,10 +194,6 @@ def _act_evidence_material(
         "participation": _participation(
             source_standing_reference,
             act_occurrence_identity=act_occurrence_identity,
-        ),
-        "evidence_scope": (
-            "Evidence bounded to this exact direct Standing Locality continuation "
-            "occurrence"
         ),
     }
 
@@ -290,8 +247,8 @@ def _result_material(
 def _recorded_result_material(
     result_material: dict[str, Any],
     *,
-    responsible_act_evidence_identity: str,
-    evidence_of_yield_relation_identity: str,
+    act_occurrence_event_identity: str,
+    yield_relation_identity: str,
 ) -> dict[str, Any]:
     """Carry every result coordinate at one literal durable address."""
 
@@ -321,8 +278,8 @@ def _recorded_result_material(
         "standing": result_material["standing"],
         "unknown": result_material["unknown"],
         "limits": result_material["limits"],
-        "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
+        "act_occurrence_event_identity": act_occurrence_event_identity,
+        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -330,7 +287,7 @@ def record_standing_locality_continuation_responsibility_assignment(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
-    addressed_representation_event_identity: str,
+    standing_boundary_event_identity: str,
 ) -> Event:
     """Record one bounded assignment at one fresh destination Locality."""
 
@@ -339,9 +296,7 @@ def record_standing_locality_continuation_responsibility_assignment(
     source_reference = _source_standing_reference(
         ledger,
         source_locality_identity=source_locality_identity,
-        addressed_representation_event_identity=(
-            addressed_representation_event_identity
-        ),
+        standing_boundary_event_identity=standing_boundary_event_identity,
     )
     destination_locality_identity = new_identity("standing_locality")
     if ledger.has_locality(destination_locality_identity):
@@ -370,7 +325,7 @@ def record_standing_locality_continuation_responsibility_assignment(
     )
 
 
-def record_standing_locality_continuation_responsible_act_evidence(
+def record_standing_locality_continuation_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
@@ -434,8 +389,8 @@ def record_standing_locality_continuation_responsible_act_evidence(
         "standing_locality_continuation_relation_occurrence"
     )
     return ledger.append(
-        STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
-        _act_evidence_material(
+        STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
+        _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
             act_occurrence_identity=act_occurrence_identity,
             locality_relation_occurrence_identity=(
@@ -449,41 +404,41 @@ def record_standing_locality_continuation_responsible_act_evidence(
     )
 
 
-def _validated_act_evidence(
-    ledger: EventLedger, responsible_act_evidence_event_identity: str
+def _validated_act_occurrence(
+    ledger: EventLedger, act_occurrence_event_identity: str
 ) -> Event:
     _require_identity(
-        responsible_act_evidence_event_identity,
-        "Standing Locality continuation result requires one exact Act Evidence identity",
+        act_occurrence_event_identity,
+        "Standing Locality continuation result requires one exact Act occurrence identity",
     )
-    act_evidence = ledger.get(responsible_act_evidence_event_identity)
+    act_occurrence = ledger.get(act_occurrence_event_identity)
     if (
-        act_evidence is None
-        or act_evidence.kind != STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND
-        or type(act_evidence.locality_identity) is not str
-        or not act_evidence.locality_identity
-        or act_evidence.exact_material is not None
-        or ledger.integrity_of(act_evidence.identity) == CORRUPTED
+        act_occurrence is None
+        or act_occurrence.kind != STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
+        or type(act_occurrence.locality_identity) is not str
+        or not act_occurrence.locality_identity
+        or act_occurrence.exact_material is not None
+        or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
     ):
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation result requires intact Act Evidence"
+            "Standing Locality continuation result requires intact Act occurrence"
         )
-    material = act_evidence.material
+    material = act_occurrence.material
     source_reference = material.get("source_standing_reference")
     if type(source_reference) is not dict:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act Evidence carries no exact source boundary"
+            "Standing Locality continuation Act occurrence carries no exact source boundary"
         )
     expected_reference = _source_standing_reference(
         ledger,
         source_locality_identity=source_reference.get("source_locality_identity"),
-        addressed_representation_event_identity=source_reference.get(
-            "addressed_representation_event_identity"
+        standing_boundary_event_identity=source_reference.get(
+            "source_standing_through_event_occurrence_identity"
         ),
     )
     if source_reference != expected_reference:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act Evidence carries another source boundary"
+            "Standing Locality continuation Act occurrence carries another source boundary"
         )
     continuation_act_identity = material.get("continuation_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
@@ -493,7 +448,7 @@ def _validated_act_evidence(
     assignment_reference = material.get("responsibility_assignment_reference")
     if type(assignment_reference) is not dict:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act Evidence carries no exact Responsibility assignment"
+            "Standing Locality continuation Act occurrence carries no exact Responsibility assignment"
         )
     assignment = get_standing_locality_continuation_responsibility_assignment(
         ledger, assignment_reference.get("recorded_occurrence_identity")
@@ -521,17 +476,17 @@ def _validated_act_evidence(
         )
         != 7
         or assignment_reference != _assignment_reference(assignment)
-        or assignment.locality_identity != act_evidence.locality_identity
+        or assignment.locality_identity != act_occurrence.locality_identity
         or assignment.material["responsibility"]
         != STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY
         or assignment.material["responsible_boundary"] != "this Seed"
         or assignment.material["source_standing_reference"] != expected_reference
         or assignment.material["destination_locality_identity"]
-        != act_evidence.locality_identity
+        != act_occurrence.locality_identity
         or material.get("destination_locality_identity")
-        != act_evidence.locality_identity
+        != act_occurrence.locality_identity
         or material
-        != _act_evidence_material(
+        != _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
             act_occurrence_identity=act_occurrence_identity,
             locality_relation_occurrence_identity=(
@@ -539,35 +494,35 @@ def _validated_act_evidence(
             ),
             responsibility_assignment_reference=assignment_reference,
             source_standing_reference=expected_reference,
-            destination_locality_identity=act_evidence.locality_identity,
+            destination_locality_identity=act_occurrence.locality_identity,
         )
     ):
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act Evidence is not exact"
+            "Standing Locality continuation Act occurrence is not exact"
         )
-    return act_evidence
+    return act_occurrence
 
 
 def record_standing_locality_continuation_result(
     ledger: EventLedger,
     *,
-    responsible_act_evidence_event_identity: str,
+    act_occurrence_event_identity: str,
 ) -> Event:
-    """Record the Yield and direct Locality relation for one evidenced Act."""
+    """Record the Yield and direct Locality relation for one recorded Act."""
 
-    act_evidence = _validated_act_evidence(
-        ledger, responsible_act_evidence_event_identity
+    act_occurrence = _validated_act_occurrence(
+        ledger, act_occurrence_event_identity
     )
-    material = act_evidence.material
-    locality_identity = act_evidence.locality_identity
+    material = act_occurrence.material
+    locality_identity = act_occurrence.locality_identity
     act_occurrence_identity = material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
-        locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+        locality_identity, RECORDED_YIELD_RELATION_EVENT
     ):
         dimensions = prior_yield.material.get("dimensions")
         if (
-            prior_yield.material.get("responsible_act_evidence_identity")
-            == act_evidence.identity
+            prior_yield.material.get("act_occurrence_event_identity")
+            == act_occurrence.identity
             or (
                 type(dimensions) is dict
                 and dimensions.get("act_occurrence_identity")
@@ -581,8 +536,8 @@ def record_standing_locality_continuation_result(
         locality_identity, STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
     ):
         if (
-            prior_result.material.get("responsible_act_evidence_identity")
-            == act_evidence.identity
+            prior_result.material.get("act_occurrence_event_identity")
+            == act_occurrence.identity
             or prior_result.material.get("act_occurrence_identity")
             == act_occurrence_identity
         ):
@@ -606,12 +561,12 @@ def record_standing_locality_continuation_result(
         source_standing_reference=material["source_standing_reference"],
         destination_locality_identity=locality_identity,
     )
-    evidence_of_yield_relation = _record_evidence_of_yield_relation(
+    yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act=STANDING_LOCALITY_CONTINUATION_ACT,
         act_occurrence_identity=act_occurrence_identity,
-        responsible_act_evidence_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
         result_kind=STANDING_LOCALITY_CONTINUATION_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_material,
@@ -623,8 +578,8 @@ def record_standing_locality_continuation_result(
         STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
         _recorded_result_material(
             result_material,
-            responsible_act_evidence_identity=act_evidence.identity,
-            evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
+            act_occurrence_event_identity=act_occurrence.identity,
+            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=locality_identity,
     )
@@ -633,7 +588,7 @@ def record_standing_locality_continuation_result(
 def get_recorded_standing_locality_continuation(
     ledger: EventLedger, recorded_result_event_identity: str
 ) -> dict[str, Any]:
-    """Read one direct continuation relation through its exact Evidence."""
+    """Read one direct continuation relation through its exact relation."""
 
     _require_identity(
         recorded_result_event_identity,
@@ -651,36 +606,36 @@ def get_recorded_standing_locality_continuation(
         raise StandingLocalityContinuationError(
             "the Standing Locality continuation result is absent or corrupted"
         )
-    act_evidence = _validated_act_evidence(
-        ledger, event.material.get("responsible_act_evidence_identity")
+    act_occurrence = _validated_act_occurrence(
+        ledger, event.material.get("act_occurrence_event_identity")
     )
     result_identity = event.material.get("result_identity")
     expected = _result_material(
         result_identity=result_identity,
-        continuation_act_identity=act_evidence.material[
+        continuation_act_identity=act_occurrence.material[
             "continuation_act_identity"
         ],
-        act_occurrence_identity=act_evidence.material["act_occurrence_identity"],
-        locality_relation_occurrence_identity=act_evidence.material[
+        act_occurrence_identity=act_occurrence.material["act_occurrence_identity"],
+        locality_relation_occurrence_identity=act_occurrence.material[
             "locality_relation_occurrence_identity"
         ],
-        responsibility_assignment_reference=act_evidence.material[
+        responsibility_assignment_reference=act_occurrence.material[
             "responsibility_assignment_reference"
         ],
-        source_standing_reference=act_evidence.material[
+        source_standing_reference=act_occurrence.material[
             "source_standing_reference"
         ],
         destination_locality_identity=event.locality_identity,
     )
     expected_event_material = _recorded_result_material(
         expected,
-        responsible_act_evidence_identity=act_evidence.identity,
-        evidence_of_yield_relation_identity=event.material.get("evidence_of_yield_relation_identity"),
+        act_occurrence_event_identity=act_occurrence.identity,
+        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     if (
         type(result_identity) is not str
         or not result_identity
-        or act_evidence.locality_identity != event.locality_identity
+        or act_occurrence.locality_identity != event.locality_identity
         or event.material != expected_event_material
     ):
         raise StandingLocalityContinuationError(
@@ -689,12 +644,12 @@ def get_recorded_standing_locality_continuation(
     requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        evidence_of_yield_relation_event_identity=event.material["evidence_of_yield_relation_identity"],
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        yield_relation_event_identity=event.material["yield_relation_identity"],
+        act_occurrence_event_identity=act_occurrence.identity,
     )
     if not all(requirements.values()):
         raise StandingLocalityContinuationError(
-            "the Standing Locality continuation carries no exact Evidence of Yield relation"
+            "the Standing Locality continuation carries no exact Yield relation"
         )
     return deepcopy(event.material)
 
@@ -730,8 +685,8 @@ def get_standing_locality_continuation_responsibility_assignment(
     expected_reference = _source_standing_reference(
         ledger,
         source_locality_identity=source_reference.get("source_locality_identity"),
-        addressed_representation_event_identity=source_reference.get(
-            "addressed_representation_event_identity"
+        standing_boundary_event_identity=source_reference.get(
+            "source_standing_through_event_occurrence_identity"
         ),
     )
     assignment_identity = material.get("assignment_identity")

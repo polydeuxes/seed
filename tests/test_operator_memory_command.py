@@ -17,7 +17,7 @@ from seed_runtime.operator_memory_command import (
     request_operator_memory,
 )
 from seed_runtime.operator_standing_continuation import (
-    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
     get_recorded_standing_locality_continuation,
 )
@@ -66,7 +66,7 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     acts = [
         event
         for event in ledger.list()
-        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND
+        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
     ]
     results = [
         event
@@ -147,7 +147,7 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
     assert not [
         event
         for event in ledger.list()
-        if event.kind == "operator.addressed_representation.locality_evidenced"
+        if event.kind == "operator.addressed_representation.locality_recorded"
     ]
     assert {
         recorded["source_standing_reference"][

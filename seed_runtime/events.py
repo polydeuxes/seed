@@ -21,7 +21,7 @@ from seed_runtime.event import Event, _decode_screened_event_material
 # What a ledger can say about a stored occurrence's integrity.
 #
 # `06.Standing:16` names append-only records permissively, among material
-# representations. Nothing in active law requires append-only, and
+# forms. Nothing in active law requires append-only, and
 # nothing here asserts history cannot revision: a `DROP TRIGGER` followed by a
 # rewrite of both row and material identity defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
@@ -69,7 +69,7 @@ _STORED_OCCURRENCE_FIELDS = (
 
 # Material storage, below the integrity boundary.
 #
-# The material identity is computed over the canonical JSON string, never over the stored
+# The material identity is computed over the exact JSON string, never over the stored
 # bytes, so how a material was written down cannot revision what it commits to.
 # `#2492` was the same lesson at the other end: two base64 encodings of one
 # byte string had to read one account.
@@ -102,7 +102,7 @@ def _stored_material(serialized: str) -> str | bytes:
     """The material as stored: compressed when that is smaller, else as written.
 
     A material that does not shrink is stored as text, because compressing it
-    would cost bytes and reads for nothing. The two represents are told apart on read
+    would cost bytes and reads for nothing. The two forms are told apart on read
     by their type, which SQLite preserves.
     """
 
@@ -116,11 +116,11 @@ class InvalidStoredMaterial(LedgerIntegrityError):
 
 
 def _serialized_material(stored: str | bytes) -> str:
-    """The canonical JSON string a stored material carries.
+    """The exact JSON string a stored material carries.
 
     A store written before compression holds text, and reads preserved.
 
-    **Failure to read the stored representation is corruption, not a
+    **Failure to read the stored material is corruption, not a
     compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
     that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
     stored row no longer carries what it was identified from, which is the
@@ -137,7 +137,7 @@ def _serialized_material(stored: str | bytes) -> str:
             ) from exc
     if not isinstance(stored, str):
         raise InvalidStoredMaterial(
-            f"a stored material is {type(stored).__name__}, not a representation"
+            f"a stored material is {type(stored).__name__}, not text or bytes"
         )
     return stored
 
@@ -158,7 +158,7 @@ def _identity_of_stored_occurrence_material(row: "sqlite3.Row") -> str | None:
 def _stored_occurrence_material(row: "sqlite3.Row") -> dict:
     """A stored row as the material identity was taken over it.
 
-    The material is returned to its canonical string because the identity is
+    The material is returned to its exact string because the identity is
     taken from what the occurrence carries, not its stored form.
     """
 
@@ -224,8 +224,8 @@ def _identified_occurrence_bytes(row: dict) -> bytes:
     )
 
 
-def _canonical_occurrence_bytes(event: Event) -> bytes:
-    """Canonical bytes for the occurrence itself, excluding ledger mechanics."""
+def _exact_occurrence_bytes(event: Event) -> bytes:
+    """Exact bytes for the occurrence itself, excluding ledger mechanics."""
     represented = {
         "identity": event.identity,
         "kind": event.kind,
@@ -238,7 +238,7 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
 
 
 def _next_prefix_identity(previous: str, event: Event) -> str:
-    occurrence = _canonical_occurrence_bytes(event)
+    occurrence = _exact_occurrence_bytes(event)
     return hashlib.sha256(
         _PREFIX_DOMAIN
         + bytes.fromhex(previous)
@@ -408,7 +408,7 @@ class EventLedger:
         """What this ledger can say about a stored occurrence's integrity.
 
         An in-memory ledger holds objects, not stored bytes, so there is no
-        recorded representation to have diverged from. It reports
+        recorded material to have diverged from. It reports
         `UNVERIFIABLE` rather than `VERIFIED`: nothing was protected, and
         saying otherwise would manufacture the guarantee.
         """
@@ -520,33 +520,11 @@ class SQLiteEventLedger(EventLedger):
     #
     # The four operator-console prefixes were absent until `#2413` connected
     # the console to a durable ledger, at which point the second `seed --db`
-    # invocation aborted on `duplicate representation reference`. Nothing was
+    # invocation aborted on a duplicate minted identity. Nothing was
     # wrong with them before: no console had ever written durable history.
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
-        "operator_representation", "operator_representation_act",
-        "operator_representation_act_occurrence", "operator_representation_emission_act",
-        "operator_representation_emission_occurrence",
-        "operator_representation_emission_result",
-        "operator_representation_emission_locality_occurrence",
-        "operator_egress_boundary",
-        "operator_egress_locality",
-        "representation_candidate_assignment",
-        "representation_candidate_assignment_subject",
-        "representation_candidate_act",
-        "representation_candidate_act_occurrence",
-        "representation_candidate_result",
-        "representation_candidate_scope",
-        "exact_material_representation_admission_assignment",
-        "exact_material_representation_admission_assignment_subject",
-        "exact_material_representation_admission_act",
-        "exact_material_representation_admission_act_occurrence",
-        "exact_material_representation_admission_result",
-        "exact_material_representation_admission_scope",
-        "representation_emission_applicability_act",
-        "representation_emission_applicability_act_occurrence",
-        "representation_emission_applicability_result",
         "witness_material_acquisition_act",
         "witness_material_acquisition_act_occurrence",
         "witness_material_acquisition_result",
@@ -665,9 +643,6 @@ class SQLiteEventLedger(EventLedger):
         "recurrent_result_exact_material_measurement_act",
         "recurrent_result_exact_material_measurement_act_occurrence",
         "recurrent_result_exact_material_measurement_result",
-        "operator_representation_boundary_failure_act",
-        "operator_representation_boundary_failure_act_occurrence",
-        "operator_representation_boundary_failure_result",
         "operator_material_acquire_act",
         "operator_material_acquire_act_occurrence",
         "operator_material_acquire_assignment",
@@ -1119,7 +1094,7 @@ class SQLiteEventLedger(EventLedger):
         # A durable occurrence always carries a material identity: the store is refused
         # at open otherwise. So this returns VERIFIED or CORRUPTED, never
         # UNVERIFIABLE. Leaving a supported unverifiable path here would let it
-        # be cited later as evidence that durable references need no integrity.
+        # be cited later as yield_relation that durable references need no integrity.
         return (
             VERIFIED
             if _identity_of_stored_occurrence_material(row) == row["occurrence_material_identity"]
@@ -1466,7 +1441,7 @@ class SQLiteEventLedger(EventLedger):
         A reservable identity is a known prefix, an underscore, and digits.
         The digits therefore run to the end of the string and begin just after
         its **last** underscore, so one split locates the only candidate split
-        point rather than testing the value against each prefix in turn.
+        place rather than testing the value against each prefix in turn.
 
         `#2483` measured why that matters on a Compare material: testing every
         walked value against every prefix cost 53.6 million calls over 3,984

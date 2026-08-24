@@ -17,17 +17,17 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     _record_byte_measurement_responsibility_assignment_from_responsibility_boundary,
-    _record_byte_measurement_responsible_act_evidence_from_carried_standing,
-    _record_byte_measurement_result_from_carried_act_evidence,
+    _record_byte_measurement_act_occurrence_from_carried_standing,
+    _record_byte_measurement_result_from_carried_act_occurrence,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment,
+    _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment,
     _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_responsibility_boundary,
-    _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence,
+    _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
     _material_acquisition_identities_with_exact_locality_from_bounded_replay,
     _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
@@ -192,7 +192,7 @@ def _complete_direct_measurement(
             prior_through_event_occurrence_identity=prior_boundary,
         )
     )
-    act = _record_byte_pair_occurrence_position_measurement_act_evidence_from_carried_assignment(
+    act = _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment(
         ledger,
         responsibility_assignment=assignment,
         finding=finding,
@@ -204,9 +204,9 @@ def _complete_direct_measurement(
         (act.identity,),
         locality_identity=locality_identity,
     )
-    result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_evidence(
+    result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence(
         ledger,
-        responsible_act_evidence=act,
+        act_occurrence=act,
         responsibility_assignment=assignment,
         finding=finding,
     )
@@ -320,7 +320,7 @@ def _complete_byte_measurement(
         prior_through_event_occurrence_identity=prior_boundary,
         responsibility_boundary_replay=responsibility_boundary_replay,
     )
-    act = _record_byte_measurement_responsible_act_evidence_from_carried_standing(
+    act = _record_byte_measurement_act_occurrence_from_carried_standing(
         ledger,
         responsibility_assignment=assignment,
         responsibility_assignment_standing=recording_replay,
@@ -331,9 +331,9 @@ def _complete_byte_measurement(
         (act.identity,),
         locality_identity=locality_identity,
     )
-    result = _record_byte_measurement_result_from_carried_act_evidence(
+    result = _record_byte_measurement_result_from_carried_act_occurrence(
         ledger,
-        responsible_act_evidence=act,
+        act_occurrence=act,
         responsibility_assignment=assignment,
         locality_standing=recording_replay,
     )
@@ -341,7 +341,7 @@ def _complete_byte_measurement(
         ledger,
         recording_replay,
         (
-            result.material["evidence_of_yield_relation_identity"],
+            result.material["yield_relation_identity"],
             result.identity,
         ),
         locality_identity=locality_identity,

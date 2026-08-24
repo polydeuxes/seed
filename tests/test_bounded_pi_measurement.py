@@ -8,7 +8,7 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_measurement_responsibility_assignment,
     record_byte_position_pair_count_layer,
-    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
@@ -29,7 +29,7 @@ def _record_byte_measurement(
             ledger, locality_identity=recording_locality_identity
         ),
     )
-    act_evidence = record_byte_measurement_responsible_act_evidence(
+    act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -38,7 +38,7 @@ def _record_byte_measurement(
     )
     return record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
     )
 
 

@@ -13,7 +13,7 @@ SECRET_FIELD_NAMES = frozenset(
 
 
 def secret_boundary_key(name: object) -> str:
-    """Return the exact key representation used by this boundary."""
+    """Return the exact key content used by this boundary."""
     return str(name).strip().lower().replace("-", "_")
 
 

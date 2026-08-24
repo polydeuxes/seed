@@ -49,7 +49,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsibility_assignment,
-    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
@@ -860,7 +860,7 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
     # One identity for material acquisition or the separately observable byte Measurement
-    # Act Evidence, two for its Yield/result, three for occurrence-position
+    # Act occurrence, two for its Yield/result, three for occurrence-position
     # Measurement, four for a record-only Representation, six for the distinct
     # pair-input Applicability and pair Measurement lifecycles, and all ten
     # exact identities for a successful raw Representation lifecycle. No call
@@ -886,7 +886,7 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
             ledger, locality_identity="s"
         ),
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_act = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=measurement_assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -895,7 +895,7 @@ def test_fresh_pair_measurement_is_not_reread_when_it_enters_standing(monkeypatc
     )
     measurement = record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=measurement_act.identity,
+        act_occurrence_event_identity=measurement_act.identity,
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
     reads = []
@@ -948,7 +948,7 @@ def test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged():
             ledger, locality_identity="s"
         ),
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_act = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=measurement_assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -956,7 +956,7 @@ def test_corrupted_pair_assignment_refusal_leaves_carried_standing_unchanged():
         ),
     )
     measurement = record_byte_measurement_result(
-        ledger, responsible_act_evidence_event_identity=measurement_act.identity
+        ledger, act_occurrence_event_identity=measurement_act.identity
     )
     pair = record_byte_position_pair_count_layer(
         ledger,
@@ -1013,7 +1013,7 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
             ledger, locality_identity="s"
         ),
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_act = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=measurement_assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -1022,7 +1022,7 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
     )
     measurement = record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=measurement_act.identity,
+        act_occurrence_event_identity=measurement_act.identity,
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
     standing, pair_measurement = operator_console._record_pair_measurement(
@@ -1092,7 +1092,7 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     )
     from seed_runtime.operator_material_acquisition import (
         _record_operator_material_acquire_responsibility_assignment_from_carried_representation,
-        _record_operator_material_acquire_responsible_act_evidence_from_assignment,
+        _record_operator_material_acquire_act_occurrence_from_assignment,
         record_operator_material_acquire_result,
     )
     from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
@@ -1118,7 +1118,7 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
             ledger, locality_identity="s"
         ),
     )
-    measurement_act = record_byte_measurement_responsible_act_evidence(
+    measurement_act = record_byte_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=measurement_assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
@@ -1127,7 +1127,7 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     )
     measurement = record_byte_measurement_result(
         ledger,
-        responsible_act_evidence_event_identity=measurement_act.identity,
+        act_occurrence_event_identity=measurement_act.identity,
     )
     standing = read_operator_locality_standing(ledger, locality_identity="s")
     standing, pair_measurement = operator_console._record_pair_measurement(
@@ -1172,8 +1172,8 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
             "representation_event_identity"
         ],
     )
-    act_evidence = (
-        _record_operator_material_acquire_responsible_act_evidence_from_assignment(
+    act_occurrence = (
+        _record_operator_material_acquire_act_occurrence_from_assignment(
             ledger,
             responsibility_assignment=assignment,
             responsibility_assignment_standing=standing,
@@ -1181,13 +1181,13 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     )
     standing = _carry_operator_material_acquisition_occurrence_into_standing(
         standing,
-        act_evidence,
+        act_occurrence,
         prior_through_event_occurrence_identity=assignment.identity,
     )
     assert representation_reads == []
     acquired = record_operator_material_acquire_result(
         ledger,
-        responsible_act_evidence_event_identity=act_evidence.identity,
+        act_occurrence_event_identity=act_occurrence.identity,
         boundary_material=OperatorBoundaryMaterial(
             exact_bytes=b"next material",
             eof=False,
@@ -1203,13 +1203,13 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
             _carry_operator_material_acquisition_occurrence_into_standing(
                 standing,
                 malformed,
-                prior_through_event_occurrence_identity=act_evidence.identity,
+                prior_through_event_occurrence_identity=act_occurrence.identity,
             )
         assert standing == unchanged
     standing = _carry_operator_material_acquisition_occurrence_into_standing(
         standing,
         acquired,
-        prior_through_event_occurrence_identity=act_evidence.identity,
+        prior_through_event_occurrence_identity=act_occurrence.identity,
     )
 
     assert representation_reads.count(
