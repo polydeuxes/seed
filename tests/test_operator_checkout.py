@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from io import BytesIO, StringIO
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -64,7 +64,6 @@ def _standing_with_recorded_boundary_reference(ledger, *, locality="source"):
         ledger=ledger,
         locality_identity=locality,
         input_stream=BytesIO(b"/checkpoint\n"),
-        output_stream=StringIO(),
     )
     anchor = next(
         event
@@ -192,7 +191,6 @@ def test_console_fans_out_descendants_to_one_immutable_anchor():
         input_stream=BytesIO(
             b"/checkpoint\nsource later\n/checkout\nfirst branch\n/checkout\nsecond branch\n"
         ),
-        output_stream=StringIO(),
     )
     anchor = next(
         event
@@ -232,7 +230,6 @@ def test_no_anchor_and_several_anchors_both_refuse_selection():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"/checkpoint\n/checkpoint\n"),
-        output_stream=StringIO(),
     )
     ambiguous = read_operator_locality_standing(
         ledger, locality_identity="source"

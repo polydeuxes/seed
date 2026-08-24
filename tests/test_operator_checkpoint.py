@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -152,7 +152,6 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"before\n/checkpoint\nafter\n"),
-        output_stream=StringIO(),
     )
 
     assert {event.locality_identity for event in ledger.list()} == {"source"}

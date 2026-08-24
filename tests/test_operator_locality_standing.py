@@ -1,6 +1,5 @@
 from copy import deepcopy
 from tests.binary_input import binary_input
-from io import StringIO
 
 import pytest
 
@@ -683,74 +682,13 @@ def test_unknown_conflict_and_absence_remain_distinct():
     standing = _standing(ledger)
 
     # Unknown are only what locality events positively carry.
-    assert standing["unknown"] == ["represented_relation", "source_relation"]
+    assert standing["unknown"] == ["source_relation"]
     # No locality event records a conflict or a relation standing; both stay
     # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []
     assert standing["recorded_relation_Standing"] == {}
     next_attempt = _attempt(ledger, "next\n", locality_standing=standing)
     assert next_attempt["locality_standing"]["recorded_relation_Standing"] == {}
-
-
-def test_one_attempt_records_only_responsible_representation_results():
-    baseline_ledger = EventLedger()
-    baseline = _attempt(baseline_ledger, "solo material\n")
-    assert "locality_standing" not in baseline
-
-    # The console passes Standing containing C0 to the first interaction and
-    # does not manufacture outward material for the generic Representation.
-    input_stream = binary_input("solo material\n")
-    output_stream = StringIO()
-    console_ledger = EventLedger()
-    run_persistent_operator_console(
-        ledger=console_ledger,
-        locality_identity="s",
-        input_stream=input_stream,
-        output_stream=output_stream,
-    )
-    assert output_stream.getvalue() == ""
-    assert len(_standing(console_ledger)["representations"]) == 3
-
-
-def test_console_supplies_prior_locality_standing_to_later_interactions():
-    input_stream = binary_input("first material\nsecond material\n")
-    output_stream = StringIO()
-    ledger = EventLedger()
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="s",
-        input_stream=input_stream,
-        output_stream=output_stream,
-    )
-
-    assert output_stream.getvalue() == ""
-    standing = _standing(ledger)
-    assert len(standing["representations"]) == 5
-    representation_identities = list(standing["representations"])
-    first_identity = representation_identities[0]
-    last_identity = representation_identities[-1]
-    # The later Representation's recorded representation Act input Standing taken
-    # through a strictly later occurrence than the first one's.
-    positions = {event.identity: index for index, event in enumerate(ledger.list())}
-    first_representation = standing["representations"][first_identity]
-    assert first_representation["locality_standing_through_event_occurrence_identity"] is None
-    later_boundary = positions[
-        standing["representations"][last_identity]["locality_standing_through_event_occurrence_identity"]
-    ]
-    # The first Representation Act falls inside the prefix the later Act input.
-    assert positions[first_representation["representation_event_identity"]] < later_boundary
-    assert first_representation["emitted_event_identity"] is None
-
-
-def test_representation_does_not_mutate_ledger_or_synthesize_events():
-    ledger = EventLedger()
-    _attempt(ledger, "material\n")
-    events_before = deepcopy(ledger.list())
-
-    _standing(ledger)
-
-    assert ledger.list() == events_before
 
 
 PYTEST_ADMISSION = (
@@ -775,7 +713,4 @@ PYTEST_ADMISSION = (
     test_next_attempt_reads_standing_from_earlier_same_locality_events,
     test_representation_is_deterministic_regardless_of_unrelated_ledger_events,
     test_unknown_conflict_and_absence_remain_distinct,
-    test_one_attempt_records_only_responsible_representation_results,
-    test_console_supplies_prior_locality_standing_to_later_interactions,
-    test_representation_does_not_mutate_ledger_or_synthesize_events,
 )

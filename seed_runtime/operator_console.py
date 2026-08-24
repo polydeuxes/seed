@@ -262,7 +262,7 @@ def _record_pair_measurements_after_declared_measurements(
 
 
 def _recorded_byte_measurement_material_references(ledger):
-    """Recover exact-material storage references already measured by this Seed."""
+    """Read exact-material storage references already measured by this Seed."""
 
     references = set()
     for event in ledger.list():
@@ -409,7 +409,6 @@ def run_persistent_operator_console(
     ledger: EventLedger,
     locality_identity: str,
     input_stream: BinaryIO | TextIO,
-    output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     operator_invocation_provider: OperatorInvocationProvider | None = None,
 ) -> None:

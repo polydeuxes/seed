@@ -1,7 +1,6 @@
 from tests.binary_input import binary_input
 from collections import Counter as ExactCounter
 from copy import deepcopy
-from io import StringIO
 import hashlib
 import json
 
@@ -201,7 +200,6 @@ def _ledger(text="猫\n狗\n"):
         ledger=ledger,
         locality_identity="source",
         input_stream=binary_input(text + ""),
-        output_stream=StringIO(),
     )
     return ledger
 
@@ -680,7 +678,6 @@ def test_console_exact_byte_same_call_path_does_not_use_public_standing_gate(
         ledger=ledger,
         locality_identity="source",
         input_stream=binary_input("a\n"),
-        output_stream=StringIO(),
     )
     assert any(
         event.kind == BYTE_MEASUREMENT_RECORDED_KIND
@@ -1744,7 +1741,6 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
         ledger=ledger,
         locality_identity="source",
         input_stream=binary_input("tata\n"),
-        output_stream=StringIO(),
     )
     source = _byte_source(ledger)
     recorded_before = sum(

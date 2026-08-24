@@ -1335,7 +1335,7 @@ def record_shared_position_applicability_result(
         result_content={
             coordinate: value
             for coordinate, value in result.items()
-            if coordinate != "act_occurrence_identity"
+            if coordinate != "act_occurrence_event_identity"
         },
         responsibility=RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_applicability",
@@ -1442,7 +1442,7 @@ def _read_applicability_result(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position Applicability result is corrupted")
-    act_identity = event.material.get("act_occurrence_identity")
+    act_identity = event.material.get("act_occurrence_event_identity")
     act, assignment, inputs = _read_applicability_act(
         ledger,
         act_identity,
@@ -1823,7 +1823,7 @@ def record_shared_position_measurement_result(
         result_content={
             coordinate: value
             for coordinate, value in result.items()
-            if coordinate != "act_occurrence_identity"
+            if coordinate != "act_occurrence_event_identity"
         },
         responsibility=RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_measurement",
@@ -1858,8 +1858,8 @@ def _recorded_measurement_result_material(
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),
-        "act_occurrence_identity": result[
-            "act_occurrence_identity"
+        "act_occurrence_event_identity": result[
+            "act_occurrence_event_identity"
         ],
         "applicability_result_reference": deepcopy(
             result["applicability_result_reference"]
@@ -1892,7 +1892,7 @@ def _read_measurement_result(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position Measurement result is corrupted")
-    act_identity = event.material.get("act_occurrence_identity")
+    act_identity = event.material.get("act_occurrence_event_identity")
     act, assignment, applicability, inputs = _read_measurement_act(
         ledger,
         act_identity,

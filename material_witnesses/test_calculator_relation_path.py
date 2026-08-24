@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from io import BytesIO, StringIO
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -254,13 +254,10 @@ def calculator_boundary_witness():
         source_boundary="exact Witness claim boundary",
         provenance_occurrence_references=(earlier_source.identity,),
     )
-    raw_output = BytesIO()
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="calculator-operator",
         input_stream=BytesIO(b"!calculator 2+2\n"),
-        output_stream=StringIO(),
-        raw_output_stream=raw_output,
         operator_invocation_provider=invoke_operator_host,
     )
     invocation_locality = next(
@@ -281,7 +278,6 @@ def calculator_boundary_witness():
         "claim_source": claim_source,
         "invocation_locality": invocation_locality,
         "stdout": stdout,
-        "raw_output": raw_output.getvalue(),
     }
 
 
@@ -313,7 +309,6 @@ def test_calculator_stdout_remains_exact_provenanced_o2(
 
     assert stdout.exact_material == b"4\n"
     assert stdout.material["provenance_occurrence_references"]
-    assert witness["raw_output"] == b""
 
 
 def test_calculator_o2_records_no_measurement_path_compare_or_candidate(
@@ -422,7 +417,6 @@ def test_calculator_result_preserves_its_own_occurrence_and_provenance(
     assert witness["stdout_result"].identity in witness_standing[
         "measurement_occurrences"
     ]
-    assert b"4\n" in witness["raw_output"]
 
 
 def test_no_current_act_compares_recorded_distinction_with_calculator_result(

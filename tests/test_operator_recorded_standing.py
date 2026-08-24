@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -38,7 +38,6 @@ def _run(material: bytes) -> EventLedger:
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(material),
-        output_stream=StringIO(),
     )
     return ledger
 
@@ -221,7 +220,6 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"book material\n/checkpoint\nlater source material\n"),
-        output_stream=StringIO(),
     )
     checkpoint = next(
         event

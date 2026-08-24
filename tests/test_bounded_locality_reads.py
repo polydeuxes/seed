@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sqlite3
 from tests.binary_input import binary_input
-from io import StringIO
 
 import pytest
 
@@ -55,7 +54,6 @@ def _fill(ledger):
             ledger=ledger,
             locality_identity=locality_identity,
             input_stream=binary_input(material + ""),
-            output_stream=StringIO(),
         )
     return ledger
 

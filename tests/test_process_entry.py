@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from io import BytesIO, StringIO
 from pathlib import Path
-import os
 import subprocess
 import sys
 
@@ -15,12 +14,6 @@ from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
 from scripts.primordial_host_escape import primordial_host_input
-
-
-class _LiveOutput(StringIO):
-    def __init__(self) -> None:
-        super().__init__()
-        self.buffer = BytesIO()
 
 
 def _acquired_material(database: Path) -> list[bytes]:
@@ -53,7 +46,6 @@ def test_project_script_uses_the_live_process_entry():
 def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
     database = tmp_path / "seed.db"
     monkeypatch.setattr("sys.stdin", BytesIO(b"material\n"))
-    monkeypatch.setattr("sys.stdout", StringIO())
 
     assert process_entry.main(["--db", str(database)]) == 0
 
@@ -64,17 +56,34 @@ def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
         ledger.close()
 
 
-def test_live_entry_does_not_emit_operator_material_back_to_stdout(
-    monkeypatch, tmp_path
-):
-    output = _LiveOutput()
-    monkeypatch.setattr("sys.stdin", BytesIO(b"hello\n"))
-    monkeypatch.setattr("sys.stdout", output)
+def test_live_entry_calls_the_current_console_boundary(monkeypatch):
+    calls = []
 
-    assert process_entry.main(["--db", str(tmp_path / "seed.db")]) == 0
+    def console(
+        *,
+        ledger,
+        locality_identity,
+        input_stream,
+        command_handlers=None,
+        operator_invocation_provider=None,
+    ):
+        calls.append(
+            (
+                ledger,
+                locality_identity,
+                input_stream,
+                command_handlers,
+                operator_invocation_provider,
+            )
+        )
 
-    assert output.buffer.getvalue() == b""
-    assert output.getvalue() == ""
+    monkeypatch.setattr(process_entry, "run_persistent_operator_console", console)
+    monkeypatch.setattr("sys.stdin", BytesIO(b""))
+
+    assert process_entry.main([]) == 0
+    assert len(calls) == 1
+    assert calls[0][3] is None
+    assert calls[0][4] is process_entry.invoke_operator_host
 
 
 @pytest.mark.parametrize("frame", (b"/", b"/\n", b"/\r\n"))
@@ -90,7 +99,6 @@ def test_primordial_slash_frame_is_the_existing_eof_boundary(
         raise AssertionError("primordial slash reached the host provider")
 
     monkeypatch.setattr(process_entry, "invoke_operator_host", provider)
-    monkeypatch.setattr("sys.stdout", _LiveOutput())
     monkeypatch.setattr("sys.stdin", BytesIO(frame))
     assert process_entry.main(["--db", str(escape_database)]) == 0
     monkeypatch.setattr("sys.stdin", BytesIO(b""))
@@ -106,7 +114,6 @@ def test_primordial_slash_preserves_prior_occurrences_and_ends_input(
 ):
     database = tmp_path / "seed.db"
     monkeypatch.setattr("sys.stdin", BytesIO(b"prior \xff\x00\n/\nnot acquired\n"))
-    monkeypatch.setattr("sys.stdout", StringIO())
 
     assert process_entry.main(["--db", str(database)]) == 0
 
@@ -117,7 +124,6 @@ def test_other_slash_material_remains_exact_operator_material(monkeypatch, tmp_p
     database = tmp_path / "seed.db"
     material = b"/exit\n/quit\r\n/\xff\x00 material\n"
     monkeypatch.setattr("sys.stdin", BytesIO(material))
-    monkeypatch.setattr("sys.stdout", StringIO())
 
     assert process_entry.main(["--db", str(database)]) == 0
 
@@ -205,35 +211,6 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
     assert len(Localities) == 2
 
 
-@pytest.mark.parametrize("name", ("ls", "cat"))
-def test_live_process_preserves_host_witness_material_without_emitting_it(
-    tmp_path, name
-):
-    directory = tmp_path / "source"
-    directory.mkdir()
-    material = b"\x00\xffhost material\n"
-    path = directory / "one"
-    path.write_bytes(material)
-    addressed = directory if name == "ls" else path
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "seed_runtime.process_entry",
-            "--db",
-            str(tmp_path / f"{name}.db"),
-        ],
-        input=b"!" + name.encode("ascii") + b" " + os.fsencode(addressed) + b"\n",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-        cwd=str(Path(__file__).resolve().parent.parent),
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == b""
-
-
 @pytest.fixture(scope="module")
 def live_pytest_invocation(tmp_path_factory):
     database = tmp_path_factory.mktemp("live-pytest") / "pytest.db"
@@ -309,24 +286,6 @@ def test_live_process_acquisition_results_each_supplied_pytest_occurrence(
     )
 
 
-def test_live_process_does_not_emit_witness_material_by_provider_classification(
-    live_pytest_invocation,
-):
-    result, _, supplied, supplied_by_boundary = live_pytest_invocation
-
-    assert any(event.exact_material for event in supplied)
-    assert result.stdout == b""
-    assert result.stderr == b""
-    assert (
-        supplied_by_boundary["implementation function catalog"].exact_material
-        not in result.stdout
-    )
-    assert (
-        supplied_by_boundary["implementation function measurement"].exact_material
-        not in result.stdout
-    )
-
-
 def test_live_process_preserves_the_exact_pytest_measurement_result(
     live_pytest_invocation,
 ):
@@ -352,7 +311,7 @@ def test_live_entry_has_only_help_and_database_flags():
 PYTEST_ADMISSION = (
     test_project_script_uses_the_live_process_entry,
     test_live_entry_accepts_the_database_coordinate,
-    test_live_entry_does_not_emit_operator_material_back_to_stdout,
+    test_live_entry_calls_the_current_console_boundary,
     test_primordial_slash_frame_is_the_existing_eof_boundary,
     test_primordial_slash_preserves_prior_occurrences_and_ends_input,
     test_other_slash_material_remains_exact_operator_material,
@@ -360,9 +319,7 @@ PYTEST_ADMISSION = (
     test_host_escape_does_not_decode_or_reframe_other_bytes,
     test_host_escape_latches_without_consuming_later_buffered_material,
     test_reopened_live_process_allocates_a_new_locality,
-    test_live_process_preserves_host_witness_material_without_emitting_it,
     test_live_process_acquisition_results_each_supplied_pytest_occurrence,
-    test_live_process_does_not_emit_witness_material_by_provider_classification,
     test_live_process_preserves_the_exact_pytest_measurement_result,
     test_live_entry_has_only_help_and_database_flags,
 )

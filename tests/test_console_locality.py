@@ -6,7 +6,6 @@ import pathlib
 import subprocess
 import sys
 from tests.binary_input import binary_input
-from io import StringIO
 
 import pytest
 
@@ -29,7 +28,6 @@ def db(tmp_path):
 
 def _console(monkeypatch, material: str, argv: list[str]) -> None:
     monkeypatch.setattr("sys.stdin", binary_input(material))
-    monkeypatch.setattr("sys.stdout", StringIO())
     assert process_entry.main(argv) == 0
 
 
@@ -183,7 +181,6 @@ def test_the_in_memory_ledger_scopes_the_same_way():
             ledger=ledger,
             locality_identity=locality_identity,
             input_stream=binary_input("material\n"),
-            output_stream=StringIO(),
         )
     assert {e.locality_identity for e in ledger.list_locality("a")} == {"a"}
     assert len(ledger.list_locality("a")) < len(ledger.list())
@@ -200,26 +197,21 @@ def test_a_caller_supplied_locality_identity_remains_exact():
         ledger=ledger,
         locality_identity="chosen-by-the-caller",
         input_stream=binary_input("material\n"),
-        output_stream=StringIO(),
     )
     assert {event.locality_identity for event in ledger.list()} == {
         "chosen-by-the-caller"
     }
 
 
-def test_unrecorded_locality_named_list_is_refused_without_direct_output():
+def test_unrecorded_locality_named_list_is_refused():
     ledger = EventLedger()
-    output = StringIO()
 
     with pytest.raises(ValueError, match="existing Locality"):
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity="current",
             input_stream=binary_input("/locality list\n"),
-            output_stream=output,
         )
-
-    assert output.getvalue() == ""
 
 
 # --------------------------------------------------------------------------
@@ -290,7 +282,7 @@ PYTEST_ADMISSION = (
     test_a_fresh_locality_reads_none_of_the_history,
     test_the_in_memory_ledger_scopes_the_same_way,
     test_a_caller_supplied_locality_identity_remains_exact,
-    test_unrecorded_locality_named_list_is_refused_without_direct_output,
+    test_unrecorded_locality_named_list_is_refused,
     test_a_reopened_console_process_does_not_abort,
     test_separate_processes_receive_separate_localities,
 )

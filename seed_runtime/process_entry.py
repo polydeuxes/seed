@@ -23,18 +23,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
-    raw_output_stream = getattr(sys.stdout, "buffer", None)
     raw_input_stream = getattr(sys.stdin, "buffer", sys.stdin)
     try:
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity=new_identity("locality"),
             input_stream=primordial_host_input(raw_input_stream),
-            output_stream=sys.stdout,
-            raw_output_stream=raw_output_stream,
-            operator_invocation_provider=(
-                invoke_operator_host if raw_output_stream is not None else None
-            ),
+            operator_invocation_provider=invoke_operator_host,
         )
         return 0
     finally:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -106,8 +106,6 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!cat material\n"),
-            output_stream=StringIO(),
-            raw_output_stream=BytesIO(),
             operator_invocation_provider=_provider(supplied),
         )
         relation = next(
@@ -180,8 +178,6 @@ def test_provider_cannot_append_outside_one_supplied_occurrence():
             ledger=ledger,
             locality_identity="operator-locality",
             input_stream=BytesIO(b"!guard\n"),
-            output_stream=StringIO(),
-            raw_output_stream=BytesIO(),
             operator_invocation_provider=provider,
         )
 
@@ -408,7 +404,6 @@ _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
 def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     ledger = EventLedger()
     seen = []
-    raw_output = BytesIO()
 
     def provider(exact_command, supply):
         seen.append(exact_command)
@@ -440,13 +435,10 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         ledger=ledger,
         locality_identity="locality",
         input_stream=BytesIO(b"!ls \xff\x00\n"),
-        output_stream=StringIO(),
-        raw_output_stream=raw_output,
         operator_invocation_provider=provider,
     )
 
     assert seen == [b"!ls \xff\x00\n"]
-    assert raw_output.getvalue() == b""
     acquisition_results = _acquisition_results(ledger)
     assert [acquired_material_bytes(event) for event in acquisition_results] == [
         b"!ls \xff\x00\n",
@@ -565,8 +557,6 @@ def test_supplied_material_does_not_gain_admission_from_a_locality_change():
         ledger=ledger,
         locality_identity="initial",
         input_stream=BytesIO(b"/locality\n!ls\n"),
-        output_stream=StringIO(),
-        raw_output_stream=BytesIO(),
         operator_invocation_provider=provider,
     )
 
@@ -596,9 +586,8 @@ def test_supplied_material_does_not_gain_admission_from_a_locality_change():
     assert emitted == []
 
 
-def test_witness_material_is_durable_without_emission_before_provider_resumes():
+def test_witness_material_is_durable_before_provider_resumes():
     ledger = EventLedger()
-    raw_output = BytesIO()
     observed = []
 
     def provider(_exact_command, supply):
@@ -615,34 +604,25 @@ def test_witness_material_is_durable_without_emission_before_provider_resumes():
         ):
             supply(occurrence)
             observed.append(
-                (
-                    raw_output.getvalue(),
-                    tuple(event.exact_material for event in _acquisition_results(ledger)),
-                )
+                tuple(event.exact_material for event in _acquisition_results(ledger))
             )
 
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="locality",
         input_stream=BytesIO(b"!ls\n"),
-        output_stream=StringIO(),
-        raw_output_stream=raw_output,
         operator_invocation_provider=provider,
     )
 
     assert observed == [
-        (b"", (b"!ls\n", b"lower-0")),
-        (b"", (b"!ls\n", b"lower-0", b"lower-1")),
-        (
-            b"",
-            (b"!ls\n", b"lower-0", b"lower-1", b""),
-        ),
+        (b"!ls\n", b"lower-0"),
+        (b"!ls\n", b"lower-0", b"lower-1"),
+        (b"!ls\n", b"lower-0", b"lower-1", b""),
     ]
 
 
 def test_reused_witness_boundary_is_refused_before_second_acquisition():
     ledger = EventLedger()
-    raw_output = BytesIO()
 
     def provider(_exact_command, supply):
         supply(SuppliedWitnessMaterialOccurrence(b"first", "same"))
@@ -653,8 +633,6 @@ def test_reused_witness_boundary_is_refused_before_second_acquisition():
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!ls\n"),
-            output_stream=StringIO(),
-            raw_output_stream=raw_output,
             operator_invocation_provider=provider,
         )
 
@@ -662,7 +640,6 @@ def test_reused_witness_boundary_is_refused_before_second_acquisition():
         b"!ls\n",
         b"first",
     ]
-    assert raw_output.getvalue() == b""
 
 
 def test_provider_death_leaves_the_complete_command_acquisition():
@@ -676,8 +653,6 @@ def test_provider_death_leaves_the_complete_command_acquisition():
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!cat path\n"),
-            output_stream=StringIO(),
-            raw_output_stream=BytesIO(),
             operator_invocation_provider=die,
         )
 
@@ -699,7 +674,6 @@ def test_provider_death_leaves_the_complete_command_acquisition():
 
 def test_provider_death_preserves_each_already_supplied_witness_occurrence():
     ledger = EventLedger()
-    raw_output = BytesIO()
 
     def die(_exact_command, supply):
         supply(
@@ -714,8 +688,6 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!cat path\n"),
-            output_stream=StringIO(),
-            raw_output_stream=raw_output,
             operator_invocation_provider=die,
         )
 
@@ -723,7 +695,6 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
         b"!cat path\n",
         b"partial",
     ]
-    assert raw_output.getvalue() == b""
     relation = next(
         event
         for event in ledger.list()
@@ -750,7 +721,6 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
 
 def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     ledger = EventLedger()
-    raw_output = BytesIO()
     supplied = (
         SuppliedWitnessMaterialOccurrence(b"error", "provider:error"),
         SuppliedWitnessMaterialOccurrence(
@@ -768,8 +738,6 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
         ledger=ledger,
         locality_identity="locality",
         input_stream=BytesIO(b"!ls\n"),
-        output_stream=StringIO(),
-        raw_output_stream=raw_output,
         operator_invocation_provider=_provider(*supplied),
     )
 
@@ -797,7 +765,6 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
         expected_base,
         expected_base,
     ]
-    assert raw_output.getvalue() == b""
     kinds = tuple(event.kind for event in ledger.list())
     assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 4
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
@@ -838,8 +805,6 @@ def test_repeated_exact_witness_material_does_not_repeat_measurement_work(tmp_pa
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!opaque\n"),
-            output_stream=StringIO(),
-            raw_output_stream=BytesIO(),
             operator_invocation_provider=provider,
         )
         if _position == 0:
@@ -874,8 +839,6 @@ def test_missing_supplied_result_is_refused_after_command_acquisition():
             ledger=ledger,
             locality_identity="locality",
             input_stream=BytesIO(b"!ls\n"),
-            output_stream=StringIO(),
-            raw_output_stream=BytesIO(),
             operator_invocation_provider=lambda _exact, _supply: None,
         )
 
@@ -909,7 +872,6 @@ def test_host_provider_requires_an_exact_output_boundary():
             ledger=EventLedger(),
             locality_identity="locality",
             input_stream=BytesIO(b""),
-            output_stream=StringIO(),
             operator_invocation_provider=_provider(*_supplied()),
         )
 
@@ -1015,7 +977,7 @@ PYTEST_ADMISSION = (
     test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references,
     test_host_provider_receives_an_acquired_exact_command_before_it_occurs,
     test_supplied_material_does_not_gain_admission_from_a_locality_change,
-    test_witness_material_is_durable_without_emission_before_provider_resumes,
+    test_witness_material_is_durable_before_provider_resumes,
     test_reused_witness_boundary_is_refused_before_second_acquisition,
     test_provider_death_leaves_the_complete_command_acquisition,
     test_provider_death_preserves_each_already_supplied_witness_occurrence,

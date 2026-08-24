@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -221,7 +221,6 @@ def test_console_empty_input_records_one_unfinished_boundary_occurrence():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(),
-        output_stream=StringIO(),
     )
 
     assert len(
@@ -252,7 +251,6 @@ def test_console_records_one_fresh_occurrence_per_read_including_final_empty_rea
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"first\nsecond\n"),
-        output_stream=StringIO(),
     )
     assignments = [
         event
@@ -293,7 +291,6 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"Hello\n"),
-        output_stream=StringIO(),
     )
     acquired = [
         event
@@ -367,7 +364,6 @@ def test_exact_acquisition_families_merge_only_their_append_order():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"operator material\n"),
-        output_stream=StringIO(),
     )
     operator = next(
         event
@@ -838,7 +834,6 @@ def test_durable_material_contains_no_later_control_words():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"ordinary\n"),
-        output_stream=StringIO(),
     )
     durable = repr(
         [

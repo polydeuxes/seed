@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from io import BytesIO, StringIO
+from io import BytesIO
 
 import pytest
 
@@ -61,7 +61,6 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"before\n/memory\nafter\n"),
-        output_stream=StringIO(),
     )
     acts = [
         event
@@ -129,7 +128,6 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
         ledger=ledger,
         locality_identity="source",
         input_stream=BytesIO(b"one\ntwo\n/memory\n"),
-        output_stream=StringIO(),
     )
     result = next(
         event

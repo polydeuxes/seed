@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from tests.binary_input import binary_input
-from io import BytesIO, StringIO
 
 import pytest
 
@@ -82,14 +81,12 @@ MATERIALS = (
 
 def _console(material, ledger=None):
     ledger = ledger if ledger is not None else EventLedger()
-    output = StringIO()
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="s",
         input_stream=binary_input(material),
-        output_stream=output,
     )
-    return ledger, output.getvalue()
+    return ledger
 
 
 def _replay(events):
@@ -99,7 +96,7 @@ def _replay(events):
 
 
 def test_operator_acquisition_records_exact_byte_pair_occurrence_position_result():
-    ledger, _output = _console("2+2=5\n")
+    ledger = _console("2+2=5\n")
     results = tuple(
         event
         for event in ledger.list()
@@ -253,8 +250,6 @@ def test_supplied_witness_acquisition_records_declared_measurements_from_localit
         ledger=ledger,
         locality_identity="s",
         input_stream=binary_input(b"!calculator 2+2\n"),
-        output_stream=StringIO(),
-        raw_output_stream=BytesIO(),
         operator_invocation_provider=provide,
     )
     invocation_locality = next(
@@ -586,7 +581,7 @@ def _advance(events, prior=None, *, ledger=None):
 
 @pytest.mark.parametrize("material", MATERIALS)
 def test_advancing_one_occurrence_at_a_time_equals_replay(material):
-    ledger, _ = _console(material)
+    ledger = _console(material)
     events = ledger.list()
     standing = _advance([])
     prefix = EventLedger()
@@ -600,7 +595,7 @@ def test_advancing_one_occurrence_at_a_time_equals_replay(material):
 
 def test_advancing_in_the_console_s_own_groupings_equals_replay():
     """Two Representation occurrences, then three acquisition_result occurrences, repeating."""
-    ledger, _ = _console("alpha\nbeta\ngamma\n")
+    ledger = _console("alpha\nbeta\ngamma\n")
     events = ledger.list()
     standing = _advance([])
     prefix = EventLedger()
@@ -616,7 +611,7 @@ def test_advancing_in_the_console_s_own_groupings_equals_replay():
 
 
 def test_an_advance_over_no_occurrences_changes_nothing():
-    ledger, _ = _console("alpha\n")
+    ledger = _console("alpha\n")
     events = ledger.list()
     standing = _advance(events)
     assert _advance([], prior=standing) == _replay(events)
@@ -624,7 +619,7 @@ def test_an_advance_over_no_occurrences_changes_nothing():
 
 def test_replay_still_works_and_agrees_with_a_single_advance():
     for material in MATERIALS:
-        ledger, _ = _console(material)
+        ledger = _console(material)
         events = ledger.list()
         assert _advance(events) == _replay(events)
         assert read_operator_locality_standing(
@@ -709,7 +704,6 @@ def test_input_boundary_cannot_append_an_occurrence_during_acquisition():
             ledger=ledger,
             locality_identity="s",
             input_stream=AppendingInput(),
-            output_stream=StringIO(),
         )
 
     assert all(
@@ -806,7 +800,7 @@ def test_declared_measurement_discovery_uses_validated_replay_coordinates(
         operator_material_acquisition,
     )
 
-    ledger, _output = _console("alpha\nbeta\n")
+    ledger = _console("alpha\nbeta\n")
     replay = read_operator_locality_standing(ledger, locality_identity="s")
 
     def refuse(*_args, **_kwargs):
@@ -1275,8 +1269,6 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
         ledger=ledger,
         locality_identity="s",
         input_stream=binary_input(material),
-        output_stream=StringIO(),
-        raw_output_stream=BytesIO() if raw else None,
     )
 
     assert observed
@@ -1284,52 +1276,6 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
         assert carried == read_operator_locality_standing(
             ledger, locality_identity=locality_identity
         )
-
-
-def test_supplied_witness_material_does_not_invoke_the_raw_output_boundary(
-    monkeypatch,
-):
-    from seed_runtime import operator_console
-
-    class FailedBoundary(BytesIO):
-        def write(self, value):
-            pytest.fail(("unexpected raw output write", value))
-
-        def flush(self):
-            pytest.fail("unexpected raw output flush")
-
-    ledger = EventLedger()
-    observed = []
-    original = operator_console._advance_over_representation
-
-    def record(ledger, standing, representation):
-        advanced = original(ledger, standing, representation)
-        observed.append(advanced)
-        return advanced
-
-    monkeypatch.setattr(operator_console, "_advance_over_representation", record)
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="s",
-        input_stream=binary_input(b"!ls\n"),
-        output_stream=StringIO(),
-        raw_output_stream=FailedBoundary(),
-        operator_invocation_provider=lambda _command, supply: supply(
-            SuppliedWitnessMaterialOccurrence(
-                b"exact raw material\n",
-                "invocation output occurrence 0",
-            )
-        ),
-    )
-
-    invocation_locality_identity = next(
-        event.locality_identity
-        for event in ledger.list()
-        if event.kind == "operator.invocation_locality_recorded"
-    )
-    assert observed[-1] == read_operator_locality_standing(
-        ledger, locality_identity=invocation_locality_identity
-    )
 
 
 # --------------------------------------------------------------------------
@@ -1343,7 +1289,7 @@ def test_the_advance_reads_its_prior():
     Copying per advance would cost the locality event count every time, which is the
     quadratic this replaced.
     """
-    ledger, _ = _console("alpha\nbeta\n")
+    ledger = _console("alpha\nbeta\n")
     events = ledger.list()
     prefix = EventLedger()
     prefix.extend(events[:5])
@@ -1363,7 +1309,7 @@ def test_every_growable_accumulator_participates_without_copying():
     live kinds, so the measured path stayed linear, but acquisition would make
     them grow and restore the shape.
     """
-    ledger, _ = _console("alpha\nbeta\n")
+    ledger = _console("alpha\nbeta\n")
     events = ledger.list()
     prefix = EventLedger()
     prefix.extend(events[:5])
@@ -1411,8 +1357,7 @@ def test_repeated_values_are_recorded_once():
 
 def test_the_console_keeps_no_earlier_standing():
     """The only holder hands its Standing forward and retains nothing."""
-    ledger, output = _console("alpha\nbeta\ngamma\n")
-    assert output == ""
+    ledger = _console("alpha\nbeta\ngamma\n")
     assert read_operator_locality_standing(
         ledger, locality_identity="s"
     ) == _replay(ledger.list())
@@ -1424,7 +1369,7 @@ def test_the_console_keeps_no_earlier_standing():
 
 
 def test_c0_still_forms_from_empty_standing():
-    ledger, _ = _console("")
+    ledger = _console("")
     supplied = next(
         event
         for event in ledger.list()
@@ -1434,12 +1379,11 @@ def test_c0_still_forms_from_empty_standing():
 
 
 def test_the_locality_records_only_responsible_representation_occurrences():
-    ledger, output = _console("alpha\nbeta\n")
+    ledger = _console("alpha\nbeta\n")
     kinds = [event.kind for event in ledger.list()]
     assert kinds.count(OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND) == 2
     assert kinds.count("operator.representation.recorded") == 5
     assert kinds.count("operator.representation.emitted") == 0
-    assert output == ""
 
 
 PYTEST_ADMISSION = (
@@ -1473,7 +1417,6 @@ PYTEST_ADMISSION = (
     test_fresh_pair_measurement_is_not_reread_to_address_its_representation,
     test_fresh_representation_is_carried_until_acquisition_crosses_input,
     test_each_console_road_leaves_carried_standing_matching_replay,
-    test_supplied_witness_material_does_not_invoke_the_raw_output_boundary,
     test_the_advance_reads_its_prior,
     test_every_growable_accumulator_participates_without_copying,
     test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying,

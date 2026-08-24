@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from tests.binary_input import binary_input
-from io import StringIO
 
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
@@ -51,7 +50,6 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
         ledger=ledger,
         locality_identity=locality,
         input_stream=binary_input(material + "\n"),
-        output_stream=StringIO(),
     )
 
 

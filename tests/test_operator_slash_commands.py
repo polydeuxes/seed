@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from io import BytesIO, StringIO
+from io import BytesIO
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
@@ -22,7 +22,6 @@ def _run(material: bytes, *, handlers=None):
         ledger=ledger,
         locality_identity="root-locality",
         input_stream=BytesIO(material),
-        output_stream=StringIO(),
         command_handlers=handlers,
     )
     return ledger

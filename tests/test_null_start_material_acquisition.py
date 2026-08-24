@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from io import StringIO
 import json
 
 import pytest
@@ -28,7 +27,6 @@ def run_null_start() -> list:
         ledger=ledger,
         locality_identity="s",
         input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
-        output_stream=StringIO(),
     )
     return ledger.list()
 
@@ -52,7 +50,6 @@ def ledger() -> EventLedger:
         ledger=result,
         locality_identity="s",
         input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
-        output_stream=StringIO(),
     )
     return result
 

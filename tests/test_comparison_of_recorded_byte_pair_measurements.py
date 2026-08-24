@@ -1,5 +1,4 @@
 from copy import deepcopy
-from io import BytesIO, StringIO
 
 import pytest
 
@@ -725,8 +724,6 @@ def test_supplied_local_material_records_pair_measurements_without_compare():
         ledger=ledger,
         locality_identity="operator-locality",
         input_stream=binary_input(b"!opaque\n"),
-        output_stream=StringIO(),
-        raw_output_stream=BytesIO(),
         operator_invocation_provider=provider,
     )
 
@@ -752,7 +749,6 @@ def test_first_exact_material_records_pair_counts_without_prior_pair_measurement
         ledger=ledger,
         locality_identity=LOCALITY,
         input_stream=binary_input(exact_material),
-        output_stream=StringIO(),
     )
 
     pair_measurements = tuple(
@@ -803,7 +799,6 @@ def test_raw_material_acquisition_does_not_create_a_pair_premise():
         ledger=ledger,
         locality_identity=LOCALITY,
         input_stream=binary_input(b""),
-        output_stream=StringIO(),
     )
 
     standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
@@ -842,7 +837,6 @@ def test_new_raw_acquisition_does_not_replace_one_carried_pair_premise():
         ledger=ledger,
         locality_identity=LOCALITY,
         input_stream=binary_input(b""),
-        output_stream=StringIO(),
     )
 
     current_pairs = tuple(
@@ -873,7 +867,6 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
         ledger=ledger,
         locality_identity=LOCALITY,
         input_stream=binary_input(b"abac\n"),
-        output_stream=StringIO(),
     )
     ledger.close()
 
@@ -907,7 +900,6 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
         ledger=resumed,
         locality_identity=LOCALITY,
         input_stream=binary_input(b""),
-        output_stream=StringIO(),
     )
     resumed_standing = read_operator_locality_standing(
         resumed, locality_identity=LOCALITY
@@ -945,7 +937,6 @@ def test_zero_pair_premise_comparison_survives_console_and_reopen(
         ledger=ledger,
         locality_identity=LOCALITY,
         input_stream=binary_input(later_material),
-        output_stream=StringIO(),
     )
     pair_identities = tuple(
         event.identity
@@ -977,7 +968,6 @@ def test_zero_pair_premise_comparison_survives_console_and_reopen(
         ledger=reopened,
         locality_identity=LOCALITY,
         input_stream=binary_input(b""),
-        output_stream=StringIO(),
     )
     assert sum(
         event.kind == "operator.measurement.byte_position_pair_counts_recorded"
