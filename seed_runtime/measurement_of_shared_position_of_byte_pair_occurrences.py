@@ -572,13 +572,17 @@ def _require_standing(
     return boundary
 
 
-def _assignment_reference(event: Event) -> dict[str, str]:
+def _assignment_reference(
+    event: Event, *, result_boundary_identity: str
+) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
         "assignment_identity": event.material["assignment_identity"],
         "assignment_subject_identity": event.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": event.material["book_clause_identity"],
+        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -610,6 +614,7 @@ def _assignment_material(
         "measurement_result_identity": identities[
             "measurement_result_identity"
         ],
+        "result_boundary_identity": identities["measurement_result_identity"],
         "first_input_relation_identity": identities[
             "first_input_relation_identity"
         ],
@@ -1074,7 +1079,12 @@ def _applicability_act_material(
         "act": APPLICABILITY_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
         "measurement_rule": MEASUREMENT_RULE,
         "standing_boundary_identity": standing_boundary_identity,
         "input_relations": [
@@ -1238,7 +1248,12 @@ def _applicability_result_material(
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
         "responsible_act_evidence_identity": act.identity,
         "first_input_relation_identity": assignment.material[
             "first_input_relation_identity"
@@ -1484,7 +1499,12 @@ def _measurement_act_material(
         "act": MEASUREMENT_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "measurement_result_identity"
+            ],
+        ),
         "applicability_result_reference": {
             "recorded_occurrence_identity": applicability.identity,
             "result_identity": applicability.material["result_identity"],
@@ -1751,7 +1771,12 @@ def _measurement_result_material(
             ),
             "determination": MEASUREMENT_RULE,
         },
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "measurement_result_identity"
+            ],
+        ),
         "responsible_act_evidence_identity": act.identity,
         "applicability_result_reference": {
             "recorded_occurrence_identity": applicability.identity,

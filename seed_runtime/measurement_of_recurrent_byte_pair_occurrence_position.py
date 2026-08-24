@@ -576,6 +576,10 @@ def _responsibility_assignment_reference(assignment: Event) -> dict[str, str]:
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
 
 
@@ -595,6 +599,7 @@ def _responsibility_assignment_material(
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
+        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "responsibility": (
             RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
@@ -1069,6 +1074,8 @@ def _finding_of_measurement_from_evidence_of_act_occurrence(
             "recorded_occurrence_identity",
             "assignment_identity",
             "assignment_subject_identity",
+            "book_clause_identity",
+            "result_boundary_identity",
         }
     ):
         raise ValueError("pair occurrence Act Evidence carries malformed coordinates")

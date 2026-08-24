@@ -235,6 +235,10 @@ def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_id
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
     assert result.material["responsibility_assignment_reference"] == act.material[
         "responsibility_assignment_reference"

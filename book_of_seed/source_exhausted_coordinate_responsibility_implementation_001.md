@@ -13,7 +13,7 @@ source-position coordinates, records the complete internal Compare findings,
 measures recurrence of those findings, and may add the next source position to
 each exact recurrent production.  Before this change it had two defects:
 
-1. its Acts and results had no preceding exact Responsibility branch;
+1. its Acts and results had no preceding exact Responsibility;
 2. the caller supplied `extension_count`, choosing how many later coordinate
    populations the road was allowed to reach.
 
@@ -27,7 +27,7 @@ prior Locality occurrence boundary B
 + Book clause
 + Authority / Scope / Locality / limits / conflicts / Unknown
 ↓
-exact Responsibility branch
+exact Responsibility
 ↓ exact Responsibility reference
 Act occurrence
 ↓ Yield

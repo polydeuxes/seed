@@ -427,6 +427,21 @@ def _exact_source_material(
     exact_result_occurrences = locality_standing.get("exact_result_occurrences", {})
     if type(exact_result_occurrences) is not dict:
         raise ValueError("Representation requires exact carried result occurrences")
+    material_acquisitions = locality_standing.get(
+        "material_acquisition_result_occurrences", []
+    )
+    representations = locality_standing.get("representations", {})
+    if type(material_acquisitions) is not list or type(representations) is not dict:
+        raise ValueError("Representation requires exact family result coordinates")
+    family_result_is_carried = any(
+        type(occurrence) is dict
+        and occurrence.get("result_occurrence_identity") == source.identity
+        for occurrence in material_acquisitions
+    ) or any(
+        type(coordinate) is dict
+        and coordinate.get("representation_event_identity") == source.identity
+        for coordinate in representations.values()
+    )
     if (
         source is not carried_pair_measurement
         and ledger.integrity_of(source.identity) == CORRUPTED
@@ -502,7 +517,10 @@ def _exact_source_material(
         return None
     if source.kind in _STRUCTURED_RESULT_READERS:
         raise ValueError("Representation source Compare result is not carried by Standing")
-    if source.identity not in exact_result_occurrences:
+    ownership = exact_result_occurrences.get(source.identity)
+    if ownership is not None and type(ownership) is not dict:
+        raise ValueError("Representation source Responsibility ownership is not exact")
+    if ownership is None and not family_result_is_carried:
         raise ValueError("Representation source occurrence is not carried by Standing")
     requirements = read_requirements_of_yield_relation(
         ledger,

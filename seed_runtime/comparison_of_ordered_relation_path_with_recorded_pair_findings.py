@@ -775,13 +775,17 @@ def _require_input_standing(
     return boundary
 
 
-def _assignment_reference(event: Event) -> dict[str, str]:
+def _assignment_reference(
+    event: Event, *, result_boundary_identity: str
+) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
         "assignment_identity": event.material["assignment_identity"],
         "assignment_subject_identity": event.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": event.material["book_clause_identity"],
+        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -854,6 +858,7 @@ def _assignment_material(
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": identities["compare_result_identity"],
+        "result_boundary_identity": identities["compare_result_identity"],
         "path_input_relation_identity": identities[
             "path_input_relation_identity"
         ],
@@ -1034,7 +1039,10 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         "act": APPLICABILITY_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=material["applicability_result_identity"],
+        ),
         "applicability_of_input_to_compare": [
             {
                 "relation_identity": material["path_input_relation_identity"],
@@ -1149,7 +1157,12 @@ def _applicability_result_material(
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
         "responsible_act_evidence_identity": act.identity,
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
@@ -1363,7 +1376,10 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
         "act": COMPARE_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=material["compare_result_identity"],
+        ),
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
@@ -1541,7 +1557,12 @@ def _compare_result_material(
         "exact_act": COMPARE_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "compare_result_identity"
+            ],
+        ),
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]

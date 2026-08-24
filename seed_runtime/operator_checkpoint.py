@@ -163,6 +163,7 @@ def _assignment_material(
         "recording_act_identity": recording_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
+        "result_boundary_identity": result_identity,
         "source_reference": deepcopy(source_reference),
         "scope": {
             "scope_identity": scope_identity,
@@ -189,6 +190,9 @@ def _assignment_reference(assignment: Event) -> dict[str, str]:
             "assignment_subject_identity"
         ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
         "result_identity": assignment.material["result_identity"],
     }
 

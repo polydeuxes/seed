@@ -867,6 +867,10 @@ def _movement_assignment_reference(assignment: Event) -> dict[str, str]:
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
 
 
@@ -1071,6 +1075,7 @@ def _movement_assignment_material(
         "movement_act_identity": movement_act_identity,
         "movement_act_occurrence_identity": movement_act_occurrence_identity,
         "movement_result_identity": movement_result_identity,
+        "result_boundary_identity": movement_result_identity,
         "book_clause_identity": "03.Movement.A",
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -2294,6 +2299,10 @@ def _byte_measurement_assignment_reference(assignment: Event) -> dict[str, str]:
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
 
 
@@ -2315,6 +2324,7 @@ def _byte_measurement_assignment_material(
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
+        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -2949,6 +2959,8 @@ def _measurement_of_responsible_act_evidence(
             "recorded_occurrence_identity",
             "assignment_identity",
             "assignment_subject_identity",
+            "book_clause_identity",
+            "result_boundary_identity",
         }
         or type(event.locality_identity) is not str
         or not event.locality_identity
@@ -3400,6 +3412,10 @@ def _pair_measurement_assignment_reference(assignment: Event) -> dict[str, str]:
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
 
 
@@ -3430,6 +3446,7 @@ def _pair_measurement_assignment_material(
         "measurement_act_identity": measurement_act_identity,
         "measurement_act_occurrence_identity": measurement_act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
+        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,

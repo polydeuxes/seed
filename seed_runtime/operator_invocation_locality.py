@@ -156,7 +156,7 @@ def record_operator_invocation_locality_responsibility_assignment(
     )
     if (
         type(carried) is not dict
-        or carried.get(command.identity, object()) is not None
+        or type(carried.get(command.identity)) is not dict
         or operator_locality_standing.get("locality_identity")
         != command.locality_identity
         or type(boundary_identity) is not str

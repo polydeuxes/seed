@@ -22,13 +22,18 @@ answer:
 R -> Act -> Responsibility -> S
 ```
 
-The Locality Standing projection nevertheless carried the branch and result in
-separate populations.  It did not carry the direct `R -> Responsibility`
-coordinate required by the runtime recovery of `01.Standing.A.1`.
+The Locality Standing projection nevertheless carried the Responsibility and
+result in separate populations.  It did not carry the direct
+`R -> Responsibility` coordinate required by the runtime recovery of
+`01.Standing.A.1`.
 
-This change repairs only that projection seam.  It changes no producing Act,
-result, subject, Responsibility, Yield, Book clause, or family-specific result
-population.
+`8d31f042` first repaired only that projection seam, but retained two
+accommodations: `None` for unowned Yield results and silent exclusion of older
+incomplete ownership references.  Both accommodations are removed here.
+
+The subject, Act, result, Yield, and Book clause are unchanged.  Active
+producers whose ownership references were incomplete now record the exact Book
+clause and result boundary before their Acts.
 
 ## Recovered compression
 
@@ -39,8 +44,8 @@ result necessarily carried raw bytes:
 type(event.exact_material) is bytes
 ```
 
-That condition describes one result surface.  It does not establish branch
-membership.
+That condition describes one result surface.  It does not establish
+Responsibility ownership.
 
 The repaired gate asks instead:
 
@@ -54,13 +59,13 @@ intact result occurrence
 direct A.1 result / owner coordinate
 ```
 
-Whether the result carries exact bytes or structured coordinates does not
+Whether the result carries exact bytes or other exact coordinates does not
 change this test.
 
 ## Projection topology
 
-One variable-coordinate Measurement result now occupies both exact read-model
-positions:
+One variable-coordinate Measurement result now occupies both exact carried
+populations:
 
 ```text
 measurement_occurrences[R]
@@ -73,33 +78,40 @@ exact_result_occurrences[R]
 Applicability and Compare results likewise remain in their family populations
 while also carrying the direct generic ownership coordinate.
 
-The populations do not replace one another.  The family population answers
-what exact result work was recorded.  The generic coordinate answers which
-exact Responsibility branch owns that result.
+The populations do not replace one another.  The Act-specific population
+answers what exact result work was recorded.  The generic coordinate answers
+which exact Responsibility owns that result.
 
-## Exact absence
+## Exact absence and refusal
 
-The older raw-byte road preserves this historical distinction:
+The positive A.1 population has one rule:
 
 ```text
-exact yielded bytes + exact owner
+exact Yield + complete exact Responsibility ownership
     -> result / owner coordinate
 
-exact yielded bytes + no recorded owner
-    -> None
+exact Yield + no recorded ownership
+    -> absent from the A.1 population
+
+recorded but incomplete ownership
+    -> refusal
 ```
 
-`None` remains yielded-result availability without positive
-subject-relative Standing.  This change does not reinterpret it.
+It stores no `None` compatibility value.  Act-specific availability does
+not substitute for Responsibility ownership, and no missing ownership
+coordinate is inferred or reconstructed.
 
-A structured result without a complete five-coordinate Responsibility
-reference is not inserted into the generic A.1 population.  Its existing
-family population may still carry it under that family's own exact validation.
-No missing branch coordinate is inferred or reconstructed.
+The migrated active producers include exact-byte Measurement, byte-pair
+Measurement, Assertion Locality movement, occurrence-position Measurement,
+direct source-position Measurement, recurrent pair-position Measurement,
+shared-position Measurement, addressed-coordinate determination, bounded
+Compare roads, and recorded Standing-boundary roads.
 
-This restraint matters because older structured Measurement roads still carry
-three-coordinate assignment references.  They are not silently upgraded by
-this change.  Migrating those roads, if warranted, is separate work.
+Where one Responsibility declares more than one exact result, each Act carries
+the same Responsibility identity, subject, and Book clause while naming its
+own exact result boundary.  The Responsibility already carries that complete
+bounded result population; the Standing reader does not choose or construct a
+boundary.
 
 ## Proofs
 
@@ -108,7 +120,7 @@ Applicability, Compare, coordinate-set Measurement, recurrence Measurement,
 and corresponding-coordinate Measurement result:
 
 ```text
-family population contains R
+Act-specific population contains R
 generic exact-result population maps R to owner
 owner identifies the Responsibility occurrence
 Responsibility subject equals the subject fixed before the Act
@@ -123,10 +135,10 @@ Independent mutations are refused:
 - changing the Yield occurrence coordinate;
 - changing the yielded result's source coordinate.
 
-The unchanged direct source-position Measurement supplies a negative control.
-It remains present in `measurement_occurrences`, but because its older
-Responsibility reference does not carry the complete generic ownership
-coordinates, it is not manufactured into `exact_result_occurrences`.
+The direct source-position Measurement supplies the smallest migration proof.
+It is present in `measurement_occurrences` and in
+`exact_result_occurrences`, where the latter maps it to its complete exact
+Responsibility ownership.
 
 ## Disposition
 

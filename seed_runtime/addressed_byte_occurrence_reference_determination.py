@@ -138,13 +138,17 @@ def _determination_result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _assignment_reference(event: Event) -> dict[str, str]:
+def _assignment_reference(
+    event: Event, *, result_boundary_identity: str
+) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
         "assignment_identity": event.material["assignment_identity"],
         "assignment_subject_identity": event.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": event.material["book_clause_identity"],
+        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -371,6 +375,7 @@ def _assignment_material(
         "determination_result_identity": identities[
             "determination_result_identity"
         ],
+        "result_boundary_identity": identities["determination_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
@@ -615,8 +620,14 @@ def _refuse_existing_act(
     for event in ledger.iter_locality_kind(assignment.locality_identity, kind):
         if (
             event.material.get(occurrence_coordinate) == occurrence_identity
-            or event.material.get("responsibility_assignment_reference")
-            == _assignment_reference(assignment)
+            or (
+                type(event.material.get("responsibility_assignment_reference"))
+                is dict
+                and event.material["responsibility_assignment_reference"].get(
+                    "recorded_occurrence_identity"
+                )
+                == assignment.identity
+            )
         ):
             raise AddressedByteOccurrenceReferenceDeterminationError(
                 "determination assignment already carries this Act"
@@ -636,7 +647,12 @@ def _applicability_act_material(
         "act": APPLICABILITY_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
         "direct_pair_position_result_reference": _direct_result_reference(
             source_result
         ),
@@ -749,7 +765,12 @@ def _read_applicability_act(
         ledger, assignment_identity, prior_standing=prior_standing
     )
     if (
-        reference != _assignment_reference(assignment)
+        reference != _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        )
         or event.locality_identity != assignment.locality_identity
         or event.material
         != _applicability_act_material(
@@ -810,7 +831,12 @@ def _applicability_finding(
         "completeness_boundary_identity": coordinate[
             "completeness_boundary_identity"
         ],
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
     }
 
 
@@ -834,7 +860,12 @@ def _applicability_result_material(
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        ),
         "direct_pair_position_result_reference": _direct_result_reference(
             source_result
         ),
@@ -1237,7 +1268,12 @@ def _determination_act_material(
         "act": DETERMINATION_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "determination_result_identity"
+            ],
+        ),
         "applicability_result_reference": _applicability_result_reference(
             applicability_result
         ),
@@ -1429,7 +1465,12 @@ def _determination_result_material(
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "determination_result_identity"
+            ],
+        ),
         "applicability_result_reference": _applicability_result_reference(
             applicability
         ),

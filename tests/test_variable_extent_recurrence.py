@@ -109,7 +109,10 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert run.exhausted is True
     assert all(step.new_event_count > 0 for step in run.steps)
     assert direct.identity in run.locality_standing["measurement_occurrences"]
-    assert direct.identity not in run.locality_standing["exact_result_occurrences"]
+    direct_act = ledger.get(direct.material["responsible_act_evidence_identity"])
+    assert run.locality_standing["exact_result_occurrences"][direct.identity] == (
+        direct_act.material["responsibility_assignment_reference"]
+    )
 
     final_recurrence = get_recorded_variable_extent_recurrence(
         ledger, run.steps[-1].recurrence_result_occurrence.identity

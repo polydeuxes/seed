@@ -709,13 +709,17 @@ def _require_measurement_standing(
     return boundary_identity
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _assignment_reference(
+    assignment: Event, *, result_boundary_identity: str
+) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": assignment.identity,
         "assignment_identity": assignment.material["assignment_identity"],
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": result_boundary_identity,
         "comparison_result_identity": assignment.material[
             "comparison_result_identity"
         ],
@@ -748,6 +752,7 @@ def _assignment_material(
         "comparison_act_identity": comparison_act_identity,
         "comparison_act_occurrence_identity": comparison_act_occurrence_identity,
         "comparison_result_identity": comparison_result_identity,
+        "result_boundary_identity": comparison_result_identity,
         "earlier_input_relation_identity": earlier_input_relation_identity,
         "later_input_relation_identity": later_input_relation_identity,
         "earlier_participation_relation_identity": (
@@ -1063,7 +1068,10 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
         "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=material["applicability_result_identity"],
+        ),
         "applicability_of_input_to_compare": (
             _applicability_of_input_to_compare(assignment)
         ),
@@ -1351,7 +1359,10 @@ def _comparison_act_material(assignment: Event, applicability: Event) -> dict[st
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
         "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "responsibility_assignment_reference": _assignment_reference(
+            assignment,
+            result_boundary_identity=material["comparison_result_identity"],
+        ),
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
@@ -1386,7 +1397,12 @@ def record_recorded_pair_measurement_comparison_act_evidence(
     if (
         applicability_assignment[0].identity != assignment.identity
         or applicability_material["responsibility_assignment_reference"]
-        != _assignment_reference(assignment)
+        != _assignment_reference(
+            assignment,
+            result_boundary_identity=assignment.material[
+                "applicability_result_identity"
+            ],
+        )
     ):
         raise RecordedPairMeasurementComparisonError(
             "Compare Applicability names another assignment"

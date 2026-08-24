@@ -539,6 +539,10 @@ def _assignment_reference(assignment: Event) -> dict[str, str]:
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
+        ],
     }
 
 
@@ -588,6 +592,7 @@ def _assignment_material(
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
+        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",

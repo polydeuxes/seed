@@ -1,9 +1,9 @@
 """01.Standing.A.1 — the exact result is one coordinate of Standing for the
-exact subject of its Responsibility branch.
+exact subject of its Responsibility.
 
 Current Standing recorded only that a result occurrence was admitted.  The
-Responsibility branch that yielded it, the exact subject that branch is for,
-and the Book clause governing it were all resolved at the admission gate and
+Responsibility that yielded it, its exact subject, and the Book clause
+governing it were all resolved at the admission gate and
 then discarded.  These witness that the ownership already carried by the
 responsible Act evidence is preserved beside the result instead, and that a
 result whose Act evidence records no such reference keeps no composed owner.
@@ -74,7 +74,7 @@ def test_the_admitted_result_carries_its_exact_Responsibility_ownership():
     assert REQUIRED <= set(carried)
 
 
-def test_the_carried_ownership_answers_branch_subject_and_clause_directly():
+def test_the_carried_ownership_answers_subject_and_clause_directly():
     """Answered from the result's own coordinate, reconstructing no Standing."""
 
     ledger = EventLedger()
@@ -92,7 +92,7 @@ def test_the_carried_ownership_answers_branch_subject_and_clause_directly():
     )
 
 
-def test_one_Responsibility_branch_carries_each_admitted_result():
+def test_one_Responsibility_carries_each_admitted_result():
     ledger = EventLedger()
     first = _acquired(ledger, locality="one", exact=b"first")
     second = _acquired(ledger, locality="two", exact=b"second")
@@ -166,8 +166,8 @@ def test_a_substituted_ownership_coordinate_is_refused(coordinate):
         _ownership(ledger, "probe", result.identity)
 
 
-def test_a_result_whose_evidence_records_no_reference_keeps_no_owner():
-    """Absence of an established owner is recorded as absence, never composed."""
+def test_a_result_whose_evidence_records_no_reference_has_no_A1_coordinate():
+    """Absence of an owner is no positive A.1 coordinate, never ``None``."""
 
     ledger = EventLedger()
     acquired = record_witness_material_acquisition(
@@ -180,8 +180,7 @@ def test_a_result_whose_evidence_records_no_reference_keeps_no_owner():
         ledger, locality_identity="witness"
     )
 
-    assert acquired.identity in standing["exact_result_occurrences"]
-    assert standing["exact_result_occurrences"][acquired.identity] is None
+    assert acquired.identity not in standing["exact_result_occurrences"]
 
 
 def test_live_incremental_carry_and_complete_replay_agree():
@@ -335,7 +334,7 @@ def test_ownership_naming_an_absent_assignment_is_refused():
     ],
 )
 def test_ownership_disagreeing_with_its_assignment_is_refused(coordinate):
-    """A syntactically whole reference cannot substitute a branch or subject.
+    """A syntactically whole reference cannot substitute ownership or subject.
 
     The named assignment owns these coordinates, so a carried value that does
     not agree with the recorded assignment is refused rather than preserved.
@@ -385,12 +384,12 @@ def test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject():
 
 PYTEST_ADMISSION = (
     test_the_admitted_result_carries_its_exact_Responsibility_ownership,
-    test_the_carried_ownership_answers_branch_subject_and_clause_directly,
-    test_one_Responsibility_branch_carries_each_admitted_result,
+    test_the_carried_ownership_answers_subject_and_clause_directly,
+    test_one_Responsibility_carries_each_admitted_result,
     test_a_complete_replay_produces_the_same_ownership,
     test_the_ownership_survives_a_sqlite_close_and_reopen,
     test_a_substituted_ownership_coordinate_is_refused,
-    test_a_result_whose_evidence_records_no_reference_keeps_no_owner,
+    test_a_result_whose_evidence_records_no_reference_has_no_A1_coordinate,
     test_live_incremental_carry_and_complete_replay_agree,
     test_ownership_present_but_incomplete_is_refused_not_read_as_absent,
     test_ownership_that_is_not_a_coordinate_mapping_is_refused,

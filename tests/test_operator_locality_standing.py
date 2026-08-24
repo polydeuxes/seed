@@ -426,11 +426,23 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
 
     standing = _standing(ledger)
 
-    assert standing["exact_result_occurrences"] == {source.identity: None}
+    source_act = ledger.get(source.material["responsible_act_evidence_identity"])
+    measurement_act = ledger.get(
+        measurement.material["responsible_act_evidence_identity"]
+    )
+    assert standing["exact_result_occurrences"] == {
+        source.identity: source_act.material["responsibility_assignment_reference"],
+        measurement.identity: measurement_act.material[
+            "responsibility_assignment_reference"
+        ],
+    }
     assert all(
         type(identity) is str for identity in standing["exact_result_occurrences"]
     )
-    assert measurement.identity not in standing["exact_result_occurrences"]
+    assert all(
+        standing["exact_result_occurrences"][identity] is not None
+        for identity in (source.identity, measurement.identity)
+    )
 
 
 def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield():

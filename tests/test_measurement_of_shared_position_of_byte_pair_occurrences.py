@@ -394,6 +394,10 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
         ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "measurement_result_identity"
+        ],
     }
     assert assignment.identity in _standing(ledger, locality)[
         "responsibility_assignment_occurrences"

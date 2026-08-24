@@ -697,16 +697,15 @@ _NO_RESULT_COORDINATE = object()
 
 def _result_responsibility_coordinate(
     ledger: EventLedger, event
-) -> dict[str, Any] | None | object:
+) -> dict[str, Any] | object:
     """Return one exact A.1 ownership coordinate, or its exact absence.
 
     Whether a result carries exact bytes or structured coordinates does not
-    determine branch membership.  Any intact result with an exact Yield and
-    exact Responsibility ownership is carried directly beside that owner.  The
-    historical raw-byte road also preserves yielded-result availability as
-    ``None`` where no owner was recorded; that legacy absence is not positive
-    subject-relative Standing.  A structured result without an owner is not
-    added to the generic A.1 projection.
+    determine Responsibility ownership.  Any intact result with an exact Yield
+    and exact Responsibility ownership is carried directly beside that owner.
+    A yielded result without recorded ownership is not a positive A.1
+    coordinate.  A recorded ownership reference that is incomplete is refused;
+    it is never skipped, completed, or reduced to absence.
     """
 
     if ledger.integrity_of(event.identity) == CORRUPTED:
@@ -723,47 +722,28 @@ def _result_responsibility_coordinate(
     )
     if not all(requirements.values()):
         return _NO_RESULT_COORDINATE
-    if type(event.exact_material) is not bytes:
-        act_evidence = ledger.get(
-            event.material.get("responsible_act_evidence_identity")
-        )
-        reference = (
-            act_evidence.material.get("responsibility_assignment_reference")
-            if act_evidence is not None
-            and type(act_evidence.material) is dict
-            else None
-        )
-        if (
-            type(reference) is not dict
-            or not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES
-            <= set(reference)
-        ):
-            return _NO_RESULT_COORDINATE
     ownership = _responsibility_ownership_of_exact_result(ledger, event)
     if ownership is not None:
         return ownership
-    if type(event.exact_material) is bytes:
-        return None
     return _NO_RESULT_COORDINATE
 
 
 def _responsibility_ownership_of_exact_result(
     ledger: EventLedger, event
 ) -> dict[str, Any] | None:
-    """The exact Responsibility ownership this admitted result already carries.
+    """The exact Responsibility ownership this yielded result already carries.
 
     01.Standing.A.1 makes the exact result one coordinate of Standing for the
-    exact subject of its Responsibility branch.  The responsible Act evidence
-    the result already names carries that branch, its subject, and the Book
+    exact subject of its Responsibility.  The responsible Act evidence the
+    result already names carries that Responsibility, its subject, and the Book
     clause, so the ownership is read from there and never composed here.
 
-    ``None`` is the exact absence of an established ownership, and only that.
-    A result whose responsible Act evidence records no reference is still
-    admitted on the unchanged membership rule; no owner is supplied for it.
+    ``None`` is returned only to report that no ownership was recorded.  The
+    caller must not insert that absence into the positive A.1 coordinate map.
 
     A reference that is recorded must be exact.  Ownership that is present but
     malformed, incomplete, or in disagreement with the assignment it names is
-    refused rather than reduced to absence, so a substituted branch, subject,
+    refused rather than reduced to absence, so substituted ownership, subject,
     clause, or boundary can never be read as a result that simply has no owner.
     """
 
@@ -797,15 +777,35 @@ def _responsibility_ownership_of_exact_result(
         raise ValueError(
             "recorded Responsibility ownership requires its exact assignment"
         )
-    for coordinate, carried in reference.items():
-        if coordinate == "recorded_occurrence_identity":
-            continue
-        if coordinate not in assignment.material:
-            continue
-        if assignment.material[coordinate] != carried:
+    for coordinate in (
+        _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES
+        - {"recorded_occurrence_identity", "result_boundary_identity"}
+    ):
+        if assignment.material.get(coordinate) != reference[coordinate]:
             raise ValueError(
                 "recorded Responsibility ownership disagrees with its assignment"
             )
+    declared_result_boundaries = {
+        value
+        for coordinate, value in assignment.material.items()
+        if (
+            coordinate == "result_boundary_identity"
+            or coordinate.endswith("_result_identity")
+            or coordinate == "result_identity"
+        )
+        and type(value) is str
+        and value
+    }
+    if reference["result_boundary_identity"] not in declared_result_boundaries:
+        raise ValueError(
+            "recorded Responsibility ownership disagrees with its assignment"
+        )
+    if reference["result_boundary_identity"] != event.material.get(
+        "result_identity"
+    ):
+        raise ValueError(
+            "recorded Responsibility ownership names another result boundary"
+        )
     return deepcopy(reference)
 
 
@@ -1081,7 +1081,7 @@ def advance_operator_locality_standing(
     occurrence representations.
 
     Every accumulator the live event kinds read is seeded from `prior`, and the
-    per-event branches and refusals below are the same ones replay uses. Those
+    per-event paths and refusals below are the same ones replay uses. Those
     refusals consult accumulated Standing rather than the ledger, which is why
     seeding preserves them (`#2376`).
 
@@ -1110,7 +1110,7 @@ def advance_operator_locality_standing(
     material_acquisition_result_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
-    exact_result_occurrences: dict[str, None] = {}
+    exact_result_occurrences: dict[str, dict[str, Any]] = {}
     representations: dict[str, dict[str, Any]] = {}
     recorded_relation_Standing: dict[str, None] = {}
     recorded_standing_boundary_references: dict[str, None] = {}

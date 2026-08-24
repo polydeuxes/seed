@@ -431,7 +431,7 @@ def test_exact_result_carrier_does_not_stand_for_measurement_result_carrier():
     measurement = _byte_measurement(ledger)
     standing = _standing(ledger)
     standing["measurement_occurrences"] = {}
-    standing["exact_result_occurrences"][measurement.identity] = None
+    standing["exact_result_occurrences"][measurement.identity] = {}
 
     with pytest.raises(ValueError, match="Measurement is not carried"):
         record_operator_representation(
@@ -598,10 +598,15 @@ def test_representation_consumes_an_exact_yielded_representation_result():
     )
     second_event = ledger.get(second["representation_event_identity"])
 
-    assert standing["exact_result_occurrences"] == {
-        source.identity: None,
-        first_event.identity: None,
-    }
+    assert standing["exact_result_occurrences"] == {}
+    assert any(
+        occurrence["result_occurrence_identity"] == source.identity
+        for occurrence in standing["material_acquisition_result_occurrences"]
+    )
+    assert any(
+        coordinate["representation_event_identity"] == first_event.identity
+        for coordinate in standing["representations"].values()
+    )
     assert second_event.material["source_occurrence_reference"] == first_event.identity
     assert second_event.exact_material == b"\x00\xffresult"
     assert ledger.get(
@@ -629,9 +634,8 @@ def test_representation_refuses_a_raw_carrier_without_exact_yield():
         locality_identity="s",
     )
     standing = _standing(ledger)
-    standing["exact_result_occurrences"][unrelated.identity] = None
 
-    with pytest.raises(ValueError, match="Yield is not exact"):
+    with pytest.raises(ValueError, match="not carried by Standing"):
         record_operator_representation(
             ledger,
             locality_identity="s",
@@ -715,9 +719,7 @@ def test_representation_refuses_a_source_after_its_standing_boundary():
         exact_bytes=b"later",
         source_boundary="fixture boundary",
     )
-    boundary_standing["exact_result_occurrences"][later.identity] = None
-
-    with pytest.raises(ValueError, match="outside its Standing boundary"):
+    with pytest.raises(ValueError, match="not carried by Standing"):
         record_operator_representation(
             ledger,
             locality_identity="s",
