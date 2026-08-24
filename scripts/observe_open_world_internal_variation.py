@@ -41,6 +41,11 @@ OUTPUT = Path("/tmp/seed_open_world_internal_variation_manifest.json")
 SOURCE_OUTPUT_DIRECTORY = Path(
     "/tmp/seed_open_world_internal_variation_sources"
 )
+OPERATION = (
+    "incremental recurrent same/different extent surfaces with every "
+    "source-addressed internal coordinate class independently tested "
+    "against recurrent exact substitution while all other classes remain fixed"
+)
 
 
 def _canonical(value: object) -> bytes:
@@ -400,11 +405,7 @@ def _observe_source_with_limit(
     )
     wall_seconds = observed.pop("wall_seconds")
     source_finding = {
-        "operation": (
-            "incremental recurrent same/different extent surfaces with every "
-            "source-addressed internal coordinate class independently tested "
-            "against recurrent exact substitution while all other classes remain fixed"
-        ),
+        "operation": OPERATION,
         "source": observed,
         "known_loss": (
             "time boundary reached with an unvisited recurrent extent frontier"
@@ -446,6 +447,47 @@ def _observe_source_with_limit(
     )
 
 
+def _reusable_source_artifacts(
+    sources: list[dict], input_sha256: str, manifest_path: Path
+) -> dict[str, dict]:
+    if not manifest_path.exists():
+        return {}
+    try:
+        manifest = json.loads(manifest_path.read_bytes())
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    if (
+        manifest.get("source_aperture_artifact_sha256") != input_sha256
+        or manifest.get("operation") != OPERATION
+        or manifest.get("known_loss") is not None
+    ):
+        return {}
+    source_by_name = {source["source"]: source for source in sources}
+    reusable = {}
+    for entry in manifest.get("source_artifacts", []):
+        source = source_by_name.get(entry.get("source"))
+        if source is None or any(
+            entry.get(key) != source[key]
+            for key in ("first_line", "line_count", "material_sha256")
+        ):
+            continue
+        artifact = Path(entry.get("artifact", ""))
+        if not artifact.is_file():
+            continue
+        encoded = artifact.read_bytes()
+        if (
+            len(encoded) != entry.get("artifact_bytes")
+            or _digest(encoded) != entry.get("artifact_sha256")
+        ):
+            continue
+        reusable[source["source"]] = {
+            **entry,
+            "wall_seconds": 0.0,
+            "reused_complete_artifact": True,
+        }
+    return reusable
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=INPUT)
@@ -459,10 +501,18 @@ def main() -> int:
     parser.add_argument("--time-limit-seconds", type=float, default=55.0)
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--profile-slow-extents", action="store_true")
+    parser.add_argument("--no-reuse-complete-source-artifacts", action="store_true")
+    parser.add_argument(
+        "--complete-source-manifest",
+        type=Path,
+        default=OUTPUT,
+    )
     arguments = parser.parse_args()
 
     begun = time.perf_counter()
-    aperture = json.loads(arguments.input.read_text(encoding="utf-8"))
+    encoded_input = arguments.input.read_bytes()
+    input_sha256 = _digest(encoded_input)
+    aperture = json.loads(encoded_input)
     sources = []
     stopped_at_time_boundary = False
     selected_sources = [
@@ -477,6 +527,26 @@ def main() -> int:
         selected_sources,
         key=lambda source: (-source["scalar_count"], source["source"]),
     )
+    observed_by_source = {}
+    reusable_by_source = {}
+    if not arguments.no_reuse_complete_source_artifacts:
+        reusable_by_source = _reusable_source_artifacts(
+            execution_sources,
+            input_sha256,
+            arguments.complete_source_manifest,
+        )
+    pending_sources = []
+    for source in execution_sources:
+        reusable = reusable_by_source.get(source["source"])
+        if reusable is None:
+            pending_sources.append(source)
+            continue
+        observed_by_source[source["source"]] = (reusable, False)
+        print(
+            f"{source['source']:48} reused complete "
+            f"{reusable['artifact_sha256'][:12]}",
+            flush=True,
+        )
     payloads = [
         (
             source,
@@ -484,7 +554,7 @@ def main() -> int:
             str(arguments.source_output_directory),
             arguments.profile_slow_extents,
         )
-        for source in execution_sources
+        for source in pending_sources
     ]
     if arguments.jobs < 1:
         raise ValueError("jobs must be a positive exact process count")
@@ -495,9 +565,8 @@ def main() -> int:
         observed_sources = executor.map(_observe_source_with_limit, payloads)
 
     try:
-        observed_by_source = {}
         for source, (source_artifact, stopped) in zip(
-            execution_sources, observed_sources
+            pending_sources, observed_sources
         ):
             observed_by_source[source["source"]] = (source_artifact, stopped)
             print(
@@ -515,7 +584,7 @@ def main() -> int:
             {
                 key: value
                 for key, value in observed_by_source[source["source"]][0].items()
-                if key != "wall_seconds"
+                if key not in {"wall_seconds", "reused_complete_artifact"}
             }
             for source in selected_sources
         ]
@@ -524,12 +593,8 @@ def main() -> int:
             executor.shutdown()
 
     finding = {
-        "source_aperture_artifact_sha256": _digest(arguments.input.read_bytes()),
-        "operation": (
-            "incremental recurrent same/different extent surfaces with every "
-            "source-addressed internal coordinate class independently tested "
-            "against recurrent exact substitution while all other classes remain fixed"
-        ),
+        "source_aperture_artifact_sha256": input_sha256,
+        "operation": OPERATION,
         "source_artifacts": sources,
         "known_loss": (
             "time boundary reached with an unvisited recurrent extent frontier"
