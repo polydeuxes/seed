@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.candidate_results_from_exact_result_assertions import (
+    source_assertion_references_through_boundary,
+)
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     record_byte_pair_occurrence_position_measurement_act_evidence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
@@ -590,6 +593,34 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     ]
 
 
+def test_exact_reusable_material_result_is_not_a_source_assertion():
+    ledger = EventLedger()
+    measurements, _coordinate_measurements, material_measurements, _standing = (
+        _record_material_measurements(
+            ledger,
+            locality="candidate exact-material refusal",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+    exact_material_result, _reading = _material_for_group(
+        ledger, material_measurements, group
+    )
+
+    references = source_assertion_references_through_boundary(
+        ledger, source_append_boundary=ledger.append_boundary()
+    )
+
+    assert exact_material_result.exact_material == b"a+a"
+    assert exact_material_result.material.get("assertions") is None
+    assert all(
+        reference["recorded_result_occurrence_identity"]
+        != exact_material_result.identity
+        for reference in references
+    )
+
+
 def test_varying_coordinate_material_yields_no_common_exact_material():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, _standing = (
@@ -776,6 +807,7 @@ PYTEST_ADMISSION = (
     test_unrelated_acquired_material_does_not_change_exact_coordinates,
     test_sqlite_restart_recovers_source_position_readers,
     test_recurrent_results_yield_one_exact_reusable_material_without_selection,
+    test_exact_reusable_material_result_is_not_a_source_assertion,
     test_varying_coordinate_material_yields_no_common_exact_material,
     test_recurrent_result_material_refuses_changed_support_material_order_owner_and_yield,
     test_sqlite_restart_recovers_recurrent_result_material_and_ownership,

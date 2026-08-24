@@ -100,16 +100,24 @@ def _boundary(ledger: EventLedger, address: Any) -> EventLedgerBoundary:
     return exact
 
 
-def _assertion_address(assertion: Any, message: str) -> str:
+def _carried_assertion_address(assertion: Any) -> str | None:
+    """Return an independently addressed Assertion, never its carrying result."""
+
     if type(assertion) is not dict:
-        raise ValueError(message)
+        return None
     dimensions = assertion.get("dimensions")
     address = dimensions.get("identity") if type(dimensions) is dict else None
     if type(address) is not str or not address:
         address = assertion.get("identity")
     if type(address) is not str or not address:
         address = assertion.get("subject_address")
-    return _address(address, message)
+    if type(address) is not str or not address:
+        return None
+    return address
+
+
+def _assertion_address(assertion: Any, message: str) -> str:
+    return _address(_carried_assertion_address(assertion), message)
 
 
 def _source_assertion_reference(
@@ -163,33 +171,19 @@ def _references_carried_by_result(
 ) -> list[dict[str, Any]]:
     material = event.material
     references: list[dict[str, Any]] = []
-    result_address = material.get("result_identity")
-    if type(result_address) is str and result_address:
-        references.append(
-            _source_assertion_reference(
-                event,
-                replay_coordinate=replay_coordinate,
-                assertion_coordinate="result",
-                assertion_address=result_address,
-                source_assertion_coordinates=_source_coordinates(event, None),
-                source_replay_through_event_occurrence_address=(
-                    source_replay_through_event_occurrence_address
-                ),
-            )
-        )
 
     assertions = material.get("assertions")
     if type(assertions) is list:
         for position, assertion in enumerate(assertions):
+            assertion_address = _carried_assertion_address(assertion)
+            if assertion_address is None:
+                continue
             references.append(
                 _source_assertion_reference(
                     event,
                     replay_coordinate=replay_coordinate,
                     assertion_coordinate=f"assertions/{position}",
-                    assertion_address=_assertion_address(
-                        assertion,
-                        "Candidate production requires exact Assertions carried by a result",
-                    ),
+                    assertion_address=assertion_address,
                     source_assertion_coordinates=_source_coordinates(event, assertion),
                     source_replay_through_event_occurrence_address=(
                         source_replay_through_event_occurrence_address
@@ -197,23 +191,20 @@ def _references_carried_by_result(
                 )
             )
     elif type(assertions) is dict:
-        references.append(
-            _source_assertion_reference(
-                event,
-                replay_coordinate=replay_coordinate,
-                assertion_coordinate="assertions",
-                assertion_address=_assertion_address(
-                    assertions,
-                    "Candidate production requires one exact Assertion carried by a result",
-                ),
-                source_assertion_coordinates=_source_coordinates(event, assertions),
-                source_replay_through_event_occurrence_address=(
-                    source_replay_through_event_occurrence_address
-                ),
+        assertion_address = _carried_assertion_address(assertions)
+        if assertion_address is not None:
+            references.append(
+                _source_assertion_reference(
+                    event,
+                    replay_coordinate=replay_coordinate,
+                    assertion_coordinate="assertions",
+                    assertion_address=assertion_address,
+                    source_assertion_coordinates=_source_coordinates(event, assertions),
+                    source_replay_through_event_occurrence_address=(
+                        source_replay_through_event_occurrence_address
+                    ),
+                )
             )
-        )
-    elif assertions is not None:
-        raise ValueError("Candidate production requires exact result Assertions")
 
     if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
         for position, assertion in enumerate(
@@ -240,16 +231,14 @@ def _references_carried_by_result(
             )
 
     finding = material.get("finding")
-    if finding is not None:
+    finding_address = _carried_assertion_address(finding)
+    if finding_address is not None:
         references.append(
             _source_assertion_reference(
                 event,
                 replay_coordinate=replay_coordinate,
                 assertion_coordinate="finding",
-                assertion_address=_assertion_address(
-                    finding,
-                    "Candidate production requires one exact finding Assertion",
-                ),
+                assertion_address=finding_address,
                 source_assertion_coordinates=_source_coordinates(event, finding),
                 source_replay_through_event_occurrence_address=(
                     source_replay_through_event_occurrence_address

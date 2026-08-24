@@ -73,12 +73,43 @@ def test_source_read_preserves_every_exact_assertion_coordinate_in_order():
 
     assert tuple(
         reference["recorded_result_occurrence_identity"] for reference in references
-    ) == (result.identity,) * 4
+    ) == (result.identity,) * 3
     assert tuple(reference["assertion_coordinate"] for reference in references) == (
-        "result",
         "assertions/0",
         "assertions/1",
         "assertions/2",
+    )
+    assert all(
+        reference["assertion_identity"] != result.material["result_identity"]
+        for reference in references
+    )
+
+
+def test_sqlite_reopen_does_not_promote_result_identity_to_source_assertion(tmp_path):
+    database = str(tmp_path / "candidate-source-assertions.sqlite")
+    ledger = SQLiteEventLedger(database)
+    result = _source(ledger)
+    boundary = ledger.append_boundary()
+    expected = source_assertion_references_through_boundary(
+        ledger, source_append_boundary=boundary
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(database)
+    recorded = source_assertion_references_through_boundary(
+        reopened, source_append_boundary=boundary
+    )
+    reopened.close()
+
+    assert recorded == expected
+    assert tuple(reference["assertion_coordinate"] for reference in recorded) == (
+        "assertions/0",
+        "assertions/1",
+        "assertions/2",
+    )
+    assert all(
+        reference["assertion_identity"] != result.material["result_identity"]
+        for reference in recorded
     )
 
 
@@ -97,7 +128,7 @@ def test_one_candidate_yields_while_required_subjects_remain_unrecorded():
     recorded = candidate_results_by_required_subject(
         ledger, responsibility_event_identity=responsibility.identity
     )
-    assert len(required) == 4
+    assert len(required) == 3
     assert recorded == (
         (
             yielded.material["required_subject"][
@@ -106,7 +137,7 @@ def test_one_candidate_yields_while_required_subjects_remain_unrecorded():
             yielded.identity,
         ),
     )
-    assert len(required) - len(recorded) == 3
+    assert len(required) - len(recorded) == 2
     material = get_recorded_candidate_result(
         ledger, yielded.identity
     )
@@ -172,11 +203,11 @@ def test_resuming_one_responsibility_records_every_required_subject_once():
         ledger, responsibility_event_identity=responsibility.identity
     )
 
-    assert len(later) == 3
+    assert len(later) == 2
     assert len(recorded) == len(required)
     result_occurrences = tuple(result for _subject, result in recorded)
-    assert len(result_occurrences) == 4
-    assert len(set(result_occurrences)) == 4
+    assert len(result_occurrences) == 3
+    assert len(set(result_occurrences)) == 3
     assert record_one_candidate_result(
         ledger, responsibility_event_identity=responsibility.identity
     ) is None
@@ -296,10 +327,10 @@ def test_generator_rereads_required_subjects_and_results_after_yielding_control(
             ledger, responsibility_event_identity=responsibility.identity
         )
     )
-    assert len(result_subjects) == len(set(result_subjects)) == 4
+    assert len(result_subjects) == len(set(result_subjects)) == 3
     assert first.identity != interleaved.identity
     assert resumed.identity != interleaved.identity
-    assert len(completed) == 1
+    assert completed == ()
 
 
 def test_same_responsibility_does_not_repeat_required_work_before_append():
@@ -374,8 +405,8 @@ def test_yielded_candidate_is_an_exact_subject_read_at_a_later_source_boundary()
     )
     assert tuple(
         reference["assertion_coordinate"] for reference in candidate_references
-    ) == ("result", "candidate_assertion")
-    assert candidate_references[1]["assertion_identity"] == (
+    ) == ("candidate_assertion",)
+    assert candidate_references[0]["assertion_identity"] == (
         yielded.material["candidate_assertion"]["subject_address"]
     )
 
@@ -542,6 +573,7 @@ def test_changed_candidate_result_is_refused():
 
 PYTEST_ADMISSION = (
     test_source_read_preserves_every_exact_assertion_coordinate_in_order,
+    test_sqlite_reopen_does_not_promote_result_identity_to_source_assertion,
     test_one_candidate_yields_while_required_subjects_remain_unrecorded,
     test_another_responsibility_can_begin_before_the_first_is_exhausted,
     test_resuming_one_responsibility_records_every_required_subject_once,
