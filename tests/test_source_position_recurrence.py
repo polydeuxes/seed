@@ -219,6 +219,9 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
                 "measurement_occurrences"
             ]
         assert assignment.material["subject"] == act.material["coordinates"]["subject"]
+        assert assignment.material["rule"] == (
+            source_position_recurrence._RESPONSIBILITY_RULES[assignment.kind]
+        )
         assert assignment.material["result_boundary_identity"] == result.material[
             "result_identity"
         ]
@@ -702,6 +705,25 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         raise AssertionError("changed Responsibility ownership was accepted")
     assignment.material["result_boundary_identity"] = result_boundary
 
+    rule = assignment.material["rule"]
+    assignment.material["rule"] = "changed exact rule"
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed Responsibility rule was accepted")
+    assignment.material["rule"] = rule
+
+    del assignment.material["rule"]
+    try:
+        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("missing Responsibility rule was accepted")
+    assignment.material["rule"] = rule
+
     yielded = ledger.get(event.material["evidence_of_yield_relation_identity"])
     act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
     yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
@@ -751,6 +773,9 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         )
         assignment = ledger.get(
             expected_ownership["recorded_occurrence_identity"]
+        )
+        assert assignment.material["rule"] == (
+            source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
         )
         assert assignment.material["subject"] == recorded["subject"]
         assert assignment.material["result_boundary_identity"] == (

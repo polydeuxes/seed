@@ -123,22 +123,41 @@ COMPARE_RESPONSIBILITY = "compare exact material at two exact source positions"
 COMPARE_APPLICABILITY_ACT = (
     "Applicability of exact source-position coordinates to Compare"
 )
+COMPARE_APPLICABILITY_RULE = (
+    "the exact carried source-position coordinates address this exact Compare Act"
+)
 COMPARE_ACT = "Compare exact material at two exact source positions"
+COMPARE_RULE = (
+    "same-content exactly when the two exact source-position materials are equal; "
+    "difference otherwise"
+)
 SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY = (
     "preserve all Compare results for exact consecutive source positions"
 )
 SOURCE_POSITION_MEASUREMENT_ACT = "Measure the complete Compare result"
+SOURCE_POSITION_MEASUREMENT_RULE = (
+    "preserve one Compare result for every distinct pair of exact consecutive "
+    "source positions carried by the subject"
+)
 RECURRENCE_MEASUREMENT_RESPONSIBILITY = (
     "measure exact recurrence of complete internal Compare results"
 )
 RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
 )
+RECURRENCE_MEASUREMENT_RULE = (
+    "group exact source-position results only when their complete Compare findings "
+    "are equal; recurrence requires more than one exact result"
+)
 COORDINATE_MEASUREMENT_RESPONSIBILITY = (
     "measure corresponding carried material across exact recurrence support results"
 )
 COORDINATE_MEASUREMENT_ACT = (
     "Measure corresponding carried material across exact recurrence support results"
+)
+COORDINATE_MEASUREMENT_RULE = (
+    "measure the exact material at each corresponding source position carried by "
+    "every exact result of one recurrence finding"
 )
 RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY = (
     "measure exact material shared by every exact recurrent result"
@@ -150,6 +169,21 @@ RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE = (
     "one exact material at every corresponding source position across exactly the same "
     "results, each carrying consecutive source positions"
 )
+
+_ACT_RULES = {
+    COMPARE_APPLICABILITY_ACT_KIND: COMPARE_APPLICABILITY_RULE,
+    COMPARE_ACT_KIND: COMPARE_RULE,
+    SOURCE_POSITION_MEASUREMENT_ACT_KIND: SOURCE_POSITION_MEASUREMENT_RULE,
+    RECURRENCE_MEASUREMENT_ACT_KIND: RECURRENCE_MEASUREMENT_RULE,
+    COORDINATE_MEASUREMENT_ACT_KIND: COORDINATE_MEASUREMENT_RULE,
+    RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT_KIND: (
+        RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
+    ),
+}
+_RESPONSIBILITY_RULES = {
+    _ACT_RESPONSIBILITY_KINDS[act_kind]: rule
+    for act_kind, rule in _ACT_RULES.items()
+}
 
 COMPARE_APPLICABILITY_BOUNDARY = "source_position_compare_applicability"
 COMPARE_BOUNDARY = "source_position_compare"
@@ -382,6 +416,7 @@ def _preserved_responsibility_material(material):
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
         "exact_act": material["exact_act"],
+        "rule": material["rule"],
         "subject": deepcopy(material["subject"]),
         "authority": deepcopy(material["authority"]),
         "scope": deepcopy(material["scope"]),
@@ -541,6 +576,7 @@ def _record_responsibility(
     *,
     kind: str,
     exact_act: str,
+    rule: str,
     responsibility: str,
     book_reference: str,
     locality_identity: str,
@@ -566,6 +602,7 @@ def _record_responsibility(
             "responsibility": responsibility,
             "responsible_boundary": "this Seed",
             "exact_act": exact_act,
+            "rule": rule,
             "subject": subject,
             "authority": {
                 "book_clause_identity": book_reference,
@@ -617,6 +654,7 @@ def _record_yielded_result(
         ledger,
         kind=_ACT_RESPONSIBILITY_KINDS[act_kind],
         exact_act=exact_act,
+        rule=_ACT_RULES[act_kind],
         responsibility=responsibility,
         book_reference=book_reference,
         locality_identity=locality_identity,
@@ -760,6 +798,7 @@ def _require_responsibility(
         or assignment.material.get("responsibility")
         != act.material.get("responsibility")
         or assignment.material.get("exact_act") != act.material.get("act")
+        or assignment.material.get("rule") != _ACT_RULES.get(act.kind)
         or assignment.material.get("subject")
         != _coordinates(act.material).get("subject")
         or assignment.material.get("standing_boundary_identity")
@@ -818,6 +857,7 @@ def _require_recorded_responsibility(
         or not material["responsibility"]
         or type(material.get("exact_act")) is not str
         or not material["exact_act"]
+        or material.get("rule") != _RESPONSIBILITY_RULES.get(event.kind)
         or type(material.get("subject")) is not dict
         or type(material.get("authority")) is not dict
         or type(material.get("scope")) is not dict
