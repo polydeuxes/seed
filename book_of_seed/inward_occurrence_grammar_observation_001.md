@@ -6,7 +6,7 @@ This is findings only.
 
 No Book, machine grammar, or runtime law is amended here. No occurrence label,
 Book coordinate, machine coordinate, or expected Responsibility coordinate was
-available to the blind operations.
+read by the blind operations.
 
 The question was:
 
@@ -40,6 +40,9 @@ occurrence material only
 event labels withheld
 scalar values withheld
 -> exact coordinate-surface artifact
+
+coordinate-name lookup
+-> separately addressed post-freeze artifact
 
 coordinate surfaces only
 -> every closed recurring coordinate frame
@@ -144,6 +147,12 @@ runtime constants
 nested coordinate interpretation
 ```
 
+The observer necessarily reads exact coordinate material in order to hash it.
+The first version placed its hash-to-plaintext lookup beside the blind finding;
+the blind operations did not consult that lookup, but physical separation was
+weaker than the report first stated. The lookup is now written as a separate,
+addressed artifact. The blind coordinate-surface artifact contains hashes only.
+
 The first result is:
 
 ```text
@@ -163,7 +172,10 @@ additional source-position work.
 
 ```text
 blind coordinate-surface artifact SHA-256
-96f1ff5f037860b80f08ade251076a50a87c1cdc1a2b9884fccf468f0a3eb0a4
+68dda00a44dbbea35bc363bc1e42b1d371fb0c551220859e77f1a6da4bccaa6f
+
+separate coordinate-material lookup SHA-256
+0771d046d834445bda582bcdb57f2c66e07fc98380f7bb73bc14f88e063dfca9
 ```
 
 ## 4. Second blind aperture: closed recurring frames
@@ -187,7 +199,7 @@ closed frames carried by all sources   228
 
 ```text
 blind closed-frame artifact SHA-256
-15b8d762117b5cda5571268044f251ae0882b879075c1cafcb252d5ede146cdf
+a4ee1501bb33d92b0298113084dd1b343e7aec5ab8ef3ef504274170ec10e5cf
 ```
 
 The previously noticed nine-coordinate frame emerges as frame 52 under this
@@ -257,7 +269,7 @@ source-order measurement to all 228 frames.
 
 ```text
 blind neighbor artifact SHA-256
-7136f6e58388a95466d27d77904f9b28ae6763af5d5aa2ace7298f2e574a9b3c
+4201c6446bc2d3fba760f59bb86a447845577dc35333fe2ce736adf7f458f9b6
 ```
 
 For the blind nine-coordinate frame:
@@ -302,7 +314,7 @@ frame reduced it to 4.1 MB and 7,986 source-recurring equalities.
 
 ```text
 blind neighbor-equality artifact SHA-256
-f91f4336e3050445adea4fb19d47b128847a698b13203df4e70e073dd867c87c
+fd4d84c24c93a7efb3798ebc407eea3212c1bf0443bc35492bda7a4c34c18381
 ```
 
 For frame 52, post-freeze reading gives:
@@ -345,7 +357,7 @@ one frame contained in another   3,009
 
 ```text
 blind frame-comparison artifact SHA-256
-6172f17b50c7b62d7b59a188c6ed221881d9e1b6a1f2839de6b1d007b785ee1b
+0f011b1a1edd374080478d048cb7ed7cade97761c9d83d896115c0fff649a0ee
 ```
 
 Thus none of the 228 frames is a duplicate under either measured surface:
@@ -426,7 +438,7 @@ Locality
 required relations
 ```
 
-Act identities occur under several family-specific coordinate names outside
+Act identities occur under several surface-specific coordinate names outside
 the common nine-coordinate frame. Authority is not a uniform top-level
 coordinate. Locality may occur inside `scope`, but nested coordinates were not
 measured and cannot be promoted by inspection.

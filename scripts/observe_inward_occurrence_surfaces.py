@@ -23,6 +23,9 @@ from typing import Any
 
 INPUT = Path("/tmp/seed_inward_occurrence_material.json")
 OUTPUT = Path("/tmp/seed_inward_occurrence_surfaces_blind.json")
+COORDINATE_MATERIAL_OUTPUT = Path(
+    "/tmp/seed_inward_occurrence_coordinate_materials.json"
+)
 
 
 def _encoded(value: object) -> bytes:
@@ -138,6 +141,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=INPUT)
     parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument(
+        "--coordinate-material-output",
+        type=Path,
+        default=COORDINATE_MATERIAL_OUTPUT,
+    )
     arguments = parser.parse_args()
 
     input_bytes = arguments.input.read_bytes()
@@ -252,7 +260,6 @@ def main() -> int:
             "and event labels withheld; recurring source-order frames measured "
             "across every supplied source"
         ),
-        "coordinate_materials": coordinate_materials,
         "source_occurrence_counts": [len(sequence) for sequence in source_sequences],
         "surface_count": len(surfaces),
         "surfaces": sorted(
@@ -266,9 +273,22 @@ def main() -> int:
     }
     encoded = _encoded(finding)
     arguments.output.write_bytes(encoded)
+    coordinate_material_finding = {
+        "source_artifact_sha256": _digest(input_bytes),
+        "occurrence_surface_artifact_sha256": _digest(encoded),
+        "coordinate_materials": coordinate_materials,
+        "known_loss": None,
+    }
+    coordinate_material_encoded = _encoded(coordinate_material_finding)
+    arguments.coordinate_material_output.write_bytes(coordinate_material_encoded)
     print(f"artifact: {arguments.output}")
     print(f"artifact bytes: {len(encoded)}")
     print(f"artifact sha256: {_digest(encoded)}")
+    print(f"coordinate material: {arguments.coordinate_material_output}")
+    print(
+        "coordinate material sha256: "
+        f"{_digest(coordinate_material_encoded)}"
+    )
     print(f"occurrences: {sum(finding['source_occurrence_counts'])}")
     print(f"coordinate surfaces: {finding['surface_count']}")
     print(f"maximum common adjacent length: {maximum_length}")
