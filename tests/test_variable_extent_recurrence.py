@@ -8,11 +8,14 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.variable_extent_recurrence import (
+    BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND,
+    get_recorded_bounded_literal_measurement,
     get_recorded_corresponding_coordinate_material_measurement,
     get_recorded_variable_extent,
     get_recorded_variable_extent_recurrence,
     iter_recurrent_coordinate_material_findings,
     record_corresponding_coordinate_material_measurements,
+    record_recurrent_bounded_literal_measurements,
     record_variable_extent_steps,
 )
 import seed_runtime.variable_extent_recurrence as variable_extent_recurrence
@@ -90,6 +93,51 @@ def _step_at(run, coordinate_count):
     )
     assert len(matching) == 1
     return matching[0]
+
+
+def _record_literal_measurements(ledger, *, locality, exact):
+    direct = _direct_result(ledger, locality=locality, exact=exact)
+    variable_measurements = record_variable_extent_steps(
+        ledger, direct_result_event_identity=direct.identity
+    )
+    standing = variable_measurements.locality_standing
+    coordinate_measurements_by_recurrence = []
+    literal_measurements_by_recurrence = []
+    for step in variable_measurements.steps:
+        recurrence_result = step.recurrence_result_occurrence
+        coordinate_measurements = (
+            record_corresponding_coordinate_material_measurements(
+                ledger,
+                recurrence_result_event_identity=recurrence_result.identity,
+                locality_standing=standing,
+            )
+        )
+        coordinate_measurements_by_recurrence.append(coordinate_measurements)
+        literal_measurements = record_recurrent_bounded_literal_measurements(
+            ledger,
+            recurrence_result_event_identity=recurrence_result.identity,
+            locality_standing=coordinate_measurements.locality_standing,
+        )
+        literal_measurements_by_recurrence.append(literal_measurements)
+        standing = literal_measurements.locality_standing
+    return (
+        variable_measurements,
+        tuple(coordinate_measurements_by_recurrence),
+        tuple(literal_measurements_by_recurrence),
+        standing,
+    )
+
+
+def _literal_for_group(ledger, literal_measurements_by_recurrence, group):
+    matching = tuple(
+        measurement
+        for measurements in literal_measurements_by_recurrence
+        for measurement in measurements.measurements
+        if measurement.recurrence_finding_reference == group["finding_reference"]
+    )
+    assert len(matching) == 1
+    event = matching[0].result_occurrence
+    return event, get_recorded_bounded_literal_measurement(ledger, event.identity)
 
 
 def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
@@ -482,6 +530,234 @@ def test_variable_extent_results_and_coordinate_measurements_survive_restart(tmp
         reopened.close()
 
 
+def test_recurrent_support_yields_one_exact_reusable_literal_without_selection():
+    ledger = EventLedger()
+    variable_measurements, _coordinate_measurement_sets, literal_measurement_sets, standing = (
+        _record_literal_measurements(
+            ledger,
+            locality="bounded-literal-positive",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(variable_measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+
+    event, reading = _literal_for_group(ledger, literal_measurement_sets, group)
+    assert event.kind == BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND
+    assert event.exact_material == b"a+a"
+    assert bytes(reading["exact_material"]) == b"a+a"
+    assert tuple(
+        (
+            finding["subject"]["coordinate_role"],
+            bytes(finding["subject"]["exact_material"]),
+        )
+        for finding in reading["coordinate_material_findings"]
+    ) == ((0, b"a"), (1, b"+"), (2, b"a"))
+    assert reading["support_result_references"] == group[
+        "support_result_references"
+    ]
+    assert all(
+        tuple(
+            coordinate["position"]
+            for coordinate in support["source_position_coordinates"]
+        )
+        in {(0, 1, 2), (3, 4, 5)}
+        for support in reading["support_occurrences"]
+    )
+
+    act = ledger.get(event.material["responsible_act_evidence_identity"])
+    ownership = act.material["responsibility_assignment_reference"]
+    assignment = ledger.get(ownership["recorded_occurrence_identity"])
+    assert standing["measurement_occurrences"][event.identity][
+        "result_identity"
+    ] == event.material["result_identity"]
+    assert standing["exact_result_occurrences"][event.identity] == (
+        ownership
+    )
+    assert assignment.material["subject"] == reading["subject"]
+    assert assignment.material["result_boundary_identity"] == reading[
+        "result_identity"
+    ]
+
+
+def test_varying_coordinate_material_yields_no_common_literal_for_that_structure():
+    ledger = EventLedger()
+    variable_measurements, _coordinate_measurement_sets, literal_measurement_sets, _standing = (
+        _record_literal_measurements(
+            ledger,
+            locality="bounded-literal-control",
+            exact=b"a+aa-a",
+        )
+    )
+    recurrence = _step_at(variable_measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+
+    assert all(
+        measurement.recurrence_finding_reference != group["finding_reference"]
+        for measurement_set in literal_measurement_sets
+        for measurement in measurement_set.measurements
+    )
+    assert all(
+        measurement.result_occurrence.exact_material not in {b"a+a", b"a-a"}
+        for measurement_set in literal_measurement_sets
+        for measurement in measurement_set.measurements
+    )
+
+
+def test_bounded_literal_refuses_changed_support_material_order_owner_and_yield():
+    ledger = EventLedger()
+    variable_measurements, _coordinate_measurement_sets, literal_measurement_sets, _standing = (
+        _record_literal_measurements(
+            ledger,
+            locality="bounded-literal-integrity",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(variable_measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+    event, _reading = _literal_for_group(ledger, literal_measurement_sets, group)
+
+    support = event.material["coordinates"]["support_result_references"]
+    event.material["coordinates"]["support_result_references"] = list(
+        reversed(support)
+    )
+    try:
+        get_recorded_bounded_literal_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed support references were accepted")
+    event.material["coordinates"]["support_result_references"] = support
+
+    material = event.material["coordinates"]["coordinate_material_findings"][1][
+        "subject"
+    ]["exact_material"]
+    event.material["coordinates"]["coordinate_material_findings"][1]["subject"][
+        "exact_material"
+    ] = [ord("-")]
+    try:
+        get_recorded_bounded_literal_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed coordinate material was accepted")
+    event.material["coordinates"]["coordinate_material_findings"][1]["subject"][
+        "exact_material"
+    ] = material
+
+    findings = event.material["coordinates"]["coordinate_material_findings"]
+    event.material["coordinates"]["coordinate_material_findings"] = list(
+        reversed(findings)
+    )
+    try:
+        get_recorded_bounded_literal_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed coordinate-role sequence was accepted")
+    event.material["coordinates"]["coordinate_material_findings"] = findings
+
+    act = ledger.get(event.material["responsible_act_evidence_identity"])
+    assignment = ledger.get(
+        act.material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    result_boundary = assignment.material["result_boundary_identity"]
+    assignment.material["result_boundary_identity"] = "changed-result-boundary"
+    try:
+        get_recorded_bounded_literal_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed Responsibility ownership was accepted")
+    assignment.material["result_boundary_identity"] = result_boundary
+
+    yielded = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
+    yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
+    try:
+        get_recorded_bounded_literal_measurement(ledger, event.identity)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("changed Yield was accepted")
+    yielded.material["dimensions"]["act_occurrence_identity"] = act_occurrence
+
+
+def test_bounded_literal_and_ownership_survive_sqlite_restart(tmp_path):
+    database = tmp_path / "bounded-literal.sqlite"
+    ledger = EventLedger()
+    variable_measurements, _coordinate_measurement_sets, literal_measurement_sets, standing = (
+        _record_literal_measurements(
+            ledger,
+            locality="bounded-literal-restart",
+            exact=b"a+aa+a",
+        )
+    )
+    recurrence = _step_at(variable_measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+    event, expected = _literal_for_group(ledger, literal_measurement_sets, group)
+    expected_ownership = standing["exact_result_occurrences"][
+        event.identity
+    ]
+    event_identity = event.identity
+    durable = SQLiteEventLedger(str(database))
+    durable.append_many(ledger.list())
+    durable.close()
+
+    ledger = SQLiteEventLedger(str(database))
+    try:
+        recorded = get_recorded_bounded_literal_measurement(
+            ledger, event_identity
+        )
+        assert recorded == expected
+        event = ledger.get(event_identity)
+        assert event.exact_material == b"a+a"
+        act = ledger.get(
+            event.material["responsible_act_evidence_identity"]
+        )
+        assert act.material["responsibility_assignment_reference"] == (
+            expected_ownership
+        )
+        assignment = ledger.get(
+            expected_ownership["recorded_occurrence_identity"]
+        )
+        assert assignment.material["subject"] == recorded["subject"]
+        assert assignment.material["result_boundary_identity"] == (
+            recorded["result_identity"]
+        )
+    finally:
+        ledger.close()
+
+
+def test_source_coordinate_not_in_support_does_not_choose_literal():
+    ledger = EventLedger()
+    variable_measurements, _coordinate_measurement_sets, literal_measurement_sets, _standing = (
+        _record_literal_measurements(
+            ledger,
+            locality="bounded-literal-coordinate-not-in-support",
+            exact=b"xa+aa+a",
+        )
+    )
+    recurrence = _step_at(variable_measurements, 3).recurrence_result_occurrence
+    group = _target_group(ledger, recurrence)
+    event, reading = _literal_for_group(
+        ledger, literal_measurement_sets, group
+    )
+
+    assert event.exact_material == b"a+a"
+    assert tuple(
+        bytes(finding["subject"]["exact_material"])
+        for finding in reading["coordinate_material_findings"]
+    ) == (b"a", b"+", b"a")
+    assert tuple(
+        coordinate["position"]
+        for support in reading["support_occurrences"]
+        for coordinate in support["source_position_coordinates"]
+    ) == (1, 2, 3, 4, 5, 6)
+
+
 PYTEST_ADMISSION = (
     test_recurrence_exhausts_source_and_reuses_prior_compare_work,
     test_same_internal_surface_does_not_create_varying_literal_recurrence,
@@ -489,4 +765,9 @@ PYTEST_ADMISSION = (
     test_bounded_variable_extent_recording_reuses_validated_direct_coordinates,
     test_interior_coordinate_set_survives_unrelated_surrounding_material,
     test_variable_extent_results_and_coordinate_measurements_survive_restart,
+    test_recurrent_support_yields_one_exact_reusable_literal_without_selection,
+    test_varying_coordinate_material_yields_no_common_literal_for_that_structure,
+    test_bounded_literal_refuses_changed_support_material_order_owner_and_yield,
+    test_bounded_literal_and_ownership_survive_sqlite_restart,
+    test_source_coordinate_not_in_support_does_not_choose_literal,
 )

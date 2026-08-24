@@ -7,11 +7,11 @@ This is the smallest live proof of two separate declared Measurements:
 * literal recurrence at corresponding source-coordinate roles across the
   exact extent results carried by the first recurrence result.
 
-The public producer begins with the complete adjacent extent population and
+The public producer begins with all complete adjacent coordinates and
 continues only while exact recurrent results make a next source coordinate
 addressable.  No caller chooses how many extents to attempt.  Each Act has an
-exact preceding Responsibility branch, so every yielded result remains owned
-by the subject that branch addressed in current Standing.  The consumer
+exact preceding Responsibility, so every yielded result remains owned
+by the subject that Responsibility addressed in current Standing.  The consumer
 accepts the complete recurrence result, not a selected recurrence group, role,
 or value.  The explicit call from producer result to consumer is deliberately
 left visible: this module does not claim a general result-uptake dispatcher.
@@ -58,6 +58,12 @@ COORDINATE_MEASUREMENT_ACT_KIND = (
 COORDINATE_MEASUREMENT_RESULT_KIND = (
     "operator.recurrence_ordered_coordinate_material.measurement_result_recorded"
 )
+BOUNDED_LITERAL_MEASUREMENT_ACT_KIND = (
+    "operator.recurrent_bounded_literal.measurement_act_recorded"
+)
+BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND = (
+    "operator.recurrent_bounded_literal.measurement_result_recorded"
+)
 
 COMPARE_APPLICABILITY_RESPONSIBILITY_KIND = (
     "operator.ordered_coordinate_set_compare.applicability_responsibility_recorded"
@@ -74,6 +80,9 @@ RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND = (
 COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND = (
     "operator.recurrence_ordered_coordinate_material.measurement_responsibility_recorded"
 )
+BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY_KIND = (
+    "operator.recurrent_bounded_literal.measurement_responsibility_recorded"
+)
 
 EVENT_KIND_RESPONSIBILITIES = {
     COMPARE_APPLICABILITY_RESPONSIBILITY_KIND: "01.Standing.E.1",
@@ -81,6 +90,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     EXTENT_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D",
     RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D",
     COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D.1",
+    BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D",
     COMPARE_APPLICABILITY_ACT_KIND: "02.Acts.A",
     COMPARE_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
     COMPARE_ACT_KIND: "02.Acts.A",
@@ -91,6 +101,8 @@ EVENT_KIND_RESPONSIBILITIES = {
     RECURRENCE_MEASUREMENT_RESULT_KIND: "01.Source.D",
     COORDINATE_MEASUREMENT_ACT_KIND: "02.Acts.A",
     COORDINATE_MEASUREMENT_RESULT_KIND: "01.Source.D",
+    BOUNDED_LITERAL_MEASUREMENT_ACT_KIND: "02.Acts.A",
+    BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND: "01.Source.D",
 }
 
 _ACT_RESPONSIBILITY_KINDS = {
@@ -99,6 +111,9 @@ _ACT_RESPONSIBILITY_KINDS = {
     EXTENT_MEASUREMENT_ACT_KIND: EXTENT_MEASUREMENT_RESPONSIBILITY_KIND,
     RECURRENCE_MEASUREMENT_ACT_KIND: RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
     COORDINATE_MEASUREMENT_ACT_KIND: COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
+    BOUNDED_LITERAL_MEASUREMENT_ACT_KIND: (
+        BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY_KIND
+    ),
 }
 _RESPONSIBILITY_KINDS = frozenset(_ACT_RESPONSIBILITY_KINDS.values())
 
@@ -123,6 +138,16 @@ COORDINATE_MEASUREMENT_RESPONSIBILITY = (
 COORDINATE_MEASUREMENT_ACT = (
     "Measure corresponding carried material across exact recurrence support results"
 )
+BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY = (
+    "measure one exact bounded literal shared by every exact recurrence support result"
+)
+BOUNDED_LITERAL_MEASUREMENT_ACT = (
+    "Measure one exact bounded literal shared by every exact recurrence support result"
+)
+BOUNDED_LITERAL_MEASUREMENT_RULE = (
+    "one exact material per coordinate role, supported by exactly the same "
+    "results carried at consecutive source positions"
+)
 
 COMPARE_APPLICABILITY_BOUNDARY = "ordered_coordinate_set_compare_applicability"
 COMPARE_BOUNDARY = "ordered_coordinate_set_compare"
@@ -130,6 +155,9 @@ EXTENT_MEASUREMENT_BOUNDARY = "ordered_coordinate_set_measurement"
 RECURRENCE_MEASUREMENT_BOUNDARY = "ordered_coordinate_set_recurrence_measurement"
 COORDINATE_MEASUREMENT_BOUNDARY = (
     "recurrence_ordered_coordinate_material_measurement"
+)
+BOUNDED_LITERAL_MEASUREMENT_BOUNDARY = (
+    "recurrent_bounded_literal_measurement"
 )
 
 
@@ -154,6 +182,16 @@ class CorrespondingCoordinateMeasurement(NamedTuple):
 
 class CorrespondingCoordinateMeasurementRun(NamedTuple):
     measurements: tuple[CorrespondingCoordinateMeasurement, ...]
+    locality_standing: dict[str, Any]
+
+
+class BoundedLiteralMeasurement(NamedTuple):
+    recurrence_finding_reference: str
+    result_occurrence: Event
+
+
+class BoundedLiteralMeasurements(NamedTuple):
+    measurements: tuple[BoundedLiteralMeasurement, ...]
     locality_standing: dict[str, Any]
 
 
@@ -202,6 +240,31 @@ def _coordinates(material: dict[str, Any]) -> dict[str, Any]:
     if type(coordinates) is not dict:
         raise ValueError("variable extent occurrence carries no exact coordinates")
     return coordinates
+
+
+def _require_preserved_result(
+    ledger: EventLedger,
+    result: Event,
+    *,
+    act_kind: str,
+    exact_act: str,
+    responsibility: str,
+    occurrence_boundary: str,
+) -> tuple[Event, dict[str, Any]]:
+    """Read one exact produced result without replaying its input history."""
+
+    act = _require_yield(
+        ledger,
+        result,
+        act_kind=act_kind,
+        exact_act=exact_act,
+        responsibility=responsibility,
+        occurrence_boundary=occurrence_boundary,
+    )
+    coordinates = deepcopy(_coordinates(result.material))
+    if _coordinates(act.material).get("subject") != coordinates:
+        raise ValueError("recorded result does not preserve its exact Act subject")
+    return act, {**deepcopy(result.material), **coordinates}
 
 
 def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str, Any]:
@@ -414,6 +477,31 @@ def _append_coordinate_measurement_result(ledger, material, locality_identity):
     )
 
 
+def _append_bounded_literal_measurement_act(ledger, material, locality_identity):
+    return ledger.append(
+        BOUNDED_LITERAL_MEASUREMENT_ACT_KIND,
+        _preserved_act_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_bounded_literal_measurement_result(
+    ledger, material, locality_identity
+):
+    exact_material = material.get("coordinates", {}).get("exact_material")
+    if (
+        type(exact_material) is not list
+        or any(type(value) is not int or not 0 <= value <= 255 for value in exact_material)
+    ):
+        raise ValueError("bounded literal Measurement requires exact material")
+    return ledger.append(
+        BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND,
+        _preserved_result_material(material),
+        exact_material=bytes(exact_material),
+        locality_identity=locality_identity,
+    )
+
+
 _EVENT_APPENDERS = {
     COMPARE_APPLICABILITY_ACT_KIND: _append_compare_applicability_act,
     COMPARE_APPLICABILITY_RESULT_KIND: _append_compare_applicability_result,
@@ -425,6 +513,10 @@ _EVENT_APPENDERS = {
     RECURRENCE_MEASUREMENT_RESULT_KIND: _append_recurrence_measurement_result,
     COORDINATE_MEASUREMENT_ACT_KIND: _append_coordinate_measurement_act,
     COORDINATE_MEASUREMENT_RESULT_KIND: _append_coordinate_measurement_result,
+    BOUNDED_LITERAL_MEASUREMENT_ACT_KIND: _append_bounded_literal_measurement_act,
+    BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND: (
+        _append_bounded_literal_measurement_result
+    ),
 }
 
 
@@ -504,6 +596,7 @@ def _record_yielded_result(
     act_payload: dict[str, Any],
     result_payload: dict[str, Any],
     identity_prefix: str,
+    result_exact_material: bytes | None = None,
 ) -> tuple[Event, Event]:
     latest_locality_event = ledger.latest_locality_event(locality_identity)
     if latest_locality_event is None:
@@ -571,6 +664,7 @@ def _record_yielded_result(
         responsibility=responsibility,
         occurrence_boundary=occurrence_boundary,
         responsible_boundary="this Seed",
+        result_exact_material=result_exact_material,
     )
     result = _EVENT_APPENDERS[result_kind](
         ledger,
@@ -1823,6 +1917,442 @@ def get_recorded_corresponding_coordinate_material_measurement(
     return reading
 
 
+def _support_references(
+    finding: dict[str, Any],
+) -> tuple[dict[str, str], ...]:
+    support = finding.get("support")
+    if type(support) is not list:
+        raise ValueError("bounded literal Measurement carries no exact support")
+    references = []
+    for occurrence in support:
+        if type(occurrence) is not dict or type(
+            occurrence.get("support_result_reference")
+        ) is not dict:
+            raise ValueError("bounded literal Measurement carries no exact support")
+        references.append(deepcopy(occurrence["support_result_reference"]))
+    return tuple(references)
+
+
+def _bounded_literal_payload(
+    ledger: EventLedger,
+    *,
+    recurrence_event: Event,
+    recurrence: dict[str, Any],
+    recurrence_group: dict[str, Any],
+    coordinate_event: Event,
+    coordinate_measurement: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Return one exact common literal, or no result for lawful variation."""
+
+    support_references = recurrence_group.get("support_result_references")
+    coordinate_count = recurrence_group.get("subject", {}).get("coordinate_count")
+    coordinate_source = coordinate_measurement.get(
+        "source_recurrence_result_reference"
+    )
+    if (
+        type(support_references) is not list
+        or len(support_references) < 2
+        or type(coordinate_count) is not int
+        or coordinate_count < 2
+        or type(coordinate_source) is not dict
+        or coordinate_source.get("recorded_occurrence_reference")
+        != recurrence_event.identity
+        or coordinate_source.get("result_reference")
+        != recurrence.get("result_identity")
+        or coordinate_measurement.get("source_recurrence_finding_reference")
+        != recurrence_group.get("finding_reference")
+        or coordinate_measurement.get("support_result_references")
+        != support_references
+        or coordinate_measurement.get("completeness_boundary_reference")
+        != recurrence.get("completeness_boundary_reference")
+    ):
+        raise ValueError("bounded literal Measurement carries no exact recurrence support")
+
+    support_occurrences = []
+    for support_reference in support_references:
+        if type(support_reference) is not dict:
+            raise ValueError("bounded literal Measurement carries no exact production")
+        production_event = _event(
+            ledger,
+            support_reference.get("recorded_occurrence_reference"),
+            kind=EXTENT_MEASUREMENT_RESULT_KIND,
+            message="bounded literal Measurement carries no exact production",
+        )
+        _production_act, production = _require_preserved_result(
+            ledger,
+            production_event,
+            act_kind=EXTENT_MEASUREMENT_ACT_KIND,
+            exact_act=EXTENT_MEASUREMENT_ACT,
+            responsibility=EXTENT_MEASUREMENT_RESPONSIBILITY,
+            occurrence_boundary=EXTENT_MEASUREMENT_BOUNDARY,
+        )
+        coordinates = production.get("source_position_coordinates")
+        if (
+            support_reference.get("result_reference")
+            != production.get("result_identity")
+            or production.get("coordinate_count") != coordinate_count
+            or type(coordinates) is not list
+            or len(coordinates) != coordinate_count
+            or tuple(coordinate.get("position") for coordinate in coordinates)
+            != tuple(
+                range(
+                    coordinates[0]["position"],
+                    coordinates[0]["position"] + coordinate_count,
+                )
+            )
+        ):
+            raise ValueError(
+                "bounded literal Measurement cannot recover consecutive source positions"
+            )
+        support_occurrences.append(
+            {
+                "support_result_reference": deepcopy(support_reference),
+                "source_position_coordinates": deepcopy(coordinates),
+            }
+        )
+
+    findings = coordinate_measurement.get("findings")
+    if type(findings) is not list:
+        raise ValueError("bounded literal Measurement carries no exact findings")
+    by_role: dict[int, list[dict[str, Any]]] = {}
+    for finding in findings:
+        if type(finding) is not dict or type(finding.get("subject")) is not dict:
+            raise ValueError("bounded literal Measurement carries no exact finding")
+        role = finding["subject"].get("coordinate_role")
+        if type(role) is not int or role < 0 or role >= coordinate_count:
+            raise ValueError("bounded literal Measurement carries no exact role")
+        by_role.setdefault(role, []).append(finding)
+    if tuple(sorted(by_role)) != tuple(range(coordinate_count)):
+        raise ValueError("bounded literal Measurement is missing a coordinate role")
+
+    exact_material = []
+    consumed_findings = []
+    exact_support = tuple(support_references)
+    for role in range(coordinate_count):
+        complete = []
+        for finding in by_role[role]:
+            material = finding["subject"].get("exact_material")
+            if (
+                type(material) is not list
+                or len(material) != 1
+                or type(material[0]) is not int
+                or not 0 <= material[0] <= 255
+            ):
+                raise ValueError("bounded literal Measurement carries no exact material")
+            finding_support = _support_references(finding)
+            if any(reference not in exact_support for reference in finding_support):
+                raise ValueError("bounded literal Measurement carries different support")
+            if (
+                finding_support == exact_support
+                and finding.get("count") == len(exact_support)
+                and type(finding.get("recurrence")) is dict
+            ):
+                complete.append(finding)
+        if not complete:
+            return None
+        if len(complete) != 1:
+            raise ValueError("bounded literal Measurement carries more than one material")
+        exact_material.append(complete[0]["subject"]["exact_material"][0])
+        consumed_findings.append(deepcopy(complete[0]))
+
+    literal = bytes(exact_material)
+    for support in support_occurrences:
+        if bytes(
+            coordinate["exact_material"][0]
+            for coordinate in support["source_position_coordinates"]
+        ) != literal:
+            raise ValueError("bounded literal Measurement support carries different material")
+
+    coordinate_result_reference = _result_reference(coordinate_event)
+    recurrence_result_reference = _result_reference(recurrence_event)
+    subject = {
+        "coordinate_measurement_result_reference": coordinate_result_reference,
+        "recurrence_result_reference": recurrence_result_reference,
+        "recurrence_finding_reference": recurrence_group["finding_reference"],
+        "support_result_references": deepcopy(support_references),
+        "coordinate_count": coordinate_count,
+    }
+    return {
+        "subject": subject,
+        "measurement_rule": BOUNDED_LITERAL_MEASUREMENT_RULE,
+        "exact_material": exact_material,
+        "coordinate_material_findings": consumed_findings,
+        "support_result_references": deepcopy(support_references),
+        "support_occurrences": support_occurrences,
+        "completeness_boundary_reference": recurrence[
+            "completeness_boundary_reference"
+        ],
+        "authority": {
+            "book_clause_identity": "01.Source.D",
+            "coordinate_measurement_result_reference": coordinate_result_reference,
+        },
+        "scope": {
+            "locality_identity": recurrence_event.locality_identity,
+            "recurrence_result_reference": recurrence_result_reference,
+            "recurrence_finding_reference": recurrence_group["finding_reference"],
+            "support_result_references": deepcopy(support_references),
+            "completeness_boundary_reference": recurrence[
+                "completeness_boundary_reference"
+            ],
+        },
+        "locality": {"locality_identity": recurrence_event.locality_identity},
+        "limits": [
+            "the result preserves exact material shared by these exact support results only",
+            "the result establishes no word, numeral, operator, expression, "
+            "number, grammar, or meaning",
+        ],
+        "conflicts": [],
+        "unknown": [
+            "what the exact bounded literal represents beyond this Measurement: Unknown"
+        ],
+    }
+
+
+def _coordinate_measurements_for_recurrence(
+    ledger: EventLedger,
+    *,
+    recurrence_event: Event,
+    recurrence: dict[str, Any],
+    locality_standing: dict[str, Any],
+    _validated: dict[tuple[str, str], Any] | None = None,
+) -> dict[str, tuple[Event, dict[str, Any]]]:
+    recurrent_groups = {
+        finding["finding_reference"]: finding
+        for finding in recurrence["findings"]
+        if "recurrence" in finding
+    }
+    carried_measurements = locality_standing.get("measurement_occurrences")
+    if type(carried_measurements) is not dict:
+        raise ValueError("bounded literal Measurement requires current Measurement results")
+    found: dict[str, tuple[Event, dict[str, Any]]] = {}
+    for event in ledger.iter_locality_kind(
+        recurrence_event.locality_identity, COORDINATE_MEASUREMENT_RESULT_KIND
+    ):
+        source = _coordinates(event.material).get(
+            "source_recurrence_result_reference"
+        )
+        if (
+            type(source) is not dict
+            or source.get("recorded_occurrence_reference") != recurrence_event.identity
+        ):
+            continue
+        if event.identity not in carried_measurements:
+            raise ValueError("bounded literal Measurement input is not current")
+        measurement = get_recorded_corresponding_coordinate_material_measurement(
+            ledger, event.identity, _validated=_validated
+        )
+        reference = measurement["source_recurrence_finding_reference"]
+        if reference not in recurrent_groups or reference in found:
+            raise ValueError("bounded literal Measurements are not exact")
+        found[reference] = (event, measurement)
+    if tuple(sorted(found)) != tuple(sorted(recurrent_groups)):
+        raise ValueError("bounded literal Measurements are incomplete")
+    return found
+
+
+def _record_recurrent_bounded_literal_measurements(
+    ledger: EventLedger,
+    *,
+    recurrence_result_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> BoundedLiteralMeasurements:
+    recurrence_event = _event(
+        ledger,
+        recurrence_result_event_identity,
+        kind=RECURRENCE_MEASUREMENT_RESULT_KIND,
+        message="bounded literal Measurement requires one exact recurrence result",
+    )
+    standing = _require_current_measurement_subject(
+        ledger,
+        locality_identity=recurrence_event.locality_identity,
+        measurement_result_event_identity=recurrence_event.identity,
+        locality_standing=locality_standing,
+    )
+    validated: dict[tuple[str, str], Any] = {}
+    recurrence = get_recorded_variable_extent_recurrence(
+        ledger, recurrence_event.identity, _validated=validated
+    )
+    coordinate_measurements = _coordinate_measurements_for_recurrence(
+        ledger,
+        recurrence_event=recurrence_event,
+        recurrence=recurrence,
+        locality_standing=standing,
+        _validated=validated,
+    )
+    for event in ledger.iter_locality_kind(
+        recurrence_event.locality_identity, BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND
+    ):
+        source = _coordinates(event.material).get("subject", {}).get(
+            "recurrence_result_reference"
+        )
+        if (
+            type(source) is dict
+            and source.get("recorded_occurrence_reference")
+            == recurrence_event.identity
+        ):
+            raise ValueError("bounded literal Measurement was already recorded")
+
+    locality_event_count = len(ledger.list_locality(recurrence_event.locality_identity))
+    recorded = []
+    for group in recurrence["findings"]:
+        if "recurrence" not in group:
+            continue
+        coordinate_event, coordinate_measurement = coordinate_measurements[
+            group["finding_reference"]
+        ]
+        payload = _bounded_literal_payload(
+            ledger,
+            recurrence_event=recurrence_event,
+            recurrence=recurrence,
+            recurrence_group=group,
+            coordinate_event=coordinate_event,
+            coordinate_measurement=coordinate_measurement,
+        )
+        if payload is None:
+            continue
+        _act, result = _record_yielded_result(
+            ledger,
+            act_kind=BOUNDED_LITERAL_MEASUREMENT_ACT_KIND,
+            result_kind=BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND,
+            exact_act=BOUNDED_LITERAL_MEASUREMENT_ACT,
+            responsibility=BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY,
+            book_reference="01.Source.D",
+            occurrence_boundary=BOUNDED_LITERAL_MEASUREMENT_BOUNDARY,
+            locality_identity=recurrence_event.locality_identity,
+            act_payload={"subject": payload["subject"]},
+            result_payload=payload,
+            identity_prefix="recurrent_bounded_literal_measurement",
+            result_exact_material=bytes(payload["exact_material"]),
+        )
+        recorded.append(
+            BoundedLiteralMeasurement(group["finding_reference"], result)
+        )
+    new_events = tuple(
+        ledger.list_locality(recurrence_event.locality_identity)[
+            locality_event_count:
+        ]
+    )
+    return BoundedLiteralMeasurements(
+        tuple(recorded), _carry_recorded_events(ledger, standing, new_events)
+    )
+
+
+def record_recurrent_bounded_literal_measurements(
+    ledger: EventLedger,
+    *,
+    recurrence_result_event_identity: str,
+    locality_standing: dict[str, Any],
+) -> BoundedLiteralMeasurements:
+    """Measure every exact common literal selected by one recurrence result."""
+
+    with ledger.batched():
+        return _record_recurrent_bounded_literal_measurements(
+            ledger,
+            recurrence_result_event_identity=recurrence_result_event_identity,
+            locality_standing=locality_standing,
+        )
+
+
+def get_recorded_bounded_literal_measurement(
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    _validated: dict[tuple[str, str], Any] | None = None,
+) -> dict[str, Any]:
+    cache_key = ("bounded_literal_result", result_event_identity)
+    if _validated is not None and cache_key in _validated:
+        return _validated[cache_key]
+    result = ledger.get(
+        _identity(result_event_identity, "bounded literal Measurement requires one result")
+    )
+    if (
+        result is None
+        or result.kind != BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND
+        or type(result.exact_material) is not bytes
+        or ledger.integrity_of(result.identity) == CORRUPTED
+    ):
+        raise ValueError("bounded literal Measurement result is not exact")
+    act = _require_yield(
+        ledger,
+        result,
+        act_kind=BOUNDED_LITERAL_MEASUREMENT_ACT_KIND,
+        exact_act=BOUNDED_LITERAL_MEASUREMENT_ACT,
+        responsibility=BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY,
+        occurrence_boundary=BOUNDED_LITERAL_MEASUREMENT_BOUNDARY,
+    )
+    material = _coordinates(result.material)
+    subject = material.get("subject")
+    if type(subject) is not dict:
+        raise ValueError("bounded literal Measurement carries no exact subject")
+    recurrence_reference = subject.get("recurrence_result_reference")
+    coordinate_reference = subject.get("coordinate_measurement_result_reference")
+    if type(recurrence_reference) is not dict or type(coordinate_reference) is not dict:
+        raise ValueError("bounded literal Measurement carries no exact source results")
+    recurrence_event = _event(
+        ledger,
+        recurrence_reference.get("recorded_occurrence_reference"),
+        kind=RECURRENCE_MEASUREMENT_RESULT_KIND,
+        message="bounded literal Measurement carries no exact recurrence result",
+    )
+    _recurrence_act, recurrence = _require_preserved_result(
+        ledger,
+        recurrence_event,
+        act_kind=RECURRENCE_MEASUREMENT_ACT_KIND,
+        exact_act=RECURRENCE_MEASUREMENT_ACT,
+        responsibility=RECURRENCE_MEASUREMENT_RESPONSIBILITY,
+        occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
+    )
+    if recurrence_reference.get("result_reference") != recurrence["result_identity"]:
+        raise ValueError("bounded literal Measurement carries no exact recurrence result")
+    matching = tuple(
+        group
+        for group in recurrence["findings"]
+        if group.get("finding_reference")
+        == subject.get("recurrence_finding_reference")
+        and "recurrence" in group
+    )
+    if len(matching) != 1:
+        raise ValueError("bounded literal Measurement carries no exact recurrence group")
+    coordinate_event = _event(
+        ledger,
+        coordinate_reference.get("recorded_occurrence_reference"),
+        kind=COORDINATE_MEASUREMENT_RESULT_KIND,
+        message="bounded literal Measurement carries no exact coordinate result",
+    )
+    _coordinate_act, coordinate_measurement = _require_preserved_result(
+        ledger,
+        coordinate_event,
+        act_kind=COORDINATE_MEASUREMENT_ACT_KIND,
+        exact_act=COORDINATE_MEASUREMENT_ACT,
+        responsibility=COORDINATE_MEASUREMENT_RESPONSIBILITY,
+        occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
+    )
+    if coordinate_reference.get("result_reference") != coordinate_measurement[
+        "result_identity"
+    ]:
+        raise ValueError("bounded literal Measurement carries no exact coordinate result")
+    expected = _bounded_literal_payload(
+        ledger,
+        recurrence_event=recurrence_event,
+        recurrence=recurrence,
+        recurrence_group=matching[0],
+        coordinate_event=coordinate_event,
+        coordinate_measurement=coordinate_measurement,
+    )
+    carried = deepcopy(material)
+    if (
+        expected is None
+        or carried != expected
+        or _coordinates(act.material).get("subject") != expected["subject"]
+        or result.exact_material != bytes(expected["exact_material"])
+    ):
+        raise ValueError("bounded literal Measurement result is not exact")
+    reading = {**deepcopy(result.material), **deepcopy(material)}
+    if _validated is not None:
+        _validated[cache_key] = reading
+    return reading
+
+
 def validate_variable_extent_event(
     ledger: EventLedger,
     event_identity: str,
@@ -1836,6 +2366,11 @@ def validate_variable_extent_event(
         raise ValueError("variable extent occurrence is not exact")
     if event.kind in _RESPONSIBILITY_KINDS:
         return _require_recorded_responsibility(ledger, event)
+    if event.kind == BOUNDED_LITERAL_MEASUREMENT_RESULT_KIND:
+        get_recorded_bounded_literal_measurement(
+            ledger, event.identity, _validated=_validated
+        )
+        return event
     if event.kind == COMPARE_RESULT_KIND:
         get_recorded_ordered_coordinate_set_compare(
             ledger, event.identity, _validated=_validated
@@ -1922,6 +2457,11 @@ def validate_variable_extent_event(
         COORDINATE_MEASUREMENT_ACT_KIND: (
             COORDINATE_MEASUREMENT_ACT,
             COORDINATE_MEASUREMENT_RESPONSIBILITY,
+            "subject",
+        ),
+        BOUNDED_LITERAL_MEASUREMENT_ACT_KIND: (
+            BOUNDED_LITERAL_MEASUREMENT_ACT,
+            BOUNDED_LITERAL_MEASUREMENT_RESPONSIBILITY,
             "subject",
         ),
     }

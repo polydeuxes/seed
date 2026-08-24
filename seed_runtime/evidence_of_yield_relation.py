@@ -57,6 +57,7 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "ordered_coordinate_set_measurement",
         "ordered_coordinate_set_recurrence_measurement",
         "recurrence_ordered_coordinate_material_measurement",
+        "recurrent_bounded_literal_measurement",
         "standing_boundary_reference",
         "standing_locality_continuation",
         "successful_emission",
