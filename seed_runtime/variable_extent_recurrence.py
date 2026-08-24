@@ -7,11 +7,14 @@ This is the smallest live proof of two separate declared Measurements:
 * literal recurrence at corresponding source-coordinate roles across the
   exact extent results carried by the first recurrence result.
 
-The public producer grows by a caller-declared number of successive extents;
-it has no extent-three or extent-four entry point.  The consumer accepts the
-complete recurrence result, not a selected recurrence group, role, or value.
-The explicit call from producer result to consumer is deliberately left
-visible: this module does not claim a general result-uptake dispatcher.
+The public producer begins with the complete adjacent extent population and
+continues only while exact recurrent results make a next source coordinate
+addressable.  No caller chooses how many extents to attempt.  Each Act has an
+exact preceding Responsibility branch, so every yielded result remains owned
+by the subject that branch addressed in current Standing.  The consumer
+accepts the complete recurrence result, not a selected recurrence group, role,
+or value.  The explicit call from producer result to consumer is deliberately
+left visible: this module does not claim a general result-uptake dispatcher.
 """
 
 from __future__ import annotations
@@ -56,7 +59,28 @@ COORDINATE_MEASUREMENT_RESULT_KIND = (
     "operator.recurrence_ordered_coordinate_material.measurement_result_recorded"
 )
 
+COMPARE_APPLICABILITY_RESPONSIBILITY_KIND = (
+    "operator.ordered_coordinate_set_compare.applicability_responsibility_recorded"
+)
+COMPARE_RESPONSIBILITY_KIND = (
+    "operator.ordered_coordinate_set_compare.responsibility_recorded"
+)
+EXTENT_MEASUREMENT_RESPONSIBILITY_KIND = (
+    "operator.ordered_coordinate_set.measurement_responsibility_recorded"
+)
+RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND = (
+    "operator.ordered_coordinate_set_recurrence.measurement_responsibility_recorded"
+)
+COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND = (
+    "operator.recurrence_ordered_coordinate_material.measurement_responsibility_recorded"
+)
+
 EVENT_KIND_RESPONSIBILITIES = {
+    COMPARE_APPLICABILITY_RESPONSIBILITY_KIND: "01.Standing.E.1",
+    COMPARE_RESPONSIBILITY_KIND: "04.Compare",
+    EXTENT_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D",
+    RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D",
+    COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND: "01.Source.D.1",
     COMPARE_APPLICABILITY_ACT_KIND: "02.Acts.A",
     COMPARE_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
     COMPARE_ACT_KIND: "02.Acts.A",
@@ -68,6 +92,15 @@ EVENT_KIND_RESPONSIBILITIES = {
     COORDINATE_MEASUREMENT_ACT_KIND: "02.Acts.A",
     COORDINATE_MEASUREMENT_RESULT_KIND: "01.Source.D",
 }
+
+_ACT_RESPONSIBILITY_KINDS = {
+    COMPARE_APPLICABILITY_ACT_KIND: COMPARE_APPLICABILITY_RESPONSIBILITY_KIND,
+    COMPARE_ACT_KIND: COMPARE_RESPONSIBILITY_KIND,
+    EXTENT_MEASUREMENT_ACT_KIND: EXTENT_MEASUREMENT_RESPONSIBILITY_KIND,
+    RECURRENCE_MEASUREMENT_ACT_KIND: RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
+    COORDINATE_MEASUREMENT_ACT_KIND: COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
+}
+_RESPONSIBILITY_KINDS = frozenset(_ACT_RESPONSIBILITY_KINDS.values())
 
 COMPARE_RESPONSIBILITY = "compare exact material at two ordered coordinate roles"
 COMPARE_APPLICABILITY_ACT = (
@@ -110,6 +143,7 @@ class VariableExtentStep(NamedTuple):
 class VariableExtentRun(NamedTuple):
     direct_result_event_identity: str
     steps: tuple[VariableExtentStep, ...]
+    exhausted: bool
     locality_standing: dict[str, Any]
 
 
@@ -245,6 +279,9 @@ def _preserved_act_material(material):
         "act_occurrence_identity": material["act_occurrence_identity"],
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
+        "responsibility_assignment_reference": deepcopy(
+            material["responsibility_assignment_reference"]
+        ),
         "act": material["act"],
         "coordinates": deepcopy(material["coordinates"]),
     }
@@ -266,6 +303,35 @@ def _preserved_result_material(material):
             "evidence_of_yield_relation_identity"
         ],
     }
+
+
+def _preserved_responsibility_material(material):
+    return {
+        "assignment_identity": material["assignment_identity"],
+        "assignment_subject_identity": material["assignment_subject_identity"],
+        "book_clause_identity": material["book_clause_identity"],
+        "result_boundary_identity": material["result_boundary_identity"],
+        "standing_boundary_identity": material["standing_boundary_identity"],
+        "act_identity": material["act_identity"],
+        "act_occurrence_identity": material["act_occurrence_identity"],
+        "responsibility": material["responsibility"],
+        "responsible_boundary": material["responsible_boundary"],
+        "exact_act": material["exact_act"],
+        "subject": deepcopy(material["subject"]),
+        "authority": deepcopy(material["authority"]),
+        "scope": deepcopy(material["scope"]),
+        "limits": deepcopy(material["limits"]),
+        "conflicts": deepcopy(material["conflicts"]),
+        "unknown": deepcopy(material["unknown"]),
+    }
+
+
+def _append_responsibility(ledger, kind, material, locality_identity):
+    return ledger.append(
+        kind,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
 
 
 def _append_compare_applicability_act(ledger, material, locality_identity):
@@ -362,6 +428,69 @@ _EVENT_APPENDERS = {
 }
 
 
+def _responsibility_reference(assignment: Event) -> dict[str, str]:
+    return {
+        "recorded_occurrence_identity": assignment.identity,
+        "assignment_identity": assignment.material["assignment_identity"],
+        "assignment_subject_identity": assignment.material[
+            "assignment_subject_identity"
+        ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material["result_boundary_identity"],
+    }
+
+
+def _record_responsibility(
+    ledger: EventLedger,
+    *,
+    kind: str,
+    exact_act: str,
+    responsibility: str,
+    book_reference: str,
+    locality_identity: str,
+    standing_boundary_identity: str,
+    act_identity: str,
+    act_occurrence_identity: str,
+    result_identity: str,
+    subject: dict[str, Any],
+) -> Event:
+    return _append_responsibility(
+        ledger,
+        kind,
+        {
+            "assignment_identity": new_identity("variable_extent_responsibility"),
+            "assignment_subject_identity": new_identity(
+                "variable_extent_responsibility_subject"
+            ),
+            "book_clause_identity": book_reference,
+            "result_boundary_identity": result_identity,
+            "standing_boundary_identity": standing_boundary_identity,
+            "act_identity": act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
+            "responsibility": responsibility,
+            "responsible_boundary": "this Seed",
+            "exact_act": exact_act,
+            "subject": subject,
+            "authority": {
+                "book_clause_identity": book_reference,
+                "responsible_boundary": "this Seed",
+            },
+            "scope": {
+                "locality_identity": locality_identity,
+                "standing_boundary_identity": standing_boundary_identity,
+            },
+            "limits": [
+                "bounded to the exact subject, Locality, prior Standing boundary, and result boundary carried by this Responsibility"
+            ],
+            "conflicts": [],
+            "unknown": [
+                "what any recovered material represents beyond this exact result: Unknown"
+            ],
+        },
+        locality_identity,
+    )
+
+
 def _record_yielded_result(
     ledger: EventLedger,
     *,
@@ -383,6 +512,23 @@ def _record_yielded_result(
     act_identity = new_identity(identity_prefix + "_act")
     act_occurrence_identity = new_identity(identity_prefix + "_act_occurrence")
     result_identity = new_identity(identity_prefix + "_result")
+    subject = act_payload.get("subject")
+    if type(subject) is not dict:
+        raise ValueError("variable extent Responsibility requires one exact subject")
+    assignment = _record_responsibility(
+        ledger,
+        kind=_ACT_RESPONSIBILITY_KINDS[act_kind],
+        exact_act=exact_act,
+        responsibility=responsibility,
+        book_reference=book_reference,
+        locality_identity=locality_identity,
+        standing_boundary_identity=standing_boundary_occurrence_reference,
+        act_identity=act_identity,
+        act_occurrence_identity=act_occurrence_identity,
+        result_identity=result_identity,
+        subject=subject,
+    )
+    assignment_reference = _responsibility_reference(assignment)
     act = _EVENT_APPENDERS[act_kind](
         ledger,
         {
@@ -393,6 +539,7 @@ def _record_yielded_result(
             "act": exact_act,
             "responsibility": responsibility,
             "responsible_boundary": "this Seed",
+            "responsibility_assignment_reference": assignment_reference,
             "coordinates": {
                 "standing_boundary_occurrence_reference": (
                     standing_boundary_occurrence_reference
@@ -468,6 +615,7 @@ def _require_yield(
     ):
         raise ValueError("recorded result carries no exact Yield relation")
     _require_act_boundary(ledger, act)
+    _require_responsibility(ledger, act, result)
     return act
 
 
@@ -486,6 +634,115 @@ def _require_act_boundary(ledger: EventLedger, act: Event) -> None:
         act.identity,
     ):
         raise ValueError("variable extent Act carries no exact Standing boundary")
+
+
+def _require_responsibility(
+    ledger: EventLedger, act: Event, result: Event | None = None
+) -> Event:
+    reference = act.material.get("responsibility_assignment_reference")
+    if type(reference) is not dict or set(reference) != {
+        "recorded_occurrence_identity",
+        "assignment_identity",
+        "assignment_subject_identity",
+        "book_clause_identity",
+        "result_boundary_identity",
+    }:
+        raise ValueError("variable extent Act carries no exact Responsibility")
+    assignment = ledger.get(reference.get("recorded_occurrence_identity"))
+    if (
+        assignment is None
+        or assignment.kind not in _ACT_RESPONSIBILITY_KINDS.values()
+        or assignment.locality_identity != act.locality_identity
+        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        or reference != _responsibility_reference(assignment)
+        or assignment.material.get("act_identity") != act.material.get("act_identity")
+        or assignment.material.get("act_occurrence_identity")
+        != act.material.get("act_occurrence_identity")
+        or assignment.material.get("responsibility")
+        != act.material.get("responsibility")
+        or assignment.material.get("exact_act") != act.material.get("act")
+        or assignment.material.get("subject")
+        != _coordinates(act.material).get("subject")
+        or assignment.material.get("standing_boundary_identity")
+        != _coordinates(act.material).get(
+            "standing_boundary_occurrence_reference"
+        )
+        or type(assignment.material.get("authority")) is not dict
+        or type(assignment.material.get("scope")) is not dict
+        or type(assignment.material.get("limits")) is not list
+        or type(assignment.material.get("conflicts")) is not list
+        or type(assignment.material.get("unknown")) is not list
+    ):
+        raise ValueError("variable extent Act carries no exact Responsibility")
+    ordered = ledger.occurrences_in_append_order(
+        (assignment.identity, act.identity),
+        locality_identity=act.locality_identity,
+    )
+    if tuple(event.identity for event in ordered) != (
+        assignment.identity,
+        act.identity,
+    ):
+        raise ValueError("variable extent Responsibility does not precede its Act")
+    if (
+        result is not None
+        and assignment.material.get("result_boundary_identity")
+        != result.material.get("result_identity")
+    ):
+        raise ValueError("variable extent Responsibility owns no exact result")
+    return assignment
+
+
+def _require_recorded_responsibility(
+    ledger: EventLedger, event: Event
+) -> Event:
+    material = event.material
+    if (
+        event.kind not in _RESPONSIBILITY_KINDS
+        or event.exact_material is not None
+        or ledger.integrity_of(event.identity) == CORRUPTED
+        or type(material) is not dict
+        or type(material.get("assignment_identity")) is not str
+        or not material["assignment_identity"]
+        or type(material.get("assignment_subject_identity")) is not str
+        or not material["assignment_subject_identity"]
+        or type(material.get("book_clause_identity")) is not str
+        or not material["book_clause_identity"]
+        or type(material.get("result_boundary_identity")) is not str
+        or not material["result_boundary_identity"]
+        or type(material.get("standing_boundary_identity")) is not str
+        or not material["standing_boundary_identity"]
+        or type(material.get("act_identity")) is not str
+        or not material["act_identity"]
+        or type(material.get("act_occurrence_identity")) is not str
+        or not material["act_occurrence_identity"]
+        or type(material.get("responsibility")) is not str
+        or not material["responsibility"]
+        or type(material.get("exact_act")) is not str
+        or not material["exact_act"]
+        or type(material.get("subject")) is not dict
+        or type(material.get("authority")) is not dict
+        or type(material.get("scope")) is not dict
+        or type(material.get("limits")) is not list
+        or type(material.get("conflicts")) is not list
+        or type(material.get("unknown")) is not list
+    ):
+        raise ValueError("variable extent Responsibility is not exact")
+    boundary = ledger.get(material["standing_boundary_identity"])
+    if (
+        boundary is None
+        or boundary.locality_identity != event.locality_identity
+        or ledger.integrity_of(boundary.identity) == CORRUPTED
+        or tuple(
+            occurrence.identity
+            for occurrence in ledger.occurrences_in_append_order(
+                (boundary.identity, event.identity),
+                locality_identity=event.locality_identity,
+            )
+        )
+        != (boundary.identity, event.identity)
+    ):
+        raise ValueError("variable extent Responsibility has no exact prior boundary")
+    return event
 
 
 def _require_current_measurement_subject(
@@ -1236,14 +1493,11 @@ def _record_variable_extent_steps(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
-    extension_count: int,
 ) -> VariableExtentRun:
-    """Record the minimal ordered extents and exact recurrence-led extensions."""
+    """Record consecutive source-coordinate sets until recurrence is exhausted."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("variable extent recording requires an EventLedger")
-    if type(extension_count) is not int or extension_count < 0:
-        raise ValueError("variable extent recording requires a nonnegative extension count")
     validated: dict[tuple[str, str], Any] = {}
     direct_coordinates = _direct_coordinates(
         ledger, direct_result_event_identity, _validated=validated
@@ -1290,7 +1544,7 @@ def _record_variable_extent_steps(
         VariableExtentStep(2, tuple(minimal), recurrence, len(ledger.list()) - before)
     )
 
-    for _ in range(extension_count):
+    while True:
         before = len(ledger.list())
         extents = _extend_recurrent_extents(
             ledger,
@@ -1320,6 +1574,7 @@ def _record_variable_extent_steps(
     return VariableExtentRun(
         direct_result_event_identity,
         tuple(steps),
+        True,
         _carry_recorded_events(ledger, standing, new_events),
     )
 
@@ -1328,15 +1583,13 @@ def record_variable_extent_steps(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
-    extension_count: int,
 ) -> VariableExtentRun:
-    """Record the exact proof road in a durable mechanics boundary."""
+    """Record the source-exhausted proof road in a durable mechanics boundary."""
 
     with ledger.batched():
         return _record_variable_extent_steps(
             ledger,
             direct_result_event_identity=direct_result_event_identity,
-            extension_count=extension_count,
         )
 
 
@@ -1581,6 +1834,8 @@ def validate_variable_extent_event(
     event = ledger.get(event_identity)
     if event is None or event.kind not in EVENT_KIND_RESPONSIBILITIES:
         raise ValueError("variable extent occurrence is not exact")
+    if event.kind in _RESPONSIBILITY_KINDS:
+        return _require_recorded_responsibility(ledger, event)
     if event.kind == COMPARE_RESULT_KIND:
         get_recorded_ordered_coordinate_set_compare(
             ledger, event.identity, _validated=_validated

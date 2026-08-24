@@ -211,6 +211,11 @@ from seed_runtime.comparison_of_ordered_path_source_position_material import (
     validate_ordered_path_source_position_material_comparison_event,
 )
 from seed_runtime.variable_extent_recurrence import (
+    COMPARE_APPLICABILITY_RESPONSIBILITY_KIND,
+    COMPARE_RESPONSIBILITY_KIND,
+    EXTENT_MEASUREMENT_RESPONSIBILITY_KIND,
+    RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
+    COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
     COMPARE_APPLICABILITY_ACT_KIND as VARIABLE_EXTENT_COMPARE_APPLICABILITY_ACT_KIND,
     COMPARE_APPLICABILITY_RESULT_KIND as VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND,
     COMPARE_ACT_KIND as VARIABLE_EXTENT_COMPARE_ACT_KIND,
@@ -546,6 +551,11 @@ _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS = {
     ORDERED_PATH_SOURCE_POSITION_COMPARE_RESULT_KIND,
 }
 _VARIABLE_EXTENT_KINDS = {
+    COMPARE_APPLICABILITY_RESPONSIBILITY_KIND,
+    COMPARE_RESPONSIBILITY_KIND,
+    EXTENT_MEASUREMENT_RESPONSIBILITY_KIND,
+    RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
+    COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
     VARIABLE_EXTENT_COMPARE_APPLICABILITY_ACT_KIND,
     VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND,
     VARIABLE_EXTENT_COMPARE_ACT_KIND,
@@ -1979,7 +1989,15 @@ def advance_operator_locality_standing(
                 event.identity,
                 _validated=variable_extent_validated,
             )
-            if event.kind == VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND:
+            if event.kind in {
+                COMPARE_APPLICABILITY_RESPONSIBILITY_KIND,
+                COMPARE_RESPONSIBILITY_KIND,
+                EXTENT_MEASUREMENT_RESPONSIBILITY_KIND,
+                RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
+                COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
+            }:
+                responsibility_assignment_occurrences[event.identity] = None
+            elif event.kind == VARIABLE_EXTENT_COMPARE_APPLICABILITY_RESULT_KIND:
                 applicability_result_occurrences[event.identity] = None
             elif event.kind == VARIABLE_EXTENT_COMPARE_RESULT_KIND:
                 comparison_result_occurrences[event.identity] = None
