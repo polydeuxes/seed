@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.candidate_results_from_exact_result_assertions import (
-    source_assertion_references_through_boundary,
-)
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     record_byte_pair_occurrence_position_measurement_act_evidence,
     record_byte_pair_occurrence_position_measurement_responsibility_assignment,
@@ -608,17 +605,8 @@ def test_exact_reusable_material_result_is_not_a_source_assertion():
         ledger, material_measurements, group
     )
 
-    references = source_assertion_references_through_boundary(
-        ledger, source_append_boundary=ledger.append_boundary()
-    )
-
     assert exact_material_result.exact_material == b"a+a"
     assert exact_material_result.material.get("assertions") is None
-    assert all(
-        reference["recorded_result_occurrence_identity"]
-        != exact_material_result.identity
-        for reference in references
-    )
 
 
 def test_varying_coordinate_material_yields_no_common_exact_material():

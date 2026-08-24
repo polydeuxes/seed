@@ -13,13 +13,6 @@ One frame is followed and no more.  Where that leaves a local unresolved, the
 remainder was traced by reading, and is written here as read rather than
 measured so it can be checked:
 
-    candidate_results_from_exact_result_assertions
-        _authority(responsibility), reached through _responsibility_material
-        and _record_candidate_responsibility.  Its two callers supply
-        ONE_SOURCE_CANDIDATE_RESPONSIBILITY at :546 and
-        ORDERED_PAIR_CANDIDATE_RESPONSIBILITY at :560, both names the module
-        already holds.
-
     byte_measurement
         _source_assertion_authority(source) returns
         source.material["dimensions"]["authority"].  It carries an Authority
@@ -27,9 +20,8 @@ measured so it can be checked:
         one, so what it answers to is whatever produced that occurrence.
 
 Read with the source-side census, no producer found here takes its value from a
-coordinate of the occurrence it is recorded on.  Nine take nothing, two are
-filled by names their module holds, and one carries an earlier recorded value
-onward.
+coordinate of the occurrence it is recorded on. The current findings are
+emitted by this observer rather than frozen into its description.
 
 Usage:
     .venv/bin/python scripts/observe_authority_producer_inputs.py

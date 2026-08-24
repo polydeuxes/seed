@@ -217,45 +217,42 @@ def test_addressed_position_responsibility_owns_the_bounded_subject_set():
     ) in chapter
 
 
-def test_candidate_production_owns_completeness_without_a_result_barrier():
+def test_candidate_production_requires_a_prior_rule_and_subjects():
     grammar = _grammar()
     candidate = grammar["book_coordinates"]["01.Source.E.1"]
-    standing = grammar["book_coordinates"]["01.Standing.D"]
 
     assert candidate == {
-        "subject": "required_source_Assertion_or_ordered_source_Assertion_pair",
-        "Responsibility": "exhaustive_Candidate_for_bounded_subject_set",
+        "subject": "exact_subject_required_by_exact_Candidate_rule",
+        "Responsibility": "Candidate_required_by_exact_rule",
         "exact_Act": "Candidate",
+        "rule": "exact_Candidate_rule",
         "requires": [
+            "exact_Candidate_rule",
+            "exact_required_subject",
             "Applicability_result",
             "participation_relation_occurrence",
         ],
         "required_Admission": (
             "exact_Admission_occurrence_prior_to_Participation"
         ),
-        "completeness_boundary": "Responsibility_bounded_subject_set",
+        "completeness_boundary": "exact_rule_and_subject_boundary",
         "relations": ["participation", "yield"],
         "result": "exact_Candidate_result",
     }
-    # The bounded subject set belongs to the Responsibilities that carry one,
-    # not to Responsibility in general.
-    assert "responsibility_subject_set" not in standing
-
     candidate_book = (
         CHAPTERS / "07_measurement_and_candidates.md"
     ).read_text(encoding="utf-8")
-    standing_book = (
-        CHAPTERS / "01_constitutional_standing.md"
-    ).read_text(encoding="utf-8")
     compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
     assert (
-        "Each Responsibility is exhaustive for its bounded\n"
-        "subject set."
+        "Each rule, boundary, and\n"
+        "required subject is separately established prior to this Responsibility."
     ) in candidate_book
     assert (
-        "Each Responsibility is exhaustive for its bounded\n"
-        "subject set."
+        "Completeness requires one exact Candidate result for every subject "
+        "required by\n"
+        "the exact rule."
     ) in candidate_book
+    assert "source Assertion pair" not in candidate_book
     assert "one complete Candidate result" not in compare_book
     assert "every Candidate in the complete Candidate result" not in compare_book
 
@@ -475,7 +472,7 @@ PYTEST_ADMISSION = (
     test_empty_standing_is_only_the_first_current_standing,
     test_applicability_required_admission_and_participation_remain_separate,
     test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
-    test_candidate_production_owns_completeness_without_a_result_barrier,
+    test_candidate_production_requires_a_prior_rule_and_subjects,
     test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
     test_responsibility_coordinates_are_anatomy_not_assignment,
     test_exact_relations_are_direct,

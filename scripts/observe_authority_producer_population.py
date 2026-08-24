@@ -68,8 +68,6 @@ from seed_runtime.events import EventLedger
 PRODUCERS = [
     ("addressed_byte_occurrence_reference_determination", "_authority"),
     ("byte_measurement", "_source_assertion_authority"),
-    ("candidate_results_from_exact_result_assertions", "_authority"),
-    ("candidate_results_from_exact_result_assertions", "_applicability_authority"),
     ("comparison_of_ordered_path_source_position_material", "_authority"),
     ("comparison_of_ordered_relation_path_with_recorded_pair_findings", "_authority"),
     ("comparison_of_recorded_byte_pair_measurements", "_authority"),

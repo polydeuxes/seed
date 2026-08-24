@@ -43,13 +43,12 @@ carrying one exact addressed source result. The Candidate result preserves its
 exact source references, Authority, Scope, Locality, provenance, limits, and
 Unknown.
 
-### 01.Source.E.1 — Candidate results from exact results
+### 01.Source.E.1 — Candidate results required by one exact rule
 
-A Candidate Responsibility carries every exact source Assertion separately as
-a required subject through an exact boundary. Another Candidate Responsibility
-carries every distinct ordered source Assertion pair as a required subject
-through an exact boundary. Each Responsibility is exhaustive for its bounded
-subject set.
+One Candidate Responsibility carries one exact rule, one exact subject
+boundary, and every exact subject that rule requires. Each rule, boundary, and
+required subject is separately established prior to this Responsibility. The
+Candidate Responsibility, rule, boundary, and required subject are distinct.
 
 Each required subject requires its exact Applicability result and Participation
 relation to an exact Candidate Act occurrence. Each required Admission requires
@@ -59,9 +58,14 @@ its exact occurrence prior to Participation.
 Candidate Act occurrence --Yield--> exact Candidate result
 ```
 
-Each result preserves an exact Candidate with its exact source Assertion
-reference or references, coordinates, and Act-local roles. A relation requires
-a responsible relation occurrence.
+Each result preserves one exact Candidate with the exact subject references,
+coordinates, and Act-local roles required by its rule. A relation requires a
+responsible relation occurrence.
+
+Completeness requires one exact Candidate result for every subject required by
+the exact rule. Every Candidate result of the Responsibility requires one
+subject required by the exact rule. Its completeness boundary preserves the
+exact rule and subject boundary.
 
 ## References
 

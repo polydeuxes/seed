@@ -174,17 +174,20 @@
       "result": "Candidate_result"
     },
     "01.Source.E.1": {
-      "subject": "required_source_Assertion_or_ordered_source_Assertion_pair",
-      "Responsibility": "exhaustive_Candidate_for_bounded_subject_set",
+      "subject": "exact_subject_required_by_exact_Candidate_rule",
+      "Responsibility": "Candidate_required_by_exact_rule",
       "exact_Act": "Candidate",
+      "rule": "exact_Candidate_rule",
       "required_Admission": "exact_Admission_occurrence_prior_to_Participation",
-      "completeness_boundary": "Responsibility_bounded_subject_set",
+      "completeness_boundary": "exact_rule_and_subject_boundary",
       "relations": [
         "participation",
         "yield"
       ],
       "result": "exact_Candidate_result",
       "requires": [
+        "exact_Candidate_rule",
+        "exact_required_subject",
         "Applicability_result",
         "participation_relation_occurrence"
       ]

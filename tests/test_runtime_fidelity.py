@@ -682,17 +682,6 @@ def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     assert unknown == {}, f"occurrences name absent grammar clauses: {unknown}"
 
 
-def test_one_storage_stream_may_carry_several_constitutional_coordinates():
-    references = _runtime_event_kind_responsibilities()[
-        "operator.candidate.occurred"
-    ]
-    assert {clause for _path, clause in references} == {
-        "01.Source.E.1",
-        "01.Standing.E.1",
-        "02.Acts.A",
-    }
-
-
 def test_each_live_assertion_responsibility_has_one_clause_declaration():
     live = _runtime_assertion_responsibilities()
     accounted = _runtime_assertion_responsibility_clauses()
@@ -1257,7 +1246,6 @@ PYTEST_ADMISSION = (
     test_unresolved_event_material_expansion_remains_visible,
     test_every_runtime_event_kind_declares_its_witness_grammar_responsibility,
     test_each_recorded_occurrence_reference_names_a_witness_grammar_clause,
-    test_one_storage_stream_may_carry_several_constitutional_coordinates,
     test_each_live_assertion_responsibility_has_one_clause_declaration,
     test_each_assertion_responsibility_names_one_witness_grammar_clause,
     test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name,

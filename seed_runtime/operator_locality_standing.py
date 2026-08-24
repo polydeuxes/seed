@@ -231,21 +231,6 @@ from seed_runtime.source_position_recurrence import (
     RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND,
     validate_source_position_recurrence_event,
 )
-from seed_runtime.candidate_results_from_exact_result_assertions import (
-    APPLICABILITY_ACT as CANDIDATE_APPLICABILITY_ACT,
-    APPLICABILITY_RESPONSIBILITY as CANDIDATE_APPLICABILITY_RESPONSIBILITY,
-    CANDIDATE_OCCURRENCE_STREAM,
-    ONE_SOURCE_CANDIDATE_ACT,
-    ORDERED_PAIR_CANDIDATE_ACT,
-    get_candidate_responsibility,
-    get_candidate_applicability_responsibility,
-    get_candidate_applicability_act,
-    get_candidate_applicability_result,
-    get_candidate_participation,
-    get_candidate_act,
-    get_candidate_yield_relation,
-    get_recorded_candidate_result,
-)
 # The writer declares the storage-routing values. A reader declaring another
 # copy would create a second contract free to drift from the first.
 from seed_runtime.operator_representation import (
@@ -593,7 +578,6 @@ _SUPPORTED_KINDS = {
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
-    CANDIDATE_OCCURRENCE_STREAM,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -1311,7 +1295,6 @@ def advance_operator_locality_standing(
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
             or event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS
             or event.kind in _SOURCE_POSITION_RECURRENCE_KINDS
-            or event.kind == CANDIDATE_OCCURRENCE_STREAM
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -2060,43 +2043,6 @@ def advance_operator_locality_standing(
                     ],
                 }
             continue
-        if event.kind == CANDIDATE_OCCURRENCE_STREAM:
-            candidate_coordinates = event.material
-            if "responsibility_subject_identity" in candidate_coordinates:
-                if (
-                    candidate_coordinates.get("responsibility")
-                    == CANDIDATE_APPLICABILITY_RESPONSIBILITY
-                ):
-                    get_candidate_applicability_responsibility(
-                        ledger, event.identity
-                    )
-                else:
-                    get_candidate_responsibility(ledger, event.identity)
-                continue
-            if type(candidate_coordinates.get("candidate_assertion")) is dict:
-                get_recorded_candidate_result(ledger, event.identity)
-                candidate_result_occurrences[event.identity] = None
-                continue
-            if candidate_coordinates.get("act") == CANDIDATE_APPLICABILITY_ACT:
-                get_candidate_applicability_act(ledger, event.identity)
-                continue
-            if candidate_coordinates.get("exact_act") == CANDIDATE_APPLICABILITY_ACT:
-                get_candidate_applicability_result(ledger, event.identity)
-                applicability_result_occurrences[event.identity] = None
-                continue
-            if candidate_coordinates.get("relation") == "participation":
-                get_candidate_participation(ledger, event.identity)
-                continue
-            if candidate_coordinates.get("act") in {
-                ONE_SOURCE_CANDIDATE_ACT,
-                ORDERED_PAIR_CANDIDATE_ACT,
-            }:
-                get_candidate_act(ledger, event.identity)
-                continue
-            if candidate_coordinates.get("relation") == "yield":
-                get_candidate_yield_relation(ledger, event.identity)
-                continue
-            raise ValueError("Candidate occurrence carries no exact coordinates")
         if (
             event.kind
             == STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
