@@ -217,7 +217,7 @@ def test_addressed_position_responsibility_owns_the_bounded_subject_set():
     ) in chapter
 
 
-def test_candidate_production_requires_a_prior_rule_and_subjects():
+def test_candidate_production_requires_an_exact_rule_and_addressed_subjects():
     grammar = _grammar()
     candidate = grammar["book_coordinates"]["01.Source.E.1"]
 
@@ -244,8 +244,15 @@ def test_candidate_production_requires_a_prior_rule_and_subjects():
     ).read_text(encoding="utf-8")
     compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
     assert (
-        "Each rule, boundary, and\n"
-        "required subject is separately established prior to this Responsibility."
+        "The rule and subject\n"
+        "boundary are exact for this Responsibility prior to the Candidate Act."
+    ) in candidate_book
+    assert (
+        "The\nCandidate Act establishes no rule or subject boundary."
+    ) in candidate_book
+    assert (
+        "Each required subject is\n"
+        "separately addressed prior to its Applicability and Participation."
     ) in candidate_book
     assert (
         "Completeness requires one exact Candidate result for every subject "
@@ -472,7 +479,7 @@ PYTEST_ADMISSION = (
     test_empty_standing_is_only_the_first_current_standing,
     test_applicability_required_admission_and_participation_remain_separate,
     test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
-    test_candidate_production_requires_a_prior_rule_and_subjects,
+    test_candidate_production_requires_an_exact_rule_and_addressed_subjects,
     test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
     test_responsibility_coordinates_are_anatomy_not_assignment,
     test_exact_relations_are_direct,

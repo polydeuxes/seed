@@ -46,9 +46,10 @@ Unknown.
 ### 01.Source.E.1 — Candidate results required by one exact rule
 
 One Candidate Responsibility carries one exact rule, one exact subject
-boundary, and every exact subject that rule requires. Each rule, boundary, and
-required subject is separately established prior to this Responsibility. The
-Candidate Responsibility, rule, boundary, and required subject are distinct.
+boundary, and every exact subject that rule requires. The rule and subject
+boundary are exact for this Responsibility prior to the Candidate Act. The
+Candidate Act establishes no rule or subject boundary. Each required subject is
+separately addressed prior to its Applicability and Participation.
 
 Each required subject requires its exact Applicability result and Participation
 relation to an exact Candidate Act occurrence. Each required Admission requires
