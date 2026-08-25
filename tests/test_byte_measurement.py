@@ -2036,12 +2036,6 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
     assert assignment["completeness_boundary_identity"] == source.material[
         "completeness_boundary"
     ]["identity"]
-    yield_relation = ledger.get(source.material["yield_relation_identity"])
-    assert yield_relation.material["dimensions"]["responsible_boundary"] == (
-        "this Seed"
-    )
-
-
 def test_locality_movement_assignment_is_earned_from_the_exact_source():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)

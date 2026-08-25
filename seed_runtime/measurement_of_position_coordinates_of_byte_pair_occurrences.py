@@ -1519,9 +1519,7 @@ def _record_byte_pair_occurrence_position_measurement_result(
         result_kind=RESULT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="byte_pair_occurrence_position_measurement",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,

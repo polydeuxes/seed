@@ -139,9 +139,7 @@ def _record_shared_path(
             for coordinate, value in applicability_material.items()
             if coordinate != "act_occurrence_identity"
         },
-        responsibility=shared_position.RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_applicability",
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
@@ -191,9 +189,7 @@ def _record_shared_path(
             for coordinate, value in result_material.items()
             if coordinate != "act_occurrence_identity"
         },
-        responsibility=shared_position.RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_measurement",
-        responsible_boundary="this Seed",
     )
     path = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_RESULT_KIND,

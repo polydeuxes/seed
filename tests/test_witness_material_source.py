@@ -136,8 +136,6 @@ def test_durable_witness_source_preserves_raw_material_and_yield_relation(tmp_pa
             "identity",
             "exact_act",
             "act_occurrence_identity",
-            "responsibility",
-            "responsible_boundary",
         }
         assert read_requirements_of_yield_relation(
             reopened,

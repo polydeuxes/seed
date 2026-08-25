@@ -674,9 +674,7 @@ def _record_yielded_result(
         result_kind=result_kind,
         result_identity=result_identity,
         result_content=content,
-        responsibility=responsibility,
         occurrence_boundary=occurrence_boundary,
-        responsible_boundary="this Seed",
         result_exact_material=result_exact_material,
     )
     result = _EVENT_APPENDERS[result_kind](

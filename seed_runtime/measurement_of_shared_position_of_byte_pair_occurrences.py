@@ -1331,9 +1331,7 @@ def record_shared_position_applicability_result(
             for coordinate, value in result.items()
             if coordinate != "act_occurrence_event_identity"
         },
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_applicability",
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
@@ -1812,9 +1810,7 @@ def record_shared_position_measurement_result(
             for coordinate, value in result.items()
             if coordinate != "act_occurrence_event_identity"
         },
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="shared_pair_position_measurement",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         SHARED_POSITION_MEASUREMENT_RESULT_KIND,

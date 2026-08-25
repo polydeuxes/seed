@@ -947,11 +947,9 @@ def _record_applicability_yield_relation(
         result_kind=APPLICABILITY_YIELD_RESULT_KIND,
         result_identity=material["result_identity"],
         result_content=material,
-        responsibility=RESPONSIBILITY,
         occurrence_boundary=(
             "addressed_byte_occurrence_reference_determination_applicability"
         ),
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
@@ -975,9 +973,7 @@ def _record_determination_yield_relation(
         result_kind=DETERMINATION_YIELD_RESULT_KIND,
         result_identity=material["result_identity"],
         result_content=material,
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="addressed_byte_occurrence_reference_determination",
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "determination_act_occurrence_identity"
         ),

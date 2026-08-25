@@ -1189,9 +1189,7 @@ def _record_applicability_result_from_act(
         result_kind="recorded pair Measurement comparison Applicability result",
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         occurrence_boundary="recorded_pair_measurement_comparison_applicability",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
@@ -1599,9 +1597,7 @@ def _record_comparison_result_from_act(
         result_kind="recorded pair Measurement comparison result",
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         occurrence_boundary="recorded_pair_measurement_comparison",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,

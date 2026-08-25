@@ -787,9 +787,7 @@ def _yield_result(
             for key, value in result_content.items()
             if key != "act_occurrence_identity"
         },
-        responsibility=RESPONSIBILITY,
         occurrence_boundary=occurrence_boundary,
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=occurrence_coordinate,
     )
 

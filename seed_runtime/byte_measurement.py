@@ -1496,9 +1496,7 @@ def _append_assertion_locality_movement_result(
         result_kind=ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
         result_identity=assignment.material["movement_result_identity"],
         result_content=result_material,
-        responsibility=ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         occurrence_boundary="assertion_locality_movement",
-        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
@@ -2966,9 +2964,7 @@ def _record_byte_measurement_result_from_exact_inputs(
         result_kind=BYTE_MEASUREMENT_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_material,
-        responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary="byte_measurement",
-        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
@@ -3129,10 +3125,6 @@ def _assertions_of_recorded_byte_measurement(
         != BYTE_MEASUREMENT_RESULT_KIND
         or yield_relation.material.get("coordinates_of_carried_result")
         != [coordinate for coordinate in material if coordinate in BYTE_RESULT_COORDINATES]
-        or yield_relation.material.get("dimensions", {}).get("responsibility")
-        != BYTE_MEASUREMENT_RESPONSIBILITY
-        or yield_relation.material.get("dimensions", {}).get("responsible_boundary")
-        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or yield_relation.material.get("dimensions", {}).get("act_occurrence_identity")
         != material["act_occurrence_identity"]
     ):
@@ -4038,9 +4030,7 @@ def _record_pair_input_applicability_result_from_carried_act(
         result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
         result_identity=assignment.material["applicability_result_identity"],
         result_content=result_material,
-        responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         occurrence_boundary="byte_pair_applicability",
-        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
     )
     if (
@@ -4532,9 +4522,7 @@ def _record_pair_measurement_result_from_carried_act(
         result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
         result_identity=assignment.material["measurement_result_identity"],
         result_content=result_material,
-        responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary="byte_pair_measurement",
-        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     if (
         ledger.get(yield_relation.identity) != yield_relation
@@ -4934,10 +4922,6 @@ def _validated_recorded_byte_position_pair_measurement(
             for coordinate in material
             if coordinate in BYTE_PAIR_RESULT_COORDINATES
         ]
-        or yield_relation.material.get("dimensions", {}).get("responsibility")
-        != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or yield_relation.material.get("dimensions", {}).get("responsible_boundary")
-        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or yield_relation.material.get("dimensions", {}).get("act_occurrence_identity")
         != material["act_occurrence_identity"]
         or not _yield_immediately_precedes_result(ledger, yield_relation, event)

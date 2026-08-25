@@ -1244,9 +1244,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
             for key, value in result.items()
             if key != "act_occurrence_identity"
         },
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
-        responsible_boundary="this Seed",
         responsible_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
@@ -1619,9 +1617,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
             for key, value in result.items()
             if key != "act_occurrence_identity"
         },
-        responsibility=RESPONSIBILITY,
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,

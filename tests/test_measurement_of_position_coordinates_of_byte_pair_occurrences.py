@@ -862,9 +862,7 @@ def test_result_refuses_an_intact_yield_from_another_exact_family(
         result_kind=result_kind,
         result_identity=result_material["result_identity"],
         result_content=result_material,
-        responsibility=direct_position_module.RESPONSIBILITY,
         occurrence_boundary=occurrence_boundary,
-        responsible_boundary="this Seed",
     )
     result = ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,

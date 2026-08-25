@@ -955,9 +955,7 @@ def _record_occurrence_position_measurement_result(
         result_kind=OCCURRENCE_POSITION_RESULT_KIND,
         result_identity=result_material["result_identity"],
         result_content=result_material,
-        responsibility=OCCURRENCE_POSITION_RESPONSIBILITY,
         occurrence_boundary="occurrence_position_measurement",
-        responsible_boundary="this Seed",
     )
     recorded_material = {
         "result_identity": result_material["result_identity"],

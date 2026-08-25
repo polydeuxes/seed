@@ -482,9 +482,7 @@ def record_operator_invocation_locality_result(
         result_kind=OPERATOR_INVOCATION_LOCALITY_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         occurrence_boundary="operator_invocation_locality_relation",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,

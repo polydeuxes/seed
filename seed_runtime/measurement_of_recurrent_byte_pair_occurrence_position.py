@@ -1264,9 +1264,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         result_kind=RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
-        responsibility=RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         occurrence_boundary="measurement_of_recurrent_byte_pair_occurrence_position",
-        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
         RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,

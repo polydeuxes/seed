@@ -611,9 +611,7 @@ def _record_operator_material_source_result(
         result_kind=OPERATOR_MATERIAL_SOURCE_RESULT_KIND,
         result_identity=result_material["result_identity"],
         result_content=result_material,
-        responsibility=OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY,
         occurrence_boundary="operator_material_source",
-        responsible_boundary="this Seed",
         result_exact_material=boundary_material.exact_bytes,
     )
     return _append_exact_material_result_occurrence(
@@ -688,9 +686,6 @@ def read_operator_material_source_locality_relation_requirements(
             and yield_dimensions.get("exact_act") == OPERATOR_MATERIAL_SOURCE_ACT
             and yield_dimensions.get("act_occurrence_identity")
             == result.material.get("act_occurrence_identity")
-            and yield_dimensions.get("responsibility")
-            == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY
-            and yield_dimensions.get("responsible_boundary") == "this Seed"
             and act_occurrence.locality_identity == result.locality_identity
             and result.material.get("responsible_boundary") == "this Seed"
             and type(result.material.get("source_boundary")) is str

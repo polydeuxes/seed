@@ -248,10 +248,6 @@ def read_requirements_of_yield_relation(
         exact_act_occurrence = (
             yield_dimensions.get("exact_act")
             == act_occurrence.material.get("act")
-            and yield_dimensions.get("responsibility")
-            == act_occurrence.material.get("responsibility")
-            and yield_dimensions.get("responsible_boundary")
-            == act_occurrence.material.get("responsible_boundary")
         )
         yield_is_carried = yield_is_carried and (
             recorded_result_event.material.get("act_occurrence_event_identity")
@@ -286,9 +282,7 @@ def _record_yield_relation(
     result_kind: str,
     result_identity: str,
     result_content: dict[str, Any],
-    responsibility: str,
     occurrence_boundary: str,
-    responsible_boundary: str = "unestablished",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
     coordinates_of_recorded_result: dict[str, tuple[str, ...]] | None = None,
     result_exact_material: bytes | None = None,
@@ -313,9 +307,6 @@ def _record_yield_relation(
         or act_occurrence.material.get(responsible_act_occurrence_coordinate)
         != act_occurrence_identity
         or act_occurrence.material.get("act") != exact_act
-        or act_occurrence.material.get("responsibility") != responsibility
-        or act_occurrence.material.get("responsible_boundary")
-        != responsible_boundary
         or ledger.integrity_of(act_occurrence_event_identity) == CORRUPTED
     ):
         raise ValueError(
@@ -367,8 +358,6 @@ def _record_yield_relation(
                 ),
                 "exact_act": exact_act,
                 "act_occurrence_identity": act_occurrence_identity,
-                "responsibility": responsibility,
-                "responsible_boundary": responsible_boundary,
             },
             "coordinates_of_carried_result": list(result_content),
             "result": deepcopy(result_content),

@@ -397,9 +397,7 @@ def record_standing_boundary_reference_result(
         result_kind=STANDING_BOUNDARY_REFERENCE_RESULT_KIND,
         result_identity=result_material["result_identity"],
         result_content=result_material,
-        responsibility=STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
         occurrence_boundary="standing_boundary_reference",
-        responsible_boundary="this Seed",
     )
     return ledger.append(
         STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,

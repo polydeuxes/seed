@@ -189,9 +189,7 @@ def record_witness_material_source(
         result_kind="exact material",
         result_identity=result_identity,
         result_content=result,
-        responsibility=WITNESS_MATERIAL_SOURCE_RESPONSIBILITY,
         occurrence_boundary="witness_material_source",
-        responsible_boundary="this Seed",
         coordinates_of_recorded_result={key: (key,) for key in result},
         result_exact_material=exact_bytes,
     )
