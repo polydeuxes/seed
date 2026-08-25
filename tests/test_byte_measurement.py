@@ -1689,7 +1689,7 @@ def test_pair_assignment_enters_current_standing_before_distinct_acts_and_result
     )
     applicability = ledger.get(result.material["input_applicability_event_identity"])
     applicability_act = ledger.get(
-        applicability.material["act_occurrence_identity"]
+        applicability.material["act_occurrence_event_identity"]
     )
     measurement_act = ledger.get(result.material["act_occurrence_event_identity"])
     standing = read_operator_locality_standing_through(

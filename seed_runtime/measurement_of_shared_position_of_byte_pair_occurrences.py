@@ -1068,7 +1068,7 @@ def _applicability_act_material(
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": assignment.material["applicability_act_identity"],
+        "addressed_act_identity": assignment.material["measurement_act_identity"],
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],

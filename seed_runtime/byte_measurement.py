@@ -4028,7 +4028,7 @@ def _read_recorded_pair_input_applicability(
     material = event.material
     if set(material) != BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES | {
         "yield_relation_identity",
-        "act_occurrence_identity",
+        "act_occurrence_event_identity",
     }:
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact Applicability result surface"
