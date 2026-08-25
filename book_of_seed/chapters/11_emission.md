@@ -1,10 +1,10 @@
 # Emission
 
-### 07.Emission.A — Emission Responsibility
+### 07.Emission.A — Emission pre-Act coordinates
 
-One emission Responsibility carries one exact source material result, one
-exact destination boundary within its invocation Locality, one emission Act,
-Scope, Locality, conflicts, known loss, and Unknown.
+Before one emission Act occurrence, one exact source material result, one exact
+destination boundary within its invocation Locality, that exact Act, Scope,
+Locality, conflicts, known loss, and Unknown are exact together.
 
 ### 07.Emission.C — Exact-material boundary write
 
@@ -18,12 +18,13 @@ The emission Act occurrence, its attempt, and its accepted write are one
 occurrence and one result. A failure is a separate Act occurrence with its own
 result, and its reported count is one coordinate of that failure. An accepted
 write and a later failure are separate occurrences. Effects beyond the
-addressed boundary requires a separate responsible occurrence.
+addressed boundary require a separate exact Act occurrence.
 
 ### 07.Emission.D — Material supplied at the invocation Locality
 
 Material supplied by the addressed boundary at that exact invocation Locality
-requires its own exact acquisition Responsibility and Act occurrence.
+requires its own exact subject and acquisition Act coordinates before its Act
+occurrence.
 
 ## References
 

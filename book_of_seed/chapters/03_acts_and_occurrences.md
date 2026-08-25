@@ -1,12 +1,13 @@
 # Acts and Occurrences
 
-### 02.Acts.A — Exact Act and occurrence
+### 02.Acts.A — Exact pre-Act coordinates and occurrence
 
-One exact Responsibility bounds one exact Act. The Responsibility carries its
-responsible boundary, subject, Scope, Locality, and required
-relations.
+Before one exact Act occurrence, each exact subject of that Act is bound to the
+exact Act under its exact rule where required, Scope, Locality, and required
+relations. These coordinates are exact before the occurrence.
 
-An Act occurrence is the occurrence of that Act under the Responsibility.
+An Act occurrence is one occurrence of that exact Act. It carries the exact
+pre-Act coordinates.
 
 Participation carries one subject, one Act-local role, and one Act occurrence:
 
@@ -33,5 +34,5 @@ A result preserves coordinates established by its Act occurrence.
 
 ## References
 
-- [Standing](01_constitutional_standing.md)
+- [Current coordinates](01_current_coordinates.md)
 - [Scope and Support](02_scope_and_support.md)

@@ -1,39 +1,38 @@
 # This Book
 
-## Standing
+## Current coordinates
 
-This Seed first current Standing carries no coordinates.
+This Seed first carries no current coordinates.
 
-Standing for one exact subject carries its exact current coordinates.
-Standing != coordinate. Responsibility is one exact branch of current Standing.
-
-```
-current Standing
-└── exact Responsibility
-```
-
-## Responsibility
-
-One exact Responsibility carries:
+For one exact subject, its exact current coordinates through one exact
+occurrence boundary are its exact established coordinates in one Locality
+through that boundary.
 
 ```
-Responsibility
-├── responsible boundary
-├── subject
+exact subject
+└── exact coordinates current through one exact occurrence boundary
+```
+
+Current coordinates are this bounded reading.
+
+## Before an Act occurrence
+
+```
+subject
 ├── exact Act
+├── exact rule where required
 ├── Scope
-├── required Locality
-├── required source and provenance
+├── Locality
 └── required support relations
 ```
 
-Responsibility is prior to its Act and Act occurrence. Applicability,
-Admission, Participation, Carriage, Yield, result, and Standing
-are separate coordinates.
+These coordinates are exact before the Act occurrence. Applicability,
+Admission, Participation, Carriage, Yield, result, and current coordinates
+are separately exact.
 
 ## Act and occurrence
 
-An exact Act occurrence carries its Responsibility, Act, responsible boundary,
+An exact Act occurrence carries its exact Act, subjects, rule where required,
 Scope, and Locality.
 
 Participation and Carriage are exact relations:
@@ -44,14 +43,14 @@ content ── Carriage ─────────────> Act occurrence
 Act occurrence ── Yield ─────────> result
 ```
 
-Participation, Carriage, and Yield each requires exact subjects, relation,
-responsible occurrence, Scope, Locality, and Unknown.
+Participation, Carriage, and Yield each requires exact subjects, relation
+occurrence, Scope, Locality, and Unknown.
 
 The result carries the exact coordinates established by its Act occurrence.
 
 ## References
 
-- [Standing](chapters/01_constitutional_standing.md)
+- [Current coordinates](chapters/01_current_coordinates.md)
 - [Scope and Support](chapters/02_scope_and_support.md)
 - [Acts and occurrences](chapters/03_acts_and_occurrences.md)
 - [Source coordinates](chapters/04_source_coordinates.md)

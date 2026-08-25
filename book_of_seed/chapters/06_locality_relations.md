@@ -3,17 +3,16 @@
 ### 06.Locality.A — Exact Locality relation
 
 Locality is one exact relation with first and second exact subjects. It requires its
-relation occurrence, Responsibility, Act, Scope, and
+relation occurrence, exact Act, Scope, and
 Unknown.
 
 Each Locality relation requires a separate relation occurrence.
 
-### 06.Locality.B — Standing boundary at a new Locality
+### 06.Locality.B — Through-occurrence boundary at a new Locality
 
-One Responsibility to preserve the prior Standing boundary at one new
-Locality is a branch of current Standing carrying one exact addressed occurrence.
-The Responsibility carries the addressed occurrence, prior Standing boundary,
-destination Locality, exact Act, Scope, and Unknown.
+Before one preservation Act occurrence, one exact addressed occurrence, its
+prior through-occurrence boundary, that exact Act, destination Locality,
+Scope, and Unknown are exact together.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
@@ -21,21 +20,20 @@ preserves the prior boundary reference and its new Locality relation.
 
 ### 06.Locality.C — Recorded boundary relation
 
-One Responsibility to establish a direct Locality relation from the recorded
-result to one new Locality is a branch of current Standing carrying one exact
-recorded Standing boundary reference.
+Before one Locality Act occurrence, one exact recorded through-occurrence
+boundary reference, the exact Act to establish a direct Locality relation from
+the recorded result, and the new Locality are exact together.
 The result preserves the recorded reference, destination Locality, relation
-occurrence, Responsibility, Act occurrence, Yield, Scope, and Unknown.
+occurrence, Act occurrence, Yield, Scope, and Unknown.
 
 ### 06.Locality.D — Operator invocation Locality
 
-One Responsibility to establish one invocation Locality and one Locality
-relation from the operator Locality to it is a branch of current Standing
-carrying one exact operator material occurrence.
+Before one invocation-Locality Act occurrence, one exact operator material
+occurrence, exact Act, invocation Locality, and Locality relation from the
+operator Locality are exact together.
 
 The result preserves the operator occurrence, source Locality, invocation
-Locality, relation occurrence, Responsibility, Act occurrence, Yield,
-Scope, and Unknown.
+Locality, relation occurrence, Act occurrence, Yield, Scope, and Unknown.
 
 Material later supplied at the invocation Locality preserves exact provenance
 to the operator occurrence and relation result.

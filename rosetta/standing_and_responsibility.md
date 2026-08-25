@@ -3,23 +3,34 @@
 Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
 constitutional grammar; this file is not.
 
-Rosetta follows the Book ordering:
+The retired nouns translate to two active physiologies:
 
 ```text
-current Standing
-└── exact Responsibility
-    ├── responsible boundary
-    ├── subject or material
-    ├── exact Act
-    ├── Scope / Locality
-    ├── source / provenance where required
-    └── exact support relations where required
-        ↓
-    Act occurrence
-        ↓ Yield
-    exact result
+Standing
+    exact subject + exact Locality + exact through-occurrence boundary
+    ↓ bounded read
+    exact coordinates current through that boundary
+
+Responsibility
+    exact subject + exact Act + exact rule where required
+    + Scope + Locality + required relations
+    all exact before the Act occurrence
+
+    ↓ Act occurrence
+    ↓ Yield
+    exact result becomes current for the bound subject
 
 ```
+
+Neither retired noun names an additional constitutional object. Standing is
+the human orientation over the bounded current-coordinate read.
+Responsibility is the former duty-laden name for the direct pre-Act
+coordinates. The binding remains; the bureaucrat does not.
+
+`responsible boundary` currently has no constitutional replacement. Live
+runtime payloads copy a scalar through pre-Act, Act, Yield, and result records,
+but that scalar does not address an exact boundary occurrence or relation. It
+remains runtime cleanup material until such a distinction is established.
 
 Relations recur across live implementation roads:
 
@@ -32,9 +43,8 @@ exact subject ── Support → exact input to Act position
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact responsible occurrence, Scope, Locality, and
-Unknown. These are not every relation about which Seed may carry an Assertion
-or Standing.
+its exact relation occurrence, Scope, Locality, and Unknown. These are not
+every relation about which Seed may carry an Assertion.
 
 ## Live implementation references
 
@@ -44,13 +54,15 @@ unless an ordinary word needs translation to an exact Seed
 distinction.
 
 ```text
-Measurement Responsibility / Act / occurrence / Assertions
-    seed_runtime.byte_measurement::record_byte_measurement_responsible_act_evidence
+Measurement pre-Act coordinates / Act occurrence / Assertions
     seed_runtime.byte_measurement::record_byte_measurement_result
     seed_runtime.byte_measurement::record_byte_position_pair_count_layer
 
-Evidence of Yield relation
-    seed_runtime.evidence_of_yield_relation::_record_evidence_of_yield_relation
+Yield relation
+    seed_runtime.yield_relation::_record_yield_relation
+
+Bounded current-coordinate read
+    seed_runtime.operator_locality_standing::read_operator_locality_standing
 
 Assertion addressability and locality movement
     seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
@@ -59,11 +71,8 @@ Assertion addressability and locality movement
 Applicability
     seed_runtime.byte_measurement::get_recorded_pair_input_applicability
 
-Emission Locality / Participation / Yield
-    seed_runtime.operator_representation::emit_operator_representation_material
-
 Witness-grammar Fidelity
-    tests/test_grammar_implementation.py
+    tests/test_book_grammar.py
 ```
 
 ## Directional shorthand
@@ -71,7 +80,7 @@ Witness-grammar Fidelity
 `Examination` describes movement from presented material toward bounded Seed
 Assertions. `Presentation` describes movement from bounded Seed Assertions
 toward emitted material. Neither is an Act or occurrence. They are directions
-across exact Responsibilities and their occurrences.
+across exact pre-Act coordinates and their occurrences.
 
 ## Translation shorthand
 
@@ -80,33 +89,37 @@ about Seed:
 
 ```text
 Book           this constitutional language + ordered clause coordinates + this Book's admitted lexicon; Book != lexicon by identity
-Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
-Composite      one communicative address for several exact coordinates; each coordinate still requires its own responsible physiology
-Name / label / kind / shape ordinary ways to point at material or a grouping; none supplies the subject, relation, Act, occurrence, or Standing it suggests
-Evidence       communicative shorthand that exact material, source and occurrence references, Scope, and a responsible relation support an Assertion; no separate Evidence coordinate
-Authority      retired compression of responsible boundary, subject, exact Act and rule, Scope, Locality, source, provenance, occurrence, Yield, result, and current Standing; no separate Authority coordinate
+Standing       exact subject + Locality + exact through-occurrence boundary + bounded current-coordinate read; no additional identity, occurrence, relation, Act, or result
+Responsibility exact subject + exact Act + exact rule where required + Scope + Locality + required relations, all exact before occurrence; no duty, ownership, inevitability, or additional object
+Assignment     runtime witness word for recorded pre-Act coordinates; generated assignment identities add no established distinction on the audited byte-pair road
+Responsible boundary runtime scalar equality thread only; no exact boundary physiology established
+Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or currentness
+Composite      one communicative address for multiple exact coordinates; each coordinate still requires its own exact physiology
+Name / label / kind / shape ordinary ways to address material or a grouping; none supplies the subject, relation, Act, occurrence, or current coordinates it suggests
+Evidence       communicative shorthand that exact material, source and occurrence references, Scope, and an exact support relation support an Assertion; no separate Evidence coordinate
+Authority      retired compression of subject, exact Act and rule, Scope, Locality, source, provenance, occurrence, Yield, result, and bounded current coordinates; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
 Consumption    Participation in an exact Act occurrence
 Uptake         availability + Applicability + Participation
-Handoff        movement, or an exact Responsibility or responsible-boundary change
-Memory         addressed prior Locality Standing boundary + Book-bounded Responsibility assignment + direct Standing Locality continuation + new Locality; availability != Applicability; another exact Act required
-Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, Standing, temporal relation, or result
-Checkout       exact recorded Standing boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
-Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence, Standing, or Evidence equality
+Handoff        movement, or a change in exact pre-Act coordinates
+Memory         addressed prior Locality through-occurrence boundary + exact pre-Act coordinates + direct Locality continuation + new Locality; availability != Applicability; another exact Act required
+Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, currentness, temporal relation, or result
+Checkout       exact recorded through-occurrence boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
+Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence or current-coordinate equality
 Lineage        ordered source and occurrence references beneath Provenance
 Artifact       exact representation, record, Assertion, or result
 Projection     exact Act occurrence + representation + its carried coordinates
 Comparison of material-result references exact selected material-result references + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
-Comparison point carried recorded-reference occurrence + source Locality identity + exact Standing boundary occurrence + addressed Representation; transient read only; no Standing copy; availability != Applicability
+Comparison point carried recorded-reference occurrence + source Locality identity + exact through-occurrence boundary + addressed material; transient read only; no current-coordinate copy; availability != Applicability
 View           exact Act occurrence + representation + its carried coordinates
 Formation      exact Act occurrence + Yield + representation
-Constructor    callable implementation mechanism; no Responsibility by identity
-Owner          responsible boundary bearing an exact Responsibility
-Ownership      Assertion concerning that Responsibility assignment
+Constructor    callable implementation mechanism; no pre-Act binding by identity
+Owner          ordinary word requiring an exact ownership relation; pre-Act coordinates establish none by identity
+Ownership      Assertion concerning one exact ownership relation
 Claim          asserted content
-Fact           Assertion described through its bounded Standing
+Fact           Assertion described through its bounded current coordinates
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
 Warrant        exact support relation with source and occurrence references and Scope for one Assertion or assignment; composite only, no new relation by identity
@@ -114,19 +127,19 @@ Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelat
 Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
-Capability     exact Act + Responsibility + Scope + Locality + source and occurrence references
+Capability     exact Act + exact subject and rule + Scope + Locality + source and occurrence references
 Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
 Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
 Demand         shorthand that a bounded result is absent
 Reliance       Assertion that an exact input supports an exact result
-Continuum      earlier Standing + later occurrence + Compare of preserved coordinates
+Continuum      earlier through-occurrence boundary + later occurrence + Compare of preserved coordinates
 Closure        bounded Fidelity claim across the exact admitted coordinates
 Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
-Exposure       exact address / reference resolution + intact occurrence / boundary validation + returned exact coordinates, or availability at an exact Locality, or an emitted Representation; no carrying, uptake, Participation, occurrence, or Standing by identity; resolve the exact Act, occurrence, and relation
-Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
-Replay         exact recorded Locality occurrences in recorded order + Standing read from no prior Standing; a recorded Act does not occur
-Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, Standing, or relation
+Exposure       exact address / reference resolution + intact occurrence / boundary validation + returned exact coordinates, or availability at an exact Locality; no carrying, uptake, Participation, occurrence, or currentness by identity; resolve the exact Act, occurrence, and relation
+Recover        acquisition Act/result + Measurement + Compare + Admission + bounded current coordinates
+Replay         exact recorded Locality occurrences in recorded order + current-coordinate read from the empty prefix; a recorded Act does not occur
+Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, currentness, or relation
 Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
 Addressability of preserved coordinates
 ```
@@ -136,17 +149,17 @@ Addressability of preserved coordinates
 ```text
 subject / identity
 assertion / content
-standing
+current coordinates
 source / provenance
-responsibility
-responsible boundary / support
+pre-Act subject / Act / rule
+support
 scope / locality
 occurrence / preservation
 ```
 
-This is not a fixed coordinate population, a constitutional hierarchy, or a
-Responsibility. Exact subjects expose only the coordinates established under
-their own responsible boundaries.
+This is not a fixed coordinate set or a constitutional hierarchy. Exact
+subjects expose only the coordinates established through their exact
+occurrences and boundaries.
 
 ## Connective shorthand
 
@@ -156,9 +169,9 @@ exact coordinates doing the work:
 ### May / sufficient / possible / allowed / capable
 
 These words are ordinary compression. Expand each into its exact subject,
-relation, Responsibility, responsible boundary, Applicability, Participation,
-Act occurrence, source and occurrence references, Scope, Unknown,
-result, and Standing coordinates.
+relation, Act and rule, Applicability, Participation, Act occurrence, source
+and occurrence references, Scope, Locality, Unknown, result, and bounded
+current coordinates.
 The word alone establishes none of them.
 
 ### Fail / fails / failed
@@ -173,7 +186,7 @@ absence of an Act occurrence, Stop, or completion by identity.
 exact named coordinate, occurrence, boundary, or label, each subject carries
 one exact reference of that subject through its own exact relation, source and
 occurrence references and Scope. The word alone establishes no identity,
-equality, sameness, Locality, Participation, Applicability, Standing,
+equality, sameness, Locality, Participation, Applicability, currentness,
 represented relation, or Act.
 
 ### Identify / identifies / identifying
@@ -181,8 +194,8 @@ represented relation, or Act.
 These forms compress one exact address or reference, or material asserting one
 exact relation from X to Y. An address or reference carries coordinates and
 establishes no constitutional relation. Material asserting the relation
-requires one responsible occurrence, source coordinates, Scope, provenance,
-and Unknown before Standing. The forms alone establish no identity,
+requires one exact relation occurrence, source coordinates, Scope, provenance,
+and Unknown. The forms alone establish no identity,
 equality, sameness, subject, occurrence, represented relation, or truth.
 
 ### Does
@@ -196,13 +209,13 @@ the word alone establishes neither the occurrence nor the relation.
 ```text
 exact subject or material
     ↓
-exact Act + Responsibility + responsible boundary + Scope
+exact subject + exact Act + exact rule where required + Scope + Locality
     ↓
 Act occurrence + source and occurrence references + Participation
     ↓
 Yield or exact Locality relation
     ↓
-exact result + Standing
+exact result + bounded current coordinates
     ↓
 Compare
 ```
@@ -235,7 +248,7 @@ addition Act occurrence
 ```
 
 A connective composite receives no Act, relation, support relation, or
-Standing by identity.
+currentness by identity.
 
 ### Increment
 
@@ -260,7 +273,7 @@ exact material result reference
 ```
 
 Same result coordinates do not establish same material, occurrence, identity,
-grammar, or Standing. Different result coordinates establish only the bounded
+grammar, or currentness. Different result coordinates establish only the bounded
 distinction. Neither result establishes what either material represents, and
 Admission grouping does not establish language or a represented relation.
 
@@ -272,20 +285,20 @@ its represented relation:
 
 ```text
 exact material occurrence
-    + Representation occurrence
     + exact addressed subject
     + Locality
     + occurrence boundary
-    + represented-relation Evidence or Unknown
+    + exact relation Assertion or Unknown
 ```
 
 The same material under another occurrence or Locality does not preserve the
 addressed subject by identity. Different material at the same occurrence does
 not establish a different addressed subject by identity. Acquisition compares
-both directions before a bounded represented relation receives Standing.
+both directions before an exact relation Assertion becomes current through its
+exact occurrence boundary.
 
 None of these shorthands adds a constitutional subject, relation, occurrence,
-or Standing. If the expansion loses a distinction, read the missing exact
+or currentness. If the expansion loses a distinction, read the missing exact
 coordinate rather than restoring the compressed noun.
 
 ## Use

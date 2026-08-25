@@ -105,13 +105,13 @@ def test_book_and_rosetta_admission_material_are_distinct():
     )
 
 
-def test_rosetta_admits_composite_support_relation_terms():
+def test_rosetta_admits_the_support_relation_translation_it_carries():
     rosetta_warrant = {
         word
         for word in _admission_entries(ROSETTA_ADMISSION)
         if word.startswith("warrant")
     }
-    assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
+    assert rosetta_warrant == {"warrant"}
     translations = (
         ROOT / "rosetta" / "standing_and_responsibility.md"
     ).read_text(encoding="utf-8")
@@ -144,7 +144,6 @@ def test_failure_is_book_material_and_performative_forms_are_rosetta_composites(
 
 def test_clause_coordinate_tokens_require_explicit_curation():
     assert "g" in book_admission()
-    assert "g" in _admission_entries(ROSETTA_ADMISSION)
 
     uncurated_coordinate_words = set(
         re.findall(
@@ -156,13 +155,14 @@ def test_clause_coordinate_tokens_require_explicit_curation():
     assert uncurated_coordinate_words == {"uncuratedcoordinate"}
 
 
-def test_standing_requires_the_exact_support_relation():
-    chapter = (BOOK / "chapters" / "01_constitutional_standing.md").read_text(
+def test_current_coordinates_require_an_exact_occurrence_boundary():
+    chapter = (BOOK / "chapters" / "01_current_coordinates.md").read_text(
         encoding="utf-8"
     )
     assert (
-        "Standing for one exact subject requires an exact Responsibility, Act\n"
-        "occurrence, Yield, Scope, and result for that subject."
+        "For one exact subject, its exact current coordinates through one exact\n"
+        "occurrence boundary are its exact established coordinates whose occurrences\n"
+        "are in one Locality through that boundary."
     ) in chapter
 
 
@@ -176,7 +176,7 @@ def test_composite_is_communication_in_rosetta_not_active_book_grammar():
         if word.startswith("composite")
     }
     assert book_composite == set()
-    assert rosetta_composite == {"composite", "composites"}
+    assert rosetta_composite == {"composite"}
 
 
 def test_book_proper_is_within_book_admission():

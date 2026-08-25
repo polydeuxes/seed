@@ -1,8 +1,8 @@
 # Seed
 
 Seed is an append-only runtime for preserving bounded material, Assertions,
-occurrences, and Standing without strengthening what the recorded
-coordinates establish.
+occurrences, and exact coordinates current through one occurrence boundary
+without strengthening what the recorded coordinates establish.
 
 ## Orientation
 
@@ -10,7 +10,7 @@ coordinates establish.
   with its exact chapter coordinates.
 - [Rosetta of Seed](rosetta/README.md) — ordinary-language translations of the
   Book coordinates and explanations of retired vocabulary. Rosetta carries no
-  constitutional Standing.
+  constitutional coordinates.
 - [`seed_runtime/`](seed_runtime/) — current implementation witnesses.
 - [`tests/`](tests/) — executable behavioral and grammar checks.
 

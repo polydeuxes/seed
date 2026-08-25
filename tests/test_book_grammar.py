@@ -48,21 +48,9 @@ def _book_coordinates() -> set[str]:
 
 
 def test_book_and_witness_grammar_have_the_same_coordinates():
-    """Every identified clause is projected, by a coordinate or by a surface.
+    """Every identified clause has one machine coordinate."""
 
-    01.Standing.G states what this Seed's first current Standing carries, and
-    the standing surface is where that is projected. Giving it a coordinate as
-    well would state one law in two places.
-    """
-
-    grammar = _grammar()
-    by_surface = {
-        value["book_reference"]
-        for value in grammar["standing"].values()
-        if isinstance(value, dict) and "book_reference" in value
-    }
-    assert set(grammar["book_coordinates"]) | by_surface == _book_coordinates()
-    assert not set(grammar["book_coordinates"]) & by_surface
+    assert set(_grammar()["book_coordinates"]) == _book_coordinates()
 
 
 def test_witness_grammar_has_no_retired_scaffolding():
@@ -79,31 +67,27 @@ def test_witness_grammar_has_no_retired_scaffolding():
     assert {word for word in retired if word in material} == set()
 
 
-def test_machine_standing_carries_only_first_current_standing():
-    """The top-level surface carries only the first current Standing."""
+def test_machine_grammar_carries_current_coordinates_without_retired_objects():
+    grammar = _grammar()
 
-    assert _grammar()["standing"] == {
-        "current": {
-            "subject": "this_Seed",
-            "coordinates": [],
-            "book_reference": "01.Standing.G",
-        },
+    assert set(grammar) == {"relations", "book_coordinates"}
+    assert grammar["book_coordinates"]["01.Current.G"] == {
+        "subject": "this_Seed",
+        "current_coordinates": [],
     }
 
-def test_empty_standing_is_only_the_first_current_standing():
+def test_empty_current_coordinates_are_only_the_first_current_coordinates():
     active_book = _active_book()
     assert active_book.count(
-        "This Seed first current Standing carries no coordinates."
+        "This Seed first carries no current coordinates."
     ) == 2
     assert "S0" not in active_book
-    assert "This Seed current Standing carries no coordinates." not in active_book
 
 
 def test_applicability_required_admission_and_participation_remain_separate():
     grammar = _grammar()
-    boundary = grammar["book_coordinates"]["01.Standing.E.1"]
+    boundary = grammar["book_coordinates"]["01.Current.E.1"]
     assert boundary["Applicability"] == {
-        "Responsibility": "Applicability",
         "exact_Act": "Applicability",
         "result": "Applicability_result",
     }
@@ -146,7 +130,7 @@ def test_generic_compare_carries_its_exact_rule():
     generic_compare = _grammar()["book_coordinates"]["04.Compare"]
 
     assert generic_compare["rule"] == "exact_Compare_rule"
-    assert "carries its exact subjects, rule, Scope" in (
+    assert "its exact subjects, rule, Scope, Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")
 
@@ -156,10 +140,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
 
     assert candidate_compare == {
         "subject": "Candidate",
-        "Responsibility": "compare_Candidate_coordinates",
-        "branch_of_current_Standing": (
-            "current_Standing_carrying_exact_Candidate_result"
-        ),
+        "requires_current_coordinates": "exact_Candidate_result",
         "exact_Act": "Compare",
         "rule": "compare_first_and_second_source_Assertion_coordinates",
         "carried_coordinates": [
@@ -188,16 +169,16 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
     ]
 
 
-def test_addressed_position_responsibility_owns_the_bounded_subjects():
+def test_addressed_position_coordinates_carry_the_bounded_subjects():
     measurement = _grammar()["book_coordinates"]["01.Source.D.2"]
     chapter = (
         CHAPTERS / "07_measurement_and_candidates.md"
     ).read_text(encoding="utf-8")
 
-    assert measurement["branch_of_current_Standing"] == (
-        "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
+    assert measurement["requires_current_coordinates"] == (
+        "exact_byte_pair_position_Measurement_result"
     )
-    assert measurement["responsibility_subjects"] == (
+    assert measurement["subjects"] == (
         "exhaustive_bounded_source_byte_position_references"
     )
     assert "The bounded subjects are exhaustive." in chapter
@@ -209,7 +190,6 @@ def test_candidate_production_requires_an_exact_rule_and_addressed_subjects():
 
     assert candidate == {
         "subject": "exact_subject_required_by_exact_Candidate_rule",
-        "Responsibility": "Candidate_required_by_exact_rule",
         "exact_Act": "Candidate",
         "rule": "exact_Candidate_rule",
         "requires": [
@@ -230,8 +210,8 @@ def test_candidate_production_requires_an_exact_rule_and_addressed_subjects():
     ).read_text(encoding="utf-8")
     compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
     assert (
-        "The rule and subject\n"
-        "boundary are exact for this Responsibility prior to the Candidate Act."
+        "The rule and\n"
+        "subject boundary are exact prior to the Candidate Act."
     ) in candidate_book
     assert (
         "The\nCandidate Act establishes no rule or subject boundary."
@@ -261,17 +241,20 @@ def test_candidate_compare_book_refuses_source_participation_and_relation_promot
     ) in compare
 
 
-def test_responsibility_coordinates_are_anatomy_not_assignment():
-    assert _grammar()["responsibility"] == {
-        "subject": "Responsibility",
-        "coordinates": [
-            "responsible_boundary",
-            "subject",
-            "exact_Act",
+def test_pre_act_coordinates_are_direct_clause_coordinates():
+    act = _grammar()["book_coordinates"]["02.Acts.A"]
+
+    assert act == {
+        "subject": "exact_subject",
+        "exact_Act": "exact_Act",
+        "rule": "exact_rule_where_required",
+        "requires": [
             "Scope",
             "Locality",
-            "required_relations",
+            "required_relations_before_occurrence",
         ],
+        "relations": ["participation", "carriage", "yield"],
+        "result": "exact_result",
     }
 
 
@@ -288,7 +271,7 @@ def test_exact_relations_are_direct():
         "participation": (
             "exact_subject_and_role",
             "exact_Act_occurrence",
-            "01.Standing.E.1",
+            "01.Current.E.1",
         ),
         "carriage": (
             "exact_content",
@@ -340,10 +323,8 @@ def test_the_grammar_declares_no_block_for_itself():
 def test_only_clauses_naming_an_Act_project_one():
     """A clause that names no Act must not be given one.
 
-    Demanding a Responsibility and an exact_Act of every coordinate is what
-    supplied eighteen Act names the Book never gave. The population is pinned
-    positively instead, so a coordinate gaining or losing an Act has to be
-    argued against its clause.
+    Demanding an exact_Act of every coordinate supplied Act names the Book
+    never gave. The exact set is pinned positively instead.
     """
 
     coordinates = _grammar()["book_coordinates"]
@@ -361,26 +342,14 @@ def test_only_clauses_naming_an_Act_project_one():
         "08.Scope.A",
         "07.Emission.C",
         "07.Emission.D",
-        "01.Standing.A",
-        "01.Standing.A.1",
-        "01.Standing.D",
-        "01.Standing.D.1",
-        "01.Standing.D.2",
-        "01.Standing.E",
-        "01.Standing.E.1",
-    }
-    naming_no_Responsibility = {
-        reference
-        for reference, body in coordinates.items()
-        if "Responsibility" not in body
-    }
-    # 01.Source.C names the Compare Act and no Responsibility. 05.Recording.D
-    # and .E name a recording Act, and D describes its Responsibility rather
-    # than naming one.
-    assert naming_no_Responsibility == naming_no_Act | {
-        "01.Source.C",
-        "05.Recording.D",
-        "05.Recording.E",
+        "01.Current.G",
+        "01.Current.A",
+        "01.Current.A.1",
+        "01.Current.D",
+        "01.Current.D.1",
+        "01.Current.D.2",
+        "01.Current.E",
+        "01.Current.E.1",
     }
 
     for reference, body in coordinates.items():

@@ -360,12 +360,12 @@ def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
     ).read_text(encoding="utf-8")
 
     assert (
-        "Checkout       exact recorded Standing boundary reference + new Locality + "
-        "direct Locality relation; no history copy; no persistent Memory"
+        "Checkout       exact recorded through-occurrence boundary reference + new "
+        "Locality + direct Locality relation; no history copy; no persistent Memory"
     ) in rosetta
     assert (
         "Pointers       one preserved thing + many exact references to it + no identity "
-        "collapse; pointer equality establishes no occurrence, Standing, or Evidence equality"
+        "collapse; pointer equality establishes no occurrence or current-coordinate equality"
     ) in rosetta
 
 

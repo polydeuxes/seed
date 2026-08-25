@@ -17,15 +17,16 @@ coordinates within its Scope.
 One preservation occurrence preserves one exact Measurement result and its
 source coordinates.
 
-### 05.Recording.D — Standing boundary reference
+### 05.Recording.D — Through-occurrence boundary reference
 
-One Responsibility to record one exact addressed occurrence and its exact
-Standing boundary as one reference is a branch of current Standing
-carrying that occurrence in the same Locality.
+Before one recording Act occurrence, one exact addressed occurrence, its exact
+through-occurrence boundary, that Act, and the same Locality are exact
+together.
 
 One exact Yield relation carries the recording Act occurrence as first subject
-and one result as second subject. The result preserves the addressed occurrence, Standing boundary reference, Responsibility, Act occurrence,
-Scope, Locality, and Unknown.
+and one result as second subject. The result preserves the addressed
+occurrence, through-occurrence boundary reference, Act occurrence, Scope,
+Locality, and Unknown.
 
 ## References
 

@@ -1,25 +1,7 @@
 {
-  "standing": {
-    "current": {
-      "subject": "this_Seed",
-      "coordinates": [],
-      "book_reference": "01.Standing.G"
-    }
-  },
-  "responsibility": {
-    "subject": "Responsibility",
-    "coordinates": [
-      "responsible_boundary",
-      "subject",
-      "exact_Act",
-      "Scope",
-      "Locality",
-      "required_relations"
-    ]
-  },
   "relations": {
     "participation": {
-      "book_reference": "01.Standing.E.1",
+      "book_reference": "01.Current.E.1",
       "first_subject": "exact_subject_and_role",
       "relation": "participation",
       "second_subject": "exact_Act_occurrence",
@@ -61,7 +43,6 @@
       "second_subject": "exact_subject",
       "requires": [
         "relation_occurrence",
-        "Responsibility",
         "exact_Act",
         "Scope",
         "Unknown"
@@ -74,7 +55,7 @@
       "second_subject": "exact_input_to_Act_position",
       "requires": [
         "relation_occurrence",
-        "Responsibility",
+        "exact_Act",
         "Scope",
         "Locality",
         "Unknown"
@@ -82,15 +63,17 @@
     }
   },
   "book_coordinates": {
+    "01.Current.G": {
+      "subject": "this_Seed",
+      "current_coordinates": []
+    },
     "01.Source.A": {
       "subject": "supplied_material_source_coordinates",
-      "Responsibility": "preserve_exact_source_coordinates",
       "exact_Act": "preserve_exact_source_coordinates",
       "result": "preserved_source_coordinates"
     },
     "01.Source.B": {
       "subject": "cross_boundary_participation",
-      "Responsibility": "preserve_exact_source_coordinates",
       "exact_Act": "preserve_exact_source_coordinates",
       "relations": [
         "participation"
@@ -116,7 +99,6 @@
     },
     "01.Source.D": {
       "subject": "declared_Measurement",
-      "Responsibility": "declared_Measurement",
       "exact_Act": "Measurement",
       "requires": [
         "exact_material_result",
@@ -127,27 +109,23 @@
     },
     "01.Source.D.1": {
       "subject": "count_finding",
-      "Responsibility": "preserve_exact_count_finding",
       "exact_Act": "count_exact_occurrence_references",
       "result": "count_finding"
     },
     "01.Source.D.2": {
       "subject": "addressed_byte_occurrence_reference",
-      "Responsibility": "addressed_byte_occurrence_reference_Measurement",
-      "responsibility_subjects": "exhaustive_bounded_source_byte_position_references",
+      "subjects": "exhaustive_bounded_source_byte_position_references",
       "exact_Act": "Measurement",
       "result": "addressed_byte_occurrence_reference_result",
-      "branch_of_current_Standing": "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
+      "requires_current_coordinates": "exact_byte_pair_position_Measurement_result"
     },
     "01.Source.E": {
       "subject": "Candidate",
-      "Responsibility": "preserve_exact_Candidate",
       "exact_Act": "preserve_exact_Candidate",
       "result": "Candidate_result"
     },
     "01.Source.E.1": {
       "subject": "exact_subject_required_by_exact_Candidate_rule",
-      "Responsibility": "Candidate_required_by_exact_rule",
       "exact_Act": "Candidate",
       "rule": "exact_Candidate_rule",
       "required_Admission": "exact_Admission_occurrence_prior_to_Participation",
@@ -166,13 +144,11 @@
     },
     "01.Source.F": {
       "subject": "material_carrying_relation_Assertion",
-      "Responsibility": "preserve_relation_Assertion_source_coordinates",
       "exact_Act": "preserve_relation_Assertion",
       "result": "preserved_relation_Assertion"
     },
     "01.Source.G": {
       "subject": "operator_material_boundary",
-      "Responsibility": "preserve_exact_operator_material",
       "exact_Act": "operator_material_acquisition",
       "relations": [
         "yield",
@@ -182,7 +158,6 @@
     },
     "01.Source.H": {
       "subject": "supplied_material",
-      "Responsibility": "material_acquisition",
       "exact_Act": "acquisition",
       "relations": [
         "yield"
@@ -201,35 +176,36 @@
     "01.Source.I": {
       "subject": "operator_supplied_and_Witness_supplied_material",
       "carried_coordinates": [
-        "separate_source_Responsibility_branch",
+        "separate_source_to_Act_coordinates",
         "separate_occurrence"
       ]
     },
-    "01.Standing.A": {
+    "01.Current.A": {
       "subject": "exact_subject",
+      "through_boundary": "exact_occurrence_boundary",
+      "current_coordinates": "exact_established_coordinates_in_one_Locality_through_boundary"
+    },
+    "01.Current.A.1": {
+      "subject": "exact_subject_carried_with_exact_Act_before_occurrence",
       "requires": [
-        "Responsibility",
         "Act_occurrence",
         "Yield",
-        "Scope",
-        "result_for_that_subject"
+        "exact_result",
+        "same_Locality",
+        "through_boundary_at_or_after_result_occurrence"
       ],
-      "result": "Standing_for_exact_subject"
-    },
-    "01.Standing.A.1": {
-      "subject": "exact_subject_of_Responsibility_branch",
       "carried_coordinates": [
         "exact_result"
       ]
     },
-    "01.Standing.D": {
+    "01.Current.D": {
       "subject": "exact_relation",
       "requires": [
         "exact_subjects",
-        "responsible_occurrence"
+        "exact_relation_occurrence"
       ]
     },
-    "01.Standing.D.1": {
+    "01.Current.D.1": {
       "subject": "Assertion",
       "carried_coordinates": [
         "source",
@@ -237,15 +213,15 @@
         "Scope",
         "Locality",
         "conflicts",
-        "Unknown",
-        "Standing"
+        "Unknown"
       ]
     },
-    "01.Standing.D.2": {
+    "01.Current.D.2": {
       "subject": "later_Assertion",
+      "requires_current_coordinates": "exact_subject_through_exact_occurrence_boundary",
       "Applicability_subject_for": "one_exact_Act"
     },
-    "01.Standing.E": {
+    "01.Current.E": {
       "subject": "relation_Assertion",
       "carried_coordinates": [
         "first_subject",
@@ -260,10 +236,9 @@
         "Unknown"
       ]
     },
-    "01.Standing.E.1": {
+    "01.Current.E.1": {
       "subject": "subject_to_Act_position",
       "Applicability": {
-        "Responsibility": "Applicability",
         "exact_Act": "Applicability",
         "result": "Applicability_result"
       },
@@ -279,9 +254,14 @@
       }
     },
     "02.Acts.A": {
-      "subject": "exact_Act_occurrence",
-      "Responsibility": "exact_Responsibility",
+      "subject": "exact_subject",
       "exact_Act": "exact_Act",
+      "rule": "exact_rule_where_required",
+      "requires": [
+        "Scope",
+        "Locality",
+        "required_relations_before_occurrence"
+      ],
       "relations": [
         "participation",
         "carriage",
@@ -291,7 +271,6 @@
     },
     "03.Movement.A": {
       "subject": "exact_movement",
-      "Responsibility": "movement",
       "exact_Act": "movement",
       "carried_coordinates": [
         "exact_subject",
@@ -308,7 +287,6 @@
     },
     "04.Compare": {
       "subject": "exact_Compare_subjects",
-      "Responsibility": "compare_exact_subjects_under_exact_rule",
       "exact_Act": "Compare",
       "rule": "exact_Compare_rule",
       "relations": [
@@ -323,8 +301,11 @@
     },
     "04.Compare.A": {
       "subject": "recorded_pair_findings",
-      "Responsibility": "compare_complete_recorded_pair_findings",
       "exact_Act": "Compare",
+      "requires_current_coordinates": [
+        "earlier_byte_pair_position_Measurement_result",
+        "later_byte_pair_position_Measurement_result"
+      ],
       "relations": [
         "participation",
         "yield"
@@ -337,8 +318,11 @@
     },
     "04.Compare.B": {
       "subject": "ordered_relation_path_and_pair_findings",
-      "Responsibility": "compare_ordered_relation_path_and_pair_findings",
       "exact_Act": "Compare",
+      "requires_current_coordinates": [
+        "ordered_relation_path_Assertion",
+        "recorded_pair_finding_Compare_result"
+      ],
       "relations": [
         "participation",
         "yield"
@@ -351,7 +335,6 @@
     },
     "04.Compare.C": {
       "subject": "Candidate",
-      "Responsibility": "compare_Candidate_coordinates",
       "exact_Act": "Compare",
       "rule": "compare_first_and_second_source_Assertion_coordinates",
       "carried_coordinates": [
@@ -374,7 +357,7 @@
         "exact_Admission_occurrence",
         "participation_relation_occurrence"
       ],
-      "branch_of_current_Standing": "current_Standing_carrying_exact_Candidate_result"
+      "requires_current_coordinates": "exact_Candidate_result"
     },
     "05.Provenance.A": {
       "subject": "provenance",
@@ -395,17 +378,16 @@
       ]
     },
     "05.Recording.D": {
-      "subject": "exact_addressed_occurrence_and_its_exact_Standing_boundary",
+      "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
       "exact_Act": "recording",
-      "branch_of_current_Standing": "current_Standing_carrying_that_occurrence",
+      "requires_current_coordinates": "exact_addressed_occurrence",
       "relations": [
         "yield"
       ],
       "result": "one_reference",
       "carried_coordinates": [
         "addressed_occurrence",
-        "Standing_boundary_reference",
-        "Responsibility",
+        "through_occurrence_boundary_reference",
         "Act_occurrence",
         "Scope",
         "Locality",
@@ -428,7 +410,6 @@
     },
     "06.Locality.A": {
       "subject": "Locality_relation",
-      "Responsibility": "establish_exact_Locality_relation",
       "exact_Act": "establish_exact_Locality_relation",
       "relations": [
         "locality"
@@ -436,18 +417,16 @@
       "result": "Locality_relation"
     },
     "06.Locality.B": {
-      "subject": "Standing_boundary_at_new_Locality",
-      "Responsibility": "preserve_Standing_boundary_at_new_Locality",
-      "exact_Act": "preserve_Standing_boundary_at_new_Locality",
+      "subject": "through_occurrence_boundary_at_new_Locality",
+      "exact_Act": "preserve_through_occurrence_boundary_at_new_Locality",
       "relations": [
         "yield",
         "locality"
       ],
-      "result": "Standing_boundary_at_new_Locality"
+      "result": "through_occurrence_boundary_at_new_Locality"
     },
     "06.Locality.C": {
-      "subject": "recorded_Standing_boundary_reference",
-      "Responsibility": "establish_recorded_boundary_Locality_relation",
+      "subject": "recorded_through_occurrence_boundary_reference",
       "exact_Act": "establish_recorded_boundary_Locality_relation",
       "relations": [
         "yield",
@@ -457,7 +436,6 @@
     },
     "06.Locality.D": {
       "subject": "operator_invocation_Locality",
-      "Responsibility": "establish_operator_invocation_Locality",
       "exact_Act": "establish_operator_invocation_Locality",
       "relations": [
         "yield",
@@ -467,7 +445,6 @@
     },
     "07.Emission.A": {
       "subject": "exact_source_material_result",
-      "Responsibility": "emission",
       "exact_Act": "emission",
       "carried_coordinates": [
         "exact_destination_boundary_within_the_invocation_Locality",
@@ -498,7 +475,7 @@
     "07.Emission.D": {
       "subject": "material_supplied_by_the_addressed_boundary",
       "requires": [
-        "exact_acquisition_Responsibility",
+        "exact_subject_and_acquisition_Act_coordinates_before_occurrence",
         "exact_Act_occurrence"
       ]
     },
@@ -508,10 +485,9 @@
         "subject",
         "relation",
         "Act",
-        "responsible_boundary",
         "Scope",
         "Locality",
-        "responsible_occurrence"
+        "exact_relation_occurrence"
       ],
       "relations": [
         "support"
@@ -526,9 +502,6 @@
         "occurrences",
         "results",
         "Localities"
-      ],
-      "carried_coordinates": [
-        "one_exact_Responsibility"
       ]
     }
   }

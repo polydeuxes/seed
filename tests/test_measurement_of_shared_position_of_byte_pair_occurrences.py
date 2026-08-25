@@ -1748,7 +1748,7 @@ def test_carried_standing_matches_replay_for_the_whole_new_elevator():
 
 
 FIDELITY_DISTINCTIONS = {
-    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
+    ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate,
     ),
     ("book_coordinates", "01.Source.D", "result"): (

@@ -1,17 +1,16 @@
 # Scope and Support
 
-### 08.Scope.A — Scope bounds one Responsibility
+### 08.Scope.A — Scope bounds exact coordinates
 
 Scope bounds the subjects, relations, Acts, occurrences, results, and
-Localities addressed by one exact Responsibility.
+Localities it addresses.
 
 ### 08.Support.A — Input support is bounded
 
 Support for one exact input-to-Act position requires the subject, relation,
-Act, responsible boundary, Scope, Locality, and responsible
-occurrence.
+Act, Scope, Locality, and exact relation occurrence.
 
 ## References
 
-- [Standing](01_constitutional_standing.md)
+- [Current coordinates](01_current_coordinates.md)
 - [Acts and occurrences](03_acts_and_occurrences.md)

@@ -148,7 +148,7 @@ def test_rosetta_admission_does_not_establish_a_clause():
 
     assert (
         "Lexicon        admitted words only; admission of a word establishes "
-        "no clause, coordinate, relation, or Standing"
+        "no clause, coordinate, relation, or currentness"
     ) in rosetta
 
 

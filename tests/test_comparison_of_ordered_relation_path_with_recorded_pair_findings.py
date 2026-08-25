@@ -1018,7 +1018,7 @@ def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_
 
 
 FIDELITY_DISTINCTIONS = {
-    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
+    ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_another_source_occurrence_is_inapplicable_and_cannot_participate,
     ),
     ("book_coordinates", "01.Source.D", "result"): (

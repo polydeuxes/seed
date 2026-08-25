@@ -2,7 +2,8 @@
 
 This directory holds translation testimony: ordinary English about Seed's grammar, and mappings from
 words people have used to whatever current grammar corresponds to them. A
-mapping recorded here establishes no standing, no kind, and no equivalence.
+mapping recorded here establishes no currentness, no classification, and no
+equivalence.
 
 This is not part of the Book of Seed and is not stored inside it. English
 placed inside `book_of_seed/` acquires ambiguous status, since a reader

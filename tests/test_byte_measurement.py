@@ -2817,7 +2817,7 @@ FIDELITY_DISTINCTIONS = {
         test_byte_result_reader_refuses_changed_yield_result_identity,
         test_pair_result_reader_refuses_changed_yield_result_identity,
     ),
-    ("book_coordinates", "01.Standing.E.1", "Applicability", "result"): (
+    ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_addressed_act,
         test_pair_applicability_reads_exact_result_standing_instead_of_scalar,
