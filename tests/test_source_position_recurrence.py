@@ -8,7 +8,6 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.source_position_recurrence import (
-    RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND,
     get_recorded_recurrent_result_material_measurement,
     get_recorded_corresponding_coordinate_material_measurement,
     get_recorded_source_position_measurement,
@@ -175,16 +174,20 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     )
     assert recurrent_final_groups == ()
 
-    result_kinds = {
-        source_position_recurrence.COMPARE_APPLICABILITY_RESULT_KIND,
-        source_position_recurrence.COMPARE_RESULT_KIND,
-        source_position_recurrence.SOURCE_POSITION_MEASUREMENT_RESULT_KIND,
-        source_position_recurrence.RECURRENCE_MEASUREMENT_RESULT_KIND,
+    exact_acts = {
+        source_position_recurrence.COMPARE_APPLICABILITY_ACT,
+        source_position_recurrence.COMPARE_ACT,
+        source_position_recurrence.SOURCE_POSITION_MEASUREMENT_ACT,
+        source_position_recurrence.RECURRENCE_MEASUREMENT_ACT,
     }
     produced_results = tuple(
         event
         for event in ledger.list_locality("source-position-positive")
-        if event.kind in result_kinds
+        if type(event.material.get("act_occurrence_event_identity")) is str
+        and (act := ledger.get(event.material["act_occurrence_event_identity"]))
+        is not None
+        and act.material.get("act") in exact_acts
+        and type(event.material.get("yield_relation_identity")) is str
     )
     assert produced_results
     for result in produced_results:
@@ -200,14 +203,14 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             )
             is None
         )
-        if result.kind == source_position_recurrence.COMPARE_APPLICABILITY_RESULT_KIND:
+        if act.material["act"] == source_position_recurrence.COMPARE_APPLICABILITY_ACT:
             assert (
                 recording.locality_standing["applicability_result_occurrences"].get(
                     result.identity, object()
                 )
                 is None
             )
-        elif result.kind == source_position_recurrence.COMPARE_RESULT_KIND:
+        elif act.material["act"] == source_position_recurrence.COMPARE_ACT:
             assert (
                 recording.locality_standing["comparison_result_occurrences"].get(
                     result.identity, object()
@@ -219,9 +222,9 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
                 "measurement_occurrences"
             ]
         assert assignment.material["subject"] == act.material["coordinates"]["subject"]
-        assert assignment.material["rule"] == (
-            source_position_recurrence._RESPONSIBILITY_RULES[assignment.kind]
-        )
+        assert assignment.material["rule"] == source_position_recurrence._EXACT_ACT_RULES[
+            assignment.material["exact_act"]
+        ]
         assert assignment.material["result_boundary_identity"] == result.material[
             "result_identity"
         ]
@@ -554,7 +557,10 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     group = _target_group(ledger, recurrence)
 
     event, reading = _material_for_group(ledger, material_measurements, group)
-    assert event.kind == RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND
+    act = ledger.get(event.material["act_occurrence_event_identity"])
+    assert act.material["act"] == (
+        source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT
+    )
     assert event.exact_material == b"a+a"
     assert bytes(reading["exact_material"]) == b"a+a"
     assert tuple(
