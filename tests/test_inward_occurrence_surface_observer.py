@@ -30,6 +30,12 @@ from observe_inward_walk_binding_refusals import (  # noqa: E402
     _result_reference,
     _wrong_iteration_reference,
 )
+from compare_inward_story_with_book import (  # noqa: E402
+    _bound_walk_identities,
+    _coordinate_names,
+    _values_at_coordinate_casefold,
+    _walk_finding,
+)
 from seed_runtime.events import EventLedger, UNVERIFIABLE
 
 
@@ -438,6 +444,73 @@ def test_wrong_iteration_uses_an_intact_earlier_result_reference():
     assert _wrong_iteration_reference(ledger, assignment) == _result_reference(first)
 
 
+def test_bound_story_uses_enforced_edges_and_excludes_the_unbound_later_walk():
+    refusals = {
+        "coordinate_control_findings": [
+            {
+                "first_walk_identity_sha256": "a",
+                "later_walk_identity_sha256": "b",
+            },
+            {
+                "first_walk_identity_sha256": "b",
+                "later_walk_identity_sha256": "c",
+            },
+        ],
+        "unbound_transitions": [
+            {
+                "first_walk_identity_sha256": "c",
+                "later_walk_identity_sha256": "d",
+            }
+        ],
+    }
+
+    assert _bound_walk_identities(refusals) == ["a", "b", "c"]
+
+
+def test_story_coordinate_read_keeps_exact_names_separate():
+    material = {
+        "Authority": "exact",
+        "coordinate_treatment": {"negative_authority": "bounded"},
+    }
+
+    assert _coordinate_names(material) == [
+        "Authority",
+        "coordinate_treatment",
+        "negative_authority",
+    ]
+    assert _values_at_coordinate_casefold(material, "authority") == ["exact"]
+
+
+def test_one_opaque_walk_identity_cannot_resolve_to_two_event_label_sequences():
+    exact_walk = {
+        "walk_identity_sha256": "walk",
+        "walk_length": 1,
+        "occurrence_count": 2,
+        "addresses": [[0, 0, 1], [1, 0, 1]],
+    }
+    sources = [
+        {
+            "occurrences": [
+                {"append_position": 0, "event_label": "first", "material": {}}
+            ]
+        },
+        {
+            "occurrences": [
+                {"append_position": 0, "event_label": "second", "material": {}}
+            ]
+        },
+    ]
+
+    try:
+        _walk_finding(exact_walk, sources)
+    except ValueError as error:
+        assert str(error) == (
+            "one opaque walk identity resolves to different event labels"
+        )
+    else:
+        raise AssertionError("changed event labels were accepted as one walk")
+
+
 PYTEST_ADMISSION = (
     test_scalar_values_do_not_choose_an_occurrence_coordinate_surface,
     test_immediate_container_count_does_not_change_coordinate_surface,
@@ -456,4 +529,7 @@ PYTEST_ADMISSION = (
     test_scalar_change_follows_one_exact_coordinate_address,
     test_changed_assignment_is_recorded_as_supplied_not_mutated_after_append,
     test_wrong_iteration_uses_an_intact_earlier_result_reference,
+    test_bound_story_uses_enforced_edges_and_excludes_the_unbound_later_walk,
+    test_story_coordinate_read_keeps_exact_names_separate,
+    test_one_opaque_walk_identity_cannot_resolve_to_two_event_label_sequences,
 )

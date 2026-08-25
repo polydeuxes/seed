@@ -197,7 +197,7 @@ The A-through-G form has syntax with teeth at this floor:
 
 ```text
 all eight edge forms carry exact later requirements
-all 330 isolated scalar changes are refused
+all 330 isolated top-coordinate change controls are refused
 32 of 33 exact edge/top-coordinate combinations refuse absence
 the wrong D iteration is refused
 G to H remains adjacent and unbound
