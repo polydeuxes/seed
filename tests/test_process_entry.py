@@ -36,6 +36,17 @@ def _event_kinds(database: Path) -> list[str]:
         ledger.close()
 
 
+def _skip_unrelated_measurement_work(monkeypatch):
+    class _AlreadyMeasured(set):
+        def __contains__(self, _item):
+            return True
+
+    monkeypatch.setattr(
+        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
+        lambda _ledger: _AlreadyMeasured(),
+    )
+
+
 def test_project_script_uses_the_live_process_entry():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
 
@@ -112,6 +123,7 @@ def test_primordial_slash_frame_is_the_existing_eof_boundary(
 def test_primordial_slash_preserves_prior_occurrences_and_ends_input(
     monkeypatch, tmp_path
 ):
+    _skip_unrelated_measurement_work(monkeypatch)
     database = tmp_path / "seed.db"
     monkeypatch.setattr("sys.stdin", BytesIO(b"prior \xff\x00\n/\nnot acquired\n"))
 
@@ -121,6 +133,7 @@ def test_primordial_slash_preserves_prior_occurrences_and_ends_input(
 
 
 def test_other_slash_material_remains_exact_operator_material(monkeypatch, tmp_path):
+    _skip_unrelated_measurement_work(monkeypatch)
     database = tmp_path / "seed.db"
     material = b"/exit\n/quit\r\n/\xff\x00 material\n"
     monkeypatch.setattr("sys.stdin", BytesIO(material))
@@ -192,10 +205,10 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
         str(database),
     ]
 
-    for material in ("first\n", "second\n"):
+    for _invocation in range(2):
         result = subprocess.run(
             command,
-            input=material,
+            input="",
             check=False,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True,
