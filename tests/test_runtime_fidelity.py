@@ -39,6 +39,30 @@ def _runtime_trees():
         yield path, ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
+def test_runtime_contains_no_text_codec_operations():
+    found = []
+    for path, tree in _runtime_trees():
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for name in node.names:
+                    if name.name.split(".", 1)[0] in {"codecs", "encodings"}:
+                        found.append((path.name, node.lineno, name.name))
+            elif (
+                isinstance(node, ast.ImportFrom)
+                and node.module
+                and node.module.split(".", 1)[0] in {"codecs", "encodings"}
+            ):
+                found.append((path.name, node.lineno, node.module))
+            elif (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"encode", "decode"}
+            ):
+                found.append((path.name, node.lineno, node.func.attr))
+
+    assert found == [], f"runtime text codec operations:\n{found}"
+
+
 def _runtime_imports(tree: ast.Module) -> set[str]:
     imported = set()
     for node in ast.walk(tree):
