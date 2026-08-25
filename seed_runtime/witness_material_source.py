@@ -6,7 +6,6 @@ from copy import deepcopy
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
@@ -170,9 +169,11 @@ def record_witness_material_source(
         )
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
-    source_act_identity = new_identity("witness_material_source_act")
-    act_occurrence_identity = new_identity("witness_material_source_act_occurrence")
-    result_identity = new_identity("witness_material_source_result")
+    source_act_identity = ledger.mint_identity("witness_material_source_act")
+    act_occurrence_identity = ledger.mint_identity(
+        "witness_material_source_act_occurrence"
+    )
+    result_identity = ledger.mint_identity("witness_material_source_result")
     subject_to_act_binding = ledger.append(
         WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _subject_to_act_binding_material(

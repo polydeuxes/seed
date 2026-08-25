@@ -469,6 +469,34 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
         led.close()
 
 
+def test_ledger_mints_an_unlisted_identity_across_reopen(path):
+    """One requested prefix remains exact without occurrence-vocabulary lookup."""
+
+    from seed_runtime.identities import _next_values
+
+    prefix = "fixture_coordinate"
+    _next_values.clear()
+    ledger = SQLiteEventLedger(path)
+    try:
+        first = ledger.mint_identity(prefix)
+        ledger.append("k", {"coordinate_identity": first})
+    finally:
+        ledger.close()
+
+    _next_values.clear()
+    reopened = SQLiteEventLedger(path)
+    try:
+        second = reopened.mint_identity(prefix)
+    finally:
+        reopened.close()
+
+    assert first.startswith(prefix + "_")
+    assert second.startswith(prefix + "_")
+    assert int(second.rsplit("_", 1)[1]) == int(
+        first.rsplit("_", 1)[1]
+    ) + 1
+
+
 def test_a_reservation_only_ever_rises(path):
     led = SQLiteEventLedger(path)
     try:

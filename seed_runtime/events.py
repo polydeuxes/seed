@@ -296,6 +296,13 @@ class EventLedger:
 
         return new_identity("evt")
 
+    def mint_identity(self, prefix: str) -> str:
+        """Mint one identity in this ledger's identity domain."""
+
+        if type(prefix) is not str or not prefix:
+            raise TypeError("one exact identity prefix is required")
+        return new_identity(prefix)
+
     def append_many(
         self,
         events: Iterable[Event],
@@ -539,9 +546,6 @@ class SQLiteEventLedger(EventLedger):
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
-        "witness_material_source_act",
-        "witness_material_source_act_occurrence",
-        "witness_material_source_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
         "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_assignment",
@@ -852,6 +856,35 @@ class SQLiteEventLedger(EventLedger):
         """Allocate an identity for material built before `append_many`."""
 
         return self._new_event_identity()
+
+    def mint_identity(self, prefix: str) -> str:
+        """Mint one identity without interpreting occurrence material."""
+
+        if type(prefix) is not str or not prefix:
+            raise TypeError("one exact identity prefix is required")
+        if self._batch_depth:
+            return self._mint_identity_without_commit(prefix)
+        with self._connection:
+            return self._mint_identity_without_commit(prefix)
+
+    def _mint_identity_without_commit(self, prefix: str) -> str:
+        self._connection.execute(
+            "INSERT INTO identity_reservations (prefix, max_number) "
+            "VALUES (?, 0) ON CONFLICT(prefix) DO NOTHING",
+            (prefix,),
+        )
+        row = self._connection.execute(
+            "SELECT max_number FROM identity_reservations WHERE prefix = ?",
+            (prefix,),
+        ).fetchone()
+        max_number = int(row["max_number"])
+        reserve_identity_prefix(prefix, max_number)
+        identity = new_identity(prefix)
+        number = _numeric_number(identity, prefix)
+        if number is None:
+            raise LedgerIntegrityError("minted identity has no exact number")
+        self._persist_reservations({prefix: number})
+        return identity
 
     def append_many(
         self,
