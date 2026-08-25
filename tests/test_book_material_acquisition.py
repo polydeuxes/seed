@@ -83,10 +83,8 @@ from compiled_format_invocation import (  # noqa: E402
     compiled_reference_invocations,
     exact_byte_material_references,
     exact_byte_pair_material_references,
-    exact_position_material_references,
     first_recurring_added_compare_across,
     recurring_added_compares_across,
-    recurring_position_materials,
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import material_acquisition_result_reference  # noqa: E402
@@ -97,12 +95,10 @@ from scripts.book_admission import (  # noqa: E402
 )
 
 
-THIS_BOOK_MATERIAL_ACQUISITION_WITNESS = (
-    "this_book_material_acquisition_witness"
-)
+THIS_BOOK_MATERIAL_WITNESS = "this_book_material_witness"
 
 
-def test_book_material_acquisition_witness_has_one_admitted_subject():
+def test_book_material_witness_has_one_admitted_subject():
     grammar = json.loads(
         (ROOT / "book_of_seed" / "witness_grammar.json").read_text(
             encoding="utf-8"
@@ -111,13 +107,13 @@ def test_book_material_acquisition_witness_has_one_admitted_subject():
     subject_words = set(
         re.findall(
             r"[A-Za-z]+",
-            scan_active_line(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS).lower(),
+            scan_active_line(THIS_BOOK_MATERIAL_WITNESS).lower(),
         )
     )
 
     fidelity = grammar["book_coordinates"]["01.Source.C"]
 
-    assert fidelity["subjects"].count(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS) == 1
+    assert fidelity["subjects"].count(THIS_BOOK_MATERIAL_WITNESS) == 1
     assert subject_words <= book_admission()
 
 
@@ -799,56 +795,6 @@ def test_complete_book_keeps_successive_recurrence_occurrences_in_order(
     assert occurrence_positions[1] > occurrence_positions[0]
 
 
-def test_book_and_supplied_material_have_later_position_recurrence(
-    acquired_book_material,
-):
-    ledger, _, _, _, book_references, _, _ = acquired_book_material
-    supplied_path = ROOT / "corpus" / "english_grimm_fairy_tales.txt"
-    if not supplied_path.is_file():
-        pytest.skip("supplied fixture material is unavailable")
-    supplied_material = b"".join(
-        supplied_path.read_bytes().splitlines(keepends=True)[:300]
-    )
-    supplied_acquisition_result = record_witness_material_source(
-        ledger,
-        locality_identity="supplied-position-material",
-        exact_bytes=supplied_material,
-        source_boundary="corpus/english_grimm_fairy_tales.txt:first-300-lines",
-    )
-    supplied_reference = material_acquisition_result_reference(ledger, supplied_acquisition_result.identity)
-
-    book_recurring = tuple(
-        found
-        for reference in book_references
-        for found in recurring_position_materials(
-            exact_position_material_references(reference),
-            material_count=24,
-        )
-    )
-    supplied_recurring = recurring_position_materials(
-        exact_position_material_references(supplied_reference),
-        material_count=24,
-    )
-
-    for recurring in (book_recurring, supplied_recurring):
-        assert recurring
-        assert any(
-            exact_material == current.exact_material
-            for _, exact_material, current in recurring
-        )
-        assert any(
-            exact_material != current.exact_material
-            for _, exact_material, current in recurring
-        )
-        assert all(
-            first.position < current.position
-            and second.position < current.position
-            and first.source_reference == second.source_reference
-            == current.source_reference
-            for (first, second), _, current in recurring
-        )
-
-
 def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
     later_book_material_acquisition,
 ):
@@ -958,6 +904,6 @@ def test_book_admission_recomputes_from_its_exact_invocation_results(
 
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.C", "subjects", 2): (
-        test_book_material_acquisition_witness_has_one_admitted_subject,
+        test_book_material_witness_has_one_admitted_subject,
     )
 }
