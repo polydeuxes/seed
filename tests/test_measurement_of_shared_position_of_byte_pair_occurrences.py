@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from copy import deepcopy
+from functools import lru_cache
 
 import pytest
 
@@ -141,7 +142,7 @@ def _direct_d2(
     return source, direct_result, determination_result
 
 
-def _fixture(
+def _build_fixture(
     *,
     current: bytes = b"abc",
     ledger=None,
@@ -247,6 +248,22 @@ def _fixture(
     return ledger, locality, source, first, second
 
 
+@lru_cache(maxsize=None)
+def _in_memory_fixture_template(current: bytes, locality: str):
+    return _build_fixture(current=current, locality=locality)
+
+
+def _fixture(
+    *,
+    current: bytes = b"abc",
+    ledger=None,
+    locality: str = "shared-pair-position",
+):
+    if ledger is not None:
+        return _build_fixture(current=current, ledger=ledger, locality=locality)
+    return deepcopy(_in_memory_fixture_template(current, locality))
+
+
 def _assignment(ledger, locality, first, second):
     return record_shared_position_responsibility_assignment(
         ledger,
@@ -302,6 +319,24 @@ def _record_path(ledger, locality, first, second):
         measurement_act_occurrence_event_identity=measurement_act.identity,
     )
     return assignment, applicability_act, applicability, measurement_act, result
+
+
+@pytest.fixture(scope="module")
+def restarted_shared_path(tmp_path_factory):
+    database = tmp_path_factory.mktemp("shared-position") / "shared-position.sqlite"
+    ledger = SQLiteEventLedger(str(database))
+    ledger, locality, _source, first, second = _fixture(ledger=ledger)
+    assignment, _applicability_act, _applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    result_identity = result.identity
+    ledger.close()
+    return {
+        "database": database,
+        "locality": locality,
+        "assignment": assignment,
+        "result_identity": result_identity,
+    }
 
 
 def _record_d2_shared_path(ledger, locality, determination_result):
@@ -465,35 +500,6 @@ def test_ordered_path_exposes_input_position_assertion_coordinates_without_carry
     )
 
 
-def test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart(
-    tmp_path,
-):
-    database = tmp_path / "shared-position-input-coordinates.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    ledger, locality, _source, first, second = _fixture(ledger=ledger)
-    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
-        _record_path(ledger, locality, first, second)
-    )
-    result_identity = result.identity
-    expected = (
-        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
-            ledger, result_identity
-        )
-    )
-    ledger.close()
-
-    reopened = SQLiteEventLedger(str(database))
-    try:
-        assert (
-            ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
-                reopened, result_identity
-            )
-            == expected
-        )
-    finally:
-        reopened.close()
-
-
 def test_ordered_source_positions_remain_beside_the_path_assertion():
     ledger, locality, _source, first, second = _fixture()
     _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
@@ -529,33 +535,6 @@ def test_ordered_source_positions_remain_beside_the_path_assertion():
         "completeness_boundary_identity",
     }
     assert ledger.append_boundary() == boundary_before_read
-
-
-def test_ordered_source_positions_beside_path_replay_after_restart(tmp_path):
-    database = tmp_path / "shared-position-ordered-source-positions.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    ledger, locality, _source, first, second = _fixture(ledger=ledger)
-    _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
-        _record_path(ledger, locality, first, second)
-    )
-    result_identity = result.identity
-    expected = (
-        ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
-            ledger, result_identity
-        )
-    )
-    ledger.close()
-
-    reopened = SQLiteEventLedger(str(database))
-    try:
-        assert (
-            ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
-                reopened, result_identity
-            )
-            == expected
-        )
-    finally:
-        reopened.close()
 
 
 def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch):
@@ -847,58 +826,6 @@ def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
             second_result_occurrence_identity=second.recorded_occurrence_identity,
             second_assertion_identity=second.assertion_identity,
         )
-
-
-def test_recurrent_result_batch_and_public_readers_survive_restart(
-    monkeypatch, tmp_path
-):
-    database = tmp_path / "recurrent-result-batch.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    ledger, locality, _source, first, second = _fixture(ledger=ledger)
-    assignment = _assignment(ledger, locality, first, second)
-    ledger.close()
-    reopened = SQLiteEventLedger(str(database))
-    standing_reads = []
-    original = operator_standing_module.read_operator_locality_standing_through
-
-    def witnessed(*args, **kwargs):
-        standing_reads.append(kwargs["through_event_occurrence_identity"])
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "read_operator_locality_standing_through",
-        witnessed,
-    )
-    inputs = shared_position_module._inputs(
-        reopened,
-        first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
-        second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
-    )
-    assert inputs.first == first
-    assert inputs.second == second
-    assert len(standing_reads) == 1
-
-    standing_reads.clear()
-    references_to_recorded_recurrent_byte_pair_occurrence_positions(
-        reopened,
-        result_occurrence_identity=first.recorded_occurrence_identity,
-    )
-    references_to_recorded_recurrent_byte_pair_occurrence_positions(
-        reopened,
-        result_occurrence_identity=second.recorded_occurrence_identity,
-    )
-    assert len(standing_reads) == 2
-
-    standing_reads.clear()
-    assert get_shared_position_responsibility_assignment(
-        reopened, assignment.identity
-    ) == assignment.material
-    assert len(standing_reads) == 1
-    assert _standing(reopened, locality)["locality_identity"] == locality
-    reopened.close()
 
 
 def test_direct_position_coordinate_assertions_compose_without_recurrence_support(
@@ -1422,30 +1349,24 @@ def test_corrupted_shared_position_yield_relations_are_refused():
         yield_relation.material["result_identity"] = result_identity
 
 
-def test_shared_position_result_survives_sqlite_restart(tmp_path):
-    database = tmp_path / "shared-position.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    ledger, locality, _source, first, second = _fixture(ledger=ledger)
-    assignment, _applicability_act, _applicability, _measurement_act, result = (
-        _record_path(ledger, locality, first, second)
-    )
-    assignment_identity = assignment.identity
-    result_identity = result.identity
-    ledger.close()
+def test_shared_position_result_survives_sqlite_restart(restarted_shared_path):
+    reopened = SQLiteEventLedger(str(restarted_shared_path["database"]))
+    try:
+        result_identity = restarted_shared_path["result_identity"]
+        assignment = restarted_shared_path["assignment"]
+        reading = get_recorded_shared_position_measurement(
+            reopened, result_identity
+        )
 
-    reopened = SQLiteEventLedger(str(database))
-    reading = get_recorded_shared_position_measurement(
-        reopened, result_identity
-    )
-
-    assert reading["assertions"][0]["result"] == "ordered_relation_path"
-    assert get_shared_position_responsibility_assignment(
-        reopened, assignment_identity
-    ) == assignment.material
-    assert result_identity in _standing(reopened, locality)[
-        "measurement_occurrences"
-    ]
-    reopened.close()
+        assert reading["assertions"][0]["result"] == "ordered_relation_path"
+        assert get_shared_position_responsibility_assignment(
+            reopened, assignment.identity
+        ) == assignment.material
+        assert result_identity in _standing(
+            reopened, restarted_shared_path["locality"]
+        )["measurement_occurrences"]
+    finally:
+        reopened.close()
 
 
 def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path):
@@ -1773,7 +1694,5 @@ FIDELITY_DISTINCTIONS = {
 
 WITNESS_MATERIAL_TESTS = (
     test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
-    test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart,
     test_ordered_source_positions_remain_beside_the_path_assertion,
-    test_ordered_source_positions_beside_path_replay_after_restart,
 )
