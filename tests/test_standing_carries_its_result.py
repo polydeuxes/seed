@@ -22,8 +22,8 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.witness_material_acquisition import (
-    record_witness_material_acquisition,
+from seed_runtime.witness_material_source import (
+    record_witness_material_source,
 )
 
 from seed_runtime.operator_material_acquisition import (
@@ -168,7 +168,7 @@ def test_a_result_whose_act_occurrence_records_no_reference_has_no_A1_coordinate
     """Absence of an owner is no positive A.1 coordinate, never ``None``."""
 
     ledger = EventLedger()
-    acquired = record_witness_material_acquisition(
+    acquired = record_witness_material_source(
         ledger,
         locality_identity="witness",
         exact_bytes=b"\x00\xffprior\n",

@@ -9,7 +9,7 @@ import pytest
 
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
@@ -240,7 +240,7 @@ def live_pytest_invocation(tmp_path_factory):
         acquisition_results = [
             event
             for event in ledger.list()
-            if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+            if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         ]
     finally:
         ledger.close()

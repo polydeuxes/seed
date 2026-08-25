@@ -35,8 +35,8 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.material_source import MaterialSourceError
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
@@ -260,7 +260,7 @@ def test_supplied_witness_acquisition_records_declared_measurements_from_localit
     supplied = tuple(
         event
         for event in ledger.list()
-        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         and event.locality_identity == invocation_locality
     )
     results = tuple(
@@ -290,13 +290,13 @@ def test_supplied_witness_acquisition_records_declared_measurements_from_localit
 
 def test_witness_acquisitions_enter_declared_measurement_through_locality():
     ledger = EventLedger()
-    first = record_witness_material_acquisition(
+    first = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"first\n",
         source_boundary="first exact boundary",
     )
-    second = record_witness_material_acquisition(
+    second = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"second\n",
@@ -336,13 +336,13 @@ def test_witness_acquisitions_enter_declared_measurement_through_locality():
 
 def test_witness_locality_exposes_declared_measurement_subjects():
     ledger = EventLedger()
-    first = record_witness_material_acquisition(
+    first = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"first\n",
         source_boundary="first exact boundary",
     )
-    second = record_witness_material_acquisition(
+    second = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"second\n",
@@ -376,13 +376,13 @@ def test_witness_locality_exposes_declared_measurement_subjects():
 
 def test_exact_byte_measurement_refuses_a_raw_witness_acquisition_result_set():
     ledger = EventLedger()
-    first = record_witness_material_acquisition(
+    first = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"first\n",
         source_boundary="first exact boundary",
     )
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"second\n",
@@ -403,7 +403,7 @@ def test_exact_byte_measurement_refuses_a_raw_witness_acquisition_result_set():
 
 def test_bounded_replay_exposes_assignments_after_witness_locality():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"Hello, how are you\n",
@@ -439,7 +439,7 @@ def test_bounded_replay_exposes_assignments_after_witness_locality():
 def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield():
     ledger = EventLedger()
     source = ledger.append(
-        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
         {
             "dimensions": {
                 "identity": "preserved material",
@@ -474,7 +474,7 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
 
 def test_carried_declaration_records_witness_measurements_after_another_locality_append():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"pin\n",
@@ -502,7 +502,7 @@ def test_carried_declaration_records_witness_measurements_after_another_locality
 
 def test_carried_declaration_refuses_replay_before_the_current_boundary():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"pin\n",
@@ -532,7 +532,7 @@ def test_witness_material_measurements_remain_exhausted_after_sqlite_reopen(tmp_
     path = str(tmp_path / "standing-declarations.sqlite")
     ledger = SQLiteEventLedger(path)
     try:
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="s",
             exact_bytes=b"2+2=5\n",
@@ -635,7 +635,7 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
     try:
         for ledger in ledgers:
             first = ledger.append(
-                WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+                WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
                 {
                     "dimensions": {
                         "identity": "first",
@@ -645,7 +645,7 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
                 locality_identity="s",
             )
             second = ledger.append(
-                WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+                WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
                 {
                     "dimensions": {
                         "identity": "second",
@@ -668,7 +668,7 @@ def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
 def test_an_advance_refuses_an_occurrence_from_another_locality():
     ledger = EventLedger()
     event = ledger.append(
-        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
         {
             "dimensions": {
                 "identity": "elsewhere",
@@ -691,7 +691,7 @@ def test_input_boundary_cannot_append_an_occurrence_during_acquisition():
 
     class AppendingInput:
         def readline(self):
-            record_witness_material_acquisition(
+            record_witness_material_source(
                 ledger,
                 locality_identity="s",
                 exact_bytes=b"outside acquisition",
@@ -1037,7 +1037,7 @@ def test_fresh_pair_measurement_is_not_reread_to_address_its_representation(
         "_read_recorded_byte_position_pair_measurement",
         record,
     )
-    later_boundary = record_witness_material_acquisition(
+    later_boundary = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"later material",
@@ -1244,7 +1244,7 @@ def test_each_console_road_leaves_carried_standing_matching_replay(
 
     ledger = EventLedger()
     if existing_locality:
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="existing",
             exact_bytes=b"existing material",

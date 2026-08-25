@@ -15,8 +15,8 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import (
-    record_witness_material_acquisition,
+from seed_runtime.witness_material_source import (
+    record_witness_material_source,
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
@@ -43,7 +43,7 @@ COMPILED_MATERIAL = (
 
 def measured_material():
     ledger = EventLedger()
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity="compiled-material-source",
         exact_bytes=bytes(range(256)),

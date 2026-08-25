@@ -9,7 +9,7 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
     record_standing_boundary_reference_responsibility_assignment,
@@ -209,7 +209,7 @@ def test_unrelated_occurrences_do_not_change_the_recorded_read():
     assert not [
         event
         for event in ledger.list_locality("other")
-        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     ]
 
 

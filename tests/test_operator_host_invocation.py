@@ -18,7 +18,7 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
 )
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
@@ -119,7 +119,7 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
         acquisition = next(
             event
             for event in events
-            if event.kind == "witness.material.acquire_recorded"
+            if event.kind == "witness.material.source_result_recorded"
         )
         position_result = next(
             event
@@ -166,7 +166,7 @@ def test_provider_cannot_append_outside_one_supplied_occurrence():
                 "provider:guarded",
             )
         )
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="outside-provider-locality",
             exact_bytes=b"outside supplied material",
@@ -330,7 +330,7 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
         supplied=SuppliedWitnessMaterialOccurrence(b"second", "provider:second"),
         prior_supplied_occurrence_references=(first.identity,),
     )
-    unrelated = record_witness_material_acquisition(
+    unrelated = record_witness_material_source(
         ledger,
         locality_identity="unrelated",
         exact_bytes=b"unrelated",
@@ -575,7 +575,7 @@ def test_supplied_material_does_not_gain_admission_from_a_locality_change():
     supplied = tuple(
         event
         for event in ledger.list_locality(relation.locality_identity)
-        if event.kind == "witness.material.acquire_recorded"
+        if event.kind == "witness.material.source_result_recorded"
     )
     assert tuple(event.exact_material for event in supplied) == (b"one result",)
     emitted = [

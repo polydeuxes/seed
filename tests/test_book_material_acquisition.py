@@ -9,7 +9,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_act_occurrence,
@@ -130,7 +130,7 @@ def acquired_book_material():
         if path.is_file()
     )
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="book-material-acquisition",
             exact_bytes=path.read_bytes(),
@@ -334,7 +334,7 @@ def later_book_material_acquisition(acquired_book_material):
         acquired_book_material
     )
     later_acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="book-material-acquisition-later",
             exact_bytes=path.read_bytes(),
@@ -379,7 +379,7 @@ def test_every_current_book_file_has_one_exact_material_acquisition_result(
         for occurrence in ledger.list_locality(
             "book-material-acquisition", through=boundary
         )
-        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     )
 
     assert paths == tuple(
@@ -809,7 +809,7 @@ def test_book_and_supplied_material_have_later_position_recurrence(
     supplied_material = b"".join(
         supplied_path.read_bytes().splitlines(keepends=True)[:300]
     )
-    supplied_acquisition_result = record_witness_material_acquisition(
+    supplied_acquisition_result = record_witness_material_source(
         ledger,
         locality_identity="supplied-position-material",
         exact_bytes=supplied_material,
@@ -883,7 +883,7 @@ def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
         for occurrence in ledger.list_locality(
             "book-material-acquisition-later", through=later_boundary
         )
-        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     ) == later_acquisition_results
     assert all(
         occurrence not in ledger.list(through=earlier_boundary)
@@ -914,7 +914,7 @@ def test_later_material_does_not_enter_the_book_completeness_boundary(
     acquired_book_material,
 ):
     ledger, _, acquisition_results, boundary, _, _, _ = acquired_book_material
-    later = record_witness_material_acquisition(
+    later = record_witness_material_source(
         ledger,
         locality_identity="book-material-acquisition",
         exact_bytes=b"later material",
@@ -926,7 +926,7 @@ def test_later_material_does_not_enter_the_book_completeness_boundary(
         for occurrence in ledger.list_locality(
             "book-material-acquisition", through=boundary
         )
-        if occurrence.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if occurrence.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     )
     assert bounded_acquisition_results == acquisition_results
     assert later not in bounded_acquisition_results

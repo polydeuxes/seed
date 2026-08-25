@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 
 from seed_runtime.material_source import exact_material_result_bytes
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.declared_measurement_responsibilities import (
     record_declared_measurements_from_current_bounded_locality_replay,
@@ -29,7 +29,7 @@ def test_book_material_acquisition_locality_exposes_declared_measurements():
     )
     assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
     assert all(
-        result.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        result.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         for result in acquisition_results
     )
     bounded_replay = read_operator_locality_standing(

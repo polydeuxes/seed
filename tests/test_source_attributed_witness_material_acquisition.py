@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
@@ -41,7 +41,7 @@ def acquired_source_attributed_witness_material():
         pytest.skip(str(error))
     ledger = EventLedger()
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="source-attributed-witness-material",
             exact_bytes=material,

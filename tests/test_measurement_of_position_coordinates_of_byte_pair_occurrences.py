@@ -325,12 +325,12 @@ def test_material_without_a_byte_pair_yields_an_exact_empty_result(exact):
 
 
 def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assignment():
-    from seed_runtime.witness_material_acquisition import (
-        record_witness_material_acquisition,
+    from seed_runtime.witness_material_source import (
+        record_witness_material_source,
     )
 
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity="position-occurrence-position",
         exact_bytes=b"",

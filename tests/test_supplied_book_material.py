@@ -9,7 +9,7 @@ import pytest
 
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +49,7 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
         pytest.skip("compiled implementation function is unavailable")
     ledger = EventLedger()
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="supplied-material",
             exact_bytes=material,

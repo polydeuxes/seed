@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +27,7 @@ from compiled_material_invocation import (  # noqa: E402
 
 
 def _source(ledger, locality_identity, material):
-    event = record_witness_material_acquisition(
+    event = record_witness_material_source(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=material,

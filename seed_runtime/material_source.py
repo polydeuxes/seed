@@ -134,7 +134,7 @@ def iter_exact_material_results(
 ):
     """Yield exact material results without a Locality-wide read."""
 
-    from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+    from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     from seed_runtime.operator_material_acquisition import (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     )
@@ -142,7 +142,7 @@ def iter_exact_material_results(
     witness = iter(
         ledger.iter_locality_kind_identities(
             locality_identity,
-            WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
+            WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
             through=through,
         )
     )
@@ -204,13 +204,13 @@ def read_exact_material_result(
             "exact material result is absent or corrupted"
         )
 
-    from seed_runtime.witness_material_acquisition import (
-        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-        _read_witness_material_acquisition_result,
+    from seed_runtime.witness_material_source import (
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        _read_witness_material_source_result,
     )
 
-    if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND:
-        return _read_witness_material_acquisition_result(ledger, event)
+    if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+        return _read_witness_material_source_result(ledger, event)
 
     from seed_runtime.operator_material_acquisition import (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -240,13 +240,13 @@ def read_material_locality_relation_requirements(
     result = read_exact_material_result(
         ledger, recorded_result_event_identity
     )
-    from seed_runtime.witness_material_acquisition import (
-        WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-        read_witness_material_acquire_locality_relation_requirements,
+    from seed_runtime.witness_material_source import (
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        read_witness_material_source_locality_relation_requirements,
     )
 
-    if result.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND:
-        return read_witness_material_acquire_locality_relation_requirements(
+    if result.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+        return read_witness_material_source_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=result.identity,
         )

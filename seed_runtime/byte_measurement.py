@@ -34,10 +34,10 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 
 
-ACQUISITION_OCCURRED_KIND = WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+ACQUISITION_OCCURRED_KIND = WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (

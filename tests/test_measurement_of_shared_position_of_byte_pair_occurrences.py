@@ -28,7 +28,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
     record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
@@ -1058,7 +1058,7 @@ def test_d2_shared_assignment_refuses_stale_or_forged_standing_atomically():
         ledger, locality=locality
     )
     stale = _standing(ledger, locality)
-    record_witness_material_acquisition(
+    record_witness_material_source(
         ledger,
         locality_identity=locality,
         exact_bytes=b"later",

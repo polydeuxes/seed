@@ -29,7 +29,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
@@ -64,7 +64,7 @@ def _pair_measurement(ledger):
 
 def _witness_compare_input_testimony(monkeypatch):
     ledger = EventLedger()
-    earlier_source = record_witness_material_acquisition(
+    earlier_source = record_witness_material_source(
         ledger,
         locality_identity=LOCALITY,
         exact_bytes=b"abab",
@@ -75,7 +75,7 @@ def _witness_compare_input_testimony(monkeypatch):
         {"test_subject": "earlier recorded pair Measurement"},
         locality_identity=LOCALITY,
     )
-    added = record_witness_material_acquisition(
+    added = record_witness_material_source(
         ledger,
         locality_identity=LOCALITY,
         exact_bytes=b"abac",
@@ -219,7 +219,7 @@ def _operator_acquisition(ledger, exact_bytes):
 
 def _operator_inputs(*, acquisition_before_earlier_measurement=False):
     ledger = EventLedger()
-    bootstrap = record_witness_material_acquisition(
+    bootstrap = record_witness_material_source(
         ledger,
         locality_identity=LOCALITY,
         exact_bytes=b"bootstrap",

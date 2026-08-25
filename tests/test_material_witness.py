@@ -17,7 +17,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.declared_measurement_responsibilities import (
     record_declared_measurements_from_current_bounded_locality_replay,
@@ -137,7 +137,7 @@ def book_material_acquisitions():
         pytest.skip("supplied fixture material is unavailable")
     supplied_material = supplied_book_material(ROOT)
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="book-material",
             exact_bytes=material,

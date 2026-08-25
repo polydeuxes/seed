@@ -20,7 +20,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
@@ -69,7 +69,7 @@ def _record_byte_measurement(
 
 def _attempt(ledger, text, *, locality="s", locality_standing=None):
     exact = text.encode() if type(text) is str else text
-    event = record_witness_material_acquisition(
+    event = record_witness_material_source(
         ledger,
         locality_identity=locality,
         exact_bytes=exact,
@@ -366,13 +366,13 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
 
 def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield():
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
         source_boundary="test boundary",
     )
-    other = record_witness_material_acquisition(
+    other = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"other result",
@@ -388,7 +388,7 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
 
 def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",
@@ -418,7 +418,7 @@ def test_locality_standing_refuses_corrupted_raw_yield_relation(
     monkeypatch, required_occurrence_coordinate
 ):
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity="s",
         exact_bytes=b"raw result",

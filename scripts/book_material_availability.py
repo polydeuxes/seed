@@ -10,8 +10,8 @@ sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import (
-    record_witness_material_acquisition,
+from seed_runtime.witness_material_source import (
+    record_witness_material_source,
 )
 
 
@@ -25,7 +25,7 @@ def acquired_book_material():
         if path.is_file()
     )
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity="book-material",
             exact_bytes=path.read_bytes(),

@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -431,13 +431,13 @@ def small_boundary_material():
     book = (ROOT / "book_of_seed" / "README.md").read_bytes()
     start = book.index(b"Seed")
     ledger = EventLedger()
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity="small-boundary-material",
         exact_bytes=book[start : start + 4],
         source_boundary="fixture-0",
     )
-    added = record_witness_material_acquisition(
+    added = record_witness_material_source(
         ledger,
         locality_identity="small-boundary-material",
         exact_bytes=b" ",
@@ -736,7 +736,7 @@ def test_each_returned_material_can_enter_a_fresh_locality(
     ledger = small_boundary_material[0]
     invocations = small_boundary_material[6][0]
     acquisition_results = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity=f"small-boundary-result-{position}",
             exact_bytes=invocation.stdout_bytes,

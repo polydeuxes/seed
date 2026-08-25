@@ -6,7 +6,7 @@ import pytest
 
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -28,7 +28,7 @@ from seed_runtime.yield_relation import read_requirements_of_yield_relation
 def _source_boundary(
     ledger: EventLedger, locality_identity: str = "source"
 ) -> tuple[object, str]:
-    source = record_witness_material_acquisition(
+    source = record_witness_material_source(
         ledger,
         locality_identity=locality_identity,
         exact_bytes=b"\x00\xffprior\n",
@@ -292,7 +292,7 @@ def test_later_source_occurrences_do_not_move_the_exact_source_cut():
     ledger = EventLedger()
     source, boundary = _source_boundary(ledger)
     act_occurrence = _act(ledger, boundary)
-    later = record_witness_material_acquisition(
+    later = record_witness_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"later",

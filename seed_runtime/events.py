@@ -539,9 +539,9 @@ class SQLiteEventLedger(EventLedger):
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
-        "witness_material_acquisition_act",
-        "witness_material_acquisition_act_occurrence",
-        "witness_material_acquisition_result",
+        "witness_material_source_act",
+        "witness_material_source_act_occurrence",
+        "witness_material_source_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
         "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_assignment",

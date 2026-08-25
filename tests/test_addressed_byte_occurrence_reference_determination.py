@@ -27,7 +27,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
@@ -246,7 +246,7 @@ def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically
     )
     coordinate = _coordinate(ledger, first_source, b"ab", 0)
     stale = deepcopy(first_standing)
-    extra = record_witness_material_acquisition(
+    extra = record_witness_material_source(
         ledger,
         locality_identity="addressed-byte",
         exact_bytes=b"later",

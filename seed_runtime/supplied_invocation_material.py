@@ -8,7 +8,7 @@ from typing import Callable
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import read_exact_material_result
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
 from seed_runtime.operator_invocation_locality import (
     get_recorded_operator_invocation_locality,
 )
@@ -173,7 +173,7 @@ def acquire_supplied_witness_material_occurrence(
     )
     if any(
         occurrence is None
-        or occurrence.kind != WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        or occurrence.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         or occurrence.locality_identity != relation["destination_locality_identity"]
         or occurrence.material.get("source_role") != "this Witness"
         or occurrence.material.get("provenance_occurrence_references")[:2]
@@ -199,7 +199,7 @@ def acquire_supplied_witness_material_occurrence(
             prior_supplied_occurrence_references
         ):
             raise ValueError("exact prior supplied occurrence references required")
-    return record_witness_material_acquisition(
+    return record_witness_material_source(
         ledger,
         locality_identity=relation["destination_locality_identity"],
         exact_bytes=supplied.exact_bytes,

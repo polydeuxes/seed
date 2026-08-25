@@ -15,7 +15,7 @@ from seed_runtime.material_source import (
     read_exact_material_result,
     read_material_locality_relation_requirements,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -399,7 +399,7 @@ def _operator_standing_validation_context(
     }
 
 _SUBJECT_BY_KIND = {
-    WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND: "material_acquisition_result_occurrence",
+    WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "material_acquisition_result_occurrence",
 }
 _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -1235,7 +1235,7 @@ def advance_operator_locality_standing(
             ),
         )
         if not (
-            event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+            event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
             or event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS
             or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS

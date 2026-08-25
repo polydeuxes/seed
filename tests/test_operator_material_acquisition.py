@@ -13,7 +13,7 @@ from seed_runtime.material_source import (
     iter_exact_material_results,
     read_exact_material_result,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
@@ -308,7 +308,7 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
     acquisition_results = [
         event
         for event in ledger.list()
-        if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+        if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     ]
     assert acquisition_results == []
     assert read_exact_material_result(ledger, acquired[0].identity) == acquired[0]
@@ -351,7 +351,7 @@ def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
 
 def test_exact_acquisition_families_merge_only_their_append_order():
     ledger = EventLedger()
-    first = record_witness_material_acquisition(
+    first = record_witness_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"first supplied material",
@@ -367,7 +367,7 @@ def test_exact_acquisition_families_merge_only_their_append_order():
         for event in ledger.list_locality("source")
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     )
-    last = record_witness_material_acquisition(
+    last = record_witness_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"last supplied material",

@@ -13,7 +13,7 @@ from seed_runtime.material_source import (
     iter_exact_material_results,
     read_exact_material_result,
 )
-from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
@@ -238,7 +238,7 @@ def test_the_kind_stream_seeks_by_locality_and_kind(durable_ledger):
             "EXPLAIN QUERY PLAN "
             "SELECT * FROM events WHERE locality_identity = ? "
             "AND kind = ? ORDER BY rowid",
-            ("s1", WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND),
+            ("s1", WITNESS_MATERIAL_SOURCE_RECORDED_KIND),
         ).fetchall()
     finally:
         connection.close()

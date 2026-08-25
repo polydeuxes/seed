@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -221,7 +221,7 @@ def test_one_byte_material_crosses_the_return_code_boundary(material_invocations
 def test_each_returned_material_enters_a_fresh_locality(material_invocations):
     ledger, _, occurrences = material_invocations
     events = tuple(
-        record_witness_material_acquisition(
+        record_witness_material_source(
             ledger,
             locality_identity=f"compiled-material-result-{position}",
             exact_bytes=occurrence.stdout_bytes,

@@ -12,11 +12,11 @@ from seed_runtime.events import (
     LedgerIntegrityError,
     SQLiteEventLedger,
 )
-from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
+from seed_runtime.witness_material_source import record_witness_material_source
 
 
 def _acquire(ledger, exact_material: bytes, position: int):
-    return record_witness_material_acquisition(
+    return record_witness_material_source(
         ledger,
         locality_identity="material-storage",
         exact_bytes=exact_material,
