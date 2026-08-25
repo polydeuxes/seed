@@ -7,7 +7,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.material_source import (
     MATERIAL_RESULT_UNKNOWN,
     _append_exact_material_result_occurrence,
@@ -339,12 +338,12 @@ def _record_operator_material_source_subject_to_act_binding(
     source_boundary: str,
     current_reference: dict[str, str | None],
 ) -> Event:
-    exact_act_identity = new_identity("operator_material_source_act")
-    act_occurrence_identity = new_identity(
+    exact_act_identity = ledger.mint_identity("operator_material_source_act")
+    act_occurrence_identity = ledger.mint_identity(
         "operator_material_source_act_occurrence"
     )
-    scope_identity = new_identity("operator_material_source_scope")
-    result_boundary_identity = new_identity(
+    scope_identity = ledger.mint_identity("operator_material_source_scope")
+    result_boundary_identity = ledger.mint_identity(
         "operator_material_source_result_boundary"
     )
     return ledger.append(
