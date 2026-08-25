@@ -2,9 +2,10 @@
 
 ## Question
 
-Do console material, material returned by one Witness invocation, and material
-produced by a compiled external Witness each retain their own exact
-source-boundary bridge before entering one shared material physiology?
+Do console material and material returned by one Witness invocation retain
+their own exact source-boundary bridge before entering one shared material
+physiology? Does a compiled external Witness enter Seed through that road at
+all?
 
 This investigation reads the active runtime at `78b9ce5f`. It changes no Book,
 Witness Grammar, or runtime physiology.
@@ -74,41 +75,36 @@ The inner Witness source road still carries retired `responsibility` and
 subject-to-Act binding. That contradicts the corrected Book, but it does not
 erase the invocation bridge that precedes it.
 
-## Compiled external Witness material
+## Compiled external Witness
 
-The pytest external Witness can return ordinary invocation material plus two
-additional exact occurrences:
+The pytest external Witness can produce two observer artifacts:
 
 ```text
 compiled Witness catalog
 compiled Witness measurement
 ```
 
-Those occurrences retain distinct source-boundary strings and their exact
-bytes. They do not currently retain an exact compiled-Witness subject,
-compiled-Witness occurrence reference, or compiled-Witness-to-source-Act
-binding in Seed.
+Those artifacts test external behavior. They are not source material that Seed
+is meant to take through its exact-material front door.
 
-They are passed through the same `SuppliedWitnessMaterialOccurrence` consumer
-as ordinary invocation output and then through the ordinary Witness material
-source road.
+Current `operator_host_provider` nevertheless passes them through the same
+`SuppliedWitnessMaterialOccurrence` consumer as ordinary invocation output and
+then through the ordinary Witness material source road.
 
-Current runtime therefore establishes:
+That is a runtime crossing to remove, not a missing route-owned bridge to add.
+The exact invocation output and error remain Witness-return material. The
+compiled Witness catalog and measurement remain outside Seed as observer
+artifacts.
 
-```text
-compiled Witness material
-is exact returned material at a distinct named source boundary
-```
-
-It does not yet establish:
+Current runtime incorrectly establishes:
 
 ```text
-compiled external Witness
--- exact source-boundary bridge -->
-compiled Witness material result
+compiled Witness observer artifact
+is exact returned material at a named source boundary
 ```
 
-The source-boundary string cannot own that missing relation by itself.
+The source-boundary string cannot turn an external observer artifact into a
+Seed source occurrence.
 
 ## Smallest exact distinctions
 
@@ -119,14 +115,14 @@ console route-owned source-boundary bridge                      present
 
 Witness invocation-return route-owned bridge                    present
 
-compiled external Witness route-owned bridge                    absent
+compiled external Witness is external observer behavior          real
 
-compiled Witness bytes and distinct source-boundary material    present
+compiled Witness artifacts entering Seed as returned material    incorrect
 ```
 
-The compiled external Witness may be nested inside one Witness invocation,
-but nested provenance and a route-owned subject-to-Act binding are different
-distinctions.
+Running a compiled external Witness may itself happen through a host process,
+but its observer artifacts and that process's ordinary output are different
+material.
 
 ## Runtime cleanup frontier
 
@@ -134,14 +130,14 @@ distinctions.
    subject-to-Act binding without retired Responsibility vocabulary.
 2. Preserve the invocation-return bridge as the owner of invocation Locality,
    command, read, and returned-occurrence coordinates.
-3. Determine what exact occurrence identifies a compiled external Witness
-   before adding a compiled-Witness bridge. A source-boundary label alone does
-   not establish it.
-4. Keep all roads converged at the exact-material result front door. Do not
+3. Stop supplying compiled external Witness artifacts through the invocation
+   material callback. Keep their behavior checks external.
+4. Keep both Seed source roads converged at the exact-material result front
+   door. Do not
    merge their boundary mechanics or recreate later material physiology for
    each route.
 
 ## Stop
 
-No new compiled-Witness relation is added by this investigation. The exact
-compiled Witness occurrence coordinate is not currently carried into Seed.
+No compiled-Witness relation is added by this investigation. A compiled
+external Witness remains external.
