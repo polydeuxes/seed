@@ -116,9 +116,7 @@ def _resolve_one_carried_anchor(
 
 def _assignment_material(
     *,
-    assignment_identity: str,
-    assignment_subject_identity: str,
-    locality_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
     result_identity: str,
@@ -126,16 +124,15 @@ def _assignment_material(
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE,
         "responsibility": RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "locality_act_identity": locality_act_identity,
+        "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "locality_relation_occurrence_identity": locality_relation_occurrence_identity,
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
+        "subject_reference": deepcopy(standing_boundary_reference),
         "standing_boundary_reference": deepcopy(standing_boundary_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
@@ -151,18 +148,17 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _assignment_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": deepcopy(
+            assignment.material["standing_boundary_reference"]
+        ),
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
-        "result_identity": assignment.material["result_identity"],
     }
 
 
@@ -179,7 +175,7 @@ def _participation(
 def _act_material(assignment: Event) -> dict[str, Any]:
     material = assignment.material
     return {
-        "locality_act_identity": material["locality_act_identity"],
+        "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "locality_relation_occurrence_identity": material[
             "locality_relation_occurrence_identity"
@@ -205,7 +201,7 @@ def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
         "result_identity": material["result_identity"],
-        "locality_act_identity": material["locality_act_identity"],
+        "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "locality_relation_occurrence_identity": material[
             "locality_relation_occurrence_identity"
@@ -243,7 +239,7 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
-        "locality_act_identity": result_material["locality_act_identity"],
+        "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "locality_relation_occurrence_identity": result_material[
             "locality_relation_occurrence_identity"
@@ -288,13 +284,7 @@ def record_recorded_standing_boundary_locality_responsibility_assignment(
             "recorded Standing boundary Locality requires one fresh Locality"
         )
     identities = {
-        "assignment_identity": new_identity(
-            "recorded_standing_boundary_locality_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "recorded_standing_boundary_locality_assignment_subject"
-        ),
-        "locality_act_identity": new_identity(
+        "exact_act_identity": new_identity(
             "recorded_standing_boundary_locality_act"
         ),
         "act_occurrence_identity": new_identity(
@@ -337,9 +327,7 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
     material = event.material
     anchor = material.get("standing_boundary_reference")
     identities = (
-        material.get("assignment_identity"),
-        material.get("assignment_subject_identity"),
-        material.get("locality_act_identity"),
+        material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
         material.get("locality_relation_occurrence_identity"),
         material.get("result_identity"),
@@ -356,12 +344,10 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
         ledger, anchor.get("recorded_occurrence_identity")
     )
     expected = _assignment_material(
-        assignment_identity=identities[0],
-        assignment_subject_identity=identities[1],
-        locality_act_identity=identities[2],
-        act_occurrence_identity=identities[3],
-        locality_relation_occurrence_identity=identities[4],
-        result_identity=identities[5],
+        exact_act_identity=identities[0],
+        act_occurrence_identity=identities[1],
+        locality_relation_occurrence_identity=identities[2],
+        result_identity=identities[3],
         standing_boundary_reference=expected_anchor,
         destination_locality_identity=event.locality_identity,
     )

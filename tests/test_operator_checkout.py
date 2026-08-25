@@ -144,9 +144,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     assert len(
         {
             assignment.identity,
-            assignment.material["assignment_identity"],
-            assignment.material["assignment_subject_identity"],
-            assignment.material["locality_act_identity"],
+            assignment.material["exact_act_identity"],
             assignment.material["act_occurrence_identity"],
             assignment.material["locality_relation_occurrence_identity"],
             assignment.material["result_identity"],
@@ -154,7 +152,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 10
+    ) == 8
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
