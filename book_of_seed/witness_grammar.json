@@ -310,6 +310,7 @@
       "subject": "exact_Compare_subjects",
       "Responsibility": "compare_exact_subjects_under_exact_rule",
       "exact_Act": "Compare",
+      "rule": "exact_Compare_rule",
       "relations": [
         "participation",
         "yield"

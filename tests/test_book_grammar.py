@@ -142,6 +142,15 @@ def test_applicability_required_admission_and_participation_remain_separate():
     }
 
 
+def test_generic_compare_carries_its_exact_rule():
+    generic_compare = _grammar()["book_coordinates"]["04.Compare"]
+
+    assert generic_compare["rule"] == "exact_Compare_rule"
+    assert "carries its exact subjects, rule, Scope" in (
+        CHAPTERS / "08_compare.md"
+    ).read_text(encoding="utf-8")
+
+
 def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates():
     candidate_compare = _grammar()["book_coordinates"]["04.Compare.C"]
 
