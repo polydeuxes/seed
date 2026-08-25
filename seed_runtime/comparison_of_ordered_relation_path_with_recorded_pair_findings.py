@@ -895,9 +895,7 @@ def _assignment_material(
             "locality_identity": inputs["locality_identity"],
             "standing_boundary_identity": boundary,
         },
-        "unknown": [
-            "path and Compare finding relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 
@@ -1526,9 +1524,7 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             "exact yielded ordered path and recorded comparison findings"
         ),
         "scope": {"locality_identity": inputs["locality_identity"]},
-        "unknown": [
-            "path and recorded Compare finding relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 

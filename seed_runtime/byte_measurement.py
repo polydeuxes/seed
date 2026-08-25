@@ -166,7 +166,6 @@ BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
 )
 BYTE_PAIR_UNKNOWN = (
     "Participation: Unknown",
-    "byte position pair relation: Unknown",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -666,11 +665,7 @@ def _pair_input_applicability_from_exact_source(
                 "treatment": "not required for this historical bounded source material",
             },
         },
-        "unknown": [
-            "byte relation: Unknown",
-            "byte position pair relation: Unknown",
-            *([basis] if standing == "Unknown" else []),
-        ],
+        "unknown": [basis] if standing == "Unknown" else [],
     }
 
 
@@ -1055,7 +1050,7 @@ def _movement_assignment_material(
                 destination_standing_boundary_identity
             ),
         },
-        "unknown": ["Assertion relation: Unknown"],
+        "unknown": [],
     }
 
 
@@ -2113,7 +2108,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": [],
             },
             "conflicts": "Unknown",
-            "unknown": ["source byte relation: Unknown"],
+            "unknown": [],
         }
     ]
 
@@ -2147,7 +2142,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": local_support_references,
             },
             "conflicts": "Unknown",
-            "unknown": ["Participation: Unknown", "byte relation: Unknown"],
+            "unknown": ["Participation: Unknown"],
         }
 
     for item in measured.counts:
@@ -2278,7 +2273,7 @@ def _byte_measurement_assignment_material(
             "source_localities": list(source_localities),
             "completeness_boundary_identity": completeness_boundary_identity,
         },
-        "unknown": ["source material relation: Unknown"],
+        "unknown": [],
     }
 
 
@@ -3391,9 +3386,7 @@ def _pair_measurement_assignment_material(
                 "identity"
             ],
         },
-        "unknown": [
-            "byte position pair relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 

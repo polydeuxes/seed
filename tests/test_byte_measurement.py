@@ -1393,7 +1393,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["result_boundary"]
     assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
-    assert applicability["input_unknown"]
+    assert applicability["input_unknown"] == []
     assert applicability["conflicts"] == []
     assert applicability["input_standing"] == {
         "recorded_measurement_result_occurrence_identity": source.identity,

@@ -644,7 +644,7 @@ def _assignment_material(
             ),
             "standing_boundary_identity": standing_boundary_identity,
         },
-        "unknown": ["relation path relation: Unknown"],
+        "unknown": [],
     }
     if determination_result_reference is not None:
         material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
@@ -1704,7 +1704,7 @@ def _path_assertion(
             "local_assertion_references": [],
         },
         "conflicts": "Unknown",
-        "unknown": ["relation path relation: Unknown"],
+        "unknown": [],
     }
 
 

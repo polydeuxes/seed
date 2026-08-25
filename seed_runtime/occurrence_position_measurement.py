@@ -224,7 +224,7 @@ def _assignment_material(
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": finding.completeness_boundary.identity,
         },
-        "unknown": ["Participation: Unknown", "relation: Unknown"],
+        "unknown": ["Participation: Unknown"],
     }
 
 
@@ -288,10 +288,7 @@ def _position_assertions(
                     "local_assertion_references": [],
                 },
                 "conflicts": "Unknown",
-                "unknown": [
-                    "Participation: Unknown",
-                    "relation: Unknown",
-                ],
+                "unknown": ["Participation: Unknown"],
             }
         )
     return assertions

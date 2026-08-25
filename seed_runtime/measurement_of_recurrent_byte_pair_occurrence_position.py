@@ -619,7 +619,7 @@ def _responsibility_assignment_material(
             ),
             "occurrence_count_boundary": finding.occurrence_count_boundary,
         },
-        "unknown": ["pair relation: Unknown"],
+        "unknown": [],
     }
 
 
@@ -1157,9 +1157,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                     "local_assertion_references": [],
                 },
                 "conflicts": "Unknown",
-                "unknown": [
-                    "pair occurrence relation: Unknown"
-                ],
+                "unknown": [],
             }
         )
     return assertions

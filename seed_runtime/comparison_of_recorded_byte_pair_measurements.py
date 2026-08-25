@@ -785,9 +785,7 @@ def _assignment_material(
                 "operator_locality_identity"
             ],
         },
-        "unknown": [
-            "distinction relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 
@@ -1140,9 +1138,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(act.material["scope"]),
         "standing": "applicable",
-        "unknown": [
-            "Compare distinction relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 
@@ -1544,9 +1540,7 @@ def _comparison_result_material(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
         "scope": deepcopy(act.material["scope"]),
-        "unknown": [
-            "each finding relation: Unknown"
-        ],
+        "unknown": [],
     }
 
 

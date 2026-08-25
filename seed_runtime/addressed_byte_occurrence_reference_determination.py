@@ -74,10 +74,7 @@ DETERMINATION_RULE = (
     "each exact pair-occurrence position Assertion reference carrying the "
     "addressed source-byte position-coordinate reference in source occurrence order"
 )
-UNKNOWN = [
-    "addressed byte occurrence relation: Unknown",
-    "carried Assertion relation: Unknown",
-]
+UNKNOWN = []
 
 EVENT_KIND_RESPONSIBILITIES = {
     RESPONSIBILITY_ASSIGNMENT_KIND: "01.Source.D.2",

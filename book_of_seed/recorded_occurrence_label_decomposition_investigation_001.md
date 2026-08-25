@@ -79,6 +79,11 @@ surfaces carrying two labels          3
 ```
 
 Sixty-two labels are distinguished by their top-level coordinate names alone.
+That is sufficient to distinguish the recorded surfaces. It does not establish
+that each distinguishing coordinate is Seed grammar. A constant family field,
+schema identity, or another label encoded as a coordinate name could produce
+the same result. Those sixty-two surfaces remain to be audited coordinate by
+coordinate before repository-wide removal of `Event.kind` is warranted.
 The remaining eighteen labels occupy three common surfaces, all in
 `source_position_recurrence.py`:
 
@@ -178,21 +183,41 @@ result occurrence
     exact result
 ```
 
-These exact coordinates and relations distinguish every audited occurrence
-form. The runtime label duplicates their answer.
+These exact coordinates and relations distinguish every occurrence in the
+current process material and every occurrence in the three deeply audited
+source-position collisions. The runtime label duplicates their answer within
+that bounded material.
 
 The bounded disposition is therefore:
 
 ```text
 constitutional Kind                         refused
-missing physiological distinction           not found
-persisted occurrence label                  redundant in the audited material
-exact coordinates and lineage               sufficient
+missing source-position distinction         not found
+durable top-level Event.kind                 redundant in the audited current occurrences
+exact source-position coordinates/lineage   sufficient
+sixty-two unique static surfaces            discriminator ownership Unknown
 ```
+
+This finding concerns durable top-level `Event.kind`. It does not decide every
+other runtime coordinate or identifier containing the word `kind`.
+
+Three separate questions remain open:
+
+```text
+subject_kind: "assertion"
+result_kind carried by Yield
+occurrence_boundary carried by Yield
+```
+
+`subject_kind` may duplicate exact Assertion coordinates. `result_kind` may
+duplicate the complete exact result and its Act/Yield lineage.
+`occurrence_boundary` may be an exact boundary or another family label. None
+of those conclusions follows from this investigation; each requires its own
+decomposition and refusal operation.
 
 ## Why immediate deletion is not one small edit
 
-The redundant label currently performs several implementation jobs:
+The redundant label currently performs eight implementation jobs:
 
 ```text
 Event carries it as a fixed top-level field
@@ -254,7 +279,7 @@ relations directly.
 
 After that bounded road no longer reads its label, measure its SQLite cost.
 That measurement should determine the smallest exact coordinate index needed
-before the durable `kind` column and the remaining label dispatch can be
-removed. Any such index must index actual carried coordinates; it must not be
-another concealed occurrence category.
-
+before broader durable-label removal is considered. Separately audit the
+smallest discriminator on each of the sixty-two unique surfaces. Any index
+must index actual carried coordinates; it must not be another concealed
+occurrence category.
