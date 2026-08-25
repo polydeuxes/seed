@@ -86,7 +86,7 @@ def test_the_carried_ownership_answers_subject_and_clause_directly():
     assert carried["book_clause_identity"] == "01.Source.G"
     assert (
         carried["recorded_occurrence_identity"]
-        in standing["responsibility_assignment_occurrences"]
+        in standing["pre_act_coordinate_occurrences"]
     )
 
 
@@ -360,7 +360,7 @@ def test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject():
     carried = standing["exact_result_occurrences"][result.identity]
 
     assert result.identity not in standing[
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     ]
     assert carried["assignment_subject_identity"] != result.identity
     assert carried["recorded_occurrence_identity"] != result.identity

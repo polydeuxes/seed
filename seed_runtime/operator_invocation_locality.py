@@ -321,7 +321,7 @@ def record_operator_invocation_locality_act_occurrence(
     )
     carried = (
         responsibility_assignment_standing.get(
-            "responsibility_assignment_occurrences"
+            "pre_act_coordinate_occurrences"
         )
         if type(responsibility_assignment_standing) is dict
         else None

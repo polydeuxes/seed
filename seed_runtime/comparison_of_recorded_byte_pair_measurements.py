@@ -993,7 +993,7 @@ def _require_assignment_standing(
     assignment: Event, locality_standing: dict[str, Any]
 ) -> None:
     carried = (
-        locality_standing.get("responsibility_assignment_occurrences")
+        locality_standing.get("pre_act_coordinate_occurrences")
         if type(locality_standing) is dict
         else None
     )
@@ -1264,7 +1264,7 @@ def _require_applicability_standing(
     locality_standing: dict[str, Any],
 ) -> None:
     assignments = (
-        locality_standing.get("responsibility_assignment_occurrences")
+        locality_standing.get("pre_act_coordinate_occurrences")
         if type(locality_standing) is dict
         else None
     )

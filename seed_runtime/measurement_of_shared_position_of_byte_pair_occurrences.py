@@ -141,7 +141,7 @@ class _SharedPositionReplayReading:
     input_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
     source_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
     pair_measurement_result_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
-    responsibility_assignment_occurrences: tuple[
+    pre_act_coordinate_occurrences: tuple[
         _SharedPositionReplayOccurrence, ...
     ]
     act_occurrence_occurrences: tuple[_SharedPositionReplayOccurrence, ...]
@@ -1121,7 +1121,7 @@ def record_shared_position_applicability_act_occurrence(
         ledger,
         inputs=inputs,
         locality_standing=locality_standing,
-        carried_coordinate="responsibility_assignment_occurrences",
+        carried_coordinate="pre_act_coordinate_occurrences",
         required_occurrences=(assignment.identity,),
     )
     return ledger.append(
@@ -2114,7 +2114,7 @@ def _shared_position_replay_reading(
         input_result_occurrences=input_results,
         source_occurrences=sources,
         pair_measurement_result_occurrences=pair_measurement_results,
-        responsibility_assignment_occurrences=responsibility_assignments,
+        pre_act_coordinate_occurrences=responsibility_assignments,
         act_occurrence_occurrences=act_occurrence,
         yield_relation_occurrences=yield_relations,
     )
@@ -2142,7 +2142,7 @@ def _require_exact_shared_position_replay_reading(
         *reading.input_result_occurrences,
         *reading.source_occurrences,
         *reading.pair_measurement_result_occurrences,
-        *reading.responsibility_assignment_occurrences,
+        *reading.pre_act_coordinate_occurrences,
         *reading.act_occurrence_occurrences,
         *reading.yield_relation_occurrences,
         reading.applicability_act_occurrence,

@@ -973,7 +973,7 @@ def _require_current_movement_destination_standing(
         ledger, locality_identity=destination_locality
     )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     if (
         locality_standing != current
         or locality_standing.get("locality_identity") != destination_locality
@@ -1241,7 +1241,7 @@ def _read_assertion_locality_movement_responsibility_assignment(
         "through_event_occurrence_identity"
     )
     carried_assignments = prior_destination_standing.get(
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     )
     destination_boundary_is_exact = prior_destination_boundary == destination_boundary
     assignment_is_carried_later = bool(
@@ -1365,7 +1365,7 @@ def _record_assertion_locality_movement_act_from_carried_standing(
         or destination_standing.get("through_event_occurrence_identity")
         != assignment.identity
         or destination_standing.get(
-            "responsibility_assignment_occurrences", {}
+            "pre_act_coordinate_occurrences", {}
         ).get(assignment.identity, object())
         is not None
         or ledger.append_boundary_through_occurrence(assignment.identity)
@@ -2277,7 +2277,7 @@ def _require_current_byte_measurement_standing(
     current = read_operator_locality_standing(
         ledger, locality_identity=recording_locality_identity
     )
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     if (
         locality_standing != current
@@ -2311,7 +2311,7 @@ def _require_carried_byte_measurement_replay_at_current_boundary(
             "byte Measurement requires exact current Locality Standing"
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     if (
         locality_standing.get("locality_identity")
         != recording_locality_identity
@@ -2666,7 +2666,7 @@ def _read_byte_measurement_responsibility_assignment(
                     "byte Measurement Responsibility assignment has no exact prior Standing"
                 ) from error
     carried_assignments = prior_standing.get(
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     )
     prior_boundary_identity = prior_standing.get(
         "through_event_occurrence_identity"
@@ -3508,7 +3508,7 @@ def _pair_source_is_carried(
     *,
     assignment_identity: str | None = None,
 ) -> bool:
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     if assignment_identity is not None:
         return (
             type(assignments) is dict
@@ -3539,7 +3539,7 @@ def _require_carried_pair_measurement_standing_at_tip(
     required_applicability_identity: str | None = None,
 ) -> str:
     boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     applicability = locality_standing.get("applicability_result_occurrences")
     event = ledger.get(boundary) if type(boundary) is str else None
     if (
@@ -3753,7 +3753,7 @@ def _read_pair_pre_act_binding(
             ledger, binding=binding, boundary=boundary
         )
     standing_boundary = prior_standing.get("through_event_occurrence_identity")
-    assignments = prior_standing.get("responsibility_assignment_occurrences")
+    assignments = prior_standing.get("pre_act_coordinate_occurrences")
     boundary_is_exact = standing_boundary == boundary
     assignment_is_carried = bool(
         type(assignments) is dict

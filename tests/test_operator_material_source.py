@@ -107,7 +107,7 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     assert "locality_relation" not in assignment.material
     assert assignment.material["unknown"] == ["operator boundary material: Unknown"]
     assert assignment.identity in after_assignment[
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     ]
     assert recorded["result_identity"] == assignment.material[
         "result_boundary_identity"
@@ -174,7 +174,7 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
         ledger, locality_identity="source"
     )
     assert carried == replayed
-    assert replayed["responsibility_assignment_occurrences"][assignment.identity] is None
+    assert replayed["pre_act_coordinate_occurrences"][assignment.identity] is None
     assert replayed["operator_material_source_act_occurrences"] == {
         act_occurrence.identity: None
     }
@@ -765,7 +765,7 @@ def test_assignment_and_act_survive_a_durable_restart_before_raw_result(tmp_path
 
     ledger = SQLiteEventLedger(str(path))
     before = read_operator_locality_standing(ledger, locality_identity="source")
-    assert before["responsibility_assignment_occurrences"][assignment.identity] is None
+    assert before["pre_act_coordinate_occurrences"][assignment.identity] is None
     assert before["operator_material_source_act_occurrences"] == {
         act.identity: None
     }
@@ -796,7 +796,7 @@ def test_assignment_survives_alone_and_its_carried_standing_can_record_its_act(
     after_assignment = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    assert after_assignment["responsibility_assignment_occurrences"] == {
+    assert after_assignment["pre_act_coordinate_occurrences"] == {
         assignment.identity: None
     }
     assert after_assignment["operator_material_source_act_occurrences"] == {}

@@ -66,7 +66,7 @@ def _advance(
             error_message="source-position continuation Standing is not exact",
         )
         if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
-            standing["responsibility_assignment_occurrences"][event.identity] = None
+            standing["pre_act_coordinate_occurrences"][event.identity] = None
         elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
             standing["applicability_result_occurrences"][event.identity] = None
         elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:

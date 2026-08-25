@@ -377,7 +377,7 @@ def _require_current_locality_standing(
     current = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    carried = locality_standing.get("responsibility_assignment_occurrences")
+    carried = locality_standing.get("pre_act_coordinate_occurrences")
     if (
         locality_standing != current
         or locality_standing.get("locality_identity") != locality_identity
@@ -414,7 +414,7 @@ def _require_carried_locality_standing_at_tip(
             "occurrence position Measurement requires exact current Locality Standing"
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    carried = locality_standing.get("responsibility_assignment_occurrences")
+    carried = locality_standing.get("pre_act_coordinate_occurrences")
     if (
         locality_standing.get("locality_identity") != locality_identity
         or boundary is None

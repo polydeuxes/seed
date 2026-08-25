@@ -96,7 +96,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert assignment.locality_identity == destination
     assert assignment.material["book_clause_identity"] == "06.Locality.B"
     assert assignment.identity in after_act[
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     ]
     assert assignment.material["standing_boundary_occurrence_reference"] == boundary
     assert assignment_reference == {
@@ -123,7 +123,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     ) == 7
     assert after_act["event_count"] == 2
     assert after_act["recorded_relation_Standing"] == {}
-    assert after_act["responsibility_assignment_occurrences"] == {
+    assert after_act["pre_act_coordinate_occurrences"] == {
         assignment.identity: None
     }
     assert after_act["material_acquisition_result_occurrences"] == []
@@ -195,7 +195,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     )
     assert carried == replayed
     assert replayed["recorded_relation_Standing"] == {result.identity: None}
-    assert replayed["responsibility_assignment_occurrences"] == {
+    assert replayed["pre_act_coordinate_occurrences"] == {
         assignment.identity: None
     }
     assert replayed["material_acquisition_result_occurrences"] == []
@@ -223,7 +223,7 @@ def test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it(
     assignment_standing = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
-    assert assignment_standing["responsibility_assignment_occurrences"] == {
+    assert assignment_standing["pre_act_coordinate_occurrences"] == {
         assignment.identity: None
     }
     assert assignment_standing["recorded_relation_Standing"] == {}
@@ -509,7 +509,7 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
     assignment_identity = act_occurrence.material[
         "responsibility_assignment_reference"
     ]["recorded_occurrence_identity"]
-    assert standing["responsibility_assignment_occurrences"] == {
+    assert standing["pre_act_coordinate_occurrences"] == {
         assignment_identity: None
     }
     assert standing["through_event_occurrence_identity"] == act_occurrence.identity

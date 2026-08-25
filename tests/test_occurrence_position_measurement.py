@@ -266,7 +266,7 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
         "responsibility_assignment"
     ]
     assert assignment.identity in _standing(ledger)[
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     ]
     assert len(
         {

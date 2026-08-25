@@ -384,7 +384,7 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
     )
 
     assert assignment.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-    assert standing["responsibility_assignment_occurrences"].get(
+    assert standing["pre_act_coordinate_occurrences"].get(
         assignment.identity, object()
     ) is None
     assert "standing" not in assignment.material
@@ -438,7 +438,7 @@ def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
     shaped = deepcopy(
         read_operator_locality_standing(ledger, locality_identity="measurement")
     )
-    shaped["responsibility_assignment_occurrences"] = {
+    shaped["pre_act_coordinate_occurrences"] = {
         "same-shaped-assignment": None
     }
 
@@ -539,7 +539,7 @@ def test_operator_replay_uses_exact_context_while_public_assignment_reads_recons
         ledger, locality_identity="measurement"
     )
     assert standing["measurement_occurrences"][first.identity]
-    assert standing["responsibility_assignment_occurrences"][second.identity] is None
+    assert standing["pre_act_coordinate_occurrences"][second.identity] is None
     with pytest.raises(AssertionError, match="nested operator Standing replay"):
         get_byte_measurement_responsibility_assignment(ledger, second.identity)
 
@@ -587,13 +587,13 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
     )
     copied_measurements = deepcopy(exact["measurement_occurrences"])
     copied_acquisition_results = deepcopy(exact["material_acquisition_result_occurrences"])
-    copied_assignments = deepcopy(exact["responsibility_assignment_occurrences"])
+    copied_assignments = deepcopy(exact["pre_act_coordinate_occurrences"])
     assert copied_measurements == exact["measurement_occurrences"]
     assert copied_measurements is not exact["measurement_occurrences"]
     assert copied_acquisition_results == exact["material_acquisition_result_occurrences"]
     assert copied_acquisition_results is not exact["material_acquisition_result_occurrences"]
-    assert copied_assignments == exact["responsibility_assignment_occurrences"]
-    assert copied_assignments is not exact["responsibility_assignment_occurrences"]
+    assert copied_assignments == exact["pre_act_coordinate_occurrences"]
+    assert copied_assignments is not exact["pre_act_coordinate_occurrences"]
     ledger.corrupted.add(first.identity)
 
     @_operator_standing_replay_validation
@@ -607,7 +607,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
                 ],
                 measurement_occurrences=copied_measurements,
                 material_acquisition_result_occurrences=copied_acquisition_results,
-                responsibility_assignment_occurrences=copied_assignments,
+                pre_act_coordinate_occurrences=copied_assignments,
             )
         return get_byte_measurement_responsibility_assignment(
             ledger, second.identity
@@ -1669,7 +1669,7 @@ def test_pair_pre_act_bindings_are_distinct_and_share_the_addressed_act():
         through_event_occurrence_identity=assignment.identity,
     )
 
-    assert standing["responsibility_assignment_occurrences"].get(
+    assert standing["pre_act_coordinate_occurrences"].get(
         assignment.identity, object()
     ) is None
     applicability_binding = ledger.get(
@@ -2072,7 +2072,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     )
     assert assignment.material["source_locality"] == "byte-measurement"
     assert assignment.material["destination_locality"] == "measurement"
-    assert standing["responsibility_assignment_occurrences"][assignment.identity] is None
+    assert standing["pre_act_coordinate_occurrences"][assignment.identity] is None
     assert "standing" not in assignment.material
     assert "responsibility_assignment" not in movement.material
 
@@ -2109,7 +2109,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
     )
 
     assert len(identities) == 6
-    assert standing["responsibility_assignment_occurrences"] == {
+    assert standing["pre_act_coordinate_occurrences"] == {
         assignment.identity: None
     }
     assert assignment.material["source_standing_boundary_identity"] == (
@@ -2166,7 +2166,7 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
     shaped = deepcopy(
         read_operator_locality_standing(ledger, locality_identity="movement")
     )
-    shaped["responsibility_assignment_occurrences"] = {
+    shaped["pre_act_coordinate_occurrences"] = {
         "same-shaped-assignment": None
     }
 
@@ -2466,7 +2466,7 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
         assertion.assertion_identity for assertion in sources
     )
     assert all(
-        standing["responsibility_assignment_occurrences"].get(
+        standing["pre_act_coordinate_occurrences"].get(
             assignment.identity, object()
         )
         is None

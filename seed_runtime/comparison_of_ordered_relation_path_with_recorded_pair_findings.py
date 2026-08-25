@@ -511,7 +511,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    standing_assignments = standing.get("responsibility_assignment_occurrences")
+    standing_assignments = standing.get("pre_act_coordinate_occurrences")
     if type(standing_assignments) is not dict:
         raise ValueError(
             "ordered-path Compare Applicability requires exact current Standing"
@@ -1008,7 +1008,7 @@ def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsi
 
 def _require_assignment_standing(assignment: Event, standing: Any) -> None:
     assignments = (
-        standing.get("responsibility_assignment_occurrences")
+        standing.get("pre_act_coordinate_occurrences")
         if type(standing) is dict
         else None
     )
@@ -1335,7 +1335,7 @@ def _require_compare_standing(
     assignment: Event, applicability: Event, standing: Any
 ) -> None:
     assignments = (
-        standing.get("responsibility_assignment_occurrences")
+        standing.get("pre_act_coordinate_occurrences")
         if type(standing) is dict
         else None
     )

@@ -552,7 +552,7 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     )
     assert all(
         assignment.identity
-        in recorded.locality_standing["responsibility_assignment_occurrences"]
+        in recorded.locality_standing["pre_act_coordinate_occurrences"]
         for assignment in assignments
     )
     assert recorded.locality_standing["applicability_result_occurrences"] == (

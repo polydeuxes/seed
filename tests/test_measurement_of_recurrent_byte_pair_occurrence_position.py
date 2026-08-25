@@ -197,7 +197,7 @@ def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_id
     assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger, assignment.identity
     ) == assignment
-    assert standing["responsibility_assignment_occurrences"][assignment.identity] is None
+    assert standing["pre_act_coordinate_occurrences"][assignment.identity] is None
     assert "standing" not in assignment.material
 
     act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -269,7 +269,7 @@ def test_shaped_standing_without_the_exact_assignment_cannot_authorize_the_act()
     shaped = deepcopy(
         read_operator_locality_standing(ledger, locality_identity=locality)
     )
-    shaped["responsibility_assignment_occurrences"] = {
+    shaped["pre_act_coordinate_occurrences"] = {
         "same-shape-assignment": None
     }
 
@@ -345,8 +345,8 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
                 ],
                 measurement_occurrences=standing["measurement_occurrences"],
                 material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
-                responsibility_assignment_occurrences=standing[
-                    "responsibility_assignment_occurrences"
+                pre_act_coordinate_occurrences=standing[
+                    "pre_act_coordinate_occurrences"
                 ],
             )
         assert _operator_standing_validation_context(
@@ -380,8 +380,8 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
             through_event_occurrence_identity=pair.identity,
             measurement_occurrences=standing["measurement_occurrences"],
             material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
-            responsibility_assignment_occurrences={
-                **standing["responsibility_assignment_occurrences"],
+            pre_act_coordinate_occurrences={
+                **standing["pre_act_coordinate_occurrences"],
                 assignment.identity: None,
             },
         )
@@ -418,8 +418,8 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
             ],
             measurement_occurrences=measurements,
             material_acquisition_result_occurrences=acquisition_results,
-            responsibility_assignment_occurrences=standing[
-                "responsibility_assignment_occurrences"
+            pre_act_coordinate_occurrences=standing[
+                "pre_act_coordinate_occurrences"
             ],
         )
         return get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(

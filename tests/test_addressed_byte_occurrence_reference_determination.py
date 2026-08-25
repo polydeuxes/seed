@@ -413,7 +413,7 @@ def test_call_local_standing_equals_full_replay():
     )
     assert recorded["standing"] == replayed
     assert recorded["assignment"].identity in replayed[
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     ]
     assert recorded["applicability"].identity in replayed[
         "applicability_result_occurrences"

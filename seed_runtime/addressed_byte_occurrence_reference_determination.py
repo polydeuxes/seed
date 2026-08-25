@@ -574,7 +574,7 @@ def _require_stage_standing(
     current = _current_standing(
         ledger, source_result=source_result, locality_standing=standing
     )
-    assignments = current.get("responsibility_assignment_occurrences")
+    assignments = current.get("pre_act_coordinate_occurrences")
     applicability = current.get("applicability_result_occurrences")
     required_tip = assignment.identity
     if applicability_result is not None:
@@ -1829,7 +1829,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         )
 
     def carry(event: Event, *, prior: str) -> None:
-        assignments = standing.get("responsibility_assignment_occurrences")
+        assignments = standing.get("pre_act_coordinate_occurrences")
         applicability_results = standing.get("applicability_result_occurrences")
         measurements = standing.get("measurement_occurrences")
         count = standing.get("event_count")

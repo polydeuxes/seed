@@ -646,7 +646,7 @@ def _require_current_assignment_standing(
     )
     measurements = locality_standing.get("measurement_occurrences")
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
-    assignments = locality_standing.get("responsibility_assignment_occurrences")
+    assignments = locality_standing.get("pre_act_coordinate_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     source_has_exact_locality = all(
         read_material_locality_relation_requirements(
@@ -795,7 +795,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             )
     pair_validation_standing = (
         prior_standing
-        if type(prior_standing.get("responsibility_assignment_occurrences"))
+        if type(prior_standing.get("pre_act_coordinate_occurrences"))
         is dict
         else None
     )
@@ -829,7 +829,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     measurements = prior_standing.get("measurement_occurrences")
     acquisition_results = prior_standing.get("material_acquisition_result_occurrences")
     carried_assignments = prior_standing.get(
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     )
     prior_boundary_identity = prior_standing.get(
         "through_event_occurrence_identity"

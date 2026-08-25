@@ -364,7 +364,7 @@ def test_assignment_act_yield_and_result_enter_current_standing():
     )
     assert assignment.identity in _standing(
         ledger, locality
-    )["responsibility_assignment_occurrences"]
+    )["pre_act_coordinate_occurrences"]
 
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
@@ -900,7 +900,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
         )
     )
     carried_assignment = deepcopy(carried_source)
-    carried_assignment["responsibility_assignment_occurrences"][
+    carried_assignment["pre_act_coordinate_occurrences"][
         assignment.identity
     ] = None
     carried_assignment["through_event_occurrence_identity"] = assignment.identity

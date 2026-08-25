@@ -484,7 +484,7 @@ def _record_operator_material_source_act_occurrence(
             "operator material source Act requires assignment Standing"
         )
     carried = responsibility_assignment_standing.get(
-        "responsibility_assignment_occurrences"
+        "pre_act_coordinate_occurrences"
     )
     if (
         responsibility_assignment_standing.get("locality_identity")
