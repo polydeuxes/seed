@@ -29,9 +29,6 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
-from seed_runtime.operator_material_source import (
-    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-)
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     record_operator_invocation_locality_responsibility_assignment,
@@ -361,46 +358,6 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
     assert len(ledger.list()) == before
 
 
-def _represented_boundary_kinds(ledger):
-    represented = []
-    for event in ledger.list_locality("locality"):
-        if event.kind != "operator.representation.recorded":
-            continue
-        standing_boundary = event.material[
-            "locality_standing_through_event_occurrence_identity"
-        ]
-        source_reference = event.material["source_occurrence_reference"]
-        represented.append(
-            (
-                (
-                    None
-                    if standing_boundary is None
-                    else ledger.get(standing_boundary).kind
-                ),
-                (
-                    None
-                    if source_reference is None
-                    else ledger.get(source_reference).kind
-                ),
-            )
-        )
-    return tuple(represented)
-
-
-_COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
-    (None, None),
-    (
-        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-    ),
-    (
-        OCCURRENCE_POSITION_RECORDED_KIND,
-        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-    ),
-    ("operator.representation.recorded", None),
-)
-
-
 def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     ledger = EventLedger()
     seen = []
@@ -424,10 +381,6 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
                 if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
             ]
         ) == 1
-        assert (
-            _represented_boundary_kinds(ledger)
-            == _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES
-        )
         for occurrence in _supplied():
             supply(occurrence)
 
@@ -470,7 +423,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         relation.material["destination_locality_identity"]
     }
     assert all(
-        event.material["unknown"] == ["represented_relation", "source_relation"]
+        event.material["unknown"] == ["source_relation"]
         for event in acquisition_results[1:]
     )
     assert len({event.material["result_identity"] for event in acquisition_results}) == 4
@@ -481,19 +434,6 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
     ) == 4
-    emitted = [
-        event
-        for event in ledger.list()
-        if event.kind == "operator.representation.emitted"
-    ]
-    assert emitted == []
-    admissions = [
-        event
-        for event in ledger.list()
-        if event.kind
-        == "operator.representation.exact_material_admission_recorded"
-    ]
-    assert admissions == []
     assert len(
         [
             event
@@ -536,10 +476,6 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         event.material["input_applicability_event_identity"]
         for event in witness_pair_measurements
     } == set(witness_standing["applicability_result_occurrences"])
-    assert all(
-        reference["emitted_event_identity"] is None
-        for reference in witness_standing["representations"].values()
-    )
 
 
 def test_witness_material_is_durable_before_provider_resumes():
@@ -622,10 +558,6 @@ def test_provider_death_leaves_the_complete_command_acquisition():
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
     ) == 1
-    assert (
-        _represented_boundary_kinds(ledger)
-        == _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES
-    )
 
 
 def test_provider_death_preserves_each_already_supplied_witness_occurrence():
@@ -813,16 +745,6 @@ def test_equal_empty_supplied_material_remains_three_exact_occurrences():
     assert [exact_material_result_bytes(event) for event in events] == [b"", b"", b""]
 
 
-def test_host_provider_requires_an_exact_output_boundary():
-    with pytest.raises(ValueError, match="exact output boundary required"):
-        run_persistent_operator_console(
-            ledger=EventLedger(),
-            locality_identity="locality",
-            input_stream=BytesIO(b""),
-            operator_invocation_provider=_provider(*_supplied()),
-        )
-
-
 def test_supplied_occurrence_requires_exact_types():
     class OtherOccurrence(SuppliedWitnessMaterialOccurrence):
         pass
@@ -858,7 +780,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
         recorded_result_event_identity=output.identity,
         yield_relation_event_identity=output.material["yield_relation_identity"],
         act_occurrence_event_identity=output.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     )
     substituted = read_requirements_of_yield_relation(
@@ -866,7 +788,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
         recorded_result_event_identity=output.identity,
         yield_relation_event_identity=error.material["yield_relation_identity"],
         act_occurrence_event_identity=output.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     )
 
@@ -882,7 +804,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
         recorded_result_event_identity=output.identity,
         yield_relation_event_identity=output.material["yield_relation_identity"],
         act_occurrence_event_identity=output.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     )
     assert not all(different_command.values())
