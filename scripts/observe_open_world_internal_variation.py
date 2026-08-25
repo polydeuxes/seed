@@ -31,7 +31,10 @@ import json
 from pathlib import Path
 import time
 
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:  # Focused checks use only dependency-free operations.
+    np = None
 
 from observe_open_world_apertures import CORPUS, _window
 
@@ -196,6 +199,8 @@ def _observe_source(
     deadline: float,
     profile_slow_extents: bool = False,
 ) -> tuple[dict, bool]:
+    if np is None:
+        raise RuntimeError("this disposable observer requires numpy")
     source_begun = time.perf_counter()
     exact_bytes, _line_starts = _window(
         CORPUS.parent / source["source"], source["first_line"]

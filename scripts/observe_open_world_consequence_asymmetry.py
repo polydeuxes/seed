@@ -34,7 +34,10 @@ import json
 from pathlib import Path
 import time
 
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:  # Focused checks use only dependency-free operations.
+    np = None
 
 from observe_open_world_apertures import CORPUS, _window
 
@@ -311,6 +314,8 @@ def _observe_source(
     output_directory: str,
     profile_slow_findings: bool = False,
 ) -> dict:
+    if np is None:
+        raise RuntimeError("this disposable observer requires numpy")
     begun = time.perf_counter()
     encoded_input = Path(entry["artifact"]).read_bytes()
     if len(encoded_input) != entry["artifact_bytes"]:
