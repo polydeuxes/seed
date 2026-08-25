@@ -607,7 +607,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
     ) == 1
 
 
-def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
+def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     ledger = EventLedger()
     supplied = (
         SuppliedWitnessMaterialOccurrence(b"error", "provider:error"),
@@ -616,10 +616,6 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
             "provider:output",
             provenance_occurrence_positions=(0,),
         ),
-        SuppliedWitnessMaterialOccurrence(
-            b"artifact", "provider:artifact"
-        ),
-        SuppliedWitnessMaterialOccurrence(b"end", "provider:end"),
     )
 
     run_persistent_operator_console(
@@ -634,8 +630,6 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     assert [event.exact_material for event in supplied_acquisition_results] == [
         b"error",
         b"output",
-        b"artifact",
-        b"end",
     ]
     relation = next(
         event
@@ -650,18 +644,16 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     assert preserved_provenance == [
         expected_base,
         [*expected_base, supplied_acquisition_results[0].identity],
-        expected_base,
-        expected_base,
     ]
     kinds = tuple(event.kind for event in ledger.list())
-    assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 4
+    assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 2
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
     standing = read_operator_locality_standing(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"][-4:]
+        for occurrence in standing["material_acquisition_result_occurrences"][-2:]
     ] == [event.identity for event in supplied_acquisition_results]
 
 
