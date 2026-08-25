@@ -1,7 +1,6 @@
-"""A finite decimal representation attributed to pi, measured only as bytes."""
+"""Finite material attributed by the test is measured only as bytes."""
 
 from copy import deepcopy
-from tests.binary_input import binary_input
 
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
@@ -11,10 +10,10 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-
-
+from tests.operator_material_source_test_witness import (
+    record_operator_material_occurrence,
+)
 
 
 def _record_byte_measurement(
@@ -41,15 +40,16 @@ def _record_byte_measurement(
     )
 
 
-SHORT = "3.14159265358979323846"
-LONG = SHORT + "264338327950288419716939937510"
+SHORT = b"3.14159"
+LONG = SHORT + b"26"
 
 
-def _supply(ledger: EventLedger, locality: str, material: str) -> None:
-    run_persistent_operator_console(
+def _supply(ledger: EventLedger, locality: str, material: bytes) -> None:
+    record_operator_material_occurrence(
         ledger=ledger,
         locality_identity=locality,
-        input_stream=binary_input(material + "\n"),
+        exact=material,
+        source_boundary=f"{locality} boundary",
     )
 
 
@@ -69,14 +69,15 @@ def _measure(ledger: EventLedger, source: str, result: str):
 
 def _pair_counts(event):
     return {
-        bytes(assertion["assertion_subject"]["content"]).decode("ascii"):
-        assertion["dimensions"]["content"]["count"]
+        bytes(assertion["assertion_subject"]["content"]): assertion["dimensions"][
+            "content"
+        ]["count"]
         for assertion in event.material["assertions"]
         if assertion["result"] == "count"
     }
 
 
-def test_seed_measures_one_bounded_decimal_representation_not_all_of_pi():
+def test_one_bounded_decimal_material_does_not_gain_its_human_attribution():
     ledger = EventLedger()
     _supply(ledger, "short-source", SHORT)
     byte_event, pair_event = _measure(ledger, "short-source", "short")
@@ -85,9 +86,9 @@ def test_seed_measures_one_bounded_decimal_representation_not_all_of_pi():
     pair_counts = _pair_counts(pair_event)
 
     assert any(assertion.content == 46 for assertion in byte_assertions)
-    assert pair_counts["3."] == 1
-    assert pair_counts[".1"] == 1
-    assert pair_counts["59"] == 1
+    assert pair_counts[b"3."] == 1
+    assert pair_counts[b".1"] == 1
+    assert pair_counts[b"59"] == 1
     assert all(count == 1 for count in pair_counts.values())
     assert "pi" not in str(byte_event.material).lower()
     assert "pi" not in str(pair_event.material).lower()
@@ -108,7 +109,7 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     assert short_source.assertion_identity != long_source.assertion_identity
     assert short_bytes.material == short_material
     assert _pair_counts(short_pairs) == short_pair_counts
-    assert _pair_counts(long_pairs)["10"] == 1
+    assert _pair_counts(long_pairs)[b"26"] == 1
     assert long_pairs.material["completeness_boundary"] != short_pairs.material[
         "completeness_boundary"
     ]
