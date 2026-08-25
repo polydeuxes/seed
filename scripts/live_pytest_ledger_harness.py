@@ -1,4 +1,4 @@
-"""Run one live Seed-to-pytest invocation and report returned process material."""
+"""Inspect one live Seed-to-pytest invocation through Seed's ledger reader."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from seed_runtime.witness_material_source import (
 )
 
 
-def observe_live_pytest_process(database: Path) -> dict:
+def inspect_live_pytest_ledger(database: Path) -> dict:
     nodeid = (
         b"tests/test_book_material_acquisition.py::"
         b"test_book_material_witness_has_one_admitted_subject"
@@ -97,10 +97,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--db")
     args = parser.parse_args(argv)
     if args.db:
-        report = observe_live_pytest_process(Path(args.db))
+        report = inspect_live_pytest_ledger(Path(args.db))
     else:
         with TemporaryDirectory(prefix="seed-live-pytest-") as directory:
-            report = observe_live_pytest_process(Path(directory) / "seed.db")
+            report = inspect_live_pytest_ledger(Path(directory) / "seed.db")
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 
