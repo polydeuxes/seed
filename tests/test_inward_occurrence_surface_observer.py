@@ -15,6 +15,13 @@ from observe_inward_frame_coordinate_continuities import (  # noqa: E402
     _complete_existing,
     _scalar_coordinates,
 )
+from observe_inward_frame_walks import (  # noqa: E402
+    _aligned_coordinate_intersections,
+    _frame_walks,
+    _maximum_common_adjacent,
+    _repeated_walks,
+    _shared_ends,
+)
 
 
 def test_scalar_values_do_not_choose_an_occurrence_coordinate_surface():
@@ -202,3 +209,77 @@ def test_complete_nested_scalar_finding_is_reused_only_while_exact(tmp_path):
         )
         is None
     )
+
+
+def test_frozen_frame_bounds_every_walk_without_a_requested_length():
+    walks = _frame_walks(
+        [
+            ["frame", "act", "result", "frame", "act", "yield", "result"],
+            ["frame", "act", "result"],
+        ],
+        frozenset({"frame"}),
+    )
+
+    assert [walk["coordinate_surface_sha256s"] for walk in walks] == [
+        ["frame", "act", "result"],
+        ["frame", "act", "yield", "result"],
+        ["frame", "act", "result"],
+    ]
+
+
+def test_aligned_walk_positions_retain_only_shared_coordinates():
+    intersections = _aligned_coordinate_intersections(
+        [
+            {"coordinate_surface_sha256s": ["assignment-a", "act-a"]},
+            {"coordinate_surface_sha256s": ["assignment-b", "act-b"]},
+        ],
+        {
+            "assignment-a": frozenset({"assignment", "first-extra"}),
+            "assignment-b": frozenset({"assignment", "second-extra"}),
+            "act-a": frozenset({"act", "first-extra"}),
+            "act-b": frozenset({"act", "second-extra"}),
+        },
+    )
+
+    assert [finding["coordinate_material_sha256s"] for finding in intersections] == [
+        ["assignment"],
+        ["act"],
+    ]
+
+
+def test_walk_sequences_expose_shared_ends_and_varying_middle():
+    first, last, middles = _shared_ends(
+        [
+            ["a", "b", "x", "y", "c"],
+            ["a", "b", "x", "y", "x", "y", "c"],
+            ["a", "b", "x", "y", "x", "y", "x", "y", "c"],
+        ]
+    )
+
+    assert first == ["a", "b", "x", "y"]
+    assert last == ["c"]
+    assert middles == [[], ["x", "y"], ["x", "y", "x", "y"]]
+
+
+def test_maximum_common_adjacent_walk_is_source_selected():
+    length, findings = _maximum_common_adjacent(
+        [
+            ["a", "b", "c", "d"],
+            ["x", "a", "b", "c", "d", "y"],
+            ["a", "b", "c", "d", "z"],
+        ]
+    )
+
+    assert length == 4
+    assert findings == [["a", "b", "c", "d"]]
+
+
+def test_walk_repetition_is_recovered_across_empty_and_varying_middles():
+    first, repeated, counts = _repeated_walks(
+        ["a", "b", "x", "y", "x", "y"],
+        [[], ["x", "y"], ["x", "y", "x", "y"]],
+    )
+
+    assert first == ["a", "b"]
+    assert repeated == ["x", "y"]
+    assert counts == [2, 3, 4]
