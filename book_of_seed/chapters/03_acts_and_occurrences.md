@@ -1,13 +1,12 @@
 # Acts and Occurrences
 
-### 02.Acts.A — Exact pre-Act coordinates and occurrence
+### 02.Acts.A — Exact subject-to-Act binding and occurrence
 
-Before one exact Act occurrence, each exact subject of that Act is bound to the
-exact Act under its exact rule where required, Scope, Locality, and required
-relations. These coordinates are exact before the occurrence.
+Each exact subject of one exact Act is bound to that Act under its exact rule
+where required, Scope, Locality, and required relations.
 
 An Act occurrence is one occurrence of that exact Act. It carries the exact
-pre-Act coordinates.
+subject-to-Act binding and its carried coordinates.
 
 Participation carries one subject, one Act-local role, and one Act occurrence:
 

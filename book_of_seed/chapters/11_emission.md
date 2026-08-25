@@ -1,10 +1,10 @@
 # Emission
 
-### 07.Emission.A — Emission pre-Act coordinates
+### 07.Emission.A — Emission subject-to-Act binding
 
-Before one emission Act occurrence, one exact source material result, one exact
-destination boundary within its invocation Locality, that exact Act, Scope,
-Locality, conflicts, known loss, and Unknown are exact together.
+One exact source material result and one exact destination boundary within its
+invocation Locality are bound to one exact emission Act under its Scope,
+Locality, conflicts, known loss, and Unknown.
 
 ### 07.Emission.C — Exact-material boundary write
 

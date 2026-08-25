@@ -29,6 +29,8 @@ b
 becomes
 before
 beyond
+bind
+binding
 book
 both
 bound
@@ -118,7 +120,6 @@ pair
 participation
 path
 position
-pre
 preservation
 preserve
 preserved

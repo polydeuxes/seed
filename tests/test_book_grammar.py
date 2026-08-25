@@ -241,7 +241,7 @@ def test_candidate_compare_book_refuses_source_participation_and_relation_promot
     ) in compare
 
 
-def test_pre_act_coordinates_are_direct_clause_coordinates():
+def test_subject_to_act_binding_is_direct_clause_coordinates():
     act = _grammar()["book_coordinates"]["02.Acts.A"]
 
     assert act == {
@@ -251,7 +251,7 @@ def test_pre_act_coordinates_are_direct_clause_coordinates():
         "requires": [
             "Scope",
             "Locality",
-            "required_relations_before_occurrence",
+            "required_relations",
         ],
         "relations": ["participation", "carriage", "yield"],
         "result": "exact_result",

@@ -15,7 +15,7 @@ exact subject
 
 Current coordinates are this bounded reading.
 
-## Before an Act occurrence
+## Subject-to-Act binding
 
 ```
 subject
@@ -26,9 +26,9 @@ subject
 └── required support relations
 ```
 
-These coordinates are exact before the Act occurrence. Applicability,
-Admission, Participation, Carriage, Yield, result, and current coordinates
-are separately exact.
+These coordinates bind each exact subject to the exact Act. Applicability,
+Admission, Participation, Carriage, Act occurrence, Yield, result, and current
+coordinates are separately exact.
 
 ## Act and occurrence
 
