@@ -13,7 +13,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_pre_act_binding,
+    get_byte_position_pair_measurement_subject_to_act_binding,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -175,7 +175,7 @@ def _pair_lifecycle(ledger):
     return assignment, applicability_act, applicability, measurement_act, result
 
 
-def test_pair_standing_replay_carries_both_pre_act_bindings_and_result():
+def test_pair_standing_replay_carries_both_subject_to_act_bindings_and_result():
     ledger = _measurement_ledger()
     measurement_binding, applicability_act, _applicability, _measurement_act, result = (
         _pair_lifecycle(ledger)
@@ -195,7 +195,7 @@ def test_pair_standing_replay_carries_both_pre_act_bindings_and_result():
     assert result.identity in standing["measurement_occurrences"]
 
 
-def test_pair_standing_replay_refuses_changed_pre_act_binding():
+def test_pair_standing_replay_refuses_changed_subject_to_act_binding():
     ledger = _measurement_ledger()
     measurement_binding, _applicability_act, _applicability, _measurement_act, _result = (
         _pair_lifecycle(ledger)
@@ -222,7 +222,7 @@ def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path)
 
     reopened = SQLiteEventLedger(path)
     assert result.identity in _standing(reopened)["measurement_occurrences"]
-    assert get_byte_position_pair_measurement_pre_act_binding(
+    assert get_byte_position_pair_measurement_subject_to_act_binding(
         reopened, assignment.identity
     ).identity == assignment.identity
     assert assertions_of_recorded_byte_position_pair_measurement(

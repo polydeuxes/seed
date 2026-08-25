@@ -22,8 +22,8 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RESULT_KIND,
-    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
-    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -46,13 +46,13 @@ from seed_runtime.byte_measurement import (
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_assignment_and_source,
     _read_byte_measurement_responsibility_assignment,
-    _read_pair_applicability_pre_act_binding,
-    _read_pair_measurement_pre_act_binding,
+    _read_pair_applicability_subject_to_act_binding,
+    _read_pair_measurement_subject_to_act_binding,
     _read_pair_applicability_act_occurrence,
     _read_recorded_pair_input_applicability,
     _read_pair_measurement_act_occurrence,
     _pair_applicability_binding_of_result,
-    _require_exact_pair_pre_act_binding_event,
+    _require_exact_pair_subject_to_act_binding_event,
     _require_exact_pair_applicability_act_event,
     _require_exact_pair_applicability_result_event,
     _require_exact_pair_measurement_act_event,
@@ -413,8 +413,8 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
-    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
-    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -430,8 +430,8 @@ _ASSERTION_LOCALITY_MOVEMENT_KINDS = {
     ASSERTION_LOCALITY_MOVEMENT_KIND,
 }
 _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
-    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
-    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -1286,13 +1286,13 @@ def advance_operator_locality_standing(
             ),
         }
         if pair_lifecycle_event:
-            if event.kind == BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND:
-                _read_pair_applicability_pre_act_binding(
+            if event.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+                _read_pair_applicability_subject_to_act_binding(
                     ledger, event.identity, prior_standing=pair_prior_standing
                 )
                 subject_to_act_binding_occurrences[event.identity] = None
-            elif event.kind == BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND:
-                _read_pair_measurement_pre_act_binding(
+            elif event.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+                _read_pair_measurement_subject_to_act_binding(
                     ledger, event.identity, prior_standing=pair_prior_standing
                 )
                 subject_to_act_binding_occurrences[event.identity] = None
@@ -2628,7 +2628,7 @@ def _carry_pair_applicability_binding_into_standing(
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    _require_exact_pair_pre_act_binding_event(ledger, binding, source)
+    _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
         locality_standing,
@@ -2646,7 +2646,7 @@ def _carry_pair_measurement_binding_into_standing(
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    _require_exact_pair_pre_act_binding_event(ledger, binding, source)
+    _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
         locality_standing,

@@ -9,8 +9,8 @@ import pytest
 import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
-    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -30,7 +30,7 @@ from seed_runtime.byte_measurement import (
     _validate_moved_byte_assertion,
     _identity,
     _pair_assertion_identity,
-    get_byte_position_pair_measurement_pre_act_binding,
+    get_byte_position_pair_measurement_subject_to_act_binding,
     get_recorded_pair_input_applicability,
     get_byte_measurement_responsibility_assignment,
     get_assertion_locality_movement_responsibility_assignment,
@@ -1634,7 +1634,7 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
     assert first["responsibility"]
     assert first_assignment.kind == (
-        BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND
+        BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
     assert "assignment_identity" not in first["responsibility_assignment_reference"]
     assert "assignment_subject_identity" not in first["responsibility_assignment_reference"]
@@ -1644,7 +1644,7 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     assert first["addressed_act_occurrence_identity"] is None
 
 
-def test_pair_pre_act_bindings_are_distinct_and_share_the_addressed_act():
+def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act():
     ledger = _ledger("tata\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
@@ -1652,7 +1652,7 @@ def test_pair_pre_act_bindings_are_distinct_and_share_the_addressed_act():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    assignment = get_byte_position_pair_measurement_pre_act_binding(
+    assignment = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger,
         result.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"
@@ -1678,9 +1678,9 @@ def test_pair_pre_act_bindings_are_distinct_and_share_the_addressed_act():
         ]
     )
     assert applicability_binding.kind == (
-        BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND
+        BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert assignment.kind == BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND
+    assert assignment.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     assert applicability_binding.identity != assignment.identity
     assert applicability_binding.material["addressed_act_identity"] == (
         assignment.material["exact_act_identity"]

@@ -13,7 +13,7 @@ from compiled_material_invocation import MaterialAcquisitionResultReference
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_pre_act_binding,
+    get_byte_position_pair_measurement_subject_to_act_binding,
 )
 from seed_runtime.events import EventLedger
 
@@ -79,7 +79,7 @@ def exact_references_to_recurrent_material_pairs(
         ledger, measurement_occurrence_identity
     )
     reference = event.material["responsibility_assignment_reference"]
-    assignment = get_byte_position_pair_measurement_pre_act_binding(
+    assignment = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     ).material
     source_occurrence_identities = tuple(
