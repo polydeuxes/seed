@@ -212,7 +212,7 @@ def test_corrupted_source_cannot_enter_act_occurrence_after_measurement():
 
 def test_recorded_position_measurement_has_exact_act_and_yield_relation():
     ledger, _occurrences, _boundary, finding, recorded = recorded_road()
-    act_occurrence = ledger.get(recorded.material["act_occurrence_identity"])
+    act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
     yield_relation = ledger.get(recorded.material["yield_relation_identity"])
 
     assert recorded.kind == OCCURRENCE_POSITION_RECORDED_KIND
@@ -245,7 +245,7 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
     assignment = get_occurrence_position_measurement_responsibility_assignment(
         ledger, reference["recorded_occurrence_identity"]
     )
-    act_occurrence = ledger.get(recorded.material["act_occurrence_identity"])
+    act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
     yielded = ledger.get(recorded.material["yield_relation_identity"])
 
     assert assignment.kind == (
@@ -256,6 +256,10 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
         "assignment_identity": assignment.material["assignment_identity"],
         "assignment_subject_identity": assignment.material[
             "assignment_subject_identity"
+        ],
+        "book_clause_identity": assignment.material["book_clause_identity"],
+        "result_boundary_identity": assignment.material[
+            "result_boundary_identity"
         ],
     }
     assert "standing" not in recorded.material[
@@ -456,7 +460,7 @@ def test_act_occurrence_is_observed_before_yield_without_reconstructing_finding(
         RECORDED_YIELD_RELATION_EVENT,
         OCCURRENCE_POSITION_RECORDED_KIND,
     ]
-    assert recorded.material["act_occurrence_identity"] == (
+    assert recorded.material["act_occurrence_event_identity"] == (
         act_occurrence.identity
     )
     assert get_recorded_occurrence_position_measurement(
@@ -599,22 +603,6 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         )
 
 
-def test_position_finding_establishes_no_stronger_relation():
-    _ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-
-    assert "first_subject" not in recorded.material
-    assert "second_subject" not in recorded.material
-    assert "causation" not in recorded.material
-    assert all(
-        assertion["limits"]
-        == [
-            "exact occurrence position bounded by source Locality and "
-            "completeness boundary"
-        ]
-        for assertion in recorded.material["assertions"]
-    )
-
-
 def test_changed_position_is_refused_by_the_unchanged_yield_relation():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     recorded.material["assertions"][0]["dimensions"]["content"]["position"] = 1
@@ -628,6 +616,7 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "act_occurrence_identity",
+        "act_occurrence_event_identity",
         "yield_relation_identity",
     }
     assert recorded.material["measurement_rule"] == (
@@ -656,7 +645,7 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert _standing(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
         "result_identity": recorded.material["result_identity"],
-        "act_occurrence_identity": recorded.material["act_occurrence_identity"],
+        "act_occurrence_event_identity": recorded.material["act_occurrence_event_identity"],
         "act_occurrence_identity": recorded.material[
             "act_occurrence_identity"
         ],
@@ -722,7 +711,7 @@ def test_wrong_result_boundary_coordinates_are_refused(coordinate, value):
 def test_corrupted_input_act_or_yield_relation_is_refused():
     for coordinate in (
         "input",
-        "act_occurrence_identity",
+        "act_occurrence_event_identity",
         "yield_relation_identity",
     ):
         ledger, occurrences, _boundary, _finding, recorded = recorded_road()
@@ -899,7 +888,6 @@ PYTEST_ADMISSION = (
     test_result_refuses_wrong_kind_and_corrupted_act_occurrence,
     test_one_measurement_act_cannot_yield_two_results,
     test_carried_result_skips_history_scan_only_at_its_exact_act_tip,
-    test_position_finding_establishes_no_stronger_relation,
     test_changed_position_is_refused_by_the_unchanged_yield_relation,
     test_result_carries_one_ordered_assertion_per_exact_position,
     test_measured_scalar_cannot_impersonate_occurrence_position_standing,
@@ -920,7 +908,6 @@ FIDELITY_DISTINCTIONS = {
         test_supplied_reversal_cannot_replace_the_ledger_measurement,
         test_subclass_finding_cannot_replace_the_exact_measurement_type,
         test_recording_and_reading_do_not_reconstruct_complete_result_material,
-        test_position_finding_establishes_no_stronger_relation,
         test_changed_position_is_refused_by_the_unchanged_yield_relation,
         test_missing_reordered_duplicated_or_substituted_assertions_are_refused,
         test_wrong_result_boundary_coordinates_are_refused,

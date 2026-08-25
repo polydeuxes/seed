@@ -644,10 +644,6 @@ def _assignment_material(
             ),
             "standing_boundary_identity": standing_boundary_identity,
         },
-        "limits": [
-            "pair counts establish no shared position",
-            "relation path Standing from exact source material is not_established",
-        ],
         "unknown": ["what this ordered relation path represents: Unknown"],
     }
     if determination_result_reference is not None:
@@ -1106,7 +1102,6 @@ def _applicability_act_material(
             },
         ],
         "scope": assignment.material["scope"],
-        "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
 
@@ -1265,7 +1260,6 @@ def _applicability_result_material(
         "measurement_rule": MEASUREMENT_RULE,
         "applicability": standing,
         "scope": assignment.material["scope"],
-        "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
 
@@ -1390,7 +1384,6 @@ def _recorded_applicability_result_material(
         "measurement_rule": result["measurement_rule"],
         "applicability": result["applicability"],
         "scope": deepcopy(result["scope"]),
-        "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1533,7 +1526,6 @@ def _measurement_act_material(
             },
         ],
         "scope": assignment.material["scope"],
-        "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
 
@@ -1713,10 +1705,6 @@ def _path_assertion(
         },
         "conflicts": "Unknown",
         "unknown": ["what this ordered relation path represents: Unknown"],
-        "limits": [
-            "one path bounded by exact position Assertions and one exact shared "
-            "position-coordinate reference"
-        ],
     }
 
 
@@ -1788,7 +1776,6 @@ def _measurement_result_material(
         "second_position_assertion": _reference_material(inputs.second),
         "assertions": [assertion],
         "scope": assignment.material["scope"],
-        "limits": assignment.material["limits"],
         "unknown": assignment.material["unknown"],
     }
 
@@ -1871,7 +1858,6 @@ def _recorded_measurement_result_material(
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "assertions": deepcopy(result["assertions"]),
         "scope": deepcopy(result["scope"]),
-        "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }

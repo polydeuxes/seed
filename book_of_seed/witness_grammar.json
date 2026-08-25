@@ -14,7 +14,6 @@
       "exact_Act",
       "Scope",
       "Locality",
-      "limits",
       "required_relations"
     ]
   },
@@ -28,7 +27,6 @@
         "relation_occurrence",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     },
@@ -41,7 +39,6 @@
         "relation_occurrence",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     },
@@ -54,7 +51,6 @@
         "relation_occurrence",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     },
@@ -68,7 +64,6 @@
         "Responsibility",
         "exact_Act",
         "Scope",
-        "limits",
         "Unknown"
       ]
     },
@@ -82,7 +77,6 @@
         "Responsibility",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     }
@@ -96,8 +90,8 @@
     },
     "01.Source.B": {
       "subject": "cross_boundary_participation",
-      "Responsibility": "preserve_exact_source_coordinates_and_limits",
-      "exact_Act": "preserve_exact_source_coordinates_and_limits",
+      "Responsibility": "preserve_exact_source_coordinates",
+      "exact_Act": "preserve_exact_source_coordinates",
       "relations": [
         "participation"
       ]
@@ -115,7 +109,6 @@
         "provenance",
         "Scope",
         "Locality",
-        "limits",
         "conflicts",
         "loss",
         "Unknown"
@@ -202,7 +195,6 @@
         "Scope",
         "Locality",
         "known_loss",
-        "limits",
         "Unknown"
       ]
     },
@@ -220,7 +212,6 @@
         "Act_occurrence",
         "Yield",
         "Scope",
-        "limits",
         "result_for_that_subject"
       ],
       "result": "Standing_for_exact_subject"
@@ -246,7 +237,6 @@
         "Scope",
         "Locality",
         "conflicts",
-        "limits",
         "Unknown",
         "Standing"
       ]
@@ -266,7 +256,6 @@
         "exact_relation_occurrence",
         "Scope",
         "Locality",
-        "limits",
         "conflicts",
         "Unknown"
       ]
@@ -310,7 +299,6 @@
         "destination_coordinates",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ],
       "relations": [
@@ -420,7 +408,6 @@
         "Act_occurrence",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     },
@@ -435,7 +422,6 @@
         "source_coordinates",
         "Scope",
         "Locality",
-        "limits",
         "Unknown"
       ]
     },
@@ -486,7 +472,6 @@
         "exact_destination_boundary_within_the_invocation_Locality",
         "Scope",
         "Locality",
-        "limits",
         "conflicts",
         "known_loss",
         "Unknown"
@@ -525,7 +510,6 @@
         "responsible_boundary",
         "Scope",
         "Locality",
-        "limits",
         "responsible_occurrence"
       ],
       "relations": [
@@ -540,8 +524,7 @@
         "Acts",
         "occurrences",
         "results",
-        "Localities",
-        "limits"
+        "Localities"
       ],
       "carried_coordinates": [
         "one_exact_Responsibility"

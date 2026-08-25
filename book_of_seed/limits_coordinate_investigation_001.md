@@ -13,9 +13,10 @@ that Scope, Locality, exact boundaries, known loss, conflicts,
 Unknown, subjects, rules, and exact occurrences do not already perform?
 ```
 
-Ordinary material can be limited. This investigation does not dispute exact
-bounds. It tests whether every Responsibility, relation, result, and Standing
-coordinate also requires one constitutional list named `limits`.
+This investigation tests whether Seed has any grammar for `limit` or `limits`.
+An exact source boundary, completeness boundary, result boundary, count
+boundary, Scope, or Locality is its own coordinate. None needs a second concept
+that groups it with the others.
 
 ## 1. Active grammar names no limits physiology
 
@@ -335,10 +336,10 @@ Disposition: not established.
 ## 8. Exact conclusion
 
 ```text
-ordinary English limit                    useful
-exact bounded coordinate                  real
+limit / limits                            not Seed grammar
+exact named boundaries and coordinates    established separately
 universal constitutional limits list      unsupported compression
-negative limits prose                     blacklist behavior
+negative limits prose                     unsupported denial
 positive limits prose                     duplicate description
 ```
 
@@ -348,8 +349,7 @@ The smallest warranted build is:
 remove `limits` from universal Book and machine grammar
 remove runtime limits prose and its copy/equality checks
 retain every exact boundary, Scope, Locality, rule,
-occurrence_limit, known loss, conflict, and Unknown coordinate
-prove each real bound through its own existing reader
+occurrence_count_boundary, known loss, conflict, and Unknown coordinate
 add no replacement coordinate
 add no compatibility material
 ```

@@ -763,7 +763,7 @@ def test_first_exact_material_records_pair_counts_without_prior_pair_measurement
     ab_assertions = tuple(
         assertion
         for assertion in assertions or ()
-        if assertion.representation == (ord("a"), ord("b"))
+        if assertion.content == (ord("a"), ord("b"))
     )
     count_assertion = next(
         assertion for assertion in ab_assertions if assertion.result == "count"

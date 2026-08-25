@@ -15,7 +15,7 @@ exact material --Locality--> this Seed
 One exact Yield relation carries the Measurement Act occurrence as first
 subject and one result as second subject. The result preserves its exact rule, subjects, source occurrences,
 completeness boundary, findings,
-Scope, Locality, limits, conflicts, and Unknown.
+Scope, Locality, conflicts, and Unknown.
 
 Each exact Measurement Responsibility branch carries one responsible Standing
 boundary.
@@ -40,7 +40,7 @@ preserves every exact pair-position reference for that byte occurrence in source
 
 One Responsibility to preserve one Candidate is a branch of current Standing
 carrying one exact addressed source result. The Candidate result preserves its
-exact source references, Scope, Locality, provenance, limits, and
+exact source references, Scope, Locality, provenance, and
 Unknown.
 
 ### 01.Source.E.1 — Candidate results required by one exact rule

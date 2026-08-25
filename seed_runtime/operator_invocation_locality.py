@@ -127,10 +127,6 @@ def _assignment_material(
             "destination_locality_identity": destination_locality_identity,
             "operator_material_occurrence_reference": command.identity,
         },
-        "limits": [
-            "one operator material occurrence establishes one new destination Locality",
-            "the relation carries no operator Standing into the destination Locality",
-        ],
         "unknown": [],
     }
 

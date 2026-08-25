@@ -102,7 +102,7 @@ def _fixture(
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identity=recurrence.assertion_identity,
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=16,
+        occurrence_count_boundary=16,
     )
     return ledger, locality, pair, recurrence, source, finding
 
@@ -290,7 +290,7 @@ def test_corrupted_assignment_occurrence_cannot_authorize_the_act():
             ledger, locality_identity=locality
         ),
     )
-    assignment.material["occurrence_limit"] += 1
+    assignment.material["occurrence_count_boundary"] += 1
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
         get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -569,7 +569,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=identity,
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=through,
         )
         for identity in recurrence_identities
@@ -633,7 +633,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identities=recurrence_identities,
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=16,
+        occurrence_count_boundary=16,
         through=through,
     )
 
@@ -653,7 +653,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
             finding.source_material_acquisition_occurrence_identity,
             finding.source_locality_identity,
             finding.completeness_boundary.identity,
-            finding.occurrence_limit,
+            finding.occurrence_count_boundary,
         )
         for finding in measured
     } == {(source.identity, source.locality_identity, through.identity, 16)}
@@ -839,7 +839,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 pair_measurement_occurrence_identity=pair.identity,
                 recurrence_assertion_identities=supplied,
                 source_material_acquisition_occurrence_identity=source.identity,
-                occurrence_limit=16,
+                occurrence_count_boundary=16,
                 through=through,
             )
     with pytest.raises(ValueError, match="entered one result twice"):
@@ -851,7 +851,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 recurrence.assertion_identity,
             ),
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=through,
         )
     count_identity = recurrence.support_assertion_references[0][
@@ -863,7 +863,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(count_identity,),
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=through,
         )
     with pytest.raises(TypeError, match="one exact boundary"):
@@ -872,7 +872,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(recurrence.assertion_identity,),
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=BoundarySubclass(through.identity),
         )
     with pytest.raises(ValueError, match="outside its exact boundary"):
@@ -881,7 +881,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identities=(recurrence.assertion_identity,),
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=ledger.append_boundary_through_occurrence(pair.identity),
         )
 
@@ -903,7 +903,7 @@ def test_same_boundary_pair_subjects_keep_each_yield_relation_distinct():
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identities=recurrence_identities,
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=16,
+        occurrence_count_boundary=16,
         through=ledger.append_boundary(),
     )
     results = tuple(_record(ledger, locality, finding)[1] for finding in findings)
@@ -954,22 +954,22 @@ def test_act_occurrence_has_inputs_and_responsibility_but_no_result_finding():
     } & set(act.material)
 
 
-def test_occurrence_limit_is_explicit_and_preserves_exact_known_loss():
+def test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss():
     ledger, locality, pair, recurrence, source, _finding = _fixture()
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_identity=recurrence.assertion_identity,
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=2,
+        occurrence_count_boundary=2,
     )
     _act, result = _record(ledger, locality, finding)
 
     assert finding.occurrences == ((1, 0), (1, 6))
     assert finding.available_occurrence_count == 4
-    assert result.material["occurrence_limit"] == 2
+    assert result.material["occurrence_count_boundary"] == 2
     assert result.material["known_loss"] == [
-        "pair occurrences beyond the exact occurrence limit are not carried"
+        "pair occurrences beyond the exact occurrence count boundary are not carried"
     ]
 
 
@@ -1042,7 +1042,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=recurrence.assertion_identity,
             source_material_acquisition_occurrence_identity=other.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
         )
     boundary_before_source = ledger.append_boundary_through_occurrence(pair.identity)
     with pytest.raises(ValueError, match="outside its exact boundary"):
@@ -1051,7 +1051,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=recurrence.assertion_identity,
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
             through=boundary_before_source,
         )
 
@@ -1067,7 +1067,7 @@ def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use(
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_identity=count_identity,
             source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_limit=16,
+            occurrence_count_boundary=16,
         )
     act, _result = _record(ledger, locality, finding)
     with pytest.raises(ValueError, match="already has a result"):
@@ -1113,10 +1113,10 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
     act, result = _record(ledger, locality, finding)
 
     if crossing == "act_occurrence":
-        act.material["occurrence_limit"] += 1
+        act.material["occurrence_count_boundary"] += 1
     elif crossing == "yield_relation":
         yield_relation = ledger.get(result.material["yield_relation_identity"])
-        yield_relation.material["result"]["occurrence_limit"] += 1
+        yield_relation.material["result"]["occurrence_count_boundary"] += 1
     elif crossing == "recorded_result":
         result.material["assertions"][0]["dimensions"]["content"][
             "first_position"
@@ -1153,7 +1153,7 @@ PYTEST_ADMISSION = (
     test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
     test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
     test_act_occurrence_has_inputs_and_responsibility_but_no_result_finding,
-    test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
+    test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss,
     test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
     test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing,
     test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence,
@@ -1175,7 +1175,7 @@ FIDELITY_DISTINCTIONS = {
         test_public_assignment_read_still_reconstructs_prior_standing,
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
-        test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
+        test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss,
         test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence,
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,

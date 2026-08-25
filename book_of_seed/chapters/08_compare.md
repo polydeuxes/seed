@@ -3,7 +3,7 @@
 ### 04.Compare — Exact subjects
 
 A Compare Responsibility carries its exact subjects, rule, Scope,
-Locality, limits, conflicts, and Unknown. Each subject requires its exact
+Locality, conflicts, and Unknown. Each subject requires its exact
 Applicability result and Participation relation to the Compare Act occurrence.
 Each boundary with required Admission requires its exact Admission occurrence prior
 to Participation.
@@ -22,7 +22,7 @@ Participation.
 
 The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references, the added occurrence, provenance,
-Scope, Locality, limits, conflicts, and Unknown.
+Scope, Locality, conflicts, and Unknown.
 
 ### 04.Compare.B — Ordered relation path and pair findings
 
@@ -34,8 +34,7 @@ Each input requires its exact Applicability result and Participation relation.
 Each required Admission requires its exact occurrence prior to Participation.
 
 The result preserves each source reference, ordered path roles, pair subjects,
-complete finding references, Scope, Locality, limits, conflicts,
-and Unknown.
+complete finding references, Scope, Locality, conflicts, and Unknown.
 
 ### 04.Compare.C — Candidate coordinates
 

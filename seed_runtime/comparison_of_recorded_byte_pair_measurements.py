@@ -785,11 +785,6 @@ def _assignment_material(
                 "operator_locality_identity"
             ],
         },
-        "limits": [
-            "comparison establishes no source relation",
-            "comparison establishes no represented relation",
-            "comparison establishes no Admission or Applicability for another Act",
-        ],
         "unknown": [
             "what the measured difference represents: Unknown"
         ],
@@ -1145,9 +1140,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(act.material["scope"]),
         "standing": "applicable",
-        "limits": [
-            "Applicability establishes no Participation or comparison result"
-        ],
         "unknown": [
             "what the compared difference represents: Unknown"
         ],
@@ -1173,7 +1165,6 @@ def _recorded_applicability_result_material(
         "comparison_rule": material["comparison_rule"],
         "scope": deepcopy(material["scope"]),
         "standing": material["standing"],
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
@@ -1239,7 +1230,7 @@ def _applicability_reading(
     act, assignment_reading = (
         _applicability_act_reading(
             ledger,
-            event.material.get("act_occurrence_identity"),
+            event.material.get("act_occurrence_event_identity"),
             assignment_reading=assignment_reading,
         )
     )
@@ -1553,11 +1544,6 @@ def _comparison_result_material(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
         "scope": deepcopy(act.material["scope"]),
-        "limits": [
-            "matching content establishes no corroboration or truth",
-            "difference establishes no causal source relation or meaning",
-            "comparison result establishes no Applicability for another Act",
-        ],
         "unknown": [
             "what each measured match or difference represents: Unknown"
         ],
@@ -1589,7 +1575,6 @@ def _recorded_comparison_result_material(
         "comparison_rule": material["comparison_rule"],
         "findings": deepcopy(material["findings"]),
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
@@ -1730,7 +1715,7 @@ def _recorded_pair_measurement_comparison_reading(
     act, assignment_reading, _applicability = (
         _comparison_act_reading(
             ledger,
-            event.material.get("act_occurrence_identity"),
+            event.material.get("act_occurrence_event_identity"),
             assignment_reading=assignment_reading,
         )
     )

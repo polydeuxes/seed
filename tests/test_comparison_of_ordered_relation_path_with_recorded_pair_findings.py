@@ -125,17 +125,17 @@ def _record_path(ledger, pair_measurement, source):
         ledger, pair_measurement.identity
     )
     recurrence = {
-        assertion.representation: assertion.assertion_identity
+        assertion.content: assertion.assertion_identity
         for assertion in assertions or ()
         if assertion.result == "recurrence"
-        and assertion.representation in {(97, 98), (98, 99)}
+        and assertion.content in {(97, 98), (98, 99)}
     }
     findings = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
         recurrence_assertion_identities=(recurrence[(97, 98)], recurrence[(98, 99)]),
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=16,
+        occurrence_count_boundary=16,
         through=ledger.append_boundary(),
     )
     results = []
@@ -643,7 +643,7 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
 
     assert len(results) == len(acts) == 2
     assert tuple(
-        result.material["act_occurrence_identity"] for result in results
+            result.material["act_occurrence_event_identity"] for result in results
     ) == tuple(act.identity for act in acts)
     assert len(
         {

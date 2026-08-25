@@ -138,20 +138,20 @@ def _record_byte_measurement_assignment_and_act(
         ("recurrence", {"recurrence_established": True}),
     ),
 )
-def test_fixed_pair_identity_shape_equals_the_general_canonical_identity(
+def test_fixed_pair_identity_shape_equals_the_general_exact_identity(
     result, content
 ):
-    representation = (0, 255)
+    exact_pair = (0, 255)
     scope = {"source_localities": ["source-λ", "source-2"]}
     subject = {
-        "representation": list(representation),
+        "content": list(exact_pair),
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
     }
 
     assert _pair_assertion_identity(
         result=result,
-        representation=representation,
-        canonical_scope=json.dumps(
+        exact_pair=exact_pair,
+        exact_scope_json=json.dumps(
             scope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         ),
         content=content,
@@ -896,7 +896,7 @@ def test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occ
         for value in expected_totals
     }
     assert {
-        item.representation: (item.occurrences_carrying, item.count)
+        item.content: (item.occurrences_carrying, item.count)
         for item in measured.counts
     } == {
         value: (expected_carrying[value], count)
@@ -998,7 +998,7 @@ def test_material_appended_after_act_occurrence_cannot_enter_its_result():
         act_occurrence_event_identity=act_occurrence.identity,
     )
     counts = {
-        item.representation: item.material["dimensions"]["content"]["count"]
+        item.content: item.material["dimensions"]["content"]["count"]
         for item in assertions_of_recorded_byte_measurement(ledger, result.identity)
         if item.result == "count"
     }
@@ -1057,7 +1057,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     measured = measure_byte_counts(
         _ledger(), source_localities=("source",)
     )
-    counts = {item.representation: item for item in measured.counts}
+    counts = {item.content: item for item in measured.counts}
 
     # UTF-8 猫 = e7 8c ab and 狗 = e7 8b 97.  No character boundary is used or
     # asserted; these are the exact bytes Seed recorded.
@@ -1090,9 +1090,9 @@ def test_count_and_recurrence_are_distinct_results():
     )
     by_byte = {}
     for assertion in event.material["assertions"]:
-        representation = assertion["assertion_subject"].get("representation")
-        if representation is not None:
-            by_byte.setdefault(representation, []).append(assertion)
+        content = assertion["assertion_subject"].get("content")
+        if content is not None:
+            by_byte.setdefault(content, []).append(assertion)
 
     assert [item["result"] for item in by_byte[97]] == ["count"]
     assert by_byte[97][0]["dimensions"]["content"]["count"] == 1
@@ -1109,7 +1109,7 @@ def test_recurrence_exists_only_above_one():
     results = [
         item["result"]
         for item in event.material["assertions"]
-        if item["assertion_subject"].get("representation") == 97
+        if item["assertion_subject"].get("content") == 97
     ]
     assert results == ["count", "recurrence"]
 
@@ -1159,7 +1159,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     count = next(
         item
         for item in read
-        if item.representation == 231 and item.result == "count"
+        if item.content == 231 and item.result == "count"
     )
     assert count.material["dimensions"]["content"] == {
         "input_count": 2,
@@ -1172,7 +1172,6 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert count.material["dimensions"]["source_provenance"]
     assert count.material["unknown"]
     assert count.material["conflicts"] == "Unknown"
-    assert count.material["limits"]
     assert count.support_assertion_references == (
         {
             "recorded_occurrence_identity": event.identity,
@@ -1192,7 +1191,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     # result by transmuting lists to tuples or dicts to proxy objects.
     represented = Event(
         identity="re-represented",
-        kind="test.representation",
+        kind="test.content",
         material=count.material,
     )
     assert type(represented.material) is dict
@@ -1252,7 +1251,7 @@ def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_me
         localities=("source",),
         boundary=boundary,
     )
-    assert {item.representation: item.count for item in measured.counts} == {97: 1}
+    assert {item.content: item.count for item in measured.counts} == {97: 1}
 
 
 def test_a_missing_declared_locality_is_refused():
@@ -1292,7 +1291,7 @@ def test_every_overlapping_byte_position_pair_is_measured():
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(item["assertion_subject"]["representation"]): item["dimensions"]["content"]
+            tuple(item["assertion_subject"]["content"]): item["dimensions"]["content"]
         for item in event.material["assertions"]
         if item["result"] == "count"
     }
@@ -1312,7 +1311,7 @@ def test_byte_position_pair_results_follow_first_observed_pair_positions():
     )
 
     assert [
-        tuple(assertion["assertion_subject"]["representation"])
+        tuple(assertion["assertion_subject"]["content"])
         for assertion in event.material["assertions"]
         if assertion["result"] == "count"
     ] == [(116, 97), (97, 116), (97, 10)]
@@ -1327,7 +1326,7 @@ def test_position_pairs_never_cross_material_acquisition_boundaries():
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(item["assertion_subject"]["representation"]): item["dimensions"]["content"][
+        tuple(item["assertion_subject"]["content"]): item["dimensions"]["content"][
             "count"
         ]
         for item in event.material["assertions"]
@@ -1347,7 +1346,7 @@ def test_position_pair_measurement_remains_byte_not_character_based():
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(item["assertion_subject"]["representation"])
+        tuple(item["assertion_subject"]["content"])
         for item in event.material["assertions"]
         if item["result"] == "count"
     }
@@ -1368,9 +1367,9 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
     by_pair = {}
     for assertion in event.material["assertions"]:
-        representation = assertion["assertion_subject"].get("representation")
-        if representation is not None:
-            by_pair.setdefault(tuple(representation), []).append(assertion)
+        content = assertion["assertion_subject"].get("content")
+        if content is not None:
+            by_pair.setdefault(tuple(content), []).append(assertion)
 
     assert [item["result"] for item in by_pair[(116, 97)]] == ["count", "recurrence"]
     assert [item["result"] for item in by_pair[(97, 10)]] == ["count"]
@@ -1395,7 +1394,6 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknown"]
-    assert applicability["input_limits"]
     assert applicability["conflicts"] == []
     assert applicability["input_standing"] == {
         "recorded_measurement_result_occurrence_identity": source.identity,
@@ -1424,7 +1422,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     )
     assert read
     assert all(item.recorded_occurrence_identity == event.identity for item in read)
-    assert {item.representation for item in read if item.representation} == {
+    assert {item.content for item in read if item.content} == {
         (116, 97),
         (97, 116),
         (97, 10),
@@ -1432,7 +1430,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     count = next(
         item
         for item in read
-        if item.representation == (116, 97) and item.result == "count"
+        if item.content == (116, 97) and item.result == "count"
     )
     detached = count.material
     detached["dimensions"]["standing"] = "unsupported"
@@ -1544,7 +1542,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
 
 
 @pytest.mark.parametrize(
-    "representation",
+    "content",
     (
         [116],
         [116, 256],
@@ -1555,7 +1553,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         [True, 97],
     ),
 )
-def test_pair_validation_requires_one_exact_ordered_representation(representation):
+def test_pair_validation_requires_one_exact_ordered_content(content):
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
@@ -1564,7 +1562,7 @@ def test_pair_validation_requires_one_exact_ordered_representation(representatio
         recording_locality_identity="measurement",
     )
     assertion = event.material["assertions"][0]
-    assertion["assertion_subject"]["representation"] = representation
+    assertion["assertion_subject"]["content"] = content
     assertion["dimensions"]["identity"] = _identity(
         result=assertion["result"],
         subject=assertion["assertion_subject"],
@@ -1693,7 +1691,7 @@ def test_pair_assignment_enters_current_standing_before_distinct_acts_and_result
     applicability_act = ledger.get(
         applicability.material["act_occurrence_identity"]
     )
-    measurement_act = ledger.get(result.material["act_occurrence_identity"])
+    measurement_act = ledger.get(result.material["act_occurrence_event_identity"])
     standing = read_operator_locality_standing_through(
         ledger,
         locality_identity="measurement",
@@ -1914,7 +1912,7 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
         recording_locality_identity="measurement",
     )
     counts = {
-        tuple(assertion["assertion_subject"]["representation"]): assertion[
+        tuple(assertion["assertion_subject"]["content"]): assertion[
             "dimensions"
         ]["content"]["count"]
         for assertion in result.material["assertions"]
@@ -2663,7 +2661,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     count = next(
         assertion
         for assertion in event.material["assertions"]
-        if assertion["assertion_subject"]["representation"] == [116, 97]
+        if assertion["assertion_subject"]["content"] == [116, 97]
     )
     count["dimensions"]["content"] = {
         "input_count": 2,
@@ -2790,7 +2788,7 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
 
 
 PYTEST_ADMISSION = (
-    test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
+    test_fixed_pair_identity_shape_equals_the_general_exact_identity,
     test_act_occurrence_is_observable_before_yield_and_result,
     test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_identities,
     test_stale_and_shaped_standing_cannot_authorize_exact_byte_act,
@@ -2833,7 +2831,7 @@ PYTEST_ADMISSION = (
     test_recorded_pair_results_replay_the_complete_bounded_source_read,
     test_same_locality_pair_result_reuses_one_exact_prior_standing,
     test_pair_validation_refuses_a_self_consistent_truncated_result_inputs,
-    test_pair_validation_requires_one_exact_ordered_representation,
+    test_pair_validation_requires_one_exact_ordered_content,
     test_pair_validation_does_not_perform_the_pair_measurement_again,
     test_pair_validation_refuses_unsupported_input_applicability,
     test_zero_measured_pairs_is_a_lawful_exact_result,
@@ -2874,7 +2872,7 @@ PYTEST_ADMISSION = (
 
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.D", "result"): (
-        test_fixed_pair_identity_shape_equals_the_general_canonical_identity,
+        test_fixed_pair_identity_shape_equals_the_general_exact_identity,
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_material_acquisition_and_reads_independently,
@@ -2912,6 +2910,6 @@ FIDELITY_DISTINCTIONS = {
         test_pair_applicability_reader_revalidates_exact_input_standing,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (
-        test_pair_validation_requires_one_exact_ordered_representation,
+        test_pair_validation_requires_one_exact_ordered_content,
     ),
 }

@@ -613,9 +613,6 @@ def _assignment_material(
             ),
             "recording_standing_boundary_identity": standing_boundary_identity,
         },
-        "limits": [
-            "assignment is bounded to this exact material acquisition result and source boundary"
-        ],
         "unknown": [
             "Participation or content of each measured byte pair: Unknown"
         ],
@@ -1381,10 +1378,6 @@ def _assertion(
         "conflicts": "Unknown",
         "unknown": [
             "Participation or content of this byte pair: Unknown"
-        ],
-        "limits": [
-            "first and second position coordinates bounded by one exact material acquisition result "
-            "and source boundary"
         ],
     }
 

@@ -3,7 +3,7 @@
 ### 06.Locality.A — Exact Locality relation
 
 Locality is one exact relation with first and second exact subjects. It requires its
-relation occurrence, Responsibility, Act, Scope, limits, and
+relation occurrence, Responsibility, Act, Scope, and
 Unknown.
 
 Each Locality relation requires a separate relation occurrence.
@@ -13,7 +13,7 @@ Each Locality relation requires a separate relation occurrence.
 One Responsibility to preserve the prior Standing boundary at one new
 Locality is a branch of current Standing carrying one exact addressed occurrence.
 The Responsibility carries the addressed occurrence, prior Standing boundary,
-destination Locality, exact Act, Scope, limits, and Unknown.
+destination Locality, exact Act, Scope, and Unknown.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
@@ -25,8 +25,7 @@ One Responsibility to establish a direct Locality relation from the recorded
 result to one new Locality is a branch of current Standing carrying one exact
 recorded Standing boundary reference.
 The result preserves the recorded reference, destination Locality, relation
-occurrence, Responsibility, Act occurrence, Yield, Scope, limits,
-and Unknown.
+occurrence, Responsibility, Act occurrence, Yield, Scope, and Unknown.
 
 ### 06.Locality.D — Operator invocation Locality
 
@@ -36,7 +35,7 @@ carrying one exact operator material occurrence.
 
 The result preserves the operator occurrence, source Locality, invocation
 Locality, relation occurrence, Responsibility, Act occurrence, Yield,
-Scope, limits, and Unknown.
+Scope, and Unknown.
 
 Material later supplied at the invocation Locality preserves exact provenance
 to the operator occurrence and relation result.

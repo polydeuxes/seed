@@ -513,7 +513,6 @@ def test_act_refuses_assignment_not_carried_by_supplied_standing():
         "scope",
         "standing_boundary_occurrence_reference",
         "standing",
-        "limits",
         "unknown",
     ),
 )
@@ -551,7 +550,6 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
         "locality_relation_occurrence_identity",
         "known_loss",
         "standing",
-        "limits",
         "unknown",
         "act_occurrence_identity",
         "yield_relation_identity",

@@ -99,7 +99,7 @@ to four current terms and to no single one of them.
 Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
 and points here without importing Rosetta admission into active law. In
 particular, Rosetta admits the `warrant` word family while Book proper names
-the exact source and occurrence coordinates, Scope, preserved limits, and
+the exact source and occurrence coordinates, Scope, and
 support relation.
 
 The Book's Responsibility spine supplies the ordering. Rosetta words hang

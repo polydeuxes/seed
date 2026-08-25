@@ -603,8 +603,8 @@ def _assertion_locality_movement_occurrence_coordinates(
             "source_standing_boundary_identity"
         ],
         "responsibility_assignment_reference": deepcopy(assignment_reference),
-        "act_occurrence_identity": event.material[
-            "act_occurrence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
         "movement_act_occurrence_identity": event.material[
             "movement_act_occurrence_identity"
@@ -1024,7 +1024,7 @@ def advance_operator_locality_standing(
 
     The result is fully recomputable
     from the ledger and is not itself recorded: it returns only standings,
-    limits, and Unknown the Locality's events already carry.  An empty
+    and Unknown the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
     No Yield is established for relation Candidates here.
     """

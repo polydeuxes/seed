@@ -11,7 +11,7 @@ current Standing
     ├── responsible boundary
     ├── subject or material
     ├── exact Act
-    ├── Scope / Locality / limits
+    ├── Scope / Locality
     ├── source / provenance where required
     └── exact support relations where required
         ↓
@@ -32,7 +32,7 @@ exact subject ── Support → exact input to Act position
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact responsible occurrence, Scope, Locality, limits, and
+its exact responsible occurrence, Scope, Locality, and
 Unknown. These are not every relation about which Seed may carry an Assertion
 or Standing.
 
@@ -83,8 +83,8 @@ Book           this constitutional language + ordered clause coordinates + this 
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
 Composite      one communicative address for several exact coordinates; each coordinate still requires its own responsible physiology
 Name / label / kind / shape ordinary ways to point at material or a grouping; none supplies the subject, relation, Act, occurrence, or Standing it suggests
-Evidence       communicative shorthand that exact material, source and occurrence references, Scope, limits, and a responsible relation support an Assertion; no separate Evidence coordinate
-Authority      retired compression of responsible boundary, subject, exact Act and rule, Scope, Locality, limits, source, provenance, occurrence, Yield, result, and current Standing; no separate Authority coordinate
+Evidence       communicative shorthand that exact material, source and occurrence references, Scope, and a responsible relation support an Assertion; no separate Evidence coordinate
+Authority      retired compression of responsible boundary, subject, exact Act and rule, Scope, Locality, source, provenance, occurrence, Yield, result, and current Standing; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
@@ -109,12 +109,12 @@ Claim          asserted content
 Fact           Assertion described through its bounded Standing
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
-Warrant        exact support relation with source and occurrence references, Scope, and preserved limits for one Assertion or assignment; composite only, no new relation by identity
+Warrant        exact support relation with source and occurrence references and Scope for one Assertion or assignment; composite only, no new relation by identity
 Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
 Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
-Capability     exact Act + Responsibility + Scope + Locality + limits + source and occurrence references
+Capability     exact Act + Responsibility + Scope + Locality + source and occurrence references
 Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
 Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
@@ -157,14 +157,14 @@ exact coordinates doing the work:
 
 These words are ordinary compression. Expand each into its exact subject,
 relation, Responsibility, responsible boundary, Applicability, Participation,
-Act occurrence, source and occurrence references, Scope, limits, Unknown,
+Act occurrence, source and occurrence references, Scope, Unknown,
 result, and Standing coordinates.
 The word alone establishes none of them.
 
 ### Fail / fails / failed
 
 These forms compress one exact Act occurrence plus a bounded failure Assertion
-or result, source and occurrence references, Scope, and preserved limits. They do not mean
+or result, source and occurrence references, and Scope. They do not mean
 absence of an Act occurrence, Stop, or completion by identity.
 
 ### Shared
@@ -172,7 +172,7 @@ absence of an Act occurrence, Stop, or completion by identity.
 `Shared` is an auxiliary composite only. For exact named subjects and one
 exact named coordinate, occurrence, boundary, or label, each subject carries
 one exact reference of that subject through its own exact relation, source and
-occurrence references, Scope, and limits. The word alone establishes no identity,
+occurrence references and Scope. The word alone establishes no identity,
 equality, sameness, Locality, Participation, Applicability, Standing,
 represented relation, or Act.
 
@@ -182,7 +182,7 @@ These forms compress one exact address or reference, or material asserting one
 exact relation from X to Y. An address or reference carries coordinates and
 establishes no constitutional relation. Material asserting the relation
 requires one responsible occurrence, source coordinates, Scope, provenance,
-limits, and Unknown before Standing. The forms alone establish no identity,
+and Unknown before Standing. The forms alone establish no identity,
 equality, sameness, subject, occurrence, represented relation, or truth.
 
 ### Does
@@ -247,7 +247,7 @@ establishes no later count relation or count by identity.
 ### Counted
 
 `Counted` is an auxiliary composite only: one exact occurrence reference in
-one exact count finding with Evidence, Scope, and limits. The word alone
+one exact count finding with Evidence and Scope. The word alone
 establishes no change of occurrence or identity.
 
 `Grammar distinctions` are bounded discriminators:

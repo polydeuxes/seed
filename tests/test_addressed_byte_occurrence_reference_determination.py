@@ -209,9 +209,8 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "determination_rule",
         "completeness_boundary",
         "ordered_assertion_references",
-        "limits",
         "unknown",
-        "act_occurrence_identity",
+        "act_occurrence_event_identity",
         "yield_relation_identity",
     }
     assert not {"exact_pair", "first_position", "second_position"} & set(material)

@@ -144,10 +144,6 @@ def _assignment_material(
             "destination_locality_identity": destination_locality_identity,
         },
         "result_boundary_identity": result_boundary_identity,
-        "limits": [
-            "this assignment is bounded to one direct occurrence and result boundary",
-            "availability at this Locality is not Applicability or Participation",
-        ],
         "unknown": [
             "Applicability of every carried subject to another Act: Unknown"
         ],
@@ -237,10 +233,6 @@ def _result_material(
         "unknown": [
             "Applicability of every carried subject to another Act: Unknown"
         ],
-        "limits": [
-            "availability at this exact Locality is not Applicability or Participation",
-            "this direct Locality relation carries no other Locality relation",
-        ],
     }
 
 
@@ -277,7 +269,6 @@ def _recorded_result_material(
         "locality_relation": result_material["locality_relation"],
         "standing": result_material["standing"],
         "unknown": result_material["unknown"],
-        "limits": result_material["limits"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
     }

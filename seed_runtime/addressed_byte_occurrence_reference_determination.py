@@ -76,12 +76,6 @@ DETERMINATION_RULE = (
     "addressed source-byte position-coordinate reference and no other Assertion "
     "reference, in source occurrence order"
 )
-LIMITS = [
-    "bounded to one exact direct pair-position Measurement result, source "
-    "occurrence, Locality, completeness boundary, and addressed coordinate",
-    "establishes no recurrence, shared position relation, represented relation, "
-    "or other relation",
-]
 UNKNOWN = [
     "what the addressed byte occurrence represents: Unknown",
     "what each carried Assertion reference represents: Unknown",
@@ -392,7 +386,6 @@ def _assignment_material(
             coordinate_reference=coordinate_reference,
             standing_boundary_identity=standing_boundary_identity,
         ),
-        "limits": list(LIMITS),
         "unknown": list(UNKNOWN),
     }
 
@@ -666,7 +659,6 @@ def _applicability_act_material(
             "determination_act_identity"
         ],
         "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
@@ -878,7 +870,6 @@ def _applicability_result_material(
             assignment=assignment, source_result=source_result
         ),
         "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
@@ -1026,7 +1017,6 @@ def _recorded_applicability_result_material(
         "determination_rule": material["determination_rule"],
         "applicability_finding": deepcopy(material["applicability_finding"]),
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,
@@ -1287,7 +1277,6 @@ def _determination_act_material(
         "determination_rule": DETERMINATION_RULE,
         "result_identity": assignment.material["determination_result_identity"],
         "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
@@ -1489,7 +1478,6 @@ def _determination_result_material(
         "ordered_assertion_references": [
             reference.assertion_reference for reference in references
         ],
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
@@ -1523,7 +1511,6 @@ def _recorded_determination_result_material(
         "ordered_assertion_references": deepcopy(
             material["ordered_assertion_references"]
         ),
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,

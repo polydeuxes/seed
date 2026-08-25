@@ -524,8 +524,6 @@ legitimacy
 length
 let
 lexicon
-limit
-limits
 live
 local
 localities
@@ -989,7 +987,6 @@ uninstantiated
 unique
 unknown
 unless
-unlimited
 unmatched
 unmet
 unreachable

@@ -206,7 +206,7 @@ def _fixture(
             recurrence_by_pair[(ord("b"), ord("c"))],
         ),
         source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_limit=16,
+        occurrence_count_boundary=16,
         through=ledger.append_boundary(),
     )
     results = []

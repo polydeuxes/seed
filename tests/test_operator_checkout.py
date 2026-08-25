@@ -39,7 +39,7 @@ def _command(exact_bytes=b"/checkout\n", arguments=b""):
     return AddressedOperatorCommand(
         command_identity="command",
         locality_identity="source",
-        addressed_at_representation_event_identity="representation",
+        addressed_at_standing_boundary_event_identity="standing-boundary",
         frame=OperatorCommandFrame(
             exact_bytes=exact_bytes,
             name=b"checkout",
@@ -280,7 +280,6 @@ def test_one_relation_act_cannot_yield_twice():
         "participation",
         "responsibility_assignment_reference",
         "scope",
-        "limits",
         "unknown",
         "yield_relation_identity",
     ),
@@ -375,21 +374,6 @@ def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
     assert "pointer" not in book
 
 
-def test_relation_establishes_no_cross_examination_occurrence():
-    ledger = EventLedger()
-    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
-    result = record_recorded_standing_boundary_locality_result(
-        ledger,
-        act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing)
-        ).identity,
-    )
-    recorded = get_recorded_standing_boundary_locality(ledger, result.identity)
-
-    assert "the relation establishes no Compare" in recorded["limits"]
-    assert not [event for event in ledger.list() if "compare" in event.kind.lower()]
-
-
 def test_prior_relation_carrier_must_remain_an_identity_dictionary():
     ledger = EventLedger()
     _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
@@ -425,6 +409,5 @@ PYTEST_ADMISSION = (
     test_anchor_and_relation_survive_restart_without_copying_source_history,
     test_durable_native_values_do_not_import_operator_or_memory_shorthand,
     test_rosetta_keeps_checkout_and_pointers_as_translation_only,
-    test_relation_establishes_no_cross_examination_occurrence,
     test_prior_relation_carrier_must_remain_an_identity_dictionary,
 )

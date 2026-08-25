@@ -147,10 +147,6 @@ def _assignment_material(
         "standing_boundary_occurrence_reference": standing_boundary_reference[
             "recorded_occurrence_identity"
         ],
-        "limits": [
-            "this assignment is bounded to one direct Locality relation",
-            "the relation carries no addressed Standing",
-        ],
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
         ],
@@ -236,11 +232,6 @@ def _result_material(act: Event) -> dict[str, Any]:
             ],
         },
         "standing": "preserved",
-        "limits": [
-            "this direct Locality relation carries no other Locality relation",
-            "the relation carries no addressed Standing",
-            "the relation establishes no Compare",
-        ],
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
         ],
@@ -275,7 +266,6 @@ def _recorded_result_material(
         "participation": deepcopy(result_material["participation"]),
         "locality_relation": deepcopy(result_material["locality_relation"]),
         "standing": result_material["standing"],
-        "limits": list(result_material["limits"]),
         "unknown": list(result_material["unknown"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,

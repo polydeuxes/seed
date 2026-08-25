@@ -261,7 +261,6 @@ def test_responsibility_coordinates_are_anatomy_not_assignment():
             "exact_Act",
             "Scope",
             "Locality",
-            "limits",
             "required_relations",
         ],
     }
@@ -426,7 +425,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "provenance",
             "Scope",
             "Locality",
-            "limits",
             "conflicts",
             "loss",
             "Unknown",

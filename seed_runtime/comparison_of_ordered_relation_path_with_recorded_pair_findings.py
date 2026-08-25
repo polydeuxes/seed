@@ -895,11 +895,6 @@ def _assignment_material(
             "locality_identity": inputs["locality_identity"],
             "standing_boundary_identity": boundary,
         },
-        "limits": [
-            "one exact pair subject under each input establishes no source relation",
-            "exact result carries recorded comparison findings",
-            "the result establishes no later relation or recurrence",
-        ],
         "unknown": [
             "what the relation of path and comparison findings represents: Unknown"
         ],
@@ -1169,7 +1164,6 @@ def _applicability_result_material(
         "comparison_rule": COMPARISON_RULE,
         "applicability": standing,
         "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
     }
 
@@ -1203,7 +1197,6 @@ def _recorded_applicability_result_material(
         "comparison_rule": result["comparison_rule"],
         "applicability": result["applicability"],
         "scope": deepcopy(result["scope"]),
-        "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1316,7 +1309,7 @@ def _read_applicability_result(
 ) -> tuple[Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
-        candidate.material.get("act_occurrence_identity")
+        candidate.material.get("act_occurrence_event_identity")
         if candidate is not None and type(candidate.material) is dict
         else None
     )
@@ -1533,10 +1526,6 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             "exact yielded ordered path and recorded comparison findings"
         ),
         "scope": {"locality_identity": inputs["locality_identity"]},
-        "limits": [
-            "recorded Standing carries comparison findings",
-            "the relation establishes no source relation or recurrence",
-        ],
         "unknown": [
             "what the relation of the ordered path and recorded comparison findings represents: Unknown"
         ],
@@ -1571,7 +1560,6 @@ def _compare_result_material(
         "comparison_rule": COMPARISON_RULE,
         "finding": _comparison_finding(inputs),
         "scope": deepcopy(assignment.material["scope"]),
-        "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
         "act_occurrence_event_identity": act.identity,
     }
@@ -1602,10 +1590,9 @@ def _recorded_compare_result_material(
         "comparison_rule": result["comparison_rule"],
         "finding": deepcopy(result["finding"]),
         "scope": deepcopy(result["scope"]),
-        "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
-        "act_occurrence_identity": result[
-            "act_occurrence_identity"
+        "act_occurrence_event_identity": result[
+            "act_occurrence_event_identity"
         ],
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1654,7 +1641,7 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
 ) -> dict[str, Any]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
-        candidate.material.get("act_occurrence_identity")
+        candidate.material.get("act_occurrence_event_identity")
         if candidate is not None and type(candidate.material) is dict
         else None
     )

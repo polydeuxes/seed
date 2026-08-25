@@ -114,8 +114,8 @@ def test_rosetta_admits_composite_support_relation_terms():
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
     roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
     assert (
-        "Warrant        exact support relation with source and occurrence references, "
-        "Scope, and preserved limits for one Assertion or assignment; composite only, no "
+        "Warrant        exact support relation with source and occurrence references and "
+        "Scope for one Assertion or assignment; composite only, no "
         "new relation by identity"
     ) in roots
 
@@ -134,7 +134,7 @@ def test_failure_is_book_material_and_performative_forms_are_rosetta_composites(
     roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
     assert (
         "These forms compress one exact Act occurrence plus a bounded failure "
-        "Assertion\nor result, source and occurrence references, Scope, and preserved limits."
+        "Assertion\nor result, source and occurrence references, and Scope."
     ) in roots
 
 
@@ -158,7 +158,7 @@ def test_standing_requires_the_exact_support_relation():
     )
     assert (
         "Standing for one exact subject requires an exact Responsibility, Act\n"
-        "occurrence, Yield, Scope, limits, and result for that subject."
+        "occurrence, Yield, Scope, and result for that subject."
     ) in chapter
 
 

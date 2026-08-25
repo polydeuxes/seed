@@ -58,7 +58,7 @@ RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
 )
 RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "each ordered occurrence of the exact Yield-carried byte pair in one exact "
-    "material acquisition result through one completeness boundary and occurrence limit"
+    "material acquisition result through one completeness boundary and occurrence count boundary"
 )
 SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "exact Yield-carried pair Assertion and exact later material acquisition result only"
@@ -84,7 +84,7 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "completeness_boundary",
         "pair_assertion_reference",
         "source_material_acquisition_occurrence_identity",
-        "occurrence_limit",
+        "occurrence_count_boundary",
         "available_occurrence_count",
         "known_loss",
         "assertions",
@@ -161,7 +161,7 @@ class FindingOfRecurrentBytePairOccurrencePositions(NamedTuple):
     source_material_acquisition_occurrence_identity: str
     source_locality_identity: str
     completeness_boundary: EventLedgerBoundary
-    occurrence_limit: int
+    occurrence_count_boundary: int
     available_occurrence_count: int
     occurrences: tuple[tuple[int, int], ...]
 
@@ -227,13 +227,13 @@ def _validate_finding(finding: FindingOfRecurrentBytePairOccurrencePositions) ->
         or not isinstance(finding.completeness_boundary, EventLedgerBoundary)
     ):
         raise ValueError("pair occurrence finding requires exact source coordinates")
-    if type(finding.occurrence_limit) is not int or finding.occurrence_limit <= 0:
-        raise ValueError("pair occurrence finding requires a positive exact limit")
+    if type(finding.occurrence_count_boundary) is not int or finding.occurrence_count_boundary <= 0:
+        raise ValueError("pair occurrence finding requires a positive exact count boundary")
     if (
         type(finding.available_occurrence_count) is not int
         or finding.available_occurrence_count < 0
         or finding.available_occurrence_count < len(finding.occurrences)
-        or len(finding.occurrences) > finding.occurrence_limit
+        or len(finding.occurrences) > finding.occurrence_count_boundary
     ):
         raise ValueError("pair occurrence finding carries an impossible count")
     if type(finding.occurrences) is not tuple:
@@ -443,7 +443,7 @@ def _finding_from_source_position_coordinates(
     source: Event,
     position_coordinates: tuple[tuple[int, ...], ...],
     boundary: EventLedgerBoundary,
-    occurrence_limit: int,
+    occurrence_count_boundary: int,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     first_byte, second_byte = pair_reference.exact_material
     first_position_coordinates = position_coordinates[first_byte]
@@ -460,17 +460,17 @@ def _finding_from_source_position_coordinates(
         for second_position in second_position_coordinates:
             if first_position == second_position:
                 continue
-            if len(found) == occurrence_limit:
+            if len(found) == occurrence_count_boundary:
                 break
             found.append((first_position, second_position))
-        if len(found) == occurrence_limit:
+        if len(found) == occurrence_count_boundary:
             break
     finding = FindingOfRecurrentBytePairOccurrencePositions(
         pair_reference=pair_reference,
         source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary=boundary,
-        occurrence_limit=occurrence_limit,
+        occurrence_count_boundary=occurrence_count_boundary,
         available_occurrence_count=available,
         occurrences=tuple(found),
     )
@@ -484,7 +484,7 @@ def _measure_through(
     pair_reference: ReferenceToRecordedRecurrentBytePair,
     source_material_acquisition_occurrence_identity: str,
     boundary: EventLedgerBoundary,
-    occurrence_limit: int,
+    occurrence_count_boundary: int,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
@@ -497,7 +497,7 @@ def _measure_through(
         source=source,
         position_coordinates=position_coordinates,
         boundary=boundary,
-        occurrence_limit=occurrence_limit,
+        occurrence_count_boundary=occurrence_count_boundary,
     )
 
 
@@ -507,13 +507,13 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     pair_measurement_occurrence_identity: str,
     recurrence_assertion_identity: str,
     source_material_acquisition_occurrence_identity: str,
-    occurrence_limit: int,
+    occurrence_count_boundary: int,
     through: EventLedgerBoundary | None = None,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     """Measure one yielded pair subject in one later exact material acquisition result."""
 
-    if type(occurrence_limit) is not int or occurrence_limit <= 0:
-        raise ValueError("pair occurrence Measurement requires a positive exact limit")
+    if type(occurrence_count_boundary) is not int or occurrence_count_boundary <= 0:
+        raise ValueError("pair occurrence Measurement requires a positive exact count boundary")
     pair_reference = reference_to_recorded_recurrent_byte_pair(
         ledger,
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
@@ -524,7 +524,7 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
         pair_reference=pair_reference,
         source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
         boundary=through or ledger.append_boundary(),
-        occurrence_limit=occurrence_limit,
+        occurrence_count_boundary=occurrence_count_boundary,
     )
 
 
@@ -534,7 +534,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     pair_measurement_occurrence_identity: str,
     recurrence_assertion_identities: tuple[str, ...],
     source_material_acquisition_occurrence_identity: str,
-    occurrence_limit: int,
+    occurrence_count_boundary: int,
     through: EventLedgerBoundary,
 ) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
     """Measure same-boundary pair subjects after one exact pair-result read."""
@@ -543,8 +543,8 @@ def measure_positions_for_recurrent_byte_pair_assertions(
         raise TypeError(
             "Measurement of same-boundary pair subjects requires one exact boundary"
         )
-    if type(occurrence_limit) is not int or occurrence_limit <= 0:
-        raise ValueError("pair occurrence Measurement requires a positive exact limit")
+    if type(occurrence_count_boundary) is not int or occurrence_count_boundary <= 0:
+        raise ValueError("pair occurrence Measurement requires a positive exact count boundary")
     references = _references_to_recorded_recurrent_byte_pairs(
         ledger,
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
@@ -562,7 +562,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
             source=source,
             position_coordinates=position_coordinates,
             boundary=through,
-            occurrence_limit=occurrence_limit,
+            occurrence_count_boundary=occurrence_count_boundary,
         )
         for reference in references
     )
@@ -610,19 +610,15 @@ def _responsibility_assignment_material(
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
-        "occurrence_limit": finding.occurrence_limit,
+        "occurrence_count_boundary": finding.occurrence_count_boundary,
         "standing_boundary_identity": standing_boundary_identity,
         "scope": {
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": (
                 finding.completeness_boundary.identity
             ),
-            "occurrence_limit": finding.occurrence_limit,
+            "occurrence_count_boundary": finding.occurrence_count_boundary,
         },
-        "limits": [
-            "assignment is bounded to the exact pair Assertion, material acquisition result, "
-            "completeness boundary, and occurrence limit"
-        ],
         "unknown": ["what the measured pair relation represents: Unknown"],
     }
 
@@ -772,8 +768,8 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         or not material["source_material_acquisition_occurrence_identity"]
         or type(material.get("completeness_boundary_identity")) is not str
         or not material["completeness_boundary_identity"]
-        or type(material.get("occurrence_limit")) is not int
-        or material["occurrence_limit"] <= 0
+        or type(material.get("occurrence_count_boundary")) is not int
+        or material["occurrence_count_boundary"] <= 0
         or type(material.get("standing_boundary_identity")) is not str
         or not material["standing_boundary_identity"]
     ):
@@ -818,7 +814,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             "source_material_acquisition_occurrence_identity"
         ],
         boundary=EventLedgerBoundary(material["completeness_boundary_identity"]),
-        occurrence_limit=material["occurrence_limit"],
+        occurrence_count_boundary=material["occurrence_count_boundary"],
     )
     expected = _responsibility_assignment_material(
         finding,
@@ -984,7 +980,7 @@ def _material_of_act_occurrence(
         "source_material_acquisition_occurrence_identity": (
             finding.source_material_acquisition_occurrence_identity
         ),
-        "occurrence_limit": finding.occurrence_limit,
+        "occurrence_count_boundary": finding.occurrence_count_boundary,
         "participation": _participation_in_measurement(
             finding,
             act_occurrence_identity=act_occurrence_identity,
@@ -1011,7 +1007,7 @@ def _validate_exact_finding_of_measurement(
         pair_reference=pair_reference,
         source_material_acquisition_occurrence_identity=finding.source_material_acquisition_occurrence_identity,
         boundary=finding.completeness_boundary,
-        occurrence_limit=finding.occurrence_limit,
+        occurrence_count_boundary=finding.occurrence_count_boundary,
     )
     if exact != finding:
         raise ValueError("pair occurrence finding differs from its exact inputs")
@@ -1164,10 +1160,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 "unknown": [
                     "what this ordered pair occurrence relation represents: Unknown"
                 ],
-                "limits": [
-                    "position is bounded by the exact source result, completeness "
-                    "boundary, and occurrence limit"
-                ],
             }
         )
     return assertions
@@ -1179,7 +1171,7 @@ def _material_of_result_of_measurement(
     assignment: Event,
 ) -> dict[str, Any]:
     known_loss = (
-        ["pair occurrences beyond the exact occurrence limit are not carried"]
+        ["pair occurrences beyond the exact occurrence count boundary are not carried"]
         if finding.available_occurrence_count > len(finding.occurrences)
         else []
     )
@@ -1210,7 +1202,7 @@ def _material_of_result_of_measurement(
         "source_material_acquisition_occurrence_identity": (
             finding.source_material_acquisition_occurrence_identity
         ),
-        "occurrence_limit": finding.occurrence_limit,
+        "occurrence_count_boundary": finding.occurrence_count_boundary,
         "available_occurrence_count": finding.available_occurrence_count,
         "known_loss": known_loss,
         "assertions": _position_assertions_of_measurement(finding),
@@ -1298,7 +1290,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "source_material_acquisition_occurrence_identity": result[
                 "source_material_acquisition_occurrence_identity"
             ],
-            "occurrence_limit": result["occurrence_limit"],
+            "occurrence_count_boundary": result["occurrence_count_boundary"],
             "available_occurrence_count": result[
                 "available_occurrence_count"
             ],

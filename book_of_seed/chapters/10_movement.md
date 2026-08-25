@@ -3,7 +3,7 @@
 ### 03.Movement.A — Exact movement
 
 One movement Responsibility carries its exact subject, source coordinates,
-destination coordinates, movement Act, Scope, Locality, limits,
+destination coordinates, movement Act, Scope, Locality,
 and Unknown.
 
 One exact Yield relation carries the movement Act occurrence as first subject

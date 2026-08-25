@@ -154,9 +154,6 @@ def _assignment_material(
         "standing_boundary_occurrence_reference": source_standing_reference[
             "standing_boundary_event_identity"
         ],
-        "limits": [
-            "this assignment is bounded to one exact boundary occurrence",
-        ],
         "unknown": [
             "what exact material the operator boundary supplies: Unknown"
         ],
@@ -230,10 +227,6 @@ def _result_material(
         "locality_relation_occurrence_identity": recorded_result_event_identity,
         "known_loss": list(boundary_material.known_loss),
         "standing": "preserved",
-        "limits": [
-            "exact material establishes no relation",
-            "this result establishes no other boundary occurrence",
-        ],
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
@@ -265,7 +258,6 @@ def _recorded_result_material(
         ],
         "known_loss": result_material["known_loss"],
         "standing": result_material["standing"],
-        "limits": result_material["limits"],
         "unknown": result_material["unknown"],
         "source_role": "this operator",
         "provenance_occurrence_references": [],

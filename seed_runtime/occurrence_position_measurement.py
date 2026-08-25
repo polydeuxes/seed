@@ -224,9 +224,6 @@ def _assignment_material(
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": finding.completeness_boundary.identity,
         },
-        "limits": [
-            "assignment is bounded to this exact Locality and completeness boundary"
-        ],
         "unknown": ["Participation and represented relation: Unknown"],
     }
 
@@ -293,10 +290,6 @@ def _position_assertions(
                 "conflicts": "Unknown",
                 "unknown": [
                     "what this occurrence participates in or represents: Unknown"
-                ],
-                "limits": [
-                    "exact occurrence position bounded by source Locality and "
-                    "completeness boundary"
                 ],
             }
         )
@@ -1087,6 +1080,7 @@ def get_recorded_occurrence_position_measurement(
     material = event.material
     if set(material) != OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "act_occurrence_identity",
+        "act_occurrence_event_identity",
         "yield_relation_identity",
     }:
         raise ValueError(
@@ -1142,9 +1136,9 @@ def get_recorded_occurrence_position_measurement(
     )
     try:
         act_occurrence, assignment, assigned_finding = (
-            _read_occurrence_position_measurement_act_occurrence(
-                ledger, material.get("act_occurrence_identity")
-            )
+                _read_occurrence_position_measurement_act_occurrence(
+                    ledger, material.get("act_occurrence_event_identity")
+                )
         )
     except (TypeError, ValueError) as error:
         raise ValueError(
@@ -1181,11 +1175,11 @@ def get_recorded_occurrence_position_measurement(
     carried = {
         key: value
         for key, value in material.items()
-        if key
-        not in {
-            "act_occurrence_identity",
-            "yield_relation_identity",
-        }
+            if key
+                not in {
+                    "act_occurrence_event_identity",
+                    "yield_relation_identity",
+                }
     }
     if carried != result_material:
         raise ValueError(

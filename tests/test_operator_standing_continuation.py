@@ -550,7 +550,6 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         "scope",
         "result_boundary_identity",
         "standing",
-        "limits",
         "unknown",
     ),
 )

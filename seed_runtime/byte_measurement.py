@@ -136,7 +136,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 }
 ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
     "make one exact preserved Assertion available in another Locality and "
-    "preserve its identity, Standing, and carried limits"
+    "preserve its identity and Standing"
 )
 BYTE_MEASUREMENT_RULE = (
     "each exact byte in exact recorded material acquisition material with the same exact byte "
@@ -154,12 +154,12 @@ BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurem
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and Yield the findings "
-    "established by its exact source occurrences, rule, Scope, and limits"
+    "established by its exact source occurrences, rule, and Scope"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "Yield exact byte-position-pair findings from an applicable exact bounded "
     "source material within its Scope, provenance, occurrence references, "
-    "Unknown, and limits"
+    "and Unknown"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine Applicability of one exact source-material-set Assertion to one "
@@ -167,10 +167,6 @@ BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
 )
 BYTE_PAIR_UNKNOWN = (
     "what this ordered byte position pair participates in or represents: Unknown",
-)
-BYTE_PAIR_LIMITS = (
-    "an exact byte-position-pair count or recurrence bounded by the exact measured "
-    "pair and order",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -618,7 +614,6 @@ def _pair_input_applicability_from_exact_source(
     applicability_scope = scope
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
-    input_limits = material["limits"]
     identity = "byte-pair-applicability:" + hashlib.sha256(
         _exact_json(
             {
@@ -659,7 +654,6 @@ def _pair_input_applicability_from_exact_source(
         "scope_locality": applicability_scope,
         "input_standing": input_standing,
         "input_unknown": input_unknown,
-        "input_limits": input_limits,
         "conflicts": [basis] if standing == "conflicting" else [],
         "coordinate_treatment": {
             "support_relation_standing": {
@@ -675,9 +669,6 @@ def _pair_input_applicability_from_exact_source(
         "unknown": [
             "what any byte or byte position pair represents: Unknown",
             *([basis] if standing == "Unknown" else []),
-        ],
-        "limits": [
-            "Applicability to this Measurement is not Applicability for another Act"
         ],
     }
 
@@ -935,7 +926,7 @@ def _source_measurement_standing_coordinates(source_event: Event) -> dict[str, s
         "result_identity": source_event.material["result_identity"],
         "act_occurrence_identity": source_event.material["act_occurrence_identity"],
         "act_occurrence_event_identity": source_event.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
         "yield_relation_identity": source_event.material[
             "yield_relation_identity"
@@ -1063,10 +1054,6 @@ def _movement_assignment_material(
                 destination_standing_boundary_identity
             ),
         },
-        "limits": [
-            "assignment is bounded to the exact source Assertion and source and "
-            "destination Standing boundaries"
-        ],
         "unknown": ["what the exact Assertion represents: Unknown"],
     }
 
@@ -1488,7 +1475,6 @@ def _movement_result_material(
         "preserved_coordinates": [
             "Scope",
             "Unknown",
-            "limits",
             "Standing",
         ],
         "movement_scope": (
@@ -1966,7 +1952,7 @@ def _validate_moved_byte_assertion(
     act_occurrence, assignment, source = (
         _read_assertion_locality_movement_act_occurrence(
             ledger,
-            movement.material.get("act_occurrence_identity"),
+            movement.material.get("act_occurrence_event_identity"),
             prior_destination_standing=prior_destination_standing,
         )
     )
@@ -1982,9 +1968,9 @@ def _validate_moved_byte_assertion(
         ledger,
         recorded_result_event_identity=movement.identity,
         yield_relation_event_identity=movement.material.get("yield_relation_identity"),
-        act_occurrence_event_identity=movement.material.get(
-            "act_occurrence_identity"
-        ),
+            act_occurrence_event_identity=movement.material.get(
+                "act_occurrence_event_identity"
+            ),
         recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
     )
@@ -2130,10 +2116,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknown": ["what the exact source bytes represent: Unknown"],
-            "limits": [
-                "exact source-material set bounded by source occurrences and "
-                "completeness boundary"
-            ],
         }
     ]
 
@@ -2168,10 +2150,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknown": ["what this byte participates in or represents: Unknown"],
-            "limits": [
-                "exact byte count or recurrence bounded by source occurrences and "
-                "Measurement rule"
-            ],
         }
 
     for item in measured.counts:
@@ -2302,10 +2280,6 @@ def _byte_measurement_assignment_material(
             "source_localities": list(source_localities),
             "completeness_boundary_identity": completeness_boundary_identity,
         },
-        "limits": [
-            "assignment is bounded to the exact declared source Localities, "
-            "material acquisition occurrences, and completeness boundary"
-        ],
         "unknown": ["what the exact source material represents: Unknown"],
     }
 
@@ -3326,7 +3300,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknown": list(BYTE_PAIR_UNKNOWN),
-            "limits": list(BYTE_PAIR_LIMITS),
         }
 
     for item in measured.counts:
@@ -3420,10 +3393,6 @@ def _pair_measurement_assignment_material(
                 "identity"
             ],
         },
-        "limits": [
-            "assignment is bounded to the exact source Assertion, Locality, "
-            "completeness boundary, rule, Applicability, and Measurement result"
-        ],
         "unknown": [
             "what measured byte position pair represents: Unknown"
         ],
@@ -5114,7 +5083,6 @@ def _validated_recorded_byte_position_pair_measurement(
         "input_support",
         "conflicts",
         "unknown",
-        "limits",
     }
     exact_scope_json = _exact_json(expected_scope)
     for assertion in assertions:
@@ -5153,8 +5121,6 @@ def _validated_recorded_byte_position_pair_measurement(
                 }
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
-            or assertion.get("limits")
-            != list(BYTE_PAIR_LIMITS)
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
         content = dimensions.get("content")

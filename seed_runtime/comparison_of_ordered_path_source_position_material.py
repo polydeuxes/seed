@@ -287,10 +287,6 @@ def _applicability_act_material(
             ],
             "standing_boundary_identity": boundary,
         },
-        "limits": [
-            "the result establishes no position occurrence relation",
-            "the result establishes no material carried by the path",
-        ],
         "unknown": [],
         "conflicts": [],
     }
@@ -414,7 +410,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
     }
@@ -472,7 +467,6 @@ def _recorded_applicability_result_material(
         "path_position_pair": list(material["path_position_pair"]),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
         "yield_relation_identity": yield_relation_identity,
@@ -503,11 +497,10 @@ def _recorded_compare_result_material(
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
-        "act_occurrence_identity": material[
-            "act_occurrence_identity"
+        "act_occurrence_event_identity": material[
+            "act_occurrence_event_identity"
         ],
         "yield_relation_identity": yield_relation_identity,
     }
@@ -559,7 +552,7 @@ def _read_applicability_result(
     if act_reading is None:
         act_reading = _read_applicability_act(
             ledger,
-            candidate.material.get("act_occurrence_identity")
+            candidate.material.get("act_occurrence_event_identity")
             if candidate is not None
             else None,
         )
@@ -629,7 +622,6 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
         ],
         "comparison_rule": RULE,
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
     }
@@ -684,10 +676,6 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "result": result,
         "source_provenance": "exact ordered relation path source coordinates",
         "scope": {"locality_identity": inputs["locality_identity"]},
-        "limits": [
-            "the finding establishes no position occurrence relation",
-            "the finding establishes no material carried by the path",
-        ],
         "unknown": [],
         "conflicts": [],
     }
@@ -718,7 +706,6 @@ def _compare_result_material(
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
         "scope": deepcopy(material["scope"]),
-        "limits": list(material["limits"]),
         "unknown": [],
         "conflicts": [],
         "act_occurrence_event_identity": act.identity,
@@ -731,7 +718,7 @@ def _read_compare_result(
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act, applicability, inputs = _read_compare_act(
         ledger,
-        candidate.material.get("act_occurrence_identity")
+        candidate.material.get("act_occurrence_event_identity")
         if candidate is not None
         else None,
     )

@@ -419,7 +419,6 @@ def _preserved_responsibility_material(material):
         "rule": material["rule"],
         "subject": deepcopy(material["subject"]),
         "scope": deepcopy(material["scope"]),
-        "limits": deepcopy(material["limits"]),
         "conflicts": deepcopy(material["conflicts"]),
         "unknown": deepcopy(material["unknown"]),
     }
@@ -607,10 +606,6 @@ def _record_responsibility(
                 "locality_identity": locality_identity,
                 "standing_boundary_identity": standing_boundary_identity,
             },
-            "limits": [
-                "bounded to the exact subject, Locality, prior Standing boundary, "
-                "and result boundary carried by this Responsibility"
-            ],
             "conflicts": [],
             "unknown": [
                 "what any recovered material represents beyond this exact result: Unknown"
@@ -801,7 +796,6 @@ def _require_responsibility(
             "standing_boundary_occurrence_reference"
         )
         or type(assignment.material.get("scope")) is not dict
-        or type(assignment.material.get("limits")) is not list
         or type(assignment.material.get("conflicts")) is not list
         or type(assignment.material.get("unknown")) is not list
     ):
@@ -854,7 +848,6 @@ def _require_recorded_responsibility(
         or material.get("rule") != _RESPONSIBILITY_RULES.get(event.kind)
         or type(material.get("subject")) is not dict
         or type(material.get("scope")) is not dict
-        or type(material.get("limits")) is not list
         or type(material.get("conflicts")) is not list
         or type(material.get("unknown")) is not list
     ):
@@ -2148,11 +2141,6 @@ def _recurrent_result_material_payload(
             ],
         },
         "locality": {"locality_identity": recurrence_event.locality_identity},
-        "limits": [
-            "the result preserves exact material shared by these exact support results only",
-            "the result establishes no word, numeral, operator, expression, "
-            "number, grammar, or meaning",
-        ],
         "conflicts": [],
         "unknown": [
             "what the exact material means beyond this Measurement: Unknown"

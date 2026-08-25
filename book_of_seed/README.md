@@ -22,7 +22,7 @@ Responsibility
 ├── subject
 ├── exact Act
 ├── Scope
-├── required Locality and limits
+├── required Locality
 ├── required source and provenance
 └── required support relations
 ```
@@ -34,7 +34,7 @@ are separate coordinates.
 ## Act and occurrence
 
 An exact Act occurrence carries its Responsibility, Act, responsible boundary,
-Scope, Locality, and limits.
+Scope, and Locality.
 
 Participation and Carriage are exact relations:
 
@@ -45,7 +45,7 @@ Act occurrence ── Yield ─────────> result
 ```
 
 Participation, Carriage, and Yield each requires exact subjects, relation,
-responsible occurrence, Scope, Locality, limits, and Unknown.
+responsible occurrence, Scope, Locality, and Unknown.
 
 The result carries the exact coordinates established by its Act occurrence.
 
