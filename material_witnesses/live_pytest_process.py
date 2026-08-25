@@ -1,4 +1,4 @@
-"""Run one live Seed-to-pytest invocation and report its exact source results."""
+"""Run one live Seed-to-pytest invocation and report returned process material."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def observe_live_pytest_process(database: Path) -> dict:
         cwd=str(Path(__file__).resolve().parent.parent),
     )
     if result.returncode:
-        raise RuntimeError(result.stderr.decode("utf-8", errors="replace"))
+        raise RuntimeError(result.stderr)
 
     ledger = SQLiteEventLedger(database)
     try:
@@ -50,21 +50,13 @@ def observe_live_pytest_process(database: Path) -> dict:
     by_boundary = {
         event.material["source_boundary"]: event for event in source_results
     }
-    required_boundaries = {
-        "compiled Witness catalog",
-        "compiled Witness measurement",
+    returned_boundaries = {
+        "invocation output",
+        "invocation error",
         "invocation completion",
     }
-    if len(source_results) < 6 or not required_boundaries <= set(by_boundary):
+    if len(source_results) != 3 or set(by_boundary) != returned_boundaries:
         raise RuntimeError("live pytest invocation omitted exact source results")
-    if not all(
-        event.material["source_boundary"].startswith(
-            ("invocation output occurrence ", "invocation error occurrence ")
-        )
-        or event.material["source_boundary"] in required_boundaries
-        for event in source_results
-    ):
-        raise RuntimeError("live pytest invocation carried another source boundary")
 
     provenance = [
         event.material["provenance_occurrence_references"]
@@ -83,19 +75,19 @@ def observe_live_pytest_process(database: Path) -> dict:
     ):
         raise RuntimeError("live pytest source provenance cites another result")
 
-    catalog = by_boundary["compiled Witness catalog"]
-    measurement = by_boundary["compiled Witness measurement"]
+    output = by_boundary["invocation output"]
+    error = by_boundary["invocation error"]
     completion = by_boundary["invocation completion"]
-    if not catalog.exact_material or not measurement.exact_material:
-        raise RuntimeError("live pytest invocation omitted exact result material")
+    if not output.exact_material:
+        raise RuntimeError("live pytest invocation omitted output material")
     if completion.exact_material != b"":
         raise RuntimeError("live pytest completion material is not exact")
 
     return {
         "source_result_count": len(source_results),
         "source_boundaries": sorted(by_boundary),
-        "catalog_byte_count": len(catalog.exact_material),
-        "measurement_byte_count": len(measurement.exact_material),
+        "output_byte_count": len(output.exact_material),
+        "error_byte_count": len(error.exact_material),
         "completion_byte_count": len(completion.exact_material),
     }
 

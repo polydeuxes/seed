@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import os
-from pathlib import Path
 import subprocess
 import time
 
@@ -92,12 +90,6 @@ def test_pytest_provider_has_one_exact_argument_and_a_clean_environment(
     assert coordinates["env"] == {
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         "PYTHONDONTWRITEBYTECODE": "1",
-        "SEED_COMPILED_WITNESS_CATALOG": coordinates["env"][
-            "SEED_COMPILED_WITNESS_CATALOG"
-        ],
-        "SEED_COMPILED_WITNESS_MEASUREMENT": coordinates["env"][
-            "SEED_COMPILED_WITNESS_MEASUREMENT"
-        ],
     }
     assert coordinates["cwd"] == operator_host_provider._ROOT
     assert "PYTEST_ADDOPTS" not in coordinates["env"]
@@ -389,84 +381,32 @@ def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
     )
 
 
-def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
+def test_pytest_provider_supplies_process_material_and_completion():
     nodeid = (
         b"tests/test_book_material_acquisition.py::"
         b"test_book_material_witness_has_one_admitted_subject"
     )
-    nodeid_text = (
-        "tests/test_book_material_acquisition.py::"
-        "test_book_material_witness_has_one_admitted_subject"
-    )
-
     supplied = _invoke(b"!pytest " + nodeid + b"\n")
 
-    by_boundary = {
-        occurrence.source_boundary: occurrence
-        for occurrence in supplied
-    }
-    invocation_output = tuple(
+    process_material = tuple(
         occurrence
         for occurrence in supplied
         if occurrence.source_boundary in ("invocation output", "invocation error")
     )
-    assert invocation_output
+    completion = supplied[-1]
+    assert process_material
     assert all(
         occurrence.source_boundary in ("invocation output", "invocation error")
-        for occurrence in invocation_output
+        for occurrence in process_material
     )
-    assert {
-        "compiled Witness catalog",
-        "compiled Witness measurement",
-        "invocation completion",
-    } <= set(by_boundary)
     assert any(
         occurrence.exact_bytes
-        for occurrence in invocation_output
+        for occurrence in process_material
         if occurrence.source_boundary == "invocation output"
     )
-    catalog_occurrence = by_boundary["compiled Witness catalog"]
-    artifact_occurrence = by_boundary["compiled Witness measurement"]
-    catalog = json.loads(catalog_occurrence.exact_bytes)
-    artifact = json.loads(artifact_occurrence.exact_bytes)
-    assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
-        nodeid_text
-    ]
-    assert artifact["pytest"][0]["fidelity_distinction_reference"] == [
-        "book_coordinates",
-        "01.Source.C",
-        "subjects",
-        2,
-    ]
-    assert "test_subject" not in artifact["pytest"][0]
-    assert "witness_for" not in artifact["pytest"][0]
-    assert "distinct_from" not in artifact["pytest"][0]
-    witness_positions = {
-        coordinate["compiled_witness_position"]
-        for coordinate in artifact["pytest"][0]["python"]
-    }
-    assert witness_positions
-    assert all(
-        position < len(catalog["python"])
-        for position in witness_positions
-    )
-    assert catalog_occurrence.known_loss == ()
-    assert artifact_occurrence.known_loss == ()
-    assert by_boundary["invocation completion"].exact_bytes == b""
-
-
-def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
-    monkeypatch.setattr(
-        operator_host_provider,
-        "_bounded_invocation",
-        lambda *args, **kwargs: (False, False, False),
-    )
-
-    with pytest.raises(
-        operator_host_provider.OperatorHostProviderError,
-        match="exact compiled Witness measurement material required",
-    ):
-        _invoke(b"!pytest tests/exact.py\n")
+    assert completion.source_boundary == "invocation completion"
+    assert completion.exact_bytes == b""
+    assert completion.known_loss == ()
 
 
 @pytest.mark.parametrize(
@@ -477,7 +417,7 @@ def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
         (False, False, True),
     ),
 )
-def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
+def test_bounded_pytest_preserves_partial_results_and_known_completion_loss(
     monkeypatch, timed_out, output_truncated, error_truncated
 ):
     def bounded(*args, supply, **kwargs):
@@ -507,23 +447,10 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
         b"partial out",
         b"partial error",
         b"",
-        b"",
-        b"",
     )
     assert supplied[0].known_loss == ()
     assert supplied[1].known_loss == ()
-    assert all(supplied[position].known_loss for position in (2, 3, 4))
-
-
-def test_pytest_measurement_artifact_is_bounded(tmp_path):
-    path = tmp_path / "measurement"
-    exact = b"x" * (operator_host_provider.MATERIAL_BYTE_COUNT_BOUNDARY + 1)
-    path.write_bytes(exact)
-
-    material, truncated = operator_host_provider._bounded_artifact(path)
-
-    assert material == exact[:-1]
-    assert truncated is True
+    assert supplied[2].known_loss
 
 
 def test_pytest_provider_death_is_not_replaced_by_supplied_results(monkeypatch):

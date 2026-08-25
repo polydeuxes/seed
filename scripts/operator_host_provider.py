@@ -8,7 +8,6 @@ from pathlib import Path
 import selectors
 import subprocess
 import sys
-import tempfile
 import time
 
 from seed_runtime.supplied_invocation_material import (
@@ -31,15 +30,7 @@ _PYTEST_INVOCATION = (
     b"-m",
     b"pytest",
     b"-q",
-    b"-p",
-    b"scripts.compiled_witness_measurement",
     b"--",
-)
-_PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE = (
-    "SEED_COMPILED_WITNESS_MEASUREMENT"
-)
-_PYTEST_CATALOG_ENVIRONMENT_COORDINATE = (
-    "SEED_COMPILED_WITNESS_CATALOG"
 )
 _ROOT = Path(__file__).resolve().parents[1]
 _TRUNCATION_LOSS = (
@@ -238,24 +229,6 @@ def _bounded_invocation(
     return time_boundary_reached, output_boundary_reached, error_boundary_reached
 
 
-def _bounded_artifact(
-    path: Path, *, missing_is_known_loss: bool = False
-) -> tuple[bytes, bool]:
-    try:
-        with path.open("rb") as stream:
-            material = stream.read(MATERIAL_BYTE_COUNT_BOUNDARY + 1)
-    except FileNotFoundError as error:
-        if missing_is_known_loss:
-            return b"", True
-        raise OperatorHostProviderError(
-            "exact compiled Witness measurement material required"
-        ) from error
-    return (
-        material[:MATERIAL_BYTE_COUNT_BOUNDARY],
-        len(material) > MATERIAL_BYTE_COUNT_BOUNDARY,
-    )
-
-
 def _supply_completion(
     supply: SuppliedWitnessMaterialConsumer,
     *,
@@ -298,63 +271,16 @@ def invoke_operator_host(
             error_truncated=error_truncated,
         )
         return
-    with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
-        artifact_path = Path(directory) / "compiled-Witness-measurement"
-        catalog_path = Path(directory) / "compiled-Witness-catalog"
-        timed_out, output_truncated, error_truncated = _bounded_invocation(
-            argv,
-            supply=supply,
-            time_boundary_second_count=TIME_BOUNDARY_SECOND_COUNT,
-            material_byte_count_boundary=MATERIAL_BYTE_COUNT_BOUNDARY,
-            environment={
-                "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
-                "PYTHONDONTWRITEBYTECODE": "1",
-                _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE: str(
-                    artifact_path
-                ),
-                _PYTEST_CATALOG_ENVIRONMENT_COORDINATE: str(catalog_path),
-            },
-            working_directory=_ROOT,
-        )
-        artifact, artifact_truncated = _bounded_artifact(
-            artifact_path,
-            missing_is_known_loss=(
-                timed_out or output_truncated or error_truncated
-            ),
-        )
-        catalog, catalog_truncated = _bounded_artifact(
-            catalog_path,
-            missing_is_known_loss=(
-                timed_out or output_truncated or error_truncated
-            ),
-        )
-    supply(
-        SuppliedWitnessMaterialOccurrence(
-            exact_bytes=catalog,
-            source_boundary="compiled Witness catalog",
-            known_loss=(
-                _TRUNCATION_LOSS
-                if catalog_truncated
-                or timed_out
-                or output_truncated
-                or error_truncated
-                else ()
-            ),
-        )
-    )
-    supply(
-        SuppliedWitnessMaterialOccurrence(
-            exact_bytes=artifact,
-            source_boundary="compiled Witness measurement",
-            known_loss=(
-                _TRUNCATION_LOSS
-                if artifact_truncated
-                or timed_out
-                or output_truncated
-                or error_truncated
-                else ()
-            ),
-        )
+    timed_out, output_truncated, error_truncated = _bounded_invocation(
+        argv,
+        supply=supply,
+        time_boundary_second_count=TIME_BOUNDARY_SECOND_COUNT,
+        material_byte_count_boundary=MATERIAL_BYTE_COUNT_BOUNDARY,
+        environment={
+            "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
+        working_directory=_ROOT,
     )
     _supply_completion(
         supply,
