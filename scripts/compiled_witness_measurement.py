@@ -208,7 +208,7 @@ def _compiled_identities(path: Path) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=1)
-def implementation_function_identities() -> tuple[str, ...]:
+def compiled_witness_identities() -> tuple[str, ...]:
     return tuple(
         identity
         for directory in SOURCE_DIRECTORIES
@@ -254,7 +254,7 @@ def _compiled_sql_invocation_identities(path: Path) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=1)
-def implementation_sql_invocation_identities() -> tuple[str, ...]:
+def compiled_witness_sql_invocation_identities() -> tuple[str, ...]:
     return tuple(
         identity
         for directory in SOURCE_DIRECTORIES
@@ -340,7 +340,7 @@ def _measurement(
     sql_coordinates: dict[str, int],
     sql_invocation_coordinates: dict[str, int] | None = None,
 ) -> dict[str, object]:
-    identities = implementation_function_identities()
+    identities = compiled_witness_identities()
     python = {
         identity: {
             "occurrence_count": python_coordinates.get(identity, [0, 0, 0])[0],
@@ -362,7 +362,7 @@ def _measurement(
                 else sql_invocation_coordinates
             ).get(identity, 0)
         }
-        for identity in implementation_sql_invocation_identities()
+        for identity in compiled_witness_sql_invocation_identities()
     }
     return {
         "python": python,
@@ -429,7 +429,7 @@ def _output_materials(
     observation = {
         "python": tuple(
             {
-                "implementation_function_position": python_positions[identity],
+                "compiled_witness_position": python_positions[identity],
                 **found["python"][identity],
             }
             for identity in python_identities
@@ -447,7 +447,7 @@ def _output_materials(
         ),
         "sql_invocations": tuple(
             {
-                "implementation_function_position": sql_invocation_positions[
+                "compiled_witness_position": sql_invocation_positions[
                     identity
                 ],
                 **found["sql_invocations"][identity],
@@ -473,7 +473,7 @@ def _output_materials(
                 },
                 "python": tuple(
                     {
-                        "implementation_function_position": python_positions[
+                        "compiled_witness_position": python_positions[
                             identity
                         ],
                         **coordinates,
@@ -492,7 +492,7 @@ def _output_materials(
                 },
                 "python": tuple(
                     {
-                        "implementation_function_position": python_positions[
+                        "compiled_witness_position": python_positions[
                             identity
                         ],
                         **coordinates,
@@ -571,7 +571,7 @@ def finish() -> dict[str, object]:
 def _finish_observed() -> dict[str, object]:
     global _profiler
     if _profiler is None or not _enclosing_measurement_coordinates:
-        raise RuntimeError("one enclosing implementation measurement is required")
+        raise RuntimeError("one enclosing compiled Witness measurement is required")
     _profiler.disable()
     current_python = _profile_coordinates(_profiler)
     prior_python, prior_sql_position, _ = _enclosing_measurement_coordinates.pop()

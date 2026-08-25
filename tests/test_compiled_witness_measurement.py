@@ -11,7 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import implementation_function_measurement as measured  # noqa: E402
+import compiled_witness_measurement as measured  # noqa: E402
 from reference_pair_comparison import ReferencePairComparison  # noqa: E402
 
 
@@ -30,13 +30,13 @@ def test_compiled_code_supplies_exact_identities(tmp_path):
 def test_observed_measurement_preserves_observation_order_without_sorting():
     observed = measured._observed_measurement(
         {
-            "implementation-z": [1, 2, 3],
-            "implementation-a": [4, 5, 6],
+            "witness-z": [1, 2, 3],
+            "witness-a": [4, 5, 6],
         },
         {"SELECT z": 1, "SELECT a": 2},
     )
 
-    assert tuple(observed["python"]) == ("implementation-z", "implementation-a")
+    assert tuple(observed["python"]) == ("witness-z", "witness-a")
     assert tuple(observed["sql"]) == ("SELECT z", "SELECT a")
 
 
@@ -53,10 +53,10 @@ def test_python_invocation_occurrence_is_measured():
     identity, coordinates = next(
         (identity, coordinates)
         for identity, coordinates in result["python"].items()
-        if identity.startswith("scripts/implementation_function_measurement.py:")
+        if identity.startswith("scripts/compiled_witness_measurement.py:")
         and identity.endswith(":_identity")
     )
-    assert identity.startswith("scripts/implementation_function_measurement.py:")
+    assert identity.startswith("scripts/compiled_witness_measurement.py:")
     assert coordinates["occurrence_count"] == 1
     assert coordinates["elapsed_nanoseconds"] > 0
     assert coordinates["self_elapsed_nanoseconds"] > 0
@@ -99,7 +99,7 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     identity = next(
         identity
         for identity in complete["python"]
-        if identity.startswith("scripts/implementation_function_measurement.py:")
+        if identity.startswith("scripts/compiled_witness_measurement.py:")
         and identity.endswith(":_identity")
     )
     assert inside["python"][identity]["occurrence_count"] == 1
@@ -168,7 +168,7 @@ def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
         coordinate
         for coordinate in output_occurrence["python"]
         if catalog["python"][
-            coordinate["implementation_function_position"]
+            coordinate["compiled_witness_position"]
         ].endswith(":_identity")
     )
     assert output_coordinate["occurrence_count"] == 1
@@ -302,11 +302,11 @@ def test_pytest_uptake_function_must_be_collected():
     another_function = lambda: None
     first = SimpleNamespace(
         nodeid=(
-            "tests/test_implementation_function_measurement.py::"
+            "tests/test_compiled_witness_measurement.py::"
             "test_pytest_uptake_function_must_be_collected"
         ),
         module=SimpleNamespace(
-            __name__="tests.test_implementation_function_measurement",
+            __name__="tests.test_compiled_witness_measurement",
             FIDELITY_DISTINCTIONS={
                 ("book_coordinates", "01.Source.C"): (another_function,)
             },
@@ -321,10 +321,10 @@ def test_pytest_uptake_function_must_be_collected():
     assert first.stash == {}
 
 
-def test_ordinary_implementation_test_has_no_seed_uptake():
-    function = test_ordinary_implementation_test_has_no_seed_uptake
+def test_ordinary_pytest_test_has_no_seed_uptake():
+    function = test_ordinary_pytest_test_has_no_seed_uptake
     item = SimpleNamespace(
-        nodeid="tests/implementation.py::test_ordinary_implementation",
+        nodeid="tests/ordinary.py::test_ordinary_pytest_test",
         module=SimpleNamespace(),
         function=function,
         stash={},
@@ -339,7 +339,7 @@ def test_ordinary_implementation_test_has_no_seed_uptake():
         material_occurrence_count = len(measured._witness_material_occurrences)
         protocol = measured.pytest_runtest_protocol(item, None)
         next(protocol)
-        measured._identity(ROOT, 8, "inside-ordinary-implementation-test")
+        measured._identity(ROOT, 8, "inside-ordinary-pytest-test")
         with pytest.raises(StopIteration):
             next(protocol)
     finally:
@@ -421,7 +421,7 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
         coordinate
         for coordinate in output_occurrence["python"]
         if catalog["python"][
-            coordinate["implementation_function_position"]
+            coordinate["compiled_witness_position"]
         ].endswith(":_identity")
     )
     assert output_coordinate["occurrence_count"] == 1
@@ -440,7 +440,7 @@ def test_stable_catalog_is_separate_from_sparse_observation():
     assert all(type(identity) is str for identity in catalog["python"])
     assert all("identity" not in coordinate for coordinate in observation["python"])
     assert all(
-        coordinate["implementation_function_position"] < len(catalog["python"])
+        coordinate["compiled_witness_position"] < len(catalog["python"])
         for coordinate in observation["python"]
     )
 
@@ -557,7 +557,7 @@ FIDELITY_DISTINCTIONS = {
         test_pytest_distinction_refuses_duplicate_or_invalid_references,
         test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
         test_pytest_uptake_function_must_be_collected,
-        test_ordinary_implementation_test_has_no_seed_uptake,
+        test_ordinary_pytest_test_has_no_seed_uptake,
         test_witness_material_occurrence_has_no_fidelity_uptake,
         test_stable_catalog_is_separate_from_sparse_observation,
         test_reference_pair_measurement_contains_each_preserved_function,

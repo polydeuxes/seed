@@ -32,7 +32,7 @@ _PYTEST_INVOCATION = (
     b"pytest",
     b"-q",
     b"-p",
-    b"scripts.implementation_function_measurement",
+    b"scripts.compiled_witness_measurement",
     b"--",
 )
 _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE = (

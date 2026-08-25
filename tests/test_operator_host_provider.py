@@ -441,14 +441,14 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     assert "test_subject" not in artifact["pytest"][0]
     assert "witness_for" not in artifact["pytest"][0]
     assert "distinct_from" not in artifact["pytest"][0]
-    implementation_positions = {
-        coordinate["implementation_function_position"]
+    witness_positions = {
+        coordinate["compiled_witness_position"]
         for coordinate in artifact["pytest"][0]["python"]
     }
-    assert implementation_positions
+    assert witness_positions
     assert all(
         position < len(catalog["python"])
-        for position in implementation_positions
+        for position in witness_positions
     )
     assert catalog_occurrence.known_loss == ()
     assert artifact_occurrence.known_loss == ()
