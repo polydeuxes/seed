@@ -7,8 +7,8 @@ from io import BytesIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from seed_runtime.material_source import (
     exact_material_result_bytes,
@@ -42,7 +42,7 @@ def _acquired_bytes(ledger: EventLedger) -> list[bytes]:
     return [
         event.exact_material
         for event in ledger.list()
-        if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
     ]
 
 

@@ -32,8 +32,8 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing_through,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.witness_material_source import record_witness_material_source
@@ -65,7 +65,7 @@ from seed_runtime.declared_measurement_responsibilities import (
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
 )
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 
@@ -707,7 +707,7 @@ def test_input_boundary_cannot_append_an_occurrence_during_acquisition():
         )
 
     assert all(
-        event.kind != OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+        event.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
         for event in ledger.list()
     )
 
@@ -797,7 +797,7 @@ def test_declared_measurement_discovery_uses_validated_replay_coordinates(
 
     from seed_runtime import (
         measurement_of_position_coordinates_of_byte_pair_occurrences as position_measurement,
-        operator_material_acquisition,
+        operator_material_source,
     )
 
     ledger = _console("alpha\nbeta\n")
@@ -809,8 +809,8 @@ def test_declared_measurement_discovery_uses_validated_replay_coordinates(
     monkeypatch.setattr(position_measurement, "_read_assignment", refuse)
     monkeypatch.setattr(position_measurement, "_read_result", refuse)
     monkeypatch.setattr(
-        operator_material_acquisition,
-        "read_operator_material_acquire_locality_relation_requirements",
+        operator_material_source,
+        "read_operator_material_source_locality_relation_requirements",
         refuse,
     )
 
@@ -1082,16 +1082,16 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     from seed_runtime import (
         byte_measurement,
         operator_console,
-        operator_material_acquisition,
+        operator_material_source,
     )
-    from seed_runtime.operator_material_acquisition import (
-        _record_operator_material_acquire_responsibility_assignment_from_carried_representation,
-        _record_operator_material_acquire_act_occurrence_from_assignment,
-        record_operator_material_acquire_result,
+    from seed_runtime.operator_material_source import (
+        _record_operator_material_source_responsibility_assignment_from_carried_representation,
+        _record_operator_material_source_act_occurrence_from_assignment,
+        record_operator_material_source_result,
     )
     from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
     from seed_runtime.operator_locality_standing import (
-        _carry_operator_material_acquisition_occurrence_into_standing,
+        _carry_operator_material_source_occurrence_into_standing,
     )
     from seed_runtime.operator_representation import (
         _record_operator_representation_from_recorded_pair_measurement,
@@ -1142,24 +1142,24 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         ledger, standing, representation
     )
     representation_reads = []
-    original = operator_material_acquisition.read_operator_representation
+    original = operator_material_source.read_operator_representation
 
     def record(*args, **kwargs):
         representation_reads.append(args[1])
         return original(*args, **kwargs)
 
     monkeypatch.setattr(
-        operator_material_acquisition,
+        operator_material_source,
         "read_operator_representation",
         record,
     )
-    assignment = _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
+    assignment = _record_operator_material_source_responsibility_assignment_from_carried_representation(
         ledger,
         locality_identity="s",
         representation=representation,
         locality_standing=standing,
     )
-    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+    standing = _carry_operator_material_source_occurrence_into_standing(
         standing,
         assignment,
         prior_through_event_occurrence_identity=representation[
@@ -1167,19 +1167,19 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         ],
     )
     act_occurrence = (
-        _record_operator_material_acquire_act_occurrence_from_assignment(
+        _record_operator_material_source_act_occurrence_from_assignment(
             ledger,
             responsibility_assignment=assignment,
             responsibility_assignment_standing=standing,
         )
     )
-    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+    standing = _carry_operator_material_source_occurrence_into_standing(
         standing,
         act_occurrence,
         prior_through_event_occurrence_identity=assignment.identity,
     )
     assert representation_reads == []
-    acquired = record_operator_material_acquire_result(
+    acquired = record_operator_material_source_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
         boundary_material=OperatorBoundaryMaterial(
@@ -1194,13 +1194,13 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
         malformed = deepcopy(acquired)
         malformed.material["unknown"] = malformed_unknown
         with pytest.raises(ValueError, match="Standing is not exact"):
-            _carry_operator_material_acquisition_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_standing(
                 standing,
                 malformed,
                 prior_through_event_occurrence_identity=act_occurrence.identity,
             )
         assert standing == unchanged
-    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+    standing = _carry_operator_material_source_occurrence_into_standing(
         standing,
         acquired,
         prior_through_event_occurrence_identity=act_occurrence.identity,
@@ -1212,10 +1212,10 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
     assert acquired.exact_material == b"next material"
     assert acquired.identity in standing["exact_result_occurrences"]
     with pytest.raises(
-        operator_material_acquisition.OperatorMaterialAcquireError,
+        operator_material_source.OperatorMaterialSourceError,
         match="carried Representation",
     ):
-        _record_operator_material_acquire_responsibility_assignment_from_carried_representation(
+        _record_operator_material_source_responsibility_assignment_from_carried_representation(
             ledger,
             locality_identity="s",
             representation={
@@ -1321,7 +1321,7 @@ def test_every_growable_accumulator_participates_without_copying():
         "material_acquisition_result_occurrences",
         "measurement_occurrences",
         "exact_result_occurrences",
-        "operator_material_acquire_act_occurrences",
+        "operator_material_source_act_occurrences",
         "material_locality_relation_occurrences",
         "recorded_standing_boundary_references",
         "recorded_standing_boundary_locality_relations",
@@ -1381,6 +1381,6 @@ def test_c0_still_forms_from_empty_standing():
 def test_the_locality_records_only_responsible_representation_occurrences():
     ledger = _console("alpha\nbeta\n")
     kinds = [event.kind for event in ledger.list()]
-    assert kinds.count(OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND) == 2
+    assert kinds.count(OPERATOR_MATERIAL_SOURCE_RECORDED_KIND) == 2
     assert kinds.count("operator.representation.recorded") == 5
     assert kinds.count("operator.representation.emitted") == 0

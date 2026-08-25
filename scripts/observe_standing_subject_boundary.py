@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 

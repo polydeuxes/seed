@@ -9,7 +9,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing

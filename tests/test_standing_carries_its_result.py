@@ -17,7 +17,7 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_locality_standing import (
-    _carry_operator_material_acquisition_occurrence_into_standing,
+    _carry_operator_material_source_occurrence_into_standing,
     _responsibility_ownership_of_exact_result,
     advance_operator_locality_standing,
     read_operator_locality_standing,
@@ -26,14 +26,14 @@ from seed_runtime.witness_material_source import (
     record_witness_material_source,
 )
 
-from seed_runtime.operator_material_acquisition import (
-    OperatorMaterialAcquireError,
-    record_operator_material_acquire_responsibility_assignment,
-    record_operator_material_acquire_act_occurrence,
-    record_operator_material_acquire_result,
+from seed_runtime.operator_material_source import (
+    OperatorMaterialSourceError,
+    record_operator_material_source_responsibility_assignment,
+    record_operator_material_source_act_occurrence,
+    record_operator_material_source_result,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 
@@ -160,7 +160,7 @@ def test_a_substituted_ownership_coordinate_is_refused(coordinate):
     mutated["responsibility_assignment_reference"][coordinate] = "substituted"
     object.__setattr__(stored, "material", mutated)
 
-    with pytest.raises(OperatorMaterialAcquireError):
+    with pytest.raises(OperatorMaterialSourceError):
         _ownership(ledger, "probe", result.identity)
 
 
@@ -195,31 +195,31 @@ def test_live_incremental_carry_and_complete_replay_agree():
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
-    assignment = record_operator_material_acquire_responsibility_assignment(
+    assignment = record_operator_material_source_responsibility_assignment(
         ledger,
         locality_identity=locality,
         locality_standing=standing,
     )
-    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+    standing = _carry_operator_material_source_occurrence_into_standing(
         ledger,
         standing,
         assignment,
         prior_through_event_occurrence_identity=None,
     )
-    act_occurrence = record_operator_material_acquire_act_occurrence(
+    act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )
-    standing = _carry_operator_material_acquisition_occurrence_into_standing(
+    standing = _carry_operator_material_source_occurrence_into_standing(
         ledger,
         standing,
         act_occurrence,
         prior_through_event_occurrence_identity=assignment.identity,
     )
-    result = record_operator_material_acquire_result(
+    result = record_operator_material_source_result(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
         boundary_material=OperatorBoundaryMaterial(
@@ -229,7 +229,7 @@ def test_live_incremental_carry_and_complete_replay_agree():
             known_loss=(),
         ),
     )
-    carried = _carry_operator_material_acquisition_occurrence_into_standing(
+    carried = _carry_operator_material_source_occurrence_into_standing(
         ledger,
         standing,
         result,

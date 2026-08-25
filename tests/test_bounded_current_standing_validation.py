@@ -27,7 +27,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.events import EventLedger
 
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from tests.test_addressed_byte_occurrence_reference_determination import (

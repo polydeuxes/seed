@@ -135,8 +135,8 @@ def iter_exact_material_results(
     """Yield exact material results without a Locality-wide read."""
 
     from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-    from seed_runtime.operator_material_acquisition import (
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    from seed_runtime.operator_material_source import (
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
     )
 
     witness = iter(
@@ -149,7 +149,7 @@ def iter_exact_material_results(
     operator = iter(
         ledger.iter_locality_kind_identities(
             locality_identity,
-            OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+            OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
             through=through,
         )
     )
@@ -212,14 +212,14 @@ def read_exact_material_result(
     if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         return _read_witness_material_source_result(ledger, event)
 
-    from seed_runtime.operator_material_acquisition import (
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-        get_recorded_operator_material_acquire,
+    from seed_runtime.operator_material_source import (
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        get_recorded_operator_material_source,
     )
 
-    if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
+    if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         try:
-            get_recorded_operator_material_acquire(ledger, event.identity)
+            get_recorded_operator_material_source(ledger, event.identity)
         except (TypeError, ValueError) as error:
             raise MaterialSourceError(
                 "operator material source occurrence carries no intact physiology"
@@ -251,12 +251,12 @@ def read_material_locality_relation_requirements(
             recorded_result_event_identity=result.identity,
         )
 
-    from seed_runtime.operator_material_acquisition import (
-        read_operator_material_acquire_locality_relation_requirements,
+    from seed_runtime.operator_material_source import (
+        read_operator_material_source_locality_relation_requirements,
     )
 
     operator_requirements = (
-        read_operator_material_acquire_locality_relation_requirements(
+        read_operator_material_source_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=result.identity,
         )

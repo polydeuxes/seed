@@ -12,7 +12,7 @@ from seed_runtime.material_source import (
     iter_exact_material_results,
 )
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 
@@ -105,7 +105,7 @@ def test_material_acquisition_does_not_assert_a_source_relation(ledger):
 def test_material_acquisition_occurrences_are_exactly_addressable(ledger):
     occurrences = exact_null_start_occurrences(ledger.list())
 
-    assert "operator.material.acquire_recorded" in occurrences
+    assert "operator.material.source_recorded" in occurrences
     assert "act_occurrence_identity" in occurrences
     assert "yield_relation_identity" in occurrences
 

@@ -26,7 +26,7 @@ from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
 from seed_runtime.ordered_path_source_position_continuation import (
     yield_ordered_path_source_position_continuations,
 )
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 

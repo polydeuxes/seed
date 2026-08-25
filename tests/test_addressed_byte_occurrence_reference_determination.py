@@ -24,7 +24,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.witness_material_source import record_witness_material_source

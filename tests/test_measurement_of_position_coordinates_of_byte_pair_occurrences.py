@@ -15,7 +15,7 @@ from seed_runtime.byte_measurement import (
     ByteMeasurementError,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (

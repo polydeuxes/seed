@@ -17,10 +17,10 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_material_boundary import operator_boundary_material
-from seed_runtime.operator_material_acquisition import (
-    _record_operator_material_acquire_responsibility_assignment_from_standing,
-    _record_operator_material_acquire_act_occurrence_from_assignment,
-    record_operator_material_acquire_result,
+from seed_runtime.operator_material_source import (
+    _record_operator_material_source_responsibility_assignment_from_standing,
+    _record_operator_material_source_act_occurrence_from_assignment,
+    record_operator_material_source_result,
 )
 from seed_runtime.operator_command import (
     OperatorCommandHandler,
@@ -64,7 +64,7 @@ from seed_runtime.standing_boundary_locality import (
 from seed_runtime.operator_locality_standing import (
     _carry_occurrence_position_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_result_into_standing,
-    _carry_operator_material_acquisition_occurrence_into_standing,
+    _carry_operator_material_source_occurrence_into_standing,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
@@ -436,14 +436,14 @@ def run_persistent_operator_console(
             "through_event_occurrence_identity"
         ]
         acquire_assignment = (
-            _record_operator_material_acquire_responsibility_assignment_from_standing(
+            _record_operator_material_source_responsibility_assignment_from_standing(
                 ledger,
                 locality_identity=locality_identity,
                 locality_standing=locality_standing,
             )
         )
         locality_standing = (
-            _carry_operator_material_acquisition_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
                 acquire_assignment,
@@ -451,14 +451,14 @@ def run_persistent_operator_console(
             )
         )
         acquire_act_occurrence = (
-            _record_operator_material_acquire_act_occurrence_from_assignment(
+            _record_operator_material_source_act_occurrence_from_assignment(
                 ledger,
                 responsibility_assignment=acquire_assignment,
                 responsibility_assignment_standing=locality_standing,
             )
         )
         locality_standing = (
-            _carry_operator_material_acquisition_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
                 acquire_act_occurrence,
@@ -475,13 +475,13 @@ def run_persistent_operator_console(
             )
         if boundary_material.eof:
             return
-        acquired_material = record_operator_material_acquire_result(
+        acquired_material = record_operator_material_source_result(
             ledger,
             act_occurrence_event_identity=acquire_act_occurrence.identity,
             boundary_material=boundary_material,
         )
         locality_standing = (
-            _carry_operator_material_acquisition_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
                 acquired_material,

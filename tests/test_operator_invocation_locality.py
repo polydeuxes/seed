@@ -5,7 +5,7 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.operator_locality_standing import (

@@ -25,7 +25,7 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "witness_material_source",
         "occurrence_position_measurement",
         "measurement_of_recurrent_byte_pair_occurrence_position",
-        "operator_material_acquire",
+        "operator_material_source",
         "operator_invocation_locality_relation",
         "recorded_pair_measurement_comparison_applicability",
         "recorded_pair_measurement_comparison",

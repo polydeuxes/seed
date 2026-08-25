@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 
 from tests.binary_input import binary_input
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 
@@ -254,7 +254,7 @@ def test_operator_acquisition_carries_the_prior_pair_measurement_into_compare():
         "operator material acquisition at prior Standing"
     )
     assert assignment.material[
-        "operator_material_acquire_result_event_identity"
+        "operator_material_source_result_event_identity"
     ] == acquired.identity
     assert assignment.material[
         "operator_material_source_standing_reference"

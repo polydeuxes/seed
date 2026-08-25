@@ -19,7 +19,7 @@ from seed_runtime.material_source import (
     read_exact_material_result,
 )
 from seed_runtime.witness_material_source import record_witness_material_source
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -29,8 +29,8 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
-from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
@@ -390,12 +390,12 @@ def _represented_boundary_kinds(ledger):
 _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
     (None, None),
     (
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
     ),
     (
         OCCURRENCE_POSITION_RECORDED_KIND,
-        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
     ),
     ("operator.representation.recorded", None),
 )

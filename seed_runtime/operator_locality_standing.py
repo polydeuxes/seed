@@ -142,13 +142,13 @@ from seed_runtime.standing_boundary_locality import (
     get_recorded_standing_boundary_locality_act_occurrence,
     get_recorded_standing_boundary_locality_responsibility_assignment,
 )
-from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT,
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
-    OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    get_operator_material_acquire_act_occurrence,
-    get_operator_material_acquire_responsibility_assignment,
-    get_recorded_operator_material_acquire,
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+    OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    get_operator_material_source_act_occurrence,
+    get_operator_material_source_responsibility_assignment,
+    get_recorded_operator_material_source,
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -452,10 +452,10 @@ _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
 }
-_OPERATOR_MATERIAL_ACQUIRE_KINDS = {
-    OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT,
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+_OPERATOR_MATERIAL_SOURCE_KINDS = {
+    OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
 _OPERATOR_INVOCATION_LOCALITY_KINDS = {
     OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -526,7 +526,7 @@ _SUPPORTED_KINDS = {
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
-    *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
+    *_OPERATOR_MATERIAL_SOURCE_KINDS,
     *_OPERATOR_INVOCATION_LOCALITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
@@ -1071,7 +1071,7 @@ def advance_operator_locality_standing(
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
     operator_invocation_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
-    operator_material_acquire_act_occurrences: dict[str, None] = {}
+    operator_material_source_act_occurrences: dict[str, None] = {}
     material_locality_relation_occurrences: dict[
         str, dict[str, Any]
     ] = {}
@@ -1146,12 +1146,12 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact Responsibility assignment occurrences"
             )
-        operator_material_acquire_act_occurrences = prior[
-            "operator_material_acquire_act_occurrences"
+        operator_material_source_act_occurrences = prior[
+            "operator_material_source_act_occurrences"
         ]
-        if type(operator_material_acquire_act_occurrences) is not dict:
+        if type(operator_material_source_act_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact operator material acquire Act occurrences"
+                "prior Locality Standing requires exact operator material source Act occurrences"
             )
         material_locality_relation_occurrences = prior[
             "material_locality_relation_occurrences"
@@ -1244,7 +1244,7 @@ def advance_operator_locality_standing(
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
-            or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
+            or event.kind in _OPERATOR_MATERIAL_SOURCE_KINDS
             or event.kind in _OPERATOR_INVOCATION_LOCALITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
@@ -1468,19 +1468,19 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
         ):
-            get_operator_material_acquire_responsibility_assignment(
+            get_operator_material_source_responsibility_assignment(
                 ledger, event.identity
             )
             responsibility_assignment_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
-            get_operator_material_acquire_act_occurrence(ledger, event.identity)
-            operator_material_acquire_act_occurrences[event.identity] = None
+        if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
+            get_operator_material_source_act_occurrence(ledger, event.identity)
+            operator_material_source_act_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
-            material = get_recorded_operator_material_acquire(
+        if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
+            material = get_recorded_operator_material_source(
                 ledger, event.identity
             )
             material_locality_relation_occurrences[event.identity] = {
@@ -2061,8 +2061,8 @@ def advance_operator_locality_standing(
         "responsibility_assignment_occurrences": (
             responsibility_assignment_occurrences
         ),
-        "operator_material_acquire_act_occurrences": (
-            operator_material_acquire_act_occurrences
+        "operator_material_source_act_occurrences": (
+            operator_material_source_act_occurrences
         ),
         "material_locality_relation_occurrences": (
             material_locality_relation_occurrences
@@ -2875,7 +2875,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
     return locality_standing
 
 
-def _carry_operator_material_acquisition_occurrence_into_standing(
+def _carry_operator_material_source_occurrence_into_standing(
     ledger: EventLedger,
     locality_standing: dict[str, Any],
     event,
@@ -2886,14 +2886,14 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
 
     if (
         type(locality_standing) is not dict
-        or event.kind not in _OPERATOR_MATERIAL_ACQUIRE_KINDS
+        or event.kind not in _OPERATOR_MATERIAL_SOURCE_KINDS
         or locality_standing.get("locality_identity") != event.locality_identity
         or locality_standing.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
         raise ValueError("operator material acquisition Standing is not exact")
     assignments = locality_standing.get("responsibility_assignment_occurrences")
-    acts = locality_standing.get("operator_material_acquire_act_occurrences")
+    acts = locality_standing.get("operator_material_source_act_occurrences")
     locality_relations = locality_standing.get(
         "material_locality_relation_occurrences"
     )
@@ -2910,7 +2910,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         or event_count < 0
     ):
         raise ValueError("operator material acquisition Standing is not exact")
-    if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
+    if event.kind == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
         source = event.material.get("source_standing_reference")
         if (
             type(source) is not dict
@@ -2919,7 +2919,7 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
             or event.identity in assignments
         ):
             raise ValueError("operator material acquisition assignment is not exact")
-    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
+    elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         assignment = event.material.get("responsibility_assignment_reference")
         if (
             type(assignment) is not dict
@@ -2946,9 +2946,9 @@ def _carry_operator_material_acquisition_occurrence_into_standing(
         event,
         error_message="operator material acquisition Standing is not exact",
     )
-    if event.kind == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
+    if event.kind == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
         assignments[event.identity] = None
-    elif event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_OCCURRENCE_EVENT:
+    elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         acts[event.identity] = None
     else:
         exact_results[event.identity] = _responsibility_ownership_of_exact_result(

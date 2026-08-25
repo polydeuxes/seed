@@ -45,7 +45,7 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 

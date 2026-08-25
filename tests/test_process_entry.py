@@ -10,8 +10,8 @@ import pytest
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from scripts.primordial_host_escape import primordial_host_input
 
@@ -22,7 +22,7 @@ def _acquired_material(database: Path) -> list[bytes]:
         return [
             event.exact_material
             for event in ledger.list()
-            if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+            if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
         ]
     finally:
         ledger.close()

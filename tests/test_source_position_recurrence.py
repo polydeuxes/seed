@@ -18,7 +18,7 @@ from seed_runtime.source_position_recurrence import (
     record_source_position_measurements,
 )
 import seed_runtime.source_position_recurrence as source_position_recurrence
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 

@@ -64,7 +64,7 @@ from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 from seed_runtime.material_source import (
     iter_exact_material_results,
 )
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 

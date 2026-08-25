@@ -21,7 +21,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.material_source import MaterialSourceError

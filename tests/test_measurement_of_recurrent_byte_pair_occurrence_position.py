@@ -15,7 +15,7 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger, EventLedgerBoundary, SQLiteEventLedger
-from tests.operator_material_acquisition_test_witness import (
+from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
