@@ -7,7 +7,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.operator_checkpoint import get_recorded_standing_boundary_reference
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -261,22 +260,22 @@ def record_recorded_standing_boundary_locality_responsibility_assignment(
     anchor = _resolve_one_carried_anchor(
         ledger, source_locality_standing=source_locality_standing
     )
-    destination = new_identity("recorded_standing_boundary_locality")
+    destination = ledger.mint_identity("recorded_standing_boundary_locality")
     if ledger.has_locality(destination):
         raise RecordedStandingBoundaryLocalityError(
             "recorded Standing boundary Locality requires one fresh Locality"
         )
     identities = {
-        "exact_act_identity": new_identity(
+        "exact_act_identity": ledger.mint_identity(
             "recorded_standing_boundary_locality_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "recorded_standing_boundary_locality_act_occurrence"
         ),
-        "locality_relation_occurrence_identity": new_identity(
+        "locality_relation_occurrence_identity": ledger.mint_identity(
             "recorded_standing_boundary_locality_relation_occurrence"
         ),
-        "result_identity": new_identity(
+        "result_identity": ledger.mint_identity(
             "recorded_standing_boundary_locality_result"
         ),
     }
