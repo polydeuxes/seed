@@ -122,7 +122,6 @@ def _assignment_material(
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
     result_identity: str,
-    scope_identity: str,
     standing_boundary_reference: dict[str, str],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -140,7 +139,6 @@ def _assignment_material(
         "standing_boundary_reference": deepcopy(standing_boundary_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
-            "scope_identity": scope_identity,
             "standing_boundary_reference": deepcopy(standing_boundary_reference),
             "destination_locality_identity": destination_locality_identity,
         },
@@ -308,9 +306,6 @@ def record_recorded_standing_boundary_locality_responsibility_assignment(
         "result_identity": new_identity(
             "recorded_standing_boundary_locality_result"
         ),
-        "scope_identity": new_identity(
-            "recorded_standing_boundary_locality_scope"
-        ),
     }
     return ledger.append(
         RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -341,7 +336,6 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
         )
     material = event.material
     anchor = material.get("standing_boundary_reference")
-    scope = material.get("scope")
     identities = (
         material.get("assignment_identity"),
         material.get("assignment_subject_identity"),
@@ -349,7 +343,6 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
         material.get("act_occurrence_identity"),
         material.get("locality_relation_occurrence_identity"),
         material.get("result_identity"),
-        scope.get("scope_identity") if type(scope) is dict else None,
     )
     if (
         type(anchor) is not dict
@@ -369,7 +362,6 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
         act_occurrence_identity=identities[3],
         locality_relation_occurrence_identity=identities[4],
         result_identity=identities[5],
-        scope_identity=identities[6],
         standing_boundary_reference=expected_anchor,
         destination_locality_identity=event.locality_identity,
     )

@@ -150,12 +150,11 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
             assignment.material["act_occurrence_identity"],
             assignment.material["locality_relation_occurrence_identity"],
             assignment.material["result_identity"],
-            assignment.material["scope"]["scope_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 11
+    ) == 10
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
