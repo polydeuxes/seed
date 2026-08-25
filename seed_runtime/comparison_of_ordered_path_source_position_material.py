@@ -52,7 +52,7 @@ COMPARE_BOUNDARY = "comparison_of_ordered_path_source_position_material_compare"
 
 EVENT_KIND_RESPONSIBILITIES = {
     APPLICABILITY_ACT_KIND: "02.Acts.A",
-    APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
+    APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     COMPARE_ACT_KIND: "02.Acts.A",
     COMPARE_RESULT_KIND: "04.Compare",
 }

@@ -282,9 +282,9 @@ def main() -> int:
         }
     )
     governing_clause_identities = (
-        "01.Standing.A",
-        "01.Standing.A.1",
-        "01.Standing.E.1",
+        "01.Current.A",
+        "01.Current.A.1",
+        "01.Current.E.1",
         "02.Acts.A",
         "08.Support.A",
         "08.Scope.A",

@@ -36,7 +36,7 @@ GRAMMAR = BOOK / "witness_grammar.json"
 # key -> (class, reading)
 KEYS = {
     "Admission": ("A", "the Book states Admission and required Admission prior to Participation"),
-    "Applicability": ("A", "01.Standing.E.1 states Applicability and its result"),
+    "Applicability": ("A", "01.Current.E.1 states Applicability and its result"),
     "Participation": ("A", "02.Acts.A states Participation as an exact relation"),
     "Responsibility": ("A", "stated throughout"),
     "boundary": ("A", "the Book carries boundary in 39 places"),

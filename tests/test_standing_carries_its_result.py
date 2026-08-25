@@ -1,4 +1,4 @@
-"""01.Standing.A.1 — the exact result is one coordinate of Standing for the
+"""01.Current.A.1 — the exact result is one coordinate of Standing for the
 exact subject of its Responsibility.
 
 Current Standing recorded only that a result occurrence was admitted.  The

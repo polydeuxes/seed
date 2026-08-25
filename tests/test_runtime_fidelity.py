@@ -764,14 +764,14 @@ def test_nested_assertion_clause_declarations_preserve_duplicates():
     tree = ast.parse(
         """
 RESPONSIBILITY = "one exact responsibility"
-ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "01.Standing.D.1"}
+ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "01.Current.D.1"}
 ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "02.Acts.A"}
 """
     )
 
     assert _assertion_responsibility_clauses(Path("adversary.py"), tree) == {
         "one exact responsibility": [
-            ("adversary.py", "01.Standing.D.1"),
+            ("adversary.py", "01.Current.D.1"),
             ("adversary.py", "02.Acts.A"),
         ]
     }
@@ -789,8 +789,8 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
         for _path, clause in declarations
     }
 
-    assert "01.Standing.D.1" not in event_clauses
-    assert "01.Standing.D.1" in assertion_clauses
+    assert "01.Current.D.1" not in event_clauses
+    assert "01.Current.D.1" in assertion_clauses
 
 
 def test_runtime_record_words_have_constitutional_admission():

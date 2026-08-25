@@ -126,7 +126,7 @@ ELIMINATION = {
         "survives",
         "the bounded subjects a Responsibility is exhaustive over",
         "nothing else in the schema",
-        "what exhaustiveness is exhaustive over. 01.Standing.D turns on it",
+        "what exhaustiveness is exhaustive over. 01.Current.D turns on it",
     ),
     "carried_coordinates": (
         "survives",

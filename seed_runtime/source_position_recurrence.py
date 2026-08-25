@@ -88,7 +88,7 @@ RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY_KIND = (
 
 EVENT_KIND_RESPONSIBILITIES = {
     COMPARE_APPLICABILITY_ACT_KIND: "02.Acts.A",
-    COMPARE_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
+    COMPARE_APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     COMPARE_ACT_KIND: "02.Acts.A",
     COMPARE_RESULT_KIND: "04.Compare",
     SOURCE_POSITION_MEASUREMENT_ACT_KIND: "02.Acts.A",
@@ -958,7 +958,7 @@ def _record_compare(
         result_kind=COMPARE_APPLICABILITY_RESULT_KIND,
         exact_act=COMPARE_APPLICABILITY_ACT,
         responsibility=COMPARE_RESPONSIBILITY,
-        book_reference="01.Standing.E.1",
+        book_reference="01.Current.E.1",
         occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         locality_identity=locality_identity,
         act_payload={"subject": applicability_subject},

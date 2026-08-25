@@ -678,7 +678,7 @@ def _responsibility_ownership_of_exact_result(
 ) -> dict[str, Any] | None:
     """The exact Responsibility ownership this yielded result already carries.
 
-    01.Standing.A.1 makes the exact result one coordinate of Standing for the
+    01.Current.A.1 makes the exact result one coordinate of Standing for the
     exact subject of its Responsibility.  The Act occurrence named by the
     result carries that Responsibility, its subject, and the Book
     clause, so the ownership is read from there and never composed here.

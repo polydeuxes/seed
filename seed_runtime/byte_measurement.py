@@ -128,11 +128,11 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: "01.Source.D",
     BYTE_MEASUREMENT_RECORDED_KIND: "01.Source.D",
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND: "01.Source.D",
-    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND: "01.Standing.E.1",
+    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
     BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND: "01.Source.D",
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
-    BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Standing.E.1",
+    BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Current.E.1",
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND: "03.Movement.A",
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -175,7 +175,7 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
 )
 ASSERTION_RESPONSIBILITIES = {
-    MEASURED_ASSERTION_RESPONSIBILITY: "01.Standing.D.1",
+    MEASURED_ASSERTION_RESPONSIBILITY: "01.Current.D.1",
 }
 
 
@@ -3375,7 +3375,7 @@ def _pair_applicability_binding_material(
         "applicability_result_identity": applicability_result_identity,
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": applicability_result_identity,
-        "book_clause_identity": "01.Standing.E.1",
+        "book_clause_identity": "01.Current.E.1",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "input_role": BYTE_PAIR_INPUT_ROLE,
