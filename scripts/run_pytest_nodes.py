@@ -85,10 +85,19 @@ def _collect_pytest_nodes(targets: list[str]) -> tuple[str, ...]:
 def _divide_pytest_nodes(
     pytest_nodes: tuple[str, ...], jobs: int
 ) -> tuple[tuple[str, ...], ...]:
-    process_count = min(jobs, len(pytest_nodes))
+    nodes_by_file: dict[str, list[str]] = {}
+    for node in pytest_nodes:
+        nodes_by_file.setdefault(node.split("::", 1)[0], []).append(node)
+
+    process_count = min(jobs, len(nodes_by_file))
     divided = [[] for _ in range(process_count)]
-    for number, node in enumerate(pytest_nodes):
-        divided[number % process_count].append(node)
+    node_counts = [0] * process_count
+    for file_nodes in sorted(
+        nodes_by_file.values(), key=lambda nodes: len(nodes), reverse=True
+    ):
+        process = min(range(process_count), key=node_counts.__getitem__)
+        divided[process].extend(file_nodes)
+        node_counts[process] += len(file_nodes)
     return tuple(tuple(process_nodes) for process_nodes in divided)
 
 
