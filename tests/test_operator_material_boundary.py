@@ -10,11 +10,33 @@ import pytest
 from seed_runtime.operator_material_boundary import (
     OperatorMaterialBoundaryError,
     operator_boundary_material,
+    operator_material_source_boundary,
 )
 
 
 class _DeclaredBytes(BytesIO):
     encoding = "a declaration the byte boundary does not consult"
+
+
+class _ReadCountingBytes(BytesIO):
+    def __init__(self, material: bytes):
+        super().__init__(material)
+        self.read_count = 0
+
+    def readline(self, *args, **kwargs):
+        self.read_count += 1
+        return super().readline(*args, **kwargs)
+
+
+def test_source_boundary_is_addressed_before_material_is_read():
+    stream = _ReadCountingBytes(b"material\n")
+
+    source_boundary = operator_material_source_boundary(stream)
+
+    assert stream.read_count == 0
+    material = operator_boundary_material(stream)
+    assert stream.read_count == 1
+    assert material.material_boundary == source_boundary
 
 
 def test_binary_boundary_preserves_every_byte_without_text_conversion():

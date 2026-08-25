@@ -43,6 +43,35 @@ class OperatorBoundaryMaterial:
                 "malformed operator boundary material"
             )
 
+
+def _operator_material_source(
+    input_stream: TextIO | BinaryIO,
+) -> tuple[BinaryIO, str, tuple[str, ...]]:
+    binary = getattr(input_stream, "buffer", None)
+    if binary is not None:
+        return (
+            binary,
+            "stdin.buffer.readline",
+            (
+                "transport bytes before the stdin byte-stream boundary are not available",
+            ),
+        )
+    return (
+        input_stream,
+        "binary-stream.readline (exact bytes)",
+        (
+            "transport bytes before the supplied binary-stream boundary are not available",
+        ),
+    )
+
+
+def operator_material_source_boundary(input_stream: TextIO | BinaryIO) -> str:
+    """Return the exact boundary address without reading from it."""
+
+    _source, boundary, _loss = _operator_material_source(input_stream)
+    return boundary
+
+
 def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBoundaryMaterial:
     """Read one framed occurrence from a byte stream.
 
@@ -51,19 +80,8 @@ def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBound
     Programmatic callers therefore supply a binary stream such as
     :class:`io.BytesIO`.
     """
-    binary = getattr(input_stream, "buffer", None)
-    if binary is not None:
-        material = binary.readline()
-        boundary = "stdin.buffer.readline"
-        loss = (
-            "transport bytes before the stdin byte-stream boundary are not available",
-        )
-    else:
-        material = input_stream.readline()
-        boundary = "binary-stream.readline (exact bytes)"
-        loss = (
-            "transport bytes before the supplied binary-stream boundary are not available",
-        )
+    source, boundary, loss = _operator_material_source(input_stream)
+    material = source.readline()
     if type(material) is not bytes:
         raise OperatorMaterialBoundaryError("operator material requires a binary stream")
     return OperatorBoundaryMaterial(
