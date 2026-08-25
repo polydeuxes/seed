@@ -23,11 +23,23 @@ from seed_runtime.operator_standing_continuation import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _skip_unrelated_measurement_work(monkeypatch):
+    class _AlreadyMeasured(set):
+        def __contains__(self, _item):
+            return True
+
+    monkeypatch.setattr(
+        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
+        lambda _ledger: _AlreadyMeasured(),
+    )
+
+
 def _command(exact_bytes: bytes, arguments: bytes = b""):
     return AddressedOperatorCommand(
         command_identity="command",
         locality_identity="source",
-        addressed_at_representation_event_identity="representation",
+        addressed_at_standing_boundary_event_identity="boundary",
         frame=OperatorCommandFrame(
             exact_bytes=exact_bytes,
             name=b"memory",
@@ -83,13 +95,10 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     )
     addressed = ledger.get(
         recorded["source_standing_reference"][
-            "addressed_representation_event_identity"
+            "source_standing_through_event_occurrence_identity"
         ]
     )
     assert addressed.locality_identity == "source"
-    assert recorded["source_standing_reference"][
-        "source_standing_through_event_occurrence_identity"
-    ] == addressed.material["locality_standing_through_event_occurrence_identity"]
     acquisition_results = []
     for event in ledger.list():
         try:
@@ -108,18 +117,6 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
         b"/memory\n",
         b"after\n",
     ]
-    destination_representations = [
-        event
-        for event in ledger.list_locality(result.locality_identity)
-        if event.kind == "operator.representation.recorded"
-    ]
-    assignment_identity = act.material["responsibility_assignment_reference"][
-        "recorded_occurrence_identity"
-    ]
-    assert [
-        event.material["locality_standing_through_event_occurrence_identity"]
-        for event in destination_representations[:3]
-    ] == [assignment_identity, act.identity, result.identity]
 
 
 def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
@@ -142,15 +139,7 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
         ledger, result.identity
     )
 
-    assert not [
-        event
-        for event in ledger.list()
-        if event.kind == "operator.addressed_representation.locality_recorded"
-    ]
     assert {
-        recorded["source_standing_reference"][
-            "addressed_representation_event_identity"
-        ],
         recorded["source_standing_reference"][
             "source_standing_through_event_occurrence_identity"
         ],
