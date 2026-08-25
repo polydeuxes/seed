@@ -84,7 +84,7 @@ def test_seed_measures_one_bounded_decimal_representation_not_all_of_pi():
     byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
 
-    assert any(assertion.representation == 46 for assertion in byte_assertions)
+    assert any(assertion.content == 46 for assertion in byte_assertions)
     assert pair_counts["3."] == 1
     assert pair_counts[".1"] == 1
     assert pair_counts["59"] == 1

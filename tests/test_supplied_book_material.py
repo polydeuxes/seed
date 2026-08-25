@@ -69,7 +69,7 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
                 invocation=(executable,),
             ),
         ),
-        time_limit_second_count=31.0,
+        time_boundary_second_count=31.0,
     )[0]
 
     assert {event.locality_identity for event in acquisition_results} == {"supplied-material"}
@@ -85,7 +85,7 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
     )
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
     assert all(
-        occurrence.time_limit_second_count == 31.0
+        occurrence.time_boundary_second_count == 31.0
         for occurrence in occurrences
     )
     assert tuple(occurrence.exact_material for occurrence in occurrences) == (

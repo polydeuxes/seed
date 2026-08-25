@@ -120,14 +120,8 @@ def _substitute_value(value: Any, existing: Any, replacement: Any) -> int:
     return changed
 
 
-# Coordinates recorded by more than one occurrence.  The same coordinate name
-# answers differently depending on which occurrence carries the substitution,
-# so each carrier is asked separately.
-CARRIED_IN_SEVERAL = ("scope", "limits", "unknown", "standing")
-
 CONSISTENT = [
     ("second_subject", "result_identity", "substituted-result"),
-    ("limits", "limits", ["substituted"]),
     ("Unknown", "unknown", ["substituted"]),
 ]
 
@@ -165,7 +159,7 @@ def main() -> int:
     )
 
     print("\n  the same coordinate, substituted at each occurrence recording it:\n")
-    for coordinate in CARRIED_IN_SEVERAL:
+    for coordinate in ("scope", "unknown", "standing"):
         for holder_name in ("result", "yield_relation", "act_occurrence"):
             ledger, result, yield_relation, act_occurrence = _material()
             target = {

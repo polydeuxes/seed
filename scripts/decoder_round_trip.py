@@ -28,11 +28,11 @@ def round_trip(codec: str, sequence: tuple[int, ...]) -> str | None:
     return SAME if written == given else DIFFERENT
 
 
-def disagreements(codec: str, limit: int = 256) -> list[tuple[int, str, str]]:
+def disagreements(codec: str, boundary: int = 256) -> list[tuple[int, str, str]]:
     """Return single-byte results not written back preserved."""
 
     found = []
-    for value in range(limit):
+    for value in range(boundary):
         result = round_trip(codec, (value,))
         if result in (SAME, NOT_DECODABLE):
             continue

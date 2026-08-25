@@ -139,10 +139,10 @@ class MaterialAddedCompareOccurrence:
         ):
             raise ValueError("Compare cannot cross implementation functions")
         if (
-            self.source_invocation.time_limit_second_count
-            != self.result_invocation.time_limit_second_count
+            self.source_invocation.time_boundary_second_count
+            != self.result_invocation.time_boundary_second_count
         ):
-            raise ValueError("Compare cannot cross time limits")
+            raise ValueError("Compare cannot cross time boundaries")
         if self.source_invocation.source_reference != (
             self.addition_occurrence.source_reference
         ):
@@ -221,15 +221,15 @@ class MaterialRemovedCompareOccurrence:
         ):
             raise ValueError("Compare cannot cross implementation functions")
         if (
-            self.source_invocation.time_limit_second_count
-            != self.result_invocation.time_limit_second_count
+            self.source_invocation.time_boundary_second_count
+            != self.result_invocation.time_boundary_second_count
         ):
-            raise ValueError("Compare cannot cross time limits")
+            raise ValueError("Compare cannot cross time boundaries")
         if (
-            self.source_invocation.material_byte_count_limit
-            != self.result_invocation.material_byte_count_limit
+            self.source_invocation.material_byte_count_boundary
+            != self.result_invocation.material_byte_count_boundary
         ):
-            raise ValueError("Compare cannot cross material byte-count limits")
+            raise ValueError("Compare cannot cross material byte-count boundaries")
         if self.source_invocation.source_reference != (
             self.removal_occurrence.source_reference
         ):
@@ -283,12 +283,12 @@ class MaterialInvocationOccurrence:
     stdout_bytes: bytes | None
     stderr_bytes: bytes | None
     source_reference: Hashable | None = None
-    time_limit_second_count: float = 30.0
-    material_byte_count_limit: int | None = None
+    time_boundary_second_count: float = 30.0
+    material_byte_count_boundary: int | None = None
     input_boundary_accepted_byte_count: int | None = None
-    time_limit_reached: bool = False
-    stdout_byte_count_limit_reached: bool = False
-    stderr_byte_count_limit_reached: bool = False
+    time_boundary_reached: bool = False
+    stdout_byte_count_boundary_reached: bool = False
+    stderr_byte_count_boundary_reached: bool = False
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -304,15 +304,15 @@ class MaterialInvocationOccurrence:
         if type(self.returned) is not bool:
             raise TypeError("returned coordinate must be exact")
         if (
-            type(self.time_limit_second_count) is not float
-            or self.time_limit_second_count <= 0
+            type(self.time_boundary_second_count) is not float
+            or self.time_boundary_second_count <= 0
         ):
-            raise TypeError("one exact positive time limit second count is required")
-        if self.material_byte_count_limit is not None and (
-            type(self.material_byte_count_limit) is not int
-            or self.material_byte_count_limit < 1
+            raise TypeError("one exact positive time boundary second count is required")
+        if self.material_byte_count_boundary is not None and (
+            type(self.material_byte_count_boundary) is not int
+            or self.material_byte_count_boundary < 1
         ):
-            raise TypeError("one exact positive material byte count limit is required")
+            raise TypeError("one exact positive material byte count boundary is required")
         if self.input_boundary_accepted_byte_count is not None and (
             type(self.input_boundary_accepted_byte_count) is not int
             or self.input_boundary_accepted_byte_count < 0
@@ -321,37 +321,37 @@ class MaterialInvocationOccurrence:
             raise TypeError(
                 "input boundary accepted byte count must be exact"
             )
-        if self.material_byte_count_limit is not None and (
+        if self.material_byte_count_boundary is not None and (
             self.input_boundary_accepted_byte_count is None
         ):
             raise ValueError(
                 "bounded invocation requires its input boundary accepted byte count"
             )
-        limit_coordinates = (
-            self.time_limit_reached,
-            self.stdout_byte_count_limit_reached,
-            self.stderr_byte_count_limit_reached,
+        boundary_coordinates = (
+            self.time_boundary_reached,
+            self.stdout_byte_count_boundary_reached,
+            self.stderr_byte_count_boundary_reached,
         )
-        if any(type(coordinate) is not bool for coordinate in limit_coordinates):
-            raise TypeError("invocation limit coordinates must be exact")
+        if any(type(coordinate) is not bool for coordinate in boundary_coordinates):
+            raise TypeError("invocation boundary coordinates must be exact")
         if (
-            self.material_byte_count_limit is None
+            self.material_byte_count_boundary is None
             and (
-                self.stdout_byte_count_limit_reached
-                or self.stderr_byte_count_limit_reached
+                self.stdout_byte_count_boundary_reached
+                or self.stderr_byte_count_boundary_reached
             )
         ):
-            raise ValueError("material limit cannot be reached without its exact count")
-        if self.returned and any(limit_coordinates):
-            raise ValueError("a returned invocation cannot have reached a limit")
-        if self.stdout_byte_count_limit_reached and (
+            raise ValueError("material boundary cannot be reached without its exact count")
+        if self.returned and any(boundary_coordinates):
+            raise ValueError("a returned invocation cannot have reached a boundary")
+        if self.stdout_byte_count_boundary_reached and (
             type(self.stdout_bytes) is not bytes
-            or len(self.stdout_bytes) != self.material_byte_count_limit
+            or len(self.stdout_bytes) != self.material_byte_count_boundary
         ):
             raise ValueError("stdout material does not preserve its exact bounded prefix")
-        if self.stderr_byte_count_limit_reached and (
+        if self.stderr_byte_count_boundary_reached and (
             type(self.stderr_bytes) is not bytes
-            or len(self.stderr_bytes) != self.material_byte_count_limit
+            or len(self.stderr_bytes) != self.material_byte_count_boundary
         ):
             raise ValueError("stderr material does not preserve its exact bounded prefix")
         if self.returned:
@@ -389,13 +389,13 @@ class MaterialInvocationOccurrence:
         self,
     ) -> MaterialInvocationCoordinates:
         return (
-            self.time_limit_second_count,
-            self.material_byte_count_limit,
+            self.time_boundary_second_count,
+            self.material_byte_count_boundary,
             self.input_boundary_accepted_byte_count,
             self.returned,
-            self.time_limit_reached,
-            self.stdout_byte_count_limit_reached,
-            self.stderr_byte_count_limit_reached,
+            self.time_boundary_reached,
+            self.stdout_byte_count_boundary_reached,
+            self.stderr_byte_count_boundary_reached,
             self.returncode,
             self.stdout_bytes,
             self.stderr_bytes,
@@ -404,13 +404,13 @@ class MaterialInvocationOccurrence:
     @property
     def return_coordinates(self) -> MaterialInvocationReturnCoordinates:
         return (
-            self.time_limit_second_count,
-            self.material_byte_count_limit,
+            self.time_boundary_second_count,
+            self.material_byte_count_boundary,
             self.input_boundary_accepted_byte_count,
             self.returned,
-            self.time_limit_reached,
-            self.stdout_byte_count_limit_reached,
-            self.stderr_byte_count_limit_reached,
+            self.time_boundary_reached,
+            self.stdout_byte_count_boundary_reached,
+            self.stderr_byte_count_boundary_reached,
             self.returncode,
         )
 
@@ -521,11 +521,11 @@ class MaterialAdmissionOccurrence:
             raise ValueError("one material Admission cannot cross implementation functions")
         if len(
             {
-                occurrence.time_limit_second_count
+                occurrence.time_boundary_second_count
                 for occurrence in invocation_occurrences
             }
         ) != 1:
-            raise ValueError("one material Admission cannot cross time limits")
+            raise ValueError("one material Admission cannot cross time boundaries")
         source_material = tuple(
             occurrence.source_reference for occurrence in invocation_occurrences
         )
@@ -888,32 +888,32 @@ def invocation_occurrence(
     boundary_identity: str,
     invocation_position: int = 0,
     source_reference: Hashable | None = None,
-    time_limit_second_count: float = 30.0,
-    material_byte_count_limit: int | None = None,
+    time_boundary_second_count: float = 30.0,
+    material_byte_count_boundary: int | None = None,
 ) -> MaterialInvocationOccurrence:
     if type(exact_material) is not bytes:
         raise TypeError("implementation function material must be exact bytes")
     if not isinstance(implementation_function, MaterialImplementationFunction):
         raise TypeError("one material implementation function is required")
     if (
-        type(time_limit_second_count) is not float
-        or time_limit_second_count <= 0
+        type(time_boundary_second_count) is not float
+        or time_boundary_second_count <= 0
     ):
-        raise TypeError("one exact positive time limit second count is required")
-    if material_byte_count_limit is not None and (
-        type(material_byte_count_limit) is not int
-        or material_byte_count_limit < 1
+        raise TypeError("one exact positive time boundary second count is required")
+    if material_byte_count_boundary is not None and (
+        type(material_byte_count_boundary) is not int
+        or material_byte_count_boundary < 1
     ):
-        raise TypeError("one exact positive material byte count limit is required")
-    if material_byte_count_limit is not None:
+        raise TypeError("one exact positive material byte count boundary is required")
+    if material_byte_count_boundary is not None:
         return _byte_bounded_invocation_occurrence(
             exact_material,
             implementation_function,
             boundary_identity=boundary_identity,
             invocation_position=invocation_position,
             source_reference=source_reference,
-            time_limit_second_count=time_limit_second_count,
-            material_byte_count_limit=material_byte_count_limit,
+            time_boundary_second_count=time_boundary_second_count,
+            material_byte_count_boundary=material_byte_count_boundary,
         )
     try:
         completed = subprocess.run(
@@ -922,7 +922,7 @@ def invocation_occurrence(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
-            timeout=time_limit_second_count,
+            timeout=time_boundary_second_count,
         )
     except subprocess.TimeoutExpired as occurrence:
         return MaterialInvocationOccurrence(
@@ -935,8 +935,8 @@ def invocation_occurrence(
             stdout_bytes=occurrence.stdout,
             stderr_bytes=occurrence.stderr,
             source_reference=source_reference,
-            time_limit_second_count=time_limit_second_count,
-            time_limit_reached=True,
+            time_boundary_second_count=time_boundary_second_count,
+            time_boundary_reached=True,
         )
     return MaterialInvocationOccurrence(
         boundary_identity=boundary_identity,
@@ -948,7 +948,7 @@ def invocation_occurrence(
         stdout_bytes=completed.stdout,
         stderr_bytes=completed.stderr,
         source_reference=source_reference,
-        time_limit_second_count=time_limit_second_count,
+        time_boundary_second_count=time_boundary_second_count,
     )
 
 
@@ -959,8 +959,8 @@ def _byte_bounded_invocation_occurrence(
     boundary_identity,
     invocation_position,
     source_reference,
-    time_limit_second_count,
-    material_byte_count_limit,
+    time_boundary_second_count,
+    material_byte_count_boundary,
 ):
     streams = selectors.DefaultSelector()
     process = subprocess.Popen(
@@ -973,9 +973,9 @@ def _byte_bounded_invocation_occurrence(
     input_position = 0
     stdout = bytearray()
     stderr = bytearray()
-    time_limit_reached = False
-    stdout_limit_reached = False
-    stderr_limit_reached = False
+    time_boundary_reached = False
+    stdout_boundary_reached = False
+    stderr_boundary_reached = False
 
     def end_process() -> None:
         if process.poll() is None:
@@ -989,12 +989,12 @@ def _byte_bounded_invocation_occurrence(
     streams.register(process.stdin, selectors.EVENT_WRITE, "stdin")
     streams.register(process.stdout, selectors.EVENT_READ, "stdout")
     streams.register(process.stderr, selectors.EVENT_READ, "stderr")
-    deadline = time.monotonic() + time_limit_second_count
+    deadline = time.monotonic() + time_boundary_second_count
     try:
         while streams.get_map():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                time_limit_reached = True
+                time_boundary_reached = True
                 end_process()
                 if process.stdin in tuple(
                     key.fileobj for key in streams.get_map().values()
@@ -1028,13 +1028,13 @@ def _byte_bounded_invocation_occurrence(
                     stream.close()
                     continue
                 material = stdout if key.data == "stdout" else stderr
-                available = material_byte_count_limit - len(material)
+                available = material_byte_count_boundary - len(material)
                 material.extend(found[:available])
                 if len(found) > available:
                     if key.data == "stdout":
-                        stdout_limit_reached = True
+                        stdout_boundary_reached = True
                     else:
-                        stderr_limit_reached = True
+                        stderr_boundary_reached = True
                     end_process()
             if process.poll() is not None and len(streams.get_map()) == 1:
                 remaining_stream = next(iter(streams.get_map().values())).fileobj
@@ -1051,7 +1051,7 @@ def _byte_bounded_invocation_occurrence(
                 stream.close()
         process.wait()
     returned = not (
-        time_limit_reached or stdout_limit_reached or stderr_limit_reached
+        time_boundary_reached or stdout_boundary_reached or stderr_boundary_reached
     )
     return MaterialInvocationOccurrence(
         boundary_identity=boundary_identity,
@@ -1063,12 +1063,12 @@ def _byte_bounded_invocation_occurrence(
         stdout_bytes=bytes(stdout),
         stderr_bytes=bytes(stderr),
         source_reference=source_reference,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=material_byte_count_limit,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=material_byte_count_boundary,
         input_boundary_accepted_byte_count=input_position,
-        time_limit_reached=time_limit_reached,
-        stdout_byte_count_limit_reached=stdout_limit_reached,
-        stderr_byte_count_limit_reached=stderr_limit_reached,
+        time_boundary_reached=time_boundary_reached,
+        stdout_byte_count_boundary_reached=stdout_boundary_reached,
+        stderr_byte_count_boundary_reached=stderr_boundary_reached,
     )
 
 
@@ -1079,15 +1079,15 @@ def occurrences_across(
     implementation_functions: tuple[
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
-    time_limit_second_count: float = 30.0,
-    material_byte_count_limit: int | None = None,
+    time_boundary_second_count: float = 30.0,
+    material_byte_count_boundary: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     return _occurrences_across(
         exact_materials,
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=material_byte_count_limit,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
 
 
@@ -1099,8 +1099,8 @@ def reference_occurrences_across(
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
     max_workers: int = 16,
-    time_limit_second_count: float = 30.0,
-    material_byte_count_limit: int | None = None,
+    time_boundary_second_count: float = 30.0,
+    material_byte_count_boundary: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or any(
         type(getattr(reference, "exact_material", None)) is not bytes
@@ -1113,8 +1113,8 @@ def reference_occurrences_across(
         implementation_functions=implementation_functions,
         source_references=references,
         max_workers=max_workers,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=material_byte_count_limit,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
 
 
@@ -1333,8 +1333,8 @@ def _occurrences_across(
     implementation_functions: tuple[MaterialImplementationFunction, ...],
     source_references: tuple[Hashable, ...] | None = None,
     max_workers: int = 16,
-    time_limit_second_count: float = 30.0,
-    material_byte_count_limit: int | None = None,
+    time_boundary_second_count: float = 30.0,
+    material_byte_count_boundary: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or any(
         type(material) is not bytes for material in exact_materials
@@ -1364,10 +1364,10 @@ def _occurrences_across(
     if type(max_workers) is not int or max_workers < 1:
         raise TypeError("invocation count must be one positive integer")
     if (
-        type(time_limit_second_count) is not float
-        or time_limit_second_count <= 0
+        type(time_boundary_second_count) is not float
+        or time_boundary_second_count <= 0
     ):
-        raise TypeError("one exact positive time limit second count is required")
+        raise TypeError("one exact positive time boundary second count is required")
     if not exact_materials:
         return tuple(() for _ in implementation_functions)
     calls = tuple(
@@ -1391,8 +1391,8 @@ def _occurrences_across(
             boundary_identity=boundary_identity,
             invocation_position=position,
             source_reference=source_reference,
-            time_limit_second_count=time_limit_second_count,
-            material_byte_count_limit=material_byte_count_limit,
+            time_boundary_second_count=time_boundary_second_count,
+            material_byte_count_boundary=material_byte_count_boundary,
         )
 
     with ThreadPoolExecutor(max_workers=min(max_workers, len(calls))) as workers:
@@ -1592,7 +1592,7 @@ def first_recurring_added_return_compare(
     implementation_function: MaterialImplementationFunction,
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
     invoke_later: bool = True,
 ) -> tuple[
     tuple[MaterialAddedReturnCompareOccurrence, ...],
@@ -1613,10 +1613,10 @@ def first_recurring_added_return_compare(
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if (
-        type(act_occurrence_count_limit) is not int
-        or act_occurrence_count_limit < 1
+        type(act_occurrence_count_boundary) is not int
+        or act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     if type(invoke_later) is not bool:
         raise TypeError("later invocation control must be exact")
     source_by_reference = {
@@ -1633,7 +1633,7 @@ def first_recurring_added_return_compare(
         return (), None, None
 
     comparisons = []
-    for addition in additions[:act_occurrence_count_limit]:
+    for addition in additions[:act_occurrence_count_boundary]:
         source_invocation = source_by_reference.get(addition.source_reference)
         if source_invocation is None:
             raise ValueError("recurrence requires each exact source invocation")
@@ -1654,8 +1654,8 @@ def first_recurring_added_return_compare(
             boundary_identity=f"{boundary_identity}-invocation",
             invocation_position=len(comparisons),
             source_reference=addition.result_reference,
-            time_limit_second_count=source_invocation.time_limit_second_count,
-            material_byte_count_limit=source_invocation.material_byte_count_limit,
+            time_boundary_second_count=source_invocation.time_boundary_second_count,
+            material_byte_count_boundary=source_invocation.material_byte_count_boundary,
         )
         comparison = MaterialAddedReturnCompareOccurrence(
             boundary_identity=f"{boundary_identity}-compare",
@@ -1748,7 +1748,7 @@ def first_recurring_added_return_compare_across(
     source_invocation_rows: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
 ) -> tuple[
     tuple[tuple[MaterialAddedReturnCompareOccurrence, ...], ...],
     tuple[MaterialInvocationReturnCoordinates, ...] | None,
@@ -1784,7 +1784,7 @@ def first_recurring_added_return_compare_across(
         raise ValueError("full-function recurrence requires distinct source occurrences")
     comparisons = tuple([] for _ in functions)
     for occurrence_position, addition in enumerate(
-        additions[:act_occurrence_count_limit]
+        additions[:act_occurrence_count_boundary]
     ):
         source_invocations = tuple(
             found.get(addition.source_reference) for found in source_by_function
@@ -1810,8 +1810,8 @@ def first_recurring_added_return_compare_across(
                 boundary_identity=f"{boundary_identity}-{function.identity}-invocation",
                 invocation_position=occurrence_position,
                 source_reference=addition.result_reference,
-                time_limit_second_count=source_invocation.time_limit_second_count,
-                material_byte_count_limit=source_invocation.material_byte_count_limit,
+                time_boundary_second_count=source_invocation.time_boundary_second_count,
+                material_byte_count_boundary=source_invocation.material_byte_count_boundary,
             )
             comparison = MaterialAddedReturnCompareOccurrence(
                 boundary_identity=f"{boundary_identity}-{function.identity}-compare",

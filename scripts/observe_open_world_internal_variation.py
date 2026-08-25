@@ -394,13 +394,13 @@ def _observe_source(
     return result, stopped_at_time_boundary
 
 
-def _observe_source_with_limit(
+def _observe_source_with_boundary(
     payload: tuple[dict, float, str, bool]
 ) -> tuple[dict, bool]:
-    source, time_limit_seconds, output_directory, profile_slow_extents = payload
+    source, time_boundary_seconds, output_directory, profile_slow_extents = payload
     observed, stopped = _observe_source(
         source,
-        deadline=time.perf_counter() + time_limit_seconds,
+        deadline=time.perf_counter() + time_boundary_seconds,
         profile_slow_extents=profile_slow_extents,
     )
     wall_seconds = observed.pop("wall_seconds")
@@ -498,7 +498,7 @@ def main() -> int:
         default=SOURCE_OUTPUT_DIRECTORY,
     )
     parser.add_argument("--source", action="append", default=[])
-    parser.add_argument("--time-limit-seconds", type=float, default=55.0)
+    parser.add_argument("--time-boundary-seconds", type=float, default=55.0)
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--profile-slow-extents", action="store_true")
     parser.add_argument("--no-reuse-complete-source-artifacts", action="store_true")
@@ -550,7 +550,7 @@ def main() -> int:
     payloads = [
         (
             source,
-            arguments.time_limit_seconds,
+            arguments.time_boundary_seconds,
             str(arguments.source_output_directory),
             arguments.profile_slow_extents,
         )
@@ -559,10 +559,10 @@ def main() -> int:
     if arguments.jobs < 1:
         raise ValueError("jobs must be a positive exact process count")
     if arguments.jobs == 1:
-        observed_sources = map(_observe_source_with_limit, payloads)
+        observed_sources = map(_observe_source_with_boundary, payloads)
     else:
         executor = ProcessPoolExecutor(max_workers=arguments.jobs)
-        observed_sources = executor.map(_observe_source_with_limit, payloads)
+        observed_sources = executor.map(_observe_source_with_boundary, payloads)
 
     try:
         for source, (source_artifact, stopped) in zip(

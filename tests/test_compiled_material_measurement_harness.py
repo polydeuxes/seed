@@ -22,7 +22,7 @@ def test_harness_preserves_exact_and_return_admissions_separately():
             invocation=("/bin/cat",),
         ),
         references[:3],
-        time_limit_second_count=1.0,
+        time_boundary_second_count=1.0,
         max_workers=1,
     )
 

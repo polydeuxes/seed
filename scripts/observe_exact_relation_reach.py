@@ -64,7 +64,6 @@ STATED_YIELD_COORDINATES = {
     "yield_relation_identity": "relation_occurrence",
     "scope": "Scope",
     "locality_identity": "Locality",
-    "limits": "limits",
     "unknown": "Unknown",
 }
 

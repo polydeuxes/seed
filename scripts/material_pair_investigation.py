@@ -91,7 +91,7 @@ def exact_references_to_recurrent_material_pairs(
     ]
     found = []
     for assertion in assertions or ():
-        if assertion.result != "recurrence" or assertion.representation is None:
+        if assertion.result != "recurrence" or assertion.content is None:
             continue
         support = assertion.support_assertion_references
         if (
@@ -108,7 +108,7 @@ def exact_references_to_recurrent_material_pairs(
                 locality_identity=event.locality_identity,
                 source_occurrence_identities=source_occurrence_identities,
                 completeness_boundary_identity=completeness_boundary_identity,
-                exact_material=bytes(assertion.representation),
+                exact_material=bytes(assertion.content),
             )
         )
     return tuple(found)

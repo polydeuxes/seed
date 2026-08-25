@@ -120,7 +120,6 @@ CHANGES: list[tuple[str, str, Callable]] = [
     ),
     ("Scope", "act_occurrence", lambda m: _set(m, "scope", "substituted")),
     ("Locality", "result", lambda m: _set(m, "locality_identity", "substituted")),
-    ("limits", "result", lambda m: _set(m, "limits", ["substituted"])),
     ("Unknown", "result", lambda m: _set(m, "unknown", ["substituted"])),
     # Negative controls.  These name no Book coordinate of the Yield relation.
     # A predicate that stops holding here is not establishing any particular

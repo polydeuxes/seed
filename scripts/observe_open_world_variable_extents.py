@@ -455,13 +455,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=INPUT)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--time-limit-seconds", type=float, default=55.0)
+    parser.add_argument("--time-boundary-seconds", type=float, default=55.0)
     parser.add_argument("--source", action="append", default=[])
     parser.add_argument("--verify-exhaustive", action="store_true")
     arguments = parser.parse_args()
 
     begun = time.perf_counter()
-    deadline = begun + arguments.time_limit_seconds
+    deadline = begun + arguments.time_boundary_seconds
     aperture = json.loads(arguments.input.read_text(encoding="utf-8"))
     observed_sources = []
     stopped_at_time_boundary = False
@@ -479,9 +479,9 @@ def main() -> int:
         materials: dict[str, dict[str, object]] = {}
         frames = []
         frame_number = 0
-        for delimiter in source["delimiters"]:
-            separator = delimiter["separator_scalar"]
-            for frame in delimiter["recurrent_substitution_frames"]:
+        for deboundaryer in source["deboundaryers"]:
+            separator = deboundaryer["separator_scalar"]
+            for frame in deboundaryer["recurrent_substitution_frames"]:
                 frame_number += 1
                 left = _material(source, frame["left_material"])
                 right = _material(source, frame["right_material"])

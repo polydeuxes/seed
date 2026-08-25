@@ -34,7 +34,6 @@ AROUND = (
     "exact_act",
     "act",
     "scope",
-    "limits",
     "unknown",
     "role",
     "book_clause_identity",

@@ -66,7 +66,7 @@ def material_pair_invocations(material_invocations):
     additions = admission_added_position_occurrences(
         admission.result_reference,
         boundary_identity="one-byte-pair-addition",
-        admitted_material_act_occurrence_count_limit=len(references) ** 2,
+        admitted_material_act_occurrence_count_boundary=len(references) ** 2,
     )
     implementation_function = source_occurrences[0].implementation_function
     result_occurrences = reference_occurrences_across(
@@ -159,7 +159,7 @@ def test_moved_byte_references_can_enter_one_new_admission(
     additions = admission_added_position_occurrences(
         admission.result_reference,
         boundary_identity="one-byte-moved-addition",
-        admitted_material_act_occurrence_count_limit=(len(moved) + 1) * len(moved) ** 2,
+        admitted_material_act_occurrence_count_boundary=(len(moved) + 1) * len(moved) ** 2,
     )
     assert additions
 
@@ -308,7 +308,7 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
         for addition in additions
     )
     assert all(
-        addition.admitted_material_act_occurrence_count_limit
+        addition.admitted_material_act_occurrence_count_boundary
         == len(references) ** 2
         for addition in additions
     )
@@ -318,11 +318,11 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
     assert len({addition.result_identity for addition in additions}) == len(additions)
 
 
-def test_act_occurrence_limit_never_splits_admitted_material(
+def test_act_occurrence_boundary_never_splits_admitted_material(
     material_pair_invocations,
 ):
     _, references, admission, additions, _, _ = material_pair_invocations
-    limit = len(references) ** 2
+    boundary = len(references) ** 2
 
     for admitted_position, admitted_material in enumerate(
         admission.admitted_material
@@ -336,7 +336,7 @@ def test_act_occurrence_limit_never_splits_admitted_material(
             for addition in additions
             if addition.source_admitted_material_position == admitted_position
         )
-        if expected_count <= limit:
+        if expected_count <= boundary:
             assert len(found) == expected_count
         else:
             assert found == ()
@@ -408,7 +408,7 @@ def test_distinct_admission_results_bind_each_addition_input():
         source_admission.result_reference,
         added_admission.result_reference,
         boundary_identity="two-admission-addition",
-        admitted_material_act_occurrence_count_limit=12,
+        admitted_material_act_occurrence_count_boundary=12,
     )
 
     assert len(additions) == 12
@@ -464,7 +464,7 @@ def test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple():
             source_admission.result_reference,
             added_admission.result_reference,
             boundary_identity="cross-locality-addition",
-            admitted_material_act_occurrence_count_limit=3,
+            admitted_material_act_occurrence_count_boundary=3,
         )
 
     local_added = replace(added, locality_identity="source-locality")
@@ -477,7 +477,7 @@ def test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple():
         source_admission.result_reference,
         local_added_admission.result_reference,
         boundary_identity="bounded-addition",
-        admitted_material_act_occurrence_count_limit=2,
+        admitted_material_act_occurrence_count_boundary=2,
     ) == ()
 
 
@@ -582,7 +582,7 @@ PYTEST_ADMISSION = (
     test_one_byte_material_crosses_the_return_code_boundary,
     test_each_returned_material_enters_a_fresh_locality,
     test_each_ordered_material_pair_has_one_exact_addition_occurrence,
-    test_act_occurrence_limit_never_splits_admitted_material,
+    test_act_occurrence_boundary_never_splits_admitted_material,
     test_addition_cannot_cross_its_exact_admitted_material,
     test_addition_refuses_another_admitted_reference_position,
     test_distinct_admission_results_bind_each_addition_input,

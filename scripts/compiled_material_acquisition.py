@@ -186,14 +186,14 @@ def measure_material(
     references,
     *,
     boundary_identity,
-    time_limit_second_count,
+    time_boundary_second_count,
 ):
     occurrences = reference_occurrences_across(
         references,
         boundary_identity=f"{boundary_identity}-invocation",
         implementation_functions=implementation_functions,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=4096,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=4096,
         max_workers=8,
     )
     exact = tuple(
@@ -218,18 +218,18 @@ def measure_material(
 def measure_material_time_counts(
     implementation_functions,
     references,
-    time_limit_second_counts,
+    time_boundary_second_counts,
 ):
     if (
-        type(time_limit_second_counts) is not tuple
-        or len(time_limit_second_counts) < 2
-        or len(set(time_limit_second_counts)) != len(time_limit_second_counts)
+        type(time_boundary_second_counts) is not tuple
+        or len(time_boundary_second_counts) < 2
+        or len(set(time_boundary_second_counts)) != len(time_boundary_second_counts)
         or any(
             type(second_count) is not float or second_count <= 0
-            for second_count in time_limit_second_counts
+            for second_count in time_boundary_second_counts
         )
     ):
-        raise TypeError("distinct positive time limit second counts are required")
+        raise TypeError("distinct positive time boundary second counts are required")
     measurements = tuple(
         (
             second_count,
@@ -237,10 +237,10 @@ def measure_material_time_counts(
                 implementation_functions,
                 references,
                 boundary_identity=f"compiled-material-{position}",
-                time_limit_second_count=second_count,
+                time_boundary_second_count=second_count,
             ),
         )
-        for position, second_count in enumerate(time_limit_second_counts)
+        for position, second_count in enumerate(time_boundary_second_counts)
     )
     exact_references = tuple(
         admission.result_reference
@@ -269,31 +269,31 @@ def measure_added_material(
     source_occurrences,
     returned_admissions,
     *,
-    time_limit_second_count,
-    act_occurrence_count_limit,
+    time_boundary_second_count,
+    act_occurrence_count_boundary,
 ):
     if (
-        type(act_occurrence_count_limit) is not int
-        or act_occurrence_count_limit < 1
+        type(act_occurrence_count_boundary) is not int
+        or act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     found_additions = []
     for admission_position, admission in enumerate(returned_admissions):
         found = admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity=f"compiled-material-addition-{admission_position}",
-            admitted_material_act_occurrence_count_limit=act_occurrence_count_limit,
+            admitted_material_act_occurrence_count_boundary=act_occurrence_count_boundary,
         )
-        if len(found_additions) + len(found) > act_occurrence_count_limit:
-            raise ValueError("addition Act occurrences exceed their exact count limit")
+        if len(found_additions) + len(found) > act_occurrence_count_boundary:
+            raise ValueError("addition Act occurrences exceed their exact count boundary")
         found_additions.extend(found)
     additions = tuple(found_additions)
     result_occurrences = reference_occurrences_across(
         tuple(addition.result_reference for addition in additions),
         boundary_identity="compiled-added-material-invocation",
         implementation_functions=implementation_functions,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=4096,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=4096,
         max_workers=8,
     )
     result_exact = tuple(
@@ -361,7 +361,7 @@ def measure_material_and_act_results(
     references,
     additions,
     *,
-    time_limit_second_count,
+    time_boundary_second_count,
 ):
     all_references = references + tuple(
         addition.result_reference for addition in additions
@@ -370,7 +370,7 @@ def measure_material_and_act_results(
         implementation_functions,
         all_references,
         boundary_identity="compiled-material-and-act-results",
-        time_limit_second_count=time_limit_second_count,
+        time_boundary_second_count=time_boundary_second_count,
     )
     exact_compares = compare_admission_result_pairs(
         tuple(admission.result_reference for admission in exact),
@@ -419,14 +419,14 @@ def main() -> int:
         references,
         source_occurrences,
         returned,
-        time_limit_second_count=second_count,
-        act_occurrence_count_limit=len(references) * len(functions),
+        time_boundary_second_count=second_count,
+        act_occurrence_count_boundary=len(references) * len(functions),
     )
     measure_material_and_act_results(
         functions,
         references,
         additions,
-        time_limit_second_count=second_count,
+        time_boundary_second_count=second_count,
     )
     print(
         (

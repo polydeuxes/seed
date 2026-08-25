@@ -64,14 +64,14 @@ def main() -> int:
         f for f in fields
         if f in ("exact_material", "boundary_identity", "source_reference",
                  "input_boundary_accepted_byte_count", "implementation_function",
-                 "invocation_position", "time_limit_second_count",
-                 "material_byte_count_limit")
+                 "invocation_position", "time_boundary_second_count",
+                 "material_byte_count_boundary")
     ]
     inbound = [
         f for f in fields
         if f in ("returned", "returncode", "stdout_bytes", "stderr_bytes",
-                 "time_limit_reached", "stdout_byte_count_limit_reached",
-                 "stderr_byte_count_limit_reached")
+                 "time_boundary_reached", "stdout_byte_count_boundary_reached",
+                 "stderr_byte_count_boundary_reached")
     ]
     print("  One external invocation occurrence carries both crossings:\n")
     print(f"    outbound, Seed to the boundary  ({len(outbound)} coordinates)")

@@ -41,10 +41,10 @@ def _decode(materials: dict, reference: str) -> str:
     return bytes.fromhex(materials[reference]["utf8_hex"]).decode("utf-8")
 
 
-def _render(value: str, limit: int = 100) -> str:
+def _render(value: str, boundary: int = 100) -> str:
     rendered = value.encode("unicode_escape").decode("ascii")
-    if len(rendered) > limit:
-        return rendered[: limit - 3] + "..."
+    if len(rendered) > boundary:
+        return rendered[: boundary - 3] + "..."
     return rendered
 
 

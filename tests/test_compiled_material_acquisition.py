@@ -39,14 +39,14 @@ def test_material_climb_refuses_the_collective_act_occurrence_count():
         for position, material in enumerate((first_material, second_material))
     )
 
-    with pytest.raises(ValueError, match="exact count limit"):
+    with pytest.raises(ValueError, match="exact count boundary"):
         measure_added_material(
             (),
             references[:4],
             (),
             admissions,
-            time_limit_second_count=0.01,
-            act_occurrence_count_limit=12,
+            time_boundary_second_count=0.01,
+            act_occurrence_count_boundary=12,
         )
 
 
@@ -71,7 +71,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         }
     ) == len(time_counts) * len(functions) * len(references)
     assert all(
-        occurrence.time_limit_second_count == second_count
+        occurrence.time_boundary_second_count == second_count
         for second_count, found, _, _ in measurements
         for row in found
         for occurrence in row
@@ -113,16 +113,16 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         occurrence for row in occurrences for occurrence in row
     )
     assert all(
-        occurrence.material_byte_count_limit == 4096
+        occurrence.material_byte_count_boundary == 4096
         for occurrence in all_occurrences
     )
-    limited = tuple(
+    truncated = tuple(
         occurrence
         for occurrence in all_occurrences
-        if occurrence.stdout_byte_count_limit_reached
-        or occurrence.stderr_byte_count_limit_reached
+        if occurrence.stdout_byte_count_boundary_reached
+        or occurrence.stderr_byte_count_boundary_reached
     )
-    assert all(not occurrence.returned for occurrence in limited)
+    assert all(not occurrence.returned for occurrence in truncated)
     assert all(
         len(occurrence.stdout_bytes or b"") <= 4096
         and len(occurrence.stderr_bytes or b"") <= 4096
@@ -136,7 +136,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         for second_returned in (measurements[-1][3][position],)
     )
 
-    act_occurrence_count_limit = len(references) * len(functions)
+    act_occurrence_count_boundary = len(references) * len(functions)
 
     (
         additions,
@@ -154,21 +154,21 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         references,
         source_occurrences,
         returned,
-        time_limit_second_count=second_count,
-        act_occurrence_count_limit=act_occurrence_count_limit,
+        time_boundary_second_count=second_count,
+        act_occurrence_count_boundary=act_occurrence_count_boundary,
     )
 
     assert len({addition.act_occurrence_identity for addition in additions}) == len(
         additions
     )
-    assert len(additions) <= act_occurrence_count_limit
+    assert len(additions) <= act_occurrence_count_boundary
     assert all(
-        addition.admitted_material_act_occurrence_count_limit
-        == act_occurrence_count_limit
+        addition.admitted_material_act_occurrence_count_boundary
+        == act_occurrence_count_boundary
         for addition in additions
     )
     assert all(
-        occurrence.time_limit_second_count == time_counts[0]
+        occurrence.time_boundary_second_count == time_counts[0]
         for row in result_occurrences
         for occurrence in row
     )
@@ -228,7 +228,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
         functions,
         references,
         additions,
-        time_limit_second_count=second_count,
+        time_boundary_second_count=second_count,
     )
 
     assert all_references == references + tuple(
@@ -266,7 +266,7 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
                 boundary_identity=(
                     f"compiled-material-recurrence-{function_position}"
                 ),
-                act_occurrence_count_limit=len(additions),
+                act_occurrence_count_boundary=len(additions),
             )
         )
         if later_compare is None:
@@ -283,10 +283,10 @@ def test_each_compiled_function_preserves_every_one_byte_input_boundary():
     assert later[0] == later[1]
 
 
-def test_constructed_output_crosses_the_exact_material_byte_count_limit():
+def test_constructed_output_crosses_the_exact_material_byte_count_boundary():
     _, references = measured_one_byte_material()
     function = MaterialImplementationFunction(
-        identity="constructed-output-limit",
+        identity="constructed-output-boundary",
         invocation=(
             sys.executable,
             "-I",
@@ -299,16 +299,16 @@ def test_constructed_output_crosses_the_exact_material_byte_count_limit():
     occurrences, _exact, _returned = measure_material(
         (function,),
         references[:1],
-        boundary_identity="constructed-output-limit",
-        time_limit_second_count=1.0,
+        boundary_identity="constructed-output-boundary",
+        time_boundary_second_count=1.0,
     )
 
     occurrence = occurrences[0][0]
-    assert occurrence.material_byte_count_limit == 4096
+    assert occurrence.material_byte_count_boundary == 4096
     assert occurrence.stdout_bytes == b"x" * 4096
     assert occurrence.stderr_bytes == b""
-    assert occurrence.stdout_byte_count_limit_reached is True
-    assert occurrence.stderr_byte_count_limit_reached is False
+    assert occurrence.stdout_byte_count_boundary_reached is True
+    assert occurrence.stderr_byte_count_boundary_reached is False
     assert occurrence.returned is False
     assert occurrence.returncode is None
 
@@ -316,5 +316,5 @@ def test_constructed_output_crosses_the_exact_material_byte_count_limit():
 PYTEST_ADMISSION = (
     test_material_climb_refuses_the_collective_act_occurrence_count,
     test_each_compiled_function_preserves_every_one_byte_input_boundary,
-    test_constructed_output_crosses_the_exact_material_byte_count_limit,
+    test_constructed_output_crosses_the_exact_material_byte_count_boundary,
 )

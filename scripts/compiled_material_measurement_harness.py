@@ -75,7 +75,7 @@ def measure(
     implementation_function: MaterialImplementationFunction,
     references,
     *,
-    time_limit_second_count: float,
+    time_boundary_second_count: float,
     max_workers: int,
 ):
     occurrences = reference_occurrences_across(
@@ -83,7 +83,7 @@ def measure(
         boundary_identity="compiled-material-invocation",
         implementation_functions=(implementation_function,),
         max_workers=max_workers,
-        time_limit_second_count=time_limit_second_count,
+        time_boundary_second_count=time_boundary_second_count,
     )[0]
     exact = admit_invocation_occurrences(
         occurrences,
@@ -101,17 +101,17 @@ def measure_functions(
     references,
     *,
     boundary_identity: str,
-    time_limit_second_count: float,
+    time_boundary_second_count: float,
     max_workers: int,
-    material_byte_count_limit: int,
+    material_byte_count_boundary: int,
 ):
     occurrences = reference_occurrences_across(
         references,
         boundary_identity=f"{boundary_identity}-invocation",
         implementation_functions=implementation_functions,
         max_workers=max_workers,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=material_byte_count_limit,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
     admission = admit_invocation_rows(
         occurrences,
@@ -126,40 +126,40 @@ def measure_added_material(
     added_references,
     *,
     boundary_identity: str,
-    time_limit_second_count: float,
+    time_boundary_second_count: float,
     max_workers: int,
-    material_byte_count_limit: int,
-    act_occurrence_count_limit: int,
+    material_byte_count_boundary: int,
+    act_occurrence_count_boundary: int,
 ):
     source_occurrences, source_admission = measure_functions(
         implementation_functions,
         source_references,
         boundary_identity=f"{boundary_identity}-source",
-        time_limit_second_count=time_limit_second_count,
+        time_boundary_second_count=time_boundary_second_count,
         max_workers=max_workers,
-        material_byte_count_limit=material_byte_count_limit,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
     _, added_admission = measure_functions(
         implementation_functions,
         added_references,
         boundary_identity=f"{boundary_identity}-added",
-        time_limit_second_count=time_limit_second_count,
+        time_boundary_second_count=time_boundary_second_count,
         max_workers=max_workers,
-        material_byte_count_limit=material_byte_count_limit,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
     additions = admission_result_added_position_occurrences(
         source_admission.result_reference,
         added_admission.result_reference,
         boundary_identity=f"{boundary_identity}-addition",
-        admitted_material_act_occurrence_count_limit=act_occurrence_count_limit,
+        admitted_material_act_occurrence_count_boundary=act_occurrence_count_boundary,
     )
     result_occurrences = reference_occurrences_across(
         tuple(addition.result_reference for addition in additions),
         boundary_identity=f"{boundary_identity}-result",
         implementation_functions=implementation_functions,
         max_workers=max_workers,
-        time_limit_second_count=time_limit_second_count,
-        material_byte_count_limit=material_byte_count_limit,
+        time_boundary_second_count=time_boundary_second_count,
+        material_byte_count_boundary=material_byte_count_boundary,
     )
     comparisons = compare_added_material_invocations(
         additions,
@@ -185,7 +185,7 @@ def main() -> int:
             ),
         ),
         references,
-        time_limit_second_count=31.0,
+        time_boundary_second_count=31.0,
         max_workers=2,
     )
     print(

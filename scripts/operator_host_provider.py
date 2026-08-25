@@ -18,10 +18,10 @@ from seed_runtime.supplied_invocation_material import (
 )
 
 
-TIME_LIMIT_SECOND_COUNT = 2.0
-MATERIAL_BYTE_COUNT_LIMIT = 1_048_576
-IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT = 262144
-PIPE_DRAIN_LIMIT_SECONDS = 0.05
+TIME_BOUNDARY_SECOND_COUNT = 2.0
+MATERIAL_BYTE_COUNT_BOUNDARY = 1_048_576
+IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY = 262144
+PIPE_DRAIN_TIME_BOUNDARY_SECONDS = 0.05
 _WITNESS_INVOCATIONS = {
     b"ls": b"/usr/bin/ls",
     b"cat": b"/usr/bin/cat",
@@ -43,7 +43,7 @@ _PYTEST_CATALOG_ENVIRONMENT_COORDINATE = (
     "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
 )
 _ROOT = Path(__file__).resolve().parents[1]
-_LIMIT_LOSS = (
+_TRUNCATION_LOSS = (
     "material beyond the supplied boundary is not available",
 )
 
@@ -102,21 +102,21 @@ def _bounded_invocation(
     argv: tuple[bytes, ...],
     *,
     supply: SuppliedWitnessMaterialConsumer,
-    time_limit_second_count: float,
-    material_byte_count_limit: int,
+    time_boundary_second_count: float,
+    material_byte_count_boundary: int,
     environment: dict[str, str] | None = None,
     working_directory: Path | None = None,
 ) -> tuple[bool, bool, bool]:
     if (
-        type(time_limit_second_count) is not float
-        or time_limit_second_count <= 0
+        type(time_boundary_second_count) is not float
+        or time_boundary_second_count <= 0
     ):
-        raise TypeError("exact positive time limit second count required")
+        raise TypeError("exact positive time boundary second count required")
     if (
-        type(material_byte_count_limit) is not int
-        or material_byte_count_limit < 1
+        type(material_byte_count_boundary) is not int
+        or material_byte_count_boundary < 1
     ):
-        raise TypeError("exact positive material byte count limit required")
+        raise TypeError("exact positive material byte count boundary required")
     coordinates = {
         "stdin": subprocess.DEVNULL,
         "stdout": subprocess.PIPE,
@@ -138,9 +138,9 @@ def _bounded_invocation(
     supplied_counts = {"output": 0, "error": 0}
     read_occurrences = {"output": [], "error": []}
     invocation_read_position = 0
-    time_limit_reached = False
-    output_limit_reached = False
-    error_limit_reached = False
+    time_boundary_reached = False
+    output_boundary_reached = False
+    error_boundary_reached = False
     pipe_drain_deadline = None
 
     def end_process() -> None:
@@ -153,26 +153,26 @@ def _bounded_invocation(
     for stream, role in ((process.stdout, "output"), (process.stderr, "error")):
         os.set_blocking(stream.fileno(), False)
         streams.register(stream, selectors.EVENT_READ, role)
-    deadline = time.monotonic() + time_limit_second_count
+    deadline = time.monotonic() + time_boundary_second_count
     try:
         while streams.get_map():
             now = time.monotonic()
             remaining = deadline - now
             if remaining <= 0:
                 if process.poll() is None:
-                    if not time_limit_reached:
-                        time_limit_reached = True
+                    if not time_boundary_reached:
+                        time_boundary_reached = True
                         end_process()
-                    remaining = PIPE_DRAIN_LIMIT_SECONDS
+                    remaining = PIPE_DRAIN_TIME_BOUNDARY_SECONDS
                 elif pipe_drain_deadline is None:
-                    pipe_drain_deadline = now + PIPE_DRAIN_LIMIT_SECONDS
-                    remaining = PIPE_DRAIN_LIMIT_SECONDS
+                    pipe_drain_deadline = now + PIPE_DRAIN_TIME_BOUNDARY_SECONDS
+                    remaining = PIPE_DRAIN_TIME_BOUNDARY_SECONDS
                 elif now >= pipe_drain_deadline:
                     for key in streams.get_map().values():
                         if key.data == "output":
-                            output_limit_reached = True
+                            output_boundary_reached = True
                         else:
-                            error_limit_reached = True
+                            error_boundary_reached = True
                     break
                 else:
                     remaining = pipe_drain_deadline - now
@@ -187,7 +187,7 @@ def _bounded_invocation(
                     stream.close()
                     continue
                 available = (
-                    material_byte_count_limit - supplied_counts[key.data]
+                    material_byte_count_boundary - supplied_counts[key.data]
                 )
                 exact = found[:available]
                 if exact:
@@ -205,9 +205,9 @@ def _bounded_invocation(
                     invocation_read_position += 1
                 if len(found) > available:
                     if key.data == "output":
-                        output_limit_reached = True
+                        output_boundary_reached = True
                     else:
-                        error_limit_reached = True
+                        error_boundary_reached = True
                     end_process()
     except BaseException:
         end_process()
@@ -227,16 +227,16 @@ def _bounded_invocation(
                 ),
                 source_boundary=f"invocation {role}",
                 known_loss=(
-                    _LIMIT_LOSS
-                    if time_limit_reached
-                    or (role == "output" and output_limit_reached)
-                    or (role == "error" and error_limit_reached)
+                    _TRUNCATION_LOSS
+                    if time_boundary_reached
+                    or (role == "output" and output_boundary_reached)
+                    or (role == "error" and error_boundary_reached)
                     else ()
                 ),
                 read_occurrences=occurrences,
             )
         )
-    return time_limit_reached, output_limit_reached, error_limit_reached
+    return time_boundary_reached, output_boundary_reached, error_boundary_reached
 
 
 def _bounded_artifact(
@@ -244,7 +244,7 @@ def _bounded_artifact(
 ) -> tuple[bytes, bool]:
     try:
         with path.open("rb") as stream:
-            material = stream.read(IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT + 1)
+            material = stream.read(IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY + 1)
     except FileNotFoundError as error:
         if missing_is_known_loss:
             return b"", True
@@ -252,8 +252,8 @@ def _bounded_artifact(
             "exact implementation measurement material required"
         ) from error
     return (
-        material[:IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT],
-        len(material) > IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT,
+        material[:IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY],
+        len(material) > IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY,
     )
 
 
@@ -261,12 +261,12 @@ def _supply_completion(
     supply: SuppliedWitnessMaterialConsumer,
     *,
     timed_out: bool,
-    output_limited: bool,
-    error_limited: bool,
+    output_truncated: bool,
+    error_truncated: bool,
 ) -> None:
     invocation_loss = (
-        _LIMIT_LOSS
-        if timed_out or output_limited or error_limited
+        _TRUNCATION_LOSS
+        if timed_out or output_truncated or error_truncated
         else ()
     )
     supply(
@@ -286,27 +286,27 @@ def invoke_operator_host(
         raise TypeError("exact supplied material consumer required")
     argv = _invocation_argv(exact_command)
     if argv[: len(_PYTEST_INVOCATION)] != _PYTEST_INVOCATION:
-        timed_out, output_limited, error_limited = _bounded_invocation(
+        timed_out, output_truncated, error_truncated = _bounded_invocation(
             argv,
             supply=supply,
-            time_limit_second_count=TIME_LIMIT_SECOND_COUNT,
-            material_byte_count_limit=MATERIAL_BYTE_COUNT_LIMIT,
+            time_boundary_second_count=TIME_BOUNDARY_SECOND_COUNT,
+            material_byte_count_boundary=MATERIAL_BYTE_COUNT_BOUNDARY,
         )
         _supply_completion(
             supply,
             timed_out=timed_out,
-            output_limited=output_limited,
-            error_limited=error_limited,
+            output_truncated=output_truncated,
+            error_truncated=error_truncated,
         )
         return
     with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
         artifact_path = Path(directory) / "implementation-measurement"
         catalog_path = Path(directory) / "implementation-catalog"
-        timed_out, output_limited, error_limited = _bounded_invocation(
+        timed_out, output_truncated, error_truncated = _bounded_invocation(
             argv,
             supply=supply,
-            time_limit_second_count=TIME_LIMIT_SECOND_COUNT,
-            material_byte_count_limit=MATERIAL_BYTE_COUNT_LIMIT,
+            time_boundary_second_count=TIME_BOUNDARY_SECOND_COUNT,
+            material_byte_count_boundary=MATERIAL_BYTE_COUNT_BOUNDARY,
             environment={
                 "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",
@@ -317,16 +317,16 @@ def invoke_operator_host(
             },
             working_directory=_ROOT,
         )
-        artifact, artifact_limited = _bounded_artifact(
+        artifact, artifact_truncated = _bounded_artifact(
             artifact_path,
             missing_is_known_loss=(
-                timed_out or output_limited or error_limited
+                timed_out or output_truncated or error_truncated
             ),
         )
-        catalog, catalog_limited = _bounded_artifact(
+        catalog, catalog_truncated = _bounded_artifact(
             catalog_path,
             missing_is_known_loss=(
-                timed_out or output_limited or error_limited
+                timed_out or output_truncated or error_truncated
             ),
         )
     supply(
@@ -334,11 +334,11 @@ def invoke_operator_host(
             exact_bytes=catalog,
             source_boundary="implementation function catalog",
             known_loss=(
-                _LIMIT_LOSS
-                if catalog_limited
+                _TRUNCATION_LOSS
+                if catalog_truncated
                 or timed_out
-                or output_limited
-                or error_limited
+                or output_truncated
+                or error_truncated
                 else ()
             ),
         )
@@ -348,11 +348,11 @@ def invoke_operator_host(
             exact_bytes=artifact,
             source_boundary="implementation function measurement",
             known_loss=(
-                _LIMIT_LOSS
-                if artifact_limited
+                _TRUNCATION_LOSS
+                if artifact_truncated
                 or timed_out
-                or output_limited
-                or error_limited
+                or output_truncated
+                or error_truncated
                 else ()
             ),
         )
@@ -360,6 +360,6 @@ def invoke_operator_host(
     _supply_completion(
         supply,
         timed_out=timed_out,
-        output_limited=output_limited,
-        error_limited=error_limited,
+        output_truncated=output_truncated,
+        error_truncated=error_truncated,
     )

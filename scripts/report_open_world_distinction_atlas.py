@@ -43,10 +43,10 @@ POSTHOC_FAMILIES = {
 }
 
 
-def _render(value: bytes, limit: int = 56) -> str:
+def _render(value: bytes, boundary: int = 56) -> str:
     rendered = value.decode("utf-8", "backslashreplace")
-    if len(rendered) > limit:
-        rendered = rendered[: limit - 1] + "…"
+    if len(rendered) > boundary:
+        rendered = rendered[: boundary - 1] + "…"
     return repr(rendered)
 
 
@@ -83,11 +83,11 @@ def main() -> int:
     role_occurrences: dict[bytes, Counter[str]] = defaultdict(Counter)
     role_sources: dict[bytes, set[str]] = defaultdict(set)
     for source in artifact["sources"]:
-        for delimiter in source["delimiters"]:
-            for frame in delimiter["substitution_frames"]:
+        for deboundaryer in source["deboundaryers"]:
+            for frame in deboundaryer["substitution_frames"]:
                 left = _material(source, frame["left_material"])
                 right = _material(source, frame["right_material"])
-                key = (delimiter["separator_byte"], left, right)
+                key = (deboundaryer["separator_byte"], left, right)
                 occupants = tuple(
                     _material(source, occupant["material"])
                     for occupant in frame["occupants"]

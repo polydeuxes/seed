@@ -172,14 +172,14 @@ def measured_book_pairs(book_material_acquisitions):
         ledger, byte_measurement.identity
     )
     pairs = tuple(
-        bytes(assertion.representation)
+        bytes(assertion.content)
         for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+        if assertion.result == "count" and assertion.content is not None
     )
     byte_values = tuple(
-        assertion.representation
+        assertion.content
         for assertion in byte_assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+        if assertion.result == "count" and assertion.content is not None
     )
     pair_material = exact_byte_pair_material_references(
         ledger, pair_measurement.identity
@@ -310,7 +310,7 @@ def book_three_byte_format_occurrences(
         pair_admission.result_reference,
         byte_admission.result_reference,
         boundary_identity="book-three-byte-addition",
-        admitted_material_act_occurrence_count_limit=4096,
+        admitted_material_act_occurrence_count_boundary=4096,
     )
     return pair_admission, occurrences, added_position_invocations(
         occurrences, boundary_identity="book-three-byte-format"
@@ -349,7 +349,7 @@ def book_addition_result_additions(
         result_admission.result_reference,
         book_format_admissions[1].result_reference,
         boundary_identity="book-addition-result-later-addition",
-        admitted_material_act_occurrence_count_limit=4096,
+        admitted_material_act_occurrence_count_boundary=4096,
     )
     result_invocations = added_position_invocations(
         later_additions,
@@ -462,7 +462,7 @@ def book_removal_result_additions(
         removal_admission.result_reference,
         book_format_admissions[1].result_reference,
         boundary_identity="book-removal-result-addition",
-        admitted_material_act_occurrence_count_limit=4096,
+        admitted_material_act_occurrence_count_boundary=4096,
     )
     result_invocations = added_position_invocations(
         additions,
@@ -707,7 +707,7 @@ def test_bash_admission_additions_reach_one_later_compare(
         source_admission.result_reference,
         added_admission.result_reference,
         boundary_identity="book-bash-addition",
-        admitted_material_act_occurrence_count_limit=4096,
+        admitted_material_act_occurrence_count_boundary=4096,
     )
 
     earlier, coordinates, later = first_recurring_added_return_compare(
@@ -715,7 +715,7 @@ def test_bash_admission_additions_reach_one_later_compare(
         source_invocations,
         function,
         boundary_identity="book-bash-addition-recurrence",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert additions
@@ -877,7 +877,7 @@ def test_format_recurrence_precedes_later_moved_material(
             source_invocations,
             source_invocations[0].implementation_function,
             boundary_identity=f"book-moved-recurrence-{position}",
-            act_occurrence_count_limit=len(additions),
+            act_occurrence_count_boundary=len(additions),
         )
         if later is None:
             continue
@@ -940,7 +940,7 @@ def test_format_recurrence_preserves_unknown_function_coordinates(
         additions,
         book_pair_format_occurrences,
         boundary_identity="book-full-function-format-recurrence",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
     assert later is not None
     assert coordinate is not None
@@ -973,7 +973,7 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
         additions,
         (first_row, clone_row),
         boundary_identity="book-matching-full-function-format-recurrence",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
     assert later is not None
     assert coordinate is not None
@@ -989,7 +989,7 @@ def test_recurrence_returns_coordinate_before_later_compare(
         book_pair_format_occurrences[0],
         book_pair_format_occurrences[0][0].implementation_function,
         boundary_identity="book-recurrence-before-later",
-        act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+        act_occurrence_count_boundary=len(book_three_byte_format_occurrences[1]),
         invoke_later=False,
     )
     assert earlier
@@ -1007,7 +1007,7 @@ def test_removal_recurrence_returns_coordinate_before_later_compare(
         book_pair_format_occurrences[0],
         book_pair_format_occurrences[0][0].implementation_function,
         boundary_identity="book-removal-recurrence-before-later",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
         invoke_later=False,
     )
     assert earlier
@@ -1030,7 +1030,7 @@ def test_recurrence_before_later_refuses_wrong_function_identity(
             row,
             wrong,
             boundary_identity="wrong-before-later-function",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
             invoke_later=False,
         )
 
@@ -1056,7 +1056,7 @@ def test_full_function_recurrence_refuses_reordered_source_occurrences(
             book_three_byte_format_occurrences[1],
             (first_row, reordered),
             boundary_identity="book-reordered-full-function-recurrence",
-            act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+            act_occurrence_count_boundary=len(book_three_byte_format_occurrences[1]),
         )
 
 
@@ -1080,7 +1080,7 @@ def test_removal_full_function_recurrence_refuses_reordered_source_occurrences(
             removals,
             (first_row, reordered),
             boundary_identity="book-reordered-removal-full-function",
-            act_occurrence_count_limit=len(removals),
+            act_occurrence_count_boundary=len(removals),
         )
 
 
@@ -1095,7 +1095,7 @@ def test_recurrence_before_later_requires_a_boolean_control(
             book_three_byte_format_occurrences[1], row,
             row[0].implementation_function,
             boundary_identity="bad-control-addition",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
             invoke_later=None,
         )
     removals, _ = book_removed_position_invocation_occurrences
@@ -1103,7 +1103,7 @@ def test_recurrence_before_later_requires_a_boolean_control(
         first_recurring_removed_compare(
             removals, row, row[0].implementation_function,
             boundary_identity="bad-control-removal",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
             invoke_later=None,
         )
 
@@ -1135,7 +1135,7 @@ def test_full_function_recurrence_preserves_heterogeneous_coordinates(
         book_three_byte_format_occurrences[1],
         (row, clone_row),
         boundary_identity="book-heterogeneous-full-function",
-        act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+        act_occurrence_count_boundary=len(book_three_byte_format_occurrences[1]),
     )
     assert later is not None
     assert coordinates is not None
@@ -1166,7 +1166,7 @@ def test_full_function_recurrence_preserves_conflict_and_continues_after_it():
         boundary_identity="prospective-conflict-admission",
         source_material=references,
     )
-    act_occurrence_count_limit = sum(
+    act_occurrence_count_boundary = sum(
         (len(source.exact_material) + 1) * len(references)
         for source in references
     )
@@ -1175,8 +1175,8 @@ def test_full_function_recurrence_preserves_conflict_and_continues_after_it():
         for addition in admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="prospective-conflict-addition",
-            admitted_material_act_occurrence_count_limit=(
-                act_occurrence_count_limit
+            admitted_material_act_occurrence_count_boundary=(
+                act_occurrence_count_boundary
             ),
         )
         if addition.source_reference == references[0]
@@ -1196,7 +1196,7 @@ def test_full_function_recurrence_preserves_conflict_and_continues_after_it():
         additions,
         source_rows,
         boundary_identity="prospective-conflict-compare",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert tuple(addition.result_material for addition in additions) == (
@@ -1268,7 +1268,7 @@ def test_full_function_coordinates_precede_every_added_material_invocation():
         for addition in admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="full-function-addition",
-            admitted_material_act_occurrence_count_limit=18,
+            admitted_material_act_occurrence_count_boundary=18,
         )
         if addition.position == 0
         and addition.source_reference == references[0]
@@ -1288,7 +1288,7 @@ def test_full_function_coordinates_precede_every_added_material_invocation():
         additions,
         source_rows,
         boundary_identity="full-function-prospective",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert tuple(len(row) for row in earlier) == (2, 2)
@@ -1335,7 +1335,7 @@ def test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation
         for addition in admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="unknown-function-addition",
-            admitted_material_act_occurrence_count_limit=18,
+            admitted_material_act_occurrence_count_boundary=18,
         )
         if addition.position == 0
         and addition.source_reference == references[0]
@@ -1355,7 +1355,7 @@ def test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation
         additions,
         source_rows,
         boundary_identity="unknown-function-prospective",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert tuple(len(row) for row in earlier) == (2, 2)
@@ -1381,7 +1381,7 @@ def test_full_function_recurrence_refuses_duplicate_function_identity(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
             boundary_identity="duplicate-full-function",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
         )
 
 
@@ -1394,11 +1394,11 @@ def test_full_function_recurrence_refuses_an_empty_function_row(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], ()),
             boundary_identity="empty-full-function",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
         )
 
 
-def test_full_function_recurrence_refuses_a_nonpositive_limit(
+def test_full_function_recurrence_refuses_a_nonpositive_boundary(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -1406,8 +1406,8 @@ def test_full_function_recurrence_refuses_a_nonpositive_limit(
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0],),
-            boundary_identity="invalid-full-function-limit",
-            act_occurrence_count_limit=0,
+            boundary_identity="invalid-full-function-boundary",
+            act_occurrence_count_boundary=0,
         )
 
 
@@ -1421,7 +1421,7 @@ def test_full_function_removal_recurrence_refuses_duplicate_function_identity(
             removals,
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
             boundary_identity="duplicate-full-function-removal",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
         )
 
 
@@ -1434,7 +1434,7 @@ def test_full_function_addition_recurrence_refuses_different_row_lengths(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
             boundary_identity="short-full-function-addition-row",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
         )
 
 
@@ -1448,11 +1448,11 @@ def test_full_function_removal_recurrence_refuses_different_row_lengths(
             removals,
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
             boundary_identity="short-full-function-removal-row",
-            act_occurrence_count_limit=10,
+            act_occurrence_count_boundary=10,
         )
 
 
-def test_full_function_removal_recurrence_refuses_nonpositive_limit(
+def test_full_function_removal_recurrence_refuses_nonpositive_boundary(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -1461,8 +1461,8 @@ def test_full_function_removal_recurrence_refuses_nonpositive_limit(
         first_recurring_removed_compare_across(
             removals,
             (book_pair_format_occurrences[0],),
-            boundary_identity="invalid-full-function-removal-limit",
-            act_occurrence_count_limit=0,
+            boundary_identity="invalid-full-function-removal-boundary",
+            act_occurrence_count_boundary=0,
         )
 
 
@@ -1967,7 +1967,7 @@ def test_admitted_material_addition_refuses_cross_locality_material():
         admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="cross-locality-addition",
-            admitted_material_act_occurrence_count_limit=8,
+            admitted_material_act_occurrence_count_boundary=8,
         )
 
 
@@ -2595,7 +2595,7 @@ def test_removal_recurrence_is_recovered_before_later_compare(
         source_invocations,
         source_invocations[0].implementation_function,
         boundary_identity="book-removal-recurrence-later",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
     )
     assert later is not None
     assert coordinate == later.result_returned
@@ -2615,7 +2615,7 @@ def test_removal_recurrence_freezes_known_coordinates_before_one_later_act(
         removals,
         book_pair_format_occurrences,
         boundary_identity="book-removal-full-function-recurrence",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
     )
     assert later is not None
     assert coordinates is not None
@@ -2653,7 +2653,7 @@ def test_removal_recurrence_accepts_a_matching_full_function_vector(
         removals,
         (first_row, clone_row),
         boundary_identity="book-matching-full-function-removal-recurrence",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
     )
     assert later is not None
     assert coordinate is not None
@@ -2713,7 +2713,7 @@ def test_full_function_coordinates_precede_every_removed_material_invocation():
         removals,
         source_rows,
         boundary_identity="full-function-removal-prospective",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
     )
 
     assert tuple(len(row) for row in earlier) == (2, 2)
@@ -2776,7 +2776,7 @@ def test_unknown_removal_function_coordinate_does_not_erase_the_known_coordinate
         removals,
         source_rows,
         boundary_identity="unknown-removal-prospective",
-        act_occurrence_count_limit=len(removals),
+        act_occurrence_count_boundary=len(removals),
     )
 
     assert tuple(len(row) for row in earlier) == (2, 2)
@@ -2842,7 +2842,7 @@ def test_admitted_source_lineage_crosses_every_exact_removal_boundary():
     removals = admission_removed_position_occurrences(
         source_admission.result_reference,
         boundary_identity="admitted-removal-act",
-        admitted_material_act_occurrence_count_limit=4,
+        admitted_material_act_occurrence_count_boundary=4,
     )
 
     assert len(removals) == 4
@@ -2924,7 +2924,7 @@ def test_removal_refuses_swapped_admission_lineage_and_mismatched_act_result():
     removals = admission_removed_position_occurrences(
         source_admission.result_reference,
         boundary_identity="swapped-removal-act",
-        admitted_material_act_occurrence_count_limit=2,
+        admitted_material_act_occurrence_count_boundary=2,
     )
 
     with pytest.raises(ValueError, match="source differs from its Admission"):
@@ -2974,7 +2974,7 @@ def test_removal_refuses_swapped_admission_lineage_and_mismatched_act_result():
         )
 
 
-def test_removal_occurrence_limit_does_not_split_an_admitted_tuple():
+def test_removal_occurrence_boundary_does_not_split_an_admitted_tuple():
     sources = (
         ExactMaterialReference(
             "bounded-removal-source-0",
@@ -3004,7 +3004,7 @@ def test_removal_occurrence_limit_does_not_split_an_admitted_tuple():
     removals = admission_removed_position_occurrences(
         source_admission.result_reference,
         boundary_identity="bounded-removal-act",
-        admitted_material_act_occurrence_count_limit=2,
+        admitted_material_act_occurrence_count_boundary=2,
     )
 
     assert len(removals) == 1
@@ -3232,7 +3232,7 @@ def test_removal_result_admission_reaches_later_addition_compare(
                 "book-removal-result-addition-recurrence-"
                 f"{first_position}-{second_position}"
             ),
-            act_occurrence_count_limit=len(additions),
+            act_occurrence_count_boundary=len(additions),
         )
         for first_position, first in enumerate(source_invocations)
         for second_position, second in enumerate(source_invocations)
@@ -3462,7 +3462,7 @@ def test_recurring_result_coordinates_precede_one_later_invocation(monkeypatch):
     all_additions = admission_added_position_occurrences(
         admission.result_reference,
         boundary_identity="recurrence-addition",
-        admitted_material_act_occurrence_count_limit=18,
+        admitted_material_act_occurrence_count_boundary=18,
     )
     additions = tuple(
         addition
@@ -3547,7 +3547,7 @@ def test_recurring_result_coordinates_precede_one_later_invocation(monkeypatch):
             tuple(source_invocations.values()),
             function,
             boundary_identity="recurrence-later",
-            act_occurrence_count_limit=len(all_additions),
+            act_occurrence_count_boundary=len(all_additions),
         )
     )
     assert later_compare is not None
@@ -3568,7 +3568,7 @@ def test_recurring_result_coordinates_precede_one_later_invocation(monkeypatch):
         same_source_coordinates,
         function,
         boundary_identity="recurrence-one-source-coordinate",
-        act_occurrence_count_limit=len(all_additions),
+        act_occurrence_count_boundary=len(all_additions),
     ) == ((), None, None)
     assert supplied == []
 
@@ -3612,7 +3612,7 @@ def test_distinct_function_coordinates_precede_every_later_invocation(monkeypatc
         for addition in admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="distinct-function-addition",
-            admitted_material_act_occurrence_count_limit=18,
+            admitted_material_act_occurrence_count_boundary=18,
         )
         if addition.position == 0
         and addition.source_reference == references[0]
@@ -3643,7 +3643,7 @@ def test_distinct_function_coordinates_precede_every_later_invocation(monkeypatc
         additions,
         source_rows,
         boundary_identity="distinct-function-recurrence",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert tuple(len(row) for row in earlier) == (2, 2)
@@ -3738,7 +3738,7 @@ def test_format_recurrence_precedes_one_later_invocation():
         for addition in admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="format-recurrence-addition",
-            admitted_material_act_occurrence_count_limit=18,
+            admitted_material_act_occurrence_count_boundary=18,
         )
         if addition.position == 0 and addition.source_reference == references[0]
     )
@@ -3763,7 +3763,7 @@ def test_format_recurrence_precedes_one_later_invocation():
         source_invocations,
         function,
         boundary_identity="format-recurrence-later",
-        act_occurrence_count_limit=len(additions),
+        act_occurrence_count_boundary=len(additions),
     )
 
     assert later is not None
@@ -3780,7 +3780,7 @@ def test_format_recurrence_precedes_one_later_invocation():
     ) + (additions_by_identity[later.added_position_act_occurrence_identity].result_material,)
 
 
-def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
+def test_time_boundary_preserves_an_invocation_that_did_not_return(monkeypatch):
     function = MaterialImplementationFunction(
         identity="compiled-0",
         invocation=("compiled-0",),
@@ -3800,16 +3800,16 @@ def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
     occurrence = invocation_occurrence(
         b"material",
         function,
-        boundary_identity="time-limit-boundary",
-        time_limit_second_count=0.25,
+        boundary_identity="time-boundary-boundary",
+        time_boundary_second_count=0.25,
     )
 
     assert occurrence.returned is False
     assert occurrence.returncode is None
     assert occurrence.stdout_bytes == b"available output"
     assert occurrence.stderr_bytes is None
-    assert occurrence.time_limit_second_count == 0.25
-    assert occurrence.time_limit_reached
+    assert occurrence.time_boundary_second_count == 0.25
+    assert occurrence.time_boundary_reached
     assert occurrence.coordinates == (
         0.25,
         None,
@@ -3824,7 +3824,7 @@ def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
     )
 
 
-def test_material_byte_count_limit_preserves_the_exact_available_prefix():
+def test_material_byte_count_boundary_preserves_the_exact_available_prefix():
     occurrence = invocation_occurrence(
         b"",
         MaterialImplementationFunction(
@@ -3835,16 +3835,16 @@ def test_material_byte_count_limit_preserves_the_exact_available_prefix():
                 "while :; do printf 0123456789; done",
             ),
         ),
-        boundary_identity="material-byte-count-limit",
-        time_limit_second_count=1.0,
-        material_byte_count_limit=127,
+        boundary_identity="material-byte-count-boundary",
+        time_boundary_second_count=1.0,
+        material_byte_count_boundary=127,
     )
 
     assert not occurrence.returned
     assert occurrence.returncode is None
-    assert not occurrence.time_limit_reached
-    assert occurrence.stdout_byte_count_limit_reached
-    assert not occurrence.stderr_byte_count_limit_reached
+    assert not occurrence.time_boundary_reached
+    assert occurrence.stdout_byte_count_boundary_reached
+    assert not occurrence.stderr_byte_count_boundary_reached
     assert occurrence.stdout_bytes == (b"0123456789" * 13)[:127]
     assert occurrence.stderr_bytes == b""
     assert occurrence.return_coordinates == (
@@ -3859,25 +3859,25 @@ def test_material_byte_count_limit_preserves_the_exact_available_prefix():
     )
 
 
-def test_exact_material_at_the_byte_count_limit_can_return():
+def test_exact_material_at_the_byte_count_boundary_can_return():
     occurrence = invocation_occurrence(
         b"abc",
         MaterialImplementationFunction(
             identity="compiled-0",
             invocation=("/bin/cat",),
         ),
-        boundary_identity="exact-material-byte-count-limit",
-        time_limit_second_count=1.0,
-        material_byte_count_limit=3,
+        boundary_identity="exact-material-byte-count-boundary",
+        time_boundary_second_count=1.0,
+        material_byte_count_boundary=3,
     )
 
     assert occurrence.returned
     assert occurrence.returncode == 0
     assert occurrence.stdout_bytes == b"abc"
     assert occurrence.stderr_bytes == b""
-    assert not occurrence.time_limit_reached
-    assert not occurrence.stdout_byte_count_limit_reached
-    assert not occurrence.stderr_byte_count_limit_reached
+    assert not occurrence.time_boundary_reached
+    assert not occurrence.stdout_byte_count_boundary_reached
+    assert not occurrence.stderr_byte_count_boundary_reached
     assert occurrence.input_boundary_accepted_byte_count == len(
         occurrence.exact_material
     )
@@ -3896,17 +3896,17 @@ def test_returned_invocation_preserves_incomplete_input_boundary_acceptance():
             ),
         ),
         boundary_identity="incomplete-input-boundary",
-        time_limit_second_count=1.0,
-        material_byte_count_limit=127,
+        time_boundary_second_count=1.0,
+        material_byte_count_boundary=127,
     )
 
     assert occurrence.returned
     assert occurrence.returncode == 0
     assert occurrence.input_boundary_accepted_byte_count is not None
     assert 0 < occurrence.input_boundary_accepted_byte_count < len(material)
-    assert not occurrence.time_limit_reached
-    assert not occurrence.stdout_byte_count_limit_reached
-    assert not occurrence.stderr_byte_count_limit_reached
+    assert not occurrence.time_boundary_reached
+    assert not occurrence.stdout_byte_count_boundary_reached
+    assert not occurrence.stderr_byte_count_boundary_reached
 
 
 @pytest.mark.parametrize(
@@ -3927,7 +3927,7 @@ def test_bounded_invocation_refuses_invalid_input_boundary_acceptance(count):
             returncode=0,
             stdout_bytes=b"",
             stderr_bytes=b"",
-            material_byte_count_limit=1,
+            material_byte_count_boundary=1,
             input_boundary_accepted_byte_count=count,
         )
 
@@ -3946,7 +3946,7 @@ def test_bounded_invocation_requires_input_boundary_acceptance():
             returncode=0,
             stdout_bytes=b"",
             stderr_bytes=b"",
-            material_byte_count_limit=1,
+            material_byte_count_boundary=1,
         )
 
 
@@ -3978,11 +3978,11 @@ PYTEST_ADMISSION = (
     test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation,
     test_full_function_recurrence_refuses_duplicate_function_identity,
     test_full_function_recurrence_refuses_an_empty_function_row,
-    test_full_function_recurrence_refuses_a_nonpositive_limit,
+    test_full_function_recurrence_refuses_a_nonpositive_boundary,
     test_full_function_removal_recurrence_refuses_duplicate_function_identity,
     test_full_function_addition_recurrence_refuses_different_row_lengths,
     test_full_function_removal_recurrence_refuses_different_row_lengths,
-    test_full_function_removal_recurrence_refuses_nonpositive_limit,
+    test_full_function_removal_recurrence_refuses_nonpositive_boundary,
     test_compiled_format_implementation_functions_admit_the_same_material_differently,
     test_exact_position_material_returns_once_through_its_original_order,
     test_missing_position_cannot_return_the_complete_exact_material,
@@ -4029,7 +4029,7 @@ PYTEST_ADMISSION = (
     test_removal_compare_refuses_a_result_without_its_act_occurrence,
     test_admitted_source_lineage_crosses_every_exact_removal_boundary,
     test_removal_refuses_swapped_admission_lineage_and_mismatched_act_result,
-    test_removal_occurrence_limit_does_not_split_an_admitted_tuple,
+    test_removal_occurrence_boundary_does_not_split_an_admitted_tuple,
     test_addition_result_admission_comes_from_exact_compare_distinctions,
     test_later_addition_uses_exact_earlier_addition_results,
     test_removal_result_admission_comes_from_exact_compare_distinctions,
@@ -4045,9 +4045,9 @@ PYTEST_ADMISSION = (
     test_recurring_result_coordinates_precede_one_later_invocation,
     test_distinct_function_coordinates_precede_every_later_invocation,
     test_format_recurrence_precedes_one_later_invocation,
-    test_time_limit_preserves_an_invocation_that_did_not_return,
-    test_material_byte_count_limit_preserves_the_exact_available_prefix,
-    test_exact_material_at_the_byte_count_limit_can_return,
+    test_time_boundary_preserves_an_invocation_that_did_not_return,
+    test_material_byte_count_boundary_preserves_the_exact_available_prefix,
+    test_exact_material_at_the_byte_count_boundary_can_return,
     test_returned_invocation_preserves_incomplete_input_boundary_acceptance,
     test_bounded_invocation_refuses_invalid_input_boundary_acceptance,
     test_bounded_invocation_requires_input_boundary_acceptance,
@@ -4065,7 +4065,7 @@ FIDELITY_DISTINCTIONS = {
         test_added_position_refuses_a_different_source_order,
         test_equal_result_material_keeps_each_exact_added_position_occurrence,
         test_equal_source_material_keeps_distinct_source_assertion_references,
-        test_material_byte_count_limit_preserves_the_exact_available_prefix,
-        test_exact_material_at_the_byte_count_limit_can_return,
+        test_material_byte_count_boundary_preserves_the_exact_available_prefix,
+        test_exact_material_at_the_byte_count_boundary_can_return,
     ),
 }

@@ -133,20 +133,20 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
         argv,
         *,
         supply,
-        time_limit_second_count,
-        material_byte_count_limit,
+        time_boundary_second_count,
+        material_byte_count_boundary,
     ):
         assert argv == (
             b"/usr/bin/gnome-calculator",
             b"--solve=2+2",
         )
         assert (
-            time_limit_second_count
-            == operator_host_provider.TIME_LIMIT_SECOND_COUNT
+            time_boundary_second_count
+            == operator_host_provider.TIME_BOUNDARY_SECOND_COUNT
         )
         assert (
-            material_byte_count_limit
-            == operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
+            material_byte_count_boundary
+            == operator_host_provider.MATERIAL_BYTE_COUNT_BOUNDARY
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
@@ -219,7 +219,7 @@ def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
 
 
 def test_host_material_boundary_is_one_mebibyte():
-    assert operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT == 1_048_576
+    assert operator_host_provider.MATERIAL_BYTE_COUNT_BOUNDARY == 1_048_576
 
 
 def test_cat_preserves_finite_material_across_multiple_pipe_reads(tmp_path):
@@ -267,7 +267,7 @@ def test_host_output_is_bounded_without_returncode_material():
         if occurrence.source_boundary == "invocation output"
     )
     assert len(output.exact_bytes) == (
-        operator_host_provider.MATERIAL_BYTE_COUNT_LIMIT
+        operator_host_provider.MATERIAL_BYTE_COUNT_BOUNDARY
     )
     assert tuple(
         occurrence.source_boundary for occurrence in output.read_occurrences
@@ -280,21 +280,21 @@ def test_host_output_is_bounded_without_returncode_material():
     assert supplied[-1].known_loss
 
 
-def test_bounded_invocation_uses_its_exact_material_byte_count_limit():
+def test_bounded_invocation_uses_its_exact_material_byte_count_boundary():
     supplied = []
 
-    timed_out, output_limited, error_limited = (
+    timed_out, output_truncated, error_truncated = (
         operator_host_provider._bounded_invocation(
             (b"/usr/bin/printf", b"abcdef"),
             supply=supplied.append,
-            time_limit_second_count=1.0,
-            material_byte_count_limit=3,
+            time_boundary_second_count=1.0,
+            material_byte_count_boundary=3,
         )
     )
 
     assert not timed_out
-    assert output_limited
-    assert not error_limited
+    assert output_truncated
+    assert not error_truncated
     assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         b"abc",
         b"",
@@ -302,7 +302,7 @@ def test_bounded_invocation_uses_its_exact_material_byte_count_limit():
 
 
 @pytest.mark.parametrize(
-    ("time_limit_second_count", "material_byte_count_limit"),
+    ("time_boundary_second_count", "material_byte_count_boundary"),
     (
         (0.0, 3),
         (1, 3),
@@ -310,10 +310,10 @@ def test_bounded_invocation_uses_its_exact_material_byte_count_limit():
         (1.0, 3.0),
     ),
 )
-def test_bounded_invocation_refuses_invalid_exact_limits_before_process(
+def test_bounded_invocation_refuses_invalid_exact_boundaries_before_process(
     monkeypatch,
-    time_limit_second_count,
-    material_byte_count_limit,
+    time_boundary_second_count,
+    material_byte_count_boundary,
 ):
     monkeypatch.setattr(
         subprocess,
@@ -325,8 +325,8 @@ def test_bounded_invocation_refuses_invalid_exact_limits_before_process(
         operator_host_provider._bounded_invocation(
             (b"/usr/bin/printf", b"exact"),
             supply=lambda _occurrence: None,
-            time_limit_second_count=time_limit_second_count,
-            material_byte_count_limit=material_byte_count_limit,
+            time_boundary_second_count=time_boundary_second_count,
+            material_byte_count_boundary=material_byte_count_boundary,
         )
 
 
@@ -340,18 +340,18 @@ def test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer(
         if len(supplied) == 1:
             time.sleep(0.03)
 
-    timed_out, output_limited, error_limited = (
+    timed_out, output_truncated, error_truncated = (
         operator_host_provider._bounded_invocation(
             (b"/usr/bin/printf", b"exact"),
             supply=slow_consumer,
-            time_limit_second_count=0.01,
-            material_byte_count_limit=64,
+            time_boundary_second_count=0.01,
+            material_byte_count_boundary=64,
         )
     )
 
     assert not timed_out
-    assert not output_limited
-    assert not error_limited
+    assert not output_truncated
+    assert not error_truncated
     assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         b"exact",
         b"",
@@ -371,18 +371,18 @@ def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
         b"os._exit(0)\n"
     )
 
-    timed_out, output_limited, error_limited = (
+    timed_out, output_truncated, error_truncated = (
         operator_host_provider._bounded_invocation(
             (operator_host_provider._PYTEST_INVOCATION[0], b"-c", program),
             supply=supplied.append,
-            time_limit_second_count=0.05,
-            material_byte_count_limit=64,
+            time_boundary_second_count=0.05,
+            material_byte_count_boundary=64,
         )
     )
 
     assert not timed_out
-    assert output_limited
-    assert error_limited
+    assert output_truncated
+    assert error_truncated
     assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         b"exact",
         b"",
@@ -507,7 +507,7 @@ def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("timed_out", "output_limited", "error_limited"),
+    ("timed_out", "output_truncated", "error_truncated"),
     (
         (True, False, False),
         (False, True, False),
@@ -515,7 +515,7 @@ def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
     ),
 )
 def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
-    monkeypatch, timed_out, output_limited, error_limited
+    monkeypatch, timed_out, output_truncated, error_truncated
 ):
     def bounded(*args, supply, **kwargs):
         supply(
@@ -530,7 +530,7 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
                 "invocation error occurrence 0",
             )
         )
-        return timed_out, output_limited, error_limited
+        return timed_out, output_truncated, error_truncated
 
     monkeypatch.setattr(
         operator_host_provider,
@@ -554,13 +554,13 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
 
 def test_pytest_measurement_artifact_is_bounded(tmp_path):
     path = tmp_path / "measurement"
-    exact = b"x" * (operator_host_provider.IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT + 1)
+    exact = b"x" * (operator_host_provider.IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY + 1)
     path.write_bytes(exact)
 
-    material, limited = operator_host_provider._bounded_artifact(path)
+    material, truncated = operator_host_provider._bounded_artifact(path)
 
     assert material == exact[:-1]
-    assert limited is True
+    assert truncated is True
 
 
 def test_pytest_provider_death_is_not_replaced_by_supplied_results(monkeypatch):
@@ -581,8 +581,8 @@ PYTEST_ADMISSION = (
     test_cat_preserves_exact_posix_path_and_material,
     test_ls_preserves_a_non_utf8_posix_path,
     test_host_material_boundary_is_one_mebibyte,
-    test_bounded_invocation_refuses_invalid_exact_limits_before_process,
-    test_bounded_invocation_uses_its_exact_material_byte_count_limit,
+    test_bounded_invocation_refuses_invalid_exact_boundaries_before_process,
+    test_bounded_invocation_uses_its_exact_material_byte_count_boundary,
     test_cat_preserves_finite_material_across_multiple_pipe_reads,
     test_host_output_is_bounded_without_returncode_material,
     test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer,

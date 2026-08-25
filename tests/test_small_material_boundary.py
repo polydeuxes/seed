@@ -520,7 +520,7 @@ def small_boundary_removal_material(small_boundary_material):
     removals = admission_removed_position_occurrences(
         source_admission.result_reference,
         boundary_identity="small-boundary-removal-act",
-        admitted_material_act_occurrence_count_limit=len(
+        admitted_material_act_occurrence_count_boundary=len(
             source_reference.exact_material
         ),
     )
@@ -786,17 +786,17 @@ def test_compare_refuses_a_result_from_another_addition(small_boundary_material)
         )
 
 
-def test_compare_refuses_different_time_limits(small_boundary_material):
+def test_compare_refuses_different_time_boundaries(small_boundary_material):
     addition = small_boundary_material[3][0]
     source = small_boundary_material[5][0][0]
     result = replace(
         small_boundary_material[6][0][0],
-        time_limit_second_count=31.0,
+        time_boundary_second_count=31.0,
     )
 
-    with pytest.raises(ValueError, match="cannot cross time limits"):
+    with pytest.raises(ValueError, match="cannot cross time boundaries"):
         MaterialAddedCompareOccurrence(
-            boundary_identity="changed-time-limit-compare",
+            boundary_identity="changed-time-boundary-compare",
             occurrence_position=0,
             addition_occurrence=addition,
             source_invocation=source,
@@ -895,15 +895,15 @@ def test_removal_compare_refuses_wrong_or_mismatched_occurrences(
             source_invocation=result_rows[0][0],
             result_invocation=result_rows[0][1],
         )
-    with pytest.raises(ValueError, match="material byte-count limits"):
+    with pytest.raises(ValueError, match="material byte-count boundaries"):
         MaterialRemovedCompareOccurrence(
-            boundary_identity="mismatched-removal-limit-compare",
+            boundary_identity="mismatched-removal-boundary-compare",
             occurrence_position=0,
             removal_occurrence=removals[0],
             source_invocation=source,
             result_invocation=replace(
                 result_rows[0][0],
-                material_byte_count_limit=1,
+                material_byte_count_boundary=1,
                 input_boundary_accepted_byte_count=len(
                     result_rows[0][0].exact_material
                 ),
@@ -927,9 +927,9 @@ def test_removal_result_admission_refuses_corrupted_raw_coordinates(
         returncode=other.returncode,
         stdout_bytes=other.stdout_bytes,
         stderr_bytes=other.stderr_bytes,
-        time_limit_reached=other.time_limit_reached,
-        stdout_byte_count_limit_reached=other.stdout_byte_count_limit_reached,
-        stderr_byte_count_limit_reached=other.stderr_byte_count_limit_reached,
+        time_boundary_reached=other.time_boundary_reached,
+        stdout_byte_count_boundary_reached=other.stdout_byte_count_boundary_reached,
+        stderr_byte_count_boundary_reached=other.stderr_byte_count_boundary_reached,
     )
 
     with pytest.raises(ValueError, match="differs from its invocation results"):
@@ -955,7 +955,7 @@ PYTEST_ADMISSION = (
     test_one_small_boundary_compares_all_implementation_functions,
     test_each_returned_material_can_enter_a_fresh_locality,
     test_compare_refuses_a_result_from_another_addition,
-    test_compare_refuses_different_time_limits,
+    test_compare_refuses_different_time_boundaries,
     test_removal_compare_preserves_exact_admission_and_raw_coordinates,
     test_removal_compare_refuses_missing_and_unrelated_invocations,
     test_removal_compare_refuses_wrong_or_mismatched_occurrences,

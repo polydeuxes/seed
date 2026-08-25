@@ -37,7 +37,7 @@ def _run_one(
     repository: Path,
     source: Path,
     output_directory: Path,
-    time_limit_seconds: float,
+    time_boundary_seconds: float,
 ) -> dict[str, object]:
     slug = _slug(source)
     artifact = output_directory / f"{slug}.json"
@@ -63,9 +63,9 @@ def _run_one(
         )
         status = "completed"
         try:
-            returncode = process.wait(timeout=time_limit_seconds)
+            returncode = process.wait(timeout=time_boundary_seconds)
         except subprocess.TimeoutExpired:
-            status = "time_limit_reached"
+            status = "time_boundary_reached"
             os.killpg(process.pid, signal.SIGINT)
             try:
                 returncode = process.wait(timeout=5)
@@ -90,13 +90,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--time-limit-seconds", type=float, default=60.0)
+    parser.add_argument("--time-boundary-seconds", type=float, default=60.0)
     parser.add_argument("sources", nargs="*", type=Path)
     arguments = parser.parse_args()
     if arguments.workers < 1:
         parser.error("workers must be positive")
-    if arguments.time_limit_seconds <= 0:
-        parser.error("time limit must be positive")
+    if arguments.time_boundary_seconds <= 0:
+        parser.error("time boundary must be positive")
 
     repository = Path(__file__).resolve().parents[1]
     if arguments.sources:
@@ -115,7 +115,7 @@ def main() -> int:
                 repository,
                 source,
                 output_directory,
-                arguments.time_limit_seconds,
+                arguments.time_boundary_seconds,
             ): source
             for source in relative_sources
         }
@@ -135,14 +135,14 @@ def main() -> int:
         "completed_count": sum(
             result["status"] == "completed" for result in results
         ),
-        "time_limit_reached_count": sum(
-            result["status"] == "time_limit_reached" for result in results
+        "time_boundary_reached_count": sum(
+            result["status"] == "time_boundary_reached" for result in results
         ),
         "nonzero_return_count": sum(
             result["returncode"] != 0 for result in results
         ),
         "workers": arguments.workers,
-        "time_limit_seconds": arguments.time_limit_seconds,
+        "time_boundary_seconds": arguments.time_boundary_seconds,
         "results": results,
     }
     structural = json.dumps(

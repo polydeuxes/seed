@@ -178,7 +178,7 @@ def test_exact_material_stored_as_text_is_detected(ledger, path):
 
 
 def test_rewriting_the_row_and_both_internal_identities_is_not_detected(ledger, path):
-    """Stated as a test so the limit cannot be forgotten.
+    """Stated as a test so the boundary cannot be forgotten.
 
     Someone able to write arbitrary SQL can drop both guards, rewrite the row,
     and recompute both identities. Detecting that needs an integrity root outside

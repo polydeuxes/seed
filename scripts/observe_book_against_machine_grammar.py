@@ -40,7 +40,6 @@ STATES = (
     "Applicability",
     "Scope",
     "Locality",
-    "limits",
     "Unknown",
 )
 

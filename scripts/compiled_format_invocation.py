@@ -350,10 +350,10 @@ def exact_byte_material_references(
             recorded_occurrence_identity=assertion.recorded_occurrence_identity,
             assertion_identity=assertion.assertion_identity,
             locality_identity=event.locality_identity,
-            exact_material=bytes((assertion.representation,)),
+            exact_material=bytes((assertion.content,)),
         )
         for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+        if assertion.result == "count" and assertion.content is not None
     )
 
 
@@ -376,7 +376,7 @@ def moved_exact_byte_material_references(
     sources = tuple(
         assertion
         for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+        if assertion.result == "count" and assertion.content is not None
     )
     moved_sources = move_recorded_byte_assertions_to_locality(
         ledger, sources=sources, destination_locality=destination_locality
@@ -404,7 +404,7 @@ def moved_exact_byte_material_references(
                 recorded_occurrence_identity=moved.recorded_occurrence_identity,
                 assertion_identity=moved.assertion_identity,
                 locality_identity=destination_locality,
-                exact_material=bytes((moved.representation,)),
+                exact_material=bytes((moved.content,)),
                 locality_movement_event_identity=(
                     movement_identity
                 ),
@@ -429,10 +429,10 @@ def exact_byte_pair_material_references(
             recorded_occurrence_identity=assertion.recorded_occurrence_identity,
             assertion_identity=assertion.assertion_identity,
             locality_identity=event.locality_identity,
-            exact_material=bytes(assertion.representation),
+            exact_material=bytes(assertion.content),
         )
         for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
+        if assertion.result == "count" and assertion.content is not None
     )
 
 
@@ -448,7 +448,7 @@ class ExactMaterialResultReference:
     added_admission_result_reference: AdmissionResultReference | None = None
     added_admitted_material_position: int | None = None
     added_admitted_reference_position: int | None = None
-    admitted_material_act_occurrence_count_limit: int | None = None
+    admitted_material_act_occurrence_count_boundary: int | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -523,12 +523,12 @@ class ExactMaterialResultReference:
                 raise TypeError("material result requires its exact admitted added position")
         if has_source_admission or has_added_admission:
             if (
-                type(self.admitted_material_act_occurrence_count_limit) is not int
-                or self.admitted_material_act_occurrence_count_limit < 1
+                type(self.admitted_material_act_occurrence_count_boundary) is not int
+                or self.admitted_material_act_occurrence_count_boundary < 1
             ):
-                raise TypeError("material result requires its exact Act occurrence count limit")
-        elif self.admitted_material_act_occurrence_count_limit is not None:
-            raise TypeError("material result occurrence limit requires Admission lineage")
+                raise TypeError("material result requires its exact Act occurrence count boundary")
+        elif self.admitted_material_act_occurrence_count_boundary is not None:
+            raise TypeError("material result occurrence boundary requires Admission lineage")
 
     def __hash__(self) -> int:
         return hash(self.result_identity)
@@ -581,7 +581,7 @@ class AddedPositionOccurrence:
     added_admission_result_reference: AdmissionResultReference | None = None
     added_admitted_material_position: int | None = None
     added_admitted_reference_position: int | None = None
-    admitted_material_act_occurrence_count_limit: int | None = None
+    admitted_material_act_occurrence_count_boundary: int | None = None
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -616,7 +616,7 @@ class AddedPositionOccurrence:
             self.added_admission_result_reference,
             self.added_admitted_material_position,
             self.added_admitted_reference_position,
-            self.admitted_material_act_occurrence_count_limit,
+            self.admitted_material_act_occurrence_count_boundary,
         )
         if any(coordinate is not None for coordinate in admission_coordinates):
             if not isinstance(
@@ -653,10 +653,10 @@ class AddedPositionOccurrence:
             ):
                 raise TypeError("addition Act requires its exact admitted positions")
             if (
-                type(self.admitted_material_act_occurrence_count_limit) is not int
-                or self.admitted_material_act_occurrence_count_limit < 1
+                type(self.admitted_material_act_occurrence_count_boundary) is not int
+                or self.admitted_material_act_occurrence_count_boundary < 1
             ):
-                raise TypeError("addition Act requires its exact occurrence count limit")
+                raise TypeError("addition Act requires its exact occurrence count boundary")
             source_admitted_reference = (
                 self.source_admission_result_reference.admitted_material[
                     self.source_admitted_material_position
@@ -701,8 +701,8 @@ class AddedPositionOccurrence:
             added_admission_result_reference=self.added_admission_result_reference,
             added_admitted_material_position=self.added_admitted_material_position,
             added_admitted_reference_position=self.added_admitted_reference_position,
-            admitted_material_act_occurrence_count_limit=(
-                self.admitted_material_act_occurrence_count_limit
+            admitted_material_act_occurrence_count_boundary=(
+                self.admitted_material_act_occurrence_count_boundary
             ),
         )
 
@@ -734,7 +734,7 @@ class RemovedPositionOccurrence:
     source_admission_result_reference: AdmissionResultReference | None = None
     source_admitted_material_position: int | None = None
     source_admitted_reference_position: int | None = None
-    admitted_material_act_occurrence_count_limit: int | None = None
+    admitted_material_act_occurrence_count_boundary: int | None = None
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -768,7 +768,7 @@ class RemovedPositionOccurrence:
             self.source_admission_result_reference,
             self.source_admitted_material_position,
             self.source_admitted_reference_position,
-            self.admitted_material_act_occurrence_count_limit,
+            self.admitted_material_act_occurrence_count_boundary,
         )
         if any(coordinate is not None for coordinate in admission_coordinates):
             if not isinstance(
@@ -791,10 +791,10 @@ class RemovedPositionOccurrence:
             ):
                 raise TypeError("removal Act requires its exact admitted source position")
             if (
-                type(self.admitted_material_act_occurrence_count_limit) is not int
-                or self.admitted_material_act_occurrence_count_limit < 1
+                type(self.admitted_material_act_occurrence_count_boundary) is not int
+                or self.admitted_material_act_occurrence_count_boundary < 1
             ):
-                raise TypeError("removal Act requires its exact occurrence count limit")
+                raise TypeError("removal Act requires its exact occurrence count boundary")
             source_admitted_reference = (
                 self.source_admission_result_reference.admitted_material[
                     self.source_admitted_material_position
@@ -825,8 +825,8 @@ class RemovedPositionOccurrence:
             source_admission_result_reference=self.source_admission_result_reference,
             source_admitted_material_position=self.source_admitted_material_position,
             source_admitted_reference_position=self.source_admitted_reference_position,
-            admitted_material_act_occurrence_count_limit=(
-                self.admitted_material_act_occurrence_count_limit
+            admitted_material_act_occurrence_count_boundary=(
+                self.admitted_material_act_occurrence_count_boundary
             ),
         )
 
@@ -2250,17 +2250,17 @@ def admission_added_position_occurrences(
     admission_result_reference: AdmissionResultReference,
     *,
     boundary_identity: str,
-    admitted_material_act_occurrence_count_limit: int,
+    admitted_material_act_occurrence_count_boundary: int,
 ) -> tuple[AddedPositionOccurrence, ...]:
     if not isinstance(admission_result_reference, AdmissionResultReference):
         raise TypeError("addition Acts require one exact Admission result")
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if (
-        type(admitted_material_act_occurrence_count_limit) is not int
-        or admitted_material_act_occurrence_count_limit < 1
+        type(admitted_material_act_occurrence_count_boundary) is not int
+        or admitted_material_act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     found = []
     for admitted_position, admitted_material in enumerate(
         admission_result_reference.admitted_material
@@ -2283,7 +2283,7 @@ def admission_added_position_occurrences(
             (len(source.exact_material) + 1) * len(admitted_material)
             for source in admitted_material
         )
-        if occurrence_count > admitted_material_act_occurrence_count_limit:
+        if occurrence_count > admitted_material_act_occurrence_count_boundary:
             continue
         for source_reference_position, source in enumerate(admitted_material):
             for position in range(len(source.exact_material) + 1):
@@ -2310,8 +2310,8 @@ def admission_added_position_occurrences(
                             added_admitted_reference_position=(
                                 added_reference_position
                             ),
-                            admitted_material_act_occurrence_count_limit=(
-                                admitted_material_act_occurrence_count_limit
+                            admitted_material_act_occurrence_count_boundary=(
+                                admitted_material_act_occurrence_count_boundary
                             ),
                         )
                     )
@@ -2323,7 +2323,7 @@ def admission_result_added_position_occurrences(
     added_admission_result_reference: AdmissionResultReference,
     *,
     boundary_identity: str,
-    admitted_material_act_occurrence_count_limit: int,
+    admitted_material_act_occurrence_count_boundary: int,
 ) -> tuple[AddedPositionOccurrence, ...]:
     if not isinstance(
         source_admission_result_reference, AdmissionResultReference
@@ -2332,10 +2332,10 @@ def admission_result_added_position_occurrences(
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if (
-        type(admitted_material_act_occurrence_count_limit) is not int
-        or admitted_material_act_occurrence_count_limit < 1
+        type(admitted_material_act_occurrence_count_boundary) is not int
+        or admitted_material_act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     found = []
     for source_admitted_position, source_admitted_material in enumerate(
         source_admission_result_reference.admitted_material
@@ -2384,7 +2384,7 @@ def admission_result_added_position_occurrences(
                 (len(source.exact_material) + 1) * len(added_admitted_material)
                 for source in source_admitted_material
             )
-            if occurrence_count > admitted_material_act_occurrence_count_limit:
+            if occurrence_count > admitted_material_act_occurrence_count_boundary:
                 continue
             for source_reference_position, source in enumerate(
                 source_admitted_material
@@ -2419,8 +2419,8 @@ def admission_result_added_position_occurrences(
                                 added_admitted_reference_position=(
                                     added_reference_position
                                 ),
-                                admitted_material_act_occurrence_count_limit=(
-                                    admitted_material_act_occurrence_count_limit
+                                admitted_material_act_occurrence_count_boundary=(
+                                    admitted_material_act_occurrence_count_boundary
                                 ),
                             )
                         )
@@ -2504,7 +2504,7 @@ def admission_removed_position_occurrences(
     source_admission_result_reference: AdmissionResultReference,
     *,
     boundary_identity: str,
-    admitted_material_act_occurrence_count_limit: int,
+    admitted_material_act_occurrence_count_boundary: int,
 ) -> tuple[RemovedPositionOccurrence, ...]:
     if not isinstance(
         source_admission_result_reference, AdmissionResultReference
@@ -2513,10 +2513,10 @@ def admission_removed_position_occurrences(
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if (
-        type(admitted_material_act_occurrence_count_limit) is not int
-        or admitted_material_act_occurrence_count_limit < 1
+        type(admitted_material_act_occurrence_count_boundary) is not int
+        or admitted_material_act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
 
     found = []
     for admitted_position, admitted_material in enumerate(
@@ -2540,7 +2540,7 @@ def admission_removed_position_occurrences(
         occurrence_count = sum(
             len(source.exact_material) for source in admitted_material
         )
-        if occurrence_count > admitted_material_act_occurrence_count_limit:
+        if occurrence_count > admitted_material_act_occurrence_count_boundary:
             continue
         for source_reference_position, source in enumerate(admitted_material):
             for position in range(len(source.exact_material)):
@@ -2564,8 +2564,8 @@ def admission_removed_position_occurrences(
                         source_admitted_reference_position=(
                             source_reference_position
                         ),
-                        admitted_material_act_occurrence_count_limit=(
-                            admitted_material_act_occurrence_count_limit
+                        admitted_material_act_occurrence_count_boundary=(
+                            admitted_material_act_occurrence_count_boundary
                         ),
                     )
                 )
@@ -2771,7 +2771,7 @@ def first_recurring_added_compare(
     implementation_function: CompiledImplementationFunction,
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
     invoke_later: bool = True,
 ) -> tuple[
     tuple[AddedPositionCompareOccurrence, ...],
@@ -2792,10 +2792,10 @@ def first_recurring_added_compare(
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
     if (
-        type(act_occurrence_count_limit) is not int
-        or act_occurrence_count_limit < 1
+        type(act_occurrence_count_boundary) is not int
+        or act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     if type(invoke_later) is not bool:
         raise TypeError("later invocation control must be exact")
     source_by_reference = {
@@ -2813,7 +2813,7 @@ def first_recurring_added_compare(
     }
 
     comparisons = []
-    for addition in additions[:act_occurrence_count_limit]:
+    for addition in additions[:act_occurrence_count_boundary]:
         source_invocation = source_by_reference.get(addition.source_reference)
         if source_invocation is None:
             raise ValueError("recurrence requires each exact source invocation")
@@ -2866,8 +2866,8 @@ def _recurring_added_compares_across(
     source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
-    recurrence_count_limit: int | None,
+    act_occurrence_count_boundary: int,
+    recurrence_count_boundary: int | None,
 ) -> tuple[
     tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
     tuple[
@@ -2880,14 +2880,14 @@ def _recurring_added_compares_across(
     ):
         raise TypeError("recurrence requires exact addition Act occurrences")
     if (
-        type(act_occurrence_count_limit) is not int
-        or act_occurrence_count_limit < 1
+        type(act_occurrence_count_boundary) is not int
+        or act_occurrence_count_boundary < 1
     ):
-        raise TypeError("one exact positive Act occurrence count limit is required")
-    if recurrence_count_limit is not None and (
-        type(recurrence_count_limit) is not int or recurrence_count_limit < 1
+        raise TypeError("one exact positive Act occurrence count boundary is required")
+    if recurrence_count_boundary is not None and (
+        type(recurrence_count_boundary) is not int or recurrence_count_boundary < 1
     ):
-        raise TypeError("recurrence count limit must be exact and positive")
+        raise TypeError("recurrence count boundary must be exact and positive")
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
@@ -2934,7 +2934,7 @@ def _recurring_added_compares_across(
     comparisons = tuple([] for _ in functions)
     recurring = []
     for occurrence_position, addition in enumerate(
-        additions[:act_occurrence_count_limit]
+        additions[:act_occurrence_count_boundary]
     ):
         source_invocations = tuple(
             found.get(addition.source_reference) for found in source_by_function
@@ -2987,8 +2987,8 @@ def _recurring_added_compares_across(
         if any(coordinate is not None for coordinate in coordinates):
             recurring.append((coordinates, tuple(found)))
             if (
-                recurrence_count_limit is not None
-                and len(recurring) >= recurrence_count_limit
+                recurrence_count_boundary is not None
+                and len(recurring) >= recurrence_count_boundary
             ):
                 break
     return tuple(tuple(row) for row in comparisons), tuple(recurring)
@@ -2999,7 +2999,7 @@ def recurring_added_compares_across(
     source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
 ) -> tuple[
     tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
     tuple[
@@ -3011,8 +3011,8 @@ def recurring_added_compares_across(
         additions,
         source_invocation_rows,
         boundary_identity=boundary_identity,
-        act_occurrence_count_limit=act_occurrence_count_limit,
-        recurrence_count_limit=None,
+        act_occurrence_count_boundary=act_occurrence_count_boundary,
+        recurrence_count_boundary=None,
     )
 
 
@@ -3021,7 +3021,7 @@ def first_recurring_added_compare_across(
     source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
 ) -> tuple[
     tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
     tuple[bool | None, ...] | None,
@@ -3031,8 +3031,8 @@ def first_recurring_added_compare_across(
         additions,
         source_invocation_rows,
         boundary_identity=boundary_identity,
-        act_occurrence_count_limit=act_occurrence_count_limit,
-        recurrence_count_limit=1,
+        act_occurrence_count_boundary=act_occurrence_count_boundary,
+        recurrence_count_boundary=1,
     )
     if not recurring:
         return comparisons, None, None
@@ -3203,7 +3203,7 @@ def first_recurring_removed_compare(
     implementation_function: CompiledImplementationFunction,
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
     invoke_later: bool = True,
 ) -> tuple[
     tuple[RemovedPositionCompareOccurrence, ...],
@@ -3223,8 +3223,8 @@ def first_recurring_removed_compare(
         raise TypeError("recurrence requires one exact implementation function")
     if type(boundary_identity) is not str or not boundary_identity:
         raise TypeError("one exact boundary identity is required")
-    if type(act_occurrence_count_limit) is not int or act_occurrence_count_limit < 1:
-        raise TypeError("one exact positive Act occurrence count limit is required")
+    if type(act_occurrence_count_boundary) is not int or act_occurrence_count_boundary < 1:
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     if type(invoke_later) is not bool:
         raise TypeError("later invocation control must be exact")
     source_by_reference = {
@@ -3241,7 +3241,7 @@ def first_recurring_removed_compare(
         removal.act_occurrence_identity: removal for removal in removals
     }
     comparisons = []
-    for removal in removals[:act_occurrence_count_limit]:
+    for removal in removals[:act_occurrence_count_boundary]:
         source_invocation = source_by_reference.get(removal.source_reference)
         if source_invocation is None:
             raise ValueError("recurrence requires each exact source invocation")
@@ -3287,7 +3287,7 @@ def first_recurring_removed_compare_across(
     source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
-    act_occurrence_count_limit: int,
+    act_occurrence_count_boundary: int,
 ) -> tuple[
     tuple[tuple[RemovedPositionCompareOccurrence, ...], ...],
     tuple[bool | None, ...] | None,
@@ -3297,8 +3297,8 @@ def first_recurring_removed_compare_across(
         not isinstance(removal, RemovedPositionOccurrence) for removal in removals
     ):
         raise TypeError("recurrence requires exact removal Act occurrences")
-    if type(act_occurrence_count_limit) is not int or act_occurrence_count_limit < 1:
-        raise TypeError("one exact positive Act occurrence count limit is required")
+    if type(act_occurrence_count_boundary) is not int or act_occurrence_count_boundary < 1:
+        raise TypeError("one exact positive Act occurrence count boundary is required")
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
@@ -3348,7 +3348,7 @@ def first_recurring_removed_compare_across(
         raise ValueError("removal Act occurrence entered recurrence twice")
     comparisons = tuple([] for _ in functions)
     for occurrence_position, removal in enumerate(
-        removals[:act_occurrence_count_limit]
+        removals[:act_occurrence_count_boundary]
     ):
         source_invocations = tuple(
             found.get(removal.source_reference) for found in source_by_function

@@ -58,10 +58,10 @@ def _minimal_change(first: bytes, second: bytes) -> tuple[bytes, bytes]:
 def _projection(artifact: dict) -> dict:
     sources = []
     for source in artifact["sources"]:
-        delimiters = []
+        deboundaryers = []
         used_materials = set()
-        for delimiter in source["delimiters"]:
-            frames = delimiter["recurrent_substitution_frames"]
+        for deboundaryer in source["deboundaryers"]:
+            frames = deboundaryer["recurrent_substitution_frames"]
             if not frames:
                 continue
             for frame in frames:
@@ -70,11 +70,11 @@ def _projection(artifact: dict) -> dict:
                 used_materials.update(
                     occupant["material"] for occupant in frame["occupants"]
                 )
-            delimiters.append(
+            deboundaryers.append(
                 {
-                    "separator_byte": delimiter["separator_byte"],
-                    "occurrence_count": delimiter["occurrence_count"],
-                    "span_count": delimiter["span_count"],
+                    "separator_byte": deboundaryer["separator_byte"],
+                    "occurrence_count": deboundaryer["occurrence_count"],
+                    "span_count": deboundaryer["span_count"],
                     "recurrent_substitution_frames": frames,
                 }
             )
@@ -92,7 +92,7 @@ def _projection(artifact: dict) -> dict:
                     reference: source["materials"][reference]
                     for reference in sorted(used_materials)
                 },
-                "delimiters": delimiters,
+                "deboundaryers": deboundaryers,
             }
         )
     return {
@@ -123,7 +123,7 @@ def main() -> int:
     print(f"  source-enumerated apertures: {sum(source['enumerated_separator_count'] for source in projection['sources'])}")
     print(
         "  recurrent substitution frames: "
-        f"{sum(len(delimiter['recurrent_substitution_frames']) for source in projection['sources'] for delimiter in source['delimiters'])}"
+        f"{sum(len(deboundaryer['recurrent_substitution_frames']) for source in projection['sources'] for deboundaryer in source['deboundaryers'])}"
     )
     print(f"  findings sha256: {sha256(encoded).hexdigest()}\n")
 
@@ -132,9 +132,9 @@ def main() -> int:
     change_signatures: dict[tuple[tuple[bytes, bytes], ...], list[int]] = defaultdict(list)
     number = 0
     for source in projection["sources"]:
-        for delimiter in source["delimiters"]:
-            separator = delimiter["separator_byte"]
-            for frame in delimiter["recurrent_substitution_frames"]:
+        for deboundaryer in source["deboundaryers"]:
+            separator = deboundaryer["separator_byte"]
+            for frame in deboundaryer["recurrent_substitution_frames"]:
                 number += 1
                 left = _material(source, frame["left_material"])
                 right = _material(source, frame["right_material"])

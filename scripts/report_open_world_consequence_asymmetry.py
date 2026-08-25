@@ -48,7 +48,7 @@ def _effect_counts(
     return first_coordinate_changes, second_coordinate_changes
 
 
-def _observe_source(entry: dict, sample_limit: int) -> dict:
+def _observe_source(entry: dict, sample_boundary: int) -> dict:
     encoded = Path(entry["artifact"]).read_bytes()
     if len(encoded) != entry["artifact_bytes"]:
         raise ValueError("consequence source artifact byte count changed")
@@ -153,7 +153,7 @@ def _observe_source(entry: dict, sample_limit: int) -> dict:
                             asymmetric_extent_histogram[
                                 finding["coordinate_count"]
                             ] += 1
-                            if len(asymmetric_square_references) < sample_limit:
+                            if len(asymmetric_square_references) < sample_boundary:
                                 asymmetric_square_references.append(
                                     {
                                         "internal_variation_finding_reference": finding[
@@ -232,7 +232,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=INPUT)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--sample-limit-per-source", type=int, default=8)
+    parser.add_argument("--sample-boundary-per-source", type=int, default=8)
     parser.add_argument("--jobs", type=int, default=1)
     arguments = parser.parse_args()
     if arguments.jobs < 1:
@@ -246,7 +246,7 @@ def main() -> int:
     if arguments.jobs == 1:
         sources = [
             _observe_source(
-                entry, sample_limit=arguments.sample_limit_per_source
+                entry, sample_boundary=arguments.sample_boundary_per_source
             )
             for entry in manifest["source_artifacts"]
         ]
@@ -256,7 +256,7 @@ def main() -> int:
                 executor.map(
                     _observe_source,
                     manifest["source_artifacts"],
-                    repeat(arguments.sample_limit_per_source),
+                    repeat(arguments.sample_boundary_per_source),
                 )
             )
     aggregate_effects = {

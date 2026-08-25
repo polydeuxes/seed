@@ -210,14 +210,14 @@ def acquired_book_relations(acquired_book_material):
         pair_admission.result_reference,
         byte_admission.result_reference,
         boundary_identity="book-acquired-addition",
-        admitted_material_act_occurrence_count_limit=4096,
+        admitted_material_act_occurrence_count_boundary=4096,
     )
     earlier_comparisons, prospective_coordinates, later_comparisons = (
         first_recurring_added_compare_across(
             additions,
             pair_invocation_rows,
             boundary_identity="book-acquired-addition-prospective",
-            act_occurrence_count_limit=len(additions),
+            act_occurrence_count_boundary=len(additions),
         )
     )
     result_invocation_rows = added_position_invocations(
@@ -280,7 +280,7 @@ def complete_book_admission_acts(acquired_book_material):
         byte_invocation_rows,
         boundary_identity="complete-book-byte-admission",
     )
-    act_occurrence_count_limit = min(
+    act_occurrence_count_boundary = min(
         count
         for _, _, count in _complete_admitted_pair_occurrence_counts(
             book_admission.result_reference,
@@ -291,14 +291,14 @@ def complete_book_admission_acts(acquired_book_material):
         book_admission.result_reference,
         byte_admission.result_reference,
         boundary_identity="complete-book-admission-addition",
-        admitted_material_act_occurrence_count_limit=act_occurrence_count_limit,
+        admitted_material_act_occurrence_count_boundary=act_occurrence_count_boundary,
     )
     earlier_comparisons, prospective_coordinates, later_comparisons = (
         first_recurring_added_compare_across(
             additions,
             book_invocation_rows,
             boundary_identity="complete-book-admission-addition-prospective",
-            act_occurrence_count_limit=len(additions),
+            act_occurrence_count_boundary=len(additions),
         )
     )
     later_invocation_additions = additions[: len(earlier_comparisons[0]) + 1]
@@ -649,7 +649,7 @@ def test_complete_book_admission_drives_later_exact_material_acts(
         book_admission.result_reference,
         byte_admission.result_reference,
         boundary_identity="incomplete-book-admission-addition",
-        admitted_material_act_occurrence_count_limit=(
+        admitted_material_act_occurrence_count_boundary=(
             least_complete_pair_occurrence_count - 1
         ),
     ) == ()
@@ -783,7 +783,7 @@ def test_complete_book_keeps_successive_recurrence_occurrences_in_order(
         additions,
         book_invocation_rows,
         boundary_identity="complete-book-recurrence-after-conflict",
-        act_occurrence_count_limit=10,
+        act_occurrence_count_boundary=10,
     )
 
     assert len(recurring) > 1

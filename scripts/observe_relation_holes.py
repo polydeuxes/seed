@@ -27,7 +27,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 
 
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_RELATION_HOLE_OBSERVATION"
-CONSEQUENCE_RUNG_LIMIT = 8
+CONSEQUENCE_RUNG_COUNT_BOUNDARY = 8
 OBSERVER_STATEMENT = (
     "exact append-order occurrence references; a reference carries no "
     "relation unless a recorded relation carries both occurrences as "
@@ -410,7 +410,7 @@ def _consequence_traces(
 
     traces: list[list[dict[str, Any]]] = [[] for _ in event_shapes]
     prior_depth_digest: list[str | None] = [None for _ in event_shapes]
-    for depth in range(1, CONSEQUENCE_RUNG_LIMIT + 1):
+    for depth in range(1, CONSEQUENCE_RUNG_COUNT_BOUNDARY + 1):
         current_depth_digest: list[str | None] = [None for _ in event_shapes]
         for source in range(len(event_shapes) - 1, -1, -1):
             branches = []

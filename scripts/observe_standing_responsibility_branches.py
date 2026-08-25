@@ -9,7 +9,7 @@ branches this Standing carries, and what each one already holds.
 For every Locality in a recorded corpus, the current Standing is read and each
 Responsibility branch it carries is resolved to the occurrence that recorded it.
 What that occurrence holds is then read: its subject, its exact Act, its Scope,
-its Locality, its limits.
+its Locality.
 
 Nothing is proposed.  A branch that holds everything it needs is not thereby
 work Seed will do, and a branch missing something is not thereby a defect.
@@ -46,7 +46,6 @@ HELD = (
     "exact_act",
     "act",
     "scope",
-    "limits",
     "unknown",
     "book_clause_identity",
     "assignment_subject_identity",

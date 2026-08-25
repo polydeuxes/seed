@@ -89,10 +89,10 @@ def _observe_source(path: Path, first_line: int, population: str) -> dict[str, o
     scopes = _scope_materials(exact_lines)
     separators = sorted(set.intersection(*(set(scope) for scope in scopes)))
     materials: dict[str, dict[str, object]] = {}
-    delimiter_results = []
+    deboundaryer_results = []
 
     for separator in separators:
-        delimiter_begun = time.perf_counter()
+        deboundaryer_begun = time.perf_counter()
         spans = _spans(material, separator)
         frames: dict[tuple[str, str], dict[str, list[tuple[int, int]]]] = defaultdict(
             lambda: defaultdict(list)
@@ -145,7 +145,7 @@ def _observe_source(path: Path, first_line: int, population: str) -> dict[str, o
                 }
             )
 
-        delimiter_results.append(
+        deboundaryer_results.append(
             {
                 "separator_scalar": separator,
                 "separator_codepoint": ord(separator),
@@ -157,7 +157,7 @@ def _observe_source(path: Path, first_line: int, population: str) -> dict[str, o
                 "recurrent_substitution_frame_count": len(recurrent_frames),
                 "maximum_distinct_occupants": maximum_distinct_occupants,
                 "maximum_recurrent_occupants": maximum_recurrent_occupants,
-                "wall_seconds": time.perf_counter() - delimiter_begun,
+                "wall_seconds": time.perf_counter() - deboundaryer_begun,
                 "substitution_frames": substitution_frames,
                 "recurrent_substitution_frames": recurrent_frames,
             }
@@ -174,7 +174,7 @@ def _observe_source(path: Path, first_line: int, population: str) -> dict[str, o
         "scope_count": SCOPE_COUNT,
         "enumerated_separator_count": len(separators),
         "materials": materials,
-        "delimiters": delimiter_results,
+        "deboundaryers": deboundaryer_results,
         "wall_seconds": time.perf_counter() - begun,
     }
 
@@ -189,11 +189,11 @@ def main() -> int:
     for name, first_line, population in SOURCES:
         observed = _observe_source(CORPUS / name, first_line, population)
         sources.append(observed)
-        slowest = max(observed["delimiters"], key=lambda item: item["wall_seconds"])
+        slowest = max(observed["deboundaryers"], key=lambda item: item["wall_seconds"])
         print(
             f"{name:38} {observed['scalar_count']:7} scalars  "
             f"{observed['enumerated_separator_count']:3} apertures  "
-            f"{sum(item['recurrent_substitution_frame_count'] for item in observed['delimiters']):5} recurrent frames  "
+            f"{sum(item['recurrent_substitution_frame_count'] for item in observed['deboundaryers']):5} recurrent frames  "
             f"{observed['wall_seconds']:.3f}s"
         )
         print(
