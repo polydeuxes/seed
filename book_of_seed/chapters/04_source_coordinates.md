@@ -18,7 +18,7 @@ this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
 one exact declared distinction and preserves its source, provenance,
 Scope, Locality, conflicts, loss, and Unknown.
 
-This Book material acquisition witness carries this Book as material and is one
+This Book material witness carries this Book as material and is one
 exact subject of that Compare Act occurrence.
 
 ### 01.Source.F — Material carrying a relation Assertion
@@ -26,11 +26,11 @@ exact subject of that Compare Act occurrence.
 Supplied material carrying an Assertion carries one exact relation as its
 relation. Carriage preserves the Assertion and its source coordinates.
 
-### 01.Source.G — Operator material acquisition
+### 01.Source.G — Operator source boundary
 
 Before one operator-boundary Act occurrence, the exact operator boundary,
-material-acquisition Act, boundary coordinates, Scope, Locality, and Unknown
-are exact together.
+exact Act to preserve supplied material, boundary coordinates, Scope, Locality,
+and Unknown are exact together.
 
 The same occurrence establishes this Locality relation under its exact
 Act coordinates:
@@ -39,7 +39,7 @@ Act coordinates:
 exact material --Locality--> this Seed
 ```
 
-The Locality relation is separate from the acquisition occurrence,
+The Locality relation is separate from the source-boundary Act occurrence,
 material, and result. It requires its exact relation occurrence,
 Scope, Locality, and Unknown.
 
@@ -47,9 +47,9 @@ Supplied material is required for one material result. Another operator boundary
 occurrence requires another exact subject and exact Act coordinates before its
 Act occurrence.
 
-### 01.Source.H — Material acquisition
+### 01.Source.H — Supplied material source boundary
 
-One exact source boundary and one exact material-acquisition Act to preserve
+One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
 Yield relation carries the Act occurrence as
 first subject and one exact material result as second subject. The result

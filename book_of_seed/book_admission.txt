@@ -6,7 +6,6 @@
 # This file alone governs Book proper. The Rosetta reference imports no
 a
 accepted
-acquisition
 act
 acts
 added

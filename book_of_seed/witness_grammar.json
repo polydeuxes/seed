@@ -84,7 +84,7 @@
       "subjects": [
         "this_Seed_exact_occurrence",
         "this_Grammar",
-        "this_book_material_acquisition_witness"
+        "this_book_material_witness"
       ],
       "carried_coordinates": [
         "exact_declared_distinction",
@@ -149,7 +149,7 @@
     },
     "01.Source.G": {
       "subject": "operator_material_boundary",
-      "exact_Act": "operator_material_acquisition",
+      "exact_Act": "preserve_supplied_operator_material",
       "relations": [
         "yield",
         "locality"
@@ -158,7 +158,7 @@
     },
     "01.Source.H": {
       "subject": "supplied_material",
-      "exact_Act": "acquisition",
+      "exact_Act": "preserve_supplied_material",
       "relations": [
         "yield"
       ],
@@ -475,7 +475,7 @@
     "07.Emission.D": {
       "subject": "material_supplied_by_the_addressed_boundary",
       "requires": [
-        "exact_subject_and_acquisition_Act_coordinates_before_occurrence",
+        "exact_subject_and_source_boundary_Act_coordinates_before_occurrence",
         "exact_Act_occurrence"
       ]
     },

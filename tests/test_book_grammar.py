@@ -395,7 +395,7 @@ def test_fidelity_preserves_the_book_material_witness_subject():
         "subjects": [
             "this_Seed_exact_occurrence",
             "this_Grammar",
-            "this_book_material_acquisition_witness",
+            "this_book_material_witness",
         ],
         "carried_coordinates": [
             "exact_declared_distinction",

@@ -23,8 +23,8 @@ addressed boundary require a separate exact Act occurrence.
 ### 07.Emission.D — Material supplied at the invocation Locality
 
 Material supplied by the addressed boundary at that exact invocation Locality
-requires its own exact subject and acquisition Act coordinates before its Act
-occurrence.
+requires its own exact subject and source-boundary Act coordinates before its
+Act occurrence.
 
 ## References
 

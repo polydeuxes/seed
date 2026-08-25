@@ -6,7 +6,7 @@ Before one declared Measurement Act occurrence, its exact subject and every
 required coordinate are exact and current through one exact occurrence
 boundary.
 
-Measurement of material acquisition requires the exact material result,
+Measurement of supplied material requires the exact material result,
 its Yield, and the exact Locality relation:
 
 ```
@@ -28,7 +28,7 @@ declared rule and completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
-Each exact source-byte position reference in the material acquisition Yield
+Each exact source-byte position reference in the supplied-material Yield
 result and one exact declared Measurement Act are exact together before the
 Act occurrence. The current coordinates carry the exact byte-pair position
 Measurement result.
