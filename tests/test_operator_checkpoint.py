@@ -115,12 +115,11 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
             assignment.material["recording_act_identity"],
             assignment.material["act_occurrence_identity"],
             assignment.material["result_identity"],
-            assignment.material["scope"]["scope_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 10
+    ) == 9
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
@@ -256,7 +255,12 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
         "act_occurrence_identity",
         "result_identity",
     }:
-        changed.material[coordinate] = changed.material["scope"]["scope_identity"]
+        replacement_coordinate = (
+            "act_occurrence_identity"
+            if coordinate == "result_identity"
+            else "result_identity"
+        )
+        changed.material[coordinate] = changed.material[replacement_coordinate]
     else:
         changed.material[coordinate] = "different"
     with pytest.raises((OperatorCheckpointError, TypeError, ValueError)):

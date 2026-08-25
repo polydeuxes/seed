@@ -117,7 +117,6 @@ def _assignment_material(
     recording_act_identity: str,
     act_occurrence_identity: str,
     result_identity: str,
-    scope_identity: str,
     source_reference: dict[str, str | None],
 ) -> dict[str, Any]:
     return {
@@ -131,10 +130,7 @@ def _assignment_material(
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
         "source_reference": deepcopy(source_reference),
-        "scope": {
-            "scope_identity": scope_identity,
-            **deepcopy(source_reference),
-        },
+        "scope": deepcopy(source_reference),
         "standing_boundary_occurrence_reference": source_reference[
             "standing_boundary_event_identity"
         ],
@@ -245,7 +241,6 @@ def record_standing_boundary_reference_responsibility_assignment(
             "standing_boundary_reference_act_occurrence"
         ),
         "result_identity": new_identity("standing_boundary_reference_result"),
-        "scope_identity": new_identity("standing_boundary_reference_scope"),
     }
     return ledger.append(
         STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -270,14 +265,12 @@ def get_standing_boundary_reference_responsibility_assignment(
         raise OperatorCheckpointError("checkpoint assignment is absent or corrupted")
     material = event.material
     source_reference = material.get("source_reference")
-    scope = material.get("scope")
     identities = (
         material.get("assignment_identity"),
         material.get("assignment_subject_identity"),
         material.get("recording_act_identity"),
         material.get("act_occurrence_identity"),
         material.get("result_identity"),
-        scope.get("scope_identity") if type(scope) is dict else None,
     )
     if any(type(value) is not str or not value for value in identities) or len(
         set(identities)
@@ -304,7 +297,6 @@ def get_standing_boundary_reference_responsibility_assignment(
         recording_act_identity=identities[2],
         act_occurrence_identity=identities[3],
         result_identity=identities[4],
-        scope_identity=identities[5],
         source_reference=expected_source,
     )
     if source_reference != expected_source or material != expected:
