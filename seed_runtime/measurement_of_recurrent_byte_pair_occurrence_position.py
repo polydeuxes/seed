@@ -23,9 +23,9 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    read_exact_material_result,
 )
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -125,7 +125,7 @@ def _exact_measurement_occurrence_standing_coordinates(
 def _exact_material_acquisition_result_availability_coordinates(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    event = read_exact_material_acquisition_result(ledger, event_identity)
+    event = read_exact_material_result(ledger, event_identity)
     dimensions = event.material["dimensions"]
     occurrence = {
         "subject_reference": dimensions["identity"],
@@ -388,7 +388,7 @@ def _references_to_recorded_recurrent_byte_pairs(
 
 def _exact_material_acquisition_event(ledger: EventLedger, event_identity: str) -> Event:
     try:
-        return read_exact_material_acquisition_result(ledger, event_identity)
+        return read_exact_material_result(ledger, event_identity)
     except (TypeError, ValueError) as error:
         raise ValueError(
             "pair occurrence Measurement requires one intact material acquisition result"
@@ -428,7 +428,7 @@ def _measurement_source_position_coordinates(
         or source.identity not in bounded_identities
     ):
         raise ValueError("pair occurrence source falls outside its exact boundary")
-    exact = acquired_material_bytes(source)
+    exact = exact_material_result_bytes(source)
     position_coordinates = [[] for _ in range(256)]
     for position, value in enumerate(exact):
         position_coordinates[value].append(position)
@@ -637,8 +637,8 @@ def _require_current_assignment_standing(
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
     )
-    from seed_runtime.material_acquisition import (
-        read_material_acquisition_locality_relation_requirements,
+    from seed_runtime.material_source import (
+        read_material_locality_relation_requirements,
     )
 
     current = read_operator_locality_standing(
@@ -649,7 +649,7 @@ def _require_current_assignment_standing(
     assignments = locality_standing.get("responsibility_assignment_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     source_has_exact_locality = all(
-        read_material_acquisition_locality_relation_requirements(
+        read_material_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_acquisition_occurrence_identity
@@ -849,11 +849,11 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     exact_material_acquisition_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
         ledger, finding.source_material_acquisition_occurrence_identity
     )
-    from seed_runtime.material_acquisition import (
-        read_material_acquisition_locality_relation_requirements,
+    from seed_runtime.material_source import (
+        read_material_locality_relation_requirements,
     )
     source_has_exact_locality = all(
-        read_material_acquisition_locality_relation_requirements(
+        read_material_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_acquisition_occurrence_identity

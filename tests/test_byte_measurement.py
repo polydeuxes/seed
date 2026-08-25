@@ -61,8 +61,8 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing_through,
 )
 from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
-from seed_runtime.material_acquisition import (
-    iter_exact_material_acquisition_results,
+from seed_runtime.material_source import (
+    iter_exact_material_results,
 )
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
@@ -1268,7 +1268,7 @@ def test_a_missing_declared_locality_is_refused():
 
 def test_acquisition_result_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
-    acquisition_result = next(iter_exact_material_acquisition_results(ledger, "source"))
+    acquisition_result = next(iter_exact_material_results(ledger, "source"))
     object.__setattr__(acquisition_result, "exact_material", None)
     with pytest.raises(ByteMeasurementError, match="without intact physiology"):
         measure_byte_counts(

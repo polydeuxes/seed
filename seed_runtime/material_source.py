@@ -1,4 +1,4 @@
-"""Exact yielded material-acquisition results across source-specific roads."""
+"""Exact yielded material results across source-specific roads."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from seed_runtime.yield_relation import (
 MATERIAL_RESULT_UNKNOWN = ("source_relation",)
 
 
-class MaterialAcquisitionError(ValueError):
-    """One exact yielded material-acquisition result is not intact."""
+class MaterialSourceError(ValueError):
+    """One exact yielded material result is not intact."""
 
 
 def _append_exact_material_result_occurrence(
@@ -26,7 +26,7 @@ def _append_exact_material_result_occurrence(
     if not isinstance(ledger, EventLedger):
         raise TypeError("exact material result requires one EventLedger")
     if type(result_event) is not Event:
-        raise MaterialAcquisitionError("exact material result occurrence required")
+        raise MaterialSourceError("exact material result occurrence required")
     act_occurrence_event_identity = result_event.material.get(
         "act_occurrence_event_identity"
     )
@@ -42,7 +42,7 @@ def _append_exact_material_result_occurrence(
         or type(yield_relation_identity) is not str
         or not yield_relation_identity
     ):
-        raise MaterialAcquisitionError("exact material result occurrence required")
+        raise MaterialSourceError("exact material result occurrence required")
     act_occurrence = ledger.get(act_occurrence_event_identity)
     yield_relation = ledger.get(
         yield_relation_identity
@@ -95,7 +95,7 @@ def _append_exact_material_result_occurrence(
         != result_event.exact_material
         or carried_result != yield_material.get("result")
     ):
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "exact material result requires its prior intact Act and Yield"
         )
     try:
@@ -107,32 +107,32 @@ def _append_exact_material_result_occurrence(
             locality_identity=result_event.locality_identity,
         )
     except ValueError as error:
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "exact material result requires its prior intact Act and Yield"
         ) from error
     return ledger.append_many((result_event,))[0]
 
 
-def acquired_material_bytes(event: Event) -> bytes:
+def exact_material_result_bytes(event: Event) -> bytes:
     """Return bytes already admitted by one source-specific result reader."""
 
     if type(event) is not Event:
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "one exact material result occurrence required"
         )
     exact = event.exact_material
     if type(exact) is not bytes:
-        raise MaterialAcquisitionError("material result carries no exact bytes")
+        raise MaterialSourceError("material result carries no exact bytes")
     return exact
 
 
-def iter_exact_material_acquisition_results(
+def iter_exact_material_results(
     ledger: EventLedger,
     locality_identity: str,
     *,
     through: EventLedgerBoundary | None = None,
 ):
-    """Yield exact acquisition results without a Locality-wide read."""
+    """Yield exact material results without a Locality-wide read."""
 
     from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     from seed_runtime.operator_material_acquisition import (
@@ -176,32 +176,32 @@ def iter_exact_material_acquisition_results(
                         locality_identity=locality_identity,
                     )
                 except ValueError as error:
-                    raise MaterialAcquisitionError(
-                        "exact acquisition results carry no append order"
+                    raise MaterialSourceError(
+                        "exact material results carry no append order"
                     ) from error
                 selected = operator_identity
                 operator_identity = next(operator, absent)
             else:
                 selected = witness_identity
                 witness_identity = next(witness, absent)
-        yield read_exact_material_acquisition_result(ledger, selected)
+        yield read_exact_material_result(ledger, selected)
 
 
-def read_exact_material_acquisition_result(
+def read_exact_material_result(
     ledger: EventLedger, event_identity: str
 ) -> Event:
-    """Read one acquisition result through its source-specific physiology."""
+    """Read one material result through its source-specific physiology."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("exact material-acquisition read requires one EventLedger")
+        raise TypeError("exact material result read requires one EventLedger")
     if type(event_identity) is not str or not event_identity:
-        raise MaterialAcquisitionError(
-            "exact material-acquisition read requires one occurrence identity"
+        raise MaterialSourceError(
+            "exact material result read requires one occurrence identity"
         )
     event = ledger.get(event_identity)
     if event is None or ledger.integrity_of(event.identity) == CORRUPTED:
-        raise MaterialAcquisitionError(
-            "exact material-acquisition result is absent or corrupted"
+        raise MaterialSourceError(
+            "exact material result is absent or corrupted"
         )
 
     from seed_runtime.witness_material_acquisition import (
@@ -221,23 +221,23 @@ def read_exact_material_acquisition_result(
         try:
             get_recorded_operator_material_acquire(ledger, event.identity)
         except (TypeError, ValueError) as error:
-            raise MaterialAcquisitionError(
-                "operator material acquisition carries no intact physiology"
+            raise MaterialSourceError(
+                "operator material source occurrence carries no intact physiology"
             ) from error
         return event
-    raise MaterialAcquisitionError(
-        "exact material-acquisition result is absent or corrupted"
+    raise MaterialSourceError(
+        "exact material result is absent or corrupted"
     )
 
 
-def read_material_acquisition_locality_relation_requirements(
+def read_material_locality_relation_requirements(
     ledger: EventLedger,
     *,
     recorded_result_event_identity: str,
 ) -> dict[str, bool]:
     """Read one source-specific material-to-this-Seed Locality relation."""
 
-    result = read_exact_material_acquisition_result(
+    result = read_exact_material_result(
         ledger, recorded_result_event_identity
     )
     from seed_runtime.witness_material_acquisition import (
@@ -264,5 +264,5 @@ def read_material_acquisition_locality_relation_requirements(
     return {
         "exact_relation": operator_requirements["exact_relation"],
         "relation_occurrence": operator_requirements["occurrence_witness"],
-        "responsible_acquisition": operator_requirements["intact_occurrence"],
+        "intact_source_occurrence": operator_requirements["intact_occurrence"],
     }

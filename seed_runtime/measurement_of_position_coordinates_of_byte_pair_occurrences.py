@@ -27,9 +27,9 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    read_exact_material_result,
 )
 
 
@@ -201,12 +201,12 @@ def _has_exact_material_locality_to_this_seed(
 ) -> bool:
     """Whether exact source acquisition supplies the Locality prerequisite."""
 
-    from seed_runtime.material_acquisition import (
-        read_material_acquisition_locality_relation_requirements,
+    from seed_runtime.material_source import (
+        read_material_locality_relation_requirements,
     )
 
     return all(
-        read_material_acquisition_locality_relation_requirements(
+        read_material_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=source_identity,
         ).values()
@@ -386,7 +386,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             # Preserved legacy material is not an exact result of the material acquisition
             # Act/Yield physiology required by this assignment subject.
             continue
-        source = read_exact_material_acquisition_result(ledger, source_identity)
+        source = read_exact_material_result(ledger, source_identity)
         material = source.material
         exact_coordinates = {
             key: material.get(key)
@@ -425,7 +425,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
                 ],
                 source_role=exact_coordinates["source_role"],
                 source_boundary=exact_coordinates["source_boundary"],
-                exact_material=acquired_material_bytes(source),
+                exact_material=exact_material_result_bytes(source),
                 known_loss=_exact_string_list(
                     material.get("known_loss"), coordinate="known_loss"
                 ),
@@ -491,13 +491,13 @@ def _measure_through(
     source_material_acquisition_occurrence_identity: str,
     boundary: EventLedgerBoundary,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    source = read_exact_material_acquisition_result(ledger, source_material_acquisition_occurrence_identity)
+    source = read_exact_material_result(ledger, source_material_acquisition_occurrence_identity)
     exact_boundary = ledger.append_boundary_through_occurrence(source.identity)
     if type(boundary) is not EventLedgerBoundary or boundary != exact_boundary:
         raise ValueError(
             "byte-pair position-coordinate Measurement requires the exact source boundary"
         )
-    exact = acquired_material_bytes(source)
+    exact = exact_material_result_bytes(source)
     finding = FindingOfPositionCoordinatesOfBytePairOccurrences(
         source_material_acquisition_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
@@ -744,7 +744,7 @@ def _require_exact_responsibility_boundary(
             "byte-pair position-coordinate assignment requires one exact "
             "responsible boundary"
         )
-    source = read_exact_material_acquisition_result(
+    source = read_exact_material_result(
         ledger, source_material_acquisition_occurrence_identity
     )
     if not any(

@@ -8,10 +8,10 @@ import pytest
 
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    iter_exact_material_acquisition_results,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    iter_exact_material_results,
+    read_exact_material_result,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from tests.operator_material_acquisition_test_witness import (
@@ -38,12 +38,12 @@ def _all_locality_occurrences(ledger, *, locality_identity):
 
 
 def _acquisition_results(ledger, *, locality_identity):
-    return list(iter_exact_material_acquisition_results(ledger, locality_identity))
+    return list(iter_exact_material_results(ledger, locality_identity))
 
 
 def _is_readable_acquisition_result(ledger, event):
     try:
-        read_exact_material_acquisition_result(ledger, event.identity)
+        read_exact_material_result(ledger, event.identity)
     except (TypeError, ValueError):
         return False
     return True
@@ -124,7 +124,7 @@ def test_the_occurrences_are_identical_durably(durable_ledger, locality_identity
 def test_each_body_still_gets_only_its_own_material(durable_ledger):
     held = {
         locality_identity: [
-            acquired_material_bytes(event)
+            exact_material_result_bytes(event)
             for event in _acquisition_results(
                 durable_ledger, locality_identity=locality_identity
             )

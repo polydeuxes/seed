@@ -9,9 +9,9 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.material_acquisition import (
+from seed_runtime.material_source import (
     MATERIAL_RESULT_UNKNOWN,
-    MaterialAcquisitionError,
+    MaterialSourceError,
     _append_exact_material_result_occurrence,
 )
 
@@ -29,7 +29,7 @@ WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY = (
 )
 
 
-class WitnessMaterialAcquisitionError(MaterialAcquisitionError):
+class WitnessMaterialSourceError(MaterialSourceError):
     """One exact Witness material-acquisition occurrence is malformed."""
 
 
@@ -39,7 +39,7 @@ def _require_read_occurrence_coordinates(
     """Validate exact mechanical read coordinates carried by one result."""
 
     if type(read_occurrences) not in (tuple, list):
-        raise WitnessMaterialAcquisitionError(
+        raise WitnessMaterialSourceError(
             "exact read occurrence population required"
         )
     next_start = 0
@@ -47,7 +47,7 @@ def _require_read_occurrence_coordinates(
     invocation_positions: set[int] = set()
     for occurrence in read_occurrences:
         if type(occurrence) is not dict:
-            raise WitnessMaterialAcquisitionError(
+            raise WitnessMaterialSourceError(
                 "read occurrences require exact coordinates"
             )
         source = occurrence.get("source_boundary")
@@ -74,14 +74,14 @@ def _require_read_occurrence_coordinates(
             or end <= start
             or end > len(exact_bytes)
         ):
-            raise WitnessMaterialAcquisitionError(
+            raise WitnessMaterialSourceError(
                 "read occurrences require exact coordinates"
             )
         boundaries.add(source)
         invocation_positions.add(invocation_position)
         next_start = end
     if read_occurrences and next_start != len(exact_bytes):
-        raise WitnessMaterialAcquisitionError(
+        raise WitnessMaterialSourceError(
             "read occurrences require the complete exact material"
         )
 
@@ -97,7 +97,7 @@ def record_witness_material_acquisition(
     read_occurrences: tuple[dict[str, object], ...] = (),
 ) -> Event:
     if type(exact_bytes) is not bytes:
-        raise WitnessMaterialAcquisitionError(
+        raise WitnessMaterialSourceError(
             "Witness material acquisition requires exact bytes"
         )
     for name, value in (
@@ -105,11 +105,11 @@ def record_witness_material_acquisition(
         ("source_boundary", source_boundary),
     ):
         if type(value) is not str or not value.strip():
-            raise WitnessMaterialAcquisitionError(
+            raise WitnessMaterialSourceError(
                 f"Witness material acquisition requires exact {name}"
             )
     if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
-        raise WitnessMaterialAcquisitionError("known loss must be an exact tuple of material")
+        raise WitnessMaterialSourceError("known loss must be an exact tuple of material")
     if (
         type(provenance_occurrence_references) is not tuple
         or len(set(provenance_occurrence_references))
@@ -122,7 +122,7 @@ def record_witness_material_acquisition(
             for reference in provenance_occurrence_references
         )
     ):
-        raise WitnessMaterialAcquisitionError(
+        raise WitnessMaterialSourceError(
             "provenance requires exact intact occurrence references"
         )
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
@@ -279,7 +279,7 @@ def _read_witness_material_acquisition_result(
             "relation_occurrence_identity": event.identity,
         }
     ):
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "Witness material-acquisition result is absent or corrupted"
         )
     result: dict[str, object] = {
@@ -320,15 +320,15 @@ def _read_witness_material_acquisition_result(
         act_occurrence.material != expected_act_occurrence
         or material != expected_material
     ):
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "Witness material-acquisition result is absent or corrupted"
         )
     try:
         _require_read_occurrence_coordinates(
             event.exact_material, read_occurrences
         )
-    except WitnessMaterialAcquisitionError as error:
-        raise MaterialAcquisitionError(
+    except WitnessMaterialSourceError as error:
+        raise MaterialSourceError(
             "Witness material acquisition carries malformed read occurrences"
         ) from error
     try:
@@ -343,7 +343,7 @@ def _read_witness_material_acquisition_result(
             act_occurrence_event_identity=act_occurrence.identity,
         )
     except (TypeError, ValueError) as error:
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "Witness material acquisition carries no intact Act and Yield"
         ) from error
     if [occurrence.identity for occurrence in ordered] != [
@@ -351,7 +351,7 @@ def _read_witness_material_acquisition_result(
         yield_identity,
         event.identity,
     ] or not all(requirements.values()):
-        raise MaterialAcquisitionError(
+        raise MaterialSourceError(
             "Witness material acquisition carries no intact Act and Yield"
         )
     return event
@@ -369,7 +369,7 @@ def read_witness_material_acquire_locality_relation_requirements(
         return {
             "exact_relation": False,
             "relation_occurrence": False,
-            "responsible_acquisition": False,
+            "intact_source_occurrence": False,
         }
     try:
         _read_witness_material_acquisition_result(ledger, event)
@@ -377,7 +377,7 @@ def read_witness_material_acquire_locality_relation_requirements(
         return {
             "exact_relation": False,
             "relation_occurrence": False,
-            "responsible_acquisition": False,
+            "intact_source_occurrence": False,
         }
     relation = event.material.get("locality_relation")
     return {
@@ -396,5 +396,5 @@ def read_witness_material_acquire_locality_relation_requirements(
             type(relation) is dict
             and relation.get("relation_occurrence_identity") == event.identity
         ),
-        "responsible_acquisition": ledger.integrity_of(event.identity) != CORRUPTED,
+        "intact_source_occurrence": ledger.integrity_of(event.identity) != CORRUPTED,
     }

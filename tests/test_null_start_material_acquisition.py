@@ -7,9 +7,9 @@ import json
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    iter_exact_material_acquisition_results,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    iter_exact_material_results,
 )
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
 from tests.operator_material_acquisition_test_witness import (
@@ -59,7 +59,7 @@ def _record_material(ledger: EventLedger) -> None:
 
 
 def _acquisition_results(ledger: EventLedger):
-    return list(iter_exact_material_acquisition_results(ledger, "s"))
+    return list(iter_exact_material_results(ledger, "s"))
 
 
 def test_one_acquisition_result_occurs_for_each_delivered_line(ledger):
@@ -75,7 +75,7 @@ def test_each_material_acquisition_carries_the_operator_role(ledger):
 
 
 def test_each_material_acquisition_preserves_exact_bytes(ledger):
-    exact = [acquired_material_bytes(event) for event in _acquisition_results(ledger)]
+    exact = [exact_material_result_bytes(event) for event in _acquisition_results(ledger)]
 
     assert exact[0] == (E1 + "\n").encode()
     assert exact[1] == (E2 + "\n").encode()

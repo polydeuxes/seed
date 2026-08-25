@@ -11,7 +11,7 @@ import subprocess
 import time
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 from material_admission import (
@@ -853,7 +853,7 @@ def material_acquisition_result_reference(
     if not isinstance(ledger, EventLedger):
         raise TypeError("material acquisition result reference requires one EventLedger")
     try:
-        event = read_exact_material_acquisition_result(
+        event = read_exact_material_result(
             ledger, recorded_occurrence_identity
         )
     except (TypeError, ValueError) as error:

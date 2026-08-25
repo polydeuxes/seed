@@ -7,16 +7,16 @@ import pytest
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.material_acquisition import (
-    MaterialAcquisitionError,
+from seed_runtime.material_source import (
+    MaterialSourceError,
     _append_exact_material_result_occurrence,
-    acquired_material_bytes,
-    read_exact_material_acquisition_result,
-    read_material_acquisition_locality_relation_requirements,
+    exact_material_result_bytes,
+    read_exact_material_result,
+    read_material_locality_relation_requirements,
 )
 from seed_runtime.witness_material_acquisition import (
     WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND,
-    WitnessMaterialAcquisitionError,
+    WitnessMaterialSourceError,
     record_witness_material_acquisition,
     read_witness_material_acquire_locality_relation_requirements,
 )
@@ -47,7 +47,7 @@ def test_witness_material_preserves_exact_raw_bytes():
 
     assert occurred.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     assert occurred.locality_identity == "locality_000001"
-    assert acquired_material_bytes(occurred) == exact
+    assert exact_material_result_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
     assert occurred.material["locality_relation"] == {
         "first_subject": {
@@ -89,7 +89,7 @@ def test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_
     ]
 
     before = len(ledger.list())
-    with pytest.raises(WitnessMaterialAcquisitionError, match="exact intact occurrence"):
+    with pytest.raises(WitnessMaterialSourceError, match="exact intact occurrence"):
         _preserve(
             ledger,
             b"missing",
@@ -98,7 +98,7 @@ def test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_
     assert len(ledger.list()) == before
 
     ledger.corrupted = source.identity
-    with pytest.raises(WitnessMaterialAcquisitionError, match="exact intact occurrence"):
+    with pytest.raises(WitnessMaterialSourceError, match="exact intact occurrence"):
         _preserve(
             ledger,
             b"corrupted",
@@ -144,7 +144,7 @@ def test_durable_witness_acquisition_preserves_raw_material_and_yield_relation(t
             recorded_result_event_identity=occurred_identity,
             yield_relation_event_identity=yield_relation_identity,
             act_occurrence_event_identity=read.material[
-                "act_occurrence_identity"
+                "act_occurrence_event_identity"
             ],
         )["exact_relation"] is True
     finally:
@@ -187,7 +187,7 @@ def test_witness_material_locality_relation_preserves_invocation_and_provenance(
         ).values()
     )
     assert all(
-        read_material_acquisition_locality_relation_requirements(
+        read_material_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=occurred.identity,
         ).values()
@@ -216,10 +216,10 @@ def test_witness_material_locality_relation_refuses_mismatched_coordinates():
     ) == {
         "exact_relation": False,
         "relation_occurrence": False,
-        "responsible_acquisition": False,
+        "intact_source_occurrence": False,
     }
-    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
-        read_exact_material_acquisition_result(ledger, forged.identity)
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, forged.identity)
 
 
 def test_material_acquisition_event_binds_exact_act_and_yield_relation():
@@ -231,7 +231,7 @@ def test_material_acquisition_event_binds_exact_act_and_yield_relation():
         recorded_result_event_identity=acquisition_result.identity,
         yield_relation_event_identity=acquisition_result.material["yield_relation_identity"],
         act_occurrence_event_identity=acquisition_result.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     ) == {
         "exact_relation": True,
@@ -255,7 +255,7 @@ def test_changed_record_witness_material_acquisition_cannot_borrow_its_yield_rel
         recorded_result_event_identity=changed.identity,
         yield_relation_event_identity=changed.material["yield_relation_identity"],
         act_occurrence_event_identity=changed.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     )["exact_relation"] is False
 
@@ -285,7 +285,7 @@ def test_yield_relation_without_exact_material_cannot_certify_an_acquire():
         recorded_result_event_identity=carried.identity,
         yield_relation_event_identity=incomplete_yield_relation.identity,
         act_occurrence_event_identity=carried.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     )["exact_relation"] is False
 
@@ -295,7 +295,7 @@ def test_equal_material_has_distinct_material_acquisition_result_occurrences_res
     first = _preserve(ledger, b"same exact material")
     second = _preserve(ledger, b"same exact material")
 
-    assert acquired_material_bytes(first) == acquired_material_bytes(second)
+    assert exact_material_result_bytes(first) == exact_material_result_bytes(second)
     assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
     assert first.material["result_identity"] != second.material["result_identity"]
     assert first.material["yield_relation_identity"] != second.material["yield_relation_identity"]
@@ -304,7 +304,7 @@ def test_equal_material_has_distinct_material_acquisition_result_occurrences_res
         recorded_result_event_identity=first.identity,
         yield_relation_event_identity=second.material["yield_relation_identity"],
         act_occurrence_event_identity=first.material[
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ],
     ) == {
         "exact_relation": False,
@@ -324,7 +324,7 @@ def test_witness_material_requires_only_material_boundary_and_locality():
 def test_empty_witness_material_is_exact_material():
     occurred = _preserve(EventLedger(), b"")
 
-    assert acquired_material_bytes(occurred) == b""
+    assert exact_material_result_bytes(occurred) == b""
 
 
 def test_generic_material_result_read_refuses_a_changed_source_coordinate():
@@ -332,8 +332,8 @@ def test_generic_material_result_read_refuses_a_changed_source_coordinate():
     occurred = _preserve(ledger, b"exact")
     occurred.material["source_boundary"] = "different boundary"
 
-    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
-        read_exact_material_acquisition_result(ledger, occurred.identity)
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, occurred.identity)
 
 
 def test_material_acquisition_refuses_a_supplied_representation_coordinate():
@@ -341,8 +341,8 @@ def test_material_acquisition_refuses_a_supplied_representation_coordinate():
     occurred = _preserve(ledger, b"exact")
     occurred.material["represented_material"] = "supplied Representation material"
 
-    with pytest.raises(MaterialAcquisitionError, match="absent or corrupted"):
-        read_exact_material_acquisition_result(ledger, occurred.identity)
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, occurred.identity)
 
 
 def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
@@ -351,7 +351,7 @@ def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
     yielded = ledger.append("unrelated.yield", locality_identity="s")
     before = ledger.append_boundary()
 
-    with pytest.raises(MaterialAcquisitionError, match="prior intact Act and Yield"):
+    with pytest.raises(MaterialSourceError, match="prior intact Act and Yield"):
         _append_exact_material_result_occurrence(
             ledger,
             result_event=Event(
@@ -371,27 +371,27 @@ def test_storage_helper_refuses_unrelated_act_and_yield_before_append():
 
 @pytest.mark.parametrize("material", ["bytes", bytearray(b"x"), memoryview(b"x"), None, 1])
 def test_witness_material_refuses_non_bytes(material):
-    with pytest.raises(WitnessMaterialAcquisitionError, match="exact bytes"):
+    with pytest.raises(WitnessMaterialSourceError, match="exact bytes"):
         _preserve(EventLedger(), material)
 
 
 @pytest.mark.parametrize("boundary", ["", "  ", None, 1, []])
 def test_witness_material_requires_exact_boundary(boundary):
-    with pytest.raises(WitnessMaterialAcquisitionError, match="boundary"):
+    with pytest.raises(WitnessMaterialSourceError, match="boundary"):
         _preserve(EventLedger(), source_boundary=boundary)
 
 
 @pytest.mark.parametrize("locality", ["", "  ", None, 1, []])
 def test_witness_material_requires_exact_locality(locality):
-    with pytest.raises(WitnessMaterialAcquisitionError, match="locality"):
+    with pytest.raises(WitnessMaterialSourceError, match="locality"):
         _preserve(EventLedger(), locality_identity=locality)
 
 
-def test_acquired_material_bytes_refuses_wrong_or_corrupt_occurrences():
-    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
-        acquired_material_bytes(Event(identity="evt_x", kind="something.else", material={}))
-    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
-        acquired_material_bytes(
+def test_exact_material_result_bytes_refuses_wrong_or_corrupt_occurrences():
+    with pytest.raises(MaterialSourceError, match="carries no exact bytes"):
+        exact_material_result_bytes(Event(identity="evt_x", kind="something.else", material={}))
+    with pytest.raises(MaterialSourceError, match="carries no exact bytes"):
+        exact_material_result_bytes(
             Event(identity="evt_x", kind=WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND)
         )
     corrupt = Event(
@@ -400,8 +400,8 @@ def test_acquired_material_bytes_refuses_wrong_or_corrupt_occurrences():
         exact_material=b"material",
     )
     object.__setattr__(corrupt, "exact_material", "material")
-    with pytest.raises(MaterialAcquisitionError, match="carries no exact bytes"):
-        acquired_material_bytes(corrupt)
+    with pytest.raises(MaterialSourceError, match="carries no exact bytes"):
+        exact_material_result_bytes(corrupt)
 
 
 def test_witness_material_identity_is_reserved_across_reopen(tmp_path):

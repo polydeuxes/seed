@@ -19,7 +19,7 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.identities import new_identity
-from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     get_recorded_operator_invocation_locality,
@@ -339,7 +339,7 @@ def _comparison_inputs(
     )
     try:
         if added is not None:
-            read_exact_material_acquisition_result(ledger, added.identity)
+            read_exact_material_result(ledger, added.identity)
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact acquisition result"
@@ -534,7 +534,7 @@ def _comparison_inputs_from_carried_measurements(
     )
     try:
         if added is not None:
-            read_exact_material_acquisition_result(ledger, added.identity)
+            read_exact_material_result(ledger, added.identity)
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact acquisition result"

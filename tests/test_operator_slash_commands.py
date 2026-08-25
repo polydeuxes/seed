@@ -10,9 +10,9 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    read_exact_material_result,
 )
 
 
@@ -31,10 +31,10 @@ def _bounded_material_bytes(ledger: EventLedger) -> list[bytes]:
     material = []
     for event in ledger.list_locality("root-locality"):
         try:
-            result = read_exact_material_acquisition_result(ledger, event.identity)
+            result = read_exact_material_result(ledger, event.identity)
         except (TypeError, ValueError):
             continue
-        material.append(acquired_material_bytes(result))
+        material.append(exact_material_result_bytes(result))
     return material
 
 

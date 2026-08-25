@@ -37,7 +37,7 @@ from seed_runtime.operator_material_acquisition import (
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
-from seed_runtime.material_acquisition import MaterialAcquisitionError
+from seed_runtime.material_source import MaterialSourceError
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -452,7 +452,7 @@ def test_declared_measurements_refuse_a_material_acquisition_without_exact_yield
     )
 
     with pytest.raises(
-        MaterialAcquisitionError,
+        MaterialSourceError,
         match="Witness material-acquisition result is absent or corrupted",
     ):
         record_declared_measurements_from_current_bounded_locality_replay(

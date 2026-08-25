@@ -15,9 +15,9 @@ from seed_runtime import process_entry
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    iter_exact_material_acquisition_results,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    iter_exact_material_results,
 )
 
 
@@ -40,7 +40,7 @@ def _localities(ledger: EventLedger) -> list[str]:
 
 
 def _acquisition_results(ledger, *, locality_identity):
-    return list(iter_exact_material_acquisition_results(ledger, locality_identity))
+    return list(iter_exact_material_results(ledger, locality_identity))
 
 
 # --------------------------------------------------------------------------
@@ -110,7 +110,7 @@ def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
 
     def material(locality_identity):
         return [
-            acquired_material_bytes(event)
+            exact_material_result_bytes(event)
             for event in _acquisition_results(
                 two_lifetimes, locality_identity=locality_identity
             )
@@ -253,7 +253,7 @@ def test_separate_processes_receive_separate_localities(db):
         assert len(Localities) == 3
         held = [
             [
-                acquired_material_bytes(event)
+                exact_material_result_bytes(event)
                 for event in _acquisition_results(
                     ledger, locality_identity=locality
                 )

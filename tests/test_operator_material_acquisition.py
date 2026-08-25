@@ -8,10 +8,10 @@ import pytest
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
-from seed_runtime.material_acquisition import (
-    MaterialAcquisitionError,
-    iter_exact_material_acquisition_results,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    MaterialSourceError,
+    iter_exact_material_results,
+    read_exact_material_result,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -311,7 +311,7 @@ def test_ordinary_operator_material_is_the_exact_acquisition_measurement_source(
         if event.kind == WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
     ]
     assert acquisition_results == []
-    assert read_exact_material_acquisition_result(ledger, acquired[0].identity) == acquired[0]
+    assert read_exact_material_result(ledger, acquired[0].identity) == acquired[0]
     assert acquired[0].exact_material == b"Hello\n"
     assert acquired[0].material["provenance_occurrence_references"] == []
     position_results = [
@@ -345,8 +345,8 @@ def test_operator_result_kind_without_source_g_physiology_is_not_acquisition():
         locality_identity="source",
     )
 
-    with pytest.raises(MaterialAcquisitionError, match="intact physiology"):
-        read_exact_material_acquisition_result(ledger, claimed.identity)
+    with pytest.raises(MaterialSourceError, match="intact physiology"):
+        read_exact_material_result(ledger, claimed.identity)
 
 
 def test_exact_acquisition_families_merge_only_their_append_order():
@@ -376,7 +376,7 @@ def test_exact_acquisition_families_merge_only_their_append_order():
 
     assert [
         event.identity
-        for event in iter_exact_material_acquisition_results(ledger, "source")
+        for event in iter_exact_material_results(ledger, "source")
     ] == [first.identity, operator.identity, last.identity]
 
 

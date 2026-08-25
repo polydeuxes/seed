@@ -14,9 +14,9 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_acquisition import (
-    acquired_material_bytes,
-    read_exact_material_acquisition_result,
+from seed_runtime.material_source import (
+    exact_material_result_bytes,
+    read_exact_material_result,
 )
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from tests.operator_material_acquisition_test_witness import (
@@ -186,7 +186,7 @@ def _acquisition_results(ledger):
     acquisition_results = []
     for event in ledger.list():
         try:
-            acquisition_results.append(read_exact_material_acquisition_result(ledger, event.identity))
+            acquisition_results.append(read_exact_material_result(ledger, event.identity))
         except (TypeError, ValueError):
             pass
     return acquisition_results
@@ -407,7 +407,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
 
     def provider(exact_command, supply):
         seen.append(exact_command)
-        assert [acquired_material_bytes(event) for event in _acquisition_results(ledger)] == [
+        assert [exact_material_result_bytes(event) for event in _acquisition_results(ledger)] == [
             b"!ls \xff\x00\n"
         ]
         assert len(
@@ -440,7 +440,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
 
     assert seen == [b"!ls \xff\x00\n"]
     acquisition_results = _acquisition_results(ledger)
-    assert [acquired_material_bytes(event) for event in acquisition_results] == [
+    assert [exact_material_result_bytes(event) for event in acquisition_results] == [
         b"!ls \xff\x00\n",
         b"\x00\xffout",
         b"same",
@@ -656,7 +656,7 @@ def test_provider_death_leaves_the_complete_command_acquisition():
             operator_invocation_provider=die,
         )
 
-    assert [acquired_material_bytes(event) for event in _acquisition_results(ledger)] == [
+    assert [exact_material_result_bytes(event) for event in _acquisition_results(ledger)] == [
         b"!cat path\n"
     ]
     assert len(
@@ -842,7 +842,7 @@ def test_missing_supplied_result_is_refused_after_command_acquisition():
             operator_invocation_provider=lambda _exact, _supply: None,
         )
 
-    assert [acquired_material_bytes(event) for event in _acquisition_results(ledger)] == [
+    assert [exact_material_result_bytes(event) for event in _acquisition_results(ledger)] == [
         b"!ls\n"
     ]
 
@@ -863,7 +863,7 @@ def test_equal_empty_supplied_material_remains_three_exact_occurrences():
 
     assert len(events) == 3
     assert len({event.identity for event in events}) == 3
-    assert [acquired_material_bytes(event) for event in events] == [b"", b"", b""]
+    assert [exact_material_result_bytes(event) for event in events] == [b"", b"", b""]
 
 
 def test_host_provider_requires_an_exact_output_boundary():

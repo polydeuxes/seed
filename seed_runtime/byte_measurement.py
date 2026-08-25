@@ -29,10 +29,10 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.material_acquisition import (
-    MaterialAcquisitionError,
-    acquired_material_bytes,
-    iter_exact_material_acquisition_results,
+from seed_runtime.material_source import (
+    MaterialSourceError,
+    exact_material_result_bytes,
+    iter_exact_material_results,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 
@@ -659,8 +659,8 @@ def _acquired_bytes(ledger: EventLedger, occurrence) -> bytes:
             f"{occurrence.identity} is not an intact material acquisition occurrence"
         )
     try:
-        return acquired_material_bytes(occurrence)
-    except MaterialAcquisitionError as exc:
+        return exact_material_result_bytes(occurrence)
+    except MaterialSourceError as exc:
         raise ByteMeasurementError(str(exc)) from exc
 
 
@@ -671,12 +671,12 @@ def _exact_material_acquisition_results(
     through: EventLedgerBoundary,
 ):
     try:
-        yield from iter_exact_material_acquisition_results(
+        yield from iter_exact_material_results(
             ledger,
             locality_identity,
             through=through,
         )
-    except MaterialAcquisitionError as exc:
+    except MaterialSourceError as exc:
         raise ByteMeasurementError(
             "source carries a material-acquisition result without intact physiology"
         ) from exc
@@ -2174,8 +2174,8 @@ def _byte_measurement_source_material(
         )
     source_material = []
     seen_material = set()
-    from seed_runtime.material_acquisition import (
-        read_material_acquisition_locality_relation_requirements,
+    from seed_runtime.material_source import (
+        read_material_locality_relation_requirements,
     )
 
     for locality in localities:
@@ -2184,7 +2184,7 @@ def _byte_measurement_source_material(
         ):
             _acquired_bytes(ledger, acquisition_result)
             if not all(
-                read_material_acquisition_locality_relation_requirements(
+                read_material_locality_relation_requirements(
                     ledger,
                     recorded_result_event_identity=acquisition_result.identity,
                 ).values()

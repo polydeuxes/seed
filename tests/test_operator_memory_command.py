@@ -6,7 +6,7 @@ import pytest
 
 
 from seed_runtime.events import EventLedger
-from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_command import (
     AddressedOperatorCommand,
     OperatorCommandFrame,
@@ -94,7 +94,7 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     for event in ledger.list():
         try:
             acquisition_results.append(
-                read_exact_material_acquisition_result(ledger, event.identity)
+                read_exact_material_result(ledger, event.identity)
             )
         except (TypeError, ValueError):
             pass
@@ -157,4 +157,4 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
     } <= source_identities
     for event in destination:
         with pytest.raises(ValueError):
-            read_exact_material_acquisition_result(ledger, event.identity)
+            read_exact_material_result(ledger, event.identity)

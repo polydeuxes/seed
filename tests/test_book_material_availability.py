@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from seed_runtime.material_acquisition import acquired_material_bytes
+from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.declared_measurement_responsibilities import (
@@ -21,7 +21,7 @@ from book_material_availability import acquired_book_material  # noqa: E402
 
 def test_book_material_acquisition_locality_exposes_declared_measurements():
     ledger, paths, acquisition_results = acquired_book_material()
-    assert tuple(acquired_material_bytes(acquisition_result) for acquisition_result in acquisition_results) == tuple(
+    assert tuple(exact_material_result_bytes(acquisition_result) for acquisition_result in acquisition_results) == tuple(
         path.read_bytes() for path in paths
     )
     assert tuple(acquisition_result.material["source_boundary"] for acquisition_result in acquisition_results) == tuple(

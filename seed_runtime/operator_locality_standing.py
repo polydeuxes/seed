@@ -11,9 +11,9 @@ from typing import Any, Iterable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_acquisition import (
-    read_exact_material_acquisition_result,
-    read_material_acquisition_locality_relation_requirements,
+from seed_runtime.material_source import (
+    read_exact_material_result,
+    read_material_locality_relation_requirements,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.byte_measurement import (
@@ -2008,11 +2008,11 @@ def advance_operator_locality_standing(
                 _addressed_byte_reference_determination_coordinates(event)
             )
             continue
-        source_result = read_exact_material_acquisition_result(
+        source_result = read_exact_material_result(
             ledger, event.identity
         )
         locality_requirements = (
-            read_material_acquisition_locality_relation_requirements(
+            read_material_locality_relation_requirements(
                 ledger,
                 recorded_result_event_identity=source_result.identity,
             )

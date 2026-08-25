@@ -316,8 +316,8 @@ def _latest_carried_pair_premise(
 ):
     """Address the latest exact pair Measurement already carried here."""
 
-    from seed_runtime.material_acquisition import (
-        read_material_acquisition_locality_relation_requirements,
+    from seed_runtime.material_source import (
+        read_material_locality_relation_requirements,
     )
 
     for event_identity in reversed(tuple(standing["measurement_occurrences"])):
@@ -362,7 +362,7 @@ def _latest_carried_pair_premise(
             )
             and all(
                 all(
-                    read_material_acquisition_locality_relation_requirements(
+                    read_material_locality_relation_requirements(
                         ledger,
                         recorded_result_event_identity=source_reference[
                             "material_acquisition_occurrence_identity"

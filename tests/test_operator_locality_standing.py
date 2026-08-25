@@ -24,7 +24,7 @@ from seed_runtime.witness_material_acquisition import record_witness_material_ac
 from tests.operator_material_acquisition_test_witness import (
     record_operator_material_occurrence,
 )
-from seed_runtime.material_acquisition import MaterialAcquisitionError
+from seed_runtime.material_source import MaterialSourceError
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
@@ -382,7 +382,7 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
         "yield_relation_identity"
     ]
 
-    with pytest.raises(MaterialAcquisitionError):
+    with pytest.raises(MaterialSourceError):
         _standing(ledger)
 
 
@@ -404,7 +404,7 @@ def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
     )
 
     with pytest.raises(
-        MaterialAcquisitionError,
+        MaterialSourceError,
         match="absent or corrupted",
     ):
         _standing(ledger)
@@ -434,7 +434,7 @@ def test_locality_standing_refuses_corrupted_raw_yield_relation(
         ),
     )
 
-    with pytest.raises(MaterialAcquisitionError):
+    with pytest.raises(MaterialSourceError):
         _standing(ledger)
 
 

@@ -7,7 +7,7 @@ from typing import Callable
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_acquisition import read_exact_material_acquisition_result
+from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND, record_witness_material_acquisition
 from seed_runtime.operator_invocation_locality import (
     get_recorded_operator_invocation_locality,
@@ -165,7 +165,7 @@ def acquire_supplied_witness_material_occurrence(
     ):
         raise ValueError("exact operator occurrence required")
     try:
-        read_exact_material_acquisition_result(ledger, command_occurrence.identity)
+        read_exact_material_result(ledger, command_occurrence.identity)
     except (TypeError, ValueError) as error:
         raise ValueError("exact operator occurrence required") from error
     prior_occurrences = tuple(

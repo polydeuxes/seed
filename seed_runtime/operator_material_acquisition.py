@@ -8,7 +8,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_acquisition import (
+from seed_runtime.material_source import (
     MATERIAL_RESULT_UNKNOWN,
     _append_exact_material_result_occurrence,
 )

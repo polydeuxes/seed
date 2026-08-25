@@ -8,7 +8,7 @@ import pytest
 
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_acquisition import acquired_material_bytes
+from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
@@ -44,7 +44,7 @@ def _run(material: bytes) -> EventLedger:
 
 def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     return [
-        acquired_material_bytes(ledger.get(occurrence["result_occurrence_identity"]))
+        exact_material_result_bytes(ledger.get(occurrence["result_occurrence_identity"]))
         for occurrence in standing["material_acquisition_result_occurrences"]
     ]
 
