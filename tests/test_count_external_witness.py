@@ -13,7 +13,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_occurrences,
     preserves_original_order,
 )
-from count_implementation_function import count_invocation  # noqa: E402
+from count_external_witness import count_invocation  # noqa: E402
 
 
 def test_absent_material_returns_zero_without_entering_returned_material():

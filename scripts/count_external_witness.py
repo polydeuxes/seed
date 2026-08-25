@@ -25,10 +25,10 @@ def count_invocation(
         raise TypeError("exact material must be bytes")
     if type(addressed_material) is not bytes or len(addressed_material) != 1:
         raise TypeError("addressed material must be one byte")
-    implementation_function = Counter(exact_material)
+    counts = Counter(exact_material)
     return CountInvocationOccurrence(
         exact_material=exact_material,
         addressed_material=addressed_material,
-        returned_count=implementation_function[addressed_material[0]],
-        returned_material=bytes(implementation_function),
+        returned_count=counts[addressed_material[0]],
+        returned_material=bytes(counts),
     )
