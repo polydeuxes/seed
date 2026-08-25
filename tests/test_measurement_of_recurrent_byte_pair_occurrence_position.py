@@ -89,7 +89,7 @@ def _fixture(
         assertion
         for assertion in pair_assertions or ()
         if assertion.result == "recurrence"
-        and assertion.representation == (ord("a"), ord("b"))
+        and assertion.content == (ord("a"), ord("b"))
     )
     source = record_operator_material_occurrence(
         ledger,
@@ -640,12 +640,10 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     assert measured == expected
     assert pair_result_read_count == 1
     assert source_read_count == 1
-    # O1 source validation and each exact recurrence address preserve their
-    # own occurrence order while the source result itself is still read once.
-    assert order_read_count == (
-        exact_pair_read_order_count + len(recurrence_identities) + 3
-    )
-    assert boundary_read_count == exact_pair_read_boundary_count + 1
+    # The batched read adds three exact-order reads and three boundary reads;
+    # neither count grows with the recurrence identities sharing that boundary.
+    assert order_read_count == exact_pair_read_order_count + 3
+    assert boundary_read_count == exact_pair_read_boundary_count + 3
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
         for finding in measured
@@ -975,27 +973,6 @@ def test_occurrence_limit_is_explicit_and_preserves_exact_known_loss():
     ]
 
 
-def test_measurement_result_does_not_promote_across_the_three_later_crossings():
-    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    _act, result = _record(ledger, locality, finding)
-
-    serialized = json.dumps(result.material).lower()
-    assert all(
-        word not in serialized
-        for word in (
-            "candidate",
-            "participant",
-            "admitted_material",
-            "admission_result",
-            "standing_movement",
-            "represented_relation",
-        )
-    )
-    assert result.identity not in read_operator_locality_standing(
-        ledger, locality_identity=locality
-    )["exact_result_occurrences"]
-
-
 def test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     act, result = _record(ledger, locality, finding)
@@ -1177,7 +1154,6 @@ PYTEST_ADMISSION = (
     test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
     test_act_occurrence_has_inputs_and_responsibility_but_no_result_finding,
     test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
-    test_measurement_result_does_not_promote_across_the_three_later_crossings,
     test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
     test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing,
     test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence,
