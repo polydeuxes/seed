@@ -101,7 +101,6 @@ def _assignment_material(
     relation_occurrence_identity: str,
     result_identity: str,
     destination_locality_identity: str,
-    scope_identity: str,
 ) -> dict[str, Any]:
     return {
         "assignment_identity": assignment_identity,
@@ -122,7 +121,6 @@ def _assignment_material(
         "operator_standing_boundary_identity": standing_boundary_identity,
         "destination_locality_identity": destination_locality_identity,
         "scope": {
-            "scope_identity": scope_identity,
             "operator_locality_identity": command.locality_identity,
             "destination_locality_identity": destination_locality_identity,
             "operator_material_occurrence_reference": command.identity,
@@ -189,7 +187,6 @@ def record_operator_invocation_locality_responsibility_assignment(
         "destination_locality_identity": new_identity(
             "operator_invocation_locality"
         ),
-        "scope_identity": new_identity("operator_invocation_locality_scope"),
     }
     if len(set(identities.values())) != len(identities):
         raise OperatorInvocationLocalityError("invocation Locality identities are compressed")
@@ -234,11 +231,9 @@ def get_operator_invocation_locality_responsibility_assignment(
         "destination_locality_identity",
     )
     identities = tuple(material.get(key) for key in identity_coordinates)
-    scope = material.get("scope")
-    scope_identity = scope.get("scope_identity") if type(scope) is dict else None
     if (
-        any(type(value) is not str or not value for value in (*identities, scope_identity))
-        or len(set((*identities, scope_identity))) != len((*identities, scope_identity))
+        any(type(value) is not str or not value for value in identities)
+        or len(set(identities)) != len(identities)
     ):
         raise OperatorInvocationLocalityError(
             "invocation Locality assignment identities are not exact"
@@ -255,7 +250,6 @@ def get_operator_invocation_locality_responsibility_assignment(
         relation_occurrence_identity=identities[4],
         result_identity=identities[5],
         destination_locality_identity=identities[6],
-        scope_identity=scope_identity,
     )
     boundary = ledger.get(material.get("operator_standing_boundary_identity"))
     if (

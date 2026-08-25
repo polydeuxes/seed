@@ -668,7 +668,6 @@ class SQLiteEventLedger(EventLedger):
         "operator_invocation_locality_assignment_subject",
         "operator_invocation_locality_relation_occurrence",
         "operator_invocation_locality_result",
-        "operator_invocation_locality_scope",
         "recorded_standing_boundary_locality",
         "recorded_standing_boundary_locality_act",
         "recorded_standing_boundary_locality_act_occurrence",
