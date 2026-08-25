@@ -36,7 +36,7 @@ OperatorCommandHandler = Callable[[AddressedOperatorCommand], object]
 @dataclass(frozen=True)
 class OperatorCommandRun:
     addressed: AddressedOperatorCommand
-    implementation_result: object
+    handler_result: object
 
 
 def is_slash_command(material: OperatorBoundaryMaterial) -> bool:
@@ -98,11 +98,11 @@ def run_operator_command(
     if handler is None:
         return OperatorCommandRun(
             addressed=addressed_command,
-            implementation_result=None,
+            handler_result=None,
         )
 
-    implementation_result = handler(addressed_command)
+    handler_result = handler(addressed_command)
     return OperatorCommandRun(
         addressed=addressed_command,
-        implementation_result=implementation_result,
+        handler_result=handler_result,
     )

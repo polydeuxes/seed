@@ -632,7 +632,7 @@ def run_persistent_operator_console(
                 material=boundary_material,
                 handlers=handlers,
             )
-            request = command_run.implementation_result
+            request = command_run.handler_result
             if isinstance(request, OperatorMemoryRequest):
                 assignment = (
                     record_standing_locality_continuation_responsibility_assignment(
