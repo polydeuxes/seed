@@ -23,8 +23,8 @@ keeps dead words present in the grammar. It lives here.
 ## Scope
 
 ```text
-Responsibility spine        ordinary-English traversal of the same spine used
-                            by the Book and instantiated by runtime occurrences;
+Book coordinates            ordinary-English traversal of the exact coordinates
+                            carried by the Book and instantiated by runtime occurrences;
                             Examination and Presentation are directional views
 
 translation words           words the Book does not use, and what
@@ -91,7 +91,7 @@ to four current terms and to no single one of them.
 
 ## Files
 
-- [Responsibility spine](roots.md)
+- [Standing and Responsibility](standing_and_responsibility.md)
 - [Concordance](concordance.md)
 - [Rosetta admission](rosetta_admission.txt)
 - [Book admission](../book_of_seed/book_admission.txt)
@@ -102,6 +102,6 @@ particular, Rosetta admits the `warrant` word family while Book proper names
 the exact source and occurrence coordinates, Scope, and
 support relation.
 
-The Book's Responsibility spine supplies the ordering. Rosetta words hang
-from the exact coordinates they translate, or record a word that named nothing
-so its removal stays legible.
+The Book supplies its exact coordinates. Rosetta words address the exact
+coordinates they translate, or record a word that named nothing so its removal
+stays legible.

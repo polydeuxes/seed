@@ -45,7 +45,6 @@ complete
 completeness
 conflicting
 conflicts
-constitutional
 content
 coordinate
 coordinates
@@ -135,6 +134,7 @@ result
 results
 role
 roles
+root
 rule
 same
 scope

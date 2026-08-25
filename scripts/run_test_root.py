@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run independently collected pytest nodes across sibling processes."""
+"""Collect one pytest Root and run its exact node addresses concurrently."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import sys
 from time import monotonic
 
 
-ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_DIRECTORY = Path(__file__).resolve().parents[1]
 PYTEST_ARGUMENTS = (
     "-m",
     "pytest",
@@ -54,7 +54,7 @@ def _arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _collect(targets: list[str]) -> tuple[str, ...]:
+def _collect_test_root(targets: list[str]) -> tuple[str, ...]:
     command = (
         sys.executable,
         *PYTEST_ARGUMENTS,
@@ -63,7 +63,7 @@ def _collect(targets: list[str]) -> tuple[str, ...]:
     )
     completed = subprocess.run(
         command,
-        cwd=ROOT,
+        cwd=REPOSITORY_DIRECTORY,
         capture_output=True,
         text=True,
         check=False,
@@ -82,10 +82,12 @@ def _collect(targets: list[str]) -> tuple[str, ...]:
     return nodes
 
 
-def _divide(nodes: tuple[str, ...], jobs: int) -> tuple[tuple[str, ...], ...]:
-    process_count = min(jobs, len(nodes))
+def _divide_test_root(
+    test_root: tuple[str, ...], jobs: int
+) -> tuple[tuple[str, ...], ...]:
+    process_count = min(jobs, len(test_root))
     divided = [[] for _ in range(process_count)]
-    for number, node in enumerate(nodes):
+    for number, node in enumerate(test_root):
         divided[number % process_count].append(node)
     return tuple(tuple(process_nodes) for process_nodes in divided)
 
@@ -94,7 +96,7 @@ def _run(number: int, nodes: tuple[str, ...]) -> ProcessResult:
     started = monotonic()
     completed = subprocess.run(
         (sys.executable, *PYTEST_ARGUMENTS, *nodes),
-        cwd=ROOT,
+        cwd=REPOSITORY_DIRECTORY,
         capture_output=True,
         text=True,
         check=False,
@@ -115,8 +117,8 @@ def main() -> int:
         raise SystemExit("jobs must be positive")
 
     started = monotonic()
-    nodes = _collect(arguments.targets)
-    divided = _divide(nodes, arguments.jobs)
+    test_root = _collect_test_root(arguments.targets)
+    divided = _divide_test_root(test_root, arguments.jobs)
     with ThreadPoolExecutor(max_workers=len(divided)) as processes:
         results = tuple(
             processes.map(
@@ -136,7 +138,7 @@ def main() -> int:
             sys.stderr.write(result.stderr)
 
     print(
-        f"{len(nodes)} tests across {len(divided)} processes in "
+        f"{len(test_root)} tests across {len(divided)} processes in "
         f"{monotonic() - started:.2f}s"
     )
     return 1 if any(result.returncode != 0 for result in results) else 0

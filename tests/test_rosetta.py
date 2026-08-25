@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/witness_grammar.json"
 ROSETTA = ROOT / "rosetta"
-ROSETTA_ROOTS = ROSETTA / "roots.md"
+ROSETTA_STANDING_RESPONSIBILITY = ROSETTA / "standing_and_responsibility.md"
 ROSETTA_ADMISSION = ROSETTA / "rosetta_admission.txt"
 
 
@@ -92,14 +92,14 @@ def _assert_live_reference(reference: str) -> None:
 
 def test_rosetta_follows_witness_grammar_relation_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 
     _assert_rosetta_relation_order(grammar, rosetta)
 
 
 def test_rosetta_reversed_relation_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
     altered = rosetta.replace(
         "exact Act occurrence ── Yield → exact result",
         "exact result ── Yield → exact Act occurrence",
@@ -115,7 +115,7 @@ def test_rosetta_reversed_relation_is_detected():
 
 
 def test_rosetta_implementation_references_resolve():
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
     references = _implementation_references(rosetta)
 
     assert references
@@ -124,7 +124,7 @@ def test_rosetta_implementation_references_resolve():
 
 
 def test_rosetta_participant_decompresses_to_the_participation_relation():
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 
     assert "participant" in _rosetta_admission()
     assert (
@@ -134,7 +134,7 @@ def test_rosetta_participant_decompresses_to_the_participation_relation():
 
 
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 
     assert {"book", "language", "lexicon"} <= _rosetta_admission()
     assert (
@@ -144,7 +144,7 @@ def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
 
 
 def test_rosetta_admission_does_not_establish_a_clause():
-    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 
     assert (
         "Lexicon        admitted words only; admission of a word establishes "

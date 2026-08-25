@@ -35,7 +35,7 @@ def main() -> int:
     joined = "\n".join(sources.values())
 
     print("  Uptake is availability with Applicability and Participation")
-    print("  (rosetta/roots.md:94)\n")
+    print("  (rosetta/standing_and_responsibility.md)\n")
     print("  part            spoken of   recorded coordinates carrying it")
     for part in PARTS:
         spoken = len(re.findall(rf"\b{part}\b", joined, re.I))

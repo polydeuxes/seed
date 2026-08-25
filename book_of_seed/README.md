@@ -1,11 +1,16 @@
 # This Book
 
+## Root
+
+This Book is one Root. One Root is one exact bounded subject. Its exact
+coordinates and relations are addressed from that Root. Root != Standing.
+
 ## Standing
 
 This Seed first current Standing carries no coordinates.
 
-Responsibility is one exact branch of current Standing. Standing and
-Responsibility are separate constitutional coordinates.
+Standing for one exact subject carries its exact current coordinates.
+Standing != coordinate. Responsibility is one exact branch of current Standing.
 
 ```
 current Standing

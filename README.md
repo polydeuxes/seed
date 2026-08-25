@@ -1,21 +1,21 @@
 # Seed
 
 Seed is an append-only runtime for preserving bounded material, Assertions,
-Evidence, occurrences, and Standing without strengthening what the recorded
+occurrences, and Standing without strengthening what the recorded
 coordinates establish.
 
 ## Orientation
 
 - [Book of Seed](book_of_seed/README.md) — active constitutional grammar,
-  organized as chapters along the Responsibility spine.
+  with its exact Root and chapter coordinates.
 - [Rosetta of Seed](rosetta/README.md) — ordinary-language translations of the
-  same spine and explanations of retired vocabulary. Rosetta carries no
-  constitutional Authority.
+  Book coordinates and explanations of retired vocabulary. Rosetta carries no
+  constitutional Standing.
 - [`seed_runtime/`](seed_runtime/) — current implementation witnesses.
 - [`tests/`](tests/) — executable behavioral and grammar checks.
 
 The Book states grammar. Runtime behavior and tests provide implementation
-Evidence. Neither silently substitutes for the other.
+testimony. Neither silently substitutes for the other.
 
 ## Repository layout
 
@@ -26,7 +26,7 @@ Evidence. Neither silently substitutes for the other.
 - `seed_runtime/` — live Python runtime.
 - `tests/` — executable checks.
 - `archive/reports/` — historical reports retained as records, not current
-  architectural Authority.
+  grammar.
 - `dormant/` — retired implementation and data retained for inspection.
 - `scripts/` — repository maintenance commands.
 

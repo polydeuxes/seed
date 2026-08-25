@@ -1,4 +1,7 @@
 {
+  "root": {
+    "subject": "this_Book"
+  },
   "standing": {
     "current": {
       "subject": "this_Seed",

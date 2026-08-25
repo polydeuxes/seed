@@ -355,7 +355,9 @@ def test_durable_native_values_do_not_import_operator_or_memory_shorthand():
 
 def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
     root = Path(__file__).resolve().parents[1]
-    rosetta = (root / "rosetta" / "roots.md").read_text(encoding="utf-8")
+    rosetta = (
+        root / "rosetta" / "standing_and_responsibility.md"
+    ).read_text(encoding="utf-8")
     book = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (root / "book_of_seed").rglob("*")

@@ -47,6 +47,14 @@ def _book_coordinates() -> set[str]:
     )
 
 
+def test_witness_grammar_carries_this_book_root():
+    grammar = _grammar()
+
+    assert grammar["root"] == {
+        "subject": "this_Book",
+    }
+
+
 def test_book_and_witness_grammar_have_the_same_coordinates():
     """Every identified clause is projected, by a coordinate or by a surface.
 

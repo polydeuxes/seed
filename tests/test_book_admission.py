@@ -112,12 +112,14 @@ def test_rosetta_admits_composite_support_relation_terms():
         if word.startswith("warrant")
     }
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
-    roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
+    translations = (
+        ROOT / "rosetta" / "standing_and_responsibility.md"
+    ).read_text(encoding="utf-8")
     assert (
         "Warrant        exact support relation with source and occurrence references and "
         "Scope for one Assertion or assignment; composite only, no "
         "new relation by identity"
-    ) in roots
+    ) in translations
 
 
 def test_failure_is_book_material_and_performative_forms_are_rosetta_composites():
@@ -131,11 +133,13 @@ def test_failure_is_book_material_and_performative_forms_are_rosetta_composites(
     }
     assert book_failure == {"failure"}
     assert rosetta_failure == {"fail", "failed", "failure", "fails"}
-    roots = (ROOT / "rosetta" / "roots.md").read_text(encoding="utf-8")
+    translations = (
+        ROOT / "rosetta" / "standing_and_responsibility.md"
+    ).read_text(encoding="utf-8")
     assert (
         "These forms compress one exact Act occurrence plus a bounded failure "
         "Assertion\nor result, source and occurrence references, and Scope."
-    ) in roots
+    ) in translations
 
 
 def test_clause_coordinate_tokens_require_explicit_curation():

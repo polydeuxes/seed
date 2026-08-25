@@ -1,4 +1,4 @@
-# Standing and Responsibility spine
+# Standing and Responsibility
 
 Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
 constitutional grammar; this file is not.
@@ -70,8 +70,8 @@ Witness-grammar Fidelity
 
 `Examination` describes movement from presented material toward bounded Seed
 Assertions. `Presentation` describes movement from bounded Seed Assertions
-toward an emitted representation. Neither is a root, Act, or
-occurrence. They are directions across the Responsibility spine.
+toward emitted material. Neither is a Root, Act, or occurrence. They are
+directions across exact Responsibilities and their occurrences.
 
 ## Translation shorthand
 
