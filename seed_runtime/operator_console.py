@@ -16,10 +16,13 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_material_boundary import operator_boundary_material
+from seed_runtime.operator_material_boundary import (
+    operator_boundary_material,
+    operator_material_source_boundary,
+)
 from seed_runtime.operator_material_source import (
-    _record_operator_material_source_responsibility_assignment_from_standing,
-    _record_operator_material_source_act_occurrence_from_assignment,
+    _record_operator_material_source_subject_to_act_binding_from_current_coordinates,
+    _record_operator_material_source_act_occurrence_from_binding,
     record_operator_material_source_result,
 )
 from seed_runtime.operator_command import (
@@ -432,61 +435,65 @@ def run_persistent_operator_console(
         locality_identity=locality_identity,
     )
     while True:
-        acquire_prior_boundary = locality_standing[
+        source_prior_boundary = locality_standing[
             "through_event_occurrence_identity"
         ]
-        acquire_assignment = (
-            _record_operator_material_source_responsibility_assignment_from_standing(
+        source_boundary = operator_material_source_boundary(input_stream)
+        source_binding = (
+            _record_operator_material_source_subject_to_act_binding_from_current_coordinates(
                 ledger,
                 locality_identity=locality_identity,
-                locality_standing=locality_standing,
+                current_coordinates=locality_standing,
+                source_boundary=source_boundary,
             )
         )
         locality_standing = (
             _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
-                acquire_assignment,
-                prior_through_event_occurrence_identity=acquire_prior_boundary,
+                source_binding,
+                prior_through_event_occurrence_identity=source_prior_boundary,
             )
         )
-        acquire_act_occurrence = (
-            _record_operator_material_source_act_occurrence_from_assignment(
+        source_act_occurrence = (
+            _record_operator_material_source_act_occurrence_from_binding(
                 ledger,
-                responsibility_assignment=acquire_assignment,
-                responsibility_assignment_standing=locality_standing,
+                subject_to_act_binding=source_binding,
+                current_coordinates=locality_standing,
             )
         )
         locality_standing = (
             _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
-                acquire_act_occurrence,
+                source_act_occurrence,
                 prior_through_event_occurrence_identity=(
-                    acquire_assignment.identity
+                    source_binding.identity
                 ),
             )
         )
         input_boundary = ledger.append_boundary()
         boundary_material = operator_boundary_material(input_stream)
+        if boundary_material.material_boundary != source_boundary:
+            raise ValueError("operator material crossed its addressed source boundary")
         if ledger.append_boundary() != input_boundary:
             raise ValueError(
                 "operator boundary invocation appended an occurrence before its result"
             )
         if boundary_material.eof:
             return
-        acquired_material = record_operator_material_source_result(
+        source_material = record_operator_material_source_result(
             ledger,
-            act_occurrence_event_identity=acquire_act_occurrence.identity,
+            act_occurrence_event_identity=source_act_occurrence.identity,
             boundary_material=boundary_material,
         )
         locality_standing = (
             _carry_operator_material_source_occurrence_into_standing(
                 ledger,
                 locality_standing,
-                acquired_material,
+                source_material,
                 prior_through_event_occurrence_identity=(
-                    acquire_act_occurrence.identity
+                    source_act_occurrence.identity
                 ),
             )
         )
@@ -495,9 +502,9 @@ def run_persistent_operator_console(
             and boundary_material.exact_bytes.startswith(b"!")
         ):
             with ledger.batched():
-                command_occurrence_reference = acquired_material.identity
+                command_occurrence_reference = source_material.identity
                 command_material_reference = _material_measurement_reference(
-                    ledger, acquired_material
+                    ledger, source_material
                 )
                 if command_material_reference not in measured_material_references:
                     locality_standing, _byte_measurement = (
@@ -508,7 +515,7 @@ def run_persistent_operator_console(
                         )
                     )
                     measured_material_references.add(command_material_reference)
-                command_material = acquired_material.exact_material
+                command_material = source_material.exact_material
                 relation_assignment = (
                     record_operator_invocation_locality_responsibility_assignment(
                         ledger,
@@ -625,7 +632,7 @@ def run_persistent_operator_console(
             command_run = run_operator_command(
                 locality_identity=locality_identity,
                 addressed_at_standing_boundary_event_identity=(
-                    acquired_material.identity
+                    source_material.identity
                 ),
                 material=boundary_material,
                 handlers=handlers,
@@ -775,10 +782,10 @@ def run_persistent_operator_console(
             if request is not None or command_run.addressed.frame.name in handlers:
                 continue
         with ledger.batched():
-            acquired_material_reference = _material_measurement_reference(
-                ledger, acquired_material
+            source_material_reference = _material_measurement_reference(
+                ledger, source_material
             )
-            if acquired_material_reference not in measured_material_references:
+            if source_material_reference not in measured_material_references:
                 locality_standing, byte_measurement = (
                     _record_measurements_from_bounded_locality_replay(
                         ledger,
@@ -786,7 +793,7 @@ def run_persistent_operator_console(
                         locality_identity=locality_identity,
                     )
                 )
-                measured_material_references.add(acquired_material_reference)
+                measured_material_references.add(source_material_reference)
                 locality_standing, later_pair = _record_pair_measurement(
                     ledger,
                     locality_standing,

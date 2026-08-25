@@ -3,7 +3,7 @@
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_material_source import (
-    record_operator_material_source_responsibility_assignment,
+    record_operator_material_source_subject_to_act_binding,
     record_operator_material_source_act_occurrence,
     record_operator_material_source_result,
 )
@@ -22,15 +22,16 @@ def record_operator_material_occurrence(
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    assignment = record_operator_material_source_responsibility_assignment(
+    binding = record_operator_material_source_subject_to_act_binding(
         ledger,
         locality_identity=locality_identity,
-        locality_standing=standing,
+        current_coordinates=standing,
+        source_boundary=source_boundary,
     )
     act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=locality_identity
         ),
     )

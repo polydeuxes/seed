@@ -20,8 +20,8 @@ from seed_runtime.yield_relation import (
 )
 
 
-OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.material.source_responsibility_assignment_recorded"
+OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.material.source_subject_to_act_binding_recorded"
 )
 OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT = (
     "operator.material.source_act_occurrence_recorded"
@@ -32,12 +32,9 @@ OPERATOR_MATERIAL_SOURCE_LOCALITY_RELATION_OCCURRENCE_KIND = (
 )
 OPERATOR_MATERIAL_SOURCE_RESULT_KIND = "exact operator material boundary result"
 OPERATOR_MATERIAL_SOURCE_ACT = "Preserve one exact operator material boundary result"
-OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY = (
-    "preserve one exact material result supplied at one operator boundary"
-)
 OPERATOR_MATERIAL_SOURCE_BOOK_CLAUSE = "01.Source.G"
 EVENT_KIND_RESPONSIBILITIES = {
-    OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "01.Source.G"
     ),
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -55,136 +52,135 @@ def _require_identity(value: Any, message: str) -> str:
     return value
 
 
-def _source_standing_reference(
+def _current_coordinate_reference(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    locality_standing: dict[str, Any],
-    responsibility_event_identity: str | None = None,
+    current_coordinates: dict[str, Any],
+    binding_event_identity: str | None = None,
 ) -> dict[str, str | None]:
     _require_identity(
         locality_identity,
         "operator material source requires one exact Locality",
     )
-    if type(locality_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise OperatorMaterialSourceError(
-            "operator material source requires exact Locality Standing"
+            "operator material source requires exact current coordinates"
         )
-    if locality_standing.get("locality_identity") != locality_identity:
+    if current_coordinates.get("locality_identity") != locality_identity:
         raise OperatorMaterialSourceError(
-            "operator material source has a different Standing Locality"
+            "operator material source has a different current-coordinate Locality"
         )
-    standing_boundary = locality_standing.get("through_event_occurrence_identity")
-    if responsibility_event_identity is None:
+    through_event_identity = current_coordinates.get(
+        "through_event_occurrence_identity"
+    )
+    if binding_event_identity is None:
         latest = ledger.latest_locality_event(locality_identity)
         prior_event_identity = latest.identity if latest is not None else None
     else:
         try:
             earlier = ledger.prior_locality_event(
-                responsibility_event_identity, locality_identity
+                binding_event_identity, locality_identity
             )
         except ValueError as error:
             raise OperatorMaterialSourceError(
-                "operator material source requires its exact current Standing boundary"
+                "operator material source requires its exact through-occurrence boundary"
             ) from error
         prior_event_identity = earlier.identity if earlier is not None else None
-    if standing_boundary != prior_event_identity:
+    if through_event_identity != prior_event_identity:
         raise OperatorMaterialSourceError(
-            "operator material source requires its exact current Standing boundary"
+            "operator material source requires its exact through-occurrence boundary"
         )
-    if standing_boundary is not None:
+    if through_event_identity is not None:
         _require_identity(
-            standing_boundary,
-            "operator material source requires one exact Standing boundary",
+            through_event_identity,
+            "operator material source requires one exact through-occurrence boundary",
         )
-        boundary_event = ledger.get(standing_boundary)
+        boundary_event = ledger.get(through_event_identity)
         if (
             boundary_event is None
             or boundary_event.locality_identity != locality_identity
             or ledger.integrity_of(boundary_event.identity) == CORRUPTED
         ):
             raise OperatorMaterialSourceError(
-                "operator material source requires its exact current Standing boundary"
+                "operator material source requires its exact through-occurrence boundary"
             )
     return {
         "locality_identity": locality_identity,
-        "standing_boundary_event_identity": standing_boundary,
+        "through_event_occurrence_identity": through_event_identity,
     }
 
 
 def _scope(
     *,
     scope_identity: str,
-    source_standing_reference: dict[str, str | None],
+    current_coordinate_reference: dict[str, str | None],
     result_boundary_identity: str,
 ) -> dict[str, str | None]:
     return {
         "scope_identity": scope_identity,
-        **deepcopy(source_standing_reference),
+        **deepcopy(current_coordinate_reference),
         "result_boundary_identity": result_boundary_identity,
     }
 
 
-def _assignment_material(
+def _subject_to_act_binding_material(
     *,
-    assignment_identity: str,
-    assignment_subject_identity: str,
-    source_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     scope_identity: str,
     result_boundary_identity: str,
-    source_standing_reference: dict[str, str | None],
+    source_boundary: str,
+    current_coordinate_reference: dict[str, str | None],
 ) -> dict[str, Any]:
+    subject_reference = {
+        "source_role": "this operator",
+        "source_boundary": source_boundary,
+    }
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": OPERATOR_MATERIAL_SOURCE_BOOK_CLAUSE,
-        "responsible_boundary": "this Seed",
-        "responsibility": OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY,
-        "source_act_identity": source_act_identity,
+        "subject_reference": subject_reference,
+        "act": OPERATOR_MATERIAL_SOURCE_ACT,
+        "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_boundary_identity": result_boundary_identity,
-        "source_standing_reference": deepcopy(source_standing_reference),
+        "current_coordinate_reference": deepcopy(
+            current_coordinate_reference
+        ),
         "scope": _scope(
             scope_identity=scope_identity,
-            source_standing_reference=source_standing_reference,
+            current_coordinate_reference=current_coordinate_reference,
             result_boundary_identity=result_boundary_identity,
         ),
-        "standing_boundary_occurrence_reference": source_standing_reference[
-            "standing_boundary_event_identity"
-        ],
-        "unknown": [
-            "operator boundary material: Unknown"
-        ],
+        "unknown": ["operator boundary material: Unknown"],
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _subject_to_act_binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "scope_identity": assignment.material["scope"]["scope_identity"],
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
 
 
-def _act_occurrence_material(assignment: Event) -> dict[str, Any]:
-    material = assignment.material
+def _act_occurrence_material(binding: Event) -> dict[str, Any]:
+    material = binding.material
     return {
-        "source_act_identity": material["source_act_identity"],
+        "source_role": material["subject_reference"]["source_role"],
+        "source_boundary": material["subject_reference"]["source_boundary"],
+        "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": OPERATOR_MATERIAL_SOURCE_ACT,
-        "responsibility": OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
-        "source_standing_reference": deepcopy(
-            material["source_standing_reference"]
+        "subject_to_act_binding_reference": (
+            _subject_to_act_binding_reference(binding)
+        ),
+        "current_coordinate_reference": deepcopy(
+            material["current_coordinate_reference"]
         ),
         "scope": deepcopy(material["scope"]),
         "result_boundary_identity": material["result_boundary_identity"],
@@ -198,22 +194,25 @@ def _result_material(
     recorded_result_event_identity: str,
 ) -> dict[str, Any]:
     material = act_occurrence.material
+    if boundary_material.material_boundary != material.get("source_boundary"):
+        raise OperatorMaterialSourceError(
+            "operator material source result crossed its exact source boundary"
+        )
     exact_material_subject = {
         "recorded_occurrence_identity": recorded_result_event_identity,
         "coordinate": "exact_material",
     }
     return {
         "result_identity": material["result_boundary_identity"],
-        "source_act_identity": material["source_act_identity"],
+        "source_role": material["source_role"],
+        "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_MATERIAL_SOURCE_ACT,
-        "responsibility": OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": deepcopy(
-            material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
         ),
-        "source_standing_reference": deepcopy(
-            material["source_standing_reference"]
+        "current_coordinate_reference": deepcopy(
+            material["current_coordinate_reference"]
         ),
         "scope": deepcopy(material["scope"]),
         "source_boundary": boundary_material.material_boundary,
@@ -225,7 +224,6 @@ def _result_material(
         },
         "locality_relation_occurrence_identity": recorded_result_event_identity,
         "known_loss": list(boundary_material.known_loss),
-        "standing": "preserved",
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
@@ -238,16 +236,15 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     recorded = {
         "result_identity": result_material["result_identity"],
-        "source_act_identity": result_material["source_act_identity"],
+        "source_role": result_material["source_role"],
+        "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
-        "responsibility": result_material["responsibility"],
-        "responsible_boundary": result_material["responsible_boundary"],
-        "responsibility_assignment_reference": result_material[
-            "responsibility_assignment_reference"
+        "subject_to_act_binding_reference": result_material[
+            "subject_to_act_binding_reference"
         ],
-        "source_standing_reference": result_material[
-            "source_standing_reference"
+        "current_coordinate_reference": result_material[
+            "current_coordinate_reference"
         ],
         "scope": result_material["scope"],
         "source_boundary": result_material["source_boundary"],
@@ -256,17 +253,14 @@ def _recorded_result_material(
             "locality_relation_occurrence_identity"
         ],
         "known_loss": result_material["known_loss"],
-        "standing": result_material["standing"],
         "unknown": result_material["unknown"],
-        "source_role": "this operator",
         "provenance_occurrence_references": [],
         "dimensions": {
             "identity": result_material["result_identity"],
             "source_provenance": result_material["source_boundary"],
-            "responsibility": result_material["responsibility"],
             "scope_locality": (
                 "locality:"
-                + result_material["source_standing_reference"][
+                + result_material["current_coordinate_reference"][
                     "locality_identity"
                 ]
             ),
@@ -286,57 +280,66 @@ def _recorded_result_material(
     return recorded
 
 
-def record_operator_material_source_responsibility_assignment(
+def record_operator_material_source_subject_to_act_binding(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
+    source_boundary: str,
 ) -> Event:
-    """Assign Responsibility for exactly one later boundary occurrence."""
+    """Record the exact operator-boundary subject-to-Act binding."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("operator material source requires one EventLedger")
-    source_reference = _source_standing_reference(
-        ledger,
-        locality_identity=locality_identity,
-        locality_standing=locality_standing,
+    _require_identity(
+        source_boundary,
+        "operator material source requires one exact source boundary",
     )
-    return _record_operator_material_source_responsibility_assignment(
+    current_reference = _current_coordinate_reference(
         ledger,
         locality_identity=locality_identity,
-        source_reference=source_reference,
+        current_coordinates=current_coordinates,
+    )
+    return _record_operator_material_source_subject_to_act_binding(
+        ledger,
+        locality_identity=locality_identity,
+        source_boundary=source_boundary,
+        current_reference=current_reference,
     )
 
 
-def _record_operator_material_source_responsibility_assignment_from_standing(
+def _record_operator_material_source_subject_to_act_binding_from_current_coordinates(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
+    source_boundary: str,
 ) -> Event:
-    source_reference = _source_standing_reference(
-        ledger,
-        locality_identity=locality_identity,
-        locality_standing=locality_standing,
+    _require_identity(
+        source_boundary,
+        "operator material source requires one exact source boundary",
     )
-    return _record_operator_material_source_responsibility_assignment(
+    current_reference = _current_coordinate_reference(
         ledger,
         locality_identity=locality_identity,
-        source_reference=source_reference,
+        current_coordinates=current_coordinates,
+    )
+    return _record_operator_material_source_subject_to_act_binding(
+        ledger,
+        locality_identity=locality_identity,
+        source_boundary=source_boundary,
+        current_reference=current_reference,
     )
 
 
-def _record_operator_material_source_responsibility_assignment(
+def _record_operator_material_source_subject_to_act_binding(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    source_reference: dict[str, str | None],
+    source_boundary: str,
+    current_reference: dict[str, str | None],
 ) -> Event:
-    assignment_identity = new_identity("operator_material_source_assignment")
-    assignment_subject_identity = new_identity(
-        "operator_material_source_assignment_subject"
-    )
-    source_act_identity = new_identity("operator_material_source_act")
+    exact_act_identity = new_identity("operator_material_source_act")
     act_occurrence_identity = new_identity(
         "operator_material_source_act_occurrence"
     )
@@ -345,160 +348,161 @@ def _record_operator_material_source_responsibility_assignment(
         "operator_material_source_result_boundary"
     )
     return ledger.append(
-        OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _assignment_material(
-            assignment_identity=assignment_identity,
-            assignment_subject_identity=assignment_subject_identity,
-            source_act_identity=source_act_identity,
+        OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _subject_to_act_binding_material(
+            exact_act_identity=exact_act_identity,
             act_occurrence_identity=act_occurrence_identity,
             scope_identity=scope_identity,
             result_boundary_identity=result_boundary_identity,
-            source_standing_reference=source_reference,
+            source_boundary=source_boundary,
+            current_coordinate_reference=current_reference,
         ),
         locality_identity=locality_identity,
     )
 
 
-def get_operator_material_source_responsibility_assignment(
-    ledger: EventLedger, assignment_event_identity: str
+def get_operator_material_source_subject_to_act_binding(
+    ledger: EventLedger, binding_event_identity: str
 ) -> Event:
-    """Read one intact Book-backed assignment occurrence."""
+    """Read one exact recorded subject-to-Act binding."""
 
     _require_identity(
-        assignment_event_identity,
-        "operator material source requires one assignment occurrence",
+        binding_event_identity,
+        "operator material source requires one binding occurrence",
     )
-    assignment = ledger.get(assignment_event_identity)
+    binding = ledger.get(binding_event_identity)
     if (
-        assignment is None
-        or assignment.kind
-        != OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-        or type(assignment.locality_identity) is not str
-        or not assignment.locality_identity
-        or assignment.exact_material is not None
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        binding is None
+        or binding.kind
+        != OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or type(binding.locality_identity) is not str
+        or not binding.locality_identity
+        or binding.exact_material is not None
+        or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
         raise OperatorMaterialSourceError(
-            "operator material source assignment is absent or corrupted"
+            "operator material source binding is absent or corrupted"
         )
-    material = assignment.material
-    source_reference = material.get("source_standing_reference")
+    material = binding.material
+    current_reference = material.get("current_coordinate_reference")
+    subject_reference = material.get("subject_reference")
     scope = material.get("scope")
     identities = (
-        material.get("assignment_identity"),
-        material.get("assignment_subject_identity"),
-        material.get("source_act_identity"),
+        material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
         scope.get("scope_identity") if type(scope) is dict else None,
         material.get("result_boundary_identity"),
     )
     if (
-        type(source_reference) is not dict
-        or source_reference.get("locality_identity") != assignment.locality_identity
+        type(current_reference) is not dict
+        or current_reference.get("locality_identity") != binding.locality_identity
+        or type(subject_reference) is not dict
+        or subject_reference.get("source_role") != "this operator"
+        or type(subject_reference.get("source_boundary")) is not str
+        or not subject_reference["source_boundary"]
         or any(type(identity) is not str or not identity for identity in identities)
         or len(set(identities)) != len(identities)
     ):
         raise OperatorMaterialSourceError(
-            "operator material source assignment coordinates are not exact"
+            "operator material source binding coordinates are not exact"
         )
-    exact_source_reference = _source_standing_reference(
+    exact_current_reference = _current_coordinate_reference(
         ledger,
-        locality_identity=assignment.locality_identity,
-        locality_standing={
-            "locality_identity": assignment.locality_identity,
-            "through_event_occurrence_identity": source_reference.get(
-                "standing_boundary_event_identity"
+        locality_identity=binding.locality_identity,
+        current_coordinates={
+            "locality_identity": binding.locality_identity,
+            "through_event_occurrence_identity": current_reference.get(
+                "through_event_occurrence_identity"
             ),
         },
-        responsibility_event_identity=assignment.identity,
+        binding_event_identity=binding.identity,
     )
-    exact_assignment_material = _assignment_material(
-        assignment_identity=identities[0],
-        assignment_subject_identity=identities[1],
-        source_act_identity=identities[2],
-        act_occurrence_identity=identities[3],
-        scope_identity=identities[4],
-        result_boundary_identity=identities[5],
-        source_standing_reference=exact_source_reference,
+    exact_binding_material = _subject_to_act_binding_material(
+        exact_act_identity=identities[0],
+        act_occurrence_identity=identities[1],
+        scope_identity=identities[2],
+        result_boundary_identity=identities[3],
+        source_boundary=subject_reference["source_boundary"],
+        current_coordinate_reference=exact_current_reference,
     )
-    if material != exact_assignment_material:
+    if material != exact_binding_material:
         raise OperatorMaterialSourceError(
-            "operator material source assignment is not exact"
+            "operator material source binding is not exact"
         )
-    return assignment
+    return binding
 
 
 def record_operator_material_source_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record the distinct Act occurrence from its carried assignment."""
+    """Record the distinct Act occurrence from its carried binding."""
 
-    assignment = get_operator_material_source_responsibility_assignment(
-        ledger, responsibility_assignment_event_identity
+    binding = get_operator_material_source_subject_to_act_binding(
+        ledger, subject_to_act_binding_event_identity
     )
     return _record_operator_material_source_act_occurrence(
         ledger,
-        assignment=assignment,
-        responsibility_assignment_standing=responsibility_assignment_standing,
+        binding=binding,
+        current_coordinates=current_coordinates,
     )
 
 
-def _record_operator_material_source_act_occurrence_from_assignment(
+def _record_operator_material_source_act_occurrence_from_binding(
     ledger: EventLedger,
     *,
-    responsibility_assignment: Event,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding: Event,
+    current_coordinates: dict[str, Any],
 ) -> Event:
     if (
-        type(responsibility_assignment) is not Event
-        or responsibility_assignment.kind
-        != OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-        or responsibility_assignment.exact_material is not None
-        or type(responsibility_assignment_standing) is not dict
-        or responsibility_assignment_standing.get(
+        type(subject_to_act_binding) is not Event
+        or subject_to_act_binding.kind
+        != OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or subject_to_act_binding.exact_material is not None
+        or type(current_coordinates) is not dict
+        or current_coordinates.get(
             "through_event_occurrence_identity"
         )
-        != responsibility_assignment.identity
+        != subject_to_act_binding.identity
     ):
         raise OperatorMaterialSourceError(
-            "operator material source Act requires its recorded assignment"
+            "operator material source Act requires its recorded binding"
         )
     return _record_operator_material_source_act_occurrence(
         ledger,
-        assignment=responsibility_assignment,
-        responsibility_assignment_standing=responsibility_assignment_standing,
+        binding=subject_to_act_binding,
+        current_coordinates=current_coordinates,
     )
 
 
 def _record_operator_material_source_act_occurrence(
     ledger: EventLedger,
     *,
-    assignment: Event,
-    responsibility_assignment_standing: dict[str, Any],
+    binding: Event,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    if type(responsibility_assignment_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise OperatorMaterialSourceError(
-            "operator material source Act requires assignment Standing"
+            "operator material source Act requires current coordinates"
         )
-    carried = responsibility_assignment_standing.get(
+    carried = current_coordinates.get(
         "pre_act_coordinate_occurrences"
     )
     if (
-        responsibility_assignment_standing.get("locality_identity")
-        != assignment.locality_identity
+        current_coordinates.get("locality_identity")
+        != binding.locality_identity
         or type(carried) is not dict
-        or carried.get(assignment.identity, object()) is not None
+        or carried.get(binding.identity, object()) is not None
     ):
         raise OperatorMaterialSourceError(
-            "operator material source Act requires its exact carried assignment"
+            "operator material source Act requires its exact carried binding"
         )
     return ledger.append(
         OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
-        _act_occurrence_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _act_occurrence_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -523,30 +527,30 @@ def get_operator_material_source_act_occurrence(
         raise OperatorMaterialSourceError(
             "operator material source requires intact Act occurrence"
         )
-    reference = act_occurrence.material.get("responsibility_assignment_reference")
+    reference = act_occurrence.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise OperatorMaterialSourceError(
-            "operator material source Act carries no assignment"
+            "operator material source Act carries no exact binding"
         )
-    assignment = get_operator_material_source_responsibility_assignment(
+    binding = get_operator_material_source_subject_to_act_binding(
         ledger, reference.get("recorded_occurrence_identity")
     )
     if (
-        assignment.locality_identity != act_occurrence.locality_identity
-        or reference != _assignment_reference(assignment)
-        or act_occurrence.material != _act_occurrence_material(assignment)
+        binding.locality_identity != act_occurrence.locality_identity
+        or reference != _subject_to_act_binding_reference(binding)
+        or act_occurrence.material != _act_occurrence_material(binding)
     ):
         raise OperatorMaterialSourceError(
             "operator material source Act occurrence is not exact"
         )
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, act_occurrence.identity),
+            (binding.identity, act_occurrence.identity),
             locality_identity=act_occurrence.locality_identity,
         )
     except ValueError as error:
         raise OperatorMaterialSourceError(
-            "operator material source Act requires its prior assignment"
+            "operator material source Act requires its prior binding"
         ) from error
     return act_occurrence
 
@@ -580,6 +584,13 @@ def _record_operator_material_source_result(
     if boundary_material.eof:
         raise OperatorMaterialSourceError(
             "an empty operator boundary establishes no material result"
+        )
+    if (
+        boundary_material.material_boundary
+        != act_occurrence.material.get("source_boundary")
+    ):
+        raise OperatorMaterialSourceError(
+            "operator material source result crossed its exact source boundary"
         )
     act_occurrence_identity = act_occurrence.material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
@@ -687,7 +698,6 @@ def read_operator_material_source_locality_relation_requirements(
             and yield_dimensions.get("act_occurrence_identity")
             == result.material.get("act_occurrence_identity")
             and act_occurrence.locality_identity == result.locality_identity
-            and result.material.get("responsible_boundary") == "this Seed"
             and type(result.material.get("source_boundary")) is str
             and bool(result.material["source_boundary"])
             and ledger.integrity_of(act_occurrence.identity) != CORRUPTED

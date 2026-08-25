@@ -145,9 +145,9 @@ from seed_runtime.standing_boundary_locality import (
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-    OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     get_operator_material_source_act_occurrence,
-    get_operator_material_source_responsibility_assignment,
+    get_operator_material_source_subject_to_act_binding,
     get_recorded_operator_material_source,
 )
 from seed_runtime.operator_invocation_locality import (
@@ -453,7 +453,7 @@ _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
 }
 _OPERATOR_MATERIAL_SOURCE_KINDS = {
-    OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
@@ -617,7 +617,7 @@ def _assertion_locality_movement_occurrence_coordinates(
     }
 
 
-_REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES = frozenset(
+_REQUIRED_GENERATED_BINDING_COORDINATES = frozenset(
     {
         "recorded_occurrence_identity",
         "assignment_identity",
@@ -626,7 +626,7 @@ _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES = frozenset(
         "result_boundary_identity",
     }
 )
-_REQUIRED_PRE_ACT_BINDING_COORDINATES = frozenset(
+_REQUIRED_DIRECT_BINDING_COORDINATES = frozenset(
     {
         "recorded_occurrence_identity",
         "book_clause_identity",
@@ -640,17 +640,16 @@ _REQUIRED_PRE_ACT_BINDING_COORDINATES = frozenset(
 _NO_RESULT_COORDINATE = object()
 
 
-def _result_responsibility_coordinate(
+def _result_subject_to_act_binding_coordinate(
     ledger: EventLedger, event
 ) -> dict[str, Any] | object:
-    """Return one exact A.1 ownership coordinate, or its exact absence.
+    """Return one exact A.1 subject-to-Act binding, or its absence.
 
     Whether a result carries exact bytes or structured coordinates does not
-    determine Responsibility ownership.  Any intact result with an exact Yield
-    and exact Responsibility ownership is carried directly beside that owner.
-    A yielded result without recorded ownership is not a positive A.1
-    coordinate.  A recorded ownership reference that is incomplete is refused;
-    it is never skipped, completed, or reduced to absence.
+    determine its subject-to-Act binding. Any intact result with an exact Yield
+    and an exact recorded binding carries that binding beside the result. A
+    yielded result without a recorded binding is not a positive A.1 coordinate.
+    An incomplete recorded reference is refused.
     """
 
     if ledger.integrity_of(event.identity) == CORRUPTED:
@@ -667,29 +666,21 @@ def _result_responsibility_coordinate(
     )
     if not all(requirements.values()):
         return _NO_RESULT_COORDINATE
-    ownership = _responsibility_ownership_of_exact_result(ledger, event)
+    ownership = _subject_to_act_binding_of_exact_result(ledger, event)
     if ownership is not None:
         return ownership
     return _NO_RESULT_COORDINATE
 
 
-def _responsibility_ownership_of_exact_result(
+def _subject_to_act_binding_of_exact_result(
     ledger: EventLedger, event
 ) -> dict[str, Any] | None:
-    """The exact Responsibility ownership this yielded result already carries.
+    """Read the exact subject-to-Act binding carried by one yielded result.
 
-    01.Current.A.1 makes the exact result one coordinate of Standing for the
-    exact subject of its Responsibility.  The Act occurrence named by the
-    result carries that Responsibility, its subject, and the Book
-    clause, so the ownership is read from there and never composed here.
-
-    ``None`` is returned only to report that no ownership was recorded.  The
-    caller must not insert that absence into the positive A.1 coordinate map.
-
-    A reference that is recorded must be exact.  Ownership that is present but
-    malformed, incomplete, or in disagreement with the assignment it names is
-    refused rather than reduced to absence, so substituted ownership, subject,
-    clause, or boundary can never be read as a result that simply has no owner.
+    The Act occurrence carries the binding, its subject, and the Book clause.
+    This read composes none of those coordinates. ``None`` reports that no
+    binding was recorded. A malformed or disagreeing recorded reference is
+    refused rather than reduced to absence.
     """
 
     act_occurrence_event_identity = event.material.get("act_occurrence_event_identity")
@@ -698,59 +689,63 @@ def _responsibility_ownership_of_exact_result(
     act_occurrence = ledger.get(act_occurrence_event_identity)
     if act_occurrence is None:
         return None
-    if "responsibility_assignment_reference" not in act_occurrence.material:
+    reference = act_occurrence.material.get("subject_to_act_binding_reference")
+    if reference is None:
+        reference = act_occurrence.material.get(
+            "responsibility_assignment_reference"
+        )
+    if reference is None:
         return None
     if ledger.integrity_of(act_occurrence.identity) == CORRUPTED:
         raise ValueError(
-            "recorded Responsibility ownership requires its intact Act occurrence"
+            "recorded subject-to-Act binding requires its intact Act occurrence"
         )
-    reference = act_occurrence.material["responsibility_assignment_reference"]
-    assignment_shape = (
+    generated_identity_shape = (
         type(reference) is dict
-        and _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference)
+        and _REQUIRED_GENERATED_BINDING_COORDINATES <= set(reference)
         and all(type(value) is str and value for value in reference.values())
     )
-    binding_shape = (
+    direct_shape = (
         type(reference) is dict
-        and set(reference) == _REQUIRED_PRE_ACT_BINDING_COORDINATES
+        and set(reference) == _REQUIRED_DIRECT_BINDING_COORDINATES
         and all(
             type(reference.get(coordinate)) is str
             and reference[coordinate]
-            for coordinate in _REQUIRED_PRE_ACT_BINDING_COORDINATES
+            for coordinate in _REQUIRED_DIRECT_BINDING_COORDINATES
             - {"subject_reference"}
         )
         and type(reference.get("subject_reference")) is dict
         and bool(reference["subject_reference"])
     )
-    if not (assignment_shape or binding_shape):
+    if not (generated_identity_shape or direct_shape):
         raise ValueError(
-            "recorded Responsibility ownership requires its exact coordinates"
+            "recorded subject-to-Act binding requires its exact coordinates"
         )
-    assignment = ledger.get(reference["recorded_occurrence_identity"])
+    binding_event = ledger.get(reference["recorded_occurrence_identity"])
     if (
-        assignment is None
-        or assignment.locality_identity != event.locality_identity
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        binding_event is None
+        or binding_event.locality_identity != event.locality_identity
+        or ledger.integrity_of(binding_event.identity) == CORRUPTED
     ):
         raise ValueError(
-            "recorded Responsibility ownership requires its exact assignment"
+            "recorded subject-to-Act binding requires its exact occurrence"
         )
     required_coordinates = (
-        _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES
-        if assignment_shape
-        else _REQUIRED_PRE_ACT_BINDING_COORDINATES
+        _REQUIRED_GENERATED_BINDING_COORDINATES
+        if generated_identity_shape
+        else _REQUIRED_DIRECT_BINDING_COORDINATES
     )
     for coordinate in required_coordinates - {
         "recorded_occurrence_identity",
         "result_boundary_identity",
     }:
-        if assignment.material.get(coordinate) != reference[coordinate]:
+        if binding_event.material.get(coordinate) != reference[coordinate]:
             raise ValueError(
-                "recorded Responsibility ownership disagrees with its assignment"
+                "recorded subject-to-Act binding disagrees with its occurrence"
             )
     declared_result_boundaries = {
         value
-        for coordinate, value in assignment.material.items()
+        for coordinate, value in binding_event.material.items()
         if (
             coordinate == "result_boundary_identity"
             or coordinate.endswith("_result_identity")
@@ -761,13 +756,13 @@ def _responsibility_ownership_of_exact_result(
     }
     if reference["result_boundary_identity"] not in declared_result_boundaries:
         raise ValueError(
-            "recorded Responsibility ownership disagrees with its assignment"
+            "recorded subject-to-Act binding disagrees with its occurrence"
         )
     if reference["result_boundary_identity"] != event.material.get(
         "result_identity"
     ):
         raise ValueError(
-            "recorded Responsibility ownership names another result boundary"
+            "recorded subject-to-Act binding names another result boundary"
         )
     return deepcopy(reference)
 
@@ -1268,7 +1263,7 @@ def advance_operator_locality_standing(
             ):
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
-            result_coordinate = _result_responsibility_coordinate(ledger, event)
+            result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
         if event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS:
@@ -1330,7 +1325,7 @@ def advance_operator_locality_standing(
             ):
                 for value in event.material.get(key, ()):
                     _record_distinct(collected, value)
-            result_coordinate = _result_responsibility_coordinate(ledger, event)
+            result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
             continue
@@ -1468,9 +1463,9 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_operator_material_source_responsibility_assignment(
+            get_operator_material_source_subject_to_act_binding(
                 ledger, event.identity
             )
             pre_act_coordinate_occurrences[event.identity] = None
@@ -2882,7 +2877,7 @@ def _carry_operator_material_source_occurrence_into_standing(
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Carry one acquisition occurrence produced by this console call."""
+    """Carry one source occurrence produced by this console call."""
 
     if (
         type(locality_standing) is not dict
@@ -2891,8 +2886,8 @@ def _carry_operator_material_source_occurrence_into_standing(
         or locality_standing.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
-        raise ValueError("operator material acquisition Standing is not exact")
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+        raise ValueError("operator material source coordinates are not exact")
+    bindings = locality_standing.get("pre_act_coordinate_occurrences")
     acts = locality_standing.get("operator_material_source_act_occurrences")
     locality_relations = locality_standing.get(
         "material_locality_relation_occurrences"
@@ -2901,7 +2896,7 @@ def _carry_operator_material_source_occurrence_into_standing(
     exact_results = locality_standing.get("exact_result_occurrences")
     event_count = locality_standing.get("event_count")
     if (
-        type(assignments) is not dict
+        type(bindings) is not dict
         or type(acts) is not dict
         or type(locality_relations) is not dict
         or type(material_acquisition_result_occurrences) is not list
@@ -2909,26 +2904,26 @@ def _carry_operator_material_source_occurrence_into_standing(
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("operator material acquisition Standing is not exact")
-    if event.kind == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
-        source = event.material.get("source_standing_reference")
+        raise ValueError("operator material source coordinates are not exact")
+    if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        source = event.material.get("current_coordinate_reference")
         if (
             type(source) is not dict
-            or source.get("standing_boundary_event_identity")
+            or source.get("through_event_occurrence_identity")
             != prior_through_event_occurrence_identity
-            or event.identity in assignments
+            or event.identity in bindings
         ):
-            raise ValueError("operator material acquisition assignment is not exact")
+            raise ValueError("operator material source binding is not exact")
     elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
-        assignment = event.material.get("responsibility_assignment_reference")
+        binding = event.material.get("subject_to_act_binding_reference")
         if (
-            type(assignment) is not dict
-            or assignment.get("recorded_occurrence_identity")
+            type(binding) is not dict
+            or binding.get("recorded_occurrence_identity")
             != prior_through_event_occurrence_identity
-            or prior_through_event_occurrence_identity not in assignments
+            or prior_through_event_occurrence_identity not in bindings
             or event.identity in acts
         ):
-            raise ValueError("operator material acquisition Act is not exact")
+            raise ValueError("operator material source Act is not exact")
     else:
         if (
             event.material.get("act_occurrence_event_identity")
@@ -2940,18 +2935,18 @@ def _carry_operator_material_source_occurrence_into_standing(
             or event.identity in exact_results
             or event.identity in locality_relations
         ):
-            raise ValueError("operator material acquisition result is not exact")
+            raise ValueError("operator material source result is not exact")
     standing_additions = _exact_standing_additions(
         locality_standing,
         event,
-        error_message="operator material acquisition Standing is not exact",
+        error_message="operator material source coordinates are not exact",
     )
-    if event.kind == OPERATOR_MATERIAL_SOURCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
-        assignments[event.identity] = None
+    if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        bindings[event.identity] = None
     elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         acts[event.identity] = None
     else:
-        exact_results[event.identity] = _responsibility_ownership_of_exact_result(
+        exact_results[event.identity] = _subject_to_act_binding_of_exact_result(
             ledger, event
         )
         locality_relations[event.identity] = {

@@ -350,7 +350,7 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
         measurement.material["act_occurrence_event_identity"]
     )
     assert standing["exact_result_occurrences"] == {
-        source.identity: source_act.material["responsibility_assignment_reference"],
+        source.identity: source_act.material["subject_to_act_binding_reference"],
         measurement.identity: measurement_act.material[
             "responsibility_assignment_reference"
         ],
