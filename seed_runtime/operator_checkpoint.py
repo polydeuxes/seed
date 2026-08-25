@@ -8,7 +8,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -209,13 +208,13 @@ def record_standing_boundary_reference_subject_to_act_binding(
         locality_standing=locality_standing,
     )
     identities = {
-        "exact_act_identity": new_identity(
+        "exact_act_identity": ledger.mint_identity(
             "standing_boundary_reference_recording_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "standing_boundary_reference_act_occurrence"
         ),
-        "result_identity": new_identity("standing_boundary_reference_result"),
+        "result_identity": ledger.mint_identity("standing_boundary_reference_result"),
     }
     return ledger.append(
         STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
