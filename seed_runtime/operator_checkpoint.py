@@ -28,9 +28,6 @@ STANDING_BOUNDARY_REFERENCE_RECORDED_KIND = (
 )
 STANDING_BOUNDARY_REFERENCE_RESULT_KIND = "recorded Standing boundary reference result"
 STANDING_BOUNDARY_REFERENCE_ACT = "Record one exact Standing boundary reference"
-STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY = (
-    "record one exact addressed Standing boundary in one exact bounded record"
-)
 STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE = "05.Recording.D"
 EVENT_KIND_RESPONSIBILITIES = {
     STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
@@ -122,8 +119,6 @@ def _assignment_material(
         "subject_reference": deepcopy(source_reference),
         "act": STANDING_BOUNDARY_REFERENCE_ACT,
         "exact_act_identity": exact_act_identity,
-        "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
@@ -155,9 +150,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "exact_act_identity": assignment.material["exact_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": STANDING_BOUNDARY_REFERENCE_ACT,
-        "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "subject_to_act_binding_reference": _assignment_reference(assignment),
         "source_reference": deepcopy(assignment.material["source_reference"]),
         "scope": deepcopy(assignment.material["scope"]),
         "result_identity": assignment.material["result_identity"],
@@ -170,10 +163,8 @@ def _result_material(act_occurrence: Event) -> dict[str, Any]:
         "exact_act_identity": act_occurrence.material["exact_act_identity"],
         "act_occurrence_identity": act_occurrence.material["act_occurrence_identity"],
         "exact_act": STANDING_BOUNDARY_REFERENCE_ACT,
-        "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": deepcopy(
-            act_occurrence.material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            act_occurrence.material["subject_to_act_binding_reference"]
         ),
         "source_reference": deepcopy(act_occurrence.material["source_reference"]),
         "scope": deepcopy(act_occurrence.material["scope"]),
@@ -195,10 +186,8 @@ def _recorded_result_material(
         "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
-        "responsibility": result_material["responsibility"],
-        "responsible_boundary": result_material["responsible_boundary"],
-        "responsibility_assignment_reference": deepcopy(
-            result_material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            result_material["subject_to_act_binding_reference"]
         ),
         "source_reference": deepcopy(result_material["source_reference"]),
         "scope": deepcopy(result_material["scope"]),
@@ -331,7 +320,7 @@ def get_standing_boundary_reference_act_occurrence(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise OperatorCheckpointError("checkpoint Act occurrence is absent or corrupted")
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise OperatorCheckpointError("checkpoint Act carries no assignment")
     assignment = get_standing_boundary_reference_responsibility_assignment(
