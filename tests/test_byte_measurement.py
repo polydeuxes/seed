@@ -195,9 +195,11 @@ class YieldCallbackLedger(EventLedger):
         return event
 
 
-def _ledger(text="猫\n狗\n"):
+def _ledger(exact_material: bytes):
+    if type(exact_material) is not bytes:
+        raise TypeError("byte Measurement fixture requires exact bytes")
     ledger = EventLedger()
-    for position, exact in enumerate(text.encode("utf-8").splitlines(keepends=True)):
+    for position, exact in enumerate(exact_material.splitlines(keepends=True)):
         _record_operator_material_source(
             ledger,
             locality_identity="source",
@@ -337,7 +339,7 @@ def _carry_movement_phase(
 
 
 def test_act_occurrence_is_observable_before_yield_and_result():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
 
     assignment, act_occurrence = _record_byte_measurement_assignment_and_act(
         ledger,
@@ -372,7 +374,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
 
 
 def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_identities():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("source",),
@@ -427,7 +429,7 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
 
 
 def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     stale = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
@@ -456,7 +458,7 @@ def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
 
 
 def test_corrupted_exact_byte_assignment_cannot_authorize_an_act():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=("source",),
@@ -693,7 +695,7 @@ def test_console_exact_byte_same_call_path_does_not_use_public_standing_gate(
 
 
 def test_call_local_assignment_carry_requires_the_exact_assignment_at_tip():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     standing = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
@@ -721,7 +723,7 @@ def test_call_local_assignment_carry_requires_the_exact_assignment_at_tip():
 
 
 def test_call_local_result_requires_the_exact_act_at_tip():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     assignment, act = _record_byte_measurement_assignment_and_act(
         ledger,
         source_localities=("source",),
@@ -751,7 +753,7 @@ def test_call_local_result_requires_the_exact_act_at_tip():
 def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
     from seed_runtime import byte_measurement
 
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     assignment, act = _record_byte_measurement_assignment_and_act(
         ledger,
         source_localities=("source",),
@@ -825,7 +827,7 @@ def test_reopened_public_result_refuses_an_act_already_consumed(tmp_path):
 
 
 def test_old_unassigned_exact_byte_act_api_is_not_accepted():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     with pytest.raises(TypeError):
         record_byte_measurement_act_occurrence(
             ledger,
@@ -837,7 +839,7 @@ def test_old_unassigned_exact_byte_act_api_is_not_accepted():
 def test_two_stages_traverse_byte_counts_once(monkeypatch):
     from seed_runtime import byte_measurement
 
-    ledger = _ledger("ab\n")
+    ledger = _ledger(b"ab\n")
     calls = []
     original = byte_measurement._measure_byte_counts_through
 
@@ -987,7 +989,7 @@ def test_yield_resolves_the_exact_act_occurrence_after_reopen(tmp_path):
 
 
 def test_material_appended_after_act_occurrence_cannot_enter_its_result():
-    ledger = _ledger("a")
+    ledger = _ledger(b"a")
     _assignment, act_occurrence = _record_byte_measurement_assignment_and_act(
         ledger,
         source_localities=("source",),
@@ -1015,7 +1017,7 @@ def test_material_appended_after_act_occurrence_cannot_enter_its_result():
 def test_one_responsible_act_occurrence_cannot_yield_twice(monkeypatch):
     from seed_runtime import byte_measurement
 
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     _assignment, act_occurrence = _record_byte_measurement_assignment_and_act(
         ledger,
         source_localities=("source",),
@@ -1050,7 +1052,7 @@ def test_yield_refuses_missing_act_occurrence(identity):
 
 
 def test_yield_refuses_a_different_occurrence_kind():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     wrong = next(event for event in ledger.list() if event.locality_identity == "source")
 
     with pytest.raises(ByteMeasurementError, match="exact responsible Act occurrence"):
@@ -1083,7 +1085,7 @@ def test_opaque_bytes_supply_the_measured_subjects_without_whitespace():
 
 def test_the_complete_declared_localities_supply_the_inputs():
     measured = measure_byte_counts(
-        _ledger("a\nb\n"), source_localities=("source",)
+        _ledger(b"a\nb\n"), source_localities=("source",)
     )
     assert len(measured.source_material) == 2
     assert all(
@@ -1095,7 +1097,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
 
 def test_count_and_recurrence_are_distinct_results():
     event = _record_byte_measurement(
-        _ledger("ab\n"),
+        _ledger(b"ab\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
@@ -1113,7 +1115,7 @@ def test_count_and_recurrence_are_distinct_results():
 
 def test_recurrence_exists_only_above_one():
     event = _record_byte_measurement(
-        _ledger("aa\n"),
+        _ledger(b"aa\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
@@ -1127,7 +1129,7 @@ def test_recurrence_exists_only_above_one():
 
 def test_the_rule_is_mechanics_not_an_unchecked_callable():
     event = _record_byte_measurement(
-        _ledger("the cat\n"),
+        _ledger(b"the cat\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
@@ -1137,7 +1139,7 @@ def test_the_rule_is_mechanics_not_an_unchecked_callable():
 
 
 def test_recorded_results_replay_the_complete_bounded_source_read():
-    ledger = _ledger("a\na\n")
+    ledger = _ledger(b"a\na\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
@@ -1210,7 +1212,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
 
 
 def test_a_self_consistent_truncated_source_assertion_is_refused():
-    ledger = _ledger("a\nb\n")
+    ledger = _ledger(b"a\nb\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
@@ -1231,7 +1233,7 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
 
 
 def test_recording_occurrence_is_validated_exactly():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
@@ -1273,7 +1275,7 @@ def test_a_missing_declared_locality_is_refused():
 
 
 def test_acquisition_result_must_match_its_exact_byte_coordinates():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     acquisition_result = next(iter_exact_material_results(ledger, "source"))
     object.__setattr__(acquisition_result, "exact_material", None)
     with pytest.raises(ByteMeasurementError, match="without intact physiology"):
@@ -1283,7 +1285,7 @@ def test_acquisition_result_must_match_its_exact_byte_coordinates():
 
 
 def test_repeated_locality_coordinate_does_not_repeat_one_acquire():
-    ledger = _ledger("a\n")
+    ledger = _ledger(b"a\n")
     once = measure_byte_counts(
         ledger, source_localities=("source",)
     )
@@ -1294,7 +1296,7 @@ def test_repeated_locality_coordinate_does_not_repeat_one_acquire():
 
 
 def test_every_overlapping_byte_position_pair_is_measured():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1313,7 +1315,7 @@ def test_every_overlapping_byte_position_pair_is_measured():
 
 
 def test_byte_position_pair_results_follow_first_observed_pair_positions():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1329,7 +1331,7 @@ def test_byte_position_pair_results_follow_first_observed_pair_positions():
 
 
 def test_position_pairs_never_cross_material_acquisition_boundaries():
-    ledger = _ledger("a\nb\n")
+    ledger = _ledger(b"a\nb\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1348,8 +1350,14 @@ def test_position_pairs_never_cross_material_acquisition_boundaries():
     assert (10, 98) not in counts
 
 
-def test_position_pair_measurement_remains_byte_not_character_based():
-    ledger = _ledger("猫\n")
+def test_position_pair_measurement_uses_exact_opaque_bytes():
+    ledger = EventLedger()
+    _record_operator_material_source(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"\xe7\x8c\xab\n",
+        source_boundary="opaque pair fixture",
+    )
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1362,13 +1370,12 @@ def test_position_pair_measurement_remains_byte_not_character_based():
         if item["result"] == "count"
     }
 
-    # UTF-8 bytes e7 8c ab plus the recorded newline. These are ordered byte pairs,
-    # not a Assertion that any pair is a character.
+    # The recorded material supplies ordered byte pairs and no character claim.
     assert counts == {(231, 140), (140, 171), (171, 10)}
 
 
 def test_pair_count_and_recurrence_are_separate_results():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1420,7 +1427,7 @@ def test_pair_count_and_recurrence_are_separate_results():
 
 
 def test_recorded_pair_results_replay_the_complete_bounded_source_read():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1491,7 +1498,7 @@ def test_same_locality_pair_result_replays_without_recording_more_work():
 
 
 def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1533,7 +1540,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     ),
 )
 def test_pair_validation_requires_one_exact_ordered_content(content):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1559,7 +1566,7 @@ def test_pair_validation_requires_one_exact_ordered_content(content):
 
 
 def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch):
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1581,7 +1588,7 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
 
 
 def test_pair_validation_refuses_unsupported_input_applicability():
-    ledger = _ledger("tatatata\n")
+    ledger = _ledger(b"tatatata\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1600,7 +1607,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
 
 
 def test_zero_measured_pairs_is_a_lawful_exact_result():
-    ledger = _ledger("\n")
+    ledger = _ledger(b"\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -1613,7 +1620,7 @@ def test_zero_measured_pairs_is_a_lawful_exact_result():
 
 
 def test_applicability_identity_is_bound_to_one_exact_addressed_act():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     first_result = record_byte_position_pair_count_layer(
         ledger,
@@ -1651,7 +1658,7 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
 
 
 def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act():
-    ledger = _ledger("tata\n")
+    ledger = _ledger(b"tata\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
         ledger,
@@ -1750,7 +1757,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         _carry_pair_measurement_binding_into_standing,
     )
 
-    ledger = _ledger("tata\n")
+    ledger = _ledger(b"tata\n")
     source_event = _byte_source(ledger)
     source, scope, content = byte_measurement._prepare_pair_source(
         ledger,
@@ -1902,7 +1909,7 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
     assert "measured" not in inspect.signature(
         byte_measurement._record_pair_measurement_result_from_carried_act
     ).parameters
-    ledger = _ledger("abab\n")
+    ledger = _ledger(b"abab\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
         ledger,
@@ -1922,7 +1929,7 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
 def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypatch):
     from seed_runtime import byte_measurement
 
-    ledger = _ledger("abab\n")
+    ledger = _ledger(b"abab\n")
     source = _byte_source(ledger)
     recorded_before = sum(
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
@@ -1967,7 +1974,7 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
 
 
 def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     source = next(
         item
@@ -1995,7 +2002,7 @@ def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
 
 
 def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
         ledger,
@@ -2021,7 +2028,7 @@ def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibil
 
 
 def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     assignment = get_byte_measurement_responsibility_assignment(
         ledger,
@@ -2043,7 +2050,7 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
         "completeness_boundary"
     ]["identity"]
 def test_locality_movement_assignment_is_earned_from_the_exact_source():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
         ledger,
@@ -2084,7 +2091,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
 
 
 def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_destination_standing():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     assignment = record_assertion_locality_movement_responsibility_assignment(
         ledger,
@@ -2124,7 +2131,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
 
 
 def test_movement_assignment_refuses_stale_or_shaped_source_standing():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     stale = read_operator_locality_standing(
         ledger, locality_identity=source_result.locality_identity
@@ -2155,7 +2162,7 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
 
 
 def test_movement_act_requires_current_destination_standing_carrying_assignment():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     stale_destination = read_operator_locality_standing(
         ledger, locality_identity="movement"
@@ -2188,7 +2195,7 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
 
 
 def test_movement_lifecycle_refuses_duplicate_act_and_result():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     assignment = record_assertion_locality_movement_responsibility_assignment(
         ledger,
@@ -2228,7 +2235,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
 
 
 def test_movement_act_refuses_standing_before_a_later_destination_tip():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     assignment = record_assertion_locality_movement_responsibility_assignment(
         ledger,
@@ -2365,7 +2372,7 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
 def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
     coordinate, changed
 ):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     _source_result, source = _movement_source(ledger)
     moved = move_recorded_byte_assertion_to_locality(
         ledger, source=source, destination_locality="movement"
@@ -2381,7 +2388,7 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
 
 
 def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     prior = read_operator_locality_standing(
         ledger, locality_identity="movement"
@@ -2437,7 +2444,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
 
 
 def test_bounded_movement_batch_carries_each_assignment_before_its_act():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source_result = _byte_source(ledger)
     sources = tuple(
         assertion
@@ -2489,7 +2496,7 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
 def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
     phase,
 ):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
     before = deepcopy(state["destination_standing"])
     _record_operator_material_source(
@@ -2509,7 +2516,7 @@ def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
 def test_movement_batch_carry_phases_refuse_corruption_without_partial_standing(
     phase,
 ):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
     before = deepcopy(state["destination_standing"])
     state["event"].material["unknown"] = ["changed after append"]
@@ -2522,7 +2529,7 @@ def test_movement_batch_carry_phases_refuse_corruption_without_partial_standing(
 
 @pytest.mark.parametrize("phase", ("assignment", "act", "result"))
 def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
     before = deepcopy(state["destination_standing"])
     if phase in ("assignment", "result"):
@@ -2554,7 +2561,7 @@ def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
 
 
 def test_movement_batch_exact_carry_equals_public_replay():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, "result")
 
     carried, exact = _carry_movement_phase(ledger, state)
@@ -2631,7 +2638,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
 
 
 def test_pair_act_identity_is_not_its_occurrence_identity():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     result = record_byte_position_pair_count_layer(
         ledger,
@@ -2647,7 +2654,7 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
 
 
 def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -2681,7 +2688,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
 
 
 def test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     event = record_byte_position_pair_count_layer(
         ledger,
@@ -2711,7 +2718,7 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
 
 
 def test_byte_result_reader_refuses_changed_yield_result_identity():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     event = _byte_source(ledger)
     assert assertions_of_recorded_byte_measurement(ledger, event.identity)
     yield_relation = ledger.get(event.material["yield_relation_identity"])
@@ -2722,7 +2729,7 @@ def test_byte_result_reader_refuses_changed_yield_result_identity():
 
 
 def test_pair_applicability_reader_refuses_changed_yield_result_identity():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
         ledger,
@@ -2742,7 +2749,7 @@ def test_pair_applicability_reader_refuses_changed_yield_result_identity():
 
 
 def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch):
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
         ledger,
@@ -2764,7 +2771,7 @@ def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch)
 
 
 def test_pair_result_reader_refuses_changed_yield_result_identity():
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
         ledger,
@@ -2805,7 +2812,7 @@ FIDELITY_DISTINCTIONS = {
         test_every_overlapping_byte_position_pair_is_measured,
         test_byte_position_pair_results_follow_first_observed_pair_positions,
         test_position_pairs_never_cross_material_acquisition_boundaries,
-        test_position_pair_measurement_remains_byte_not_character_based,
+        test_position_pair_measurement_uses_exact_opaque_bytes,
         test_recorded_pair_results_replay_the_complete_bounded_source_read,
     test_same_locality_pair_result_replays_without_recording_more_work,
         test_pair_validation_refuses_a_self_consistent_truncated_result_inputs,
