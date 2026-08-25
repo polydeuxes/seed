@@ -50,7 +50,7 @@ def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
 
 
 def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
-    ledger = _run(b"book material\n/checkpoint\nlater source material\n")
+    ledger = _run(b"a\n/checkpoint\n/locality source\n")
     checkpoint = next(
         event
         for event in ledger.list_locality("source")
@@ -68,19 +68,19 @@ def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
         "source_standing_reference"
     ]["source_standing_through_event_occurrence_identity"]
     assert _acquired_materials(ledger, reading["standing"]) == [
-        b"book material\n",
+        b"a\n",
         b"/checkpoint\n",
     ]
     assert _acquired_materials(ledger, current) == [
-        b"book material\n",
+        b"a\n",
         b"/checkpoint\n",
-        b"later source material\n",
+        b"/locality source\n",
     ]
     assert reading["standing"] is not current
 
 
 def test_memory_makes_one_prior_boundary_available_without_copying_its_standing():
-    ledger = _run(b"book material\n/memory\ndestination material\n")
+    ledger = _run(b"a\n/memory\nb\n")
     continuation = next(
         event
         for event in ledger.list()
@@ -99,11 +99,11 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
 
     assert reading["standing"]["locality_identity"] == "source"
     assert _acquired_materials(ledger, reading["standing"]) == [
-        b"book material\n",
+        b"a\n",
         b"/memory\n",
     ]
     assert _acquired_materials(ledger, destination_standing) == [
-        b"destination material\n"
+        b"b\n"
     ]
     assert reading["standing"]["recorded_relation_Standing"] == {}
     assert destination_standing["recorded_relation_Standing"] == {
@@ -113,8 +113,8 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
 
 def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
     ledger = _run(
-        b"book material\n/checkpoint\nlater source material\n"
-        b"/checkout\ndestination material\n"
+        b"a\n/checkpoint\n/locality source\n"
+        b"/checkout\nc\n"
     )
     relation = next(
         event
@@ -130,7 +130,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
 
     assert reading["standing"]["locality_identity"] == "source"
     assert _acquired_materials(ledger, reading["standing"]) == [
-        b"book material\n",
+        b"a\n",
         b"/checkpoint\n",
     ]
     assert reading["standing"]["recorded_standing_boundary_references"] == {}
@@ -138,7 +138,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
 
 
 def test_an_exact_reference_is_not_globally_available_by_identity():
-    ledger = _run(b"book material\n/checkpoint\n/checkout\n")
+    ledger = _run(b"a\n/checkpoint\n/checkout\n")
     checkpoint = next(
         event
         for event in ledger.list()
@@ -165,7 +165,7 @@ def test_an_exact_reference_is_not_globally_available_by_identity():
 
 
 def test_the_read_adds_no_applicability_admission_or_compare_coordinate():
-    ledger = _run(b"book material\n/checkpoint\n")
+    ledger = _run(b"a\n/checkpoint\n")
     checkpoint = next(
         event
         for event in ledger.list()
@@ -187,7 +187,7 @@ def test_the_read_adds_no_applicability_admission_or_compare_coordinate():
 
 
 def test_unrelated_occurrences_do_not_change_the_recorded_read():
-    ledger = _run(b"book material\n/checkpoint\n")
+    ledger = _run(b"a\n/checkpoint\n")
     checkpoint = next(
         event
         for event in ledger.list()
@@ -219,7 +219,7 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="source",
-        input_stream=BytesIO(b"book material\n/checkpoint\nlater source material\n"),
+        input_stream=BytesIO(b"a\n/checkpoint\n/locality source\n"),
     )
     checkpoint = next(
         event
@@ -237,7 +237,7 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
             recorded_occurrence_identity=checkpoint_identity,
         )
         assert _acquired_materials(reopened, reading["standing"]) == [
-            b"book material\n",
+            b"a\n",
             b"/checkpoint\n",
         ]
     finally:

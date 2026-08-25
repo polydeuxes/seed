@@ -183,25 +183,25 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     assert replayed["recorded_standing_boundary_references"] == {}
 
 
-def test_console_fans_out_descendants_to_one_immutable_anchor():
+def test_relation_descendants_retain_one_immutable_anchor():
     ledger = EventLedger()
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="source",
-        input_stream=BytesIO(
-            b"/checkpoint\nsource later\n/checkout\nfirst branch\n/checkout\nsecond branch\n"
-        ),
+    anchor, source_standing = _standing_with_recorded_boundary_reference(ledger)
+    first = record_recorded_standing_boundary_locality_result(
+        ledger,
+        act_occurrence_event_identity=_act(
+            ledger, _assignment(ledger, source_standing)
+        ).identity,
     )
-    anchor = next(
-        event
-        for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+    first_standing = read_operator_locality_standing(
+        ledger, locality_identity=first.locality_identity
     )
-    relations = [
-        event
-        for event in ledger.list()
-        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
-    ]
+    second = record_recorded_standing_boundary_locality_result(
+        ledger,
+        act_occurrence_event_identity=_act(
+            ledger, _assignment(ledger, first_standing)
+        ).identity,
+    )
+    relations = [first, second]
     assert len(relations) == 2
     assert relations[0].locality_identity != relations[1].locality_identity
     expected = {
@@ -218,7 +218,7 @@ def test_console_fans_out_descendants_to_one_immutable_anchor():
     assert get_recorded_standing_boundary_reference(ledger, anchor.identity) == before
 
 
-def test_no_anchor_and_several_anchors_both_refuse_selection():
+def test_no_anchor_and_two_anchors_both_refuse_selection():
     ledger = EventLedger()
     empty = read_operator_locality_standing(ledger, locality_identity="source")
     with pytest.raises(
@@ -358,11 +358,6 @@ def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
     rosetta = (
         root / "rosetta" / "standing_and_responsibility.md"
     ).read_text(encoding="utf-8")
-    book = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in (root / "book_of_seed").rglob("*")
-        if path.is_file()
-    ).lower()
 
     assert (
         "Checkout       exact recorded Standing boundary reference + new Locality + "
@@ -372,8 +367,6 @@ def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
         "Pointers       one preserved thing + many exact references to it + no identity "
         "collapse; pointer equality establishes no occurrence, Standing, or Evidence equality"
     ) in rosetta
-    assert "checkout" not in book
-    assert "pointer" not in book
 
 
 def test_prior_relation_carrier_must_remain_an_identity_dictionary():

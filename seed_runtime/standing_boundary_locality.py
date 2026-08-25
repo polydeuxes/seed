@@ -505,7 +505,7 @@ def get_recorded_standing_boundary_locality(
             "recorded boundary relation result is absent or corrupted"
         )
     act = get_recorded_standing_boundary_locality_act_occurrence(
-        ledger, event.material.get("act_occurrence_identity")
+        ledger, event.material.get("act_occurrence_event_identity")
     )
     expected_result = _result_material(act)
     expected = _recorded_result_material(
