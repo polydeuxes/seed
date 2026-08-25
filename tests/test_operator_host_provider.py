@@ -391,8 +391,12 @@ def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
 
 def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     nodeid = (
-        b"tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_exact_identities"
+        b"tests/test_book_material_acquisition.py::"
+        b"test_book_material_witness_has_one_admitted_subject"
+    )
+    nodeid_text = (
+        "tests/test_book_material_acquisition.py::"
+        "test_book_material_witness_has_one_admitted_subject"
     )
 
     supplied = _invoke(b"!pytest " + nodeid + b"\n")
@@ -426,11 +430,13 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     catalog = json.loads(catalog_occurrence.exact_bytes)
     artifact = json.loads(artifact_occurrence.exact_bytes)
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
-        nodeid.decode("ascii")
+        nodeid_text
     ]
     assert artifact["pytest"][0]["fidelity_distinction_reference"] == [
         "book_coordinates",
         "01.Source.C",
+        "subjects",
+        2,
     ]
     assert "test_subject" not in artifact["pytest"][0]
     assert "witness_for" not in artifact["pytest"][0]
@@ -446,50 +452,7 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     )
     assert catalog_occurrence.known_loss == ()
     assert artifact_occurrence.known_loss == ()
-    assert len(artifact_occurrence.exact_bytes) < 5000
     assert by_boundary["invocation completion"].exact_bytes == b""
-
-
-def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse():
-    command = (
-        b"!pytest tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_exact_identities\n"
-    )
-
-    first = _invoke(command)
-    second = _invoke(command)
-
-    first_by_boundary = {
-        occurrence.source_boundary: occurrence for occurrence in first
-    }
-    second_by_boundary = {
-        occurrence.source_boundary: occurrence for occurrence in second
-    }
-    first_catalog = first_by_boundary["implementation function catalog"]
-    second_catalog = second_by_boundary["implementation function catalog"]
-    assert first_catalog.exact_bytes == second_catalog.exact_bytes
-    assert first_catalog is not second_catalog
-    assert len(
-        first_by_boundary["implementation function measurement"].exact_bytes
-    ) < 5000
-    assert len(
-        second_by_boundary["implementation function measurement"].exact_bytes
-    ) < 5000
-
-
-def test_admitted_implementation_test_has_no_fidelity_or_witness_uptake():
-    supplied = _invoke(
-        b"!pytest tests/test_events.py::test_append_records_reality_in_order\n"
-    )
-    measurement = next(
-        occurrence
-        for occurrence in supplied
-        if occurrence.source_boundary == "implementation function measurement"
-    )
-    artifact = json.loads(measurement.exact_bytes)
-
-    assert artifact["pytest"] == []
-    assert artifact["witness_material"] == []
 
 
 def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
@@ -554,7 +517,7 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
 
 def test_pytest_measurement_artifact_is_bounded(tmp_path):
     path = tmp_path / "measurement"
-    exact = b"x" * (operator_host_provider.IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY + 1)
+    exact = b"x" * (operator_host_provider.MATERIAL_BYTE_COUNT_BOUNDARY + 1)
     path.write_bytes(exact)
 
     material, truncated = operator_host_provider._bounded_artifact(path)

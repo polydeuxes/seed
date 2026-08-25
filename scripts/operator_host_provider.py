@@ -20,7 +20,6 @@ from seed_runtime.supplied_invocation_material import (
 
 TIME_BOUNDARY_SECOND_COUNT = 2.0
 MATERIAL_BYTE_COUNT_BOUNDARY = 1_048_576
-IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY = 262144
 PIPE_DRAIN_TIME_BOUNDARY_SECONDS = 0.05
 _WITNESS_INVOCATIONS = {
     b"ls": b"/usr/bin/ls",
@@ -244,7 +243,7 @@ def _bounded_artifact(
 ) -> tuple[bytes, bool]:
     try:
         with path.open("rb") as stream:
-            material = stream.read(IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY + 1)
+            material = stream.read(MATERIAL_BYTE_COUNT_BOUNDARY + 1)
     except FileNotFoundError as error:
         if missing_is_known_loss:
             return b"", True
@@ -252,8 +251,8 @@ def _bounded_artifact(
             "exact implementation measurement material required"
         ) from error
     return (
-        material[:IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY],
-        len(material) > IMPLEMENTATION_MEASUREMENT_BYTE_COUNT_BOUNDARY,
+        material[:MATERIAL_BYTE_COUNT_BOUNDARY],
+        len(material) > MATERIAL_BYTE_COUNT_BOUNDARY,
     )
 
 
