@@ -663,8 +663,6 @@ class SQLiteEventLedger(EventLedger):
         "recurrent_result_exact_material_measurement_result",
         "operator_material_source_act",
         "operator_material_source_act_occurrence",
-        "operator_material_source_assignment",
-        "operator_material_source_assignment_subject",
         "operator_material_source_result_boundary",
         "operator_material_source_scope",
         "operator_invocation_locality",
