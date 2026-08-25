@@ -7,7 +7,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -163,17 +162,17 @@ def record_operator_invocation_locality_subject_to_act_binding(
                 "operator material occurrence already carries an invocation Locality binding"
             )
     identities = {
-        "operator_invocation_locality_act_identity": new_identity(
+        "operator_invocation_locality_act_identity": ledger.mint_identity(
             "operator_invocation_locality_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "operator_invocation_locality_act_occurrence"
         ),
-        "relation_occurrence_identity": new_identity(
+        "relation_occurrence_identity": ledger.mint_identity(
             "operator_invocation_locality_relation_occurrence"
         ),
-        "result_identity": new_identity("operator_invocation_locality_result"),
-        "destination_locality_identity": new_identity(
+        "result_identity": ledger.mint_identity("operator_invocation_locality_result"),
+        "destination_locality_identity": ledger.mint_identity(
             "operator_invocation_locality"
         ),
     }
