@@ -17,9 +17,6 @@ from pathlib import Path
 import re
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import (
-    record_standing_boundary_reference_responsibility_assignment,
-)
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
 from scripts.book_admission import (

@@ -10,11 +10,11 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OperatorCheckpointError,
     get_recorded_standing_boundary_reference,
-    get_standing_boundary_reference_responsibility_assignment,
-    record_standing_boundary_reference_responsibility_assignment,
+    get_standing_boundary_reference_subject_to_act_binding,
+    record_standing_boundary_reference_subject_to_act_binding,
     record_standing_boundary_reference_act_occurrence,
     record_standing_boundary_reference_result,
     request_operator_checkpoint,
@@ -58,36 +58,36 @@ def _context(ledger, locality_identity="source"):
     return standing, boundary, _command(locality_identity, boundary.identity)
 
 
-def _assignment(ledger, standing, command):
-    return record_standing_boundary_reference_responsibility_assignment(
+def _binding(ledger, current_coordinates, command):
+    return record_standing_boundary_reference_subject_to_act_binding(
         ledger,
         addressed_command=command,
-        locality_standing=standing,
+        locality_standing=current_coordinates,
     )
 
 
-def _act(ledger, assignment):
-    standing = read_operator_locality_standing(
-        ledger, locality_identity=assignment.locality_identity
+def _act(ledger, binding):
+    current_coordinates = read_operator_locality_standing(
+        ledger, locality_identity=binding.locality_identity
     )
     return record_standing_boundary_reference_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=current_coordinates,
     )
 
 
 def test_three_stages_record_one_exact_bounded_reference_without_movement():
     ledger = EventLedger()
     standing, boundary, command = _context(ledger)
-    assignment = _assignment(ledger, standing, command)
-    after_assignment = read_operator_locality_standing(
+    binding = _binding(ledger, standing, command)
+    after_binding = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
     act = record_standing_boundary_reference_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=after_assignment,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=after_binding,
     )
     before_result = read_operator_locality_standing(
         ledger, locality_identity="source"
@@ -97,8 +97,8 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     )
     recorded = get_recorded_standing_boundary_reference(ledger, result.identity)
 
-    assert assignment.kind == (
-        STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    assert binding.kind == (
+        STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
     assert act.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT
     assert result.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
@@ -109,10 +109,10 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     }
     assert len(
         {
-            assignment.identity,
-            assignment.material["exact_act_identity"],
-            assignment.material["act_occurrence_identity"],
-            assignment.material["result_identity"],
+            binding.identity,
+            binding.material["exact_act_identity"],
+            binding.material["act_occurrence_identity"],
+            binding.material["result_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
@@ -189,7 +189,7 @@ def test_recorded_reference_does_not_drift_when_the_source_advances():
     result = record_standing_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing, command)
+            ledger, _binding(ledger, standing, command)
         ).identity,
     )
     before = get_recorded_standing_boundary_reference(ledger, result.identity)
@@ -202,22 +202,22 @@ def test_recorded_reference_does_not_drift_when_the_source_advances():
     assert get_recorded_standing_boundary_reference(ledger, result.identity) == before
 
 
-def test_act_requires_the_exact_carried_assignment():
+def test_act_requires_the_exact_carried_binding():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    assignment = _assignment(ledger, standing, command)
-    with pytest.raises(OperatorCheckpointError, match="carried assignment"):
+    binding = _binding(ledger, standing, command)
+    with pytest.raises(OperatorCheckpointError, match="carried binding"):
         record_standing_boundary_reference_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=standing,
+            subject_to_act_binding_event_identity=binding.identity,
+            current_coordinates=standing,
         )
 
 
 def test_one_recording_act_cannot_yield_twice():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, command))
+    act = _act(ledger, _binding(ledger, standing, command))
     record_standing_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
@@ -241,11 +241,11 @@ def test_one_recording_act_cannot_yield_twice():
         "unknown",
     ),
 )
-def test_changed_assignment_coordinates_are_refused(coordinate):
+def test_changed_binding_coordinates_are_refused(coordinate):
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    assignment = _assignment(ledger, standing, command)
-    changed = ledger.get(assignment.identity)
+    binding = _binding(ledger, standing, command)
+    changed = ledger.get(binding.identity)
     if coordinate in {
         "exact_act_identity",
         "act_occurrence_identity",
@@ -260,17 +260,17 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
     else:
         changed.material[coordinate] = "different"
     with pytest.raises((OperatorCheckpointError, TypeError, ValueError)):
-        get_standing_boundary_reference_responsibility_assignment(
-            ledger, assignment.identity
+        get_standing_boundary_reference_subject_to_act_binding(
+            ledger, binding.identity
         )
 
 
-def test_assignment_and_act_survive_restart_before_result(tmp_path):
+def test_binding_and_act_survive_restart_before_result(tmp_path):
     path = tmp_path / "checkpoint.sqlite"
     ledger = SQLiteEventLedger(str(path))
     standing, _boundary, command = _context(ledger)
-    assignment = _assignment(ledger, standing, command)
-    act = _act(ledger, assignment)
+    binding = _binding(ledger, standing, command)
+    act = _act(ledger, binding)
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
@@ -292,7 +292,7 @@ def test_durable_values_do_not_import_operator_shorthand():
     result = record_standing_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing, command)
+            ledger, _binding(ledger, standing, command)
         ).identity,
     )
     durable = repr(
@@ -318,7 +318,7 @@ def test_prior_record_carrier_must_remain_an_identity_dictionary():
     result = record_standing_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing, command)
+            ledger, _binding(ledger, standing, command)
         ).identity,
     )
     prior = read_operator_locality_standing(ledger, locality_identity="source")

@@ -17,8 +17,8 @@ from seed_runtime.yield_relation import (
 )
 
 
-STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.standing_boundary_reference_responsibility_assignment_recorded"
+STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.standing_boundary_reference_subject_to_act_binding_recorded"
 )
 STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT = (
     "operator.standing_boundary_reference_act_occurrence_recorded"
@@ -30,7 +30,7 @@ STANDING_BOUNDARY_REFERENCE_RESULT_KIND = "recorded Standing boundary reference 
 STANDING_BOUNDARY_REFERENCE_ACT = "Record one exact Standing boundary reference"
 STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE = "05.Recording.D"
 EVENT_KIND_RESPONSIBILITIES = {
-    STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "05.Recording.D"
     ),
     STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -107,7 +107,7 @@ def _source_reference(
     }
 
 
-def _assignment_material(
+def _binding_material(
     *,
     exact_act_identity: str,
     act_occurrence_identity: str,
@@ -133,27 +133,27 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, Any]:
+def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "exact_act_identity": assignment.material["exact_act_identity"],
-        "subject_reference": deepcopy(assignment.material["subject_reference"]),
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
 
 
-def _act_material(assignment: Event) -> dict[str, Any]:
+def _act_material(binding: Event) -> dict[str, Any]:
     return {
-        "exact_act_identity": assignment.material["exact_act_identity"],
-        "act_occurrence_identity": assignment.material["act_occurrence_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": STANDING_BOUNDARY_REFERENCE_ACT,
-        "subject_to_act_binding_reference": _assignment_reference(assignment),
-        "source_reference": deepcopy(assignment.material["source_reference"]),
-        "scope": deepcopy(assignment.material["scope"]),
-        "result_identity": assignment.material["result_identity"],
+        "subject_to_act_binding_reference": _binding_reference(binding),
+        "source_reference": deepcopy(binding.material["source_reference"]),
+        "scope": deepcopy(binding.material["scope"]),
+        "result_identity": binding.material["result_identity"],
     }
 
 
@@ -198,13 +198,13 @@ def _recorded_result_material(
     }
 
 
-def record_standing_boundary_reference_responsibility_assignment(
+def record_standing_boundary_reference_subject_to_act_binding(
     ledger: EventLedger,
     *,
     addressed_command: AddressedOperatorCommand,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one exact addressed Standing-boundary record in this Locality."""
+    """Bind one exact addressed boundary reference to its recording Act."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("checkpoint requires one EventLedger")
@@ -223,26 +223,26 @@ def record_standing_boundary_reference_responsibility_assignment(
         "result_identity": new_identity("standing_boundary_reference_result"),
     }
     return ledger.append(
-        STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _assignment_material(source_reference=source_reference, **identities),
+        STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(source_reference=source_reference, **identities),
         locality_identity=addressed_command.locality_identity,
     )
 
 
-def get_standing_boundary_reference_responsibility_assignment(
+def get_standing_boundary_reference_subject_to_act_binding(
     ledger: EventLedger, event_identity: str
 ) -> Event:
-    _require_identity(event_identity, "checkpoint requires one assignment occurrence")
+    _require_identity(event_identity, "checkpoint requires one binding occurrence")
     event = ledger.get(event_identity)
     if (
         event is None
         or event.kind
-        != STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or type(event.locality_identity) is not str
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OperatorCheckpointError("checkpoint assignment is absent or corrupted")
+        raise OperatorCheckpointError("checkpoint binding is absent or corrupted")
     material = event.material
     source_reference = material.get("source_reference")
     identities = (
@@ -253,9 +253,9 @@ def get_standing_boundary_reference_responsibility_assignment(
     if any(type(value) is not str or not value for value in identities) or len(
         set(identities)
     ) != len(identities):
-        raise OperatorCheckpointError("checkpoint assignment identities are not exact")
+        raise OperatorCheckpointError("checkpoint binding identities are not exact")
     if type(source_reference) is not dict:
-        raise OperatorCheckpointError("checkpoint assignment carries no source reference")
+        raise OperatorCheckpointError("checkpoint binding carries no source reference")
     boundary = ledger.get(source_reference.get("standing_boundary_event_identity"))
     if (
         boundary is None
@@ -263,48 +263,48 @@ def get_standing_boundary_reference_responsibility_assignment(
         or ledger.integrity_of(boundary.identity) == CORRUPTED
     ):
         raise OperatorCheckpointError(
-            "checkpoint assignment carries no intact Standing boundary"
+            "checkpoint binding carries no intact addressed boundary"
         )
     expected_source = {
         "source_locality_identity": event.locality_identity,
         "standing_boundary_event_identity": boundary.identity,
     }
-    expected = _assignment_material(
+    expected = _binding_material(
         exact_act_identity=identities[0],
         act_occurrence_identity=identities[1],
         result_identity=identities[2],
         source_reference=expected_source,
     )
     if source_reference != expected_source or material != expected:
-        raise OperatorCheckpointError("checkpoint assignment is not exact")
+        raise OperatorCheckpointError("checkpoint binding is not exact")
     return event
 
 
 def record_standing_boundary_reference_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment = get_standing_boundary_reference_responsibility_assignment(
-        ledger, responsibility_assignment_event_identity
+    binding = get_standing_boundary_reference_subject_to_act_binding(
+        ledger, subject_to_act_binding_event_identity
     )
-    if type(responsibility_assignment_standing) is not dict:
-        raise OperatorCheckpointError("checkpoint Act requires assignment Standing")
-    carried = responsibility_assignment_standing.get(
+    if type(current_coordinates) is not dict:
+        raise OperatorCheckpointError("checkpoint Act requires current coordinates")
+    carried = current_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
     if (
-        responsibility_assignment_standing.get("locality_identity")
-        != assignment.locality_identity
+        current_coordinates.get("locality_identity")
+        != binding.locality_identity
         or type(carried) is not dict
-        or carried.get(assignment.identity, object()) is not None
+        or carried.get(binding.identity, object()) is not None
     ):
-        raise OperatorCheckpointError("checkpoint Act requires its carried assignment")
+        raise OperatorCheckpointError("checkpoint Act requires its carried binding")
     return ledger.append(
         STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-        _act_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _act_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -323,22 +323,22 @@ def get_standing_boundary_reference_act_occurrence(
     reference = event.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise OperatorCheckpointError("checkpoint Act carries no assignment")
-    assignment = get_standing_boundary_reference_responsibility_assignment(
+    binding = get_standing_boundary_reference_subject_to_act_binding(
         ledger, reference.get("recorded_occurrence_identity")
     )
     if (
-        assignment.locality_identity != event.locality_identity
-        or reference != _assignment_reference(assignment)
-        or event.material != _act_material(assignment)
+        binding.locality_identity != event.locality_identity
+        or reference != _binding_reference(binding)
+        or event.material != _act_material(binding)
     ):
         raise OperatorCheckpointError("checkpoint Act occurrence is not exact")
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, event.identity),
+            (binding.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
-        raise OperatorCheckpointError("checkpoint Act requires its prior assignment") from error
+        raise OperatorCheckpointError("checkpoint Act requires its prior binding") from error
     return event
 
 

@@ -12,7 +12,6 @@ from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    record_standing_boundary_reference_responsibility_assignment,
     record_standing_boundary_reference_act_occurrence,
     record_standing_boundary_reference_result,
 )

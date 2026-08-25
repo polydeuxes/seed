@@ -129,10 +129,10 @@ from seed_runtime.operator_standing_continuation import (
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     get_recorded_standing_boundary_reference,
     get_standing_boundary_reference_act_occurrence,
-    get_standing_boundary_reference_responsibility_assignment,
+    get_standing_boundary_reference_subject_to_act_binding,
 )
 from seed_runtime.standing_boundary_locality import (
     RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -443,7 +443,7 @@ _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
 }
 _STANDING_BOUNDARY_REFERENCE_KINDS = {
-    STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
 }
@@ -1429,9 +1429,9 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_standing_boundary_reference_responsibility_assignment(
+            get_standing_boundary_reference_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
