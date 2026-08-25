@@ -69,7 +69,7 @@ def _measure(ledger: EventLedger, source: str, result: str):
 
 def _pair_counts(event):
     return {
-        bytes(assertion["assertion_subject"]["representation"]).decode("ascii"):
+        bytes(assertion["assertion_subject"]["content"]).decode("ascii"):
         assertion["dimensions"]["content"]["count"]
         for assertion in event.material["assertions"]
         if assertion["result"] == "count"
