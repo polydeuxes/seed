@@ -27,9 +27,6 @@ OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
 OPERATOR_INVOCATION_LOCALITY_ACT = (
     "Establish one direct operator invocation Locality relation"
 )
-OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY = (
-    "preserve one operator invocation Locality relation from one operator Locality"
-)
 OPERATOR_INVOCATION_LOCALITY_RESULT_KIND = (
     "operator invocation Locality relation result"
 )
@@ -102,8 +99,6 @@ def _assignment_material(
 ) -> dict[str, Any]:
     return {
         "book_clause_identity": OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE,
-        "responsible_boundary": "this Seed",
-        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         "exact_act": OPERATOR_INVOCATION_LOCALITY_ACT,
         "operator_invocation_locality_act_identity": (
             operator_invocation_locality_act_identity
@@ -274,8 +269,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "act_occurrence_identity": material["act_occurrence_identity"],
         "result_boundary_identity": material["result_boundary_identity"],
         "act": OPERATOR_INVOCATION_LOCALITY_ACT,
-        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_event_identity": assignment.identity,
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
@@ -373,8 +366,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         ],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_INVOCATION_LOCALITY_ACT,
-        "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_event_identity": material[
             "responsibility_assignment_event_identity"
         ],
@@ -388,7 +379,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "relation_occurrence_identity": material["relation_occurrence_identity"],
         "locality_relation": relation,
         "scope": deepcopy(material["scope"]),
-        "standing": "established",
         "known_loss": [],
         "conflicts": [],
         "unknown": [],
@@ -418,8 +408,6 @@ def _recorded_result_material(
         ],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],
-        "responsibility": result["responsibility"],
-        "responsible_boundary": result["responsible_boundary"],
         "responsibility_assignment_event_identity": result[
             "responsibility_assignment_event_identity"
         ],
@@ -435,7 +423,6 @@ def _recorded_result_material(
         ],
         "locality_relation": deepcopy(result["locality_relation"]),
         "scope": deepcopy(result["scope"]),
-        "standing": result["standing"],
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),
         "unknown": list(result["unknown"]),
