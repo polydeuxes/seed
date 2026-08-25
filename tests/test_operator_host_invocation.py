@@ -542,50 +542,6 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     )
 
 
-def test_supplied_material_does_not_gain_admission_from_a_locality_change():
-    ledger = EventLedger()
-
-    def provider(_exact_command, supply):
-        supply(
-            SuppliedWitnessMaterialOccurrence(
-                b"one result",
-                "provider:result",
-            )
-        )
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="initial",
-        input_stream=BytesIO(b"/locality\n!ls\n"),
-        operator_invocation_provider=provider,
-    )
-
-    admissions = [
-        event
-        for event in ledger.list()
-        if event.kind
-        == "operator.representation.exact_material_admission_recorded"
-    ]
-    assert admissions == []
-    relation = next(
-        event
-        for event in ledger.list()
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
-    )
-    supplied = tuple(
-        event
-        for event in ledger.list_locality(relation.locality_identity)
-        if event.kind == "witness.material.source_result_recorded"
-    )
-    assert tuple(event.exact_material for event in supplied) == (b"one result",)
-    emitted = [
-        event
-        for event in ledger.list()
-        if event.kind == "operator.representation.emitted"
-    ]
-    assert emitted == []
-
-
 def test_witness_material_is_durable_before_provider_resumes():
     ledger = EventLedger()
     observed = []

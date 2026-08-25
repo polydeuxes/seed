@@ -45,10 +45,6 @@ from seed_runtime.operator_memory_command import (
     OperatorMemoryRequest,
     request_operator_memory,
 )
-from seed_runtime.operator_locality_command import (
-    OperatorLocalityRequest,
-    request_operator_locality,
-)
 from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_responsibility_assignment,
     record_standing_locality_continuation_act_occurrence,
@@ -420,7 +416,6 @@ def run_persistent_operator_console(
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"checkout"] = request_operator_checkout
     handlers[b"memory"] = request_operator_memory
-    handlers[b"locality"] = request_operator_locality
     # Each produced result enters the current Locality Standing.  This
     # Standing is the input of the next interaction.
     locality_standing = read_operator_locality_standing(
@@ -638,19 +633,6 @@ def run_persistent_operator_console(
                 handlers=handlers,
             )
             request = command_run.implementation_result
-            if isinstance(request, OperatorLocalityRequest):
-                locality_identity = request.locality_identity
-                locality_standing = read_operator_locality_standing(
-                    ledger, locality_identity=locality_identity
-                )
-                locality_standing, pair_premise = (
-                    _latest_carried_pair_premise(
-                        ledger,
-                        locality_standing,
-                        locality_identity=locality_identity,
-                    )
-                )
-                continue
             if isinstance(request, OperatorMemoryRequest):
                 assignment = (
                     record_standing_locality_continuation_responsibility_assignment(

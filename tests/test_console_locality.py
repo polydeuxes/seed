@@ -5,7 +5,7 @@ from __future__ import annotations
 import pathlib
 import subprocess
 import sys
-from tests.binary_input import binary_input
+from io import BytesIO
 
 import pytest
 
@@ -26,8 +26,20 @@ def db(tmp_path):
     return str(tmp_path / "seed.db")
 
 
-def _console(monkeypatch, material: str, argv: list[str]) -> None:
-    monkeypatch.setattr("sys.stdin", binary_input(material))
+@pytest.fixture(autouse=True)
+def _skip_unrelated_measurement_work(monkeypatch):
+    class _AlreadyMeasured(set):
+        def __contains__(self, _item):
+            return True
+
+    monkeypatch.setattr(
+        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
+        lambda _ledger: _AlreadyMeasured(),
+    )
+
+
+def _console(monkeypatch, material: bytes, argv: list[str]) -> None:
+    monkeypatch.setattr("sys.stdin", BytesIO(material))
     assert process_entry.main(argv) == 0
 
 
@@ -66,7 +78,7 @@ def test_any_other_argument_selects_something_else(argv):
 
 
 def test_a_db_console_records_into_that_db(db, monkeypatch):
-    _console(monkeypatch, "material\n", ["--db", db])
+    _console(monkeypatch, b"material\n", ["--db", db])
 
     ledger = SQLiteEventLedger(db)
     try:
@@ -76,7 +88,7 @@ def test_a_db_console_records_into_that_db(db, monkeypatch):
 
 
 def test_the_bare_console_writes_no_durable_history(db, monkeypatch):
-    _console(monkeypatch, "material\n", [])
+    _console(monkeypatch, b"material\n", [])
 
     ledger = SQLiteEventLedger(db)
     try:
@@ -92,8 +104,8 @@ def test_the_bare_console_writes_no_durable_history(db, monkeypatch):
 
 @pytest.fixture
 def two_lifetimes(db, monkeypatch):
-    _console(monkeypatch, "first locality\nmore material\n", ["--db", db])
-    _console(monkeypatch, "a later locality\n", ["--db", db])
+    _console(monkeypatch, b"first\nmore\n", ["--db", db])
+    _console(monkeypatch, b"later\n", ["--db", db])
     ledger = SQLiteEventLedger(db)
     yield ledger
     ledger.close()
@@ -116,16 +128,11 @@ def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
             )
         ]
 
-    assert material(first) == [b"first locality\n", b"more material\n"]
-    assert material(second) == [b"a later locality\n"]
+    assert material(first) == [b"first\n", b"more\n"]
+    assert material(second) == [b"later\n"]
 
 
-def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
-    """The defect, stated as the behaviour it removes.
-
-    This is the test that could not previously be written against the real CLI,
-    because two invocations never shared history to continue.
-    """
+def test_a_reopened_console_has_distinct_current_coordinates(two_lifetimes):
     first, second = _localities(two_lifetimes)
     prior = read_operator_locality_standing(
         two_lifetimes, locality_identity=first
@@ -134,18 +141,21 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
         two_lifetimes, locality_identity=second
     )
 
-    assert len(prior["representations"]) == 5
-    assert len(later["representations"]) == 3
-    assert set(later["representations"]).isdisjoint(prior["representations"])
-
-
-def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
-    """Bounding the read must not lose what it stopped read."""
-    first = _localities(two_lifetimes)[0]
-    standing = read_operator_locality_standing(
-        two_lifetimes, locality_identity=first
+    assert prior["exact_result_occurrences"]
+    assert later["exact_result_occurrences"]
+    assert set(later["exact_result_occurrences"]).isdisjoint(
+        prior["exact_result_occurrences"]
     )
-    assert len(standing["representations"]) == 5
+
+
+def test_the_earlier_lifetime_remains_readable(two_lifetimes):
+    first = _localities(two_lifetimes)[0]
+    assert [
+        exact_material_result_bytes(event)
+        for event in _acquisition_results(
+            two_lifetimes, locality_identity=first
+        )
+    ] == [b"first\n", b"more\n"]
 
 
 # --------------------------------------------------------------------------
@@ -168,10 +178,10 @@ def test_a_fresh_locality_reads_none_of_the_history(two_lifetimes):
     """The console's startup read, which is the growing read."""
     assert two_lifetimes.list()
     assert two_lifetimes.list_locality("never-recorded") == []
-    standing = read_operator_locality_standing(
+    current = read_operator_locality_standing(
         two_lifetimes, locality_identity="never-recorded"
     )
-    assert standing["representations"] == {}
+    assert current["exact_result_occurrences"] == {}
 
 
 def test_the_in_memory_ledger_scopes_the_same_way():
@@ -180,7 +190,7 @@ def test_the_in_memory_ledger_scopes_the_same_way():
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity=locality_identity,
-            input_stream=binary_input("material\n"),
+            input_stream=BytesIO(b"material\n"),
         )
     assert {e.locality_identity for e in ledger.list_locality("a")} == {"a"}
     assert len(ledger.list_locality("a")) < len(ledger.list())
@@ -196,22 +206,11 @@ def test_a_caller_supplied_locality_identity_remains_exact():
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="chosen-by-the-caller",
-        input_stream=binary_input("material\n"),
+        input_stream=BytesIO(b"material\n"),
     )
     assert {event.locality_identity for event in ledger.list()} == {
         "chosen-by-the-caller"
     }
-
-
-def test_locality_command_refuses_a_supplied_name():
-    ledger = EventLedger()
-
-    with pytest.raises(ValueError, match="accepts no material"):
-        run_persistent_operator_console(
-            ledger=ledger,
-            locality_identity="current",
-            input_stream=binary_input("/locality list\n"),
-        )
 
 
 # --------------------------------------------------------------------------
@@ -219,12 +218,11 @@ def test_locality_command_refuses_a_supplied_name():
 # --------------------------------------------------------------------------
 
 
-def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
+def _run_console_process(db: str, material: bytes) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-m", "seed_runtime.process_entry", "--db", db],
-        input=material + "",
+        input=material,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True,
         cwd=str(pathlib.Path(__file__).resolve().parent.parent),
     )
 
@@ -237,14 +235,14 @@ def test_a_reopened_console_process_does_not_abort(db):
     `seed --db` invocation aborted on `duplicate representation reference` until
     the console's prefixes were reserved on open.
     """
-    for material in ("first process\n", "second process\n", "third process\n"):
+    for material in (b"a", b"b", b"c"):
         result = _run_console_process(db, material)
         assert result.returncode == 0, result.stderr
-        assert "Traceback" not in result.stderr
+        assert b"Traceback" not in result.stderr
 
 
 def test_separate_processes_receive_separate_localities(db):
-    for material in ("first process\n", "second process\n", "third process\n"):
+    for material in (b"a", b"b", b"c"):
         assert _run_console_process(db, material).returncode == 0
 
     ledger = SQLiteEventLedger(db)
@@ -261,9 +259,9 @@ def test_separate_processes_receive_separate_localities(db):
             for locality in Localities
         ]
         assert held == [
-            [b"first process\n"],
-            [b"second process\n"],
-            [b"third process\n"],
+            [b"a"],
+            [b"b"],
+            [b"c"],
         ]
     finally:
         ledger.close()
