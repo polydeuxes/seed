@@ -36,10 +36,10 @@ _PYTEST_INVOCATION = (
     b"--",
 )
 _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE = (
-    "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
+    "SEED_COMPILED_WITNESS_MEASUREMENT"
 )
 _PYTEST_CATALOG_ENVIRONMENT_COORDINATE = (
-    "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
+    "SEED_COMPILED_WITNESS_CATALOG"
 )
 _ROOT = Path(__file__).resolve().parents[1]
 _TRUNCATION_LOSS = (
@@ -248,7 +248,7 @@ def _bounded_artifact(
         if missing_is_known_loss:
             return b"", True
         raise OperatorHostProviderError(
-            "exact implementation measurement material required"
+            "exact compiled Witness measurement material required"
         ) from error
     return (
         material[:MATERIAL_BYTE_COUNT_BOUNDARY],
@@ -299,8 +299,8 @@ def invoke_operator_host(
         )
         return
     with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
-        artifact_path = Path(directory) / "implementation-measurement"
-        catalog_path = Path(directory) / "implementation-catalog"
+        artifact_path = Path(directory) / "compiled-Witness-measurement"
+        catalog_path = Path(directory) / "compiled-Witness-catalog"
         timed_out, output_truncated, error_truncated = _bounded_invocation(
             argv,
             supply=supply,
@@ -331,7 +331,7 @@ def invoke_operator_host(
     supply(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=catalog,
-            source_boundary="implementation function catalog",
+            source_boundary="compiled Witness catalog",
             known_loss=(
                 _TRUNCATION_LOSS
                 if catalog_truncated
@@ -345,7 +345,7 @@ def invoke_operator_host(
     supply(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=artifact,
-            source_boundary="implementation function measurement",
+            source_boundary="compiled Witness measurement",
             known_loss=(
                 _TRUNCATION_LOSS
                 if artifact_truncated

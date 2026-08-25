@@ -17,8 +17,8 @@ from seed_runtime.witness_material_source import (
 
 def observe_live_pytest_process(database: Path) -> dict:
     nodeid = (
-        b"tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_exact_identities"
+        b"tests/test_book_material_acquisition.py::"
+        b"test_book_material_witness_has_one_admitted_subject"
     )
     result = subprocess.run(
         [
@@ -51,8 +51,8 @@ def observe_live_pytest_process(database: Path) -> dict:
         event.material["source_boundary"]: event for event in source_results
     }
     required_boundaries = {
-        "implementation function catalog",
-        "implementation function measurement",
+        "compiled Witness catalog",
+        "compiled Witness measurement",
         "invocation completion",
     }
     if len(source_results) < 6 or not required_boundaries <= set(by_boundary):
@@ -83,8 +83,8 @@ def observe_live_pytest_process(database: Path) -> dict:
     ):
         raise RuntimeError("live pytest source provenance cites another result")
 
-    catalog = by_boundary["implementation function catalog"]
-    measurement = by_boundary["implementation function measurement"]
+    catalog = by_boundary["compiled Witness catalog"]
+    measurement = by_boundary["compiled Witness measurement"]
     completion = by_boundary["invocation completion"]
     if not catalog.exact_material or not measurement.exact_material:
         raise RuntimeError("live pytest invocation omitted exact result material")

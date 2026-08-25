@@ -92,11 +92,11 @@ def test_pytest_provider_has_one_exact_argument_and_a_clean_environment(
     assert coordinates["env"] == {
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         "PYTHONDONTWRITEBYTECODE": "1",
-        "SEED_IMPLEMENTATION_FUNCTION_CATALOG": coordinates["env"][
-            "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
+        "SEED_COMPILED_WITNESS_CATALOG": coordinates["env"][
+            "SEED_COMPILED_WITNESS_CATALOG"
         ],
-        "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT": coordinates["env"][
-            "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
+        "SEED_COMPILED_WITNESS_MEASUREMENT": coordinates["env"][
+            "SEED_COMPILED_WITNESS_MEASUREMENT"
         ],
     }
     assert coordinates["cwd"] == operator_host_provider._ROOT
@@ -416,8 +416,8 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
         for occurrence in invocation_output
     )
     assert {
-        "implementation function catalog",
-        "implementation function measurement",
+        "compiled Witness catalog",
+        "compiled Witness measurement",
         "invocation completion",
     } <= set(by_boundary)
     assert any(
@@ -425,8 +425,8 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
         for occurrence in invocation_output
         if occurrence.source_boundary == "invocation output"
     )
-    catalog_occurrence = by_boundary["implementation function catalog"]
-    artifact_occurrence = by_boundary["implementation function measurement"]
+    catalog_occurrence = by_boundary["compiled Witness catalog"]
+    artifact_occurrence = by_boundary["compiled Witness measurement"]
     catalog = json.loads(catalog_occurrence.exact_bytes)
     artifact = json.loads(artifact_occurrence.exact_bytes)
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
@@ -464,7 +464,7 @@ def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
 
     with pytest.raises(
         operator_host_provider.OperatorHostProviderError,
-        match="exact implementation measurement material required",
+        match="exact compiled Witness measurement material required",
     ):
         _invoke(b"!pytest tests/exact.py\n")
 
