@@ -112,20 +112,18 @@ def _source_reference(
 
 def _assignment_material(
     *,
-    assignment_identity: str,
-    assignment_subject_identity: str,
-    recording_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     result_identity: str,
     source_reference: dict[str, str | None],
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE,
+        "subject_reference": deepcopy(source_reference),
+        "act": STANDING_BOUNDARY_REFERENCE_ACT,
+        "exact_act_identity": exact_act_identity,
         "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "recording_act_identity": recording_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
@@ -140,24 +138,21 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _assignment_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": deepcopy(assignment.material["subject_reference"]),
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
-        "result_identity": assignment.material["result_identity"],
     }
 
 
 def _act_material(assignment: Event) -> dict[str, Any]:
     return {
-        "recording_act_identity": assignment.material["recording_act_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": STANDING_BOUNDARY_REFERENCE_ACT,
         "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
@@ -172,7 +167,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
 def _result_material(act_occurrence: Event) -> dict[str, Any]:
     return {
         "result_identity": act_occurrence.material["result_identity"],
-        "recording_act_identity": act_occurrence.material["recording_act_identity"],
+        "exact_act_identity": act_occurrence.material["exact_act_identity"],
         "act_occurrence_identity": act_occurrence.material["act_occurrence_identity"],
         "exact_act": STANDING_BOUNDARY_REFERENCE_ACT,
         "responsibility": STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY,
@@ -197,7 +192,7 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
-        "recording_act_identity": result_material["recording_act_identity"],
+        "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
         "responsibility": result_material["responsibility"],
@@ -230,11 +225,7 @@ def record_standing_boundary_reference_responsibility_assignment(
         locality_standing=locality_standing,
     )
     identities = {
-        "assignment_identity": new_identity("standing_boundary_reference_assignment"),
-        "assignment_subject_identity": new_identity(
-            "standing_boundary_reference_assignment_subject"
-        ),
-        "recording_act_identity": new_identity(
+        "exact_act_identity": new_identity(
             "standing_boundary_reference_recording_act"
         ),
         "act_occurrence_identity": new_identity(
@@ -266,9 +257,7 @@ def get_standing_boundary_reference_responsibility_assignment(
     material = event.material
     source_reference = material.get("source_reference")
     identities = (
-        material.get("assignment_identity"),
-        material.get("assignment_subject_identity"),
-        material.get("recording_act_identity"),
+        material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
         material.get("result_identity"),
     )
@@ -292,11 +281,9 @@ def get_standing_boundary_reference_responsibility_assignment(
         "standing_boundary_event_identity": boundary.identity,
     }
     expected = _assignment_material(
-        assignment_identity=identities[0],
-        assignment_subject_identity=identities[1],
-        recording_act_identity=identities[2],
-        act_occurrence_identity=identities[3],
-        result_identity=identities[4],
+        exact_act_identity=identities[0],
+        act_occurrence_identity=identities[1],
+        result_identity=identities[2],
         source_reference=expected_source,
     )
     if source_reference != expected_source or material != expected:

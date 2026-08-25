@@ -110,16 +110,14 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     assert len(
         {
             assignment.identity,
-            assignment.material["assignment_identity"],
-            assignment.material["assignment_subject_identity"],
-            assignment.material["recording_act_identity"],
+            assignment.material["exact_act_identity"],
             assignment.material["act_occurrence_identity"],
             assignment.material["result_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 9
+    ) == 7
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
@@ -232,10 +230,10 @@ def test_one_recording_act_cannot_yield_twice():
 @pytest.mark.parametrize(
     "coordinate",
     (
-        "assignment_identity",
-        "assignment_subject_identity",
         "book_clause_identity",
-        "recording_act_identity",
+        "subject_reference",
+        "act",
+        "exact_act_identity",
         "act_occurrence_identity",
         "result_identity",
         "source_reference",
@@ -249,9 +247,7 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
     assignment = _assignment(ledger, standing, command)
     changed = ledger.get(assignment.identity)
     if coordinate in {
-        "assignment_identity",
-        "assignment_subject_identity",
-        "recording_act_identity",
+        "exact_act_identity",
         "act_occurrence_identity",
         "result_identity",
     }:
