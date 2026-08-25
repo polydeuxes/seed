@@ -248,6 +248,59 @@ def _inputs(*, ledger=None, path_source_is_added=True):
     return ledger, *(ledger.get(identity) for identity in identities)
 
 
+@lru_cache(maxsize=1)
+def _two_input_occurrences():
+    ledger, *first = _inputs()
+    ledger, *second = _record_inputs(ledger)
+    return (
+        tuple(ledger.list()),
+        *(event.identity for event in (*first, *second)),
+    )
+
+
+def _two_inputs():
+    occurrences, *identities = _two_input_occurrences()
+    ledger = EventLedger()
+    ledger.append_many(occurrences)
+    return ledger, *(ledger.get(identity) for identity in identities)
+
+
+@lru_cache(maxsize=5)
+def _story_floor(floor):
+    if floor == 0:
+        occurrences, *_identities = _two_input_occurrences()
+        return occurrences, ()
+    prior_occurrences, _prior_results = _story_floor(floor - 1)
+    ledger = EventLedger()
+    ledger.append_many(prior_occurrences)
+    if floor == 1:
+        results = record_ordered_path_pair_finding_compare_assignments_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        ).assignment_occurrences
+    elif floor == 2:
+        results = record_ordered_path_pair_finding_compare_applicability_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        ).applicability_result_occurrences
+    elif floor == 3:
+        results = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        ).compare_act_occurrence_occurrences
+    elif floor == 4:
+        results = record_ordered_path_pair_finding_compare_results_from_current_standing(
+            ledger, locality_identity=LOCALITY
+        ).compare_result_occurrences
+    else:
+        raise ValueError("the exact story floor is absent")
+    return tuple(ledger.list()), tuple(result.identity for result in results)
+
+
+def _ledger_at_story_floor(floor):
+    occurrences, result_identities = _story_floor(floor)
+    ledger = EventLedger()
+    ledger.append_many(occurrences)
+    return ledger, tuple(ledger.get(identity) for identity in result_identities)
+
+
 def _record_comparison(ledger, comparison, path):
     assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
         ledger,
@@ -392,10 +445,17 @@ def test_unassigned_exact_compare_subject_read_after_restart(tmp_path):
 
 
 def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair():
-    ledger, _first_source, _first_added, first_comparison, first_path = _inputs()
-    ledger, _second_source, _second_added, second_comparison, second_path = _inputs(
-        ledger=ledger
-    )
+    (
+        ledger,
+        _first_source,
+        _first_added,
+        first_comparison,
+        first_path,
+        _second_source,
+        _second_added,
+        second_comparison,
+        second_path,
+    ) = _two_inputs()
     subjects = tuple(
         OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=path.identity,
@@ -430,10 +490,18 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
 
 
 def test_every_current_compare_subject_records_one_serial_responsibility_assignment():
-    ledger, _first_source, _first_added, first_comparison, first_path = _inputs()
-    ledger, _second_source, _second_added, second_comparison, second_path = _inputs(
-        ledger=ledger
-    )
+    ledger, _floor_results = _ledger_at_story_floor(0)
+    (
+        _occurrences,
+        _first_source_identity,
+        _first_added_identity,
+        first_comparison_identity,
+        first_path_identity,
+        _second_source_identity,
+        _second_added_identity,
+        second_comparison_identity,
+        second_path_identity,
+    ) = _two_input_occurrences()
     standing_before = _standing(ledger)
     boundary_before = ledger.append_boundary()
     assert boundary_before.identity != standing_before[
@@ -441,11 +509,14 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     ]
     subjects = tuple(
         OrderedPathPairFindingCompareAssignmentSubject(
-            path_result_event_identity=path.identity,
-            comparison_result_event_identity=comparison.identity,
+            path_result_event_identity=path_identity,
+            comparison_result_event_identity=comparison_identity,
         )
-        for path in (first_path, second_path)
-        for comparison in (first_comparison, second_comparison)
+        for path_identity in (first_path_identity, second_path_identity)
+        for comparison_identity in (
+            first_comparison_identity,
+            second_comparison_identity,
+        )
     )
 
     recorded = (
@@ -495,15 +566,7 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     )
 
 def test_every_current_compare_assignment_records_one_separate_applicability_result():
-    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
-    ledger, _second_source, _second_added, _second_comparison, _second_path = (
-        _inputs(ledger=ledger)
-    )
-    assignments = (
-        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        ).assignment_occurrences
-    )
+    ledger, assignments = _ledger_at_story_floor(1)
     recorded = (
         record_ordered_path_pair_finding_compare_applicability_from_current_standing(
             ledger, locality_identity=LOCALITY
@@ -530,19 +593,10 @@ def test_every_current_compare_assignment_records_one_separate_applicability_res
         for result in results
     )
 def test_only_applicable_current_compare_results_record_participation_and_act_occurrence():
-    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
-    ledger, _second_source, _second_added, _second_comparison, _second_path = (
-        _inputs(ledger=ledger)
-    )
-    assignments = (
-        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        ).assignment_occurrences
-    )
-    applicability_results = (
-        record_ordered_path_pair_finding_compare_applicability_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        ).applicability_result_occurrences
+    ledger, applicability_results = _ledger_at_story_floor(2)
+    assignments = tuple(
+        ledger.get(identity)
+        for identity in _story_floor(1)[1]
     )
     recorded = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
         ledger, locality_identity=LOCALITY
@@ -580,19 +634,7 @@ def test_only_applicable_current_compare_results_record_participation_and_act_oc
         acts[-1].identity
     )
 def test_every_current_compare_act_records_one_separate_yield_and_result():
-    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
-    ledger, _second_source, _second_added, _second_comparison, _second_path = (
-        _inputs(ledger=ledger)
-    )
-    record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    record_ordered_path_pair_finding_compare_applicability_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    acts = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    ).compare_act_occurrence_occurrences
+    ledger, acts = _ledger_at_story_floor(3)
 
     recorded = record_ordered_path_pair_finding_compare_results_from_current_standing(
         ledger, locality_identity=LOCALITY
@@ -679,22 +721,7 @@ def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
 
 
 def test_every_current_compare_result_exposes_every_exact_finding_reference_branch():
-    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
-    ledger, _second_source, _second_added, _second_comparison, _second_path = (
-        _inputs(ledger=ledger)
-    )
-    record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    record_ordered_path_pair_finding_compare_applicability_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    results = record_ordered_path_pair_finding_compare_results_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    ).compare_result_occurrences
+    ledger, results = _ledger_at_story_floor(4)
     boundary = ledger.append_boundary()
 
     pins = recorded_distinction_pins_from_current_standing(
@@ -988,30 +1015,6 @@ def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_
     assert carried == _standing(ledger)
 
 
-PYTEST_ADMISSION = (
-    test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
-    test_unassigned_exact_compare_subject_read_records_nothing,
-    test_unassigned_exact_compare_subject_read_after_restart,
-    test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
-    test_every_current_compare_subject_records_one_serial_responsibility_assignment,
-    test_every_current_compare_assignment_records_one_separate_applicability_result,
-    test_only_applicable_current_compare_results_record_participation_and_act_occurrence,
-    test_every_current_compare_act_records_one_separate_yield_and_result,
-    test_current_standing_fans_one_comparison_into_exact_distinction_pins,
-    test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
-    test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
-    test_distinction_fanout_keeps_one_locality_pin_after_another_locality_append,
-    test_another_source_occurrence_is_inapplicable_and_cannot_participate,
-    test_availability_without_both_exact_standings_cannot_assign_comparison,
-    test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice,
-    test_changed_input_compare_is_refused_on_later_read,
-    test_higher_input_preserves_the_validated_comparison_assignment,
-    test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
-    test_corrupted_higher_compare_yield_is_refused,
-    test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained_read,
-    test_ordered_path_and_recorded_findings_are_read_from_sqlite,
-    test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
-)
 
 
 FIDELITY_DISTINCTIONS = {

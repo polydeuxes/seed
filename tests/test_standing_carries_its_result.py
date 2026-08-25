@@ -364,21 +364,3 @@ def test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject():
     ]
     assert carried["assignment_subject_identity"] != result.identity
     assert carried["recorded_occurrence_identity"] != result.identity
-
-
-PYTEST_ADMISSION = (
-    test_the_admitted_result_carries_its_exact_Responsibility_ownership,
-    test_the_carried_ownership_answers_subject_and_clause_directly,
-    test_one_Responsibility_carries_each_admitted_result,
-    test_a_complete_replay_produces_the_same_ownership,
-    test_the_ownership_is_recovered_after_a_sqlite_close_and_reopen,
-    test_a_substituted_ownership_coordinate_is_refused,
-    test_a_result_whose_act_occurrence_records_no_reference_has_no_A1_coordinate,
-    test_live_incremental_carry_and_complete_replay_agree,
-    test_ownership_present_but_incomplete_is_refused_not_read_as_absent,
-    test_ownership_that_is_not_a_coordinate_mapping_is_refused,
-    test_ownership_naming_an_absent_assignment_is_refused,
-    test_ownership_disagreeing_with_its_assignment_is_refused,
-    test_a_result_with_no_recorded_reference_is_still_no_owner_not_a_refusal,
-    test_the_carried_result_establishes_no_Standing_for_itself_as_a_subject,
-)

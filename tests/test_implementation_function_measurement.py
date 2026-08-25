@@ -117,7 +117,6 @@ def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
         nodeid="tests/exact.py::test_one_occurrence",
         stash={},
         module=SimpleNamespace(
-            PYTEST_ADMISSION=(exact_function,),
             FIDELITY_DISTINCTIONS={
                 ("book_coordinates", "01.Source.C"): (exact_function,)
             }
@@ -186,89 +185,62 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         pass
 
     grammar = measured._witness_grammar()
-    no_admission = SimpleNamespace()
-    ordinary = SimpleNamespace(PYTEST_ADMISSION=(second,))
+    ordinary = SimpleNamespace()
     exact = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): (first,)
         }
     )
     repeated = SimpleNamespace(
-        PYTEST_ADMISSION=(first, second),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): (first,),
             ("book_coordinates", "02.Acts.A"): (first, second),
         }
     )
     missing = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "missing"): (first,)
         }
     )
     scalar = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={"01.Source.C": (first,)},
     )
     list_distinctions = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS=[
             (("book_coordinates", "01.Source.C"), (first,))
         ]
     )
     functions_list = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): [first]
         }
     )
     nonfunction_distinction = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): ("first",)
         }
     )
     explicit_witness_material = SimpleNamespace(
-        PYTEST_ADMISSION=(second,),
         WITNESS_MATERIAL_TESTS=(second,)
     )
     unreferenced = SimpleNamespace(
-        PYTEST_ADMISSION=(first, second),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): (first,)
         }
     )
     crossed = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
         FIDELITY_DISTINCTIONS={
             ("book_coordinates", "01.Source.C"): (first,)
         },
         WITNESS_MATERIAL_TESTS=(first,),
     )
     repeated_witness_material = SimpleNamespace(
-        PYTEST_ADMISSION=(second,),
         WITNESS_MATERIAL_TESTS=(second, second)
     )
     malformed_witness_material = SimpleNamespace(
-        PYTEST_ADMISSION=(second,),
         WITNESS_MATERIAL_TESTS=[second]
     )
-    repeated_admission = SimpleNamespace(PYTEST_ADMISSION=(first, first))
-    malformed_admission = SimpleNamespace(PYTEST_ADMISSION=[first])
-    fidelity_without_admission = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
-        FIDELITY_DISTINCTIONS={
-            ("book_coordinates", "01.Source.C"): (second,)
-        },
-    )
-    witness_without_admission = SimpleNamespace(
-        PYTEST_ADMISSION=(first,),
-        WITNESS_MATERIAL_TESTS=(second,),
-    )
 
-    with pytest.raises(TypeError, match="exact pytest admission functions"):
-        measured._pytest_uptake(no_admission, first, grammar)
     assert measured._pytest_uptake(ordinary, second, grammar) is (
         measured._NO_PYTEST_UPTAKE
     )
@@ -302,16 +274,6 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         measured._pytest_uptake(repeated_witness_material, second, grammar)
     with pytest.raises(TypeError, match="exact Witness Material test functions"):
         measured._pytest_uptake(malformed_witness_material, second, grammar)
-    with pytest.raises(ValueError, match="entered admission twice"):
-        measured._pytest_uptake(repeated_admission, first, grammar)
-    with pytest.raises(TypeError, match="exact pytest admission functions"):
-        measured._pytest_uptake(malformed_admission, first, grammar)
-    with pytest.raises(ValueError, match="Fidelity uptake requires pytest admission"):
-        measured._pytest_uptake(fidelity_without_admission, first, grammar)
-    with pytest.raises(
-        ValueError, match="Witness Material uptake requires pytest admission"
-    ):
-        measured._pytest_uptake(witness_without_admission, first, grammar)
 
 
 def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence():
@@ -321,7 +283,6 @@ def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurren
         )
         return SimpleNamespace(
             module=SimpleNamespace(
-                PYTEST_ADMISSION=(function,),
                 FIDELITY_DISTINCTIONS={reference: (function,)},
             ),
             function=function,
@@ -337,44 +298,35 @@ def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurren
     assert valid.stash == invalid.stash == {}
 
 
-def test_pytest_distinction_collection_refuses_an_ownerless_function():
-    function = test_pytest_distinction_collection_refuses_an_ownerless_function
+def test_pytest_uptake_function_must_be_collected():
+    function = test_pytest_uptake_function_must_be_collected
     another_function = lambda: None
     first = SimpleNamespace(
         nodeid=(
             "tests/test_implementation_function_measurement.py::"
-            "test_pytest_distinction_collection_refuses_an_ownerless_function"
+            "test_pytest_uptake_function_must_be_collected"
         ),
         module=SimpleNamespace(
             __name__="tests.test_implementation_function_measurement",
-            PYTEST_ADMISSION=(another_function,),
+            FIDELITY_DISTINCTIONS={
+                ("book_coordinates", "01.Source.C"): (another_function,)
+            },
         ),
         function=function,
         stash={},
     )
-    second = SimpleNamespace(
-        nodeid="tests/another.py::test_another_ownerless_function",
-        module=SimpleNamespace(
-            __name__="tests.another",
-            PYTEST_ADMISSION=(another_function,),
-        ),
-        function=lambda: None,
-        stash={},
-    )
 
-    with pytest.raises(ValueError, match="no exact admission") as refusal:
-        measured.pytest_collection_modifyitems(None, None, [first, second])
+    with pytest.raises(ValueError, match="not collected"):
+        measured.pytest_collection_modifyitems(None, None, [first])
 
-    assert first.nodeid in str(refusal.value)
-    assert second.nodeid in str(refusal.value)
-    assert first.stash == second.stash == {}
+    assert first.stash == {}
 
 
-def test_admitted_implementation_test_has_no_seed_uptake():
-    function = test_admitted_implementation_test_has_no_seed_uptake
+def test_ordinary_implementation_test_has_no_seed_uptake():
+    function = test_ordinary_implementation_test_has_no_seed_uptake
     item = SimpleNamespace(
-        nodeid="tests/implementation.py::test_admitted_implementation",
-        module=SimpleNamespace(PYTEST_ADMISSION=(function,)),
+        nodeid="tests/implementation.py::test_ordinary_implementation",
+        module=SimpleNamespace(),
         function=function,
         stash={},
     )
@@ -388,7 +340,7 @@ def test_admitted_implementation_test_has_no_seed_uptake():
         material_occurrence_count = len(measured._witness_material_occurrences)
         protocol = measured.pytest_runtest_protocol(item, None)
         next(protocol)
-        measured._identity(ROOT, 8, "inside-admitted-implementation-test")
+        measured._identity(ROOT, 8, "inside-ordinary-implementation-test")
         with pytest.raises(StopIteration):
             next(protocol)
     finally:
@@ -400,24 +352,28 @@ def test_admitted_implementation_test_has_no_seed_uptake():
 
 def test_witness_material_occurrence_has_no_fidelity_uptake():
     function = test_witness_material_occurrence_has_no_fidelity_uptake
+    fidelity_function = (
+        test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence
+    )
+    module = SimpleNamespace(
+        FIDELITY_DISTINCTIONS={
+            ("book_coordinates", "01.Source.C"): (fidelity_function,),
+        },
+        WITNESS_MATERIAL_TESTS=(function,),
+    )
     item = SimpleNamespace(
         nodeid="tests/material.py::test_one_witness_material_occurrence",
-        module=SimpleNamespace(
-            PYTEST_ADMISSION=(
-                function,
-                test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
-            ),
-            FIDELITY_DISTINCTIONS={
-                ("book_coordinates", "01.Source.C"): (
-                    test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
-                ),
-            },
-            WITNESS_MATERIAL_TESTS=(function,),
-        ),
+        module=module,
         function=function,
         stash={},
     )
-    measured.pytest_collection_modifyitems(None, None, [item])
+    fidelity_item = SimpleNamespace(
+        nodeid="tests/material.py::test_one_fidelity_occurrence",
+        module=module,
+        function=fidelity_function,
+        stash={},
+    )
+    measured.pytest_collection_modifyitems(None, None, [item, fidelity_item])
     assert item.stash[measured._PYTEST_UPTAKE] is (
         measured._WITNESS_MATERIAL_UPTAKE
     )
@@ -584,18 +540,14 @@ def test_fidelity_distinctions_resolve_current_book_coordinates():
             2,
         ],
     }
-    entered: list[object] = []
     for reference, functions in FIDELITY_DISTINCTIONS.items():
         assert measured._fidelity_distinction_coordinates(grammar, reference) == {
             "fidelity_distinction_reference": list(reference)
         }
-        entered.extend(functions)
-
-    assert set(entered) == set(PYTEST_ADMISSION)
-    assert len(entered) == len(PYTEST_ADMISSION)
+        assert all(callable(function) for function in functions)
 
 
-def test_complete_pytest_admission_collects_without_implicit_uptake():
+def test_complete_pytest_collection_has_no_implicit_uptake():
     result = subprocess.run(
         [
             sys.executable,
@@ -617,26 +569,6 @@ def test_complete_pytest_admission_collects_without_implicit_uptake():
     assert result.returncode == 0, result.stderr
 
 
-PYTEST_ADMISSION = (
-    test_compiled_code_supplies_exact_identities,
-    test_observed_measurement_preserves_observation_order_without_sorting,
-    test_python_invocation_occurrence_is_measured,
-    test_uninvoked_compiled_identity_remains_unobserved,
-    test_one_measurement_does_not_replace_an_active_measurement,
-    test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction,
-    test_pytest_distinction_refuses_duplicate_or_invalid_references,
-    test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
-    test_pytest_distinction_collection_refuses_an_ownerless_function,
-    test_admitted_implementation_test_has_no_seed_uptake,
-    test_witness_material_occurrence_has_no_fidelity_uptake,
-    test_stable_catalog_is_separate_from_sparse_observation,
-    test_reference_pair_measurement_contains_each_preserved_function,
-    test_sql_occurrence_preserves_exact_statement_material,
-    test_existing_sql_trace_callback_receives_the_same_statement,
-    test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
-    test_fidelity_distinctions_resolve_current_book_coordinates,
-    test_complete_pytest_admission_collects_without_implicit_uptake,
-)
 
 
 FIDELITY_DISTINCTIONS = {
@@ -649,8 +581,8 @@ FIDELITY_DISTINCTIONS = {
         test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction,
         test_pytest_distinction_refuses_duplicate_or_invalid_references,
         test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
-        test_pytest_distinction_collection_refuses_an_ownerless_function,
-        test_admitted_implementation_test_has_no_seed_uptake,
+        test_pytest_uptake_function_must_be_collected,
+        test_ordinary_implementation_test_has_no_seed_uptake,
         test_witness_material_occurrence_has_no_fidelity_uptake,
         test_stable_catalog_is_separate_from_sparse_observation,
         test_reference_pair_measurement_contains_each_preserved_function,
@@ -658,6 +590,6 @@ FIDELITY_DISTINCTIONS = {
         test_existing_sql_trace_callback_receives_the_same_statement,
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
         test_fidelity_distinctions_resolve_current_book_coordinates,
-        test_complete_pytest_admission_collects_without_implicit_uptake,
+        test_complete_pytest_collection_has_no_implicit_uptake,
     )
 }

@@ -298,15 +298,3 @@ def test_one_path_pair_yields_before_its_sibling_pairs():
     assert second.result_occurrence.material["path_position_pair"] == [0, 2]
     assert first.result_occurrence.material["finding"]["result"] == "difference"
     assert second.result_occurrence.material["finding"]["result"] == "difference"
-
-
-PYTEST_ADMISSION = (
-    test_every_path_ordered_pair_is_compared_without_a_chosen_pair,
-    test_three_different_path_coordinates_yield_three_differences,
-    test_three_equal_path_coordinates_yield_three_same_content_findings,
-    test_path_pair_comparison_refuses_a_changed_path_coordinate,
-    test_path_pair_comparisons_survive_sqlite_restart,
-    test_each_exact_source_position_continues_without_a_chosen_subject,
-    test_a_changed_prefix_is_refused_before_another_continuation_is_exposed,
-    test_one_path_pair_yields_before_its_sibling_pairs,
-)

@@ -629,33 +629,10 @@ def _fidelity_distinction_coordinates(
     return coordinates
 
 
-def _pytest_uptake(
+def _pytest_uptakes(
     module: object,
-    function_under_test: object,
     grammar: dict[str, object],
-) -> dict[str, object] | object:
-    admission = getattr(module, "PYTEST_ADMISSION", None)
-    if type(admission) is not tuple or not admission:
-        module_name = getattr(module, "__name__", type(module).__name__)
-        raise TypeError(
-            f"exact pytest admission functions are required: {module_name}"
-        )
-    if any(not callable(function) for function in admission):
-        raise TypeError("exact pytest admission functions are required")
-    if len(set(admission)) != len(admission):
-        raise ValueError("pytest function entered admission twice")
-    if function_under_test not in admission:
-        module_name = getattr(module, "__name__", type(module).__name__)
-        function_name = getattr(
-            function_under_test,
-            "__qualname__",
-            getattr(function_under_test, "__name__", type(function_under_test).__name__),
-        )
-        raise ValueError(
-            "pytest function has no exact admission: "
-            f"{module_name}.{function_name}"
-        )
-
+) -> dict[object, dict[str, object] | object]:
     distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
     witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
     if type(witness_material_tests) is not tuple:
@@ -664,17 +641,14 @@ def _pytest_uptake(
         raise TypeError("exact Witness Material test functions are required")
     if len(set(witness_material_tests)) != len(witness_material_tests):
         raise ValueError("test function entered Witness Material tests twice")
-    admitted = set(admission)
-    if not set(witness_material_tests) <= admitted:
-        raise ValueError("Witness Material uptake requires pytest admission")
-    produces_witness_material = function_under_test in witness_material_tests
+    uptakes: dict[object, dict[str, object] | object] = {
+        function: _WITNESS_MATERIAL_UPTAKE
+        for function in witness_material_tests
+    }
     if distinctions is None:
-        if produces_witness_material:
-            return _WITNESS_MATERIAL_UPTAKE
-        return _NO_PYTEST_UPTAKE
+        return uptakes
     if type(distinctions) is not dict or not distinctions:
         raise TypeError("exact Fidelity distinctions are required")
-    matches: list[dict[str, object]] = []
     entered_functions: set[object] = set()
     for distinction_reference, functions in distinctions.items():
         if type(distinction_reference) is not tuple:
@@ -687,27 +661,24 @@ def _pytest_uptake(
             if function in entered_functions:
                 raise ValueError("test function entered Fidelity distinctions twice")
             entered_functions.add(function)
-            if function is function_under_test:
-                matches.append(
-                    _fidelity_distinction_coordinates(
-                        grammar, distinction_reference
-                    )
-                )
-            else:
-                _fidelity_distinction_coordinates(grammar, distinction_reference)
-    if not entered_functions <= admitted:
-        raise ValueError("Fidelity uptake requires pytest admission")
+            uptakes[function] = _fidelity_distinction_coordinates(
+                grammar, distinction_reference
+            )
     if entered_functions & set(witness_material_tests):
         raise ValueError(
             "test function crossed Fidelity and Witness Material uptake"
         )
-    if produces_witness_material:
-        return _WITNESS_MATERIAL_UPTAKE
-    if not matches:
-        return _NO_PYTEST_UPTAKE
-    if len(matches) != 1:
-        raise ValueError("exact Fidelity distinction is required")
-    return matches[0]
+    return uptakes
+
+
+def _pytest_uptake(
+    module: object,
+    function_under_test: object,
+    grammar: dict[str, object],
+) -> dict[str, object] | object:
+    return _pytest_uptakes(module, grammar).get(
+        function_under_test, _NO_PYTEST_UPTAKE
+    )
 
 
 @pytest.hookimpl(trylast=True)
@@ -716,28 +687,33 @@ def pytest_collection_modifyitems(
 ) -> None:
     del session, config
     grammar = _witness_grammar()
-    resolved = []
-    missing_admission = []
+    items_by_module: dict[int, list[object]] = {}
     for item in items:
-        try:
-            resolved.append(_pytest_uptake(item.module, item.function, grammar))
-        except (TypeError, ValueError) as error:
-            if str(error).startswith(
-                (
-                    "exact pytest admission functions are required:",
-                    "pytest function has no exact admission:",
-                )
-            ):
-                missing_admission.append(item.nodeid)
-                continue
-            raise
-    if missing_admission:
-        raise ValueError(
-            "pytest functions have no exact admission:\n"
-            + "\n".join(sorted(missing_admission))
-        )
-    for item, uptake in zip(items, resolved):
-        item.stash[_PYTEST_UPTAKE] = uptake
+        items_by_module.setdefault(id(item.module), []).append(item)
+    module_uptakes: list[
+        tuple[list[object], dict[object, dict[str, object] | object]]
+    ] = []
+    for module_items in items_by_module.values():
+        module = module_items[0].module
+        uptakes = _pytest_uptakes(module, grammar)
+        collected_functions = {item.function for item in module_items}
+        uncollected_functions = set(uptakes) - collected_functions
+        if uncollected_functions:
+            module_name = getattr(module, "__name__", type(module).__name__)
+            names = sorted(
+                getattr(function, "__qualname__", type(function).__name__)
+                for function in uncollected_functions
+            )
+            raise ValueError(
+                f"pytest uptake functions were not collected: {module_name}: "
+                + ", ".join(names)
+            )
+        module_uptakes.append((module_items, uptakes))
+    for module_items, uptakes in module_uptakes:
+        for item in module_items:
+            item.stash[_PYTEST_UPTAKE] = uptakes.get(
+                item.function, _NO_PYTEST_UPTAKE
+            )
 
 
 @pytest.hookimpl(hookwrapper=True)

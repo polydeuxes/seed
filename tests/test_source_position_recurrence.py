@@ -808,19 +808,3 @@ def test_source_coordinate_not_in_support_does_not_choose_material():
         for support in reading["support_occurrences"]
         for coordinate in support["source_position_coordinates"]
     ) == (1, 2, 3, 4, 5, 6)
-
-
-PYTEST_ADMISSION = (
-    test_recurrence_exhausts_source_and_reuses_prior_compare_work,
-    test_same_compare_surface_does_not_create_common_material,
-    test_changed_source_position_coordinate_is_refused,
-    test_source_position_recording_reuses_validated_direct_coordinates,
-    test_unrelated_acquired_material_does_not_change_exact_coordinates,
-    test_sqlite_restart_recovers_source_position_readers,
-    test_recurrent_results_yield_one_exact_reusable_material_without_selection,
-    test_exact_reusable_material_result_is_not_a_source_assertion,
-    test_varying_coordinate_material_yields_no_common_exact_material,
-    test_recurrent_result_material_refuses_changed_support_material_order_owner_and_yield,
-    test_sqlite_restart_recovers_recurrent_result_material_and_ownership,
-    test_source_coordinate_not_in_support_does_not_choose_material,
-)

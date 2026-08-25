@@ -723,25 +723,3 @@ def test_first_exact_material_records_pair_counts(
     assert any(
         assertion.result == "recurrence" for assertion in ab_assertions
     ) is has_recurrence
-
-
-PYTEST_ADMISSION = (
-    test_changed_pair_crossing_a_callback_cannot_enter_compare_standing,
-    test_operator_acquisition_carries_the_prior_pair_measurement_into_compare,
-    test_witness_provenance_does_not_establish_a_compare_input_relation,
-    test_operator_acquisition_before_the_premise_cannot_supply_compare,
-    test_produced_measurements_enter_one_responsible_compare,
-    test_same_content_finding_labels_do_not_hide_changed_content,
-    test_witness_provenance_does_not_supply_the_carried_compare_rung,
-    test_measurement_availability_without_standing_cannot_supply_compare,
-    test_corrupted_compare_yield_is_refused,
-    test_one_result_read_validates_each_pair_measurement_once,
-    test_result_reader_preserves_its_exact_assignment_and_public_getter_delegates,
-    test_standing_replay_carries_one_validated_assignment_across_comparison_stages,
-    test_standing_replay_carry_refuses_callback_change_and_leaks_no_state,
-    test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings,
-    test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
-    test_later_result_read_revalidates_changed_pair_measurement_yield_relation,
-    test_supplied_local_material_records_pair_measurements,
-    test_first_exact_material_records_pair_counts,
-)

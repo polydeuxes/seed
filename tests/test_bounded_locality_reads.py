@@ -246,17 +246,3 @@ def test_the_kind_stream_seeks_by_locality_and_kind(durable_ledger):
     detail = " ".join(str(row[-1]) for row in plan)
     assert "SCAN events" not in detail
     assert "idx_events_locality_kind" in detail
-
-
-PYTEST_ADMISSION = (
-    test_the_occurrences_are_identical_in_memory,
-    test_the_occurrences_are_identical_durably,
-    test_each_body_still_gets_only_its_own_material,
-    test_an_unrecorded_locality_reads_empty,
-    test_one_kind_is_streamed_from_only_one_locality,
-    test_unrelated_locality_occurrence_does_not_enter_acquisition_read,
-    test_locality_existence_comes_from_any_recorded_kind,
-    test_the_locality_read_seeks_rather_than_scans,
-    test_the_index_covers_the_locality_boundary,
-    test_the_kind_stream_seeks_by_locality_and_kind,
-)

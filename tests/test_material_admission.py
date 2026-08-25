@@ -385,26 +385,3 @@ def test_admission_result_pair_compare_refuses_one_result_twice():
             (admission.result_reference, admission.result_reference),
             boundary_identity="repeated-admission-result",
         )
-
-
-PYTEST_ADMISSION = (
-    test_complete_pair_coverage_separates_in_one_admission,
-    test_a_nonrepresentative_pair_cannot_hide_inside_a_final_admission,
-    test_admission_invokes_each_ordered_pair_once_in_source_order,
-    test_the_same_admission_uses_a_decoder_witness,
-    test_every_admission_carries_the_same_material,
-    test_preserves_uses_no_pairwise_subset_call,
-    test_equal_admission_results_keep_distinct_act_occurrences,
-    test_admission_result_hash_uses_its_exact_result_identity,
-    test_admission_validates_each_exact_material_set_once,
-    test_admission_direct_construction_retains_exact_tuple_and_uniqueness_checks,
-    test_admission_compare_preserves_both_results_and_its_exact_result,
-    test_equal_compare_results_keep_distinct_result_references,
-    test_compare_result_reference_refuses_something_other_than_its_occurrence,
-    test_admission_compare_refuses_different_material_occurrences,
-    test_admission_compare_refuses_a_changed_result,
-    test_admission_compare_refuses_coordinates_from_another_result,
-    test_every_ordered_admission_result_pair_has_one_compare_occurrence,
-    test_admission_result_pairs_read_each_second_admission_once,
-    test_admission_result_pair_compare_refuses_one_result_twice,
-)

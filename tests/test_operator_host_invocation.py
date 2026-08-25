@@ -964,29 +964,3 @@ def test_supplied_result_refuses_missing_different_or_corrupted_command():
             command_occurrence_reference=command.identity,
             supplied=_supplied()[0],
         )
-
-
-PYTEST_ADMISSION = (
-    test_supplied_occurrence_requires_exact_distinct_prior_positions,
-    test_supplied_occurrence_requires_reads_to_reconstruct_its_material,
-    test_measured_pairs_do_not_depend_on_supplied_read_partition,
-    test_provider_cannot_append_outside_one_supplied_occurrence,
-    test_supplied_result_preserves_one_exact_prior_occurrence_reference,
-    test_supplied_result_preserves_function_and_source_occurrence_references,
-    test_supplied_result_refuses_a_nonprior_occurrence_position,
-    test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references,
-    test_host_provider_receives_an_acquired_exact_command_before_it_occurs,
-    test_supplied_material_does_not_gain_admission_from_a_locality_change,
-    test_witness_material_is_durable_before_provider_resumes,
-    test_reused_witness_boundary_is_refused_before_second_acquisition,
-    test_provider_death_leaves_the_complete_command_acquisition,
-    test_provider_death_preserves_each_already_supplied_witness_occurrence,
-    test_provider_supply_acquires_every_occurrence_without_selecting_emission,
-    test_repeated_exact_witness_material_does_not_repeat_measurement_work,
-    test_missing_supplied_result_is_refused_after_command_acquisition,
-    test_equal_empty_supplied_material_remains_three_exact_occurrences,
-    test_host_provider_requires_an_exact_output_boundary,
-    test_supplied_occurrence_requires_exact_types,
-    test_supplied_yield_cannot_be_replaced_by_another_occurrence,
-    test_supplied_result_refuses_missing_different_or_corrupted_command,
-)

@@ -124,12 +124,6 @@ def test_position_pair_admission_preserves_equal_occurrence_references():
     assert len({reference.occurrence_identity for reference in pairs}) == len(pairs)
 
 
-PYTEST_ADMISSION = (
-    test_equal_material_at_different_positions_keeps_each_occurrence,
-    test_exact_position_pairs_pair_again_at_the_exact_next_position,
-    test_position_pair_refuses_reordered_or_cross_locality_material,
-    test_position_pair_admission_preserves_equal_occurrence_references,
-)
 
 
 FIDELITY_DISTINCTIONS = {

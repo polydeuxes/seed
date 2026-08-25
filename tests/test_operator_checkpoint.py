@@ -328,17 +328,3 @@ def test_prior_record_carrier_must_remain_an_identity_dictionary():
         advance_operator_locality_standing(
             ledger, (), locality_identity="source", prior=broken
         )
-
-
-PYTEST_ADMISSION = (
-    test_three_stages_record_one_exact_bounded_reference_without_movement,
-    test_console_checkpoint_records_at_current_locality_and_does_not_move,
-    test_checkpoint_operator_shorthand_refuses_payload,
-    test_recorded_reference_does_not_drift_when_the_source_advances,
-    test_act_requires_the_exact_carried_assignment,
-    test_one_recording_act_cannot_yield_twice,
-    test_changed_assignment_coordinates_are_refused,
-    test_assignment_and_act_survive_restart_before_result,
-    test_durable_values_do_not_import_operator_shorthand,
-    test_prior_record_carrier_must_remain_an_identity_dictionary,
-)

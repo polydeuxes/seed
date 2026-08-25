@@ -320,17 +320,3 @@ def test_invocation_locality_relation_reopens_with_exact_standing(tmp_path):
     assert standing["operator_invocation_locality_relations"] == {
         relation_identity: None
     }
-
-
-PYTEST_ADMISSION = (
-    test_operator_occurrence_establishes_one_fresh_direct_locality_relation,
-    test_witness_material_occurs_only_in_the_related_locality,
-    test_each_operator_occurrence_establishes_distinct_relation_identities,
-    test_one_operator_occurrence_cannot_assign_two_invocation_localities,
-    test_assignment_requires_a_carried_exact_operator_invocation,
-    test_one_invocation_locality_act_cannot_yield_twice,
-    test_corrupted_assignment_act_and_result_are_refused_independently,
-    test_invocation_locality_act_requires_assignment_standing_in_destination,
-    test_carried_witness_standing_equals_full_replay,
-    test_invocation_locality_relation_reopens_with_exact_standing,
-)

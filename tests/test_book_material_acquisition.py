@@ -954,25 +954,6 @@ def test_book_admission_recomputes_from_its_exact_invocation_results(
         )
 
 
-PYTEST_ADMISSION = (
-    test_book_material_acquisition_witness_has_one_admitted_subject,
-    test_every_current_book_file_has_one_exact_material_acquisition_result,
-    test_every_function_receives_the_same_complete_book_source,
-    test_this_exact_book_is_admitted_under_the_exact_invocation_coordinates,
-    test_book_admission_refuses_an_incomplete_reordered_or_repeated_function_row,
-    test_book_measurements_retain_every_exact_file_occurrence,
-    test_complete_book_admission_reaches_recurring_addition_relations,
-    test_book_relations_freeze_one_distinct_function_vector_before_later_invocation,
-    test_complete_book_admission_drives_later_exact_material_acts,
-    test_complete_book_later_acts_refuse_broken_admission_lineage,
-    test_complete_book_compare_refuses_a_mismatched_act_result_occurrence,
-    test_complete_book_admission_freezes_one_coordinate_before_later_invocation,
-    test_complete_book_keeps_successive_recurrence_occurrences_in_order,
-    test_book_and_supplied_material_have_later_position_recurrence,
-    test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets,
-    test_later_material_does_not_enter_the_book_completeness_boundary,
-    test_book_admission_recomputes_from_its_exact_invocation_results,
-)
 
 
 FIDELITY_DISTINCTIONS = {

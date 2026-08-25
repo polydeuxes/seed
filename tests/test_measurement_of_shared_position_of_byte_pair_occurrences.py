@@ -1735,46 +1735,6 @@ def test_carried_standing_matches_replay_for_the_whole_new_elevator():
     assert carried == _standing(ledger, locality)
 
 
-PYTEST_ADMISSION = (
-    test_exact_yielded_pair_relations_compose_at_one_shared_position,
-    test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
-    test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart,
-    test_ordered_source_positions_remain_beside_the_path_assertion,
-    test_ordered_source_positions_beside_path_replay_after_restart,
-    test_two_recurrent_results_share_one_exact_current_standing_read,
-    test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_override,
-    test_shared_assignment_refuses_inexact_explicit_prior_standing,
-    test_shared_assignment_explicit_prior_revalidates_later_input_mutation,
-    test_recurrent_result_batch_revalidates_every_carried_occurrence_after_standing,
-    test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_append,
-    test_recurrent_result_batch_refuses_assertion_and_locality_substitution,
-    test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary,
-    test_recurrent_result_batch_and_public_readers_survive_restart,
-    test_direct_position_coordinate_assertions_compose_without_recurrence_support,
-    test_generic_assignment_refuses_raw_direct_result_inputs_atomically,
-    test_d2_result_without_exactly_two_references_cannot_assign_shared_position,
-    test_d2_repeated_material_keeps_two_source_ordered_assertion_identities,
-    test_d2_shared_assignment_refuses_stale_or_forged_standing_atomically,
-    test_d2_result_corruption_invalidates_shared_assignment_reader,
-    test_d2_shared_assignment_revalidates_after_callback_atomically,
-    test_later_direct_occurrence_read_requires_assignment_carried_exact_coordinates,
-    test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate,
-    test_one_act_cannot_yield_two_shared_position_results,
-    test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
-    test_each_new_elevator_crossing_is_read_from_its_exact_occurrences,
-    test_each_shared_position_occurrence_read_requires_exact_input_coordinates,
-    test_corrupted_shared_position_yield_relations_are_refused,
-    test_shared_position_result_survives_sqlite_restart,
-    test_d2_derived_shared_position_provenance_survives_sqlite_restart,
-    test_one_complete_shared_measurement_requires_one_assignment_read,
-    test_carried_standing_requires_each_exact_occurrence_coordinate_intact,
-    test_carried_standing_requires_its_shared_assignment_occurrence_intact,
-    test_carried_standing_requires_each_later_shared_occurrence_intact,
-    test_operator_replay_refuses_a_substituted_shared_assignment,
-    test_operator_shared_replay_starts_fresh_after_exception,
-    test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
-    test_carried_standing_matches_replay_for_the_whole_new_elevator,
-)
 
 
 FIDELITY_DISTINCTIONS = {

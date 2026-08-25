@@ -180,15 +180,3 @@ def test_reference_directions_use_covering_indexes(tmp_path):
 
     for plan in plans:
         assert any("COVERING INDEX" in row[-1] for row in plan), plan
-
-
-PYTEST_ADMISSION = (
-    test_bounded_comparison_reads_both_reference_directions,
-    test_bounded_comparison_does_not_turn_a_future_name_into_a_relation,
-    test_one_repeated_reference_relation_is_collected_once,
-    test_collection_stays_at_its_exact_boundary_after_the_ledger_advances,
-    test_persisted_collection_refuses_a_different_boundary,
-    test_load_requires_the_ledger_and_exact_boundary,
-    test_unbounded_legacy_comparison_is_refused,
-    test_reference_directions_use_covering_indexes,
-)

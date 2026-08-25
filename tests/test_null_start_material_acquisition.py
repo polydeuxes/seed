@@ -120,14 +120,3 @@ def test_material_acquisition_exact_material_is_inspectable(ledger):
 
 if __name__ == "__main__":  # pragma: no cover
     print(exact_null_start_occurrences())
-
-
-PYTEST_ADMISSION = (
-    test_one_acquisition_result_occurs_for_each_delivered_line,
-    test_each_material_acquisition_carries_the_operator_role,
-    test_each_material_acquisition_preserves_exact_bytes,
-    test_each_material_acquisition_binds_its_exact_act_and_yield_relation,
-    test_material_acquisition_does_not_assert_a_source_relation,
-    test_material_acquisition_occurrences_are_exactly_addressable,
-    test_material_acquisition_exact_material_is_inspectable,
-)

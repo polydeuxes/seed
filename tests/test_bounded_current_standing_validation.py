@@ -214,16 +214,3 @@ def test_the_position_assignment_authenticates_no_unread_branch():
     )
 
     assert assignment.identity
-
-
-PYTEST_ADMISSION = (
-    test_the_position_assignment_refuses_a_forged_standing_boundary,
-    test_the_position_assignment_authenticates_no_unread_branch,
-    test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated,
-    test_a_substituted_through_occurrence_is_refused,
-    test_a_stale_standing_is_refused_at_the_append_tip,
-    test_a_substituted_source_measurement_result_is_refused,
-    test_a_wrong_locality_in_the_supplied_standing_is_refused,
-    test_a_standing_that_is_no_mapping_is_refused,
-    test_this_standing_validation_reconstructs_no_locality_standing,
-)

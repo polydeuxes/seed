@@ -53,10 +53,3 @@ def test_each_ordered_admission_pair_is_read_once(monkeypatch):
 
     assert len(calls) == 6
     assert len(set(calls)) == 6
-
-
-PYTEST_ADMISSION = (
-    test_an_admission_preserves_itself_and_the_one_without_distinctions,
-    test_one_admission_preserves_no_other,
-    test_each_ordered_admission_pair_is_read_once,
-)

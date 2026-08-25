@@ -122,12 +122,3 @@ def test_sqlite_append_many_uses_one_transaction_for_many_events(tmp_path):
         assert len(reopened.list()) == 3
     finally:
         reopened.close()
-
-
-PYTEST_ADMISSION = (
-    test_append_many_preserves_event_ordering,
-    test_an_allocated_identity_can_be_carried_by_its_prebuilt_occurrence,
-    test_sqlite_allocated_identity_advances_after_its_occurrence_is_durable,
-    test_sqlite_append_many_persists_same_events_as_repeated_append,
-    test_sqlite_append_many_uses_one_transaction_for_many_events,
-)

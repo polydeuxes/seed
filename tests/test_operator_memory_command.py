@@ -158,11 +158,3 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
     for event in destination:
         with pytest.raises(ValueError):
             read_exact_material_acquisition_result(ledger, event.identity)
-
-
-PYTEST_ADMISSION = (
-    test_memory_request_is_only_exact_argument_free_control,
-    test_memory_request_refuses_every_payload,
-    test_console_memory_creates_and_switches_to_one_fresh_destination,
-    test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences,
-)

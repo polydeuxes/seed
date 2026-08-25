@@ -474,19 +474,6 @@ def test_pair_and_compare_carriers_require_exact_types(exact_pair):
         exact_occurrences_of_material_pair(exact_pair, object())
 
 
-PYTEST_ADMISSION = (
-    test_recurrence_not_adjacency_alone_warrants_one_pair_subject,
-    test_source_order_does_not_select_which_pair_identities_exist,
-    test_pair_subject_order_follows_first_exact_material_positions,
-    test_one_pair_identity_survives_before_and_after_displacement,
-    test_position_premise_of_pair_carries_every_exact_support_occurrence,
-    test_recurrence_and_position_premise_of_pair_discriminate_fresh_material,
-    test_position_premise_of_pair_keeps_identity_order_and_distance_distinct,
-    test_compare_reports_only_the_ordered_coordinate_distinction,
-    test_pair_coordinates_refuse_compression_and_coordinate_substitution,
-    test_position_premise_of_pair_refuses_missing_reordered_or_reused_support,
-    test_pair_and_compare_carriers_require_exact_types,
-)
 
 
 FIDELITY_DISTINCTIONS = {

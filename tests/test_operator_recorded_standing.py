@@ -242,14 +242,3 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
         ]
     finally:
         reopened.close()
-
-
-PYTEST_ADMISSION = (
-    test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it,
-    test_memory_makes_one_prior_boundary_available_without_copying_its_standing,
-    test_checkout_resolves_the_checkpoint_cut_not_either_later_branch,
-    test_an_exact_reference_is_not_globally_available_by_identity,
-    test_the_read_adds_no_applicability_admission_or_compare_coordinate,
-    test_unrelated_occurrences_do_not_change_the_recorded_read,
-    test_recorded_standing_reference_is_recovered_after_durable_reopen,
-)

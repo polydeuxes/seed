@@ -421,27 +421,3 @@ def test_witness_material_identity_is_reserved_across_reopen(tmp_path):
             ledger.close()
 
     assert len(set(identities)) == 3
-
-
-PYTEST_ADMISSION = (
-    test_witness_material_preserves_exact_raw_bytes,
-    test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_references,
-    test_durable_witness_acquisition_preserves_raw_material_and_yield_relation,
-    test_witness_material_acquisition_fixes_its_exact_source_subject,
-    test_witness_material_locality_relation_preserves_invocation_and_provenance,
-    test_witness_material_locality_relation_refuses_mismatched_coordinates,
-    test_material_acquisition_event_binds_exact_act_and_yield_relation,
-    test_changed_record_witness_material_acquisition_cannot_borrow_its_yield_relation,
-    test_yield_relation_without_exact_material_cannot_certify_an_acquire,
-    test_equal_material_has_distinct_material_acquisition_result_occurrences_results_and_yields,
-    test_witness_material_requires_only_material_boundary_and_locality,
-    test_empty_witness_material_is_exact_material,
-    test_generic_material_result_read_refuses_a_changed_source_coordinate,
-    test_material_acquisition_refuses_a_supplied_representation_coordinate,
-    test_storage_helper_refuses_unrelated_act_and_yield_before_append,
-    test_witness_material_refuses_non_bytes,
-    test_witness_material_requires_exact_boundary,
-    test_witness_material_requires_exact_locality,
-    test_acquired_material_bytes_refuses_wrong_or_corrupt_occurrences,
-    test_witness_material_identity_is_reserved_across_reopen,
-)

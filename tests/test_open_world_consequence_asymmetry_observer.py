@@ -70,12 +70,3 @@ def test_controlled_square_compares_two_edges_for_each_coordinate():
     assert _effect_counts(["a", "a", "b", "b"], (0, 1, 2, 3)) == (2, 0)
     assert _effect_counts(["a", "b", "a", "b"], (0, 1, 2, 3)) == (0, 2)
     assert _effect_counts(["a", "b", "c", "d"], (0, 1, 2, 3)) == (2, 2)
-
-
-PYTEST_ADMISSION = (
-    test_joint_frame_requires_a_complete_source_carried_substitution_square,
-    test_fixed_other_classes_remain_part_of_the_joint_frame_boundary,
-    test_immediate_consequence_preserves_left_right_and_joint_populations,
-    test_each_coordinate_gets_its_own_substitution_edges,
-    test_controlled_square_compares_two_edges_for_each_coordinate,
-)

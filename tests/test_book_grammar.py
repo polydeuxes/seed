@@ -442,25 +442,3 @@ def test_machine_grammar_contains_no_host_boolean():
         return False
 
     assert not contains_boolean(_grammar())
-
-
-PYTEST_ADMISSION = (
-    test_book_and_witness_grammar_have_the_same_coordinates,
-    test_witness_grammar_has_no_retired_scaffolding,
-    test_machine_standing_carries_only_first_current_standing,
-    test_empty_standing_is_only_the_first_current_standing,
-    test_applicability_required_admission_and_participation_remain_separate,
-    test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
-    test_addressed_position_responsibility_owns_the_bounded_subjects,
-    test_candidate_production_requires_an_exact_rule_and_addressed_subjects,
-    test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
-    test_responsibility_coordinates_are_anatomy_not_assignment,
-    test_exact_relations_are_direct,
-    test_yield_has_no_interposed_node,
-    test_the_grammar_declares_no_block_for_itself,
-    test_only_clauses_naming_an_Act_project_one,
-    test_declared_relation_references_resolve,
-    test_source_references_are_exact_and_distinct,
-    test_fidelity_preserves_the_book_material_witness_subject,
-    test_machine_grammar_contains_no_host_boolean,
-)

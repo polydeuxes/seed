@@ -78,12 +78,3 @@ def test_an_implementation_function_that_accepts_every_byte_alone_has_one_result
 
     assert len(read) == 1
     assert next(iter(read)) == (1, None)
-
-
-PYTEST_ADMISSION = (
-    test_the_second_measurement_takes_the_first_as_input_rather_than_repeating_it,
-    test_complete_pairs_name_a_distinction_the_first_admission_did_not,
-    test_every_implementation_function_returns_both_admissions,
-    test_implementation_functions_disagree_about_the_boundaries,
-    test_an_implementation_function_that_accepts_every_byte_alone_has_one_result_coordinate,
-)

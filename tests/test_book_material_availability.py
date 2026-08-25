@@ -45,8 +45,3 @@ def test_book_material_acquisition_locality_exposes_declared_measurements():
     assert set(recorded.bounded_locality_replay["measurement_occurrences"]) == {
         result.identity for result in recorded.result_occurrences
     }
-
-
-PYTEST_ADMISSION = (
-    test_book_material_acquisition_locality_exposes_declared_measurements,
-)

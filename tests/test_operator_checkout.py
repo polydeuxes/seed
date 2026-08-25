@@ -395,19 +395,3 @@ def test_prior_relation_carrier_must_remain_an_identity_dictionary():
             locality_identity=result.locality_identity,
             prior=broken,
         )
-
-
-PYTEST_ADMISSION = (
-    test_checkout_request_is_exact_argument_free_operator_control,
-    test_checkout_request_refuses_payload,
-    test_three_stage_relation_uses_one_anchor_and_one_fresh_locality,
-    test_console_fans_out_descendants_to_one_immutable_anchor,
-    test_no_anchor_and_several_anchors_both_refuse_selection,
-    test_different_locality_or_corrupted_anchor_refuses_before_destination_write,
-    test_one_relation_act_cannot_yield_twice,
-    test_changed_relation_result_coordinates_are_refused,
-    test_anchor_and_relation_survive_restart_without_copying_source_history,
-    test_durable_native_values_do_not_import_operator_or_memory_shorthand,
-    test_rosetta_keeps_checkout_and_pointers_as_translation_only,
-    test_prior_relation_carrier_must_remain_an_identity_dictionary,
-)

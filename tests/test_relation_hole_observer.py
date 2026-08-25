@@ -157,15 +157,3 @@ def test_an_unrelated_recorded_relation_carries_no_pair():
     carriage, records, _within = _carriage(events, "evt_1", "evt_2")
     assert carriage == "no_recorded_relation"
     assert records == []
-
-
-PYTEST_ADMISSION = (
-    test_a_subject_carries_the_occurrence_recorded_within_it,
-    test_a_string_that_is_no_recorded_occurrence_is_not_collected,
-    test_a_relation_carrying_both_occurrences_in_order_carries_the_pair,
-    test_the_reverse_subject_order_is_recorded_as_itself,
-    test_a_relation_recorded_in_a_third_occurrence_still_carries_the_pair,
-    test_a_reference_inside_a_relation_coordinate_carries_no_pair,
-    test_two_occurrences_inside_one_subject_carry_no_pair,
-    test_an_unrelated_recorded_relation_carries_no_pair,
-)
