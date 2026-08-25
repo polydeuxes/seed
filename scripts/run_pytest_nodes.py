@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect one pytest Root and run its exact node addresses concurrently."""
+"""Collect pytest node addresses once and run them concurrently."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def _arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _collect_test_root(targets: list[str]) -> tuple[str, ...]:
+def _collect_pytest_nodes(targets: list[str]) -> tuple[str, ...]:
     command = (
         sys.executable,
         *PYTEST_ARGUMENTS,
@@ -82,12 +82,12 @@ def _collect_test_root(targets: list[str]) -> tuple[str, ...]:
     return nodes
 
 
-def _divide_test_root(
-    test_root: tuple[str, ...], jobs: int
+def _divide_pytest_nodes(
+    pytest_nodes: tuple[str, ...], jobs: int
 ) -> tuple[tuple[str, ...], ...]:
-    process_count = min(jobs, len(test_root))
+    process_count = min(jobs, len(pytest_nodes))
     divided = [[] for _ in range(process_count)]
-    for number, node in enumerate(test_root):
+    for number, node in enumerate(pytest_nodes):
         divided[number % process_count].append(node)
     return tuple(tuple(process_nodes) for process_nodes in divided)
 
@@ -117,8 +117,8 @@ def main() -> int:
         raise SystemExit("jobs must be positive")
 
     started = monotonic()
-    test_root = _collect_test_root(arguments.targets)
-    divided = _divide_test_root(test_root, arguments.jobs)
+    pytest_nodes = _collect_pytest_nodes(arguments.targets)
+    divided = _divide_pytest_nodes(pytest_nodes, arguments.jobs)
     with ThreadPoolExecutor(max_workers=len(divided)) as processes:
         results = tuple(
             processes.map(
@@ -138,7 +138,7 @@ def main() -> int:
             sys.stderr.write(result.stderr)
 
     print(
-        f"{len(test_root)} tests across {len(divided)} processes in "
+        f"{len(pytest_nodes)} tests across {len(divided)} processes in "
         f"{monotonic() - started:.2f}s"
     )
     return 1 if any(result.returncode != 0 for result in results) else 0

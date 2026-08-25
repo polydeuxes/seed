@@ -1,5 +1,16 @@
 # Root-scoped syntax recognition investigation 001
 
+## Current correction
+
+This report correctly separates Standing from its carried coordinates, but it
+still compresses exact bounded material with Root. That Root-scoped topology is
+superseded by `root_bounded_whole_decompression_investigation_001.md`.
+
+The current start is exact bounded material, not Root. Grammar flow, Book, and
+Root remain separately unresolved. The external-material and inward enforced
+story findings below remain testimony; the sections that treat W or any exact
+bounded result as a possible Root are not current disposition.
+
 ## Boundary
 
 Findings only. No Book, machine grammar, runtime, or test behavior changes.

@@ -1,10 +1,5 @@
 # This Book
 
-## Root
-
-This Book is one Root. One Root is one exact bounded subject. Its exact
-coordinates and relations are addressed from that Root. Root != Standing.
-
 ## Standing
 
 This Seed first current Standing carries no coordinates.

@@ -7,7 +7,7 @@ coordinates establish.
 ## Orientation
 
 - [Book of Seed](book_of_seed/README.md) — active constitutional grammar,
-  with its exact Root and chapter coordinates.
+  with its exact chapter coordinates.
 - [Rosetta of Seed](rosetta/README.md) — ordinary-language translations of the
   Book coordinates and explanations of retired vocabulary. Rosetta carries no
   constitutional Standing.

@@ -70,8 +70,8 @@ Witness-grammar Fidelity
 
 `Examination` describes movement from presented material toward bounded Seed
 Assertions. `Presentation` describes movement from bounded Seed Assertions
-toward emitted material. Neither is a Root, Act, or occurrence. They are
-directions across exact Responsibilities and their occurrences.
+toward emitted material. Neither is an Act or occurrence. They are directions
+across exact Responsibilities and their occurrences.
 
 ## Translation shorthand
 

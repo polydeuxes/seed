@@ -134,7 +134,6 @@ result
 results
 role
 roles
-root
 rule
 same
 scope
