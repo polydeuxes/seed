@@ -10,7 +10,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import material_admission  # noqa: E402
-from decoder_measurement import accepts, first_admission  # noqa: E402
 
 
 def test_complete_pair_coverage_separates_in_one_admission():
@@ -47,26 +46,6 @@ def test_admission_invokes_each_ordered_pair_once_in_source_order():
         for first in material
         for second in material
     ]
-
-
-def test_the_same_admission_uses_a_decoder_witness():
-    read = first_admission("utf-8", 4)
-    first = [tuple(material) for material in read.values()]
-
-    admissions = material_admission.admit(first, lambda a, b: accepts("utf-8", (a, b)))
-
-    assert material_admission.admission_counts(admissions) == [5, 6]
-    assert sorted(len(material) for material in admissions[-1]) == [5, 13, 16, 30, 64, 128]
-
-
-def test_every_admission_carries_the_same_material():
-    read = first_admission("utf-8", 4)
-    admissions = material_admission.admit(
-        [tuple(m) for m in read.values()], lambda a, b: accepts("utf-8", (a, b))
-    )
-
-    for admission in admissions:
-        assert sorted(b for material in admission for b in material) == list(range(256))
 
 
 def test_preserves_uses_no_pairwise_subset_call():

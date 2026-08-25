@@ -584,10 +584,10 @@ def test_occurrence_material_identity_requires_every_recorded_field():
 
 
 def test_a_material_carrying_a_non_json_number_is_refused(tmp_path):
-    """`NaN` and the infinities are not JSON, whatever Python's encoder allows.
+    """`NaN` and the infinities are not JSON, whatever Python's writer allows.
 
     `NaN` never equals itself and so cannot round-trip at all. The infinities do
-    round-trip, but only under Python's own permissive encoder — no strict
+    round-trip, but only under Python's own permissive writer — no strict
     reader accepts `NaN` or `Infinity`, so a store holding one is readable by
     nothing else. `#2492` was this exact lesson at the base64 boundary: a
     durable representation must not depend on one runtime's leniency.

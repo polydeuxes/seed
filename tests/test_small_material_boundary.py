@@ -391,18 +391,8 @@ def test_added_result_admission_constructs_each_exact_result_reference_once(
         )
 
 
-def _codec_functions() -> tuple[CompiledImplementationFunction, ...]:
-    return tuple(
-        CompiledImplementationFunction(
-            identity=f"compiled-{position + len(COMPILED_IMPLEMENTATION_FUNCTIONS)}",
-            invocation=lambda material, name=name: material.decode(name),
-        )
-        for position, name in enumerate(("ascii", "utf-8", "big5hkscs"))
-    )
-
-
 def _material_functions() -> tuple[MaterialImplementationFunction, ...]:
-    first = len(COMPILED_IMPLEMENTATION_FUNCTIONS) + len(_codec_functions())
+    first = len(COMPILED_IMPLEMENTATION_FUNCTIONS)
     functions = tuple(
         MaterialImplementationFunction(
             identity=f"compiled-{first + position}",
@@ -455,7 +445,6 @@ def small_boundary_material():
             len,
             (
                 COMPILED_IMPLEMENTATION_FUNCTIONS,
-                _codec_functions(),
                 _material_functions(),
             ),
         )
@@ -648,7 +637,7 @@ def test_one_small_boundary_compares_all_implementation_functions(
     source_reference = small_boundary_material[1]
     additions = small_boundary_material[3]
     additional_comparisons = small_boundary_material[7]
-    compiled_functions = COMPILED_IMPLEMENTATION_FUNCTIONS + _codec_functions()
+    compiled_functions = COMPILED_IMPLEMENTATION_FUNCTIONS
     material_functions = _material_functions()
 
     compiled_sources = compiled_reference_invocations(

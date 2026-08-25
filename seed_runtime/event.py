@@ -25,7 +25,7 @@ class _ScreenedEventMaterial(dict[str, Any]):
 
     def __init__(self, material: dict[str, Any], token: object) -> None:
         if token is not _SCREENED_EVENT_MATERIAL_TOKEN:
-            raise TypeError("screened Event materials come from the durable decoder")
+            raise TypeError("screened Event materials come from the durable reader")
         super().__init__(material)
 
 

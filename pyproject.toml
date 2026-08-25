@@ -18,9 +18,6 @@ markers = [
 ]
 pythonpath = ["."]
 testpaths = ["tests"]
-# Probing a decoder with bytes it was not built for makes it complain while it
-# answers. A warning is not a refusal, and filtering per probe costs 14x.
 filterwarnings = [
-    "ignore::DeprecationWarning:decoder_measurement",
     "ignore::SyntaxWarning",
 ]
