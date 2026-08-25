@@ -31,10 +31,6 @@ RECORDED_STANDING_BOUNDARY_LOCALITY_RESULT_KIND = (
 RECORDED_STANDING_BOUNDARY_LOCALITY_ACT = (
     "Preserve one exact recorded Standing boundary result at one new Locality"
 )
-RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY = (
-    "preserve one direct Locality relation from one exact recorded Standing "
-    "boundary result at one new Locality"
-)
 RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
 EVENT_KIND_RESPONSIBILITIES = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
@@ -125,8 +121,6 @@ def _assignment_material(
 ) -> dict[str, Any]:
     return {
         "book_clause_identity": RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE,
-        "responsibility": RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "locality_relation_occurrence_identity": locality_relation_occurrence_identity,
@@ -139,9 +133,6 @@ def _assignment_material(
             "standing_boundary_reference": deepcopy(standing_boundary_reference),
             "destination_locality_identity": destination_locality_identity,
         },
-        "standing_boundary_occurrence_reference": standing_boundary_reference[
-            "recorded_occurrence_identity"
-        ],
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
         ],
@@ -181,9 +172,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             "locality_relation_occurrence_identity"
         ],
         "act": RECORDED_STANDING_BOUNDARY_LOCALITY_ACT,
-        "responsibility": RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "subject_to_act_binding_reference": _assignment_reference(assignment),
         "standing_boundary_reference": deepcopy(
             material["standing_boundary_reference"]
         ),
@@ -207,10 +196,8 @@ def _result_material(act: Event) -> dict[str, Any]:
             "locality_relation_occurrence_identity"
         ],
         "exact_act": RECORDED_STANDING_BOUNDARY_LOCALITY_ACT,
-        "responsibility": RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": deepcopy(
-            material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
         ),
         "standing_boundary_reference": deepcopy(
             material["standing_boundary_reference"]
@@ -225,7 +212,6 @@ def _result_material(act: Event) -> dict[str, Any]:
                 "locality_relation_occurrence_identity"
             ],
         },
-        "standing": "preserved",
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
         ],
@@ -245,10 +231,8 @@ def _recorded_result_material(
             "locality_relation_occurrence_identity"
         ],
         "exact_act": result_material["exact_act"],
-        "responsibility": result_material["responsibility"],
-        "responsible_boundary": result_material["responsible_boundary"],
-        "responsibility_assignment_reference": deepcopy(
-            result_material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            result_material["subject_to_act_binding_reference"]
         ),
         "standing_boundary_reference": deepcopy(
             result_material["standing_boundary_reference"]
@@ -259,7 +243,6 @@ def _recorded_result_material(
         "scope": deepcopy(result_material["scope"]),
         "participation": deepcopy(result_material["participation"]),
         "locality_relation": deepcopy(result_material["locality_relation"]),
-        "standing": result_material["standing"],
         "unknown": list(result_material["unknown"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
@@ -403,7 +386,7 @@ def get_recorded_standing_boundary_locality_act_occurrence(
         raise RecordedStandingBoundaryLocalityError(
             "recorded boundary relation Act occurrence is absent or corrupted"
         )
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise RecordedStandingBoundaryLocalityError(
             "recorded boundary relation Act carries no assignment"

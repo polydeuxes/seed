@@ -275,7 +275,7 @@ def test_one_relation_act_cannot_yield_twice():
         "destination_locality_identity",
         "locality_relation",
         "participation",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "scope",
         "unknown",
         "yield_relation_identity",
