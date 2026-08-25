@@ -418,7 +418,6 @@ def _preserved_responsibility_material(material):
         "exact_act": material["exact_act"],
         "rule": material["rule"],
         "subject": deepcopy(material["subject"]),
-        "authority": deepcopy(material["authority"]),
         "scope": deepcopy(material["scope"]),
         "limits": deepcopy(material["limits"]),
         "conflicts": deepcopy(material["conflicts"]),
@@ -604,10 +603,6 @@ def _record_responsibility(
             "exact_act": exact_act,
             "rule": rule,
             "subject": subject,
-            "authority": {
-                "book_clause_identity": book_reference,
-                "responsible_boundary": "this Seed",
-            },
             "scope": {
                 "locality_identity": locality_identity,
                 "standing_boundary_identity": standing_boundary_identity,
@@ -805,7 +800,6 @@ def _require_responsibility(
         != _coordinates(act.material).get(
             "standing_boundary_occurrence_reference"
         )
-        or type(assignment.material.get("authority")) is not dict
         or type(assignment.material.get("scope")) is not dict
         or type(assignment.material.get("limits")) is not list
         or type(assignment.material.get("conflicts")) is not list
@@ -859,7 +853,6 @@ def _require_recorded_responsibility(
         or not material["exact_act"]
         or material.get("rule") != _RESPONSIBILITY_RULES.get(event.kind)
         or type(material.get("subject")) is not dict
-        or type(material.get("authority")) is not dict
         or type(material.get("scope")) is not dict
         or type(material.get("limits")) is not list
         or type(material.get("conflicts")) is not list
@@ -2145,10 +2138,6 @@ def _recurrent_result_material_payload(
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"
         ],
-        "authority": {
-            "book_clause_identity": "01.Source.D",
-            "coordinate_measurement_result_reference": coordinate_result_reference,
-        },
         "scope": {
             "locality_identity": recurrence_event.locality_identity,
             "recurrence_result_reference": recurrence_result_reference,

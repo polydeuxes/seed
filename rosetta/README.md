@@ -1,12 +1,11 @@
 # Rosetta of Seed
 
-**Nothing in this directory carries constitutional Authority.** It holds
-translation testimony: ordinary English about Seed's grammar, and mappings from
+This directory holds translation testimony: ordinary English about Seed's grammar, and mappings from
 words people have used to whatever current grammar corresponds to them. A
 mapping recorded here establishes no standing, no kind, and no equivalence.
 
 This is not part of the Book of Seed and is not stored inside it. English
-placed inside `book_of_seed/` acquires ambiguous authority, since a reader
+placed inside `book_of_seed/` acquires ambiguous status, since a reader
 cannot tell whether a sentence is grammar or explanation. Keeping explanation
 outside removes the ambiguity in both directions: the Book can be grammar-only,
 and this can be plainly readable.
@@ -66,11 +65,11 @@ Assertions, and relations remain on their own bounded road; they do not enter
 this directory merely because Seed observed them. Implementation references in
 Rosetta are representative translation witnesses, not an implementation index.
 
-## Constitutional authority
+## Constitutional boundary
 
 `01.Source` governs the boundary this directory sits on: ordinary words
 may retain source coordinates and be compared **without thereby becoming
-constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
+constitutional grammar**. That chapter carries the applicable source rule. It is
 not itself a Rosetta, and this directory is not a chapter.
 
 A Rosetta representation produced under bounded translation does not become
@@ -100,7 +99,8 @@ to four current terms and to no single one of them.
 Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
 and points here without importing Rosetta admission into active law. In
 particular, Rosetta admits the `warrant` word family while Book proper names
-the exact Evidence, Authority, Scope, preserved limits, and support relation.
+the exact source and occurrence coordinates, Scope, preserved limits, and
+support relation.
 
 The Book's Responsibility spine supplies the ordering. Rosetta words hang
 from the exact coordinates they translate, or record a word that named nothing

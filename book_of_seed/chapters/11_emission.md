@@ -4,7 +4,7 @@
 
 One emission Responsibility carries one exact source material result, one
 exact destination boundary within its invocation Locality, one emission Act,
-Authority, Scope, Locality, limits, conflicts, known loss, and Unknown.
+Scope, Locality, limits, conflicts, known loss, and Unknown.
 
 ### 07.Emission.C — Exact-material boundary write
 

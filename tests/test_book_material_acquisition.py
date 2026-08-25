@@ -117,8 +117,7 @@ def test_book_material_acquisition_witness_has_one_admitted_subject():
 
     fidelity = grammar["book_coordinates"]["01.Source.C"]
 
-    assert fidelity["test_subject"] == THIS_BOOK_MATERIAL_ACQUISITION_WITNESS
-    assert grammar["book_material_reference"] == "this_Book"
+    assert fidelity["subjects"].count(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS) == 1
     assert subject_words <= book_admission()
 
 
@@ -406,12 +405,6 @@ def test_every_current_book_file_has_one_exact_material_acquisition_result(
     assert tuple(occurrence.material["source_boundary"] for occurrence in acquisition_results) == tuple(
         str(path.relative_to(ROOT)) for path in paths
     )
-    assert all(
-        occurrence.material["dimensions"]["authority"] == "unestablished"
-        for occurrence in acquisition_results
-    )
-
-
 def test_every_function_receives_the_same_complete_book_source(
     acquired_book_material,
 ):

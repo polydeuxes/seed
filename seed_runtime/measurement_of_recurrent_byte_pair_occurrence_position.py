@@ -60,7 +60,6 @@ RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "each ordered occurrence of the exact Yield-carried byte pair in one exact "
     "material acquisition result through one completeness boundary and occurrence limit"
 )
-AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = "bounded repository authority"
 SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "exact Yield-carried pair Assertion and exact later material acquisition result only"
 )
@@ -1364,7 +1363,10 @@ def _recorded_result_of_recurrent_pair_position_measurement_reading(
         key: value
         for key, value in material.items()
         if key
-        not in {"act_occurrence_identity", "yield_relation_identity"}
+        not in {
+            "act_occurrence_event_identity",
+            "yield_relation_identity",
+        }
     }
     if carried != result:
         raise ValueError("pair occurrence result differs from its exact finding")
@@ -1482,7 +1484,7 @@ def _recurrent_pair_position_result_lifecycle_boundary(
         or ledger.integrity_of(result.identity) == CORRUPTED
     ):
         raise ValueError("pair-position result is absent or corrupted")
-    act_identity = result.material.get("act_occurrence_identity")
+    act_identity = result.material.get("act_occurrence_event_identity")
     act = ledger.get(act_identity) if type(act_identity) is str else None
     if (
         act is None

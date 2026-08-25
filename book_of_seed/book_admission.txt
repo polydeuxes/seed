@@ -24,7 +24,6 @@ assertion
 assertions
 at
 attempt
-authority
 b
 beyond
 book
@@ -145,7 +144,6 @@ second
 seed
 separate
 separately
-set
 source
 standing
 subject

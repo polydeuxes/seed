@@ -183,10 +183,10 @@ def _fixture(
         ledger, pair_result.identity
     )
     recurrence_by_pair = {
-        assertion.representation: assertion.assertion_identity
+        assertion.content: assertion.assertion_identity
         for assertion in pair_assertions or ()
         if assertion.result == "recurrence"
-        and assertion.representation in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
+        and assertion.content in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
     }
     assert set(recurrence_by_pair) == {
         (ord("a"), ord("b")),
@@ -260,7 +260,7 @@ def _assignment(ledger, locality, first, second):
 
 def _recurrent_result_coordinates(ledger, reference):
     result = ledger.get(reference.recorded_occurrence_identity)
-    act = ledger.get(result.material["act_occurrence_identity"])
+    act = ledger.get(result.material["act_occurrence_event_identity"])
     assignment = ledger.get(
         act.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"
@@ -415,9 +415,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         first.assertion_reference,
         second.assertion_reference,
     ]
-    assert reading["negative_authority"] == (
-        "establish no represented relation and no emission"
-    )
     assert result.exact_material is None
     assert result.identity in _standing(ledger, locality)["measurement_occurrences"]
 

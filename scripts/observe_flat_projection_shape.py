@@ -34,7 +34,7 @@ PHYSIOLOGY = (
     "subject", "subjects", "Responsibility", "exact_Act", "result", "requires",
     "relations", "relation", "carried_coordinates", "coordinates", "current",
     "first_subject", "second_subject", "bounds", "rule", "role",
-    "responsibility_subject_set", "completeness_boundary", "required_Admission",
+    "responsibility_subjects", "completeness_boundary", "required_Admission",
     "Applicability", "Admission", "Participation",
     "one_occurrence", "separate_occurrence", "boundary", "occurrence",
     "Applicability_subject_for",

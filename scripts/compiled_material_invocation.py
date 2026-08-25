@@ -866,7 +866,7 @@ def material_acquisition_result_reference(
         recorded_result_event_identity=event.identity,
         yield_relation_event_identity=event.material.get("yield_relation_identity"),
         act_occurrence_event_identity=event.material.get(
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ),
     )
     if not all(requirements.values()):

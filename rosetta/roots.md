@@ -1,7 +1,7 @@
 # Standing and Responsibility spine
 
 Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
-the authority; this file has none.
+constitutional grammar; this file is not.
 
 Rosetta follows the Book ordering:
 
@@ -11,7 +11,6 @@ current Standing
     ├── responsible boundary
     ├── subject or material
     ├── exact Act
-    ├── Authority
     ├── Scope / Locality / limits
     ├── source / provenance where required
     └── exact support relations where required
@@ -20,8 +19,6 @@ current Standing
         ↓ Yield
     exact result
 
-later Standing
-    separate Responsibility + Act occurrence + Yield + result
 ```
 
 Relations recur across live implementation roads:
@@ -35,7 +32,7 @@ exact subject ── Support → exact input to Act position
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact responsible occurrence, Authority, Scope, Locality, limits, and
+its exact responsible occurrence, Scope, Locality, limits, and
 Unknown. These are not every relation about which Seed may carry an Assertion
 or Standing.
 
@@ -86,13 +83,14 @@ Book           this constitutional language + ordered clause coordinates + this 
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
 Composite      one communicative address for several exact coordinates; each coordinate still requires its own responsible physiology
 Name / label / kind / shape ordinary ways to point at material or a grouping; none supplies the subject, relation, Act, occurrence, or Standing it suggests
-Evidence       communicative shorthand that exact material, source and occurrence references, Authority, Scope, limits, and a responsible relation support an Assertion; no separate Evidence coordinate
+Evidence       communicative shorthand that exact material, source and occurrence references, Scope, limits, and a responsible relation support an Assertion; no separate Evidence coordinate
+Authority      retired compression of responsible boundary, subject, exact Act and rule, Scope, Locality, limits, source, provenance, occurrence, Yield, result, and current Standing; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
 Consumption    Participation in an exact Act occurrence
 Uptake         availability + Applicability + Participation
-Handoff        movement, or an exact Responsibility/Authority change
+Handoff        movement, or an exact Responsibility or responsible-boundary change
 Memory         addressed prior Locality Standing boundary + Book-bounded Responsibility assignment + direct Standing Locality continuation + new Locality; availability != Applicability; another exact Act required
 Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, Standing, temporal relation, or result
 Checkout       exact recorded Standing boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
@@ -104,19 +102,19 @@ Comparison of material-result references exact selected material-result referenc
 Comparison point carried recorded-reference occurrence + source Locality identity + exact Standing boundary occurrence + addressed Representation; transient read only; no Standing copy; availability != Applicability
 View           exact Act occurrence + representation + its carried coordinates
 Formation      exact Act occurrence + Yield + representation
-Constructor    callable implementation mechanism; no Authority by identity
+Constructor    callable implementation mechanism; no Responsibility by identity
 Owner          responsible boundary bearing an exact Responsibility
 Ownership      Assertion concerning that Responsibility assignment
 Claim          asserted content
 Fact           Assertion described through its bounded Standing
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
-Warrant        exact support relation from Evidence + Authority + Scope + preserved limits to one Assertion or assignment; composite only, no new relation by identity
+Warrant        exact support relation with source and occurrence references, Scope, and preserved limits for one Assertion or assignment; composite only, no new relation by identity
 Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
 Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
-Capability     exact Act / Authority / Constraints / Evidence
+Capability     exact Act + Responsibility + Scope + Locality + limits + source and occurrence references
 Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
 Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
@@ -141,7 +139,7 @@ assertion / content
 standing
 source / provenance
 responsibility
-authority / support
+responsible boundary / support
 scope / locality
 occurrence / preservation
 ```
@@ -158,22 +156,23 @@ exact coordinates doing the work:
 ### May / sufficient / possible / allowed / capable
 
 These words are ordinary compression. Expand each into its exact subject,
-relation, Responsibility, Authority, Applicability, Participation, Act
-occurrence, Evidence, Scope, limits, Unknown, result, and Standing coordinates.
+relation, Responsibility, responsible boundary, Applicability, Participation,
+Act occurrence, source and occurrence references, Scope, limits, Unknown,
+result, and Standing coordinates.
 The word alone establishes none of them.
 
 ### Fail / fails / failed
 
 These forms compress one exact Act occurrence plus a bounded failure Assertion
-or result, Evidence, Authority, Scope, and preserved limits. They do not mean
+or result, source and occurrence references, Scope, and preserved limits. They do not mean
 absence of an Act occurrence, Stop, or completion by identity.
 
 ### Shared
 
 `Shared` is an auxiliary composite only. For exact named subjects and one
 exact named coordinate, occurrence, boundary, or label, each subject carries
-one exact reference of that subject through its own exact relation, Evidence,
-Authority, Scope, and limits. The word alone establishes no identity,
+one exact reference of that subject through its own exact relation, source and
+occurrence references, Scope, and limits. The word alone establishes no identity,
 equality, sameness, Locality, Participation, Applicability, Standing,
 represented relation, or Act.
 
@@ -182,7 +181,7 @@ represented relation, or Act.
 These forms compress one exact address or reference, or material asserting one
 exact relation from X to Y. An address or reference carries coordinates and
 establishes no constitutional relation. Material asserting the relation
-requires one responsible occurrence, Evidence, Authority, Scope, provenance,
+requires one responsible occurrence, source coordinates, Scope, provenance,
 limits, and Unknown before Standing. The forms alone establish no identity,
 equality, sameness, subject, occurrence, represented relation, or truth.
 
@@ -197,9 +196,9 @@ the word alone establishes neither the occurrence nor the relation.
 ```text
 exact subject or material
     ↓
-exact Act + Responsibility + Authority + Scope
+exact Act + Responsibility + responsible boundary + Scope
     ↓
-Act occurrence + Evidence + Participation
+Act occurrence + source and occurrence references + Participation
     ↓
 Yield or exact Locality relation
     ↓
@@ -235,7 +234,7 @@ exact removal result reference
 addition Act occurrence
 ```
 
-A connective composite receives no Act, relation, Evidence, Authority, or
+A connective composite receives no Act, relation, support relation, or
 Standing by identity.
 
 ### Increment

@@ -156,10 +156,6 @@ def _assignment_material(
         ],
         "limits": [
             "this assignment is bounded to one exact boundary occurrence",
-            (
-                "preserved material establishes no relation or "
-                "Authority for another Act"
-            ),
         ],
         "unknown": [
             "what exact material the operator boundary supplies: Unknown"

@@ -5,7 +5,7 @@ words were brought from preserved usage.  Each word is read against each
 physiology, eighteen readings, and no word is chosen in advance.
 
 The physiology is fixed.  A dictionary definition is testimony about how English
-may name a relation, never authority over what the relation is.  A word survives
+may name a relation and never establishes what that relation is. A word remains
 only where its ordinary relational distinction neither erases a distinction the
 physiology carries nor adds one it does not.
 

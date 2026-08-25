@@ -123,7 +123,7 @@ def _substitute_value(value: Any, existing: Any, replacement: Any) -> int:
 # Coordinates recorded by more than one occurrence.  The same coordinate name
 # answers differently depending on which occurrence carries the substitution,
 # so each carrier is asked separately.
-CARRIED_IN_SEVERAL = ("authority", "scope", "limits", "unknown", "standing")
+CARRIED_IN_SEVERAL = ("scope", "limits", "unknown", "standing")
 
 CONSISTENT = [
     ("second_subject", "result_identity", "substituted-result"),
@@ -187,8 +187,7 @@ def main() -> int:
     print(
         "\n    The result carries a copy of these coordinates and the responsible"
         "\n    Act yield_relation records its own.  The copy is compared; the record is"
-        "\n    not.  A result carrying one Authority while its Act yield_relation records"
-        "\n    another is admitted."
+        "\n    not."
     )
 
     print(

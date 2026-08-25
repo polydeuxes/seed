@@ -90,7 +90,6 @@ MEASUREMENT_RULE = (
     "each exact byte-pair occurrence with its first position and second position "
     "in source occurrence order within one exact material acquisition result"
 )
-AUTHORITY = "bounded repository authority"
 ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
 )

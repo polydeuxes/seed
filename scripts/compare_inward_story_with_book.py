@@ -88,25 +88,6 @@ def _values_at_coordinate(material: object, coordinate: str) -> list[object]:
     return values
 
 
-def _values_at_coordinate_casefold(
-    material: object, coordinate: str
-) -> list[object]:
-    values = []
-
-    def visit(value: object) -> None:
-        if type(value) is dict:
-            for name, carried in value.items():
-                if name.casefold() == coordinate.casefold():
-                    values.append(carried)
-                visit(carried)
-        elif type(value) is list:
-            for carried in value:
-                visit(carried)
-
-    visit(material)
-    return values
-
-
 def _relation_material(material: object, relation: str) -> list[dict]:
     findings = []
 
@@ -202,8 +183,6 @@ def _walk_finding(exact_walk: dict, sources: list[dict]) -> dict[str, object]:
 
     coordinate_names = {}
     clause_identities = {}
-    authority_coordinates = 0
-    negative_authority_coordinates = 0
     participation_relations = 0
     carriage_relations = 0
     participation_identities = {}
@@ -215,12 +194,6 @@ def _walk_finding(exact_walk: dict, sources: list[dict]) -> dict[str, object]:
         for clause in _values_at_coordinate(material, "book_clause_identity"):
             if type(clause) is str:
                 clause_identities[clause] = None
-        authority_coordinates += len(
-            _values_at_coordinate_casefold(material, "authority")
-        )
-        negative_authority_coordinates += len(
-            _values_at_coordinate(material, "negative_authority")
-        )
         related_participation = _relation_material(material, "participation")
         related_carriage = _relation_material(material, "carriage")
         participation_relations += len(related_participation)
@@ -251,8 +224,6 @@ def _walk_finding(exact_walk: dict, sources: list[dict]) -> dict[str, object]:
         * exact_walk["occurrence_count"],
         "yield_occurrence_count": labels.count(YIELD_EVENT_LABEL)
         * exact_walk["occurrence_count"],
-        "exact_authority_coordinate_count": authority_coordinates,
-        "negative_authority_coordinate_count": negative_authority_coordinates,
         "nested_participation_relation_count": participation_relations,
         "nested_carriage_relation_count": carriage_relations,
         "exact_participation_relation_identity_count": len(participation_identities),
@@ -315,7 +286,7 @@ def main() -> int:
         "01.Standing.A.1",
         "01.Standing.E.1",
         "02.Acts.A",
-        "08.Authority.B",
+        "08.Support.A",
         "08.Scope.A",
     )
     clauses = _identified_clauses()
@@ -372,12 +343,6 @@ def main() -> int:
         "story_yield_occurrence_count": sum(
             walk["yield_occurrence_count"] for walk in story_walks
         ),
-        "story_exact_authority_coordinate_count": sum(
-            walk["exact_authority_coordinate_count"] for walk in story_walks
-        ),
-        "story_negative_authority_coordinate_count": sum(
-            walk["negative_authority_coordinate_count"] for walk in story_walks
-        ),
         "story_nested_participation_relation_count": sum(
             walk["nested_participation_relation_count"] for walk in story_walks
         ),
@@ -411,10 +376,6 @@ def main() -> int:
     print(f"artifact sha256: {_digest(encoded)}")
     print(f"story walk forms: {result['story_walk_form_count']}")
     print(f"story occurrences: {result['story_occurrence_count']}")
-    print(
-        "exact Authority coordinates: "
-        f"{result['story_exact_authority_coordinate_count']}"
-    )
     print(f"wall seconds: {time.perf_counter() - begun:.3f}")
     return 0
 

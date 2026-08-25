@@ -3,7 +3,7 @@
 ### 02.Acts.A — Exact Act and occurrence
 
 One exact Responsibility bounds one exact Act. The Responsibility carries its
-responsible boundary, subject, Authority, Scope, Locality, limits, and required
+responsible boundary, subject, Scope, Locality, limits, and required
 relations.
 
 An Act occurrence is the occurrence of that Act under the Responsibility.
@@ -26,12 +26,12 @@ Yield is the exact relation from one Act occurrence to its exact result:
 Act occurrence --Yield--> result
 ```
 
-The Yield relation requires its first subject, second subject, relation occurrence, Authority,
-Scope, Locality, limits, and Unknown.
+The Yield relation requires its first subject, second subject, relation
+occurrence, Scope, Locality, limits, and Unknown.
 
 A result preserves coordinates established by its Act occurrence.
 
 ## References
 
 - [Standing](01_constitutional_standing.md)
-- [Authority and Scope](02_authority_scope.md)
+- [Scope and Support](02_scope_and_support.md)

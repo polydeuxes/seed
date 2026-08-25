@@ -61,7 +61,7 @@ def _relation(ledger, command):
     return assignment, act, result
 
 
-def test_operator_authority_establishes_one_fresh_direct_locality_relation():
+def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     ledger = EventLedger()
     command = _command(ledger)
     assignment, act, result = _relation(ledger, command)
@@ -86,10 +86,6 @@ def test_operator_authority_establishes_one_fresh_direct_locality_relation():
             "relation_occurrence_identity"
         ],
     }
-    assert recorded["negative_authority"] == [
-        "the relation carries no operator Standing into the destination Locality",
-        "the relation establishes no enclosure or hierarchy",
-    ]
     assert operator_invocation_locality_occurrence_references(
         ledger, result.identity
     ) == (
@@ -327,7 +323,7 @@ def test_invocation_locality_relation_reopens_with_exact_standing(tmp_path):
 
 
 PYTEST_ADMISSION = (
-    test_operator_authority_establishes_one_fresh_direct_locality_relation,
+    test_operator_occurrence_establishes_one_fresh_direct_locality_relation,
     test_witness_material_occurs_only_in_the_related_locality,
     test_each_operator_occurrence_establishes_distinct_relation_identities,
     test_one_operator_occurrence_cannot_assign_two_invocation_localities,

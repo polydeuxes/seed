@@ -118,7 +118,6 @@ CHANGES: list[tuple[str, str, Callable]] = [
             "yield_relation_identity", "substituted-yield_relation"
         ),
     ),
-    ("Authority", "act_occurrence", lambda m: _set(m, "authority", "substituted")),
     ("Scope", "act_occurrence", lambda m: _set(m, "scope", "substituted")),
     ("Locality", "result", lambda m: _set(m, "locality_identity", "substituted")),
     ("limits", "result", lambda m: _set(m, "limits", ["substituted"])),

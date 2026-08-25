@@ -154,12 +154,12 @@ BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurem
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and Yield the findings "
-    "established by its exact source occurrences, rule, Scope, Authority, and limits"
+    "established by its exact source occurrences, rule, Scope, and limits"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "Yield exact byte-position-pair findings from an applicable exact bounded "
     "source material within its Scope, provenance, occurrence references, "
-    "Authority, Unknown, and limits"
+    "Unknown, and limits"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine Applicability of one exact source-material-set Assertion to one "
@@ -457,9 +457,9 @@ def _pair_assertion_identity(
 
     first, second = exact_pair
     exact_subject_json = (
-        '{"measurement_rule":'
+        f'{{"content":[{first},{second}],"measurement_rule":'
         + _BYTE_PAIR_MEASUREMENT_RULE_JSON
-        + f',"content":[{first},{second}]}}'
+        + "}"
     )
     if result == "recurrence":
         exact_content_json = '{"recurrence_established":true}'
@@ -619,11 +619,6 @@ def _pair_input_applicability_from_exact_source(
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
     input_limits = material["limits"]
-    negative_authority = {
-        "carried": True,
-        "value": input_limits,
-        "treatment": "preserved as limits on this exact use",
-    }
     identity = "byte-pair-applicability:" + hashlib.sha256(
         _exact_json(
             {
@@ -676,15 +671,13 @@ def _pair_input_applicability_from_exact_source(
                 "carried": False,
                 "treatment": "not required for this historical bounded source material",
             },
-            "negative_authority": negative_authority,
         },
         "unknown": [
             "what any byte or byte position pair represents: Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
         "limits": [
-            "Applicability to this Measurement is not Applicability for another Act, "
-            "admission, represented relation, or authority for another use"
+            "Applicability to this Measurement is not Applicability for another Act"
         ],
     }
 
@@ -5191,7 +5184,7 @@ def _validated_recorded_byte_position_pair_measurement(
         )
         if dimensions.get("identity") != expected_identity:
             raise ByteMeasurementError(f"{event_identity} carries a false pair Assertion identity")
-        group = by_pair.setdefault(tuple(content), {})
+        group = by_pair.setdefault(tuple(exact_pair), {})
         if result in group:
             raise ByteMeasurementError(f"{event_identity} duplicates one pair result")
         group[result] = assertion

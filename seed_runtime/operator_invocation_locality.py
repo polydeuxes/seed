@@ -80,7 +80,7 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
             "yield_relation_identity"
         ),
         act_occurrence_event_identity=event.material.get(
-            "act_occurrence_identity"
+            "act_occurrence_event_identity"
         ),
     )
     if not all(requirements.values()):
@@ -97,7 +97,7 @@ def _assignment_material(
     assignment_identity: str,
     assignment_subject_identity: str,
     operator_invocation_locality_act_identity: str,
-    act_occurrence_event_identity: str,
+    act_occurrence_identity: str,
     relation_occurrence_identity: str,
     result_identity: str,
     destination_locality_identity: str,
@@ -113,7 +113,7 @@ def _assignment_material(
         "operator_invocation_locality_act_identity": (
             operator_invocation_locality_act_identity
         ),
-        "act_occurrence_event_identity": act_occurrence_event_identity,
+        "act_occurrence_identity": act_occurrence_identity,
         "relation_occurrence_identity": relation_occurrence_identity,
         "result_boundary_identity": result_identity,
         "operator_material_occurrence_reference": command.identity,
@@ -141,7 +141,7 @@ def record_operator_invocation_locality_responsibility_assignment(
     operator_material_occurrence_reference: str,
     operator_locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one invocation Locality under one exact operator Authority."""
+    """Assign one invocation Locality from one exact operator occurrence."""
 
     command = _command_event(ledger, operator_material_occurrence_reference)
     carried = (
@@ -415,10 +415,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "known_loss": [],
         "conflicts": [],
         "unknown": [],
-        "negative_authority": [
-            "the relation carries no operator Standing into the destination Locality",
-            "the relation establishes no enclosure or hierarchy",
-        ],
     }
 
 
@@ -435,7 +431,7 @@ def _refuse_second_yield(ledger: EventLedger, act: Event) -> None:
 def _recorded_result_material(
     result: dict[str, Any],
     *,
-    act_occurrence_identity: str,
+    act_occurrence_event_identity: str,
     yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
@@ -466,8 +462,7 @@ def _recorded_result_material(
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),
         "unknown": list(result["unknown"]),
-        "negative_authority": list(result["negative_authority"]),
-        "act_occurrence_identity": act_occurrence_identity,
+        "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": (
             yield_relation_identity
         ),
@@ -522,7 +517,7 @@ def get_recorded_operator_invocation_locality(
             "invocation Locality result is absent or corrupted"
         )
     act = get_operator_invocation_locality_act_occurrence(
-        ledger, event.material.get("act_occurrence_identity")
+        ledger, event.material.get("act_occurrence_event_identity")
     )
     result = _result_material(act)
     exact_result_material = _recorded_result_material(
@@ -556,7 +551,7 @@ def operator_invocation_locality_occurrence_references(
     event = ledger.get(event_identity)
     result = get_recorded_operator_invocation_locality(ledger, event_identity)
     identities = (
-        result["act_occurrence_identity"],
+        result["act_occurrence_event_identity"],
         result["yield_relation_identity"],
         event.identity,
     )

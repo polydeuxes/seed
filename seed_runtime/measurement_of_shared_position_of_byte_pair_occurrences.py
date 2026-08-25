@@ -1987,7 +1987,7 @@ def _recurrent_result_assignment_act_and_yield_relation(
         raise SharedPairPositionError(
             "shared-position replay recurrent input result is not exact"
         )
-    act_identity = result.material.get("act_occurrence_identity")
+    act_identity = result.material.get("act_occurrence_event_identity")
     yield_identity = result.material.get("yield_relation_identity")
     act = ledger.get(act_identity) if type(act_identity) is str else None
     yield_relation = (

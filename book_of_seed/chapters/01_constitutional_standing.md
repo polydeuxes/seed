@@ -7,7 +7,7 @@ This Seed first current Standing carries no coordinates.
 ### 01.Standing.A — Standing requires its exact Responsibility
 
 Standing for one exact subject requires an exact Responsibility, Act
-occurrence, Yield, Authority, Scope, limits, and result for that subject.
+occurrence, Yield, Scope, limits, and result for that subject.
 
 ### 01.Standing.A.1 — The Responsibility branch carries its result
 
@@ -21,7 +21,7 @@ Each exact relation requires its exact subjects and responsible occurrence.
 ### 01.Standing.D.1 — Assertion coordinates
 
 An Assertion is exact content as one subject. It carries its source,
-provenance, Authority, Scope, Locality, conflicts, limits, Unknown, and
+provenance, Scope, Locality, conflicts, limits, Unknown, and
 Standing with exact established coordinates.
 
 ### 01.Standing.D.2 — Later Assertions
@@ -33,13 +33,13 @@ Applicability subject for one exact Act.
 
 One relation Assertion carries first subject, exact relation content, and
 second subject. Its
-Standing requires the exact relation occurrence, Authority, Scope, Locality,
-limits, conflicts, and Unknown.
+Standing requires the exact relation occurrence, Scope, Locality, limits,
+conflicts, and Unknown.
 
 ### 01.Standing.E.1 — Applicability, Admission, and Participation
 
 Applicability carries one exact subject-to-Act position. Its responsible
-occurrence carries the subject, Act, Authority, Scope, Locality, limits, and
+occurrence carries the subject, Act, Scope, Locality, limits, and
 one of `applicable`, `inapplicable`, `conflicting`, or `Unknown`.
 
 Participation is the exact relation from one subject and role to one Act
@@ -51,5 +51,5 @@ position, and one exact occurrence prior to Participation.
 
 ## References
 
-- [Authority and Scope](02_authority_scope.md)
+- [Scope and Support](02_scope_and_support.md)
 - [Acts and occurrences](03_acts_and_occurrences.md)

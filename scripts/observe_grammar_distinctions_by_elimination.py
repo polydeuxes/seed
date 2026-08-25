@@ -122,9 +122,9 @@ ELIMINATION = {
         "the difference between two Compares over the same subjects under "
         "different rules, which 04.Compare states as a Responsibility coordinate",
     ),
-    "responsibility_subject_set": (
+    "responsibility_subjects": (
         "survives",
-        "the bounded subject set a Responsibility is exhaustive over",
+        "the bounded subjects a Responsibility is exhaustive over",
         "nothing else in the schema",
         "what exhaustiveness is exhaustive over. 01.Standing.D turns on it",
     ),
@@ -152,7 +152,7 @@ ELIMINATION = {
     "completeness_boundary": (
         "Unknown",
         "what a result is complete over",
-        "responsibility_subject_set",
+        "responsibility_subjects",
         "not determinable here. What a result is complete over and what a "
         "Responsibility is exhaustive over are separable, and its one value does "
         "not establish that they are the same",

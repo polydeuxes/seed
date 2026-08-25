@@ -62,7 +62,6 @@ STATED_YIELD_COORDINATES = {
     "act_occurrence_identity": "first_subject",
     "result_identity": "second_subject",
     "yield_relation_identity": "relation_occurrence",
-    "authority": "Authority",
     "scope": "Scope",
     "locality_identity": "Locality",
     "limits": "limits",
@@ -254,8 +253,8 @@ def main() -> int:
     )
     print(
         "\n  read that line narrowly.  One coordinate name is recorded by more\n"
-        "  than one occurrence and answers differently at each.  Authority and\n"
-        "  Scope are noticed where the recorded result carries them and not\n"
+        "  than one occurrence and answers differently at each.  Scope is\n"
+        "  noticed where the recorded result carries it and not\n"
         "  noticed where the responsible Act yield_relation records its own, so a name\n"
         "  appearing above is a statement about one carrier, never about the\n"
         "  coordinate.  scripts/observe_broad_yield_predicate.py asks each\n"
@@ -307,7 +306,7 @@ def main() -> int:
     print(
         "\n  which stated Yield coordinate each predicate establishes is not read\n"
         "  from these sets.  Matching a path fragment against a coordinate name\n"
-        "  reported Authority, Scope and Locality as reached, and changing each of\n"
+        "  reported Scope and Locality as reached, and changing each of\n"
         "  them directly stopped no predicate.  The per-coordinate experiment is\n"
         "  the measurement; this section counts sensitivity only."
     )

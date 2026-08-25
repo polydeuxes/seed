@@ -1026,8 +1026,7 @@ def advance_operator_locality_standing(
     from the ledger and is not itself recorded: it returns only standings,
     limits, and Unknown the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    No Yield is established for relation Candidates here; each preserved acquisition_result keeps
-    the authority its own event recorded.
+    No Yield is established for relation Candidates here.
     """
     events = ledger.occurrences_in_append_order(
         event_identities,

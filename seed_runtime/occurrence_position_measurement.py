@@ -32,7 +32,6 @@ OCCURRENCE_POSITION_MEASUREMENT_RULE = (
     "preserve each exact occurrence in one exact Locality with its source-order "
     "position coordinate through one completeness boundary"
 )
-OCCURRENCE_POSITION_AUTHORITY = "bounded repository authority"
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
 )

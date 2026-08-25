@@ -179,7 +179,7 @@ def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates(
     ]
 
 
-def test_addressed_position_responsibility_owns_the_bounded_subject_set():
+def test_addressed_position_responsibility_owns_the_bounded_subjects():
     measurement = _grammar()["book_coordinates"]["01.Source.D.2"]
     chapter = (
         CHAPTERS / "07_measurement_and_candidates.md"
@@ -188,12 +188,10 @@ def test_addressed_position_responsibility_owns_the_bounded_subject_set():
     assert measurement["branch_of_current_Standing"] == (
         "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
     )
-    assert measurement["responsibility_subject_set"] == (
-        "exhaustive_bounded_source_byte_position_reference_set"
+    assert measurement["responsibility_subjects"] == (
+        "exhaustive_bounded_source_byte_position_references"
     )
-    assert (
-        "The bounded subject set is exhaustive."
-    ) in chapter
+    assert "The bounded subjects are exhaustive." in chapter
 
 
 def test_candidate_production_requires_an_exact_rule_and_addressed_subjects():
@@ -261,7 +259,6 @@ def test_responsibility_coordinates_are_anatomy_not_assignment():
             "responsible_boundary",
             "subject",
             "exact_Act",
-            "Authority",
             "Scope",
             "Locality",
             "limits",
@@ -303,7 +300,7 @@ def test_exact_relations_are_direct():
         "support": (
             "exact_subject",
             "exact_input_to_Act_position",
-            "08.Authority.A",
+            "08.Support.A",
         ),
     }
     for relation, (first, second, book_reference) in expected.items():
@@ -352,8 +349,7 @@ def test_only_clauses_naming_an_Act_project_one():
         "05.Recording.A",
         "05.Recording.C",
         "05.Provenance.A",
-        "08.Authority.A",
-        "08.Authority.B",
+        "08.Support.A",
         "08.Scope.A",
         "07.Emission.C",
         "07.Emission.D",
@@ -428,7 +424,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "exact_declared_distinction",
             "source",
             "provenance",
-            "Authority",
             "Scope",
             "Locality",
             "limits",
@@ -458,7 +453,7 @@ PYTEST_ADMISSION = (
     test_empty_standing_is_only_the_first_current_standing,
     test_applicability_required_admission_and_participation_remain_separate,
     test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
-    test_addressed_position_responsibility_owns_the_bounded_subject_set,
+    test_addressed_position_responsibility_owns_the_bounded_subjects,
     test_candidate_production_requires_an_exact_rule_and_addressed_subjects,
     test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
     test_responsibility_coordinates_are_anatomy_not_assignment,

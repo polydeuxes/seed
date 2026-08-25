@@ -765,9 +765,7 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         assert recorded == expected
         event = ledger.get(event_identity)
         assert event.exact_material == b"a+a"
-        act = ledger.get(
-            event.material["act_occurrence_identity"]
-        )
+        act = ledger.get(event.material["act_occurrence_event_identity"])
         assert act.material["responsibility_assignment_reference"] == (
             expected_ownership
         )

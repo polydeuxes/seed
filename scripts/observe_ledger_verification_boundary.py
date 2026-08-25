@@ -49,7 +49,7 @@ def main() -> int:
     act_occurrence = ledger.get(result.material["act_occurrence_identity"])
     before = ledger.integrity_of(act_occurrence.identity)
     material = deepcopy(act_occurrence.material)
-    material["authority"] = "substituted"
+    material["scope"] = "substituted"
     object.__setattr__(act_occurrence, "material", material)
     after = ledger.integrity_of(act_occurrence.identity)
 

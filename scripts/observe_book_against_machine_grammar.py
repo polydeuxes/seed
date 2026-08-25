@@ -9,7 +9,7 @@ beside the coordinates the grammar declares.  Then the Book law carrying no
 identifier is measured, because a clause with no identifier cannot be projected
 and cannot be enforced, whatever it states.
 
-Authority order is the active Book first and the grammar second.  Runtime
+Reading order is the active Book first and the grammar second.  Runtime
 presence is never read as warrant for a coordinate.
 
 Usage:
@@ -38,7 +38,6 @@ STATES = (
     "Participation",
     "Admission",
     "Applicability",
-    "Authority",
     "Scope",
     "Locality",
     "limits",

@@ -12,7 +12,6 @@
       "responsible_boundary",
       "subject",
       "exact_Act",
-      "Authority",
       "Scope",
       "Locality",
       "limits",
@@ -27,7 +26,6 @@
       "second_subject": "exact_Act_occurrence",
       "requires": [
         "relation_occurrence",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -41,7 +39,6 @@
       "second_subject": "exact_Act_occurrence",
       "requires": [
         "relation_occurrence",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -55,7 +52,6 @@
       "second_subject": "exact_result",
       "requires": [
         "relation_occurrence",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -71,21 +67,19 @@
         "relation_occurrence",
         "Responsibility",
         "exact_Act",
-        "Authority",
         "Scope",
         "limits",
         "Unknown"
       ]
     },
     "support": {
-      "book_reference": "08.Authority.A",
+      "book_reference": "08.Support.A",
       "first_subject": "exact_subject",
       "relation": "support",
       "second_subject": "exact_input_to_Act_position",
       "requires": [
         "relation_occurrence",
         "Responsibility",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -119,7 +113,6 @@
         "exact_declared_distinction",
         "source",
         "provenance",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -148,7 +141,7 @@
     "01.Source.D.2": {
       "subject": "addressed_byte_occurrence_reference",
       "Responsibility": "addressed_byte_occurrence_reference_Measurement",
-      "responsibility_subject_set": "exhaustive_bounded_source_byte_position_reference_set",
+      "responsibility_subjects": "exhaustive_bounded_source_byte_position_references",
       "exact_Act": "Measurement",
       "result": "addressed_byte_occurrence_reference_result",
       "branch_of_current_Standing": "current_Standing_carrying_exact_byte_pair_position_Measurement_result"
@@ -206,7 +199,6 @@
         "source_role",
         "source_boundary",
         "provenance",
-        "Authority",
         "Scope",
         "Locality",
         "known_loss",
@@ -227,7 +219,6 @@
         "Responsibility",
         "Act_occurrence",
         "Yield",
-        "Authority",
         "Scope",
         "limits",
         "result_for_that_subject"
@@ -252,7 +243,6 @@
       "carried_coordinates": [
         "source",
         "provenance",
-        "Authority",
         "Scope",
         "Locality",
         "conflicts",
@@ -274,7 +264,6 @@
       ],
       "requires": [
         "exact_relation_occurrence",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -319,7 +308,6 @@
         "exact_subject",
         "source_coordinates",
         "destination_coordinates",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -430,7 +418,6 @@
         "Standing_boundary_reference",
         "Responsibility",
         "Act_occurrence",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -446,7 +433,6 @@
       "carried_coordinates": [
         "material",
         "source_coordinates",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -498,7 +484,6 @@
       "exact_Act": "emission",
       "carried_coordinates": [
         "exact_destination_boundary_within_the_invocation_Locality",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -531,14 +516,13 @@
         "exact_Act_occurrence"
       ]
     },
-    "08.Authority.A": {
+    "08.Support.A": {
       "subject": "exact_input_to_Act_position",
       "requires": [
         "subject",
         "relation",
         "Act",
         "responsible_boundary",
-        "Authority",
         "Scope",
         "Locality",
         "limits",
@@ -546,19 +530,6 @@
       ],
       "relations": [
         "support"
-      ]
-    },
-    "08.Authority.B": {
-      "subject": "Authority",
-      "carried_coordinates": [
-        "source",
-        "Responsibility",
-        "subject",
-        "Act",
-        "occurrence",
-        "result",
-        "Scope",
-        "limits"
       ]
     },
     "08.Scope.A": {
