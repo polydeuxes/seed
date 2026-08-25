@@ -32,6 +32,18 @@ from seed_runtime.standing_boundary_locality import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _skip_unrelated_measurement_work(monkeypatch):
+    class _AlreadyMeasured(set):
+        def __contains__(self, _item):
+            return True
+
+    monkeypatch.setattr(
+        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
+        lambda _ledger: _AlreadyMeasured(),
+    )
+
+
 def _run(material: bytes) -> EventLedger:
     ledger = EventLedger()
     run_persistent_operator_console(
