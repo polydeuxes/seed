@@ -22,6 +22,7 @@ from observe_inward_frame_walks import (  # noqa: E402
     _repeated_walks,
     _shared_ends,
 )
+from observe_inward_walk_continuities import _walk_transitions  # noqa: E402
 
 
 def test_scalar_values_do_not_choose_an_occurrence_coordinate_surface():
@@ -283,3 +284,36 @@ def test_walk_repetition_is_recovered_across_empty_and_varying_middles():
     assert first == ["a", "b"]
     assert repeated == ["x", "y"]
     assert counts == [2, 3, 4]
+
+
+def test_walk_transitions_join_exact_later_and_prior_boundaries():
+    transitions = _walk_transitions(
+        [
+            {
+                "source_number": 0,
+                "walk_identity_sha256s": ["a", "b", "c"],
+                "walk_addresses": [[0, 4], [4, 11], [11, 15]],
+            }
+        ]
+    )
+
+    assert transitions == [
+        {
+            "source_number": 0,
+            "first_walk_identity_sha256": "a",
+            "later_walk_identity_sha256": "b",
+            "first_walk_start_append_position": 0,
+            "first_walk_last_append_position": 3,
+            "later_walk_first_append_position": 4,
+            "later_walk_end_append_position": 11,
+        },
+        {
+            "source_number": 0,
+            "first_walk_identity_sha256": "b",
+            "later_walk_identity_sha256": "c",
+            "first_walk_start_append_position": 4,
+            "first_walk_last_append_position": 10,
+            "later_walk_first_append_position": 11,
+            "later_walk_end_append_position": 15,
+        },
+    ]
