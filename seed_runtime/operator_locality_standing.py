@@ -22,7 +22,8 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RESULT_KIND,
-    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -45,18 +46,17 @@ from seed_runtime.byte_measurement import (
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_assignment_and_source,
     _read_byte_measurement_responsibility_assignment,
-    _read_pair_measurement_responsibility_assignment,
+    _read_pair_applicability_pre_act_binding,
+    _read_pair_measurement_pre_act_binding,
     _read_pair_applicability_act_occurrence,
     _read_recorded_pair_input_applicability,
     _read_pair_measurement_act_occurrence,
-    _require_exact_pair_measurement_assignment_event,
+    _pair_applicability_binding_of_result,
+    _require_exact_pair_pre_act_binding_event,
     _require_exact_pair_applicability_act_event,
     _require_exact_pair_applicability_result_event,
     _require_exact_pair_measurement_act_event,
     _require_exact_pair_measurement_result_event,
-    _PairMeasurementReplayReading,
-    _pair_measurement_replay_reading,
-    _advance_pair_measurement_replay_reading,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
 )
@@ -413,7 +413,8 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
-    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -429,7 +430,8 @@ _ASSERTION_LOCALITY_MOVEMENT_KINDS = {
     ASSERTION_LOCALITY_MOVEMENT_KIND,
 }
 _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
-    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -624,6 +626,15 @@ _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES = frozenset(
         "result_boundary_identity",
     }
 )
+_REQUIRED_PRE_ACT_BINDING_COORDINATES = frozenset(
+    {
+        "recorded_occurrence_identity",
+        "book_clause_identity",
+        "exact_act_identity",
+        "subject_reference",
+        "result_boundary_identity",
+    }
+)
 
 
 _NO_RESULT_COORDINATE = object()
@@ -694,11 +705,24 @@ def _responsibility_ownership_of_exact_result(
             "recorded Responsibility ownership requires its intact Act occurrence"
         )
     reference = act_occurrence.material["responsibility_assignment_reference"]
-    if (
-        type(reference) is not dict
-        or not _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference)
-        or any(type(value) is not str or not value for value in reference.values())
-    ):
+    assignment_shape = (
+        type(reference) is dict
+        and _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES <= set(reference)
+        and all(type(value) is str and value for value in reference.values())
+    )
+    binding_shape = (
+        type(reference) is dict
+        and set(reference) == _REQUIRED_PRE_ACT_BINDING_COORDINATES
+        and all(
+            type(reference.get(coordinate)) is str
+            and reference[coordinate]
+            for coordinate in _REQUIRED_PRE_ACT_BINDING_COORDINATES
+            - {"subject_reference"}
+        )
+        and type(reference.get("subject_reference")) is dict
+        and bool(reference["subject_reference"])
+    )
+    if not (assignment_shape or binding_shape):
         raise ValueError(
             "recorded Responsibility ownership requires its exact coordinates"
         )
@@ -711,10 +735,15 @@ def _responsibility_ownership_of_exact_result(
         raise ValueError(
             "recorded Responsibility ownership requires its exact assignment"
         )
-    for coordinate in (
+    required_coordinates = (
         _REQUIRED_RESPONSIBILITY_ASSIGNMENT_COORDINATES
-        - {"recorded_occurrence_identity", "result_boundary_identity"}
-    ):
+        if assignment_shape
+        else _REQUIRED_PRE_ACT_BINDING_COORDINATES
+    )
+    for coordinate in required_coordinates - {
+        "recorded_occurrence_identity",
+        "result_boundary_identity",
+    }:
         if assignment.material.get(coordinate) != reference[coordinate]:
             raise ValueError(
                 "recorded Responsibility ownership disagrees with its assignment"
@@ -1051,9 +1080,6 @@ def advance_operator_locality_standing(
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
     recorded_pair_comparison_replay_carries: dict[str, dict[str, Any]] = {}
-    pair_measurement_replay_readings: dict[
-        str, _PairMeasurementReplayReading
-    ] = {}
     shared_position_replay_readings: dict[
         str, _SharedPositionReplayReading
     ] = {}
@@ -1265,92 +1291,36 @@ def advance_operator_locality_standing(
             ),
         }
         if pair_lifecycle_event:
-            assignment_reference = event.material.get(
-                "responsibility_assignment_reference"
-            )
-            assignment_identity = (
-                event.identity
-                if event.kind
-                == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-                else (
-                    assignment_reference.get("recorded_occurrence_identity")
-                    if type(assignment_reference) is dict
-                    else None
+            if event.kind == BYTE_PAIR_APPLICABILITY_PRE_ACT_BINDING_RECORDED_KIND:
+                _read_pair_applicability_pre_act_binding(
+                    ledger, event.identity, prior_standing=pair_prior_standing
                 )
-            )
-            replay_reading = (
-                pair_measurement_replay_readings.get(assignment_identity)
-                if type(assignment_identity) is str
-                else None
-            )
-            try:
-                if (
-                    event.kind
-                    == BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-                ):
-                    assignment, source, _scope, _content = (
-                        _read_pair_measurement_responsibility_assignment(
-                            ledger,
-                            event.identity,
-                            prior_standing=pair_prior_standing,
-                        )
-                    )
-                    replay_reading = _pair_measurement_replay_reading(
-                        ledger,
-                        assignment=assignment,
-                        source=source,
-                    )
-                    pair_measurement_replay_readings[event.identity] = (
-                        replay_reading
-                    )
-                    responsibility_assignment_occurrences[event.identity] = None
-                elif replay_reading is not None:
-                    _advance_pair_measurement_replay_reading(
-                        ledger, replay_reading, event
-                    )
-                    if event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
-                        applicability_result_occurrences[event.identity] = None
-                    elif event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
-                        measurement_occurrences[event.identity] = (
-                            _measurement_occurrence_coordinates(event)
-                        )
-                        pair_measurement_replay_readings.pop(
-                            assignment_identity, None
-                        )
-                elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-                    _read_pair_applicability_act_occurrence(
-                        ledger,
-                        event.identity,
-                        prior_standing=pair_prior_standing,
-                    )
-                elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
-                    _read_recorded_pair_input_applicability(
-                        ledger,
-                        event.identity,
-                        prior_standing=pair_prior_standing,
-                    )
-                    applicability_result_occurrences[event.identity] = None
-                elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT:
-                    _read_pair_measurement_act_occurrence(
-                        ledger,
-                        event.identity,
-                        prior_standing=pair_prior_standing,
-                    )
-                else:
-                    _findings_of_recorded_byte_position_pair_measurement(
-                        ledger,
-                        event.identity,
-                        prior_standing=pair_prior_standing,
-                    )
-                    measurement_occurrences[event.identity] = (
-                        _measurement_occurrence_coordinates(event)
-                    )
-            except Exception:
-                if type(assignment_identity) is str:
-                    pair_measurement_replay_readings.pop(
-                        assignment_identity, None
-                    )
-                raise
+                responsibility_assignment_occurrences[event.identity] = None
+            elif event.kind == BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND:
+                _read_pair_measurement_pre_act_binding(
+                    ledger, event.identity, prior_standing=pair_prior_standing
+                )
+                responsibility_assignment_occurrences[event.identity] = None
+            elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT:
+                _read_pair_applicability_act_occurrence(
+                    ledger, event.identity, prior_standing=pair_prior_standing
+                )
+            elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
+                _read_recorded_pair_input_applicability(
+                    ledger, event.identity, prior_standing=pair_prior_standing
+                )
+                applicability_result_occurrences[event.identity] = None
+            elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT:
+                _read_pair_measurement_act_occurrence(
+                    ledger, event.identity, prior_standing=pair_prior_standing
+                )
+            else:
+                _findings_of_recorded_byte_position_pair_measurement(
+                    ledger, event.identity, prior_standing=pair_prior_standing
+                )
+                measurement_occurrences[event.identity] = (
+                    _measurement_occurrence_coordinates(event)
+                )
             event_count += 1
             through_event_occurrence_identity = event.identity
             for key, collected in (
@@ -2655,19 +2625,37 @@ def _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
     return locality_standing
 
 
-def _carry_pair_measurement_assignment_into_standing(
+def _carry_pair_applicability_binding_into_standing(
     ledger: EventLedger,
     locality_standing: dict[str, Any],
-    assignment,
+    binding,
     source,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    _require_exact_pair_measurement_assignment_event(ledger, assignment, source)
+    _require_exact_pair_pre_act_binding_event(ledger, binding, source)
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
         locality_standing,
-        assignment,
+        binding,
+        prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
+        destination_coordinate="responsibility_assignment_occurrences",
+    )
+
+
+def _carry_pair_measurement_binding_into_standing(
+    ledger: EventLedger,
+    locality_standing: dict[str, Any],
+    binding,
+    source,
+    *,
+    prior_through_event_occurrence_identity: str,
+) -> dict[str, Any]:
+    _require_exact_pair_pre_act_binding_event(ledger, binding, source)
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+        ledger,
+        locality_standing,
+        binding,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="responsibility_assignment_occurrences",
     )
@@ -2735,6 +2723,9 @@ def _carry_pair_measurement_act_into_standing(
         ledger,
         event,
         assignment=assignment,
+        applicability_binding=_pair_applicability_binding_of_result(
+            ledger, applicability_event, source=source
+        ),
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,

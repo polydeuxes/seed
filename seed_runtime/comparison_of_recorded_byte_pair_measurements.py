@@ -9,7 +9,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _RecordedBytePairFinding,
     _validated_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_responsibility_assignment,
+    get_byte_position_pair_measurement_pre_act_binding,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -255,7 +255,7 @@ def _source_occurrence_references(
     ledger: EventLedger, event: Event
 ) -> tuple[str, ...]:
     reference = event.material.get("responsibility_assignment_reference")
-    assignment_event = get_byte_position_pair_measurement_responsibility_assignment(
+    assignment_event = get_byte_position_pair_measurement_pre_act_binding(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict

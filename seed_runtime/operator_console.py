@@ -9,7 +9,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_position_pair_count_layer_from_carried_locality_standing,
     assertions_of_recorded_byte_measurement,
-    get_byte_position_pair_measurement_responsibility_assignment,
+    get_byte_position_pair_measurement_pre_act_binding,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
@@ -334,7 +334,7 @@ def _latest_carried_pair_premise(
             else None
         )
         try:
-            assignment = get_byte_position_pair_measurement_responsibility_assignment(
+            assignment = get_byte_position_pair_measurement_pre_act_binding(
                 ledger,
                 reference.get("recorded_occurrence_identity")
                 if type(reference) is dict

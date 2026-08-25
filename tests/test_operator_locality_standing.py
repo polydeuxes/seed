@@ -13,7 +13,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_responsibility_assignment,
+    get_byte_position_pair_measurement_pre_act_binding,
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -149,8 +149,8 @@ def _measurement_coordinates(event):
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
         "act_occurrence_identity": event.material["act_occurrence_identity"],
-        "act_occurrence_identity": event.material[
-            "act_occurrence_identity"
+        "act_occurrence_event_identity": event.material[
+            "act_occurrence_event_identity"
         ],
         "yield_relation_identity": event.material["yield_relation_identity"],
     }
@@ -159,13 +159,13 @@ def _measurement_coordinates(event):
 def _pair_lifecycle(ledger):
     result = _record_measurement(ledger, BYTE_PAIR_MEASUREMENT_RECORDED_KIND)
     measurement_act = ledger.get(
-        result.material["act_occurrence_identity"]
+        result.material["act_occurrence_event_identity"]
     )
     applicability = ledger.get(
         result.material["input_applicability_event_identity"]
     )
     applicability_act = ledger.get(
-        applicability.material["act_occurrence_identity"]
+        applicability.material["act_occurrence_event_identity"]
     )
     assignment = ledger.get(
         result.material["responsibility_assignment_reference"][
@@ -175,115 +175,35 @@ def _pair_lifecycle(ledger):
     return assignment, applicability_act, applicability, measurement_act, result
 
 
-def test_pair_standing_replay_reads_one_assignment_per_complete_lifecycle(
-    monkeypatch,
-):
+def test_pair_standing_replay_carries_both_pre_act_bindings_and_result():
     ledger = _measurement_ledger()
-    assignment, _applicability_act, _applicability, _measurement_act, result = (
+    measurement_binding, applicability_act, _applicability, _measurement_act, result = (
         _pair_lifecycle(ledger)
     )
-    calls = []
-    original = operator_standing_module._read_pair_measurement_responsibility_assignment
-
-    def counted(*args, **kwargs):
-        calls.append(args[1])
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_read_pair_measurement_responsibility_assignment",
-        counted,
-    )
+    applicability_binding_identity = applicability_act.material[
+        "responsibility_assignment_reference"
+    ]["recorded_occurrence_identity"]
 
     standing = _standing(ledger)
 
-    assert calls == [assignment.identity]
+    assert standing["responsibility_assignment_occurrences"].get(
+        applicability_binding_identity, object()
+    ) is None
+    assert standing["responsibility_assignment_occurrences"].get(
+        measurement_binding.identity, object()
+    ) is None
     assert result.identity in standing["measurement_occurrences"]
 
 
-@pytest.mark.parametrize(
-    ("phase_kind", "changed_coordinate"),
-    (
-        (BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT, "assignment_occurrence"),
-        (BYTE_PAIR_APPLICABILITY_RECORDED_KIND, "applicability_act_occurrence"),
-        (BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT, "applicability_result_occurrence"),
-        (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, "measurement_act_occurrence"),
-    ),
-)
-def test_pair_standing_replay_refuses_mutation_between_each_phase(
-    monkeypatch, phase_kind, changed_coordinate
-):
+def test_pair_standing_replay_refuses_changed_pre_act_binding():
     ledger = _measurement_ledger()
-    _pair_lifecycle(ledger)
-    original = operator_standing_module._advance_pair_measurement_replay_reading
-    changed = False
-
-    def change_before_next_phase(ledger, reading, event):
-        nonlocal changed
-        if not changed and event.kind == phase_kind:
-            occurrence = getattr(reading, changed_coordinate)
-            occurrence.event.material["changed_between_replay_phases"] = True
-            changed = True
-        return original(ledger, reading, event)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_advance_pair_measurement_replay_reading",
-        change_before_next_phase,
+    measurement_binding, _applicability_act, _applicability, _measurement_act, _result = (
+        _pair_lifecycle(ledger)
     )
+    measurement_binding.material["measurement_rule"] = "changed rule"
 
-    with pytest.raises(ByteMeasurementError, match="changed"):
+    with pytest.raises(ByteMeasurementError, match="binding coordinates"):
         _standing(ledger)
-    assert changed is True
-
-
-def test_pair_standing_replay_refuses_a_substituted_same_shaped_assignment(
-    monkeypatch,
-):
-    ledger = _measurement_ledger()
-    _pair_lifecycle(ledger)
-    original = operator_standing_module._advance_pair_measurement_replay_reading
-    substituted = False
-
-    def substitute_before_applicability(ledger, reading, event):
-        nonlocal substituted
-        if not substituted:
-            reading.assignment = deepcopy(reading.assignment)
-            substituted = True
-        return original(ledger, reading, event)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_advance_pair_measurement_replay_reading",
-        substitute_before_applicability,
-    )
-
-    with pytest.raises(ByteMeasurementError, match="substituted"):
-        _standing(ledger)
-
-
-def test_pair_standing_replay_state_clears_after_exception(monkeypatch):
-    ledger = _measurement_ledger()
-    _pair_lifecycle(ledger)
-    original = operator_standing_module._advance_pair_measurement_replay_reading
-    interrupted = False
-
-    def interrupt_once(ledger, reading, event):
-        nonlocal interrupted
-        if not interrupted:
-            interrupted = True
-            raise RuntimeError("interrupt pair replay")
-        return original(ledger, reading, event)
-
-    monkeypatch.setattr(
-        operator_standing_module,
-        "_advance_pair_measurement_replay_reading",
-        interrupt_once,
-    )
-
-    with pytest.raises(RuntimeError, match="interrupt pair replay"):
-        _standing(ledger)
-    assert _standing(ledger)["measurement_occurrences"]
 
 
 def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path):
@@ -302,7 +222,7 @@ def test_pair_standing_replay_and_public_readers_survive_sqlite_reopen(tmp_path)
 
     reopened = SQLiteEventLedger(path)
     assert result.identity in _standing(reopened)["measurement_occurrences"]
-    assert get_byte_position_pair_measurement_responsibility_assignment(
+    assert get_byte_position_pair_measurement_pre_act_binding(
         reopened, assignment.identity
     ).identity == assignment.identity
     assert assertions_of_recorded_byte_position_pair_measurement(
@@ -367,9 +287,9 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
         set(occurrence)
         == {
             "recorded_occurrence_identity",
-            "result_identity",
-            "act_occurrence_identity",
-            "act_occurrence_identity",
+                "result_identity",
+                "act_occurrence_identity",
+                "act_occurrence_event_identity",
             "yield_relation_identity",
         }
         for occurrence in standing["measurement_occurrences"].values()
@@ -425,9 +345,9 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
 
     standing = _standing(ledger)
 
-    source_act = ledger.get(source.material["act_occurrence_identity"])
+    source_act = ledger.get(source.material["act_occurrence_event_identity"])
     measurement_act = ledger.get(
-        measurement.material["act_occurrence_identity"]
+        measurement.material["act_occurrence_event_identity"]
     )
     assert standing["exact_result_occurrences"] == {
         source.identity: source_act.material["responsibility_assignment_reference"],
