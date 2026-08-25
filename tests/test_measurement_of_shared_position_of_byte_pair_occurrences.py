@@ -551,7 +551,7 @@ def test_ordered_source_positions_beside_path_replay_after_restart(tmp_path):
         reopened.close()
 
 
-def test_two_recurrent_results_share_one_exact_later_standing_read(monkeypatch):
+def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch):
     ledger, locality, _source, first, second = _fixture()
     standing_reads = []
     original = operator_standing_module.read_operator_locality_standing_through
@@ -1744,7 +1744,7 @@ PYTEST_ADMISSION = (
     test_ordered_path_and_input_position_assertion_coordinates_replay_after_restart,
     test_ordered_source_positions_remain_beside_the_path_assertion,
     test_ordered_source_positions_beside_path_replay_after_restart,
-    test_two_recurrent_results_share_one_exact_later_standing_read,
+    test_two_recurrent_results_share_one_exact_current_standing_read,
     test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_override,
     test_shared_assignment_refuses_inexact_explicit_prior_standing,
     test_shared_assignment_explicit_prior_revalidates_later_input_mutation,

@@ -50,23 +50,6 @@ responsible occurrence, Authority, Scope, Locality, limits, and Unknown.
 
 The result carries the exact coordinates established by its Act occurrence.
 
-## Later Standing
-
-Standing for one result requires another exact Responsibility and Act
-occurrence:
-
-```
-current Standing
-└── exact Responsibility
-    ├── subject: prior result
-    ├── exact Standing Act
-    ├── Authority
-    ├── Scope
-    ├── Locality and limits
-    └── Standing Act occurrence
-            └── Yield ──> Standing for prior result
-```
-
 ## References
 
 - [Standing](chapters/01_constitutional_standing.md)

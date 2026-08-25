@@ -399,7 +399,7 @@ def main() -> int:
         "readme_sections": {
             name: text
             for name, text in _readme_sections().items()
-            if name in ("Standing", "Responsibility", "Act and occurrence", "Later Standing")
+            if name in ("Standing", "Responsibility", "Act and occurrence")
         },
         "machine_grammar": relevant_grammar,
         "known_loss": None,

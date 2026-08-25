@@ -62,7 +62,6 @@ KEYS = {
     "test_subject": ("A", "01.Source.C — it is one test subject and no other subject"),
     "witness_grammar": ("A", "01.Source.C names this witness grammar as a Fidelity subject"),
     "source_references": ("A", "01.Source.E and 04.Compare.B state exact source references"),
-    "later_Standing": ("A", "stated in six places"),
     "required_Admission": ("A", "01.Source.E.1 and 04.Compare state required Admission"),
     "establishes_no": ("B", "serializes the Book's 'establishes no', its dominant grammar"),
     "responsibility_source": ("B", "serializes 'is a branch of current Standing carrying ...'; the name is authored"),
@@ -140,7 +139,8 @@ def main() -> int:
         if act and act.replace("_", " ").lower() not in book:
             minted.append((identity, act, act == body.get("Responsibility")))
     doubled = [row for row in minted if row[2]]
-    print(f"  exact_Act values naming an Act the Book never names: {len(minted)}/30")
+    acts = sum("exact_Act" in body for body in declared.values())
+    print(f"  exact_Act values naming an Act the Book never names: {len(minted)}/{acts}")
     print(f"    of those, identical to the clause's Responsibility: {len(doubled)}")
     for identity, act, _ in minted:
         print(f"      {identity:16} {act}")
@@ -161,14 +161,6 @@ def main() -> int:
     print(f"  distinct things denied across them: about {denied}")
     print(f"  of those clauses, carrying no establishes_no in the JSON: {len(dropped)}")
 
-    print("\n  two clauses where the minted Act comes out of the denial itself:\n")
-    for identity in ("01.Standing.A", "01.Standing.D"):
-        print(f"    {identity}")
-        print(f"      Book: {clause[identity][:150]}")
-        print(f"      JSON subject: {declared[identity]['subject']}")
-        print(f"      JSON Act:     {declared[identity]['exact_Act']}")
-        print(f"      JSON result:  {declared[identity]['result']}")
-
     same = [
         identity
         for identity, body in declared.items()
@@ -184,13 +176,12 @@ def main() -> int:
 
     print(
         "\n  A matching identifier is not a faithful body.  The Book's grammar is\n"
-        "  mostly denial, and the denials are the half that can refuse anything;\n"
-        "  the projection carries them for two of the twenty-four clauses that\n"
-        "  state one.\n"
-        "\n  Where a clause names no Act, the schema still required one, and a name\n"
-        "  was made from the Responsibility's own words.  Naming an Act there\n"
-        "  moves the gap rather than closing it, and Fidelity then compares a Seed\n"
-        "  occurrence against an Act no witness states.\n"
+        "  not established by the machine surface repeating its names. Of the\n"
+        f"  {total} clause(s) that now carry a denial, the projection carries it\n"
+        f"  for {total - len(dropped)}.\n"
+        "\n  Where the schema carries an exact_Act that the Book never names, the\n"
+        "  name moves the gap rather than closing it, and Fidelity then compares\n"
+        "  a Seed occurrence against an Act no witness states.\n"
         "\n  Counts are measured.  Each classification is a reading of two recovered\n"
         "  texts, recorded per term so it can be disagreed with at the row that\n"
         "  states it.  Nothing is amended and nothing here says which side changes."

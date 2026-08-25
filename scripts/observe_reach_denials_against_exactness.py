@@ -124,12 +124,6 @@ READING = {
         "provenance is an ordered reference path and carries no responsible "
         "occurrence, which every one of the three requires",
     ),
-    "The result as one coordinate of that Responsibility branch establishes no Standing for the result as another subject, and no later Standing occurrence": (
-        "Standing", "removed by existing positive grammar",
-        "Standing is for one exact subject, so Standing for subject S is already "
-        "not Standing for subject R. This is 01.Standing.A.1, which I drafted, "
-        "and under the whitelist it states what exactness states",
-    ),
     "An exhaustive bounded subject set for one Responsibility establishes no order, Applicability, or completion for another Responsibility": (
         "completion", "Unknown",
         "the Applicability half is removed by exactness. Order and completion "
@@ -217,7 +211,7 @@ def main() -> int:
     )
 
     print(
-        "\n  Ten of the thirteen fall to exactness with no new rule. Two are\n"
+        "\n  Nine of the twelve fall to exactness with no new rule. Two are\n"
         "  Unknown for want of a physiology to compare against. One does not\n"
         "  fall, and it is the useful result: Admission carries an occurrence and\n"
         "  no boundary, so its own identity cannot say which boundary admitted\n"

@@ -79,33 +79,14 @@ def test_witness_grammar_has_no_retired_scaffolding():
     assert {word for word in retired if word in material} == set()
 
 
-def test_current_standing_precedes_responsibility_without_assignment():
-    """Standing carries its first coordinates and its later physiology.
-
-    What Standing requires is stated once, by 01.Standing.A. The top-level
-    block carried a second list that named Standing among Standing's own
-    requirements and omitted Yield, Authority, Scope and limits.
-    """
+def test_machine_standing_carries_only_first_current_standing():
+    """The top-level surface carries only the first current Standing."""
 
     assert _grammar()["standing"] == {
         "current": {
             "subject": "this_Seed",
             "coordinates": [],
             "book_reference": "01.Standing.G",
-        },
-        "later_Standing": {
-            "subject": "prior_result",
-            "requires": [
-                "Responsibility",
-                "exact_Act",
-                "Authority",
-                "Scope",
-                "Locality",
-                "limits",
-                "Act_occurrence",
-                "Yield",
-                "result",
-            ],
         },
     }
 
@@ -473,7 +454,7 @@ def test_machine_grammar_contains_no_host_boolean():
 PYTEST_ADMISSION = (
     test_book_and_witness_grammar_have_the_same_coordinates,
     test_witness_grammar_has_no_retired_scaffolding,
-    test_current_standing_precedes_responsibility_without_assignment,
+    test_machine_standing_carries_only_first_current_standing,
     test_empty_standing_is_only_the_first_current_standing,
     test_applicability_required_admission_and_participation_remain_separate,
     test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,

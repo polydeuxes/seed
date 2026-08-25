@@ -1547,7 +1547,7 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
 ]:
-    """Address two distinct results through one exact later Standing read."""
+    """Address two distinct results through one exact current Standing read."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("pair-position references require one EventLedger")

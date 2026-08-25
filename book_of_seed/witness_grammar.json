@@ -4,20 +4,6 @@
       "subject": "this_Seed",
       "coordinates": [],
       "book_reference": "01.Standing.G"
-    },
-    "later_Standing": {
-      "subject": "prior_result",
-      "requires": [
-        "Responsibility",
-        "exact_Act",
-        "Authority",
-        "Scope",
-        "Locality",
-        "limits",
-        "Act_occurrence",
-        "Yield",
-        "result"
-      ]
     }
   },
   "responsibility": {

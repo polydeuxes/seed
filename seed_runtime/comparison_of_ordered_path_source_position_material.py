@@ -290,7 +290,6 @@ def _applicability_act_material(
         "limits": [
             "the result establishes no position occurrence relation",
             "the result establishes no material carried by the path",
-            "the result establishes no later Standing",
         ],
         "unknown": [],
         "conflicts": [],

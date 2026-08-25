@@ -115,14 +115,6 @@ ELIMINATION = {
         "every denial. It is the only key that can refuse anything, and the Book's "
         "grammar is mostly denial",
     ),
-    "later_Standing": (
-        "survives",
-        "Standing established after, as against current Standing",
-        "standing.current",
-        "01.Standing.A.1 entirely: that a result is one coordinate of current "
-        "Standing and establishes no later Standing occurrence cannot be said once "
-        "the two collapse",
-    ),
     "rule": (
         "survives",
         "the declared rule a Compare runs under",
@@ -162,9 +154,8 @@ ELIMINATION = {
         "what a result is complete over",
         "responsibility_subject_set",
         "not determinable here. What a result is complete over and what a "
-        "Responsibility is exhaustive over are separable, and its one value sets "
-        "them equal while later_Standing in the same body denies completion over "
-        "that set",
+        "Responsibility is exhaustive over are separable, and its one value does "
+        "not establish that they are the same",
     ),
     "responsibility_source": (
         "Unknown",
