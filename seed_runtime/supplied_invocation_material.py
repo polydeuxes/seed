@@ -118,7 +118,7 @@ def _read_occurrence_coordinates(
     return tuple(coordinates)
 
 
-def acquire_supplied_witness_material_occurrence(
+def record_supplied_witness_material_source(
     ledger: EventLedger,
     *,
     operator_invocation_locality_result_event_identity: str,
@@ -126,7 +126,7 @@ def acquire_supplied_witness_material_occurrence(
     supplied: SuppliedWitnessMaterialOccurrence,
     prior_supplied_occurrence_references: tuple[str, ...] = (),
 ) -> Event:
-    """Acquire one exact occurrence supplied by this Witness in its Locality."""
+    """Record one exact occurrence supplied by this Witness in its Locality."""
 
     if type(supplied) is not SuppliedWitnessMaterialOccurrence:
         raise TypeError("exact supplied material required")

@@ -27,7 +27,7 @@ from seed_runtime.operator_invocation_locality import (
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
-    acquire_supplied_witness_material_occurrence,
+    record_supplied_witness_material_source,
 )
 
 
@@ -99,7 +99,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     ledger = EventLedger()
     command = _command(ledger)
     assignment, _act, relation = _relation(ledger, command)
-    supplied = acquire_supplied_witness_material_occurrence(
+    supplied = record_supplied_witness_material_source(
         ledger,
         operator_invocation_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,

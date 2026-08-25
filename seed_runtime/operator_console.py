@@ -86,7 +86,7 @@ from seed_runtime.declared_measurement_responsibilities import (
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
     SuppliedWitnessMaterialOccurrence,
-    acquire_supplied_witness_material_occurrence,
+    record_supplied_witness_material_source,
 )
 
 
@@ -557,7 +557,7 @@ def run_persistent_operator_console(
             supplied_occurrence_references: list[str] = []
             provider_boundary = ledger.append_boundary()
 
-            def acquire_witness_material(supplied) -> None:
+            def record_witness_material(supplied) -> None:
                 nonlocal witness_standing
                 nonlocal supplied_occurrence_count
                 nonlocal provider_boundary
@@ -570,7 +570,7 @@ def run_persistent_operator_console(
                 if supplied.source_boundary in supplied_boundaries:
                     raise ValueError("distinct source boundary required")
                 supplied_boundaries.add(supplied.source_boundary)
-                supplied_occurrence = acquire_supplied_witness_material_occurrence(
+                supplied_occurrence = record_supplied_witness_material_source(
                     ledger,
                     operator_invocation_locality_result_event_identity=(
                         relation_result.identity
@@ -612,7 +612,7 @@ def run_persistent_operator_console(
 
             provider_result = operator_invocation_provider(
                 command_material,
-                acquire_witness_material,
+                record_witness_material,
             )
             if ledger.append_boundary() != provider_boundary:
                 raise ValueError(
