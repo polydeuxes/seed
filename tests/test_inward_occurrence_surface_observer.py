@@ -23,6 +23,14 @@ from observe_inward_frame_walks import (  # noqa: E402
     _shared_ends,
 )
 from observe_inward_walk_continuities import _walk_transitions  # noqa: E402
+from observe_inward_walk_binding_refusals import (  # noqa: E402
+    _ChangedAssignmentLedger,
+    _change_at_path,
+    _complete_later_paths,
+    _result_reference,
+    _wrong_iteration_reference,
+)
+from seed_runtime.events import EventLedger, UNVERIFIABLE
 
 
 def test_scalar_values_do_not_choose_an_occurrence_coordinate_surface():
@@ -319,6 +327,117 @@ def test_walk_transitions_join_exact_later_and_prior_boundaries():
     ]
 
 
+def test_only_complete_non_boundary_later_coordinates_are_exercised():
+    pair = {
+        "same_scalar_findings": [
+            {
+                "carried_by_every_exact_transition": True,
+                "later_walk_first_coordinates": [
+                    {
+                        "coordinate_address_sha256": "address-a",
+                        "top_coordinate_material_sha256": "name-a",
+                    },
+                    {
+                        "coordinate_address_sha256": "address-boundary",
+                        "top_coordinate_material_sha256": "name-boundary",
+                    },
+                ],
+            },
+            {
+                "carried_by_every_exact_transition": False,
+                "later_walk_first_coordinates": [
+                    {
+                        "coordinate_address_sha256": "address-incomplete",
+                        "top_coordinate_material_sha256": "name-incomplete",
+                    }
+                ],
+            },
+        ]
+    }
+    coordinate_materials = {
+        "coordinate_materials": {
+            "name-a": "alpha",
+            "name-boundary": "responsible_boundary",
+            "name-incomplete": "incomplete",
+        },
+        "coordinate_address_materials": {
+            "address-a": [
+                ["coordinate", "alpha"],
+                ["coordinate", "nested"],
+            ],
+            "address-boundary": [["coordinate", "responsible_boundary"]],
+            "address-incomplete": [["coordinate", "incomplete"]],
+        },
+    }
+
+    assert _complete_later_paths(pair, coordinate_materials) == [
+        (("coordinate", "alpha"), ("coordinate", "nested"))
+    ]
+
+
+def test_scalar_change_follows_one_exact_coordinate_address():
+    material = {
+        "alpha": {"values": ["first", "second"]},
+        "unchanged": "exact",
+    }
+
+    _change_at_path(
+        material,
+        (
+            ("coordinate", "alpha"),
+            ("coordinate", "values"),
+            ("list_position", 1),
+        ),
+    )
+
+    assert material == {
+        "alpha": {"values": ["first", "second-changed"]},
+        "unchanged": "exact",
+    }
+
+
+def test_changed_assignment_is_recorded_as_supplied_not_mutated_after_append():
+    ledger = _ChangedAssignmentLedger(
+        target_append_position=0,
+        paths=[(("coordinate", "alpha"),)],
+    )
+
+    event = ledger.append("opaque", {"alpha": "exact", "beta": "same"})
+
+    assert event.material == {"alpha": "exact-changed", "beta": "same"}
+    assert ledger.get(event.identity).material == event.material
+    assert ledger.integrity_of(event.identity) == UNVERIFIABLE
+
+
+def test_wrong_iteration_uses_an_intact_earlier_result_reference():
+    ledger = EventLedger()
+    first = ledger.append(
+        "opaque",
+        {
+            "act_occurrence_event_identity": "first-act-event",
+            "determination_act_occurrence_identity": "first-act",
+            "result_identity": "first-result",
+            "yield_relation_identity": "first-yield",
+        },
+    )
+    later = ledger.append(
+        "opaque",
+        {
+            "act_occurrence_event_identity": "later-act-event",
+            "determination_act_occurrence_identity": "later-act",
+            "result_identity": "later-result",
+            "yield_relation_identity": "later-yield",
+        },
+    )
+    assignment = {
+        "addressed_byte_occurrence_reference_determination_result_reference": (
+            _result_reference(later)
+        )
+    }
+
+    assert _wrong_iteration_reference(ledger, assignment) == _result_reference(first)
+
+
 PYTEST_ADMISSION = (
     test_scalar_values_do_not_choose_an_occurrence_coordinate_surface,
     test_immediate_container_count_does_not_change_coordinate_surface,
@@ -333,4 +452,8 @@ PYTEST_ADMISSION = (
     test_maximum_common_adjacent_walk_is_source_selected,
     test_walk_repetition_is_recovered_across_empty_and_varying_middles,
     test_walk_transitions_join_exact_later_and_prior_boundaries,
+    test_only_complete_non_boundary_later_coordinates_are_exercised,
+    test_scalar_change_follows_one_exact_coordinate_address,
+    test_changed_assignment_is_recorded_as_supplied_not_mutated_after_append,
+    test_wrong_iteration_uses_an_intact_earlier_result_reference,
 )
