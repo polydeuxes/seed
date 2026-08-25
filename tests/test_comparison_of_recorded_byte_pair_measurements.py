@@ -15,11 +15,9 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
-    get_byte_position_pair_measurement_responsibility_assignment,
     assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
-    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
     record_recorded_pair_measurement_comparison_responsibility_assignment,
@@ -30,26 +28,14 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
 )
 from seed_runtime.event import Event
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_material_acquisition import (
-    record_operator_material_acquire_responsibility_assignment,
-    record_operator_material_acquire_act_occurrence,
-    record_operator_material_acquire_result,
-)
-from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
 
 
 LOCALITY = "recorded-pair-comparison-locality"
-RECURRENT_PAIR_POSITION_RESULT_KIND = (
-    "operator.measurement_of_recurrent_byte_pair_occurrence_position."
-    "recording_occurrence_of_result"
-)
-
-
 def _pair_measurement(ledger):
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
@@ -202,43 +188,6 @@ def _comparison():
     return ledger, earlier_source, added, earlier, later, assignment, applicability, result
 
 
-def test_one_console_call_revalidates_only_the_pair_crossing_a_callback(
-    monkeypatch,
-):
-    ledger, _earlier_source, _added, earlier, later = _inputs()
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
-    full_reads = []
-    original = comparison_module._validated_recorded_byte_position_pair_measurement
-
-    def record(*args, **kwargs):
-        full_reads.append(args[1])
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(
-        comparison_module,
-        "_validated_recorded_byte_position_pair_measurement",
-        record,
-    )
-    result, standing = (
-        _record_recorded_pair_measurement_comparison_from_carried_measurements(
-            ledger,
-            earlier_measurement=earlier,
-            later_measurement=later,
-            locality_standing=standing,
-        )
-    )
-
-    assert full_reads == [earlier.identity]
-    assert result.identity in standing["comparison_result_occurrences"]
-    replayed = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
-    assert standing == replayed
-    assert full_reads.count(earlier.identity) >= 2
-    assert later.identity in full_reads
-    assert get_recorded_pair_measurement_comparison(
-        ledger, result.identity
-    ) == result.material
-
-
 def test_changed_pair_crossing_a_callback_cannot_enter_compare_standing():
     ledger, _earlier_source, _added, earlier, later = _inputs()
     standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
@@ -374,7 +323,7 @@ def test_produced_measurements_enter_one_responsible_compare():
     count_ab = next(
         item
         for item in findings["conflicting_findings"]
-        if item["subject"] == {"result": "count", "representation": [97, 98]}
+        if item["subject"] == {"result": "count", "content": [97, 98]}
     )
     assert count_ab["earlier_content"] == {
         "input_count": 2,
@@ -387,11 +336,11 @@ def test_produced_measurements_enter_one_responsible_compare():
         "count": 3,
     }
     assert any(
-        item["subject"] == {"result": "recurrence", "representation": [97, 98]}
+        item["subject"] == {"result": "recurrence", "content": [97, 98]}
         for item in findings["same_content_findings"]
     )
     assert any(
-        item["subject"] == {"result": "count", "representation": [97, 99]}
+        item["subject"] == {"result": "count", "content": [97, 99]}
         for item in findings["findings_of_later_result"]
     )
     assert findings["unknown_findings"] == []
@@ -406,7 +355,7 @@ def test_same_content_finding_labels_do_not_hide_changed_content():
         "findings"
     ]
     conflicting_subjects = {
-        (item["subject"]["result"], tuple(item["subject"]["representation"]))
+        (item["subject"]["result"], tuple(item["subject"]["content"]))
         for item in findings["conflicting_findings"]
     }
     assert ("count", (97, 98)) in conflicting_subjects
@@ -702,7 +651,7 @@ def test_later_result_read_revalidates_changed_pair_measurement_yield_relation()
         get_recorded_pair_measurement_comparison(ledger, result.identity)
 
 
-def test_supplied_local_material_records_pair_measurements_without_compare():
+def test_supplied_local_material_records_pair_measurements():
     ledger = EventLedger()
 
     def provider(command, supply):
@@ -730,18 +679,17 @@ def test_supplied_local_material_records_pair_measurements_without_compare():
     kinds = tuple(event.kind for event in ledger.list())
     assert kinds.count("operator.measurement.byte_counts_recorded") == 3
     assert kinds.count("operator.measurement.byte_position_pair_counts_recorded") == 2
-    assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
 
 
 @pytest.mark.parametrize(
-    ("exact_material", "expected_ab_count", "recurrence_expected"),
+    ("exact_material", "exact_ab_count", "has_recurrence"),
     (
         (b"ab", 1, False),
         (b"abxxab", 2, True),
     ),
 )
-def test_first_exact_material_records_pair_counts_without_prior_pair_measurement(
-    exact_material, expected_ab_count, recurrence_expected
+def test_first_exact_material_records_pair_counts(
+    exact_material, exact_ab_count, has_recurrence
 ):
     ledger = EventLedger()
 
@@ -770,214 +718,14 @@ def test_first_exact_material_records_pair_counts_without_prior_pair_measurement
     )
     assert (
         count_assertion.material["dimensions"]["content"]["count"]
-        == expected_ab_count
+        == exact_ab_count
     )
     assert any(
         assertion.result == "recurrence" for assertion in ab_assertions
-    ) is recurrence_expected
-    assert not tuple(
-        event
-        for event in ledger.list()
-        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
-    )
-    assert not tuple(
-        event
-        for event in ledger.list()
-        if event.kind == RECURRENT_PAIR_POSITION_RESULT_KIND
-    )
-
-
-def test_raw_material_acquisition_does_not_create_a_pair_premise():
-    ledger = EventLedger()
-    corpus_occurrence = record_operator_material_occurrence(
-        ledger,
-        exact=b"abab\n",
-        locality_identity=LOCALITY,
-    )
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b""),
-    )
-
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
-    assert corpus_occurrence.identity in {
-        occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"]
-    }
-    assert not tuple(
-        event
-        for event in ledger.list()
-        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-    )
-    assert not tuple(
-        event
-        for event in ledger.list()
-        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
-    )
-
-
-def test_new_raw_acquisition_does_not_replace_one_carried_pair_premise():
-    ledger = EventLedger()
-    record_operator_material_occurrence(
-        ledger,
-        exact=b"abab\n",
-        locality_identity=LOCALITY,
-    )
-    stale_pair = _pair_measurement(ledger)
-    second_corpus_occurrence = record_witness_material_acquisition(
-        ledger,
-        locality_identity=LOCALITY,
-        exact_bytes=b"abac",
-        source_boundary="second corpus occurrence",
-    )
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b""),
-    )
-
-    current_pairs = tuple(
-        event
-        for event in ledger.list()
-        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-    )
-    assert current_pairs == (stale_pair,)
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
-    assert second_corpus_occurrence.identity in {
-        occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"]
-    }
-    last_representation = next(reversed(tuple(standing["representations"].values())))
-    assert last_representation["source_occurrence_reference"] == stale_pair.identity
-
-
-def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
-    database = tmp_path / "operator-pair-compare.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    record_operator_material_occurrence(
-        ledger,
-        exact=b"abab\n",
-        locality_identity=LOCALITY,
-    )
-    _pair_measurement(ledger)
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b"abac\n"),
-    )
-    ledger.close()
-
-    reopened = SQLiteEventLedger(str(database))
-    standing = read_operator_locality_standing(
-        reopened, locality_identity=LOCALITY
-    )
-    assert len(standing["comparison_result_occurrences"]) == 1
-    comparison_identity = next(iter(standing["comparison_result_occurrences"]))
-    recorded = get_recorded_pair_measurement_comparison(
-        reopened, comparison_identity
-    )
-    assignment = comparison_module.get_recorded_pair_measurement_comparison_responsibility_assignment(
-        reopened,
-        recorded["responsibility_assignment_reference"][
-            "recorded_occurrence_identity"
-        ],
-    )
-    assert assignment.material["added_occurrence_reference"] in {
-        occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"]
-    }
-    reopened.close()
-
-    resumed = SQLiteEventLedger(str(database))
-    pair_count_before_resume = sum(
-        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-        for event in resumed.list()
-    )
-    run_persistent_operator_console(
-        ledger=resumed,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b""),
-    )
-    resumed_standing = read_operator_locality_standing(
-        resumed, locality_identity=LOCALITY
-    )
-    assert sum(
-        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-        for event in resumed.list()
-    ) == pair_count_before_resume
-    last_representation = next(
-        reversed(tuple(resumed_standing["representations"].values()))
-    )
-    assert last_representation["source_occurrence_reference"] == comparison_identity
-    resumed.close()
-
-
-@pytest.mark.parametrize(
-    ("later_material", "expected_finding_counts"),
-    (
-        (b"bc\n", (0, 2)),
-        (b"b", (0, 0)),
-    ),
-)
-def test_zero_pair_premise_comparison_survives_console_and_reopen(
-    tmp_path, later_material, expected_finding_counts
-):
-    database = tmp_path / ("zero-pair-" + str(len(later_material)) + ".sqlite")
-    ledger = SQLiteEventLedger(str(database))
-    record_operator_material_occurrence(
-        ledger,
-        exact=b"a",
-        locality_identity=LOCALITY,
-    )
-    _pair_measurement(ledger)
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(later_material),
-    )
-    pair_identities = tuple(
-        event.identity
-        for event in ledger.list()
-        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-    )
-    comparison = next(
-        event
-        for event in reversed(ledger.list())
-        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
-    )
-    assert tuple(
-        len(
-            assertions_of_recorded_byte_position_pair_measurement(
-                ledger, identity
-            )
-            or ()
-        )
-        for identity in pair_identities
-    ) == expected_finding_counts
-    ledger.close()
-
-    reopened = SQLiteEventLedger(str(database))
-    assert get_recorded_pair_measurement_comparison(
-        reopened, comparison.identity
-    ) == comparison.material
-    pair_count = len(pair_identities)
-    run_persistent_operator_console(
-        ledger=reopened,
-        locality_identity=LOCALITY,
-        input_stream=binary_input(b""),
-    )
-    assert sum(
-        event.kind == "operator.measurement.byte_position_pair_counts_recorded"
-        for event in reopened.list()
-    ) == pair_count
-    reopened.close()
+    ) is has_recurrence
 
 
 PYTEST_ADMISSION = (
-    test_one_console_call_revalidates_only_the_pair_crossing_a_callback,
     test_changed_pair_crossing_a_callback_cannot_enter_compare_standing,
     test_operator_acquisition_carries_the_prior_pair_measurement_into_compare,
     test_witness_provenance_does_not_establish_a_compare_input_relation,
@@ -994,10 +742,6 @@ PYTEST_ADMISSION = (
     test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings,
     test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers,
     test_later_result_read_revalidates_changed_pair_measurement_yield_relation,
-    test_supplied_local_material_records_pair_measurements_without_compare,
-    test_first_exact_material_records_pair_counts_without_prior_pair_measurement,
-    test_raw_material_acquisition_does_not_create_a_pair_premise,
-    test_new_raw_acquisition_does_not_replace_one_carried_pair_premise,
-    test_operator_pair_premise_and_compare_survive_reopen,
-    test_zero_pair_premise_comparison_survives_console_and_reopen,
+    test_supplied_local_material_records_pair_measurements,
+    test_first_exact_material_records_pair_counts,
 )

@@ -75,21 +75,20 @@ def _source_standing_reference(
             "operator material acquire has a different Standing Locality"
         )
     standing_boundary = locality_standing.get("through_event_occurrence_identity")
-    occurrences = ledger.list_locality(locality_identity)
     if responsibility_event_identity is None:
-        expected_boundary = occurrences[-1].identity if occurrences else None
+        latest = ledger.latest_locality_event(locality_identity)
+        prior_event_identity = latest.identity if latest is not None else None
     else:
-        positions = {
-            occurrence.identity: index
-            for index, occurrence in enumerate(occurrences)
-        }
-        position = positions.get(responsibility_event_identity)
-        if position is None:
+        try:
+            earlier = ledger.prior_locality_event(
+                responsibility_event_identity, locality_identity
+            )
+        except ValueError as error:
             raise OperatorMaterialAcquireError(
                 "operator material acquire requires its exact current Standing boundary"
-            )
-        expected_boundary = occurrences[position - 1].identity if position else None
-    if standing_boundary != expected_boundary:
+            ) from error
+        prior_event_identity = earlier.identity if earlier is not None else None
+    if standing_boundary != prior_event_identity:
         raise OperatorMaterialAcquireError(
             "operator material acquire requires its exact current Standing boundary"
         )
@@ -402,7 +401,7 @@ def get_operator_material_acquire_responsibility_assignment(
         raise OperatorMaterialAcquireError(
             "operator material acquire assignment coordinates are not exact"
         )
-    expected_source = _source_standing_reference(
+    exact_source_reference = _source_standing_reference(
         ledger,
         locality_identity=assignment.locality_identity,
         locality_standing={
@@ -413,16 +412,16 @@ def get_operator_material_acquire_responsibility_assignment(
         },
         responsibility_event_identity=assignment.identity,
     )
-    expected = _assignment_material(
+    exact_assignment_material = _assignment_material(
         assignment_identity=identities[0],
         assignment_subject_identity=identities[1],
         acquire_act_identity=identities[2],
         act_occurrence_identity=identities[3],
         scope_identity=identities[4],
         result_boundary_identity=identities[5],
-        source_standing_reference=expected_source,
+        source_standing_reference=exact_source_reference,
     )
-    if material != expected:
+    if material != exact_assignment_material:
         raise OperatorMaterialAcquireError(
             "operator material acquire assignment is not exact"
         )
@@ -753,19 +752,19 @@ def get_recorded_operator_material_acquire(
         material_boundary=result.material.get("source_boundary"),
         known_loss=tuple(result.material.get("known_loss", ())),
     )
-    expected_result = _result_material(
+    act_result_material = _result_material(
         act_occurrence,
         boundary_material=boundary,
         recorded_result_event_identity=result.identity,
     )
-    expected = _recorded_result_material(
-        expected_result,
+    exact_recorded_material = _recorded_result_material(
+        act_result_material,
         act_occurrence_event_identity=act_occurrence.identity,
         yield_relation_identity=result.material.get("yield_relation_identity"),
     )
     if (
         result.locality_identity != act_occurrence.locality_identity
-        or result.material != expected
+        or result.material != exact_recorded_material
     ):
         raise OperatorMaterialAcquireError(
             "operator material acquire result coordinates are not exact"

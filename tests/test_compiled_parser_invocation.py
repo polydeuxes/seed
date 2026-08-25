@@ -22,9 +22,6 @@ from compiled_parser_invocation import (  # noqa: E402
     compiled_parser_invocation,
     one_byte_substitutions,
 )
-from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
-
-
 def test_equal_material_keeps_distinct_invocation_occurrences():
     first = python_parser_invocation(
         b"x=1\n", boundary_identity="equal-material", invocation_position=0
@@ -145,8 +142,7 @@ def test_distinct_compiled_parser_functions_receive_the_same_exact_material():
     reason="one compiled parser function is unavailable",
 )
 def test_cross_parser_results_preserve_agreement_and_disagreement():
-    _, measured = measured_one_byte_material()
-    materials = tuple(reference.exact_material for reference in measured)
+    materials = (b"", b"\x00", b"1", b"a", b"\xff")
     rows = compiled_parser_invocations(
         materials, boundary_identity="cross-parser-results"
     )

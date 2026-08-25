@@ -57,13 +57,6 @@ from compiled_material_invocation import (  # noqa: E402
 from material_admission import compare_admission_result_pairs  # noqa: E402
 
 
-COMPILED_EXECUTABLE = ROOT / ".venv" / "bin" / "piper"
-COMPILED_MATERIAL = (
-    Path.home() / ".local" / "share" / "piper-voices" / "en_US-lessac-medium.onnx"
-)
-COMPILED_FUNCTION_AVAILABLE = COMPILED_EXECUTABLE.is_file() and COMPILED_MATERIAL.is_file()
-
-
 def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatch):
     references = tuple(
         MaterialAcquisitionResultReference(
@@ -435,8 +428,6 @@ def _material_functions() -> tuple[MaterialImplementationFunction, ...]:
 
 @pytest.fixture(scope="module")
 def small_boundary_material():
-    if not COMPILED_FUNCTION_AVAILABLE:
-        pytest.skip("compiled implementation function is unavailable")
     book = (ROOT / "book_of_seed" / "README.md").read_bytes()
     start = book.index(b"Seed")
     ledger = EventLedger()
@@ -471,12 +462,7 @@ def small_boundary_material():
     )
     implementation = MaterialImplementationFunction(
         identity=f"compiled-{earlier_function_count}",
-        invocation=(
-            str(COMPILED_EXECUTABLE),
-            "-m",
-            str(COMPILED_MATERIAL),
-            "--output-raw",
-        ),
+        invocation=("/bin/cat",),
     )
     source_invocations = reference_occurrences_across(
         (source_reference,),
@@ -712,8 +698,8 @@ def test_one_small_boundary_compares_all_implementation_functions(
         boundary_identity="small-boundary-admission-compare",
     )
 
-    expected_function_count = len(compiled_functions) + len(material_functions) + 1
-    assert len(comparison_rows) == expected_function_count
+    function_count = len(compiled_functions) + len(material_functions) + 1
+    assert len(comparison_rows) == function_count
     assert all(len(row) == len(additions) for row in comparison_rows)
     assert len({row[0].implementation_function_identity for row in comparison_rows}) == (
         len(comparison_rows)

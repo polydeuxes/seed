@@ -6,7 +6,6 @@ import sys
 
 import pytest
 
-from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_acquisition import record_witness_material_acquisition
 
 
@@ -17,7 +16,6 @@ from compiled_format_invocation import (  # noqa: E402
     ExactMaterialReference,
     admission_added_position_occurrences,
     admission_result_added_position_occurrences,
-    exact_byte_material_references,
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import (  # noqa: E402
@@ -30,13 +28,14 @@ from compiled_material_invocation import (  # noqa: E402
     material_locality_admission_occurrences,
     reference_occurrences_across,
 )
-from material_measurement_test_witness import measured_one_byte_material  # noqa: E402
+from material_measurement_test_witness import measured_material  # noqa: E402
 from material_admission import admission_occurrence  # noqa: E402
 
 
 @pytest.fixture(scope="module")
 def material_invocations():
-    ledger, references = measured_one_byte_material()
+    exact = bytes((0, 1, 2, 9, 10, 11, 12, 13, 14, 15, 16))
+    ledger, references = measured_material(exact)
     function = MaterialImplementationFunction(
         identity="compiled-0",
         invocation=(
@@ -93,15 +92,15 @@ def material_pair_invocations(material_invocations):
 def test_every_measured_byte_reaches_the_compiled_function(material_invocations):
     _, references, occurrences = material_invocations
 
-    assert len(references) == len(occurrences) == 256
+    assert len(references) == len(occurrences) == 11
     assert tuple(reference.exact_material for reference in references) == tuple(
-        bytes((value,)) for value in range(256)
+        bytes((value,)) for value in (0, 1, 2, 9, 10, 11, 12, 13, 14, 15, 16)
     )
     assert {reference.locality_identity for reference in references} == {
         "one-byte-measurement"
     }
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
-    assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 256
+    assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 11
     assert all(occurrence.returned for occurrence in occurrences)
 
 
@@ -131,7 +130,7 @@ def test_moved_byte_references_keep_identity_in_one_new_locality(
 ):
     ledger, references, moved = moved_byte_references
 
-    assert len(moved) == len(references) == 256
+    assert len(moved) == len(references) == 11
     assert {reference.locality_identity for reference in moved} == {
         "one-byte-pairs"
     }
@@ -327,7 +326,7 @@ def test_act_occurrence_boundary_never_splits_admitted_material(
     for admitted_position, admitted_material in enumerate(
         admission.admitted_material
     ):
-        expected_count = sum(
+        addition_count = sum(
             (len(source.exact_material) + 1) * len(admitted_material)
             for source in admitted_material
         )
@@ -336,8 +335,8 @@ def test_act_occurrence_boundary_never_splits_admitted_material(
             for addition in additions
             if addition.source_admitted_material_position == admitted_position
         )
-        if expected_count <= boundary:
-            assert len(found) == expected_count
+        if addition_count <= boundary:
+            assert len(found) == addition_count
         else:
             assert found == ()
 

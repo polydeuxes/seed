@@ -11,9 +11,10 @@ from seed_runtime.material_acquisition import (
     acquired_material_bytes,
     iter_exact_material_acquisition_results,
 )
-from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
-from tests.binary_input import binary_input
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 
 
 E1 = "hello"
@@ -23,11 +24,7 @@ E3 = "# Nouns\n\nA noun is a word.\n\n# Verbs\n\nA verb is a word."
 
 def run_null_start() -> list:
     ledger = EventLedger()
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="s",
-        input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
-    )
+    _record_material(ledger)
     return ledger.list()
 
 
@@ -46,12 +43,19 @@ def exact_null_start_occurrences(events=None) -> str:
 @pytest.fixture(scope="module")
 def ledger() -> EventLedger:
     result = EventLedger()
-    run_persistent_operator_console(
-        ledger=result,
-        locality_identity="s",
-        input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
-    )
+    _record_material(result)
     return result
+
+
+def _record_material(ledger: EventLedger) -> None:
+    material = "\n".join([E1, E2, E3]) + "\n"
+    for position, line in enumerate(material.splitlines(keepends=True)):
+        record_operator_material_occurrence(
+            ledger,
+            exact=line.encode(),
+            locality_identity="s",
+            source_boundary=f"operator boundary {position}",
+        )
 
 
 def _acquisition_results(ledger: EventLedger):

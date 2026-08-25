@@ -448,6 +448,20 @@ class EventLedger:
         events = self._by_locality.get(locality_identity, ())
         return events[-1] if events else None
 
+    def prior_locality_event(
+        self, event_identity: str, locality_identity: str
+    ) -> Event | None:
+        """Return the nearest earlier occurrence in the same Locality."""
+
+        event = self.get(event_identity)
+        position = self._by_identity_position.get(event_identity)
+        if event is None or position is None or event.locality_identity != locality_identity:
+            raise ValueError("the occurrence is not in this Locality")
+        for earlier in reversed(self._events[: position - 1]):
+            if earlier.locality_identity == locality_identity:
+                return earlier
+        return None
+
     def iter_locality_kind(
         self,
         locality_identity: str,
@@ -741,10 +755,10 @@ class SQLiteEventLedger(EventLedger):
             row["name"]: row
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
-        expected_columns = set(_STORED_OCCURRENCE_FIELDS) | {
+        exact_columns = set(_STORED_OCCURRENCE_FIELDS) | {
             "occurrence_material_identity"
         }
-        if set(columns) != expected_columns:
+        if set(columns) != exact_columns:
             raise LedgerIntegrityError(
                 f"{database_path} does not carry the current occurrence fields"
             )
@@ -1012,6 +1026,25 @@ class SQLiteEventLedger(EventLedger):
             f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
             "WHERE events.locality_identity = ? ORDER BY events.rowid DESC LIMIT 1",
             (locality_identity,),
+        ).fetchone()
+        return None if row is None else self._row_to_event(row)
+
+    def prior_locality_event(
+        self, event_identity: str, locality_identity: str
+    ) -> Event | None:
+        """Return the nearest earlier occurrence in the same Locality."""
+
+        event_row = self._connection.execute(
+            "SELECT rowid, locality_identity FROM events WHERE identity = ?",
+            (event_identity,),
+        ).fetchone()
+        if event_row is None or event_row["locality_identity"] != locality_identity:
+            raise ValueError("the occurrence is not in this Locality")
+        row = self._connection.execute(
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.locality_identity = ? AND events.rowid < ? "
+            "ORDER BY events.rowid DESC LIMIT 1",
+            (locality_identity, int(event_row["rowid"])),
         ).fetchone()
         return None if row is None else self._row_to_event(row)
 

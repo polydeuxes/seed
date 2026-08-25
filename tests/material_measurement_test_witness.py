@@ -21,12 +21,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_format_invocation import exact_byte_material_references  # noqa: E402
 
 
-def measured_one_byte_material():
+def measured_material(exact: bytes):
     ledger = EventLedger()
     record_operator_material_occurrence(
         ledger,
         locality_identity="one-byte-material",
-        exact=bytes(range(256)),
+        exact=exact,
         source_boundary="one-byte material test boundary",
     )
     assignment = record_byte_measurement_responsibility_assignment(
@@ -49,3 +49,7 @@ def measured_one_byte_material():
         act_occurrence_event_identity=act_occurrence.identity,
     )
     return ledger, exact_byte_material_references(ledger, measurement.identity)
+
+
+def measured_one_byte_material():
+    return measured_material(bytes(range(256)))

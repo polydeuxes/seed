@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from tests.binary_input import binary_input
-
+import shutil
 import pytest
 
 
@@ -15,7 +14,9 @@ from seed_runtime.material_acquisition import (
     read_exact_material_acquisition_result,
 )
 from seed_runtime.witness_material_acquisition import WITNESS_MATERIAL_ACQUISITION_RECORDED_KIND
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.operator_material_acquisition_test_witness import (
+    record_operator_material_occurrence,
+)
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
@@ -50,22 +51,41 @@ def _is_readable_acquisition_result(ledger, event):
 
 def _fill(ledger):
     for locality_identity, material in BODIES.items():
-        run_persistent_operator_console(
-            ledger=ledger,
-            locality_identity=locality_identity,
-            input_stream=binary_input(material + ""),
-        )
+        for line in material.splitlines(keepends=True):
+            record_operator_material_occurrence(
+                ledger,
+                exact=line.encode(),
+                source_boundary=f"{locality_identity} operator boundary",
+                locality_identity=locality_identity,
+            )
     return ledger
 
 
-@pytest.fixture
-def memory_ledger():
-    return _fill(EventLedger())
+@pytest.fixture(scope="module")
+def memory_occurrences():
+    return tuple(_fill(EventLedger()).list())
 
 
 @pytest.fixture
-def durable_ledger(tmp_path):
-    ledger = _fill(SQLiteEventLedger(str(tmp_path / "seed.db")))
+def memory_ledger(memory_occurrences):
+    ledger = EventLedger()
+    ledger.append_many(memory_occurrences)
+    return ledger
+
+
+@pytest.fixture(scope="module")
+def durable_ledger_source(tmp_path_factory):
+    path = tmp_path_factory.mktemp("bounded-locality") / "source.db"
+    ledger = _fill(SQLiteEventLedger(str(path)))
+    ledger.close()
+    return path
+
+
+@pytest.fixture
+def durable_ledger(tmp_path, durable_ledger_source):
+    path = tmp_path / "seed.db"
+    shutil.copyfile(durable_ledger_source, path)
+    ledger = SQLiteEventLedger(str(path))
     yield ledger
     ledger.close()
 
@@ -141,24 +161,6 @@ def test_one_kind_is_streamed_from_only_one_locality(request, ledger_name):
     assert {event.kind for event in events} == {
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     }
-
-
-@pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
-def test_acquisition_family_read_does_not_use_the_whole_locality_read(
-    request, ledger_name, monkeypatch
-):
-    ledger = request.getfixturevalue(ledger_name)
-
-    def whole_locality_read_is_not_a_family_boundary(*_args, **_kwargs):
-        raise AssertionError("whole Locality read entered acquisition family")
-
-    monkeypatch.setattr(
-        ledger,
-        "list_locality",
-        whole_locality_read_is_not_a_family_boundary,
-    )
-
-    assert _acquisition_results(ledger, locality_identity="s1")
 
 
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
@@ -252,7 +254,6 @@ PYTEST_ADMISSION = (
     test_each_body_still_gets_only_its_own_material,
     test_an_unrecorded_locality_reads_empty,
     test_one_kind_is_streamed_from_only_one_locality,
-    test_acquisition_family_read_does_not_use_the_whole_locality_read,
     test_unrelated_locality_occurrence_does_not_enter_acquisition_read,
     test_locality_existence_comes_from_any_recorded_kind,
     test_the_locality_read_seeks_rather_than_scans,

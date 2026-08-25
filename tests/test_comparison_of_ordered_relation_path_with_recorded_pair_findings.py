@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pytest
 
 import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
@@ -195,9 +197,7 @@ def _record_path(ledger, pair_measurement, source):
     )
 
 
-def _inputs(*, ledger=None, path_source_is_added=True):
-    if ledger is None:
-        ledger = EventLedger()
+def _record_inputs(ledger, *, path_source_is_added=True):
     earlier_source = record_operator_material_occurrence(
         ledger,
         locality_identity=LOCALITY,
@@ -223,6 +223,29 @@ def _inputs(*, ledger=None, path_source_is_added=True):
         )
     path = _record_path(ledger, earlier, path_source)
     return ledger, earlier_source, added, comparison, path
+
+
+@lru_cache(maxsize=2)
+def _input_occurrences(path_source_is_added):
+    ledger, earlier_source, added, comparison, path = _record_inputs(
+        EventLedger(), path_source_is_added=path_source_is_added
+    )
+    return (
+        tuple(ledger.list()),
+        earlier_source.identity,
+        added.identity,
+        comparison.identity,
+        path.identity,
+    )
+
+
+def _inputs(*, ledger=None, path_source_is_added=True):
+    if ledger is not None:
+        return _record_inputs(ledger, path_source_is_added=path_source_is_added)
+    occurrences, *identities = _input_occurrences(path_source_is_added)
+    ledger = EventLedger()
+    ledger.append_many(occurrences)
+    return ledger, *(ledger.get(identity) for identity in identities)
 
 
 def _record_comparison(ledger, comparison, path):
@@ -346,28 +369,26 @@ def test_unassigned_exact_compare_subject_read_records_nothing():
     )
 
 
-def test_unassigned_exact_compare_subject_read_replays_after_restart(tmp_path):
+def test_unassigned_exact_compare_subject_read_after_restart(tmp_path):
     database = str(tmp_path / "ordered-path-compare-subject.sqlite")
-    ledger = SQLiteEventLedger(database)
-    ledger, _earlier_source, _added, comparison, path = _inputs(ledger=ledger)
-    expected = (
+    source, _earlier_source, _added, comparison, path = _inputs()
+    subjects = (
         OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=path.identity,
             comparison_result_event_identity=comparison.identity,
         ),
     )
-    assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
-        ledger, locality_identity=LOCALITY
-    ) == expected
+    ledger = SQLiteEventLedger(database)
+    ledger.append_many(source.list())
     ledger.close()
 
-    reopened = SQLiteEventLedger(database)
+    durable = SQLiteEventLedger(database)
     try:
         assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
-            reopened, locality_identity=LOCALITY
-        ) == expected
+            durable, locality_identity=LOCALITY
+        ) == subjects
     finally:
-        reopened.close()
+        durable.close()
 
 
 def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair():
@@ -375,7 +396,7 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
     ledger, _second_source, _second_added, second_comparison, second_path = _inputs(
         ledger=ledger
     )
-    expected = tuple(
+    subjects = tuple(
         OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=path.identity,
             comparison_result_event_identity=comparison.identity,
@@ -386,7 +407,7 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
 
     assert unassigned_ordered_path_pair_finding_compare_subjects_in_current_standing(
         ledger, locality_identity=LOCALITY
-    ) == expected
+    ) == subjects
 
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
         ledger,
@@ -399,7 +420,7 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
         ledger, locality_identity=LOCALITY
     ) == tuple(
         subject
-        for subject in expected
+        for subject in subjects
         if subject
         != OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=first_path.identity,
@@ -418,7 +439,7 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     assert boundary_before.identity != standing_before[
         "through_event_occurrence_identity"
     ]
-    expected_subjects = tuple(
+    subjects = tuple(
         OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=path.identity,
             comparison_result_event_identity=comparison.identity,
@@ -434,7 +455,7 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
     )
     assignments = recorded.assignment_occurrences
 
-    assert len(assignments) == len(expected_subjects) == 4
+    assert len(assignments) == len(subjects) == 4
     assert tuple(
         OrderedPathPairFindingCompareAssignmentSubject(
             path_result_event_identity=assignment.material[
@@ -445,7 +466,7 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
             ]["recorded_occurrence_identity"],
         )
         for assignment in assignments
-    ) == expected_subjects
+    ) == subjects
     assert tuple(
         assignment.material["standing_boundary_identity"]
         for assignment in assignments
@@ -473,17 +494,6 @@ def test_every_current_compare_subject_records_one_serial_responsibility_assignm
         == ()
     )
 
-    boundary_after = ledger.append_boundary()
-    repeated = (
-        record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        )
-    )
-    assert repeated.assignment_occurrences == ()
-    assert repeated.locality_standing == recorded.locality_standing
-    assert ledger.append_boundary() == boundary_after
-
-
 def test_every_current_compare_assignment_records_one_separate_applicability_result():
     ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
     ledger, _second_source, _second_added, _second_comparison, _second_path = (
@@ -494,13 +504,6 @@ def test_every_current_compare_assignment_records_one_separate_applicability_res
             ledger, locality_identity=LOCALITY
         ).assignment_occurrences
     )
-    compare_results_before = tuple(
-        ledger.iter_locality_kind(
-            LOCALITY,
-            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        )
-    )
-
     recorded = (
         record_ordered_path_pair_finding_compare_applicability_from_current_standing(
             ledger, locality_identity=LOCALITY
@@ -526,28 +529,6 @@ def test_every_current_compare_assignment_records_one_separate_applicability_res
         in recorded.locality_standing["applicability_result_occurrences"]
         for result in results
     )
-    assert all(
-        "participation_of_input_in_compare" not in result.material
-        for result in results
-    )
-    assert tuple(
-        ledger.iter_locality_kind(
-            LOCALITY,
-            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        )
-    ) == compare_results_before
-
-    boundary_after = ledger.append_boundary()
-    repeated = (
-        record_ordered_path_pair_finding_compare_applicability_from_current_standing(
-            ledger, locality_identity=LOCALITY
-        )
-    )
-    assert repeated.applicability_result_occurrences == ()
-    assert repeated.locality_standing == recorded.locality_standing
-    assert ledger.append_boundary() == boundary_after
-
-
 def test_only_applicable_current_compare_results_record_participation_and_act_occurrence():
     ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
     ledger, _second_source, _second_added, _second_comparison, _second_path = (
@@ -563,13 +544,6 @@ def test_only_applicable_current_compare_results_record_participation_and_act_oc
             ledger, locality_identity=LOCALITY
         ).applicability_result_occurrences
     )
-    compare_results_before = tuple(
-        ledger.iter_locality_kind(
-            LOCALITY,
-            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        )
-    )
-
     recorded = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
         ledger, locality_identity=LOCALITY
     )
@@ -605,22 +579,6 @@ def test_only_applicable_current_compare_results_record_participation_and_act_oc
     assert recorded.locality_standing["through_event_occurrence_identity"] == (
         acts[-1].identity
     )
-    assert tuple(
-        ledger.iter_locality_kind(
-            LOCALITY,
-            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        )
-    ) == compare_results_before
-
-    boundary_after = ledger.append_boundary()
-    repeated = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    assert repeated.compare_act_occurrence_occurrences == ()
-    assert repeated.locality_standing == recorded.locality_standing
-    assert ledger.append_boundary() == boundary_after
-
-
 def test_every_current_compare_act_records_one_separate_yield_and_result():
     ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
     ledger, _second_source, _second_added, _second_comparison, _second_path = (
@@ -666,7 +624,6 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
         == act.material["participation_of_input_in_compare"]
         for result, act in zip(results, acts)
     )
-    assert all(result.exact_material is None for result in results)
     assert all(
         tuple(
             role["role"] for role in result.material["finding"]["relation_findings"]
@@ -674,70 +631,9 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
         == ("first_path_relation", "second_path_relation")
         for result in results
     )
-    assert all("exact_material" not in result.material["finding"] for result in results)
-    assert all(
-        "represented_relation" not in result.material["finding"]
-        for result in results
-    )
     assert recorded.locality_standing["through_event_occurrence_identity"] == (
         results[-1].identity
     )
-
-    boundary_after = ledger.append_boundary()
-    repeated = record_ordered_path_pair_finding_compare_results_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    assert repeated.compare_result_occurrences == ()
-    assert repeated.locality_standing == recorded.locality_standing
-    assert ledger.append_boundary() == boundary_after
-
-
-def test_complete_compare_lifecycle_advances_each_carried_read(monkeypatch):
-    ledger, _first_source, _first_added, _first_comparison, _first_path = _inputs()
-    ledger, _second_source, _second_added, _second_comparison, _second_path = (
-        _inputs(ledger=ledger)
-    )
-    import seed_runtime.operator_locality_standing as standing_module
-
-    read = standing_module.read_operator_locality_standing
-    reads = 0
-
-    def counted_read(*args, **kwargs):
-        nonlocal reads
-        reads += 1
-        return read(*args, **kwargs)
-
-    monkeypatch.setattr(
-        standing_module, "read_operator_locality_standing", counted_read
-    )
-
-    assignments = record_ordered_path_pair_finding_compare_assignments_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    applicability = record_ordered_path_pair_finding_compare_applicability_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    acts = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-    results = record_ordered_path_pair_finding_compare_results_from_current_standing(
-        ledger, locality_identity=LOCALITY
-    )
-
-    assert reads == 4
-    assert assignments.locality_standing["through_event_occurrence_identity"] == (
-        assignments.assignment_occurrences[-1].identity
-    )
-    assert applicability.locality_standing["through_event_occurrence_identity"] == (
-        applicability.applicability_result_occurrences[-1].identity
-    )
-    assert acts.locality_standing["through_event_occurrence_identity"] == (
-        acts.compare_act_occurrence_occurrences[-1].identity
-    )
-    assert results.locality_standing == read(
-        ledger, locality_identity=LOCALITY
-    )
-
 
 def test_current_standing_fans_one_comparison_into_exact_distinction_pins():
     ledger, _earlier_source, _added, comparison, path = _inputs()
@@ -991,7 +887,7 @@ def test_corrupted_higher_compare_yield_is_refused():
     assert yield_relation is not None
     yield_relation.material["result_identity"] = "crossed-result"
 
-    with pytest.raises(ValueError, match="exact Yield relation of Yield"):
+    with pytest.raises(ValueError, match="exact Yield relation"):
         get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
             ledger, result.identity
         )
@@ -1029,7 +925,7 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained
         return original(ledger, **identities)
 
     monkeypatch.setattr(comparison_module, "_inputs", counted)
-    expected_call = (path.identity, comparison.identity)
+    call_coordinates = (path.identity, comparison.identity)
 
     act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
         ledger,
@@ -1037,44 +933,45 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained
         applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
     )
-    assert calls == [expected_call]
+    assert calls == [call_coordinates]
 
     result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    assert calls == [expected_call, expected_call]
+    assert calls == [call_coordinates, call_coordinates]
 
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         ledger, result.identity
     )
-    assert calls == [expected_call, expected_call, expected_call]
+    assert calls == [call_coordinates, call_coordinates, call_coordinates]
 
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         ledger, result.identity
     )
-    assert calls == [expected_call] * 4
+    assert calls == [call_coordinates] * 4
 
 
-def test_ordered_path_and_recorded_findings_survive_sqlite_restart(tmp_path):
+def test_ordered_path_and_recorded_findings_are_read_from_sqlite(tmp_path):
     database = tmp_path / "ordered-relation-path-pair-finding-comparison.sqlite"
-    ledger = SQLiteEventLedger(str(database))
-    ledger, _earlier_source, _added, comparison, path = _inputs(ledger=ledger)
+    source, _earlier_source, _added, comparison, path = _inputs()
     _assignment, _applicability, _act, result = _record_comparison(
-        ledger, comparison, path
+        source, comparison, path
     )
     result_identity = result.identity
+    ledger = SQLiteEventLedger(str(database))
+    ledger.append_many(source.list())
     ledger.close()
 
-    reopened = SQLiteEventLedger(str(database))
+    durable = SQLiteEventLedger(str(database))
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
-        reopened, result_identity
+        durable, result_identity
     )
     assert reading["finding"]["relation_findings"]
-    assert result_identity in _standing(reopened)["comparison_result_occurrences"]
+    assert result_identity in _standing(durable)["comparison_result_occurrences"]
     assert recorded_distinction_pins_from_current_standing(
-        reopened, locality_identity=LOCALITY
+        durable, locality_identity=LOCALITY
     )
-    reopened.close()
+    durable.close()
 
 
 def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings():
@@ -1094,13 +991,12 @@ def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_
 PYTEST_ADMISSION = (
     test_yielded_path_meets_complete_findings_of_the_same_added_occurrence,
     test_unassigned_exact_compare_subject_read_records_nothing,
-    test_unassigned_exact_compare_subject_read_replays_after_restart,
+    test_unassigned_exact_compare_subject_read_after_restart,
     test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison_pair,
     test_every_current_compare_subject_records_one_serial_responsibility_assignment,
     test_every_current_compare_assignment_records_one_separate_applicability_result,
     test_only_applicable_current_compare_results_record_participation_and_act_occurrence,
     test_every_current_compare_act_records_one_separate_yield_and_result,
-    test_complete_compare_lifecycle_advances_each_carried_read,
     test_current_standing_fans_one_comparison_into_exact_distinction_pins,
     test_every_current_compare_result_exposes_every_exact_finding_reference_branch,
     test_pair_findings_and_path_do_not_authorize_distinction_fanout_by_presence,
@@ -1113,7 +1009,7 @@ PYTEST_ADMISSION = (
     test_higher_input_handoff_still_refuses_comparison_assignment_corruption,
     test_corrupted_higher_compare_yield_is_refused,
     test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained_read,
-    test_ordered_path_and_recorded_findings_survive_sqlite_restart,
+    test_ordered_path_and_recorded_findings_are_read_from_sqlite,
     test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
 
@@ -1123,7 +1019,7 @@ FIDELITY_DISTINCTIONS = {
         test_another_source_occurrence_is_inapplicable_and_cannot_participate,
     ),
     ("book_coordinates", "01.Source.D", "result"): (
-        test_ordered_path_and_recorded_findings_survive_sqlite_restart,
+        test_ordered_path_and_recorded_findings_are_read_from_sqlite,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
 }

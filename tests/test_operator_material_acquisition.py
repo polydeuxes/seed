@@ -46,8 +46,7 @@ def _context(ledger, locality_identity="source"):
     return standing, standing["through_event_occurrence_identity"]
 
 
-def _assignment(ledger, standing, standing_boundary, locality_identity="source"):
-    assert standing_boundary == standing["through_event_occurrence_identity"]
+def _assignment(ledger, standing, locality_identity="source"):
     return record_operator_material_acquire_responsibility_assignment(
         ledger,
         locality_identity=locality_identity,
@@ -78,7 +77,7 @@ def _boundary(exact=b"\x00\xffraw\n"):
 def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     after_assignment = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
@@ -194,7 +193,7 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
 def test_empty_boundary_leaves_assignment_and_act_without_result_or_yield():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     act_occurrence = _act(ledger, assignment)
     before = tuple(ledger.list())
 
@@ -390,7 +389,7 @@ def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
     assignments = []
     acts = []
     for _ in range(2):
-        assignment = _assignment(ledger, standing, standing_boundary)
+        assignment = _assignment(ledger, standing)
         act = _act(ledger, assignment)
         result = record_operator_material_acquire_result(
             ledger,
@@ -426,7 +425,7 @@ def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
 def test_one_acquire_act_cannot_yield_twice():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, standing_boundary))
+    act = _act(ledger, _assignment(ledger, standing))
     record_operator_material_acquire_result(
         ledger,
         act_occurrence_event_identity=act.identity,
@@ -447,12 +446,12 @@ def test_assignment_refuses_different_locality_and_changed_cut():
     different_locality = dict(standing)
     different_locality["locality_identity"] = "elsewhere"
     with pytest.raises(OperatorMaterialAcquireError, match="different"):
-        _assignment(ledger, different_locality, standing_boundary)
+        _assignment(ledger, different_locality)
 
     changed = dict(standing)
     changed["through_event_occurrence_identity"] = "missing"
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
-        _assignment(ledger, changed, standing_boundary)
+        _assignment(ledger, changed)
 
 
 def test_assignment_refuses_a_cross_locality_standing_boundary():
@@ -464,7 +463,7 @@ def test_assignment_refuses_a_cross_locality_standing_boundary():
         "other.locality.occurrence", locality_identity="elsewhere"
     ).identity
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
-        _assignment(ledger, changed_cut, standing_boundary)
+        _assignment(ledger, changed_cut)
 
 def test_assignment_refuses_a_corrupted_standing_boundary(monkeypatch):
     ledger = EventLedger()
@@ -484,13 +483,13 @@ def test_assignment_refuses_a_corrupted_standing_boundary(monkeypatch):
     )
 
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
-        _assignment(ledger, changed, standing_boundary)
+        _assignment(ledger, changed)
 
 
 def test_act_refuses_assignment_not_carried_by_supplied_standing():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
 
     with pytest.raises(OperatorMaterialAcquireError, match="carried assignment"):
         record_operator_material_acquire_act_occurrence(
@@ -519,7 +518,7 @@ def test_act_refuses_assignment_not_carried_by_supplied_standing():
 def test_changed_assignment_coordinates_are_refused(coordinate):
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     changed = ledger.get(assignment.identity)
     if coordinate in {
         "assignment_identity",
@@ -558,7 +557,7 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
 def test_changed_result_coordinates_are_refused(coordinate):
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, standing_boundary))
+    act = _act(ledger, _assignment(ledger, standing))
     result = record_operator_material_acquire_result(
         ledger,
         act_occurrence_event_identity=act.identity,
@@ -621,7 +620,7 @@ def test_locality_relation_refuses_each_changed_coordinate(
 ):
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, standing_boundary))
+    act = _act(ledger, _assignment(ledger, standing))
     result = record_operator_material_acquire_result(
         ledger,
         act_occurrence_event_identity=act.identity,
@@ -644,7 +643,7 @@ def test_locality_relation_refuses_a_different_or_corrupted_relation_occurrence(
 ):
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, standing_boundary))
+    act = _act(ledger, _assignment(ledger, standing))
     result = record_operator_material_acquire_result(
         ledger,
         act_occurrence_event_identity=act.identity,
@@ -718,7 +717,7 @@ def test_a_self_reference_without_o1_physiology_is_not_a_locality_relation():
 def test_prior_acquire_act_carrier_must_remain_an_identity_dictionary():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     _act(ledger, assignment)
     prior = read_operator_locality_standing(ledger, locality_identity="source")
     broken = deepcopy(prior)
@@ -736,7 +735,7 @@ def test_prior_acquire_act_carrier_must_remain_an_identity_dictionary():
 def test_prior_acquire_locality_relations_must_remain_an_identity_dictionary():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _assignment(ledger, standing, standing_boundary))
+    act = _act(ledger, _assignment(ledger, standing))
     result = record_operator_material_acquire_result(
         ledger,
         act_occurrence_event_identity=act.identity,
@@ -762,7 +761,7 @@ def test_assignment_and_act_survive_a_durable_restart_before_raw_result(tmp_path
     path = tmp_path / "acquire.sqlite"
     ledger = SQLiteEventLedger(str(path))
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     act = _act(ledger, assignment)
     ledger.close()
 
@@ -792,7 +791,7 @@ def test_assignment_survives_alone_and_its_carried_standing_can_record_its_act(
     path = tmp_path / "assignment-only.sqlite"
     ledger = SQLiteEventLedger(str(path))
     standing, standing_boundary = _context(ledger)
-    assignment = _assignment(ledger, standing, standing_boundary)
+    assignment = _assignment(ledger, standing)
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
