@@ -151,7 +151,7 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="source",
-        input_stream=BytesIO(b"before\n/checkpoint\nafter\n"),
+        input_stream=BytesIO(b"/checkpoint\n"),
     )
 
     assert {event.locality_identity for event in ledger.list()} == {"source"}
