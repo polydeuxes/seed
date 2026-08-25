@@ -127,7 +127,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     ] == [command.identity]
     assert operator_standing["operator_invocation_locality_relations"] == {}
     assert assignment.identity not in operator_standing[
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     ]
     assert [
         occurrence["result_occurrence_identity"]
@@ -136,7 +136,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     assert witness_standing["operator_invocation_locality_relations"] == {
         relation.identity: None
     }
-    assert witness_standing["pre_act_coordinate_occurrences"] == {
+    assert witness_standing["subject_to_act_binding_occurrences"] == {
         assignment.identity: None
     }
 
@@ -261,7 +261,7 @@ def test_invocation_locality_act_requires_assignment_standing_in_destination():
         **read_operator_locality_standing(
             ledger, locality_identity=assignment.locality_identity
         ),
-        "pre_act_coordinate_occurrences": {},
+        "subject_to_act_binding_occurrences": {},
     }
 
     for standing in (

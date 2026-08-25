@@ -186,10 +186,10 @@ def test_pair_standing_replay_carries_both_pre_act_bindings_and_result():
 
     standing = _standing(ledger)
 
-    assert standing["pre_act_coordinate_occurrences"].get(
+    assert standing["subject_to_act_binding_occurrences"].get(
         applicability_binding_identity, object()
     ) is None
-    assert standing["pre_act_coordinate_occurrences"].get(
+    assert standing["subject_to_act_binding_occurrences"].get(
         measurement_binding.identity, object()
     ) is None
     assert result.identity in standing["measurement_occurrences"]

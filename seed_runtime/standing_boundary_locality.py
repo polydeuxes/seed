@@ -393,7 +393,7 @@ def record_recorded_standing_boundary_locality_act_occurrence(
             "recorded boundary relation Act requires assignment Standing"
         )
     carried = responsibility_assignment_standing.get(
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     )
     if (
         responsibility_assignment_standing.get("locality_identity")

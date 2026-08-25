@@ -273,7 +273,7 @@ def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
     recorded_sources: set[str] = set()
     occurrence_populations = (
         (
-            bounded_locality_replay["pre_act_coordinate_occurrences"],
+            bounded_locality_replay["subject_to_act_binding_occurrences"],
             BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
         ),
         (
@@ -317,7 +317,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         or bounded_locality_replay.get("locality_identity") != locality_identity
         or type(bounded_locality_replay.get("material_acquisition_result_occurrences")) is not list
         or type(
-            bounded_locality_replay.get("pre_act_coordinate_occurrences")
+            bounded_locality_replay.get("subject_to_act_binding_occurrences")
         )
         is not dict
         or type(bounded_locality_replay.get("measurement_occurrences")) is not dict
@@ -641,7 +641,7 @@ def _require_current_standing(
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     standing_acquisition_results = {
         occurrence.get("result_occurrence_identity")
         for occurrence in acquisition_results or ()

@@ -68,7 +68,7 @@ def main() -> int:
             standing = read_operator_locality_standing(
                 ledger, locality_identity=locality
             )
-            branches = standing.get("pre_act_coordinate_occurrences") or {}
+            branches = standing.get("subject_to_act_binding_occurrences") or {}
             print(
                 f"\n    Locality {locality!r}: "
                 f"{len(branches)} Responsibility branch(es)"
@@ -120,7 +120,7 @@ def main() -> int:
                         ledger, locality_identity=locality
                     )
                     branches = standing.get(
-                        "pre_act_coordinate_occurrences"
+                        "subject_to_act_binding_occurrences"
                     ) or {}
                     print(
                         f"\n    Locality {locality!r}: "

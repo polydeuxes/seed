@@ -123,7 +123,7 @@ def _require_current_replay_boundary(
         is not list
         or type(bounded_locality_replay.get("measurement_occurrences")) is not dict
         or type(
-            bounded_locality_replay.get("pre_act_coordinate_occurrences")
+            bounded_locality_replay.get("subject_to_act_binding_occurrences")
         )
         is not dict
     ):

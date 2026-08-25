@@ -406,7 +406,7 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         ],
     }
     assert assignment.identity in _standing(ledger, locality)[
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     ]
     assert len(reading["assertions"]) == 1
     assertion = reading["assertions"][0]
@@ -683,10 +683,10 @@ def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior
         second_assignment = _recurrent_result_coordinates(
             ledger, second
         )["assignment"]
-        del forged["pre_act_coordinate_occurrences"][
+        del forged["subject_to_act_binding_occurrences"][
             second_assignment.identity
         ]
-        forged["pre_act_coordinate_occurrences"][
+        forged["subject_to_act_binding_occurrences"][
             "substituted-same-shaped-assignment"
         ] = None
 
@@ -1511,7 +1511,7 @@ _EXACT_OCCURRENCE_COORDINATES_REQUIRED_BY_CARRIED_STANDING = (
     ("input_result_occurrences", "result"),
     ("source_occurrences", "source"),
     ("pair_measurement_result_occurrences", "pair"),
-    ("pre_act_coordinate_occurrences", "recurrent_assignment"),
+    ("subject_to_act_binding_occurrences", "recurrent_assignment"),
     ("act_occurrence_occurrences", "recurrent_act"),
     ("yield_relation_occurrences", "recurrent_yield"),
 )

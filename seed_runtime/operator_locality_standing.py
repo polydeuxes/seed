@@ -347,7 +347,7 @@ def _set_operator_standing_validation_context(
     through_event_occurrence_identity: str | None,
     measurement_occurrences: dict[str, Any],
     material_acquisition_result_occurrences: list[dict[str, Any]],
-    pre_act_coordinate_occurrences: dict[str, None],
+    subject_to_act_binding_occurrences: dict[str, None],
 ) -> None:
     bound = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
     exact = _OPERATOR_STANDING_EXACT_ACCUMULATORS.get()
@@ -361,7 +361,7 @@ def _set_operator_standing_validation_context(
         or exact[1] != locality_identity
         or exact[2] is not measurement_occurrences
         or exact[3] is not material_acquisition_result_occurrences
-        or exact[4] is not pre_act_coordinate_occurrences
+        or exact[4] is not subject_to_act_binding_occurrences
     ):
         raise ValueError(
             "operator Standing replay context requires its exact accumulators"
@@ -375,8 +375,8 @@ def _set_operator_standing_validation_context(
             ),
             "measurement_occurrences": measurement_occurrences,
             "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
-            "pre_act_coordinate_occurrences": (
-                pre_act_coordinate_occurrences
+            "subject_to_act_binding_occurrences": (
+                subject_to_act_binding_occurrences
             ),
         }
     )
@@ -1065,7 +1065,7 @@ def advance_operator_locality_standing(
     recorded_standing_boundary_references: dict[str, None] = {}
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
     operator_invocation_locality_relations: dict[str, None] = {}
-    pre_act_coordinate_occurrences: dict[str, None] = {}
+    subject_to_act_binding_occurrences: dict[str, None] = {}
     operator_material_source_act_occurrences: dict[str, None] = {}
     material_locality_relation_occurrences: dict[
         str, dict[str, Any]
@@ -1134,10 +1134,10 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact operator invocation Locality relations"
             )
-        pre_act_coordinate_occurrences = prior[
-            "pre_act_coordinate_occurrences"
+        subject_to_act_binding_occurrences = prior[
+            "subject_to_act_binding_occurrences"
         ]
-        if type(pre_act_coordinate_occurrences) is not dict:
+        if type(subject_to_act_binding_occurrences) is not dict:
             raise ValueError(
                 "prior Locality Standing requires exact Responsibility assignment occurrences"
             )
@@ -1189,7 +1189,7 @@ def advance_operator_locality_standing(
             locality_identity,
             measurement_occurrences,
             material_acquisition_result_occurrences,
-            pre_act_coordinate_occurrences,
+            subject_to_act_binding_occurrences,
         )
     )
     _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
@@ -1201,8 +1201,8 @@ def advance_operator_locality_standing(
             ),
             "measurement_occurrences": measurement_occurrences,
             "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
-            "pre_act_coordinate_occurrences": (
-                pre_act_coordinate_occurrences
+            "subject_to_act_binding_occurrences": (
+                subject_to_act_binding_occurrences
             ),
         }
     )
@@ -1225,8 +1225,8 @@ def advance_operator_locality_standing(
             ),
             measurement_occurrences=measurement_occurrences,
             material_acquisition_result_occurrences=material_acquisition_result_occurrences,
-            pre_act_coordinate_occurrences=(
-                pre_act_coordinate_occurrences
+            subject_to_act_binding_occurrences=(
+                subject_to_act_binding_occurrences
             ),
         )
         if not (
@@ -1278,8 +1278,8 @@ def advance_operator_locality_standing(
                 assertion_locality_movement_occurrences
             ),
             "exact_result_occurrences": exact_result_occurrences,
-            "pre_act_coordinate_occurrences": (
-                pre_act_coordinate_occurrences
+            "subject_to_act_binding_occurrences": (
+                subject_to_act_binding_occurrences
             ),
             "applicability_result_occurrences": (
                 applicability_result_occurrences
@@ -1290,12 +1290,12 @@ def advance_operator_locality_standing(
                 _read_pair_applicability_pre_act_binding(
                     ledger, event.identity, prior_standing=pair_prior_standing
                 )
-                pre_act_coordinate_occurrences[event.identity] = None
+                subject_to_act_binding_occurrences[event.identity] = None
             elif event.kind == BYTE_PAIR_MEASUREMENT_PRE_ACT_BINDING_RECORDED_KIND:
                 _read_pair_measurement_pre_act_binding(
                     ledger, event.identity, prior_standing=pair_prior_standing
                 )
-                pre_act_coordinate_occurrences[event.identity] = None
+                subject_to_act_binding_occurrences[event.identity] = None
             elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT:
                 _read_pair_applicability_act_occurrence(
                     ledger, event.identity, prior_standing=pair_prior_standing
@@ -1338,12 +1338,12 @@ def advance_operator_locality_standing(
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
                     ),
-                    "pre_act_coordinate_occurrences": (
-                        pre_act_coordinate_occurrences
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
                     ),
                 },
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -1359,7 +1359,7 @@ def advance_operator_locality_standing(
                     ),
                 },
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT:
             _read_assertion_locality_movement_act_occurrence(
@@ -1370,8 +1370,8 @@ def advance_operator_locality_standing(
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
                     ),
-                    "pre_act_coordinate_occurrences": (
-                        pre_act_coordinate_occurrences
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
                     ),
                 },
             )
@@ -1385,8 +1385,8 @@ def advance_operator_locality_standing(
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
                     ),
-                    "pre_act_coordinate_occurrences": (
-                        pre_act_coordinate_occurrences
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
                     ),
                 },
             )
@@ -1401,13 +1401,13 @@ def advance_operator_locality_standing(
             get_occurrence_position_measurement_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND:
             get_byte_pair_occurrence_position_measurement_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -1425,7 +1425,7 @@ def advance_operator_locality_standing(
                     "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
                 },
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -1434,7 +1434,7 @@ def advance_operator_locality_standing(
             get_standing_boundary_reference_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT:
             get_standing_boundary_reference_act_occurrence(ledger, event.identity)
@@ -1450,7 +1450,7 @@ def advance_operator_locality_standing(
             get_recorded_standing_boundary_locality_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT:
             get_recorded_standing_boundary_locality_act_occurrence(
@@ -1468,7 +1468,7 @@ def advance_operator_locality_standing(
             get_operator_material_source_subject_to_act_binding(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
             get_operator_material_source_act_occurrence(ledger, event.identity)
@@ -1488,7 +1488,7 @@ def advance_operator_locality_standing(
             get_operator_invocation_locality_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT:
             get_operator_invocation_locality_act_occurrence(ledger, event.identity)
@@ -1504,8 +1504,8 @@ def advance_operator_locality_standing(
             ),
             "measurement_occurrences": measurement_occurrences,
             "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
-            "pre_act_coordinate_occurrences": (
-                pre_act_coordinate_occurrences
+            "subject_to_act_binding_occurrences": (
+                subject_to_act_binding_occurrences
             ),
             "applicability_result_occurrences": (
                 applicability_result_occurrences
@@ -1517,7 +1517,7 @@ def advance_operator_locality_standing(
                 event.identity,
                 prior_standing=addressed_byte_reference_prior_standing,
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_ACT_OCCURRENCE_EVENT:
             _read_addressed_byte_reference_applicability_act(
@@ -1552,7 +1552,7 @@ def advance_operator_locality_standing(
                     ledger, assignment_reading
                 )
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
             assignment_identity = _shared_position_assignment_identity(event)
@@ -1651,7 +1651,7 @@ def advance_operator_locality_standing(
                     ledger, assignment_reading
                 )
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -1818,7 +1818,7 @@ def advance_operator_locality_standing(
             get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT:
             get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
@@ -1868,7 +1868,7 @@ def advance_operator_locality_standing(
                 COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
                 RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY_KIND,
             }:
-                pre_act_coordinate_occurrences[event.identity] = None
+                subject_to_act_binding_occurrences[event.identity] = None
             elif event.kind == SOURCE_POSITION_RECURRENCE_COMPARE_APPLICABILITY_RESULT_KIND:
                 applicability_result_occurrences[event.identity] = None
             elif event.kind == SOURCE_POSITION_RECURRENCE_COMPARE_RESULT_KIND:
@@ -1900,7 +1900,7 @@ def advance_operator_locality_standing(
             get_standing_locality_continuation_responsibility_assignment(
                 ledger, event.identity
             )
-            pre_act_coordinate_occurrences[event.identity] = None
+            subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT:
             continue
@@ -1931,8 +1931,8 @@ def advance_operator_locality_standing(
                     ),
                     "measurement_occurrences": measurement_occurrences,
                     "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
-                    "pre_act_coordinate_occurrences": (
-                        pre_act_coordinate_occurrences
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
                     ),
                 },
             )
@@ -1991,8 +1991,8 @@ def advance_operator_locality_standing(
                         prior_through_event_occurrence_identity
                     ),
                     "measurement_occurrences": measurement_occurrences,
-                    "pre_act_coordinate_occurrences": (
-                        pre_act_coordinate_occurrences
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
                     ),
                     "applicability_result_occurrences": (
                         applicability_result_occurrences
@@ -2053,8 +2053,8 @@ def advance_operator_locality_standing(
         "operator_invocation_locality_relations": (
             operator_invocation_locality_relations
         ),
-        "pre_act_coordinate_occurrences": (
-            pre_act_coordinate_occurrences
+        "subject_to_act_binding_occurrences": (
+            subject_to_act_binding_occurrences
         ),
         "operator_material_source_act_occurrences": (
             operator_material_source_act_occurrences
@@ -2102,7 +2102,7 @@ def _carry_byte_measurement_assignment_into_standing(
             else responsibility_boundary_replay
         ),
     )
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
@@ -2137,7 +2137,7 @@ def _carry_assertion_locality_movement_assignment_into_standing(
     """Carry one movement assignment produced from exact same-call inputs."""
 
     assignments = (
-        locality_standing.get("pre_act_coordinate_occurrences")
+        locality_standing.get("subject_to_act_binding_occurrences")
         if type(locality_standing) is dict
         else None
     )
@@ -2245,7 +2245,7 @@ def _carry_assertion_locality_movement_act_into_standing(
     """Carry the exact movement Act produced beside its assignment Standing."""
 
     assignments = (
-        locality_standing.get("pre_act_coordinate_occurrences")
+        locality_standing.get("subject_to_act_binding_occurrences")
         if type(locality_standing) is dict
         else None
     )
@@ -2316,7 +2316,7 @@ def _carry_assertion_locality_movement_result_into_standing(
     """Carry one exact movement result and its already-carried source."""
 
     assignments = (
-        locality_standing.get("pre_act_coordinate_occurrences")
+        locality_standing.get("subject_to_act_binding_occurrences")
         if type(locality_standing) is dict
         else None
     )
@@ -2451,7 +2451,7 @@ def _carry_occurrence_position_measurement_assignment_into_standing(
         responsibility_assignment=event,
         finding=finding,
     )
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
@@ -2491,7 +2491,7 @@ def _carry_occurrence_position_measurement_result_into_standing(
         else None
     )
     assignments = (
-        locality_standing.get("pre_act_coordinate_occurrences")
+        locality_standing.get("subject_to_act_binding_occurrences")
         if type(locality_standing) is dict
         else None
     )
@@ -2634,7 +2634,7 @@ def _carry_pair_applicability_binding_into_standing(
         locality_standing,
         binding,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
-        destination_coordinate="pre_act_coordinate_occurrences",
+        destination_coordinate="subject_to_act_binding_occurrences",
     )
 
 
@@ -2652,7 +2652,7 @@ def _carry_pair_measurement_binding_into_standing(
         locality_standing,
         binding,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
-        destination_coordinate="pre_act_coordinate_occurrences",
+        destination_coordinate="subject_to_act_binding_occurrences",
     )
 
 
@@ -2788,7 +2788,7 @@ def _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
         responsibility_assignment=event,
         finding=finding,
     )
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(assignments) is not dict
@@ -2830,7 +2830,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
             "position-coordinate Measurement must follow its carried Act and Yield"
         )
     measurements = locality_standing.get("measurement_occurrences")
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
     assignment = event.material.get("responsibility_assignment_reference")
     source_identity = event.material.get("source_material_acquisition_occurrence_identity")
@@ -2887,7 +2887,7 @@ def _carry_operator_material_source_occurrence_into_standing(
         != prior_through_event_occurrence_identity
     ):
         raise ValueError("operator material source coordinates are not exact")
-    bindings = locality_standing.get("pre_act_coordinate_occurrences")
+    bindings = locality_standing.get("subject_to_act_binding_occurrences")
     acts = locality_standing.get("operator_material_source_act_occurrences")
     locality_relations = locality_standing.get(
         "material_locality_relation_occurrences"
@@ -2984,7 +2984,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
         != prior_through_event_occurrence_identity
     ):
         raise ValueError("recorded pair comparison Standing is not exact")
-    assignments = locality_standing.get("pre_act_coordinate_occurrences")
+    assignments = locality_standing.get("subject_to_act_binding_occurrences")
     applicability = locality_standing.get("applicability_result_occurrences")
     comparisons = locality_standing.get("comparison_result_occurrences")
     event_count = locality_standing.get("event_count")

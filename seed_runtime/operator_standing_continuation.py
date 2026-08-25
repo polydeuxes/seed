@@ -333,7 +333,7 @@ def record_standing_locality_continuation_act_occurrence(
             "Standing Locality continuation Act requires carried assignment Standing"
         )
     assignment_occurrences = responsibility_assignment_standing.get(
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     )
     if (
         responsibility_assignment_standing.get("locality_identity")

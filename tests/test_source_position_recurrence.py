@@ -198,7 +198,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             reference
         )
         assert (
-            recording.locality_standing["pre_act_coordinate_occurrences"].get(
+            recording.locality_standing["subject_to_act_binding_occurrences"].get(
                 assignment.identity, object()
             )
             is None
@@ -292,7 +292,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             ]
         ).identity
         in coordinate_measurements.locality_standing[
-            "pre_act_coordinate_occurrences"
+            "subject_to_act_binding_occurrences"
         ]
         for measurement in measurements
     )

@@ -111,7 +111,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert "locality_relation" not in binding.material
     assert binding.material["unknown"] == ["operator boundary material: Unknown"]
     assert binding.identity in after_binding[
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     ]
     assert recorded["result_identity"] == binding.material[
         "result_boundary_identity"
@@ -176,7 +176,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         ledger, locality_identity="source"
     )
     assert carried == replayed
-    assert replayed["pre_act_coordinate_occurrences"][binding.identity] is None
+    assert replayed["subject_to_act_binding_occurrences"][binding.identity] is None
     assert replayed["operator_material_source_act_occurrences"] == {
         act_occurrence.identity: None
     }
@@ -789,7 +789,7 @@ def test_binding_and_act_remain_addressable_after_restart_before_result(tmp_path
 
     ledger = SQLiteEventLedger(str(path))
     before = read_operator_locality_standing(ledger, locality_identity="source")
-    assert before["pre_act_coordinate_occurrences"][binding.identity] is None
+    assert before["subject_to_act_binding_occurrences"][binding.identity] is None
     assert before["operator_material_source_act_occurrences"] == {
         act.identity: None
     }
@@ -820,7 +820,7 @@ def test_binding_alone_remains_addressable_and_can_record_its_act(
     after_binding = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    assert after_binding["pre_act_coordinate_occurrences"] == {
+    assert after_binding["subject_to_act_binding_occurrences"] == {
         binding.identity: None
     }
     assert after_binding["operator_material_source_act_occurrences"] == {}

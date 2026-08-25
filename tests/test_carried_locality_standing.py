@@ -410,7 +410,7 @@ def test_bounded_replay_exposes_assignments_after_witness_locality():
         source_boundary="operator material occurrence",
     )
     before = read_operator_locality_standing(ledger, locality_identity="s")
-    assert before["pre_act_coordinate_occurrences"] == {}
+    assert before["subject_to_act_binding_occurrences"] == {}
 
     recorded = record_declared_measurements_from_current_bounded_locality_replay(
         ledger,
@@ -428,7 +428,7 @@ def test_bounded_replay_exposes_assignments_after_witness_locality():
 
     assert len(assignments) == 2
     assert len(recorded.result_occurrences) == 2
-    assert set(recorded.bounded_locality_replay["pre_act_coordinate_occurrences"]) == {
+    assert set(recorded.bounded_locality_replay["subject_to_act_binding_occurrences"]) == {
         assignment.identity for assignment in assignments
     }
     assert recorded.bounded_locality_replay == read_operator_locality_standing(

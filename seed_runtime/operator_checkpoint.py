@@ -324,7 +324,7 @@ def record_standing_boundary_reference_act_occurrence(
     if type(responsibility_assignment_standing) is not dict:
         raise OperatorCheckpointError("checkpoint Act requires assignment Standing")
     carried = responsibility_assignment_standing.get(
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     )
     if (
         responsibility_assignment_standing.get("locality_identity")

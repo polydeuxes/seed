@@ -488,7 +488,7 @@ def _record_operator_material_source_act_occurrence(
             "operator material source Act requires current coordinates"
         )
     carried = current_coordinates.get(
-        "pre_act_coordinate_occurrences"
+        "subject_to_act_binding_occurrences"
     )
     if (
         current_coordinates.get("locality_identity")
