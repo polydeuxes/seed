@@ -1060,14 +1060,20 @@ def test_yield_refuses_a_different_occurrence_kind():
         )
 
 
-def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
+def test_opaque_bytes_supply_the_measured_subjects_without_whitespace():
+    ledger = EventLedger()
+    _record_operator_material_source(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"\xe7\x8c\xab\n",
+        source_boundary="opaque byte fixture",
+    )
     measured = measure_byte_counts(
-        _ledger("猫\n"), source_localities=("source",)
+        ledger, source_localities=("source",)
     )
     counts = {item.content: item for item in measured.counts}
 
-    # UTF-8 猫 = e7 8c ab. No character boundary is used or asserted;
-    # these are the exact bytes Seed recorded.
+    # No character encoding or character boundary is supplied or asserted.
     assert counts[231].count == 1
     assert counts[140].count == 1
     assert counts[171].count == 1
@@ -2785,7 +2791,7 @@ FIDELITY_DISTINCTIONS = {
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_material_acquisition_and_reads_independently,
-        test_exact_bytes_supply_the_measured_subjects_without_whitespace,
+        test_opaque_bytes_supply_the_measured_subjects_without_whitespace,
         test_the_complete_declared_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
         test_the_rule_is_mechanics_not_an_unchecked_callable,
