@@ -31,7 +31,7 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_subject_to_act_binding,
     record_operator_invocation_locality_act_occurrence,
     record_operator_invocation_locality_result,
 )
@@ -198,18 +198,18 @@ def _command(ledger, *, locality="locality", exact=b"!ls\n"):
 
 
 def _operator_invocation_relation(ledger, command):
-    assignment = record_operator_invocation_locality_responsibility_assignment(
+    binding = record_operator_invocation_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
-        operator_locality_standing=read_operator_locality_standing(
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=command.locality_identity
         ),
     )
     act = record_operator_invocation_locality_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
-            ledger, locality_identity=assignment.locality_identity
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=read_operator_locality_standing(
+            ledger, locality_identity=binding.locality_identity
         ),
     )
     return record_operator_invocation_locality_result(

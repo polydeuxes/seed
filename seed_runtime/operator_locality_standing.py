@@ -151,10 +151,10 @@ from seed_runtime.operator_material_source import (
     get_recorded_operator_material_source,
 )
 from seed_runtime.operator_invocation_locality import (
-    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-    get_operator_invocation_locality_responsibility_assignment,
+    get_operator_invocation_locality_subject_to_act_binding,
     get_operator_invocation_locality_act_occurrence,
     get_recorded_operator_invocation_locality,
 )
@@ -458,7 +458,7 @@ _OPERATOR_MATERIAL_SOURCE_KINDS = {
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
 _OPERATOR_INVOCATION_LOCALITY_KINDS = {
-    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
 }
@@ -1483,9 +1483,9 @@ def advance_operator_locality_standing(
             }
         if (
             event.kind
-            == OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_operator_invocation_locality_responsibility_assignment(
+            get_operator_invocation_locality_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None

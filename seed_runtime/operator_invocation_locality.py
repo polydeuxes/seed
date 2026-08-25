@@ -16,8 +16,8 @@ from seed_runtime.yield_relation import (
 )
 
 
-OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.invocation_locality_responsibility_assignment_recorded"
+OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.invocation_locality_subject_to_act_binding_recorded"
 )
 OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT = (
     "operator.invocation_locality_act_occurrence_recorded"
@@ -32,7 +32,7 @@ OPERATOR_INVOCATION_LOCALITY_RESULT_KIND = (
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
-    OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.D"
     ),
     OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -87,10 +87,10 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     return event
 
 
-def _assignment_material(
+def _binding_material(
     *,
     command: Event,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     operator_invocation_locality_act_identity: str,
     act_occurrence_identity: str,
     relation_occurrence_identity: str,
@@ -109,7 +109,9 @@ def _assignment_material(
         "operator_material_occurrence_reference": command.identity,
         "operator_material_result_identity": command.material["result_identity"],
         "operator_locality_identity": command.locality_identity,
-        "operator_standing_boundary_identity": standing_boundary_identity,
+        "operator_through_event_occurrence_identity": (
+            through_event_occurrence_identity
+        ),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
             "operator_locality_identity": command.locality_identity,
@@ -120,45 +122,45 @@ def _assignment_material(
     }
 
 
-def record_operator_invocation_locality_responsibility_assignment(
+def record_operator_invocation_locality_subject_to_act_binding(
     ledger: EventLedger,
     *,
     operator_material_occurrence_reference: str,
-    operator_locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    """Assign one invocation Locality from one exact operator occurrence."""
+    """Bind one invocation Locality relation to its exact Act."""
 
     command = _command_event(ledger, operator_material_occurrence_reference)
     carried = (
-        operator_locality_standing.get("exact_result_occurrences")
-        if type(operator_locality_standing) is dict
+        current_coordinates.get("exact_result_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     boundary_identity = (
-        operator_locality_standing.get("through_event_occurrence_identity")
-        if type(operator_locality_standing) is dict
+        current_coordinates.get("through_event_occurrence_identity")
+        if type(current_coordinates) is dict
         else None
     )
     if (
         type(carried) is not dict
         or type(carried.get(command.identity)) is not dict
-        or operator_locality_standing.get("locality_identity")
+        or current_coordinates.get("locality_identity")
         != command.locality_identity
         or type(boundary_identity) is not str
         or not boundary_identity
     ):
         raise OperatorInvocationLocalityError(
-            "invocation Locality assignment requires exact operator material Standing"
+            "invocation Locality binding requires exact current operator material coordinates"
         )
-    for assignment in ledger.list_events():
+    for binding in ledger.list_events():
         if (
-            assignment.kind
-            == OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-            and assignment.material.get("operator_material_occurrence_reference")
+            binding.kind
+            == OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            and binding.material.get("operator_material_occurrence_reference")
             == command.identity
         ):
             raise OperatorInvocationLocalityError(
-                "operator material occurrence already carries an invocation Locality assignment"
+                "operator material occurrence already carries an invocation Locality binding"
             )
     identities = {
         "operator_invocation_locality_act_identity": new_identity(
@@ -178,31 +180,31 @@ def record_operator_invocation_locality_responsibility_assignment(
     if len(set(identities.values())) != len(identities):
         raise OperatorInvocationLocalityError("invocation Locality identities are compressed")
     return ledger.append(
-        OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _assignment_material(
+        OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
             command=command,
-            standing_boundary_identity=boundary_identity,
+            through_event_occurrence_identity=boundary_identity,
             **identities,
         ),
         locality_identity=identities["destination_locality_identity"],
     )
 
 
-def get_operator_invocation_locality_responsibility_assignment(
+def get_operator_invocation_locality_subject_to_act_binding(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     event = ledger.get(
-        _identity(event_identity, "invocation Locality requires one assignment")
+        _identity(event_identity, "invocation Locality requires one binding")
     )
     if (
         event is None
         or event.kind
-        != OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise OperatorInvocationLocalityError(
-            "invocation Locality assignment is absent or corrupted"
+            "invocation Locality binding is absent or corrupted"
         )
     material = event.material
     command = _command_event(
@@ -221,12 +223,12 @@ def get_operator_invocation_locality_responsibility_assignment(
         or len(set(identities)) != len(identities)
     ):
         raise OperatorInvocationLocalityError(
-            "invocation Locality assignment identities are not exact"
+            "invocation Locality binding identities are not exact"
         )
-    exact_assignment_material = _assignment_material(
+    exact_binding_material = _binding_material(
         command=command,
-        standing_boundary_identity=material.get(
-            "operator_standing_boundary_identity"
+        through_event_occurrence_identity=material.get(
+            "operator_through_event_occurrence_identity"
         ),
         operator_invocation_locality_act_identity=identities[0],
         act_occurrence_identity=identities[1],
@@ -234,16 +236,18 @@ def get_operator_invocation_locality_responsibility_assignment(
         result_identity=identities[3],
         destination_locality_identity=identities[4],
     )
-    boundary = ledger.get(material.get("operator_standing_boundary_identity"))
+    boundary = ledger.get(
+        material.get("operator_through_event_occurrence_identity")
+    )
     if (
-        material != exact_assignment_material
+        material != exact_binding_material
         or event.locality_identity
         != material.get("destination_locality_identity")
         or boundary is None
         or boundary.locality_identity != command.locality_identity
         or ledger.integrity_of(boundary.identity) == CORRUPTED
     ):
-        raise OperatorInvocationLocalityError("invocation Locality assignment is not exact")
+        raise OperatorInvocationLocalityError("invocation Locality binding is not exact")
     ordered = (
         (command.identity,)
         if command.identity == boundary.identity
@@ -255,13 +259,13 @@ def get_operator_invocation_locality_responsibility_assignment(
         )
     except (TypeError, ValueError) as error:
         raise OperatorInvocationLocalityError(
-            "invocation Locality assignment does not follow material Standing"
+            "invocation Locality binding does not follow current material coordinates"
         ) from error
     return event
 
 
-def _act_material(assignment: Event) -> dict[str, Any]:
-    material = assignment.material
+def _act_material(binding: Event) -> dict[str, Any]:
+    material = binding.material
     return {
         "operator_invocation_locality_act_identity": material[
             "operator_invocation_locality_act_identity"
@@ -269,7 +273,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "act_occurrence_identity": material["act_occurrence_identity"],
         "result_boundary_identity": material["result_boundary_identity"],
         "act": OPERATOR_INVOCATION_LOCALITY_ACT,
-        "responsibility_assignment_event_identity": assignment.identity,
+        "subject_to_act_binding_event_identity": binding.identity,
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
         ],
@@ -287,32 +291,32 @@ def _act_material(assignment: Event) -> dict[str, Any]:
 def record_operator_invocation_locality_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment = get_operator_invocation_locality_responsibility_assignment(
-        ledger, responsibility_assignment_event_identity
+    binding = get_operator_invocation_locality_subject_to_act_binding(
+        ledger, subject_to_act_binding_event_identity
     )
     carried = (
-        responsibility_assignment_standing.get(
+        current_coordinates.get(
             "subject_to_act_binding_occurrences"
         )
-        if type(responsibility_assignment_standing) is dict
+        if type(current_coordinates) is dict
         else None
     )
     if (
         type(carried) is not dict
-        or carried.get(assignment.identity, object()) is not None
-        or responsibility_assignment_standing.get("locality_identity")
-        != assignment.locality_identity
+        or carried.get(binding.identity, object()) is not None
+        or current_coordinates.get("locality_identity")
+        != binding.locality_identity
     ):
         raise OperatorInvocationLocalityError(
-            "invocation Locality Act requires its carried assignment"
+            "invocation Locality Act requires its carried binding"
         )
     return ledger.append(
         OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
-        _act_material(assignment),
-        locality_identity=assignment.material["destination_locality_identity"],
+        _act_material(binding),
+        locality_identity=binding.material["destination_locality_identity"],
     )
 
 
@@ -331,23 +335,23 @@ def get_operator_invocation_locality_act_occurrence(
         raise OperatorInvocationLocalityError(
             "invocation Locality Act occurrence is absent or corrupted"
         )
-    assignment = get_operator_invocation_locality_responsibility_assignment(
-        ledger, event.material.get("responsibility_assignment_event_identity")
+    binding = get_operator_invocation_locality_subject_to_act_binding(
+        ledger, event.material.get("subject_to_act_binding_event_identity")
     )
     if (
-        event.material != _act_material(assignment)
+        event.material != _act_material(binding)
         or event.locality_identity
-        != assignment.material.get("destination_locality_identity")
+        != binding.material.get("destination_locality_identity")
     ):
         raise OperatorInvocationLocalityError("invocation Locality Act occurrence is not exact")
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, event.identity),
+            (binding.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
         raise OperatorInvocationLocalityError(
-            "invocation Locality Act requires its prior assignment"
+            "invocation Locality Act requires its prior binding"
         ) from error
     return event
 
@@ -366,8 +370,8 @@ def _result_material(act: Event) -> dict[str, Any]:
         ],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_INVOCATION_LOCALITY_ACT,
-        "responsibility_assignment_event_identity": material[
-            "responsibility_assignment_event_identity"
+        "subject_to_act_binding_event_identity": material[
+            "subject_to_act_binding_event_identity"
         ],
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
@@ -408,8 +412,8 @@ def _recorded_result_material(
         ],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],
-        "responsibility_assignment_event_identity": result[
-            "responsibility_assignment_event_identity"
+        "subject_to_act_binding_event_identity": result[
+            "subject_to_act_binding_event_identity"
         ],
         "operator_material_occurrence_reference": result[
             "operator_material_occurrence_reference"

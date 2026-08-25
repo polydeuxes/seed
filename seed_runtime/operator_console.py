@@ -51,7 +51,7 @@ from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_result,
 )
 from seed_runtime.operator_invocation_locality import (
-    record_operator_invocation_locality_responsibility_assignment,
+    record_operator_invocation_locality_subject_to_act_binding,
     record_operator_invocation_locality_act_occurrence,
     record_operator_invocation_locality_result,
 )
@@ -511,16 +511,16 @@ def run_persistent_operator_console(
                     )
                     measured_material_references.add(command_material_reference)
                 command_material = source_material.exact_material
-                relation_assignment = (
-                    record_operator_invocation_locality_responsibility_assignment(
+                relation_binding = (
+                    record_operator_invocation_locality_subject_to_act_binding(
                         ledger,
                         operator_material_occurrence_reference=(
                             command_occurrence_reference
                         ),
-                        operator_locality_standing=locality_standing,
+                        current_coordinates=locality_standing,
                     )
                 )
-                invocation_locality_identity = relation_assignment.material[
+                invocation_locality_identity = relation_binding.material[
                     "destination_locality_identity"
                 ]
                 witness_standing = read_operator_locality_standing(
@@ -528,10 +528,10 @@ def run_persistent_operator_console(
                 )
                 relation_act = record_operator_invocation_locality_act_occurrence(
                     ledger,
-                    responsibility_assignment_event_identity=(
-                        relation_assignment.identity
+                    subject_to_act_binding_event_identity=(
+                        relation_binding.identity
                     ),
-                    responsibility_assignment_standing=witness_standing,
+                    current_coordinates=witness_standing,
                 )
                 witness_standing = _advance_over(
                     ledger,
