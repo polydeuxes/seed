@@ -56,7 +56,6 @@ def _subject_to_act_binding_material(
     exact_act_identity: str,
     act_occurrence_identity: str,
     result_identity: str,
-    scope_identity: str,
 ) -> dict[str, object]:
     return {
         "book_clause_identity": "01.Source.H",
@@ -69,7 +68,6 @@ def _subject_to_act_binding_material(
         "act_occurrence_identity": act_occurrence_identity,
         "result_boundary_identity": result_identity,
         "scope": {
-            "scope_identity": scope_identity,
             "source_boundary": source_boundary,
             "locality_identity": locality_identity,
             "result_identity": result_identity,
@@ -175,7 +173,6 @@ def record_witness_material_source(
     source_act_identity = new_identity("witness_material_source_act")
     act_occurrence_identity = new_identity("witness_material_source_act_occurrence")
     result_identity = new_identity("witness_material_source_result")
-    scope_identity = new_identity("witness_material_source_scope")
     subject_to_act_binding = ledger.append(
         WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _subject_to_act_binding_material(
@@ -184,7 +181,6 @@ def record_witness_material_source(
             exact_act_identity=source_act_identity,
             act_occurrence_identity=act_occurrence_identity,
             result_identity=result_identity,
-            scope_identity=scope_identity,
         ),
         locality_identity=locality_identity,
     )
@@ -327,8 +323,6 @@ def _read_witness_material_source_result(
         or binding_reference != _subject_to_act_binding_reference(binding)
         or scope != binding.material.get("scope")
         or type(scope) is not dict
-        or type(scope.get("scope_identity")) is not str
-        or not scope["scope_identity"]
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
         or unknown != list(MATERIAL_RESULT_UNKNOWN)
@@ -367,7 +361,6 @@ def _read_witness_material_source_result(
         exact_act_identity=source_act_identity,
         act_occurrence_identity=act_occurrence_identity,
         result_identity=result_identity,
-        scope_identity=scope["scope_identity"],
     )
     if binding.material != expected_binding:
         raise MaterialSourceError(

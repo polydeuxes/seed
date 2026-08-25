@@ -542,7 +542,6 @@ class SQLiteEventLedger(EventLedger):
         "witness_material_source_act",
         "witness_material_source_act_occurrence",
         "witness_material_source_result",
-        "witness_material_source_scope",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
         "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_assignment",
