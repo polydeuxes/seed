@@ -197,11 +197,13 @@ class YieldCallbackLedger(EventLedger):
 
 def _ledger(text="猫\n狗\n"):
     ledger = EventLedger()
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="source",
-        input_stream=binary_input(text + ""),
-    )
+    for position, exact in enumerate(text.encode("utf-8").splitlines(keepends=True)):
+        _record_operator_material_source(
+            ledger,
+            locality_identity="source",
+            exact_bytes=exact,
+            source_boundary=f"fixture operator material {position}",
+        )
     return ledger
 
 
