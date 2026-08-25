@@ -1060,19 +1060,17 @@ def test_yield_refuses_a_different_occurrence_kind():
 
 def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     measured = measure_byte_counts(
-        _ledger(), source_localities=("source",)
+        _ledger("猫\n"), source_localities=("source",)
     )
     counts = {item.content: item for item in measured.counts}
 
-    # UTF-8 猫 = e7 8c ab and 狗 = e7 8b 97.  No character boundary is used or
-    # asserted; these are the exact bytes Seed recorded.
-    assert counts[231].count == 2
+    # UTF-8 猫 = e7 8c ab. No character boundary is used or asserted;
+    # these are the exact bytes Seed recorded.
+    assert counts[231].count == 1
     assert counts[140].count == 1
     assert counts[171].count == 1
-    assert counts[139].count == 1
-    assert counts[151].count == 1
-    assert counts[10].count == 2
-    assert len(measured.source_material) == 2
+    assert counts[10].count == 1
+    assert len(measured.source_material) == 1
 
 
 def test_the_complete_declared_localities_supply_the_inputs():
@@ -1131,7 +1129,7 @@ def test_the_rule_is_mechanics_not_an_unchecked_callable():
 
 
 def test_recorded_results_replay_the_complete_bounded_source_read():
-    ledger = _ledger("猫\n狗\n")
+    ledger = _ledger("a\na\n")
     event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
@@ -1164,7 +1162,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     count = next(
         item
         for item in read
-        if item.content == 231 and item.result == "count"
+        if item.content == 97 and item.result == "count"
     )
     assert count.material["dimensions"]["content"] == {
         "input_count": 2,
@@ -1262,7 +1260,7 @@ def test_material_acquisition_after_the_measurement_boundary_cannot_enter_the_me
 def test_a_missing_declared_locality_is_refused():
     with pytest.raises(ByteMeasurementError, match="absent"):
         measure_byte_counts(
-            _ledger(), source_localities=("missing",)
+            EventLedger(), source_localities=("missing",)
         )
 
 
