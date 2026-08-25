@@ -1227,30 +1227,21 @@ def test_fresh_representation_is_carried_until_acquisition_crosses_input(monkeyp
 
 
 @pytest.mark.parametrize(
-    ("material", "raw", "existing_locality"),
+    ("material", "raw"),
     (
-        (b"", False, False),
-        (b"record-only road\n", False, False),
-        (b"\x00\xff raw road\n", True, False),
-        (b"/locality\n", False, False),
-        (b"/checkpoint\n", False, False),
-        (b"/locality existing\n", False, True),
+        (b"", False),
+        (b"record-only road\n", False),
+        (b"\x00\xff raw road\n", True),
+        (b"/locality\n", False),
+        (b"/checkpoint\n", False),
     ),
 )
 def test_each_console_road_leaves_carried_standing_matching_replay(
-    monkeypatch, material, raw, existing_locality
+    monkeypatch, material, raw
 ):
     from seed_runtime import operator_console
 
     ledger = EventLedger()
-    if existing_locality:
-        record_witness_material_source(
-            ledger,
-            locality_identity="existing",
-            exact_bytes=b"existing material",
-            source_boundary="existing exact material test boundary",
-        )
-
     observed = {}
     original = operator_console._advance_over
 

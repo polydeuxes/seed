@@ -49,8 +49,8 @@ def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     ]
 
 
-def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
-    ledger = _run(b"a\n/checkpoint\n/locality source\n")
+def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
+    ledger = _run(b"a\n/checkpoint\nlater\n")
     checkpoint = next(
         event
         for event in ledger.list_locality("source")
@@ -74,7 +74,7 @@ def test_checkpoint_reads_its_exact_prior_standing_without_returning_to_it():
     assert _acquired_materials(ledger, current) == [
         b"a\n",
         b"/checkpoint\n",
-        b"/locality source\n",
+        b"later\n",
     ]
     assert reading["standing"] is not current
 
@@ -113,8 +113,7 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
 
 def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
     ledger = _run(
-        b"a\n/checkpoint\n/locality source\n"
-        b"/checkout\nc\n"
+        b"a\n/checkpoint\n/checkout\nc\n"
     )
     relation = next(
         event
@@ -219,7 +218,7 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="source",
-        input_stream=BytesIO(b"a\n/checkpoint\n/locality source\n"),
+        input_stream=BytesIO(b"a\n/checkpoint\n"),
     )
     checkpoint = next(
         event

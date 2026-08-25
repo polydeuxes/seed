@@ -203,10 +203,10 @@ def test_a_caller_supplied_locality_identity_remains_exact():
     }
 
 
-def test_unrecorded_locality_named_list_is_refused():
+def test_locality_command_refuses_a_supplied_name():
     ledger = EventLedger()
 
-    with pytest.raises(ValueError, match="existing Locality"):
+    with pytest.raises(ValueError, match="accepts no material"):
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity="current",
