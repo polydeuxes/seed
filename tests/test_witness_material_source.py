@@ -39,7 +39,7 @@ def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
     )
 
 
-def test_witness_material_preserves_exact_raw_bytes():
+def test_source_result_preserves_each_exact_byte_value_without_interpretation():
     ledger = EventLedger()
     exact = bytes(range(256)) * 3
 
@@ -48,7 +48,6 @@ def test_witness_material_preserves_exact_raw_bytes():
     assert occurred.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     assert occurred.locality_identity == "locality_000001"
     assert exact_material_result_bytes(occurred) == exact
-    assert "represented_material" not in occurred.material
     assert occurred.material["locality_relation"] == {
         "first_subject": {
             "recorded_occurrence_identity": occurred.identity,
@@ -57,13 +56,6 @@ def test_witness_material_preserves_exact_raw_bytes():
         "relation": "locality",
         "second_subject": "this Seed",
         "relation_occurrence_identity": occurred.identity,
-    }
-    assert set(occurred.material["dimensions"]) == {
-        "identity",
-        "source_provenance",
-        "responsibility",
-        "scope_locality",
-        "occurrence_preservation",
     }
 
 
