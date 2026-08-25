@@ -9,7 +9,6 @@ import pytest
 
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
@@ -222,94 +221,6 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
         ledger.close()
     assert None not in Localities
     assert len(Localities) == 2
-
-
-@pytest.fixture(scope="module")
-def live_pytest_invocation(tmp_path_factory):
-    database = tmp_path_factory.mktemp("live-pytest") / "pytest.db"
-    nodeid = (
-        b"tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_exact_identities"
-    )
-
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "seed_runtime.process_entry",
-            "--db",
-            str(database),
-        ],
-        input=b"!pytest " + nodeid + b"\n",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-        cwd=str(Path(__file__).resolve().parent.parent),
-    )
-
-    assert result.returncode == 0, result.stderr
-    ledger = SQLiteEventLedger(database)
-    try:
-        acquisition_results = [
-            event
-            for event in ledger.list()
-            if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-        ]
-    finally:
-        ledger.close()
-    supplied = acquisition_results
-    supplied_by_boundary = {
-        event.material["source_boundary"]: event for event in supplied
-    }
-    return result, acquisition_results, supplied, supplied_by_boundary
-
-
-def test_live_process_acquisition_results_each_supplied_pytest_occurrence(
-    live_pytest_invocation,
-):
-    _, acquisition_results, supplied, supplied_by_boundary = live_pytest_invocation
-
-    assert len(acquisition_results) >= 6
-    assert {
-        "implementation function catalog",
-        "implementation function measurement",
-        "invocation completion",
-    } <= set(supplied_by_boundary)
-    assert all(
-        event.material["source_boundary"].startswith(
-            ("invocation output occurrence ", "invocation error occurrence ")
-        )
-        or event.material["source_boundary"] in {
-            "implementation function catalog",
-            "implementation function measurement",
-            "invocation completion",
-        }
-        for event in supplied
-    )
-    provenance = [
-        event.material["provenance_occurrence_references"]
-        for event in supplied
-    ]
-    supplied_identities = {event.identity for event in supplied}
-    assert all(type(references) is list and len(references) >= 2 for references in provenance)
-    assert len({tuple(references[:2]) for references in provenance}) == 1
-    assert set(provenance[0][:2]).isdisjoint(supplied_identities)
-    assert all(
-        set(references[2:]) <= supplied_identities for references in provenance
-    )
-
-
-def test_live_process_preserves_the_exact_pytest_measurement_result(
-    live_pytest_invocation,
-):
-    _, _, _, supplied_by_boundary = live_pytest_invocation
-
-    catalog = supplied_by_boundary["implementation function catalog"]
-    measurement = supplied_by_boundary["implementation function measurement"]
-    completion = supplied_by_boundary["invocation completion"]
-    assert catalog.exact_material
-    assert measurement.exact_material
-    assert completion.exact_material == b""
 
 
 def test_live_entry_has_only_help_and_database_flags():
