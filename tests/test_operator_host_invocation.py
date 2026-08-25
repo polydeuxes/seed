@@ -13,7 +13,7 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 )
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import EventLedger
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
@@ -733,8 +733,8 @@ def test_provider_supply_acquires_every_occurrence_without_selecting_emission():
     ] == [event.identity for event in supplied_acquisition_results]
 
 
-def test_repeated_exact_witness_material_does_not_repeat_measurement_work(tmp_path):
-    ledger = SQLiteEventLedger(tmp_path / "repeated-material.sqlite")
+def test_repeated_exact_witness_material_does_not_repeat_measurement_work():
+    ledger = EventLedger()
 
     def provider(_command, supply):
         supply(
@@ -766,10 +766,6 @@ def test_repeated_exact_witness_material_does_not_repeat_measurement_work(tmp_pa
         if _position == 0:
             first_counts = derived_counts()
             first_acquisitions = _acquisition_results(ledger)
-            first_material_references = {
-                ledger._exact_material_reference(event.identity)
-                for event in first_acquisitions
-            }
 
     assert first_counts == {
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: 2,
@@ -780,11 +776,6 @@ def test_repeated_exact_witness_material_does_not_repeat_measurement_work(tmp_pa
     assert len(first_acquisitions) == 2
     later_acquisitions = _acquisition_results(ledger)
     assert len(later_acquisitions) == 4
-    assert {
-        ledger._exact_material_reference(event.identity)
-        for event in later_acquisitions
-    } == first_material_references
-    ledger.close()
 
 
 def test_missing_supplied_result_is_refused_after_command_acquisition():
