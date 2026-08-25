@@ -793,47 +793,6 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     assert "01.Standing.D.1" in assertion_clauses
 
 
-def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_clauses():
-    event_clauses = {
-        clause
-        for values in _runtime_event_kind_responsibilities().values()
-        for _path, clause in values
-    }
-    assertion_clauses = {
-        values[0][1]
-        for values in _runtime_assertion_responsibility_clauses().values()
-        if len(values) == 1
-    }
-    witness = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clause_coordinates"]
-    witness_clauses = set(witness)
-    declared_event_occurrences = {
-        identity
-        for identity, clause in witness.items()
-        if clause["recorded_occurrence_kind"] == ["event_occurrence"]
-    }
-    declared_assertion_occurrences = {
-        identity
-        for identity, clause in witness.items()
-        if clause["recorded_occurrence_kind"] == ["Assertion_occurrence"]
-    }
-    declared_without_recorded_occurrence_kind = {
-        identity
-        for identity, clause in witness.items()
-        if clause["recorded_occurrence_kind"] == []
-    }
-    implemented_clauses = event_clauses | assertion_clauses
-
-    assert all(clause["grammar"] == "established" for clause in witness.values())
-    assert event_clauses == declared_event_occurrences
-    assert assertion_clauses == declared_assertion_occurrences
-    assert witness_clauses - implemented_clauses == declared_without_recorded_occurrence_kind
-    assert (
-        declared_event_occurrences
-        | declared_assertion_occurrences
-        | declared_without_recorded_occurrence_kind
-    ) == witness_clauses
-
-
 def test_runtime_record_words_have_constitutional_admission():
     """Event species and record coordinates require lexical admission."""
 

@@ -48,10 +48,10 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
 )
 BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact byte-position-pair count Measurement results"
 BYTE_OCCURRENCE_PRESERVATION = (
-    "byte Measurement results recorded after Yield"
+    "byte Measurement results with Yield"
 )
 BYTE_PAIR_OCCURRENCE_PRESERVATION = (
-    "byte-position-pair Measurement results recorded after Yield"
+    "byte-position-pair Measurement results with Yield"
 )
 BYTE_RESULT_COORDINATES = frozenset(
     {
@@ -135,8 +135,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
 ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
-    "make one exact preserved Assertion available in another Locality and "
-    "preserve its identity and Standing"
+    "preserve one exact Assertion in another Locality with its Standing"
 )
 BYTE_MEASUREMENT_RULE = (
     "each exact byte in exact recorded material acquisition material with the same exact byte "
@@ -147,14 +146,14 @@ BYTE_PAIR_MEASUREMENT_RULE = (
     "material occurrence with the same exact pair material and source order"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
-    "establish exact counts of byte-pair occurrences in source order within the exact "
+    "establish exact count of byte-pair occurrences in source order within the exact "
     "bounded source material"
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
-    "perform the bounded exact-byte Measurement and Yield the findings "
-    "established by its exact source occurrences, rule, and Scope"
+    "bounded exact-byte Measurement and Yield with findings from its exact "
+    "source occurrences, rule, and Scope"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "Yield exact byte-position-pair findings from an applicable exact bounded "
@@ -162,11 +161,12 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "and Unknown"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
-    "determine Applicability of one exact source-material-set Assertion to one "
+    "Applicability of one exact source-material Assertion to one "
     "exact byte-position-pair Measurement Act"
 )
 BYTE_PAIR_UNKNOWN = (
-    "what this ordered byte position pair participates in or represents: Unknown",
+    "Participation: Unknown",
+    "byte position pair relation: Unknown",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -667,7 +667,8 @@ def _pair_input_applicability_from_exact_source(
             },
         },
         "unknown": [
-            "what any byte or byte position pair represents: Unknown",
+            "byte relation: Unknown",
+            "byte position pair relation: Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
     }
@@ -1045,7 +1046,7 @@ def _movement_assignment_material(
             destination_standing_boundary_identity
         ),
         "determination": (
-            "the exact preserved Assertion available in another Locality"
+            "the exact preserved Assertion in another Locality"
         ),
         "scope": {
             "source_assertion_reference": _source_assertion_reference(source),
@@ -1054,7 +1055,7 @@ def _movement_assignment_material(
                 destination_standing_boundary_identity
             ),
         },
-        "unknown": ["what the exact Assertion represents: Unknown"],
+        "unknown": ["Assertion relation: Unknown"],
     }
 
 
@@ -1477,10 +1478,7 @@ def _movement_result_material(
             "Unknown",
             "Standing",
         ],
-        "movement_scope": (
-            "Locality movement bounded to this exact Assertion; establishes no "
-            "different identity or Standing"
-        ),
+        "movement_scope": "Locality movement for this exact Assertion",
     }
 
 
@@ -2098,7 +2096,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "identity": source_identity,
                 "content": source_content,
                 "source_provenance": (
-                    "complete declared material acquisition through one boundary"
+                    "complete declared material acquisition within one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
             },
@@ -2115,7 +2113,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": [],
             },
             "conflicts": "Unknown",
-            "unknown": ["what the exact source bytes represent: Unknown"],
+            "unknown": ["source byte relation: Unknown"],
         }
     ]
 
@@ -2149,7 +2147,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": local_support_references,
             },
             "conflicts": "Unknown",
-            "unknown": ["what this byte participates in or represents: Unknown"],
+            "unknown": ["Participation: Unknown", "byte relation: Unknown"],
         }
 
     for item in measured.counts:
@@ -2162,7 +2160,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             result="count",
             item=item,
             content=count_content,
-            provenance="the exact source-material-set Assertion carried here",
+            provenance="the exact source-material Assertion carried here",
             local_support_references=[source_identity],
         )
         results.append(count)
@@ -2280,7 +2278,7 @@ def _byte_measurement_assignment_material(
             "source_localities": list(source_localities),
             "completeness_boundary_identity": completeness_boundary_identity,
         },
-        "unknown": ["what the exact source material represents: Unknown"],
+        "unknown": ["source material relation: Unknown"],
     }
 
 
@@ -2955,9 +2953,9 @@ def _record_byte_measurement_result_from_exact_inputs(
         "dimensions": {
                 "identity": "byte-count-measurement-occurrence",
                 "content": (
-                    "exact source-material-set, byte count, and recurrence Assertions"
+                    "exact source material, byte count, and same-content Assertions"
                 ),
-                "source_provenance": "complete declared material acquisition through one boundary",
+                "source_provenance": "complete declared material acquisition within one boundary",
         },
         "exact_act": "declared exact-byte Measurement",
         "addressed_act_identity": act_occurrence.material[
@@ -3131,10 +3129,10 @@ def _assertions_of_recorded_byte_measurement(
         != {
             "identity": "byte-count-measurement-occurrence",
                 "content": (
-                    "exact source-material-set, byte count, and recurrence Assertions"
+                    "exact source material, byte count, and same-content Assertions"
                 ),
             "source_provenance": (
-                "complete declared material acquisition through one boundary"
+                "complete declared material acquisition within one boundary"
             ),
         }
     ):
@@ -3311,7 +3309,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "occurrences_carrying": item.occurrences_carrying,
                 "count": item.count,
             },
-            provenance="the exact source-material-set Assertion referenced here",
+            provenance="the exact source-material Assertion referenced here",
             local_support_references=[],
             source_support_references=[measured.source_assertion_reference],
         )
@@ -3394,7 +3392,7 @@ def _pair_measurement_assignment_material(
             ],
         },
         "unknown": [
-            "what measured byte position pair represents: Unknown"
+            "byte position pair relation: Unknown"
         ],
     }
 
@@ -3746,7 +3744,7 @@ def _pair_applicability_act_material(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "act": "input Applicability determination",
+        "act": "input Applicability",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -3819,7 +3817,7 @@ def _pair_applicability_result_material(
             "standing": applicability_assertion["dimensions"]["standing"],
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
         },
-        "exact_act": "input Applicability determination",
+        "exact_act": "input Applicability",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
@@ -3940,7 +3938,7 @@ def _record_pair_input_applicability_result_from_carried_act(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=assignment.locality_identity,
-        exact_act="input Applicability determination",
+        exact_act="input Applicability",
         act_occurrence_identity=assignment.material[
             "applicability_act_occurrence_identity"
         ],
@@ -4260,8 +4258,8 @@ def _pair_measurement_result_material(
         "result_identity": assignment.material["measurement_result_identity"],
         "dimensions": {
             "identity": "byte-position-pair-count-measurement-occurrence",
-            "content": "byte-position-pair count and recurrence Assertions",
-            "source_provenance": "the recorded source-material-set Assertion",
+            "content": "byte-position-pair count and same-content Assertions",
+            "source_provenance": "the recorded source-material Assertion",
         },
         "exact_act": "declared byte-position-pair Measurement",
         "addressed_act_identity": assignment.material["measurement_act_identity"],
@@ -4947,9 +4945,9 @@ def _validated_recorded_byte_position_pair_measurement(
     expected_dimensions = {
         "identity": "byte-position-pair-count-measurement-occurrence",
         "content": (
-            "byte-position-pair count and recurrence Assertions"
+            "byte-position-pair count and same-content Assertions"
         ),
-        "source_provenance": "the recorded source-material-set Assertion",
+        "source_provenance": "the recorded source-material Assertion",
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
@@ -5169,7 +5167,7 @@ def _validated_recorded_byte_position_pair_measurement(
             or count["input_support"]
             != {"assertion_references": [source_reference], "local_assertion_references": []}
             or count["dimensions"]["source_provenance"]
-            != "the exact source-material-set Assertion referenced here"
+            != "the exact source-material Assertion referenced here"
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair count")
         recurrence = group.get("recurrence")

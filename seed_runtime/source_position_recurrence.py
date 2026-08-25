@@ -424,9 +424,53 @@ def _preserved_responsibility_material(material):
     }
 
 
-def _append_responsibility(ledger, kind, material, locality_identity):
+def _append_compare_applicability_responsibility(ledger, material, locality_identity):
     return ledger.append(
-        kind,
+        COMPARE_APPLICABILITY_RESPONSIBILITY_KIND,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_compare_responsibility(ledger, material, locality_identity):
+    return ledger.append(
+        COMPARE_RESPONSIBILITY_KIND,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_source_position_measurement_responsibility(
+    ledger, material, locality_identity
+):
+    return ledger.append(
+        SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY_KIND,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_recurrence_measurement_responsibility(ledger, material, locality_identity):
+    return ledger.append(
+        RECURRENCE_MEASUREMENT_RESPONSIBILITY_KIND,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_coordinate_measurement_responsibility(ledger, material, locality_identity):
+    return ledger.append(
+        COORDINATE_MEASUREMENT_RESPONSIBILITY_KIND,
+        _preserved_responsibility_material(material),
+        locality_identity=locality_identity,
+    )
+
+
+def _append_recurrent_result_material_measurement_responsibility(
+    ledger, material, locality_identity
+):
+    return ledger.append(
+        RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY_KIND,
         _preserved_responsibility_material(material),
         locality_identity=locality_identity,
     )
@@ -556,6 +600,19 @@ _EVENT_APPENDERS = {
     ),
 }
 
+_RESPONSIBILITY_APPENDERS = {
+    COMPARE_APPLICABILITY_ACT_KIND: _append_compare_applicability_responsibility,
+    COMPARE_ACT_KIND: _append_compare_responsibility,
+    SOURCE_POSITION_MEASUREMENT_ACT_KIND: (
+        _append_source_position_measurement_responsibility
+    ),
+    RECURRENCE_MEASUREMENT_ACT_KIND: _append_recurrence_measurement_responsibility,
+    COORDINATE_MEASUREMENT_ACT_KIND: _append_coordinate_measurement_responsibility,
+    RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT_KIND: (
+        _append_recurrent_result_material_measurement_responsibility
+    ),
+}
+
 
 def _responsibility_reference(assignment: Event) -> dict[str, str]:
     return {
@@ -572,7 +629,7 @@ def _responsibility_reference(assignment: Event) -> dict[str, str]:
 def _record_responsibility(
     ledger: EventLedger,
     *,
-    kind: str,
+    act_kind: str,
     exact_act: str,
     rule: str,
     responsibility: str,
@@ -584,9 +641,8 @@ def _record_responsibility(
     result_identity: str,
     subject: dict[str, Any],
 ) -> Event:
-    return _append_responsibility(
+    return _RESPONSIBILITY_APPENDERS[act_kind](
         ledger,
-        kind,
         {
             "assignment_identity": new_identity("source_position_responsibility"),
             "assignment_subject_identity": new_identity(
@@ -608,7 +664,7 @@ def _record_responsibility(
             },
             "conflicts": [],
             "unknown": [
-                "what any recovered material represents beyond this exact result: Unknown"
+                "material relation: Unknown"
             ],
         },
         locality_identity,
@@ -642,7 +698,7 @@ def _record_yielded_result(
         raise ValueError("source-position Responsibility requires one exact subject")
     assignment = _record_responsibility(
         ledger,
-        kind=_ACT_RESPONSIBILITY_KINDS[act_kind],
+        act_kind=act_kind,
         exact_act=exact_act,
         rule=_ACT_RULES[act_kind],
         responsibility=responsibility,

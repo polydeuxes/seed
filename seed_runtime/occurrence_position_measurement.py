@@ -30,7 +30,7 @@ OCCURRENCE_POSITION_RESPONSIBILITY = (
 )
 OCCURRENCE_POSITION_MEASUREMENT_RULE = (
     "preserve each exact occurrence in one exact Locality with its source-order "
-    "position coordinate through one completeness boundary"
+    "position coordinate within one completeness boundary"
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -224,7 +224,7 @@ def _assignment_material(
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": finding.completeness_boundary.identity,
         },
-        "unknown": ["Participation and represented relation: Unknown"],
+        "unknown": ["Participation: Unknown", "relation: Unknown"],
     }
 
 
@@ -289,7 +289,8 @@ def _position_assertions(
                 },
                 "conflicts": "Unknown",
                 "unknown": [
-                    "what this occurrence participates in or represents: Unknown"
+                    "Participation: Unknown",
+                    "relation: Unknown",
                 ],
             }
         )

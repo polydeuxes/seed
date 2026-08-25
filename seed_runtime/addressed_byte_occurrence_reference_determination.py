@@ -50,11 +50,10 @@ DETERMINATION_RESULT_KIND = (
 
 BOOK_CLAUSE = "01.Source.D.2"
 RESPONSIBILITY = (
-    "determine every exact pair-occurrence position Assertion reference carrying "
-    "one addressed source-byte position-coordinate reference and no other "
-    "Assertion reference"
+    "each exact pair-occurrence position Assertion reference carrying one "
+    "addressed source-byte position-coordinate reference"
 )
-APPLICABILITY_ACT = "addressed byte occurrence reference determination Applicability"
+APPLICABILITY_ACT = "addressed byte occurrence reference Applicability"
 DETERMINATION_ACT = (
     "declared Measurement of exact pair-occurrence position Assertion "
     "references carrying one addressed source-byte position-coordinate reference"
@@ -72,13 +71,12 @@ APPLICABILITY_BOUNDARY = (
 )
 DETERMINATION_BOUNDARY = "addressed_byte_occurrence_reference_determination"
 DETERMINATION_RULE = (
-    "every exact pair-occurrence position Assertion reference carrying the "
-    "addressed source-byte position-coordinate reference and no other Assertion "
-    "reference, in source occurrence order"
+    "each exact pair-occurrence position Assertion reference carrying the "
+    "addressed source-byte position-coordinate reference in source occurrence order"
 )
 UNKNOWN = [
-    "what the addressed byte occurrence represents: Unknown",
-    "what each carried Assertion reference represents: Unknown",
+    "addressed byte occurrence relation: Unknown",
+    "carried Assertion relation: Unknown",
 ]
 
 EVENT_KIND_RESPONSIBILITIES = {

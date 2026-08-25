@@ -31,7 +31,7 @@ OPERATOR_MATERIAL_ACQUIRE_LOCALITY_RELATION_OCCURRENCE_KIND = (
     "operator.material.acquire_recorded"
 )
 OPERATOR_MATERIAL_ACQUIRE_RESULT_KIND = "exact operator material boundary result"
-OPERATOR_MATERIAL_ACQUIRE_ACT = "Acquire one exact operator material boundary result"
+OPERATOR_MATERIAL_ACQUIRE_ACT = "Acquisition of one exact operator material boundary result"
 OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY = (
     "preserve one exact material result supplied at one operator boundary"
 )
@@ -154,7 +154,7 @@ def _assignment_material(
             "standing_boundary_event_identity"
         ],
         "unknown": [
-            "what exact material the operator boundary supplies: Unknown"
+            "operator boundary material: Unknown"
         ],
     }
 
@@ -605,7 +605,7 @@ def _record_operator_material_acquire_result(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=act_occurrence.locality_identity,
-        exact_act="Acquire one exact operator material boundary result",
+        exact_act="Acquisition of one exact operator material boundary result",
         act_occurrence_identity=act_occurrence_identity,
         act_occurrence_event_identity=act_occurrence.identity,
         result_kind=OPERATOR_MATERIAL_ACQUIRE_RESULT_KIND,

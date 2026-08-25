@@ -31,12 +31,11 @@ STANDING_LOCALITY_CONTINUATION_RECORDED_KIND = (
     "operator.standing.locality_continuation_recorded"
 )
 STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
-    "Standing Locality continuation result"
+    "Standing Locality relation result"
 )
-STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality continuation"
+STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality relation"
 STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY = (
-    "preserve availability of one exact prior Locality Standing boundary at one other "
-    "exact Locality"
+    "preserve one exact prior Locality Standing boundary at another exact Locality"
 )
 STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact prior Locality Standing boundary"

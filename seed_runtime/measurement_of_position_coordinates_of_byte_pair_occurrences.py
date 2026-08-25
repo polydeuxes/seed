@@ -614,7 +614,7 @@ def _assignment_material(
             "recording_standing_boundary_identity": standing_boundary_identity,
         },
         "unknown": [
-            "Participation or content of each measured byte pair: Unknown"
+            "Participation or content of each exact byte pair: Unknown"
         ],
     }
 
@@ -1433,7 +1433,7 @@ def _assertion_population(
             "responsibility": ASSERTION_RESPONSIBILITY,
         },
         "unknown": [
-            "Participation or content of each measured byte pair: Unknown"
+            "Participation or content of each exact byte pair: Unknown"
         ],
     }
 
@@ -1461,7 +1461,7 @@ def _result_material(
         },
         "assertions": _assertion_population(finding),
         "unknown": [
-            "Participation or content of each measured byte pair: Unknown"
+            "Participation or content of each exact byte pair: Unknown"
         ],
     }
 

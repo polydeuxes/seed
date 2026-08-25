@@ -59,14 +59,14 @@ MEASUREMENT_RULE = (
     "occurrence Assertion, each of one exact byte occurrence"
 )
 RESPONSIBILITY = (
-    "determine Applicability and Yield one ordered path where exact pair occurrence "
-    "Assertions carry one exact position-coordinate reference"
+    "Applicability and Yield one ordered path of exact pair occurrence Assertions "
+    "carrying one exact position-coordinate reference"
 )
 APPLICABILITY_ACT = (
-    "determine Applicability of exact pair occurrence position Assertions to one "
-    "shared position Measurement"
+    "Applicability of exact pair occurrence position Assertions to one same-position "
+    "Measurement"
 )
-MEASUREMENT_ACT = "determine one shared position of exact byte pair occurrences"
+MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"
 SHARED_POSITION_ASSERTION_RESPONSIBILITY = (
     "preserve exact coordinates of this Measurement Assertion"
 )
@@ -644,7 +644,7 @@ def _assignment_material(
             ),
             "standing_boundary_identity": standing_boundary_identity,
         },
-        "unknown": ["what this ordered relation path represents: Unknown"],
+        "unknown": ["relation path relation: Unknown"],
     }
     if determination_result_reference is not None:
         material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
@@ -1704,7 +1704,7 @@ def _path_assertion(
             "local_assertion_references": [],
         },
         "conflicts": "Unknown",
-        "unknown": ["what this ordered relation path represents: Unknown"],
+        "unknown": ["relation path relation: Unknown"],
     }
 
 

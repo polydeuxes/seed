@@ -29,7 +29,7 @@ STANDING_BOUNDARY_REFERENCE_RECORDED_KIND = (
 STANDING_BOUNDARY_REFERENCE_RESULT_KIND = "recorded Standing boundary reference result"
 STANDING_BOUNDARY_REFERENCE_ACT = "Record one exact Standing boundary reference"
 STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY = (
-    "record one exact addressed Standing boundary in one durable bounded record"
+    "record one exact addressed Standing boundary in one exact bounded record"
 )
 STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE = "05.Recording.D"
 EVENT_KIND_RESPONSIBILITIES = {

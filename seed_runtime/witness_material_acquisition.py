@@ -162,7 +162,7 @@ def record_witness_material_acquisition(
         {
             "material_acquisition_act_identity": material_acquisition_act_identity,
             "act_occurrence_identity": act_occurrence_identity,
-            "act": "Acquire exact material supplied by this Witness",
+            "act": "Exact material acquisition from this Witness",
             "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
         },
@@ -183,7 +183,7 @@ def record_witness_material_acquisition(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
-        exact_act="Acquire exact material supplied by this Witness",
+        exact_act="Exact material acquisition from this Witness",
         act_occurrence_identity=act_occurrence_identity,
         act_occurrence_event_identity=act_occurrence.identity,
         result_kind="exact material",
@@ -298,7 +298,7 @@ def _read_witness_material_acquisition_result(
     expected_act_occurrence = {
         "material_acquisition_act_identity": material_acquisition_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "act": "Acquire exact material supplied by this Witness",
+        "act": "Exact material acquisition from this Witness",
         "responsibility": WITNESS_MATERIAL_ACQUISITION_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
     }

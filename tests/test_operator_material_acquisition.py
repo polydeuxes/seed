@@ -105,9 +105,7 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     assert result.exact_material == b"\x00\xffraw\n"
     assert assignment.material["book_clause_identity"] == "01.Source.G"
     assert "locality_relation" not in assignment.material
-    assert assignment.material["unknown"] == [
-        "what exact material the operator boundary supplies: Unknown"
-    ]
+    assert assignment.material["unknown"] == ["operator boundary material: Unknown"]
     assert assignment.identity in after_assignment[
         "responsibility_assignment_occurrences"
     ]

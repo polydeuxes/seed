@@ -50,15 +50,15 @@ RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
     "result of exact Measurement of recurrent byte-pair occurrence position"
 )
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "declared Measurement of recurrent byte-pair occurrence position"
+    "declared Measurement of byte-pair occurrence position"
 )
 RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "Measurement of each exact ordered position for one recurrent byte pair "
+    "Measurement of each exact ordered position for one exact byte pair "
     "in one exact material result"
 )
 RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "each ordered occurrence of the exact Yield-carried byte pair in one exact "
-    "material acquisition result through one completeness boundary and occurrence count boundary"
+    "material acquisition result within one completeness boundary and occurrence count boundary"
 )
 SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "exact Yield-carried pair Assertion and exact later material acquisition result only"
@@ -619,7 +619,7 @@ def _responsibility_assignment_material(
             ),
             "occurrence_count_boundary": finding.occurrence_count_boundary,
         },
-        "unknown": ["what the measured pair relation represents: Unknown"],
+        "unknown": ["pair relation: Unknown"],
     }
 
 
@@ -1158,7 +1158,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 },
                 "conflicts": "Unknown",
                 "unknown": [
-                    "what this ordered pair occurrence relation represents: Unknown"
+                    "pair occurrence relation: Unknown"
                 ],
             }
         )

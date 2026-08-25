@@ -46,26 +46,26 @@ COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND = "o
 
 BOOK_CLAUSE = "04.Compare.B"
 RESPONSIBILITY = (
-    "determine Applicability and Compare one exact ordered relation path with "
+    "Applicability and Compare one exact ordered relation path with "
     "recorded pair findings of its exact source occurrence"
 )
 APPLICABILITY_ACT = (
-    "determine Applicability of one ordered relation path and one recorded pair "
-    "comparison result to one Compare"
+    "Applicability of one ordered relation path and one recorded pair Compare "
+    "result to one Compare"
 )
 COMPARE_ACT = (
     "Compare each relation of one ordered path with complete recorded findings "
     "of the same exact pair subject"
 )
 COMPARISON_RULE = (
-    "the path source is the exact added comparison occurrence and each path pair "
-    "subject carries complete recorded comparison findings"
+    "the path source is the exact added Compare occurrence and each path pair "
+    "subject carries complete recorded Compare findings"
 )
 APPLICABILITY_RESULT_KIND = (
     "Applicability result of ordered relation path and recorded pair findings"
 )
 COMPARE_RESULT_KIND = (
-    "comparison result of ordered relation path and recorded pair findings"
+    "Compare result of ordered relation path and recorded pair findings"
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
@@ -896,7 +896,7 @@ def _assignment_material(
             "standing_boundary_identity": boundary,
         },
         "unknown": [
-            "what the relation of path and comparison findings represents: Unknown"
+            "path and Compare finding relation: Unknown"
         ],
     }
 
@@ -1052,7 +1052,7 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
-                "role": "recorded pair comparison input",
+                "role": "recorded pair Compare input",
                 "addressed_act_identity": material["compare_act_identity"],
             },
         ],
@@ -1394,7 +1394,7 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
-                "role": "recorded pair comparison result",
+                "role": "recorded pair Compare result",
                 "act_occurrence_identity": material[
                     "compare_act_occurrence_identity"
                 ],
@@ -1527,7 +1527,7 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
         ),
         "scope": {"locality_identity": inputs["locality_identity"]},
         "unknown": [
-            "what the relation of the ordered path and recorded comparison findings represents: Unknown"
+            "path and recorded Compare finding relation: Unknown"
         ],
     }
 

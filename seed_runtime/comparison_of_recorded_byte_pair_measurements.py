@@ -48,14 +48,14 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE = (
     "Measurement results"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY = (
-    "determine Applicability and compare earlier and later exact carried byte-position-pair "
-    "Measurement results through one operator material acquisition at prior Standing"
+    "Applicability and Compare earlier and later exact carried byte-position-pair "
+    "Measurement results within one operator material acquisition at prior Standing"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT = (
     "Compare earlier and later exact carried byte-position-pair Measurement results"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT = (
-    "Determine Applicability of earlier and later recorded Measurement results to one Compare"
+    "Applicability of earlier and later recorded Measurement results to one Compare"
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
@@ -786,7 +786,7 @@ def _assignment_material(
             ],
         },
         "unknown": [
-            "what the measured difference represents: Unknown"
+            "distinction relation: Unknown"
         ],
     }
 
@@ -1141,7 +1141,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "scope": deepcopy(act.material["scope"]),
         "standing": "applicable",
         "unknown": [
-            "what the compared difference represents: Unknown"
+            "Compare distinction relation: Unknown"
         ],
     }
 
@@ -1545,7 +1545,7 @@ def _comparison_result_material(
         ),
         "scope": deepcopy(act.material["scope"]),
         "unknown": [
-            "what each measured match or difference represents: Unknown"
+            "each finding relation: Unknown"
         ],
     }
 

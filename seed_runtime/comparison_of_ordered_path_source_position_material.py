@@ -41,7 +41,7 @@ COMPARE_RESULT_KIND = (
 BOOK_CLAUSE = "04.Compare"
 RESPONSIBILITY = "compare ordered path source position material"
 APPLICABILITY_ACT = (
-    "determine Applicability of ordered path source position material to Compare"
+    "Applicability of ordered path source position material to Compare"
 )
 COMPARE_ACT = "Compare ordered path source position material"
 RULE = "compare exact material of ordered path source position coordinates"

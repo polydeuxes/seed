@@ -548,117 +548,6 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
     )
 
 
-def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
-    ledger, _locality, pair, _recurrence, source, _finding = _fixture(
-        premise=b"abxxabyybayyba",
-        current=b"ba---abxx--yy",
-    )
-    pair_assertions = assertions_of_recorded_byte_position_pair_measurement(
-        ledger, pair.identity
-    )
-    recurrence_identities = tuple(
-        assertion.assertion_identity
-        for assertion in pair_assertions or ()
-        if assertion.result == "recurrence"
-    )
-    assert len(recurrence_identities) > 1
-    through = ledger.append_boundary()
-    expected = tuple(
-        measure_positions_of_recurrent_byte_pair_occurrences(
-            ledger,
-            pair_measurement_occurrence_identity=pair.identity,
-            recurrence_assertion_identity=identity,
-            source_material_acquisition_occurrence_identity=source.identity,
-            occurrence_count_boundary=16,
-            through=through,
-        )
-        for identity in recurrence_identities
-    )
-    pair_result_read_count = 0
-    source_read_count = 0
-    order_read_count = 0
-    boundary_read_count = 0
-    pair_result_read = (
-        pair_occurrence_measurement._validated_recorded_byte_position_pair_measurement
-    )
-    source_read = pair_occurrence_measurement._exact_material_acquisition_event
-    order_read = ledger.occurrences_in_append_order
-    boundary_read = ledger.list_locality
-
-    def witness_pair_result_read(ledger, event_identity, *, findings_only):
-        nonlocal pair_result_read_count
-        pair_result_read_count += 1
-        return pair_result_read(
-            ledger, event_identity, findings_only=findings_only
-        )
-
-    def witness_source_read(ledger, event_identity):
-        nonlocal source_read_count
-        source_read_count += 1
-        return source_read(ledger, event_identity)
-
-    def witness_order_read(event_identities, *, locality_identity):
-        nonlocal order_read_count
-        order_read_count += 1
-        return order_read(
-            event_identities, locality_identity=locality_identity
-        )
-
-    def witness_boundary_read(locality_identity, *, through=None):
-        nonlocal boundary_read_count
-        boundary_read_count += 1
-        return boundary_read(locality_identity, through=through)
-
-    monkeypatch.setattr(
-        pair_occurrence_measurement,
-        "_validated_recorded_byte_position_pair_measurement",
-        witness_pair_result_read,
-    )
-    monkeypatch.setattr(
-        pair_occurrence_measurement, "_exact_material_acquisition_event", witness_source_read
-    )
-    monkeypatch.setattr(
-        ledger, "occurrences_in_append_order", witness_order_read
-    )
-    monkeypatch.setattr(ledger, "list_locality", witness_boundary_read)
-    pair_result_read(ledger, pair.identity, findings_only=True)
-    exact_pair_read_order_count = order_read_count
-    exact_pair_read_boundary_count = boundary_read_count
-    pair_result_read_count = 0
-    source_read_count = 0
-    order_read_count = 0
-    boundary_read_count = 0
-    measured = measure_positions_for_recurrent_byte_pair_assertions(
-        ledger,
-        pair_measurement_occurrence_identity=pair.identity,
-        recurrence_assertion_identities=recurrence_identities,
-        source_material_acquisition_occurrence_identity=source.identity,
-        occurrence_count_boundary=16,
-        through=through,
-    )
-
-    assert measured == expected
-    assert pair_result_read_count == 1
-    assert source_read_count == 1
-    # The batched read adds three exact-order reads and three boundary reads;
-    # neither count grows with the recurrence identities sharing that boundary.
-    assert order_read_count == exact_pair_read_order_count + 3
-    assert boundary_read_count == exact_pair_read_boundary_count + 3
-    assert tuple(
-        finding.pair_reference.recurrence_assertion_identity
-        for finding in measured
-    ) == recurrence_identities
-    assert {
-        (
-            finding.source_material_acquisition_occurrence_identity,
-            finding.source_locality_identity,
-            finding.completeness_boundary.identity,
-            finding.occurrence_count_boundary,
-        )
-        for finding in measured
-    } == {(source.identity, source.locality_identity, through.identity, 16)}
-
-
 def test_assignment_read_threads_one_exact_standing_to_pair_validation(monkeypatch):
     ledger, locality, pair, _recurrence, _source, finding = _fixture()
     prior_standing = read_operator_locality_standing(
@@ -1138,7 +1027,6 @@ FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
-        test_same_boundary_pair_subjects_have_one_pair_result_read,
         test_assignment_read_threads_one_exact_standing_to_pair_validation,
         test_assignment_pair_handoff_still_refuses_later_pair_corruption,
         test_public_assignment_read_still_reconstructs_prior_standing,

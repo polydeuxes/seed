@@ -618,7 +618,7 @@ def test_only_applicable_current_compare_results_record_participation_and_act_oc
             participation["role"]
             for participation in act.material["participation_of_input_in_compare"]
         )
-        == ("ordered relation path", "recorded pair comparison result")
+        == ("ordered relation path", "recorded pair Compare result")
         for act in acts
     )
     assert all(
