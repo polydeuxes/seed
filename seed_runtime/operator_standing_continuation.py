@@ -119,9 +119,6 @@ def _assignment_material(
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
-    standing_boundary = source_standing_reference[
-        "source_standing_through_event_occurrence_identity"
-    ]
     return {
         "assignment_identity": assignment_identity,
         "assignment_subject_identity": assignment_subject_identity,
@@ -132,7 +129,6 @@ def _assignment_material(
         "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
-        "standing_boundary_occurrence_reference": standing_boundary,
         "scope": {
             "source_locality_identity": source_standing_reference[
                 "source_locality_identity"
