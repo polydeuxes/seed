@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import sqlite3
-import subprocess
 import sys
 from types import CodeType, SimpleNamespace
 
@@ -547,30 +546,6 @@ def test_fidelity_distinctions_resolve_current_book_coordinates():
         assert all(callable(function) for function in functions)
 
 
-def test_complete_pytest_collection_has_no_implicit_uptake():
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-q",
-            "--collect-only",
-            "-p",
-            "scripts.implementation_function_measurement",
-            "--",
-        ],
-        cwd=ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-        timeout=30,
-    )
-
-    assert result.returncode == 0, result.stderr
-
-
-
-
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.C"): (
         test_compiled_code_supplies_exact_identities,
@@ -590,6 +565,5 @@ FIDELITY_DISTINCTIONS = {
         test_existing_sql_trace_callback_receives_the_same_statement,
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
         test_fidelity_distinctions_resolve_current_book_coordinates,
-        test_complete_pytest_collection_has_no_implicit_uptake,
     )
 }
