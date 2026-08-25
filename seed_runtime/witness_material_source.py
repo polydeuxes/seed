@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
@@ -16,21 +18,64 @@ from seed_runtime.material_source import (
 )
 
 
+WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "witness.material.source_subject_to_act_binding_recorded"
+)
 WITNESS_MATERIAL_SOURCE_RECORDED_KIND = "witness.material.source_result_recorded"
 WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT = (
     "witness.material.source_act_occurrence_recorded"
 )
 EVENT_KIND_RESPONSIBILITIES = {
+    WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.H",
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "02.Acts.A",
     WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
 }
-WITNESS_MATERIAL_SOURCE_RESPONSIBILITY = (
-    "preserve exact material supplied by this Witness at one source boundary"
-)
+WITNESS_MATERIAL_SOURCE_ACT = "Preserve exact material supplied by this Witness"
 
 
 class WitnessMaterialSourceError(MaterialSourceError):
     """One exact Witness material source occurrence is malformed."""
+
+
+def _subject_to_act_binding_reference(binding: Event) -> dict[str, object]:
+    return {
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
+            "result_boundary_identity"
+        ],
+    }
+
+
+def _subject_to_act_binding_material(
+    *,
+    locality_identity: str,
+    source_boundary: str,
+    exact_act_identity: str,
+    act_occurrence_identity: str,
+    result_identity: str,
+    scope_identity: str,
+) -> dict[str, object]:
+    return {
+        "book_clause_identity": "01.Source.H",
+        "subject_reference": {
+            "source_role": "this Witness",
+            "source_boundary": source_boundary,
+        },
+        "act": WITNESS_MATERIAL_SOURCE_ACT,
+        "exact_act_identity": exact_act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
+        "result_boundary_identity": result_identity,
+        "scope": {
+            "scope_identity": scope_identity,
+            "source_boundary": source_boundary,
+            "locality_identity": locality_identity,
+            "result_identity": result_identity,
+        },
+        "unknown": list(MATERIAL_RESULT_UNKNOWN),
+    }
 
 
 def _require_read_occurrence_coordinates(
@@ -130,6 +175,23 @@ def record_witness_material_source(
     source_act_identity = new_identity("witness_material_source_act")
     act_occurrence_identity = new_identity("witness_material_source_act_occurrence")
     result_identity = new_identity("witness_material_source_result")
+    scope_identity = new_identity("witness_material_source_scope")
+    subject_to_act_binding = ledger.append(
+        WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _subject_to_act_binding_material(
+            locality_identity=locality_identity,
+            source_boundary=source_boundary,
+            exact_act_identity=source_act_identity,
+            act_occurrence_identity=act_occurrence_identity,
+            result_identity=result_identity,
+            scope_identity=scope_identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    binding_reference = _subject_to_act_binding_reference(
+        subject_to_act_binding
+    )
+    scope = deepcopy(subject_to_act_binding.material["scope"])
     recorded_result_event_identity = ledger.allocate_event_identity()
     locality_relation = {
         "first_subject": {
@@ -142,10 +204,12 @@ def record_witness_material_source(
     }
     result: dict[str, object] = {
         "result_identity": result_identity,
-        "source_act_identity": source_act_identity,
+        "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "source_role": "this Witness",
         "source_boundary": source_boundary,
+        "subject_to_act_binding_reference": binding_reference,
+        "scope": scope,
         "known_loss": list(known_loss),
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
         "provenance_occurrence_references": list(
@@ -160,11 +224,11 @@ def record_witness_material_source(
     act_occurrence = ledger.append(
         WITNESS_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
         {
-            "source_act_identity": source_act_identity,
+            "exact_act_identity": source_act_identity,
             "act_occurrence_identity": act_occurrence_identity,
-            "act": "Preserve exact material supplied by this Witness",
-            "responsibility": WITNESS_MATERIAL_SOURCE_RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
+            "act": WITNESS_MATERIAL_SOURCE_ACT,
+            "subject_to_act_binding_reference": binding_reference,
+            "scope": scope,
         },
         locality_identity=locality_identity,
     )
@@ -173,7 +237,6 @@ def record_witness_material_source(
         "dimensions": {
             "identity": result_identity,
             "source_provenance": source_boundary,
-            "responsibility": WITNESS_MATERIAL_SOURCE_RESPONSIBILITY,
             "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material source occurrence recorded"
@@ -183,7 +246,7 @@ def record_witness_material_source(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
-        exact_act="Preserve exact material supplied by this Witness",
+        exact_act=WITNESS_MATERIAL_SOURCE_ACT,
         act_occurrence_identity=act_occurrence_identity,
         act_occurrence_event_identity=act_occurrence.identity,
         result_kind="exact material",
@@ -222,16 +285,23 @@ def _read_witness_material_source_result(
     known_loss = material.get("known_loss")
     unknown = material.get("unknown")
     result_identity = material.get("result_identity")
-    source_act_identity = material.get("source_act_identity")
+    source_act_identity = material.get("exact_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_role = material.get("source_role")
     source_boundary = material.get("source_boundary")
+    binding_reference = material.get("subject_to_act_binding_reference")
+    scope = material.get("scope")
     yield_identity = material.get("yield_relation_identity")
     locality_relation = material.get("locality_relation")
     act_occurrence = (
         ledger.get(act_occurrence_event_identity)
         if type(act_occurrence_event_identity) is str
+        else None
+    )
+    binding = (
+        ledger.get(binding_reference.get("recorded_occurrence_identity"))
+        if type(binding_reference) is dict
         else None
     )
     if (
@@ -248,6 +318,17 @@ def _read_witness_material_source_result(
         or source_role != "this Witness"
         or type(source_boundary) is not str
         or not source_boundary
+        or binding is None
+        or binding.kind
+        != WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or binding.locality_identity != event.locality_identity
+        or binding.exact_material is not None
+        or ledger.integrity_of(binding.identity) == CORRUPTED
+        or binding_reference != _subject_to_act_binding_reference(binding)
+        or scope != binding.material.get("scope")
+        or type(scope) is not dict
+        or type(scope.get("scope_identity")) is not str
+        or not scope["scope_identity"]
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
         or unknown != list(MATERIAL_RESULT_UNKNOWN)
@@ -280,12 +361,26 @@ def _read_witness_material_source_result(
         raise MaterialSourceError(
             "Witness material result is absent or corrupted"
         )
+    expected_binding = _subject_to_act_binding_material(
+        locality_identity=event.locality_identity,
+        source_boundary=source_boundary,
+        exact_act_identity=source_act_identity,
+        act_occurrence_identity=act_occurrence_identity,
+        result_identity=result_identity,
+        scope_identity=scope["scope_identity"],
+    )
+    if binding.material != expected_binding:
+        raise MaterialSourceError(
+            "Witness material result is absent or corrupted"
+        )
     result: dict[str, object] = {
         "result_identity": result_identity,
-        "source_act_identity": source_act_identity,
+        "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "source_role": source_role,
         "source_boundary": source_boundary,
+        "subject_to_act_binding_reference": binding_reference,
+        "scope": scope,
         "known_loss": known_loss,
         "unknown": unknown,
         "provenance_occurrence_references": provenance,
@@ -294,18 +389,17 @@ def _read_witness_material_source_result(
     if read_occurrences:
         result["read_occurrences"] = read_occurrences
     expected_act_occurrence = {
-        "source_act_identity": source_act_identity,
+        "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "act": "Preserve exact material supplied by this Witness",
-        "responsibility": WITNESS_MATERIAL_SOURCE_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
+        "act": WITNESS_MATERIAL_SOURCE_ACT,
+        "subject_to_act_binding_reference": binding_reference,
+        "scope": scope,
     }
     expected_material = {
         **result,
         "dimensions": {
             "identity": result_identity,
             "source_provenance": source_boundary,
-            "responsibility": WITNESS_MATERIAL_SOURCE_RESPONSIBILITY,
             "scope_locality": f"locality:{event.locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material source occurrence recorded"
@@ -331,7 +425,12 @@ def _read_witness_material_source_result(
         ) from error
     try:
         ordered = ledger.occurrences_in_append_order(
-            (act_occurrence.identity, yield_identity, event.identity),
+            (
+                binding.identity,
+                act_occurrence.identity,
+                yield_identity,
+                event.identity,
+            ),
             locality_identity=event.locality_identity,
         )
         requirements = read_requirements_of_yield_relation(
@@ -345,6 +444,7 @@ def _read_witness_material_source_result(
             "Witness material result carries no intact Act and Yield"
         ) from error
     if [occurrence.identity for occurrence in ordered] != [
+        binding.identity,
         act_occurrence.identity,
         yield_identity,
         event.identity,

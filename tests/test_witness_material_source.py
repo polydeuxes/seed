@@ -15,6 +15,7 @@ from seed_runtime.material_source import (
     read_material_locality_relation_requirements,
 )
 from seed_runtime.witness_material_source import (
+    WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     WitnessMaterialSourceError,
     record_witness_material_source,
@@ -142,9 +143,43 @@ def test_durable_witness_source_preserves_raw_material_and_yield_relation(tmp_pa
 
 
 def test_witness_material_source_fixes_its_exact_source_subject():
-    occurred = _preserve(EventLedger())
+    ledger = EventLedger()
+    occurred = _preserve(ledger)
 
     assert occurred.material["source_role"] == "this Witness"
+    reference = occurred.material["subject_to_act_binding_reference"]
+    binding = ledger.get(reference["recorded_occurrence_identity"])
+    act_occurrence = ledger.get(
+        occurred.material["act_occurrence_event_identity"]
+    )
+    assert binding is not None and act_occurrence is not None
+    assert binding.kind == (
+        WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    )
+    assert binding.material["subject_reference"] == {
+        "source_role": "this Witness",
+        "source_boundary": "source boundary",
+    }
+    assert act_occurrence.material[
+        "subject_to_act_binding_reference"
+    ] == reference
+    assert [
+        event.identity
+        for event in ledger.occurrences_in_append_order(
+            (
+                binding.identity,
+                act_occurrence.identity,
+                occurred.material["yield_relation_identity"],
+                occurred.identity,
+            ),
+            locality_identity=occurred.locality_identity,
+        )
+    ] == [
+        binding.identity,
+        act_occurrence.identity,
+        occurred.material["yield_relation_identity"],
+        occurred.identity,
+    ]
 
 
 def test_witness_material_locality_relation_preserves_invocation_and_provenance():
