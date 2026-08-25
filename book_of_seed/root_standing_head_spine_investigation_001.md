@@ -21,7 +21,8 @@ Responsibility as the Book traversal entrance
 Standing as the later reading entrance
 ```
 
-The active Book retained neither use. It now states current Standing directly.
+The active Book retained the live distinction as current Standing. Its inert
+bounded whole is now addressed as Root.
 
 Commit `635a22ca` removed two different `root` uses together:
 
@@ -74,14 +75,16 @@ work, this Seed's current Standing can carry coordinates concerning that Root.
 
 ### HEAD
 
-HEAD may name one exact internal subject that organizes relations within one
-Root. The current repository establishes no such general relation.
+HEAD carried no independent distinction. Its historical uses decompress by
+the condition of what it addressed:
 
-For material a person reads as `the cat jumped the fence`, the sentence may be
-one Root. Which internal subject, if any, is HEAD requires exact language
-grammar concerning that sentence. Human recognition supplies no such relation.
+```text
+live current entrance       -> Standing
+inert traversal entrance    -> Root
+```
 
-HEAD therefore remains Unknown and unadmitted.
+Standing already carries the live physiology. Root addresses the inert bounded
+whole. HEAD is therefore retired rather than preserved as Unknown.
 
 ### spine
 
@@ -112,15 +115,13 @@ them.
 ```text
 Root       admitted for one exact bounded whole
 Standing   current exact coordinates concerning one subject; not a coordinate
-HEAD       Unknown; no active general relation
+HEAD       retired; live use resolves to Standing, inert use resolves to Root
 spine      removed; no distinct work found
 ```
 
-The Witness Grammar records only:
+The Witness Grammar records:
 
 ```text
 Root subject = this Book
+current Standing subject = this Seed
 ```
-
-It does not place Standing inside a generic Root coordinate list and does not
-create a HEAD coordinate.
