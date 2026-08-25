@@ -207,6 +207,7 @@ def _compiled_identities(path: Path) -> tuple[str, ...]:
     return tuple(found)
 
 
+@lru_cache(maxsize=1)
 def implementation_function_identities() -> tuple[str, ...]:
     return tuple(
         identity
@@ -252,6 +253,7 @@ def _compiled_sql_invocation_identities(path: Path) -> tuple[str, ...]:
     return tuple(found)
 
 
+@lru_cache(maxsize=1)
 def implementation_sql_invocation_identities() -> tuple[str, ...]:
     return tuple(
         identity
@@ -617,24 +619,13 @@ def _fidelity_distinction_coordinates(
                 coordinate = coordinate[part]
     except (IndexError, KeyError, TypeError) as error:
         raise ValueError(
-            "Fidelity distinction is absent from current book coordinates"
+            "Fidelity distinction is absent from current book coordinates: "
+            f"{reference!r}"
         ) from error
 
     coordinates: dict[str, object] = {
         "fidelity_distinction_reference": list(reference)
     }
-    if reference == ("book_coordinates", "01.Source.C", "test_subject"):
-        if type(coordinate) is not str or not coordinate:
-            raise TypeError("exact Fidelity test subject is required")
-        material_reference = grammar.get("book_material_reference")
-        if type(material_reference) is not str or not material_reference:
-            raise TypeError("exact Book material reference is required")
-        coordinates.update(
-            {
-                "test_subject": coordinate,
-                "material_reference": material_reference,
-            }
-        )
     return coordinates
 
 
@@ -645,13 +636,25 @@ def _pytest_uptake(
 ) -> dict[str, object] | object:
     admission = getattr(module, "PYTEST_ADMISSION", None)
     if type(admission) is not tuple or not admission:
-        raise TypeError("exact pytest admission functions are required")
+        module_name = getattr(module, "__name__", type(module).__name__)
+        raise TypeError(
+            f"exact pytest admission functions are required: {module_name}"
+        )
     if any(not callable(function) for function in admission):
         raise TypeError("exact pytest admission functions are required")
     if len(set(admission)) != len(admission):
         raise ValueError("pytest function entered admission twice")
     if function_under_test not in admission:
-        raise ValueError("pytest function has no exact admission")
+        module_name = getattr(module, "__name__", type(module).__name__)
+        function_name = getattr(
+            function_under_test,
+            "__qualname__",
+            getattr(function_under_test, "__name__", type(function_under_test).__name__),
+        )
+        raise ValueError(
+            "pytest function has no exact admission: "
+            f"{module_name}.{function_name}"
+        )
 
     distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
     witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
@@ -713,9 +716,26 @@ def pytest_collection_modifyitems(
 ) -> None:
     del session, config
     grammar = _witness_grammar()
-    resolved = tuple(
-        _pytest_uptake(item.module, item.function, grammar) for item in items
-    )
+    resolved = []
+    missing_admission = []
+    for item in items:
+        try:
+            resolved.append(_pytest_uptake(item.module, item.function, grammar))
+        except (TypeError, ValueError) as error:
+            if str(error).startswith(
+                (
+                    "exact pytest admission functions are required:",
+                    "pytest function has no exact admission:",
+                )
+            ):
+                missing_admission.append(item.nodeid)
+                continue
+            raise
+    if missing_admission:
+        raise ValueError(
+            "pytest functions have no exact admission:\n"
+            + "\n".join(sorted(missing_admission))
+        )
     for item, uptake in zip(items, resolved):
         item.stash[_PYTEST_UPTAKE] = uptake
 

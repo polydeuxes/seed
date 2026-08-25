@@ -121,3 +121,11 @@ def test_complete_source_manifest_must_address_the_current_input(tmp_path):
         encoding="utf-8",
     )
     assert _reusable_source_artifacts([], "current-input", manifest) == {}
+
+
+PYTEST_ADMISSION = (
+    test_source_population_establishes_zero_one_or_many_varying_positions,
+    test_repeated_coordinate_is_one_exact_coordinate_class,
+    test_complete_source_artifact_is_reused_only_while_its_bytes_match,
+    test_complete_source_manifest_must_address_the_current_input,
+)

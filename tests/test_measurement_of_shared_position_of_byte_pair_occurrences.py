@@ -1801,9 +1801,6 @@ FIDELITY_DISTINCTIONS = {
         test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers,
         test_carried_standing_matches_replay_for_the_whole_new_elevator,
     ),
-    ("book_coordinates", "01.Source.A", "subject"): (
-        test_structured_path_can_be_addressed_but_is_not_raw_emission_material,
-    ),
 }
 
 

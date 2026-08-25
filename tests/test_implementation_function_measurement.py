@@ -340,7 +340,7 @@ def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurren
 def test_pytest_distinction_collection_refuses_an_ownerless_function():
     function = test_pytest_distinction_collection_refuses_an_ownerless_function
     another_function = lambda: None
-    item = SimpleNamespace(
+    first = SimpleNamespace(
         nodeid=(
             "tests/test_implementation_function_measurement.py::"
             "test_pytest_distinction_collection_refuses_an_ownerless_function"
@@ -352,11 +352,22 @@ def test_pytest_distinction_collection_refuses_an_ownerless_function():
         function=function,
         stash={},
     )
+    second = SimpleNamespace(
+        nodeid="tests/another.py::test_another_ownerless_function",
+        module=SimpleNamespace(
+            __name__="tests.another",
+            PYTEST_ADMISSION=(another_function,),
+        ),
+        function=lambda: None,
+        stash={},
+    )
 
-    with pytest.raises(ValueError, match="no exact admission"):
-        measured.pytest_collection_modifyitems(None, None, [item])
+    with pytest.raises(ValueError, match="no exact admission") as refusal:
+        measured.pytest_collection_modifyitems(None, None, [first, second])
 
-    assert item.stash == {}
+    assert first.nodeid in str(refusal.value)
+    assert second.nodeid in str(refusal.value)
+    assert first.stash == second.stash == {}
 
 
 def test_admitted_implementation_test_has_no_seed_uptake():
@@ -564,15 +575,14 @@ def test_fidelity_distinctions_resolve_current_book_coordinates():
     grammar = measured._witness_grammar()
     assert measured._fidelity_distinction_coordinates(
         grammar,
-        ("book_coordinates", "01.Source.C", "test_subject"),
+        ("book_coordinates", "01.Source.C", "subjects", 2),
     ) == {
         "fidelity_distinction_reference": [
             "book_coordinates",
             "01.Source.C",
-            "test_subject",
+            "subjects",
+            2,
         ],
-        "test_subject": "this_book_material_acquisition_witness",
-        "material_reference": "this_Book",
     }
     entered: list[object] = []
     for reference, functions in FIDELITY_DISTINCTIONS.items():

@@ -1126,7 +1126,4 @@ FIDELITY_DISTINCTIONS = {
         test_ordered_path_and_recorded_findings_survive_sqlite_restart,
         test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
-    ("book_coordinates", "01.Source.A", "subject"): (
-        test_ordered_path_and_recorded_findings_are_addressable_without_exact_material,
-    ),
 }

@@ -428,6 +428,8 @@ PYTEST_ADMISSION = (
     test_material_acquisition_preserves_only_exact_intact_provenance_occurrence_references,
     test_durable_witness_acquisition_preserves_raw_material_and_yield_relation,
     test_witness_material_acquisition_fixes_its_exact_source_subject,
+    test_witness_material_locality_relation_preserves_invocation_and_provenance,
+    test_witness_material_locality_relation_refuses_mismatched_coordinates,
     test_material_acquisition_event_binds_exact_act_and_yield_relation,
     test_changed_record_witness_material_acquisition_cannot_borrow_its_yield_relation,
     test_yield_relation_without_exact_material_cannot_certify_an_acquire,

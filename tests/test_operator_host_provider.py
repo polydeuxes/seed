@@ -581,6 +581,8 @@ PYTEST_ADMISSION = (
     test_cat_preserves_exact_posix_path_and_material,
     test_ls_preserves_a_non_utf8_posix_path,
     test_host_material_boundary_is_one_mebibyte,
+    test_bounded_invocation_refuses_invalid_exact_limits_before_process,
+    test_bounded_invocation_uses_its_exact_material_byte_count_limit,
     test_cat_preserves_finite_material_across_multiple_pipe_reads,
     test_host_output_is_bounded_without_returncode_material,
     test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer,

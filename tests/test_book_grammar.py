@@ -68,8 +68,6 @@ def test_book_and_witness_grammar_have_the_same_coordinates():
 def test_witness_grammar_has_no_retired_scaffolding():
     material = GRAMMAR.read_text(encoding="utf-8").lower()
     retired = {
-        "act_occurrence",
-        "yield_relation",
         "intact_occurrence",
         "unestablished",
         "responsibility_assignment",
@@ -479,6 +477,7 @@ PYTEST_ADMISSION = (
     test_empty_standing_is_only_the_first_current_standing,
     test_applicability_required_admission_and_participation_remain_separate,
     test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates,
+    test_addressed_position_responsibility_owns_the_bounded_subject_set,
     test_candidate_production_requires_an_exact_rule_and_addressed_subjects,
     test_candidate_compare_book_refuses_source_participation_and_relation_promotion,
     test_responsibility_coordinates_are_anatomy_not_assignment,

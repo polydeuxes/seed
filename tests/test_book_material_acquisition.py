@@ -983,7 +983,7 @@ PYTEST_ADMISSION = (
 
 
 FIDELITY_DISTINCTIONS = {
-    ("book_coordinates", "01.Source.C", "test_subject"): (
+    ("book_coordinates", "01.Source.C", "subjects", 2): (
         test_book_material_acquisition_witness_has_one_admitted_subject,
     )
 }

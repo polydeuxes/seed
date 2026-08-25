@@ -317,3 +317,20 @@ def test_walk_transitions_join_exact_later_and_prior_boundaries():
             "later_walk_end_append_position": 15,
         },
     ]
+
+
+PYTEST_ADMISSION = (
+    test_scalar_values_do_not_choose_an_occurrence_coordinate_surface,
+    test_immediate_container_count_does_not_change_coordinate_surface,
+    test_coordinate_material_changes_the_surface,
+    test_nested_scalar_coordinates_have_exact_separate_addresses,
+    test_nested_coordinate_lookup_is_separate_from_blind_addresses,
+    test_plaintext_coordinate_material_is_outside_blind_surface_artifact,
+    test_complete_nested_scalar_finding_is_reused_only_while_exact,
+    test_frozen_frame_bounds_every_walk_without_a_requested_length,
+    test_aligned_walk_positions_retain_only_shared_coordinates,
+    test_walk_sequences_expose_shared_ends_and_varying_middle,
+    test_maximum_common_adjacent_walk_is_source_selected,
+    test_walk_repetition_is_recovered_across_empty_and_varying_middles,
+    test_walk_transitions_join_exact_later_and_prior_boundaries,
+)

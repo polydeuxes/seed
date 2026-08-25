@@ -1135,6 +1135,9 @@ def test_result_carries_only_its_declared_measurement_coordinates():
 
 
 PYTEST_ADMISSION = (
+    test_one_bounded_position_assertion_population_equals_each_addressed_read,
+    test_bounded_position_assertion_population_reads_once_and_hashes_each_position_once,
+    test_bounded_position_assertion_population_refuses_changed_result,
     test_carried_result_reading_refuses_a_source_changed_during_its_continuation,
     test_each_input_pair_has_first_and_second_exact_position_coordinates,
     test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b,
