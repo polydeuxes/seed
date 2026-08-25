@@ -45,7 +45,7 @@ def test_project_script_uses_the_live_process_entry():
 
 def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
     database = tmp_path / "seed.db"
-    monkeypatch.setattr("sys.stdin", BytesIO(b"material\n"))
+    monkeypatch.setattr("sys.stdin", BytesIO())
 
     assert process_entry.main(["--db", str(database)]) == 0
 
