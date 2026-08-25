@@ -94,8 +94,6 @@ def _assignment_material(
     *,
     command: Event,
     standing_boundary_identity: str,
-    assignment_identity: str,
-    assignment_subject_identity: str,
     operator_invocation_locality_act_identity: str,
     act_occurrence_identity: str,
     relation_occurrence_identity: str,
@@ -103,8 +101,6 @@ def _assignment_material(
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE,
         "responsible_boundary": "this Seed",
         "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
@@ -170,10 +166,6 @@ def record_operator_invocation_locality_responsibility_assignment(
                 "operator material occurrence already carries an invocation Locality assignment"
             )
     identities = {
-        "assignment_identity": new_identity("operator_invocation_locality_assignment"),
-        "assignment_subject_identity": new_identity(
-            "operator_invocation_locality_assignment_subject"
-        ),
         "operator_invocation_locality_act_identity": new_identity(
             "operator_invocation_locality_act"
         ),
@@ -222,8 +214,6 @@ def get_operator_invocation_locality_responsibility_assignment(
         ledger, material.get("operator_material_occurrence_reference")
     )
     identity_coordinates = (
-        "assignment_identity",
-        "assignment_subject_identity",
         "operator_invocation_locality_act_identity",
         "act_occurrence_identity",
         "relation_occurrence_identity",
@@ -243,13 +233,11 @@ def get_operator_invocation_locality_responsibility_assignment(
         standing_boundary_identity=material.get(
             "operator_standing_boundary_identity"
         ),
-        assignment_identity=identities[0],
-        assignment_subject_identity=identities[1],
-        operator_invocation_locality_act_identity=identities[2],
-        act_occurrence_identity=identities[3],
-        relation_occurrence_identity=identities[4],
-        result_identity=identities[5],
-        destination_locality_identity=identities[6],
+        operator_invocation_locality_act_identity=identities[0],
+        act_occurrence_identity=identities[1],
+        relation_occurrence_identity=identities[2],
+        result_identity=identities[3],
+        destination_locality_identity=identities[4],
     )
     boundary = ledger.get(material.get("operator_standing_boundary_identity"))
     if (
@@ -289,7 +277,6 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "responsibility": OPERATOR_INVOCATION_LOCALITY_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_event_identity": assignment.identity,
-        "assignment_identity": material["assignment_identity"],
         "operator_material_occurrence_reference": material[
             "operator_material_occurrence_reference"
         ],
