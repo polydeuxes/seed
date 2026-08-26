@@ -639,15 +639,6 @@ def _assertion_locality_movement_occurrence_coordinates(
     }
 
 
-_REQUIRED_GENERATED_BINDING_COORDINATES = frozenset(
-    {
-        "recorded_occurrence_identity",
-        "assignment_identity",
-        "assignment_subject_identity",
-        "book_clause_identity",
-        "result_boundary_identity",
-    }
-)
 _REQUIRED_DIRECT_BINDING_COORDINATES = frozenset(
     {
         "recorded_occurrence_identity",
@@ -713,20 +704,11 @@ def _subject_to_act_binding_of_exact_result(
         return None
     reference = act_occurrence.material.get("subject_to_act_binding_reference")
     if reference is None:
-        reference = act_occurrence.material.get(
-            "responsibility_assignment_reference"
-        )
-    if reference is None:
         return None
     if ledger.integrity_of(act_occurrence.identity) == CORRUPTED:
         raise ValueError(
             "recorded subject-to-Act binding requires its intact Act occurrence"
         )
-    generated_identity_shape = (
-        type(reference) is dict
-        and _REQUIRED_GENERATED_BINDING_COORDINATES <= set(reference)
-        and all(type(value) is str and value for value in reference.values())
-    )
     direct_shape = (
         type(reference) is dict
         and set(reference) == _REQUIRED_DIRECT_BINDING_COORDINATES
@@ -739,7 +721,7 @@ def _subject_to_act_binding_of_exact_result(
         and type(reference.get("subject_reference")) is dict
         and bool(reference["subject_reference"])
     )
-    if not (generated_identity_shape or direct_shape):
+    if not direct_shape:
         raise ValueError(
             "recorded subject-to-Act binding requires its exact coordinates"
         )
@@ -752,12 +734,7 @@ def _subject_to_act_binding_of_exact_result(
         raise ValueError(
             "recorded subject-to-Act binding requires its exact occurrence"
         )
-    required_coordinates = (
-        _REQUIRED_GENERATED_BINDING_COORDINATES
-        if generated_identity_shape
-        else _REQUIRED_DIRECT_BINDING_COORDINATES
-    )
-    for coordinate in required_coordinates - {
+    for coordinate in _REQUIRED_DIRECT_BINDING_COORDINATES - {
         "recorded_occurrence_identity",
         "result_boundary_identity",
     }:
