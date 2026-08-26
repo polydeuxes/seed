@@ -21,7 +21,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_MEASUREMENT_RULE,
     ByteMeasurementError,
-    SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _record_assertion_locality_movement_act_from_current_coordinates,
     _record_assertion_locality_movement_result_from_current_coordinates,
@@ -451,24 +450,6 @@ def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
                 responsibility_assignment_event_identity=assignment.identity,
                 responsibility_assignment_standing=standing,
             )
-
-
-def test_corrupted_exact_byte_assignment_cannot_authorize_an_act():
-    ledger = _ledger(b"a\n")
-    assignment = record_byte_measurement_responsibility_assignment(
-        ledger,
-        source_localities=("source",),
-        recording_locality_identity="measurement",
-        locality_standing=read_operator_locality_standing(
-            ledger, locality_identity="measurement"
-        ),
-    )
-    assignment.material["responsibility"] = "corrupted Responsibility"
-
-    with pytest.raises(ByteMeasurementError, match="coordinates are not exact"):
-        get_byte_measurement_responsibility_assignment(
-            ledger, assignment.identity
-        )
 
 
 def test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier():
@@ -1155,8 +1136,6 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "exact_act",
         "addressed_act_identity",
         "act_occurrence_identity",
-        "responsibility",
-        "responsible_boundary",
         "responsibility_assignment_reference",
         "measurement_rule",
         "source_localities",
@@ -1993,7 +1972,7 @@ def test_pair_applicability_reads_exact_input_coordinates():
     assert applicable["addressed_act_occurrence_identity"] is None
 
 
-def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
+def test_byte_measurement_binding_carries_its_exact_source_occurrences():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     assignment = get_byte_measurement_responsibility_assignment(
@@ -2008,7 +1987,6 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
         if assertion["result"] == "exact_source_material_set"
     )
 
-    assert assignment["responsible_boundary"] == "this Seed"
     assert assignment["source_occurrence_references"] == source_set["dimensions"][
         "content"
     ]["source_material"]

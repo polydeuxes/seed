@@ -63,8 +63,6 @@ BYTE_RESULT_COORDINATES = frozenset(
         "exact_act",
         "addressed_act_identity",
         "act_occurrence_identity",
-        "responsibility",
-        "responsible_boundary",
         "responsibility_assignment_reference",
         "measurement_rule",
         "source_localities",
@@ -79,8 +77,6 @@ BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.measurement.byte_responsibility_assignment_recorded"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
-    "responsibility",
-    "responsible_boundary",
     "responsibility_assignment_reference",
 } | {
     "addressed_act_identity",
@@ -153,10 +149,6 @@ BYTE_PAIR_RESULT_BOUNDARY = (
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
-BYTE_MEASUREMENT_RESPONSIBILITY = (
-    "bounded exact-byte Measurement and Yield with findings from its exact "
-    "source occurrences, rule, and Scope"
-)
 BYTE_PAIR_UNKNOWN = (
     "Participation: Unknown",
 )
@@ -2170,8 +2162,6 @@ def _byte_measurement_assignment_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_localities": list(source_localities),
         "source_occurrence_references": [
@@ -2668,8 +2658,6 @@ def _byte_measurement_act_occurrence_material(
             "act_occurrence_identity"
         ],
         "act": "declared exact-byte Measurement",
-        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _byte_measurement_assignment_reference(assignment)
         ),
@@ -2864,8 +2852,6 @@ def _record_byte_measurement_result_from_exact_inputs(
         "act_occurrence_identity": act_occurrence.material[
             "act_occurrence_identity"
         ],
-        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _byte_measurement_assignment_reference(assignment)
         ),
@@ -3015,9 +3001,6 @@ def _assertions_of_recorded_byte_measurement(
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
         or material.get("exact_act") != "declared exact-byte Measurement"
-        or material.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
-        or material.get("responsible_boundary")
-        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or not isinstance(material.get("addressed_act_identity"), str)
         or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)
@@ -3060,8 +3043,6 @@ def _assertions_of_recorded_byte_measurement(
         "addressed_act_identity": material["addressed_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": "declared exact-byte Measurement",
-        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": material[
             "responsibility_assignment_reference"
         ],
