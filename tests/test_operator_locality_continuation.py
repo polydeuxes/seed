@@ -101,8 +101,13 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert binding.material["subject_reference"][
         "source_through_event_occurrence_identity"
     ] == boundary
-    assert "destination_locality_identity" not in binding.material
-    assert binding.material["scope"]["destination_locality_identity"] == destination
+    assert tuple(sorted(binding.material)) == (
+        "book_clause_identity",
+        "exact_act_identity",
+        "result_boundary_identity",
+        "subject_reference",
+        "unknown",
+    )
     assert binding_reference == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": "06.Locality.B",

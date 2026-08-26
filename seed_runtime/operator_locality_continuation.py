@@ -120,15 +120,6 @@ def _binding_material(
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_coordinate_reference),
-        "scope": {
-            "source_locality_identity": source_coordinate_reference[
-                "source_locality_identity"
-            ],
-            "source_through_event_occurrence_identity": source_coordinate_reference[
-                "source_through_event_occurrence_identity"
-            ],
-            "destination_locality_identity": destination_locality_identity,
-        },
         "result_boundary_identity": result_boundary_identity,
         "unknown": [
             "Applicability of every carried subject to another Act: Unknown"
