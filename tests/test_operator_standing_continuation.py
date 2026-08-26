@@ -78,7 +78,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     act_occurrence = _act(ledger, boundary)
     destination = act_occurrence.locality_identity
     assignment_reference = act_occurrence.material[
-        "responsibility_assignment_reference"
+        "subject_to_act_binding_reference"
     ]
     assignment = get_standing_locality_continuation_responsibility_assignment(
         ledger, assignment_reference["recorded_occurrence_identity"]
@@ -167,7 +167,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         assignment.identity,
         assignment.material["exact_act_identity"],
     }
-    assert recorded["responsibility_assignment_reference"] == assignment_reference
+    assert recorded["subject_to_act_binding_reference"] == assignment_reference
     assert "applicability" not in recorded
     assert "priority" not in recorded
     assert read_requirements_of_yield_relation(
@@ -243,7 +243,7 @@ def test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it(
         "locality_standing_through_event_occurrence_identity"
     ] == assignment.identity
     assert act_occurrence.locality_identity == destination
-    assert act_occurrence.material["responsibility_assignment_reference"][
+    assert act_occurrence.material["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"
     ] == assignment.identity
 
@@ -447,7 +447,7 @@ def test_missing_different_or_changed_source_coordinates_are_refused():
         "locality_relation",
         "act_occurrence_identity",
         "locality_relation_occurrence_identity",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "act_occurrence_identity",
         "yield_relation_identity",
     ),
@@ -504,7 +504,7 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
 
     assert standing["recorded_relation_Standing"] == {}
     assignment_identity = act_occurrence.material[
-        "responsibility_assignment_reference"
+        "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
     assert standing["subject_to_act_binding_occurrences"] == {
         assignment_identity: None
@@ -542,8 +542,8 @@ def test_act_occurrence_cannot_cite_another_exact_assignment():
     first = _act(ledger, boundary)
     second = _act(ledger, boundary)
     changed = ledger.get(first.identity)
-    changed.material["responsibility_assignment_reference"] = dict(
-        second.material["responsibility_assignment_reference"]
+    changed.material["subject_to_act_binding_reference"] = dict(
+        second.material["subject_to_act_binding_reference"]
     )
 
     with pytest.raises(StandingLocalityContinuationError):

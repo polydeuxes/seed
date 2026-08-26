@@ -156,7 +156,7 @@ def _act_occurrence_material(
     continuation_act_identity: str,
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
-    responsibility_assignment_reference: dict[str, Any],
+    subject_to_act_binding_reference: dict[str, Any],
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -167,8 +167,8 @@ def _act_occurrence_material(
             locality_relation_occurrence_identity
         ),
         "act": STANDING_LOCALITY_CONTINUATION_ACT,
-        "responsibility_assignment_reference": dict(
-            responsibility_assignment_reference
+        "subject_to_act_binding_reference": dict(
+            subject_to_act_binding_reference
         ),
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
@@ -185,7 +185,7 @@ def _result_material(
     continuation_act_identity: str,
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
-    responsibility_assignment_reference: dict[str, Any],
+    subject_to_act_binding_reference: dict[str, Any],
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -201,8 +201,8 @@ def _result_material(
             locality_relation_occurrence_identity
         ),
         "exact_act": STANDING_LOCALITY_CONTINUATION_ACT,
-        "responsibility_assignment_reference": dict(
-            responsibility_assignment_reference
+        "subject_to_act_binding_reference": dict(
+            subject_to_act_binding_reference
         ),
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
@@ -236,8 +236,8 @@ def _recorded_result_material(
             "locality_relation_occurrence_identity"
         ],
         "exact_act": result_material["exact_act"],
-        "responsibility_assignment_reference": result_material[
-            "responsibility_assignment_reference"
+        "subject_to_act_binding_reference": result_material[
+            "subject_to_act_binding_reference"
         ],
         "source_standing_reference": result_material[
             "source_standing_reference"
@@ -360,7 +360,7 @@ def record_standing_locality_continuation_act_occurrence(
             locality_relation_occurrence_identity=(
                 locality_relation_occurrence_identity
             ),
-            responsibility_assignment_reference=_assignment_reference(assignment),
+            subject_to_act_binding_reference=_assignment_reference(assignment),
             source_standing_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
@@ -409,7 +409,7 @@ def _validated_act_occurrence(
     locality_relation_occurrence_identity = material.get(
         "locality_relation_occurrence_identity"
     )
-    assignment_reference = material.get("responsibility_assignment_reference")
+    assignment_reference = material.get("subject_to_act_binding_reference")
     if type(assignment_reference) is not dict:
         raise StandingLocalityContinuationError(
             "Standing Locality continuation Act occurrence carries no exact Responsibility assignment"
@@ -451,7 +451,7 @@ def _validated_act_occurrence(
             locality_relation_occurrence_identity=(
                 locality_relation_occurrence_identity
             ),
-            responsibility_assignment_reference=assignment_reference,
+            subject_to_act_binding_reference=assignment_reference,
             source_standing_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
         )
@@ -504,7 +504,7 @@ def record_standing_locality_continuation_result(
                 "the Standing Locality continuation Act already carries a result"
             )
 
-    result_identity = material["responsibility_assignment_reference"][
+    result_identity = material["subject_to_act_binding_reference"][
         "result_boundary_identity"
     ]
     result_material = _result_material(
@@ -514,8 +514,8 @@ def record_standing_locality_continuation_result(
         locality_relation_occurrence_identity=material[
             "locality_relation_occurrence_identity"
         ],
-        responsibility_assignment_reference=material[
-            "responsibility_assignment_reference"
+        subject_to_act_binding_reference=material[
+            "subject_to_act_binding_reference"
         ],
         source_standing_reference=material["source_standing_reference"],
         destination_locality_identity=locality_identity,
@@ -576,8 +576,8 @@ def get_recorded_standing_locality_continuation(
         locality_relation_occurrence_identity=act_occurrence.material[
             "locality_relation_occurrence_identity"
         ],
-        responsibility_assignment_reference=act_occurrence.material[
-            "responsibility_assignment_reference"
+        subject_to_act_binding_reference=act_occurrence.material[
+            "subject_to_act_binding_reference"
         ],
         source_standing_reference=act_occurrence.material[
             "source_standing_reference"
