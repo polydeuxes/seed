@@ -511,9 +511,7 @@ def _pair_input_applicability_from_exact_source(
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),
-        "applicability_act_identity": binding.material[
-            "applicability_act_identity"
-        ],
+        "applicability_act_identity": binding.material["exact_act_identity"],
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
@@ -540,9 +538,7 @@ def _pair_input_applicability_from_exact_source(
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),
-        "applicability_act_identity": binding.material[
-            "applicability_act_identity"
-        ],
+        "applicability_act_identity": binding.material["exact_act_identity"],
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
@@ -3190,7 +3186,7 @@ def _pair_applicability_binding_material(
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
-    applicability_act_identity: str,
+    exact_act_identity: str,
     applicability_act_occurrence_identity: str,
     applicability_result_identity: str,
     measurement_act_identity: str,
@@ -3210,8 +3206,7 @@ def _pair_applicability_binding_material(
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "addressed_act_identity": measurement_act_identity,
         },
-        "exact_act_identity": applicability_act_identity,
-        "applicability_act_identity": applicability_act_identity,
+        "exact_act_identity": exact_act_identity,
         "applicability_act_occurrence_identity": (
             applicability_act_occurrence_identity
         ),
@@ -3296,7 +3291,7 @@ def _require_exact_pair_subject_to_act_binding_event(
     material = binding.material
     identity_keys = (
         (
-            "applicability_act_identity",
+            "exact_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
             "addressed_act_identity",
@@ -3320,7 +3315,7 @@ def _require_exact_pair_subject_to_act_binding_event(
     if binding.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
         exact_material = _pair_applicability_binding_material(
             **common,
-            applicability_act_identity=identities["applicability_act_identity"],
+            exact_act_identity=identities["exact_act_identity"],
             applicability_act_occurrence_identity=identities[
                 "applicability_act_occurrence_identity"
             ],
@@ -3473,7 +3468,7 @@ def _append_pair_applicability_binding(
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            applicability_act_identity=identities["applicability_act_identity"],
+            exact_act_identity=identities["applicability_act_identity"],
             applicability_act_occurrence_identity=identities[
                 "applicability_act_occurrence_identity"
             ],
@@ -3686,7 +3681,7 @@ def _pair_applicability_act_material(
 ) -> dict[str, Any]:
     return {
         "applicability_act_identity": applicability_binding.material[
-            "applicability_act_identity"
+            "exact_act_identity"
         ],
         "applicability_act_occurrence_identity": applicability_binding.material[
             "applicability_act_occurrence_identity"
