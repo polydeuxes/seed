@@ -267,7 +267,7 @@ def _current_standing(
     This Responsibility consumes the exact source Measurement result, the
     Locality it is carried in, the Standing boundary, and the through
     occurrence.  Each of those is validated against the ledger itself, so a
-    forged or stale coordinate is refused without authenticating every sibling
+    changed or stale coordinate is refused without authenticating every sibling
     branch of Standing that this Responsibility never reads.
     """
 

@@ -239,7 +239,7 @@ def test_repeated_byte_occurrences_remain_distinct_by_position_assertion():
     assert tuple(reference["assertion_position"] for reference in references) == (0, 1)
 
 
-def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically():
+def test_assignment_refuses_stale_changed_and_other_result_coordinates_atomically():
     ledger = EventLedger()
     first_source, first_result, first_standing = _direct(
         ledger, b"ab", "addressed-byte"
@@ -268,13 +268,13 @@ def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically
         )
     assert len(ledger.list()) == before
 
-    forged = deepcopy(coordinate)
-    forged["exact_material"] = [ord("z")]
+    changed = deepcopy(coordinate)
+    changed["exact_material"] = [ord("z")]
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
             ledger,
             direct_result_event_identity=first_result.identity,
-            addressed_source_byte_position_coordinate_reference=forged,
+            addressed_source_byte_position_coordinate_reference=changed,
             locality_standing=current,
         )
     assert len(ledger.list()) == before
