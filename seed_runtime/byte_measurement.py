@@ -2098,10 +2098,6 @@ def _byte_measurement_binding_material(
         ],
         "completeness_boundary_identity": completeness_boundary_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "source_localities": list(source_localities),
-            "completeness_boundary_identity": completeness_boundary_identity,
-        },
         "unknown": [],
     }
 

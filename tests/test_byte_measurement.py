@@ -1986,7 +1986,7 @@ def test_pair_applicability_reads_exact_input_coordinates():
 def test_byte_measurement_binding_carries_its_exact_source_occurrences():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
-    assignment = get_byte_measurement_subject_to_act_binding(
+    binding = get_byte_measurement_subject_to_act_binding(
         ledger,
         source.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
@@ -1998,12 +1998,27 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
         if assertion["result"] == "exact_source_material_set"
     )
 
-    assert assignment["source_occurrence_references"] == source_set["dimensions"][
+    assert set(binding) == {
+        "subject_reference",
+        "exact_act_identity",
+        "act_occurrence_identity",
+        "measurement_result_identity",
+        "result_boundary_identity",
+        "book_clause_identity",
+        "source_localities",
+        "source_occurrence_references",
+        "completeness_boundary_identity",
+        "through_event_occurrence_identity",
+        "unknown",
+    }
+    assert binding["source_occurrence_references"] == source_set["dimensions"][
         "content"
     ]["source_material"]
-    assert assignment["completeness_boundary_identity"] == source.material[
+    assert binding["completeness_boundary_identity"] == source.material[
         "completeness_boundary"
     ]["identity"]
+
+
 def test_locality_movement_binding_carries_the_exact_source():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
