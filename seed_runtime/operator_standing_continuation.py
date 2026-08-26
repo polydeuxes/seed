@@ -121,7 +121,6 @@ def _binding_material(
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_coordinate_reference),
-        "destination_locality_identity": destination_locality_identity,
         "scope": {
             "source_locality_identity": source_coordinate_reference[
                 "source_locality_identity"
@@ -440,8 +439,6 @@ def _validated_act_occurrence(
         or binding_reference != _binding_reference(binding)
         or binding.locality_identity != act_occurrence.locality_identity
         or binding.material["subject_reference"] != expected_reference
-        or binding.material["destination_locality_identity"]
-        != act_occurrence.locality_identity
         or material.get("destination_locality_identity")
         != act_occurrence.locality_identity
         or material
