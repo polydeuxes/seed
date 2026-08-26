@@ -3169,11 +3169,6 @@ def _pair_applicability_binding_material(
         "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "scope": {
-            "recording_locality_identity": recording_locality_identity,
-            "source_assertion_reference": source.reference,
-            "addressed_act_identity": measurement_act_identity,
-        },
         "unknown": [],
     }
 
@@ -3203,13 +3198,6 @@ def _pair_measurement_binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "scope": {
-            "recording_locality_identity": recording_locality_identity,
-            "source_localities": list(source_localities),
-            "completeness_boundary_identity": content["completeness_boundary"][
-                "identity"
-            ],
-        },
         "unknown": [],
     }
 
