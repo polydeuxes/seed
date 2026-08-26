@@ -1193,13 +1193,6 @@ def advance_operator_current_coordinates(
         }
     )
 
-    # Source-position events in this exact advance share the same immutable
-    # direct result and frequently refer to the same prior results. Validate
-        # each referenced occurrence fully on first encounter, then reuse that
-        # exact reading for the remainder of this bounded advance. These
-    # readings end with the call, so a later replay still detects mutation.
-    source_position_recurrence_exact_readings: dict[tuple[str, str], Any] = {}
-
     for event in events:
         if event.locality_identity != locality_identity:
             continue
@@ -1928,7 +1921,6 @@ def advance_operator_current_coordinates(
             validate_source_position_recurrence_event(
                 ledger,
                 event.identity,
-                _exact_readings=source_position_recurrence_exact_readings,
             )
             if event.kind in {
                 COMPARE_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
