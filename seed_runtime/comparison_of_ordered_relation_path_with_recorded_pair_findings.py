@@ -790,10 +790,6 @@ _IDENTITY_COORDINATES = (
     "compare_act_identity",
     "compare_act_occurrence_identity",
     "compare_result_identity",
-    "path_input_relation_identity",
-    "comparison_input_relation_identity",
-    "path_participation_relation_identity",
-    "comparison_participation_relation_identity",
 )
 
 
@@ -813,18 +809,6 @@ def _new_identities() -> dict[str, str]:
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_occurrence"
         ),
         "compare_result_identity": new_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_result"),
-        "path_input_relation_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_path_input_relation"
-        ),
-        "comparison_input_relation_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_comparison_input_relation"
-        ),
-        "path_participation_relation_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_path_participation"
-        ),
-        "comparison_participation_relation_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_comparison_participation"
-        ),
     }
 
 
@@ -852,18 +836,6 @@ def _assignment_material(
         ],
         "compare_result_identity": identities["compare_result_identity"],
         "result_boundary_identity": identities["compare_result_identity"],
-        "path_input_relation_identity": identities[
-            "path_input_relation_identity"
-        ],
-        "comparison_input_relation_identity": identities[
-            "comparison_input_relation_identity"
-        ],
-        "path_participation_relation_identity": identities[
-            "path_participation_relation_identity"
-        ],
-        "comparison_participation_relation_identity": identities[
-            "comparison_participation_relation_identity"
-        ],
         "book_clause_identity": BOOK_CLAUSE,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
@@ -1031,15 +1003,11 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ),
         "applicability_of_input_to_compare": [
             {
-                "relation_identity": material["path_input_relation_identity"],
                 "subject_reference": deepcopy(material["path_assertion_reference"]),
                 "role": "ordered relation path input",
                 "addressed_act_identity": material["compare_act_identity"],
             },
             {
-                "relation_identity": material[
-                    "comparison_input_relation_identity"
-                ],
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
@@ -1367,9 +1335,6 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
         ),
         "participation_of_input_in_compare": [
             {
-                "relation_identity": material[
-                    "path_participation_relation_identity"
-                ],
                 "subject_reference": deepcopy(material["path_assertion_reference"]),
                 "role": "ordered relation path",
                 "act_occurrence_identity": material[
@@ -1377,9 +1342,6 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
                 ],
             },
             {
-                "relation_identity": material[
-                    "comparison_participation_relation_identity"
-                ],
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
