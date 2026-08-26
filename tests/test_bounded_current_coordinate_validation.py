@@ -1,15 +1,10 @@
-"""A Responsibility proves the Standing coordinates it consumes, not all of it.
+"""Validate only exact current coordinates read by one operation.
 
-`_current_standing` used to rebuild the complete Locality Standing and require
-the supplied Standing to equal it whole.  That authenticated every sibling
-branch this Responsibility never reads, and the rebuild is the full-Locality
-replay.
-
-The exact coordinates this Responsibility consumes are the source Measurement
-result, its Locality, the Standing boundary, and the through occurrence.  Each
-is validated against the ledger, so every refusal is kept while an unrelated
-branch of the supplied Standing no longer has to be reconstructed to be
-believed.
+The validation previously rebuilt every coordinate current in one Locality and
+required the supplied projection to equal that reconstruction. The operation
+reads only the source Measurement result, Locality, and exact through
+occurrence. Each remains independently checked while an unrelated coordinate
+requires no reconstruction.
 """
 
 from __future__ import annotations
@@ -19,7 +14,7 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as position_module
-import seed_runtime.operator_current_coordinates as standing_module
+import seed_runtime.operator_current_coordinates as coordinate_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     AddressedByteOccurrenceReferenceDeterminationError,
     _current_standing,
@@ -36,7 +31,7 @@ from tests.test_addressed_byte_occurrence_reference_determination import (
 
 
 def _position_material():
-    """One exact source and the current Standing that carries it."""
+    """One exact source and the current coordinates that carry it."""
 
     ledger = EventLedger()
     source = record_operator_material_occurrence(
@@ -45,18 +40,12 @@ def _position_material():
         exact=b"2+2=5\n",
         source_boundary="exact supplied material boundary",
     )
-    return ledger, source, standing_module.read_operator_current_coordinates(
+    return ledger, source, coordinate_module.read_operator_current_coordinates(
         ledger, locality_identity="entrance-witness"
     )
 
 
-def test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated():
-    """The decisive witness: this Responsibility reads only what it consumes.
-
-    A coordinate the determination never reads is changed in the supplied
-    Standing.  The Responsibility must neither reconstruct the Locality to
-    notice, nor refuse merely because the whole mapping now differs.
-    """
+def test_an_unread_coordinate_does_not_require_full_locality_reconstruction():
 
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
@@ -75,22 +64,22 @@ def test_an_unrelated_branch_of_the_supplied_standing_is_not_authenticated():
     assert determination_act.identity
 
 
-def test_a_substituted_through_occurrence_is_refused():
+def test_a_changed_through_occurrence_is_refused():
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
 
-    forged = deepcopy(recorded["standing"])
-    forged["through_event_occurrence_identity"] = recorded["assignment"].identity
+    changed = deepcopy(recorded["standing"])
+    changed["through_event_occurrence_identity"] = recorded["assignment"].identity
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
-            applicability_standing=forged,
+            applicability_standing=changed,
         )
 
 
-def test_a_stale_standing_is_refused_at_the_append_tip():
+def test_earlier_current_coordinates_are_refused_at_the_append_tip():
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
 
@@ -107,37 +96,37 @@ def test_a_stale_standing_is_refused_at_the_append_tip():
         )
 
 
-def test_a_substituted_source_measurement_result_is_refused():
+def test_a_changed_source_measurement_result_is_refused():
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
 
-    forged = deepcopy(recorded["standing"])
-    forged["measurement_occurrences"] = {"forged occurrence": {"not": "exact"}}
+    changed = deepcopy(recorded["standing"])
+    changed["measurement_occurrences"] = {"changed occurrence": {"not": "exact"}}
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
-            applicability_standing=forged,
+            applicability_standing=changed,
         )
 
 
-def test_a_wrong_locality_in_the_supplied_standing_is_refused():
+def test_a_changed_locality_in_supplied_coordinates_is_refused():
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
 
-    forged = deepcopy(recorded["standing"])
-    forged["locality_identity"] = "another-locality"
+    changed = deepcopy(recorded["standing"])
+    changed["locality_identity"] = "another-locality"
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_act_occurrence(
             ledger,
             applicability_result_event_identity=recorded["applicability"].identity,
-            applicability_standing=forged,
+            applicability_standing=changed,
         )
 
 
-def test_a_standing_that_is_no_mapping_is_refused():
+def test_supplied_coordinates_that_are_no_mapping_are_refused():
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
 
@@ -149,13 +138,7 @@ def test_a_standing_that_is_no_mapping_is_refused():
         )
 
 
-def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch):
-    """The full-Locality replay is gone from this validation.
-
-    Bounded to the site this slice changed.  Other reconstruction sites remain
-    on the wider determination road, notably the position-coordinate
-    Measurement's own assignment read, and are not this slice's subject.
-    """
+def test_this_validation_performs_no_full_locality_read(monkeypatch):
 
     ledger = EventLedger()
     recorded = _through_applicability(ledger)
@@ -164,13 +147,13 @@ def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch)
 
     def refuse(*arguments, **keywords):
         calls.append(keywords.get("locality_identity"))
-        raise AssertionError("this validation reconstructed Locality Standing")
+        raise AssertionError("this validation performed a full Locality read")
 
     monkeypatch.setattr(
-        standing_module, "read_operator_current_coordinates", refuse
+        coordinate_module, "read_operator_current_coordinates", refuse
     )
     monkeypatch.setattr(
-        standing_module, "read_operator_current_coordinates_through", refuse
+        coordinate_module, "read_operator_current_coordinates_through", refuse
     )
 
     validated = _current_standing(
@@ -183,34 +166,28 @@ def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch)
     assert calls == []
 
 
-def test_the_position_assignment_refuses_a_forged_standing_boundary():
-    ledger, source, standing = _position_material()
-    forged = deepcopy(standing)
-    forged["through_event_occurrence_identity"] = "evt_absent"
+def test_the_position_binding_refuses_a_changed_through_occurrence():
+    ledger, source, current_coordinates = _position_material()
+    changed = deepcopy(current_coordinates)
+    changed["through_event_occurrence_identity"] = "evt_absent"
 
     with pytest.raises(ValueError):
         position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            current_coordinates=forged,
+            current_coordinates=changed,
         )
 
 
-def test_the_position_assignment_authenticates_no_unread_branch():
-    """One entrance, and it rebuilds no Locality to notice a sibling.
-
-    A rebuilding entrance refuses here.  This records, so the validation reads
-    only the coordinates the Responsibility consumes.
-    """
-
-    ledger, source, standing = _position_material()
-    unread = deepcopy(standing)
+def test_the_position_binding_reads_no_unrelated_coordinate():
+    ledger, source, current_coordinates = _position_material()
+    unread = deepcopy(current_coordinates)
     unread["representations"] = {"an unread sibling branch": None}
 
-    assignment = position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    binding = position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
         current_coordinates=unread,
     )
 
-    assert assignment.identity
+    assert binding.identity
