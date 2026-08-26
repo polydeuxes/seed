@@ -987,15 +987,20 @@ def _read_binding(
     ):
         raise ValueError("byte-pair position-coordinate binding coordinates are not exact")
     from seed_runtime.operator_current_coordinates import (
+        _operator_current_coordinate_validation_context,
         read_operator_current_coordinates_through,
     )
 
     try:
-        prior = read_operator_current_coordinates_through(
-            ledger,
-            locality_identity=finding.source_locality_identity,
-            through_event_occurrence_identity=through_event_occurrence_identity,
+        prior = _operator_current_coordinate_validation_context(
+            ledger, locality_identity=finding.source_locality_identity
         )
+        if prior is None:
+            prior = read_operator_current_coordinates_through(
+                ledger,
+                locality_identity=finding.source_locality_identity,
+                through_event_occurrence_identity=through_event_occurrence_identity,
+            )
         ledger.occurrences_in_append_order(
             (through_event_occurrence_identity, binding.identity),
             locality_identity=finding.source_locality_identity,
