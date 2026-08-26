@@ -853,7 +853,7 @@ def _source_assertion_from_reference(
     raise ByteMeasurementError("Assertion movement source cannot be read")
 
 
-def _source_measurement_standing_coordinates(source_event: Event) -> dict[str, str]:
+def _source_measurement_current_coordinates(source_event: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": source_event.identity,
         "result_identity": source_event.material["result_identity"],
@@ -868,7 +868,7 @@ def _source_measurement_standing_coordinates(source_event: Event) -> dict[str, s
 
 
 def _source_assertion_is_carried(
-    source_event: Event, locality_standing: dict[str, Any]
+    source_event: Event, current_coordinates: dict[str, Any]
 ) -> bool:
     from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
@@ -879,68 +879,68 @@ def _source_assertion_is_carried(
         == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
         return (
-            locality_standing.get("comparison_result_occurrences", {}).get(
+            current_coordinates.get("comparison_result_occurrences", {}).get(
                 source_event.identity, object()
             )
             is None
         )
-    return locality_standing.get("measurement_occurrences", {}).get(
+    return current_coordinates.get("measurement_occurrences", {}).get(
         source_event.identity
-    ) == _source_measurement_standing_coordinates(source_event)
+    ) == _source_measurement_current_coordinates(source_event)
 
 
-def _require_current_movement_source_standing(
+def _require_current_movement_source_coordinates(
     ledger: EventLedger,
     *,
     source_event: Event,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> str:
     from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
     current = read_operator_locality_standing(
         ledger, locality_identity=source_event.locality_identity
     )
-    boundary = locality_standing.get("through_event_occurrence_identity")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
     if (
-        locality_standing != current
+        current_coordinates != current
         or type(boundary) is not str
         or not boundary
-        or not _source_assertion_is_carried(source_event, locality_standing)
+        or not _source_assertion_is_carried(source_event, current_coordinates)
     ):
         raise ByteMeasurementError(
-            "Assertion movement assignment requires exact current source Standing"
+            "Assertion movement binding requires exact current source coordinates"
         )
     return boundary
 
 
-def _require_current_movement_destination_standing(
+def _require_current_movement_destination_coordinates(
     ledger: EventLedger,
     *,
     destination_locality: str,
-    locality_standing: dict[str, Any],
-    assignment_identity: str | None = None,
+    current_coordinates: dict[str, Any],
+    binding_identity: str | None = None,
 ) -> str | None:
     from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
     current = read_operator_locality_standing(
         ledger, locality_identity=destination_locality
     )
-    boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     if (
-        locality_standing != current
-        or locality_standing.get("locality_identity") != destination_locality
+        current_coordinates != current
+        or current_coordinates.get("locality_identity") != destination_locality
         or (boundary is not None and (type(boundary) is not str or not boundary))
         or (
-            assignment_identity is not None
+            binding_identity is not None
             and (
-                type(assignments) is not dict
-                or assignments.get(assignment_identity, object()) is not None
+                type(bindings) is not dict
+                or bindings.get(binding_identity, object()) is not None
             )
         )
     ):
         raise ByteMeasurementError(
-            "Assertion movement requires exact current destination Standing"
+            "Assertion movement requires exact current destination coordinates"
         )
     return boundary
 
@@ -986,21 +986,21 @@ def _movement_binding_material(
 
 
 def _require_exact_movement_binding_and_source(
-    ledger: EventLedger, assignment: Event
+    ledger: EventLedger, binding: Event
 ) -> tuple[_AssertionLocalityMovementSource, Event]:
     if (
-        type(assignment) is not Event
-        or assignment.kind
+        type(binding) is not Event
+        or binding.kind
         != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
-        or assignment.locality_identity is None
-        or ledger.get(assignment.identity) != assignment
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        or binding.locality_identity is None
+        or ledger.get(binding.identity) != binding
+        or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "Assertion movement requires an exact Responsibility assignment"
+            "Assertion movement requires an exact subject-to-Act binding"
         )
     source, source_event = _source_assertion_from_reference(
-        ledger, assignment.material.get("source_assertion_reference")
+        ledger, binding.material.get("source_assertion_reference")
     )
     identity_coordinates = (
         "movement_act_identity",
@@ -1008,11 +1008,11 @@ def _require_exact_movement_binding_and_source(
         "movement_result_identity",
     )
     identities = {
-        coordinate: assignment.material.get(coordinate)
+        coordinate: binding.material.get(coordinate)
         for coordinate in identity_coordinates
     }
-    source_boundary = assignment.material.get("source_through_event_occurrence_identity")
-    destination_boundary = assignment.material.get(
+    source_boundary = binding.material.get("source_through_event_occurrence_identity")
+    destination_boundary = binding.material.get(
         "destination_through_event_occurrence_identity"
     )
     if (
@@ -1023,19 +1023,19 @@ def _require_exact_movement_binding_and_source(
             for identity in identities.values()
         )
         or len(set(identities.values())) != len(identities)
-        or assignment.material
+        or binding.material
         != _movement_binding_material(
             source=source,
             source_event=source_event,
             source_locality=source_event.locality_identity,
-            destination_locality=assignment.locality_identity,
+            destination_locality=binding.locality_identity,
             source_through_event_occurrence_identity=source_boundary,
             destination_through_event_occurrence_identity=destination_boundary,
             **identities,
         )
     ):
         raise ByteMeasurementError(
-            "Assertion movement requires an exact source and assignment"
+            "Assertion movement requires an exact source and binding"
         )
     return source, source_event
 
@@ -1045,10 +1045,10 @@ def record_assertion_locality_movement_subject_to_act_binding(
     *,
     source: RecordedByteAssertion,
     destination_locality: str,
-    source_locality_standing: dict[str, Any],
-    destination_locality_standing: dict[str, Any],
+    source_current_coordinates: dict[str, Any],
+    destination_current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record the exact Responsibility assignment for one Assertion movement."""
+    """Record the exact subject-to-Act binding for one Assertion movement."""
 
     if type(destination_locality) is not str or not destination_locality:
         raise ByteMeasurementError("Assertion movement requires a destination Locality")
@@ -1059,15 +1059,15 @@ def record_assertion_locality_movement_subject_to_act_binding(
         raise ByteMeasurementError("Assertion movement requires its exact source")
     if source_event.locality_identity == destination_locality:
         raise ByteMeasurementError("same-Locality Assertion requires no movement")
-    source_boundary = _require_current_movement_source_standing(
+    source_boundary = _require_current_movement_source_coordinates(
         ledger,
         source_event=source_event,
-        locality_standing=source_locality_standing,
+        current_coordinates=source_current_coordinates,
     )
-    destination_boundary = _require_current_movement_destination_standing(
+    destination_boundary = _require_current_movement_destination_coordinates(
         ledger,
         destination_locality=destination_locality,
-        locality_standing=destination_locality_standing,
+        current_coordinates=destination_current_coordinates,
     )
     identities = {
         "movement_act_identity": ledger.mint_identity("assertion_locality_movement_act"),
@@ -1097,22 +1097,22 @@ def record_assertion_locality_movement_subject_to_act_binding(
 
 def _read_assertion_locality_movement_subject_to_act_binding(
     ledger: EventLedger,
-    assignment_event_identity: str,
+    binding_event_identity: str,
     *,
-    prior_destination_standing: dict[str, Any] | None = None,
+    prior_destination_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, _AssertionLocalityMovementSource, Event]:
-    assignment = ledger.get(assignment_event_identity)
+    binding = ledger.get(binding_event_identity)
     if (
-        assignment is None
-        or assignment.kind
+        binding is None
+        or binding.kind
         != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
-        or assignment.locality_identity is None
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        or binding.locality_identity is None
+        or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment is absent or corrupted"
+            "Assertion movement binding is absent or corrupted"
         )
-    material = assignment.material
+    material = binding.material
     source, source_event = _source_assertion_from_reference(
         ledger, material.get("source_assertion_reference")
     )
@@ -1137,109 +1137,109 @@ def _read_assertion_locality_movement_subject_to_act_binding(
         )
     ):
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment carries malformed coordinates"
+            "Assertion movement binding carries malformed coordinates"
         )
     expected = _movement_binding_material(
         source=source,
         source_event=source_event,
         source_locality=source_event.locality_identity,
-        destination_locality=assignment.locality_identity,
+        destination_locality=binding.locality_identity,
         source_through_event_occurrence_identity=source_boundary,
         destination_through_event_occurrence_identity=destination_boundary,
         **identities,
     )
     if material != expected:
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment coordinates are not exact"
+            "Assertion movement binding coordinates are not exact"
         )
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing_through,
     )
 
     try:
-        source_standing = read_operator_locality_standing_through(
+        source_coordinates = read_operator_locality_standing_through(
             ledger,
             locality_identity=source_event.locality_identity,
             through_event_occurrence_identity=source_boundary,
         )
-        if prior_destination_standing is None:
-            prior_destination_standing = read_operator_locality_standing_through(
+        if prior_destination_coordinates is None:
+            prior_destination_coordinates = read_operator_locality_standing_through(
                 ledger,
-                locality_identity=assignment.locality_identity,
+                locality_identity=binding.locality_identity,
                 through_event_occurrence_identity=destination_boundary,
             )
     except (TypeError, ValueError) as error:
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment has no exact Standing"
+            "Assertion movement binding has no exact current coordinates"
         ) from error
-    if not _source_assertion_is_carried(source_event, source_standing):
+    if not _source_assertion_is_carried(source_event, source_coordinates):
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment has no exact source Standing"
+            "Assertion movement binding has no exact source coordinates"
         )
-    prior_destination_boundary = prior_destination_standing.get(
+    prior_destination_boundary = prior_destination_coordinates.get(
         "through_event_occurrence_identity"
     )
-    carried_assignments = prior_destination_standing.get(
+    carried_bindings = prior_destination_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
     destination_boundary_is_exact = prior_destination_boundary == destination_boundary
-    assignment_is_carried_later = bool(
+    binding_is_carried_later = bool(
         type(prior_destination_boundary) is str
         and prior_destination_boundary
-        and type(carried_assignments) is dict
-        and carried_assignments.get(assignment.identity, object()) is None
+        and type(carried_bindings) is dict
+        and carried_bindings.get(binding.identity, object()) is None
     )
     if (
-        prior_destination_standing.get("locality_identity")
-        != assignment.locality_identity
-        or not (destination_boundary_is_exact or assignment_is_carried_later)
+        prior_destination_coordinates.get("locality_identity")
+        != binding.locality_identity
+        or not (destination_boundary_is_exact or binding_is_carried_later)
     ):
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment has no exact destination Standing"
+            "Assertion movement binding has no exact destination coordinates"
         )
-    order = (assignment.identity,)
+    order = (binding.identity,)
     if destination_boundary is not None:
-        order = (destination_boundary, assignment.identity)
-    if assignment_is_carried_later and prior_destination_boundary != assignment.identity:
+        order = (destination_boundary, binding.identity)
+    if binding_is_carried_later and prior_destination_boundary != binding.identity:
         order = (*order, prior_destination_boundary)
     try:
         ledger.occurrences_in_append_order(
-            order, locality_identity=assignment.locality_identity
+            order, locality_identity=binding.locality_identity
         )
     except ValueError as error:
         raise ByteMeasurementError(
-            "Assertion movement Responsibility assignment order is false"
+            "Assertion movement binding order is false"
         ) from error
-    return assignment, source, source_event
+    return binding, source, source_event
 
 
 def get_assertion_locality_movement_subject_to_act_binding(
-    ledger: EventLedger, assignment_event_identity: str
+    ledger: EventLedger, binding_event_identity: str
 ) -> Event:
     return _read_assertion_locality_movement_subject_to_act_binding(
-        ledger, assignment_event_identity
+        ledger, binding_event_identity
     )[0]
 
 
-def _movement_act_material(assignment: Event) -> dict[str, Any]:
+def _movement_act_material(binding: Event) -> dict[str, Any]:
     return {
         "act": "Assertion Locality movement",
         "subject_to_act_binding_reference": _movement_binding_reference(
-            assignment
+            binding
         ),
-        "movement_act_identity": assignment.material["movement_act_identity"],
-        "movement_act_occurrence_identity": assignment.material[
+        "movement_act_identity": binding.material["movement_act_identity"],
+        "movement_act_occurrence_identity": binding.material[
             "movement_act_occurrence_identity"
         ],
-        "source_assertion_reference": assignment.material[
+        "source_assertion_reference": binding.material[
             "source_assertion_reference"
         ],
-        "source_locality": assignment.material["source_locality"],
-        "destination_locality": assignment.locality_identity,
+        "source_locality": binding.material["source_locality"],
+        "destination_locality": binding.locality_identity,
         "locality_relation": {
-            "first_subject": assignment.material["source_assertion_reference"],
-            "second_subject": assignment.locality_identity,
-            "relation_occurrence_identity": assignment.material[
+            "first_subject": binding.material["source_assertion_reference"],
+            "second_subject": binding.locality_identity,
+            "relation_occurrence_identity": binding.material[
                 "movement_act_occurrence_identity"
             ],
         },
@@ -1257,11 +1257,11 @@ def record_assertion_locality_movement_act_occurrence(
             ledger, subject_to_act_binding_event_identity
         )
     )
-    _require_current_movement_destination_standing(
+    _require_current_movement_destination_coordinates(
         ledger,
         destination_locality=binding.locality_identity,
-        locality_standing=current_coordinates,
-        assignment_identity=binding.identity,
+        current_coordinates=current_coordinates,
+        binding_identity=binding.identity,
     )
     for prior in ledger.iter_locality_kind(
         binding.locality_identity,
@@ -1280,41 +1280,41 @@ def record_assertion_locality_movement_act_occurrence(
     )
 
 
-def _record_assertion_locality_movement_act_from_carried_standing(
+def _record_assertion_locality_movement_act_from_current_coordinates(
     ledger: EventLedger,
     *,
-    assignment: Event,
-    destination_standing: dict[str, Any],
+    binding: Event,
+    destination_coordinates: dict[str, Any],
 ) -> Event:
     try:
-        _require_exact_movement_binding_and_source(ledger, assignment)
+        _require_exact_movement_binding_and_source(ledger, binding)
     except (ByteMeasurementError, TypeError, ValueError) as error:
         raise ByteMeasurementError(
-            "Assertion movement Act requires an exact source and assignment"
+            "Assertion movement Act requires an exact source and binding"
         ) from error
     if (
-        assignment.kind
+        binding.kind
         != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
-        or ledger.get(assignment.identity) != assignment
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
-        or destination_standing.get("locality_identity")
-        != assignment.locality_identity
-        or destination_standing.get("through_event_occurrence_identity")
-        != assignment.identity
-        or destination_standing.get(
+        or ledger.get(binding.identity) != binding
+        or ledger.integrity_of(binding.identity) == CORRUPTED
+        or destination_coordinates.get("locality_identity")
+        != binding.locality_identity
+        or destination_coordinates.get("through_event_occurrence_identity")
+        != binding.identity
+        or destination_coordinates.get(
             "subject_to_act_binding_occurrences", {}
-        ).get(assignment.identity, object())
+        ).get(binding.identity, object())
         is not None
-        or ledger.append_boundary_through_occurrence(assignment.identity)
+        or ledger.append_boundary_through_occurrence(binding.identity)
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "Assertion movement Act requires exact carried assignment Standing"
+            "Assertion movement Act requires exact carried binding coordinates"
         )
     return ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
-        _movement_act_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _movement_act_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -1322,7 +1322,7 @@ def _read_assertion_locality_movement_act_occurrence(
     ledger: EventLedger,
     act_occurrence_event_identity: str,
     *,
-    prior_destination_standing: dict[str, Any] | None = None,
+    prior_destination_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, _AssertionLocalityMovementSource]:
     act = ledger.get(act_occurrence_event_identity)
     if (
@@ -1333,57 +1333,57 @@ def _read_assertion_locality_movement_act_occurrence(
         raise ByteMeasurementError("Assertion movement Act occurrence is absent or corrupted")
     reference = act.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
-        raise ByteMeasurementError("Assertion movement Act carries no exact assignment")
-    assignment, source, _source_event = (
+        raise ByteMeasurementError("Assertion movement Act carries no exact binding")
+    binding, source, _source_event = (
         _read_assertion_locality_movement_subject_to_act_binding(
             ledger,
             reference.get("recorded_occurrence_identity"),
-            prior_destination_standing=prior_destination_standing,
+            prior_destination_coordinates=prior_destination_coordinates,
         )
     )
     if (
-        reference != _movement_binding_reference(assignment)
-        or act.locality_identity != assignment.locality_identity
-        or act.material != _movement_act_material(assignment)
+        reference != _movement_binding_reference(binding)
+        or act.locality_identity != binding.locality_identity
+        or act.material != _movement_act_material(binding)
     ):
         raise ByteMeasurementError("Assertion movement Act occurrence is not exact")
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, act.identity),
-            locality_identity=assignment.locality_identity,
+            (binding.identity, act.identity),
+            locality_identity=binding.locality_identity,
         )
     except ValueError as error:
         raise ByteMeasurementError("Assertion movement Act order is false") from error
-    return act, assignment, source
+    return act, binding, source
 
 
 def _movement_result_material(
-    assignment: Event,
+    binding: Event,
 ) -> dict[str, Any]:
     return {
-        "result_identity": assignment.material["movement_result_identity"],
-        "movement_act_identity": assignment.material["movement_act_identity"],
-        "movement_act_occurrence_identity": assignment.material[
+        "result_identity": binding.material["movement_result_identity"],
+        "movement_act_identity": binding.material["movement_act_identity"],
+        "movement_act_occurrence_identity": binding.material[
             "movement_act_occurrence_identity"
         ],
         "subject_to_act_binding_reference": _movement_binding_reference(
-            assignment
+            binding
         ),
-        "source_assertion_reference": assignment.material[
+        "source_assertion_reference": binding.material[
             "source_assertion_reference"
         ],
-        "source_assertion_coordinates": assignment.material[
+        "source_assertion_coordinates": binding.material[
             "source_assertion_coordinates"
         ],
-        "assertion_identity": assignment.material["source_assertion_reference"][
+        "assertion_identity": binding.material["source_assertion_reference"][
             "assertion_identity"
         ],
-        "source_locality": assignment.material["source_locality"],
-        "destination_locality": assignment.locality_identity,
+        "source_locality": binding.material["source_locality"],
+        "destination_locality": binding.locality_identity,
         "locality_relation": {
-            "first_subject": assignment.material["source_assertion_reference"],
-            "second_subject": assignment.locality_identity,
-            "relation_occurrence_identity": assignment.material[
+            "first_subject": binding.material["source_assertion_reference"],
+            "second_subject": binding.locality_identity,
+            "relation_occurrence_identity": binding.material[
                 "movement_act_occurrence_identity"
             ],
         },
@@ -1399,47 +1399,47 @@ def _movement_result_material(
 def record_assertion_locality_movement_result(
     ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
-    act, assignment, _source = _read_assertion_locality_movement_act_occurrence(
+    act, binding, _source = _read_assertion_locality_movement_act_occurrence(
         ledger, act_occurrence_event_identity
     )
     for kind in (
         RECORDED_YIELD_RELATION_EVENT,
         ASSERTION_LOCALITY_MOVEMENT_KIND,
     ):
-        for prior in ledger.iter_locality_kind(assignment.locality_identity, kind):
+        for prior in ledger.iter_locality_kind(binding.locality_identity, kind):
             if prior.material.get("act_occurrence_event_identity") == act.identity:
                 raise ByteMeasurementError(
                     "Assertion movement Act already carries a Yield or result"
                 )
     return _append_assertion_locality_movement_result(
-        ledger, act=act, assignment=assignment
+        ledger, act=act, binding=binding
     )
 
 
 def _append_assertion_locality_movement_result(
-    ledger: EventLedger, *, act: Event, assignment: Event
+    ledger: EventLedger, *, act: Event, binding: Event
 ) -> Event:
-    result_material = _movement_result_material(assignment)
+    result_material = _movement_result_material(binding)
     yield_relation = _record_yield_relation(
         ledger,
-        locality_identity=assignment.locality_identity,
+        locality_identity=binding.locality_identity,
         exact_act="Assertion Locality movement",
-        act_occurrence_identity=assignment.material[
+        act_occurrence_identity=binding.material[
             "movement_act_occurrence_identity"
         ],
         act_occurrence_event_identity=act.identity,
         result_kind=ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
-        result_identity=assignment.material["movement_result_identity"],
+        result_identity=binding.material["movement_result_identity"],
         result_content=result_material,
         occurrence_boundary="assertion_locality_movement",
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
-    _require_exact_movement_binding_and_source(ledger, assignment)
+    _require_exact_movement_binding_and_source(ledger, binding)
     if (
         ledger.get(act.identity) != act
         or ledger.integrity_of(act.identity) == CORRUPTED
-        or act.material != _movement_act_material(assignment)
+        or act.material != _movement_act_material(binding)
         or ledger.get(yield_relation.identity) != yield_relation
         or ledger.integrity_of(yield_relation.identity) == CORRUPTED
         or ledger.append_boundary_through_occurrence(yield_relation.identity)
@@ -1451,29 +1451,29 @@ def _append_assertion_locality_movement_result(
     return ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
         {
-            **_movement_result_material(assignment),
+            **_movement_result_material(binding),
             "act_occurrence_event_identity": act.identity,
             "yield_relation_identity": yield_relation.identity,
         },
-        locality_identity=assignment.locality_identity,
+        locality_identity=binding.locality_identity,
     )
 
 
-def _record_assertion_locality_movement_result_from_carried_act(
+def _record_assertion_locality_movement_result_from_current_coordinates(
     ledger: EventLedger,
     *,
     act: Event,
-    assignment: Event,
-    destination_standing: dict[str, Any] | None = None,
+    binding: Event,
+    destination_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    if destination_standing is not None:
+    if destination_coordinates is not None:
         try:
-            _require_exact_movement_binding_and_source(ledger, assignment)
+            _require_exact_movement_binding_and_source(ledger, binding)
         except (ByteMeasurementError, TypeError, ValueError) as error:
             raise ByteMeasurementError(
                 "Assertion movement result requires an exact source and Act"
             ) from error
-        if act.material != _movement_act_material(assignment):
+        if act.material != _movement_act_material(binding):
             raise ByteMeasurementError(
                 "Assertion movement result requires an exact source and Act"
             )
@@ -1481,8 +1481,8 @@ def _record_assertion_locality_movement_result_from_carried_act(
         ledger.get(act.identity) != act
         or act.kind != ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT
         or ledger.integrity_of(act.identity) == CORRUPTED
-        or act.locality_identity != assignment.locality_identity
-        or act.material != _movement_act_material(assignment)
+        or act.locality_identity != binding.locality_identity
+        or act.material != _movement_act_material(binding)
         or ledger.append_boundary_through_occurrence(act.identity)
         != ledger.append_boundary()
     ):
@@ -1490,7 +1490,7 @@ def _record_assertion_locality_movement_result_from_carried_act(
             "Assertion movement result requires its exact carried Act at the append tip"
         )
     return _append_assertion_locality_movement_result(
-        ledger, act=act, assignment=assignment
+        ledger, act=act, binding=binding
     )
 
 
@@ -1509,20 +1509,20 @@ def _move_byte_assertion_to_locality(
         return source
     from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality=destination_locality,
-        source_locality_standing=read_operator_locality_standing(
+        source_current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=source_event.locality_identity
         ),
-        destination_locality_standing=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=destination_locality
         ),
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=destination_locality
         ),
@@ -1573,62 +1573,62 @@ def _move_assertion_reference_to_locality(
         read_operator_locality_standing,
     )
 
-    source_standing = read_operator_locality_standing(
+    source_coordinates = read_operator_locality_standing(
         ledger, locality_identity=source_event.locality_identity
     )
-    _require_current_movement_source_standing(
-        ledger, source_event=source_event, locality_standing=source_standing
+    _require_current_movement_source_coordinates(
+        ledger, source_event=source_event, current_coordinates=source_coordinates
     )
-    destination_standing = read_operator_locality_standing(
+    destination_coordinates = read_operator_locality_standing(
         ledger, locality_identity=destination_locality
     )
-    _require_current_movement_destination_standing(
+    _require_current_movement_destination_coordinates(
         ledger,
         destination_locality=destination_locality,
-        locality_standing=destination_standing,
+        current_coordinates=destination_coordinates,
     )
-    assignment = _record_movement_binding_from_current_coordinates(
+    binding = _record_movement_binding_from_current_coordinates(
         ledger,
         source=source,
         source_event=source_event,
-        source_coordinates=source_standing,
+        source_coordinates=source_coordinates,
         destination_locality=destination_locality,
-        destination_coordinates=destination_standing,
+        destination_coordinates=destination_coordinates,
     )
-    destination_standing = (
+    destination_coordinates = (
         _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
-            destination_standing,
-            assignment,
+            destination_coordinates,
+            binding,
             source=source,
             source_event=source_event,
-            source_standing=source_standing,
+            source_standing=source_coordinates,
         )
     )
-    act = _record_assertion_locality_movement_act_from_carried_standing(
+    act = _record_assertion_locality_movement_act_from_current_coordinates(
         ledger,
-        assignment=assignment,
-        destination_standing=destination_standing,
+        binding=binding,
+        destination_coordinates=destination_coordinates,
     )
-    destination_standing = _carry_assertion_locality_movement_act_into_standing(
+    destination_coordinates = _carry_assertion_locality_movement_act_into_standing(
         ledger,
-        destination_standing,
+        destination_coordinates,
         act,
-        responsibility_assignment=assignment,
+        responsibility_assignment=binding,
     )
-    movement = _record_assertion_locality_movement_result_from_carried_act(
+    movement = _record_assertion_locality_movement_result_from_current_coordinates(
         ledger,
         act=act,
-        assignment=assignment,
-        destination_standing=destination_standing,
+        binding=binding,
+        destination_coordinates=destination_coordinates,
     )
-    _destination_standing, carried = (
+    _destination_coordinates, carried = (
         _carry_assertion_locality_movement_result_into_standing(
             ledger,
-            destination_standing,
+            destination_coordinates,
             movement,
             act_occurrence=act,
-            responsibility_assignment=assignment,
+            responsibility_assignment=binding,
             source=source,
         )
     )
@@ -1736,64 +1736,64 @@ def move_recorded_byte_assertions_to_locality(
         read_operator_locality_standing,
     )
 
-    source_standing = read_operator_locality_standing(
+    source_coordinates = read_operator_locality_standing(
         ledger, locality_identity=source_event.locality_identity
     )
-    _require_current_movement_source_standing(
-        ledger, source_event=source_event, locality_standing=source_standing
+    _require_current_movement_source_coordinates(
+        ledger, source_event=source_event, current_coordinates=source_coordinates
     )
-    destination_standing = read_operator_locality_standing(
+    destination_coordinates = read_operator_locality_standing(
         ledger, locality_identity=destination_locality
     )
-    _require_current_movement_destination_standing(
+    _require_current_movement_destination_coordinates(
         ledger,
         destination_locality=destination_locality,
-        locality_standing=destination_standing,
+        current_coordinates=destination_coordinates,
     )
     moved = []
     for source in sources:
-        assignment = _record_movement_binding_from_current_coordinates(
+        binding = _record_movement_binding_from_current_coordinates(
             ledger,
             source=source,
             source_event=source_event,
-            source_coordinates=source_standing,
+            source_coordinates=source_coordinates,
             destination_locality=destination_locality,
-            destination_coordinates=destination_standing,
+            destination_coordinates=destination_coordinates,
         )
-        destination_standing = (
+        destination_coordinates = (
             _carry_assertion_locality_movement_binding_into_current_coordinates(
                 ledger,
-                destination_standing,
-                assignment,
+                destination_coordinates,
+                binding,
                 source=source,
                 source_event=source_event,
-                source_standing=source_standing,
+                source_standing=source_coordinates,
             )
         )
-        act = _record_assertion_locality_movement_act_from_carried_standing(
+        act = _record_assertion_locality_movement_act_from_current_coordinates(
             ledger,
-            assignment=assignment,
-            destination_standing=destination_standing,
+            binding=binding,
+            destination_coordinates=destination_coordinates,
         )
-        destination_standing = _carry_assertion_locality_movement_act_into_standing(
+        destination_coordinates = _carry_assertion_locality_movement_act_into_standing(
             ledger,
-            destination_standing,
+            destination_coordinates,
             act,
-            responsibility_assignment=assignment,
+            responsibility_assignment=binding,
         )
-        movement = _record_assertion_locality_movement_result_from_carried_act(
+        movement = _record_assertion_locality_movement_result_from_current_coordinates(
             ledger,
             act=act,
-            assignment=assignment,
-            destination_standing=destination_standing,
+            binding=binding,
+            destination_coordinates=destination_coordinates,
         )
-        destination_standing, exact = (
+        destination_coordinates, exact = (
             _carry_assertion_locality_movement_result_into_standing(
                 ledger,
-                destination_standing,
+                destination_coordinates,
                 movement,
                 act_occurrence=act,
-                responsibility_assignment=assignment,
+                responsibility_assignment=binding,
                 source=source,
             )
         )
@@ -1846,27 +1846,27 @@ def _validate_moved_byte_assertion(
     ledger: EventLedger,
     movement_event_identity: str,
     *,
-    prior_destination_standing: dict[str, Any] | None = None,
+    prior_destination_coordinates: dict[str, Any] | None = None,
 ) -> RecordedByteAssertion | RecordedAssertionCarriedByLocalityMovement | None:
     movement = ledger.get(movement_event_identity)
     if movement is None or movement.kind != ASSERTION_LOCALITY_MOVEMENT_KIND:
         return None
     if ledger.integrity_of(movement.identity) == CORRUPTED:
         raise ByteMeasurementError("Assertion locality movement is corrupted")
-    act_occurrence, assignment, source = (
+    act_occurrence, binding, source = (
         _read_assertion_locality_movement_act_occurrence(
             ledger,
             movement.material.get("act_occurrence_event_identity"),
-            prior_destination_standing=prior_destination_standing,
+            prior_destination_coordinates=prior_destination_coordinates,
         )
     )
     if (
-        movement.locality_identity != assignment.locality_identity
+        movement.locality_identity != binding.locality_identity
         or movement.material.get("subject_to_act_binding_reference")
-        != _movement_binding_reference(assignment)
+        != _movement_binding_reference(binding)
     ):
         raise ByteMeasurementError(
-            "Assertion locality movement carries no exact assignment"
+            "Assertion locality movement carries no exact binding"
         )
     requirements = read_requirements_of_yield_relation(
         ledger,
@@ -1891,7 +1891,7 @@ def _validate_moved_byte_assertion(
     ):
         raise ByteMeasurementError("Assertion movement Yield relation is not exact")
     expected = {
-        **_movement_result_material(assignment),
+        **_movement_result_material(binding),
         "act_occurrence_event_identity": act_occurrence.identity,
         "yield_relation_identity": movement.material.get(
             "yield_relation_identity"
@@ -1901,7 +1901,7 @@ def _validate_moved_byte_assertion(
         raise ByteMeasurementError("Assertion locality movement is not exact")
     return _assertion_carried_by_locality_movement_result(
         movement=movement,
-        responsibility_assignment=assignment,
+        responsibility_assignment=binding,
         source=source,
     )
 

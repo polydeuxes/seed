@@ -722,7 +722,7 @@ def run_persistent_operator_console(
                 binding = (
                     record_recorded_standing_boundary_locality_subject_to_act_binding(
                         ledger,
-                        source_locality_standing=locality_standing,
+                        source_current_coordinates=locality_standing,
                     )
                 )
                 locality_identity = binding.locality_identity

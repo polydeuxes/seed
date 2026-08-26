@@ -1352,7 +1352,7 @@ def advance_operator_locality_standing(
             _read_assertion_locality_movement_subject_to_act_binding(
                 ledger,
                 event.identity,
-                prior_destination_standing={
+                prior_destination_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
@@ -1365,7 +1365,7 @@ def advance_operator_locality_standing(
             _read_assertion_locality_movement_act_occurrence(
                 ledger,
                 event.identity,
-                prior_destination_standing={
+                prior_destination_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
@@ -1380,7 +1380,7 @@ def advance_operator_locality_standing(
             _validate_moved_byte_assertion(
                 ledger,
                 event.identity,
-                prior_destination_standing={
+                prior_destination_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
