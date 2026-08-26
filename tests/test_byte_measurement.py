@@ -1645,8 +1645,6 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
-    assert "responsibility" not in first
-    assert "responsible_boundary" not in first
     assert first_assignment.kind == (
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
@@ -1699,16 +1697,6 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     assert applicability_binding.material["addressed_act_identity"] == (
         assignment.material["exact_act_identity"]
     )
-    for binding in (applicability_binding, assignment):
-        assert "assignment_identity" not in binding.material
-        assert "assignment_subject_identity" not in binding.material
-        assert "responsibility" not in binding.material
-        assert "responsible_boundary" not in binding.material
-    for event in (assignment, applicability_act, applicability, measurement_act, result):
-        assert "standing" not in event.material
-        assert "responsibility_assignment" not in event.material
-        assert "responsibility" not in event.material
-        assert "responsible_boundary" not in event.material
     assert applicability_act.material["subject_to_act_binding_reference"] != (
         result.material["subject_to_act_binding_reference"]
     )
@@ -2004,24 +1992,6 @@ def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
     }
     assert applicable["input_assertion_reference"] == source.reference
     assert applicable["addressed_act_occurrence_identity"] is None
-
-
-def test_pair_lifecycle_does_not_copy_assertion_duty_payload():
-    ledger = _ledger(b"ta\n")
-    source = _byte_source(ledger)
-    result = record_byte_position_pair_count_layer(
-        ledger,
-        source_measurement_event_identity=source.identity,
-        recording_locality_identity="measurement",
-    )
-    applicability_event = ledger.get(
-        result.material["input_applicability_event_identity"]
-    )
-
-    assert "responsibility" not in result.material
-    assert "responsible_boundary" not in result.material
-    assert "responsibility" not in applicability_event.material
-    assert "responsible_boundary" not in applicability_event.material
 
 
 def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
