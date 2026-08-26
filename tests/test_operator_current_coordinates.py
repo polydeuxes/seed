@@ -120,12 +120,12 @@ def _record_measurement(ledger, measurement_kind):
         ledger,
         recording_locality_identity="s",
         finding=finding,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     act_occurrence = record_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     return record_occurrence_position_measurement_result(
         ledger,

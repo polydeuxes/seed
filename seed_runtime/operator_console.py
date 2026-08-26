@@ -61,15 +61,15 @@ from seed_runtime.recorded_boundary_locality import (
     record_recorded_boundary_locality_result,
 )
 from seed_runtime.operator_current_coordinates import (
-    _carry_occurrence_position_measurement_assignment_into_standing,
-    _carry_occurrence_position_measurement_result_into_standing,
+    _carry_occurrence_position_measurement_assignment_into_current_coordinates,
+    _carry_occurrence_position_measurement_result_into_current_coordinates,
     _carry_operator_material_source_occurrence_into_current_coordinates,
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
 from seed_runtime.occurrence_position_measurement import (
-    _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
-    _record_occurrence_position_measurement_act_occurrence_from_carried_standing,
+    _record_occurrence_position_measurement_responsibility_assignment_from_current_coordinates,
+    _record_occurrence_position_measurement_act_occurrence_from_current_coordinates,
     _record_occurrence_position_measurement_result_from_carried_act_occurrence,
     measure_occurrence_position,
 )
@@ -115,14 +115,14 @@ def _record_occurrence_position_measurement(
         source_locality_identity=locality_identity,
     )
     position_measurement_assignment = (
-        _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing(
+        _record_occurrence_position_measurement_responsibility_assignment_from_current_coordinates(
             ledger,
             recording_locality_identity=locality_identity,
             finding=position_finding,
-            locality_standing=current_coordinates,
+            current_coordinates=current_coordinates,
         )
     )
-    current_coordinates = _carry_occurrence_position_measurement_assignment_into_standing(
+    current_coordinates = _carry_occurrence_position_measurement_assignment_into_current_coordinates(
         ledger,
         current_coordinates,
         position_measurement_assignment,
@@ -132,11 +132,11 @@ def _record_occurrence_position_measurement(
         ],
     )
     position_measurement_act_occurrence = (
-        _record_occurrence_position_measurement_act_occurrence_from_carried_standing(
+        _record_occurrence_position_measurement_act_occurrence_from_current_coordinates(
             ledger,
             responsibility_assignment=position_measurement_assignment,
             finding=position_finding,
-            responsibility_assignment_standing=current_coordinates,
+            current_coordinates=current_coordinates,
         )
     )
     current_coordinates = _advance_over(
@@ -153,7 +153,7 @@ def _record_occurrence_position_measurement(
             finding=position_finding,
         )
     )
-    current_coordinates = _carry_occurrence_position_measurement_result_into_standing(
+    current_coordinates = _carry_occurrence_position_measurement_result_into_current_coordinates(
         ledger,
         current_coordinates,
         position_measurement,

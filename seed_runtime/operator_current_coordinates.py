@@ -2472,20 +2472,20 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
     return current_coordinates, exact
 
 
-def _carry_occurrence_position_measurement_assignment_into_standing(
+def _carry_occurrence_position_measurement_assignment_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     finding,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Carry the occurrence-position assignment produced beside this Standing."""
+    """Carry the occurrence-position assignment into current coordinates."""
 
     if (
-        type(locality_standing) is not dict
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
         raise ValueError(
@@ -2496,32 +2496,32 @@ def _carry_occurrence_position_measurement_assignment_into_standing(
         responsibility_assignment=event,
         finding=finding,
     )
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    event_count = locality_standing.get("event_count")
+    assignments = current_coordinates.get("subject_to_act_binding_occurrences")
+    event_count = current_coordinates.get("event_count")
     if (
         type(assignments) is not dict
         or event.identity in assignments
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("occurrence position assignment Standing is not exact")
-    standing_additions = _exact_current_coordinate_additions(
-        locality_standing,
+        raise ValueError("occurrence position assignment coordinates are not exact")
+    coordinate_additions = _exact_current_coordinate_additions(
+        current_coordinates,
         event,
-        error_message="occurrence position assignment Standing is not exact",
+        error_message="occurrence position assignment coordinates are not exact",
     )
     assignments[event.identity] = None
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
-def _carry_occurrence_position_measurement_result_into_standing(
+def _carry_occurrence_position_measurement_result_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     act_occurrence,
@@ -2531,18 +2531,18 @@ def _carry_occurrence_position_measurement_result_into_standing(
     """Carry the occurrence-position result produced beside its exact Act."""
 
     measurements = (
-        locality_standing.get("measurement_occurrences")
-        if type(locality_standing) is dict
+        current_coordinates.get("measurement_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     assignments = (
-        locality_standing.get("subject_to_act_binding_occurrences")
-        if type(locality_standing) is dict
+        current_coordinates.get("subject_to_act_binding_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     event_count = (
-        locality_standing.get("event_count")
-        if type(locality_standing) is dict
+        current_coordinates.get("event_count")
+        if type(current_coordinates) is dict
         else None
     )
     assertions = _position_assertions(finding)
@@ -2573,8 +2573,8 @@ def _carry_occurrence_position_measurement_result_into_standing(
         event.kind != OCCURRENCE_POSITION_RECORDED_KIND
         or event.locality_identity != responsibility_assignment.locality_identity
         or event.material != expected
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != act_occurrence.identity
         or type(measurements) is not dict
         or event.identity in measurements
@@ -2593,19 +2593,19 @@ def _carry_occurrence_position_measurement_result_into_standing(
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("occurrence position Measurement Standing is not exact")
-    standing_additions = _exact_current_coordinate_additions(
-        locality_standing,
+        raise ValueError("occurrence position Measurement coordinates are not exact")
+    coordinate_additions = _exact_current_coordinate_additions(
+        current_coordinates,
         event,
-        error_message="occurrence position Measurement Standing is not exact",
+        error_message="occurrence position Measurement coordinates are not exact",
     )
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
 def _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(

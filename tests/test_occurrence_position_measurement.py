@@ -54,7 +54,7 @@ def occurrence_road():
     return ledger, (first, second, third), boundary
 
 
-def _standing(ledger, locality="measurement"):
+def _current_coordinates(ledger, locality="measurement"):
     return read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
@@ -65,7 +65,7 @@ def _record_assignment(ledger, finding, locality="measurement"):
         ledger,
         recording_locality_identity=locality,
         finding=finding,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
 
 
@@ -74,7 +74,7 @@ def _record_act(ledger, finding, locality="measurement"):
     act = record_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
     return assignment, act
 
@@ -167,7 +167,7 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
             ledger,
             recording_locality_identity="measurement",
             finding=reversed_finding,
-            locality_standing=_standing(ledger),
+            current_coordinates=_current_coordinates(ledger),
         )
 
 
@@ -187,7 +187,7 @@ def test_subclass_finding_cannot_replace_the_exact_measurement_type():
             ledger,
             recording_locality_identity="measurement",
             finding=subclass_finding,
-            locality_standing=_standing(ledger),
+            current_coordinates=_current_coordinates(ledger),
         )
 
 
@@ -205,7 +205,7 @@ def test_corrupted_source_cannot_enter_act_occurrence_after_measurement():
             ledger,
             recording_locality_identity="measurement",
             finding=finding,
-            locality_standing=_standing(ledger),
+            current_coordinates=_current_coordinates(ledger),
         )
 
 
@@ -256,7 +256,7 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
             "result_boundary_identity"
         ],
     }
-    assert assignment.identity in _standing(ledger)[
+    assert assignment.identity in _current_coordinates(ledger)[
         "subject_to_act_binding_occurrences"
     ]
     assert len(
@@ -277,27 +277,27 @@ def test_act_requires_current_standing_that_carries_its_assignment():
     finding = measure_occurrence_position(
         ledger, source_locality_identity="a", through=boundary
     )
-    before_assignment = _standing(ledger)
+    before_assignment = _current_coordinates(ledger)
     assignment = record_occurrence_position_measurement_responsibility_assignment(
         ledger,
         recording_locality_identity="measurement",
         finding=finding,
-        locality_standing=before_assignment,
+        current_coordinates=before_assignment,
     )
     before = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="exact current Locality Standing"):
+    with pytest.raises(ValueError, match="exact current coordinates"):
         record_occurrence_position_measurement_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=before_assignment,
+            current_coordinates=before_assignment,
         )
 
     assert ledger.append_boundary() == before
     assert record_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger),
+        current_coordinates=_current_coordinates(ledger),
     ).kind == OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
 
 
@@ -306,16 +306,16 @@ def test_assignment_refuses_stale_current_standing_without_appending():
     finding = measure_occurrence_position(
         ledger, source_locality_identity="a", through=boundary
     )
-    stale = _standing(ledger)
+    stale = _current_coordinates(ledger)
     _record_assignment(ledger, finding)
     before = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="exact current Locality Standing"):
+    with pytest.raises(ValueError, match="exact current coordinates"):
         record_occurrence_position_measurement_responsibility_assignment(
             ledger,
             recording_locality_identity="measurement",
             finding=finding,
-            locality_standing=stale,
+            current_coordinates=stale,
         )
 
     assert ledger.append_boundary() == before
@@ -333,7 +333,7 @@ def test_one_assignment_cannot_record_two_act_occurrences():
         record_occurrence_position_measurement_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=_standing(ledger),
+            current_coordinates=_current_coordinates(ledger),
         )
 
     assert ledger.append_boundary() == before
@@ -627,7 +627,7 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert len({item["dimensions"]["identity"] for item in assertions}) == len(
         assertions
     )
-    assert _standing(ledger)["measurement_occurrences"][recorded.identity] == {
+    assert _current_coordinates(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
         "result_identity": recorded.material["result_identity"],
         "act_occurrence_event_identity": recorded.material["act_occurrence_event_identity"],
@@ -804,7 +804,7 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
     act_occurrence = record_occurrence_position_measurement_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger),
+        current_coordinates=_current_coordinates(ledger),
     )
     act_identity = act_occurrence.identity
     ledger.close()
