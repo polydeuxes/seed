@@ -131,7 +131,7 @@ def main() -> int:
 
     entrances = {
         "first": position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
-        "second": position_module._record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_carried_standing,
+        "second": position_module._record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_carried_current_coordinates,
     }
 
     before: dict[str, Any] = {}
@@ -142,7 +142,7 @@ def main() -> int:
         assignment = entrance(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=standing,
+            current_coordinates=standing,
         )
         after[label] = _recorded_assignment(assignment, _position_of(ledger))
 

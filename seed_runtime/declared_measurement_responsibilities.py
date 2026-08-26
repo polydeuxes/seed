@@ -25,7 +25,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment,
+    _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding,
     _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
     _material_result_identities_with_exact_locality_from_bounded_replay,
@@ -192,11 +192,11 @@ def _complete_direct_measurement(
             prior_through_event_occurrence_identity=prior_boundary,
         )
     )
-    act = _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment(
+    act = _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding(
         ledger,
-        responsibility_assignment=assignment,
+        binding=assignment,
         finding=finding,
-        responsibility_assignment_standing=recording_replay,
+        binding_current_coordinates=recording_replay,
     )
     recording_replay = _advance(
         ledger,
@@ -207,7 +207,7 @@ def _complete_direct_measurement(
     result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence(
         ledger,
         act_occurrence=act,
-        responsibility_assignment=assignment,
+        binding=assignment,
         finding=finding,
     )
     recording_replay = (

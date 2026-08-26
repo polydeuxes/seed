@@ -95,12 +95,12 @@ def _record(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
     result = record_byte_pair_occurrence_position_measurement_result(
         ledger,
@@ -223,7 +223,7 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=first.identity,
-        locality_standing=_standing(ledger, "s"),
+        current_coordinates=_standing(ledger, "s"),
     )
     tip_after_assignment = ledger.append_boundary()
 
@@ -255,7 +255,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, "s"),
+        current_coordinates=_standing(ledger, "s"),
     )
     boundary = ledger.append_boundary()
 
@@ -263,7 +263,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=_standing(ledger, "s"),
+            current_coordinates=_standing(ledger, "s"),
         )
 
     assert ledger.append_boundary() == boundary
@@ -344,7 +344,7 @@ def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assign
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(
+        current_coordinates=_standing(
             ledger, "position-occurrence-position"
         ),
     )
@@ -360,7 +360,7 @@ def test_assignment_act_yield_and_result_enter_current_standing():
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     assert assignment.identity in _standing(
         ledger, locality
@@ -368,8 +368,8 @@ def test_assignment_act_yield_and_result_enter_current_standing():
 
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
     result = record_byte_pair_occurrence_position_measurement_result(
         ledger,
@@ -391,22 +391,22 @@ def test_assignment_act_yield_and_result_enter_current_standing():
     )
 
 
-def test_act_requires_current_standing_that_carries_exact_assignment():
+def test_act_requires_current_coordinates_that_carry_exact_binding():
     ledger = EventLedger()
     source = _source(ledger)
     locality = source.locality_identity
-    before_assignment = _standing(ledger, locality)
-    assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    before_binding = _standing(ledger, locality)
+    binding = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=before_assignment,
+        current_coordinates=before_binding,
     )
 
-    with pytest.raises(ValueError, match="current Locality Standing"):
+    with pytest.raises(ValueError, match="exact current coordinates"):
         record_byte_pair_occurrence_position_measurement_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=before_assignment,
+            binding_event_identity=binding.identity,
+            binding_current_coordinates=before_binding,
         )
 
 
@@ -417,8 +417,8 @@ def test_one_assignment_records_one_act_and_one_result():
     with pytest.raises(ValueError, match="already carries an Act"):
         record_byte_pair_occurrence_position_measurement_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=_standing(
+            binding_event_identity=assignment.identity,
+            binding_current_coordinates=_standing(
                 ledger, assignment.locality_identity
             ),
         )
@@ -440,12 +440,12 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
 
     def history_scan_is_not_available(*_args, **_kwargs):
@@ -458,7 +458,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         direct_position_module._record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence(
             ledger,
             act_occurrence=act,
-            responsibility_assignment=assignment,
+            binding=assignment,
             finding=finding,
         )
     )
@@ -469,7 +469,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
             direct_position_module._record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence(
                 ledger,
                 act_occurrence=act,
-                responsibility_assignment=assignment,
+                binding=assignment,
                 finding=finding,
             )
         )
@@ -838,12 +838,12 @@ def test_result_refuses_an_intact_yield_from_another_exact_family(
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, source.locality_identity),
+        current_coordinates=_standing(ledger, source.locality_identity),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(
             ledger, source.locality_identity
         ),
     )
@@ -896,7 +896,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=carried_source,
+            current_coordinates=carried_source,
         )
     )
     carried_assignment = deepcopy(carried_source)
@@ -908,8 +908,8 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
 
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=carried_assignment,
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=carried_assignment,
     )
 
     assert get_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -918,11 +918,11 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
 
     stale_source = deepcopy(carried_source)
     stale_source["material_result_occurrences"] = []
-    with pytest.raises(ValueError, match="current Locality Standing"):
+    with pytest.raises(ValueError, match="exact current coordinates"):
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=stale_source,
+            current_coordinates=stale_source,
         )
 
 
@@ -934,7 +934,7 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     assignment_identity = assignment.identity
     ledger.close()
@@ -945,8 +945,8 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
     act_identity = act.identity
     ledger.close()
@@ -991,12 +991,12 @@ def test_same_call_result_carry_equals_full_standing_replay():
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
     before_result = _standing(ledger, locality)
     result = record_byte_pair_occurrence_position_measurement_result(
@@ -1020,12 +1020,12 @@ def test_refused_same_call_result_does_not_change_prior_standing():
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger, locality),
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=_standing(ledger, locality),
     )
     prior = _standing(ledger, locality)
     unchanged = deepcopy(prior)

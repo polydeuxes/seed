@@ -37,13 +37,13 @@ def _direct_result(ledger, *, locality, exact):
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=standing,
+            current_coordinates=standing,
         )
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        binding_event_identity=assignment.identity,
+        binding_current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )

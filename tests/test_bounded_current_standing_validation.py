@@ -192,7 +192,7 @@ def test_the_position_assignment_refuses_a_forged_standing_boundary():
         position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            locality_standing=forged,
+            current_coordinates=forged,
         )
 
 
@@ -210,7 +210,7 @@ def test_the_position_assignment_authenticates_no_unread_branch():
     assignment = position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        locality_standing=unread,
+        current_coordinates=unread,
     )
 
     assert assignment.identity
