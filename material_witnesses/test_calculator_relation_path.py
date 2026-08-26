@@ -26,8 +26,9 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     recorded_distinction_pins_from_current_coordinates,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
-    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_subject_to_act_binding,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -130,16 +131,21 @@ def _pair_comparison(ledger, earlier, later):
 
 
 def _path_comparison(ledger, path, pair_comparison):
-    assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+    binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_subject_to_act_binding(
         ledger,
         path_result_event_identity=path.identity,
         comparison_result_event_identity=pair_comparison.identity,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
+    )
+    applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+        ledger,
+        comparison_binding_event_identity=binding.identity,
+        current_coordinates=_standing(ledger),
     )
     applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        locality_standing=_standing(ledger),
+        applicability_binding_event_identity=applicability_binding.identity,
+        current_coordinates=_standing(ledger),
     )
     applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
         ledger,
@@ -147,9 +153,9 @@ def _path_comparison(ledger, path, pair_comparison):
     )
     act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         applicability_result_event_identity=applicability.identity,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     return record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
         ledger, act_occurrence_event_identity=act.identity
@@ -435,15 +441,15 @@ def test_no_current_act_compares_recorded_distinction_with_calculator_result(
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         witness["ledger"], higher_results[0].identity
     )
-    assignment = witness["ledger"].get(
-        reading["responsibility_assignment_reference"][
+    binding = witness["ledger"].get(
+        reading["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    assert assignment.material["path_source_occurrence_identity"] == witness[
+    assert binding.material["path_source_occurrence_identity"] == witness[
         "claim_source"
     ].identity
-    assert assignment.material["comparison_added_occurrence_identity"] == witness[
+    assert binding.material["comparison_added_occurrence_identity"] == witness[
         "claim_source"
     ].identity
     assert witness["stdout"].identity not in json.dumps(reading, sort_keys=True)
