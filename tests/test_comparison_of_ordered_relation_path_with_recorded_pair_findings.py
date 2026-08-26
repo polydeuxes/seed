@@ -345,7 +345,9 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
     )
     assert result.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     assert binding.material["path_source_occurrence_identity"] == added.identity
-    assert len(act.material["participation_of_input_in_compare"]) == 2
+    assert act.material["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
     roles = reading["finding"]["relation_findings"]
     assert [role["pair_subject"] for role in roles] == [[97, 98], [98, 99]]
     assert all(role["comparison_finding_references"] for role in roles)
@@ -615,7 +617,7 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
         in recorded.current_coordinates["applicability_result_occurrences"]
         for result in results
     )
-def test_only_applicable_current_compare_results_record_participation_and_act_occurrence():
+def test_only_applicable_current_compare_results_record_act_occurrence():
     ledger, applicability_results = _ledger_at_story_floor(2)
     bindings = tuple(
         ledger.iter_locality_kind(
@@ -639,16 +641,9 @@ def test_only_applicable_current_compare_results_record_participation_and_act_oc
         act.material["applicability_result_event_identity"] for act in acts
     ) == (applicability_results[0].identity, applicability_results[3].identity)
     assert all(
-        tuple(
-            participation["role"]
-            for participation in act.material["participation_of_input_in_compare"]
-        )
-        == ("ordered relation path", "recorded pair Compare result")
-        for act in acts
-    )
-    assert all(
-        len(act.material["participation_of_input_in_compare"]) == 2
-        for act in acts
+        set(binding.material["subject_reference"])
+        == {"path_result_reference", "comparison_result_reference"}
+        for binding in (bindings[0], bindings[3])
     )
     assert tuple(
         result.material["addressed_act_occurrence_identity"]
@@ -686,10 +681,16 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
         in recorded.current_coordinates["comparison_result_occurrences"]
         for result in results
     )
-    assert all(
-        result.material["participation_of_input_in_compare"]
-        == act.material["participation_of_input_in_compare"]
-        for result, act in zip(results, acts)
+    assert tuple(
+        result.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+        for result in results
+    ) == tuple(
+        act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+        for act in acts
     )
     assert all(
         tuple(

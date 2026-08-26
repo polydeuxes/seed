@@ -1511,24 +1511,6 @@ def _compare_act_material(binding: Event, applicability: Event) -> dict[str, Any
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
         ),
-        "participation_of_input_in_compare": [
-            {
-                "subject_reference": deepcopy(material["path_assertion_reference"]),
-                "role": "ordered relation path",
-                "act_occurrence_identity": material[
-                    "compare_act_occurrence_identity"
-                ],
-            },
-            {
-                "subject_reference": deepcopy(
-                    material["comparison_result_reference"]
-                ),
-                "role": "recorded pair Compare result",
-                "act_occurrence_identity": material[
-                    "compare_act_occurrence_identity"
-                ],
-            },
-        ],
     }
 
 
@@ -1668,9 +1650,6 @@ def _compare_result_material(
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
         ),
-        "participation_of_input_in_compare": deepcopy(
-            act.material["participation_of_input_in_compare"]
-        ),
         "finding": _comparison_finding(inputs),
         "unknown": list(binding.material["unknown"]),
         "act_occurrence_event_identity": act.identity,
@@ -1693,9 +1672,6 @@ def _recorded_compare_result_material(
         ],
         "applicability_of_input_to_compare": deepcopy(
             result["applicability_of_input_to_compare"]
-        ),
-        "participation_of_input_in_compare": deepcopy(
-            result["participation_of_input_in_compare"]
         ),
         "finding": deepcopy(result["finding"]),
         "unknown": list(result["unknown"]),
