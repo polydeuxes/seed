@@ -218,8 +218,6 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "exact_act",
         "determination_act_identity",
         "determination_act_occurrence_identity",
-        "responsibility",
-        "responsible_boundary",
         "subject_to_act_binding_reference",
         "applicability_result_reference",
         "direct_pair_position_result_reference",
@@ -355,7 +353,7 @@ def test_each_recorded_occurrence_refuses_its_corruption(
     ledger = EventLedger()
     recorded = _record(ledger)
     event = recorded[occurrence_coordinate]
-    event.material["responsibility"] = "changed responsibility"
+    event.material["unknown"] = ["changed coordinate"]
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         reader(ledger, event.identity)
 
@@ -660,7 +658,7 @@ def test_act_requires_intact_retained_assignment_during_duplicate_iterator():
     standing = _advance(ledger, standing, assignment)
     prior = deepcopy(standing)
     ledger.callback = lambda: assignment.material.__setitem__(
-        "responsibility", "changed responsibility"
+        "unknown", ["changed coordinate"]
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
@@ -737,7 +735,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
     recorded = _through_applicability(ledger, b"abcdef", 3)
     prior = deepcopy(recorded["standing"])
     ledger.callback = lambda: recorded["applicability"].material.__setitem__(
-        "responsibility", "changed responsibility"
+        "unknown", ["changed coordinate"]
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):

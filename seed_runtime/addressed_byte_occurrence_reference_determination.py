@@ -53,10 +53,6 @@ DETERMINATION_RESULT_KIND = (
 )
 
 BOOK_CLAUSE = "01.Source.D.2"
-RESPONSIBILITY = (
-    "each exact pair-occurrence position Assertion reference carrying one "
-    "addressed source-byte position-coordinate reference"
-)
 APPLICABILITY_ACT = "addressed byte occurrence reference Applicability"
 DETERMINATION_ACT = (
     "declared Measurement of exact pair-occurrence position Assertion "
@@ -372,8 +368,6 @@ def _determination_binding_material(
         ],
         "result_boundary_identity": identities["determination_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "direct_pair_position_result_reference": deepcopy(
             subject_reference["direct_pair_position_result_reference"]
         ),
@@ -423,8 +417,6 @@ def _applicability_binding_material(
         "addressed_act_identity": determination_act_identity,
         "result_boundary_identity": identities["applicability_result_identity"],
         "book_clause_identity": "01.Current.E.1",
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "direct_pair_position_result_reference": deepcopy(
             subject["direct_pair_position_result_reference"]
         ),
@@ -727,8 +719,6 @@ def _applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "subject_to_act_binding_reference": _binding_reference(
             binding,
             result_boundary_identity=binding.material[
@@ -988,8 +978,6 @@ def _applicability_result_material(
         "addressed_act_occurrence_identity": determination_binding.material[
             "determination_act_occurrence_identity"
         ],
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "subject_to_act_binding_reference": _binding_reference(
             applicability_binding,
             result_boundary_identity=applicability_binding.material[
@@ -1140,8 +1128,6 @@ def _recorded_applicability_result_material(
         "addressed_act_occurrence_identity": material[
             "addressed_act_occurrence_identity"
         ],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
@@ -1450,8 +1436,6 @@ def _determination_act_material(
             "determination_act_occurrence_identity"
         ],
         "act": DETERMINATION_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "subject_to_act_binding_reference": _binding_reference(
             binding,
             result_boundary_identity=binding.material[
@@ -1667,8 +1651,6 @@ def _determination_result_material(
         "determination_act_occurrence_identity": binding.material[
             "determination_act_occurrence_identity"
         ],
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "subject_to_act_binding_reference": _binding_reference(
             binding,
             result_boundary_identity=binding.material[
@@ -1709,8 +1691,6 @@ def _recorded_determination_result_material(
         "determination_act_occurrence_identity": material[
             "determination_act_occurrence_identity"
         ],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
         ),
