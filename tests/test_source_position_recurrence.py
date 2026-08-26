@@ -424,6 +424,44 @@ def test_changed_source_position_coordinate_is_refused():
         raise AssertionError("changed source-position coordinate was accepted")
 
 
+def test_changed_recurrence_finding_positions_are_refused():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="recurrence-finding-position-refusal",
+        exact=b"a+aa+a",
+    )
+    recording = record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    recurrence_result = _step_at(recording, 3).recurrence_result_occurrence
+    coordinate_measurements = record_corresponding_coordinate_material_measurements(
+        ledger,
+        recurrence_result_event_identity=recurrence_result.identity,
+        current_coordinates=recording.current_coordinates,
+    )
+    coordinate_result = coordinate_measurements.measurements[0].result_occurrence
+
+    for result, reader in (
+        (recurrence_result, get_recorded_source_position_recurrence),
+        (
+            coordinate_result,
+            get_recorded_corresponding_coordinate_material_measurement,
+        ),
+    ):
+        findings = result.material["coordinates"]["findings"]
+        exact_position = findings[0]["finding_position"]
+        findings[0]["finding_position"] = len(findings)
+        try:
+            reader(ledger, result.identity)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("changed recurrence finding position was accepted")
+        findings[0]["finding_position"] = exact_position
+
+
 def test_source_position_recording_reuses_validated_direct_coordinates(
     monkeypatch,
 ):
