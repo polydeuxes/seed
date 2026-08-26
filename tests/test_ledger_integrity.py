@@ -4,9 +4,8 @@ Neither is immutability. A `DROP TRIGGER` followed by a rewrite of both the row
 and its material identity defeats all of this, and these tests say so rather than letting
 the arrangement be read as tamper-proof storage.
 
-`06.Standing:16` names append-only records permissively, beside material
-representations. Nothing in active law requires append-only, so this
-establishes a storage property Seed chose, not one the Book demanded.
+Nothing in active law requires append-only, so this establishes a storage
+property Seed chose, not one the Book demanded.
 """
 
 from __future__ import annotations
@@ -512,7 +511,7 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     finally:
         ledger.close()
 
-    # Stored represents differ; standing does not.
+    # Stored representations differ; exact occurrence material does not.
     connection = sqlite3.connect(path)
     stored = {
         row[0]: row[1]

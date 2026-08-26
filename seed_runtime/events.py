@@ -18,9 +18,8 @@ from seed_runtime.event import Event, _decode_screened_event_material
 
 # What a ledger can say about a stored occurrence's integrity.
 #
-# `06.Standing:16` names append-only records permissively, among material
-# forms. Nothing in active law requires append-only, and
-# nothing here asserts history cannot revision: a `DROP TRIGGER` followed by a
+# Nothing in active law requires append-only, and nothing here asserts history
+# cannot revision: a `DROP TRIGGER` followed by a
 # rewrite of both row and material identity defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
@@ -585,8 +584,8 @@ class SQLiteEventLedger(EventLedger):
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
         #
-        # This table is not an occurrence. It records no Assertion and
-        # supports no standing; it is ledger mechanics, and the `events`
+        # This table is not an occurrence. It records no Assertion and carries
+        # no current coordinates; it is ledger mechanics, and the `events`
         # mutation refusal deliberately does not cover it.
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS identity_reservations (
@@ -941,7 +940,7 @@ class SQLiteEventLedger(EventLedger):
         `integrity_of` remains the separate integrity boundary.
 
         The signature-count inputs run measured why this is worth its own
-        read: one 300-occurrence material-acquisition result read costs 7.09 ms
+        read: one 300-occurrence material-result read costs 7.09 ms
         as Events and 0.25 ms as identities, because 902 bytes of JSON per
         occurrence are decoded and discarded by a caller that keeps only the
         identity.

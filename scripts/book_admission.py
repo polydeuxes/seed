@@ -52,7 +52,7 @@ WITNESS_ADDRESSES = BOOK / "witness_addresses.json"
 def witness_addresses() -> list[dict[str, str]]:
     """Return what this Witness addresses by which name.
 
-    The table states no Responsibility, Act, relation or coordinate. It lives
+    The table states no Act, relation or coordinate. It lives
     outside the Grammar so that no consumer of the Grammar can read an address
     for a coordinate, and so that the separation does not depend on each
     consumer knowing to skip a subtree.
