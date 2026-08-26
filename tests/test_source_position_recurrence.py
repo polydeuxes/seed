@@ -244,6 +244,13 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert len(length_three["new_compare_result_references"]) == 2
 
     target_recurrence = _step_at(recording, 3).recurrence_result_occurrence
+    target_recurrence_reading = get_recorded_source_position_recurrence(
+        ledger, target_recurrence.identity
+    )
+    assert tuple(
+        finding["finding_position"]
+        for finding in target_recurrence_reading["findings"]
+    ) == tuple(range(len(target_recurrence_reading["findings"])))
     group = _target_group(ledger, target_recurrence)
     assert "recurrence" in group
     assert group["count"] == 2
@@ -265,6 +272,9 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     )
     measurements = coordinate_measurements.measurements
     target_measurement = _measurement_for_group(ledger, measurements, group)
+    assert tuple(
+        finding["finding_position"] for finding in target_measurement["findings"]
+    ) == tuple(range(len(target_measurement["findings"])))
     assert all(
         measurement.result_occurrence.identity
         in coordinate_measurements.current_coordinates["measurement_occurrences"]

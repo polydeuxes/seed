@@ -1289,7 +1289,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
         grouped.setdefault(key, []).append(event)
         surfaces[key] = surface
     groups = []
-    for key in sorted(grouped):
+    for finding_position, key in enumerate(sorted(grouped)):
         productions = grouped[key]
         support = [_result_reference(event) for event in productions]
         subject = {
@@ -1301,6 +1301,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
             {"subject": subject, "support": support},
         )
         group = {
+            "finding_position": finding_position,
             "finding_reference": identity,
             "subject": subject,
             "support_result_references": support,
@@ -1657,6 +1658,7 @@ def _coordinate_findings(
                 {"subject": subject, "support": support},
             )
             finding = {
+                "finding_position": len(findings),
                 "finding_reference": identity,
                 "subject": subject,
                 "support": support,
