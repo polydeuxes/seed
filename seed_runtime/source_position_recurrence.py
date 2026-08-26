@@ -286,11 +286,11 @@ def _direct_coordinates(
     ledger: EventLedger,
     direct_result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[dict[str, Any], ...]:
     cache_key = ("direct_coordinates", direct_result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     coordinates = tuple(
         source_position_coordinate_references_of_recorded_position_measurement(
             ledger, direct_result_event_identity
@@ -313,8 +313,8 @@ def _direct_coordinates(
             != completeness_boundary
         ):
             raise ValueError("direct result carries no exact source positions")
-    if _validated is not None:
-        _validated[cache_key] = coordinates
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = coordinates
     return coordinates
 
 
@@ -944,11 +944,11 @@ def get_recorded_source_position_compare(
     ledger: EventLedger,
     result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
     cache_key = ("compare_result", result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     result = _recorded_occurrence(
         ledger,
         result_event_identity,
@@ -966,7 +966,7 @@ def get_recorded_source_position_compare(
         raise ValueError("source-position Compare carries no exact subject")
     direct_identity = subject.get("direct_position_result_occurrence")
     direct_coordinates = _direct_coordinates(
-        ledger, direct_identity, _validated=_validated
+        ledger, direct_identity, _exact_readings=_exact_readings
     )
     coordinates = subject.get("source_position_coordinates")
     compare_subject = subject.get("compare_subject")
@@ -1010,7 +1010,7 @@ def get_recorded_source_position_compare(
         prior = get_recorded_source_position_measurement(
             ledger,
             prior_reference.get("recorded_occurrence_reference"),
-            _validated=_validated,
+            _exact_readings=_exact_readings,
         )
         exact_prior = (
             prior_reference.get("result_reference") == prior["result_identity"]
@@ -1052,8 +1052,8 @@ def get_recorded_source_position_compare(
     ):
         raise ValueError("source-position Compare result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(result_coordinates)}
-    if _validated is not None:
-        _validated[cache_key] = reading
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = reading
     return reading
 
 
@@ -1075,11 +1075,11 @@ def _record_source_position_result(
     compare_results: tuple[Event, ...],
     newly_introduced_compare_results: tuple[Event, ...],
     prior_source_position_result: Event | None,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     readings = tuple(
         get_recorded_source_position_compare(
-            ledger, event.identity, _validated=_validated
+            ledger, event.identity, _exact_readings=_exact_readings
         )
         for event in compare_results
     )
@@ -1127,11 +1127,11 @@ def get_recorded_source_position_measurement(
     ledger: EventLedger,
     result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
     cache_key = ("source_position_result", result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     result = _recorded_occurrence(
         ledger,
         result_event_identity,
@@ -1147,7 +1147,7 @@ def get_recorded_source_position_measurement(
     direct_coordinates = _direct_coordinates(
         ledger,
         material.get("direct_position_result_occurrence"),
-        _validated=_validated,
+        _exact_readings=_exact_readings,
     )
     coordinates = material.get("source_position_coordinates")
     references = material.get("compare_result_references")
@@ -1177,7 +1177,7 @@ def get_recorded_source_position_measurement(
         reading = get_recorded_source_position_compare(
             ledger,
             reference.get("recorded_occurrence_reference"),
-            _validated=_validated,
+            _exact_readings=_exact_readings,
         )
         if reference.get("result_reference") != reading["result_identity"]:
             raise ValueError("source-position result carries no exact Compare reference")
@@ -1198,7 +1198,7 @@ def get_recorded_source_position_measurement(
         prior_material = get_recorded_source_position_measurement(
             ledger,
             prior_reference.get("recorded_occurrence_reference"),
-            _validated=_validated,
+            _exact_readings=_exact_readings,
         )
         if (
             prior_reference.get("result_reference") != prior_material["result_identity"]
@@ -1229,8 +1229,8 @@ def get_recorded_source_position_measurement(
     ):
         raise ValueError("source-position result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(material)}
-    if _validated is not None:
-        _validated[cache_key] = reading
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = reading
     return reading
 
 
@@ -1241,7 +1241,7 @@ def _source_position_results_at_boundary(
     coordinate_count: int,
     boundary: EventLedgerBoundary,
     locality_identity: str,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[Event, ...]:
     events = []
     for event in ledger.list(through=boundary):
@@ -1258,7 +1258,7 @@ def _source_position_results_at_boundary(
             and type(event.material.get("yield_relation_identity")) is str
         ):
             get_recorded_source_position_measurement(
-                ledger, event.identity, _validated=_validated
+                ledger, event.identity, _exact_readings=_exact_readings
             )
             events.append(event)
     return tuple(events)
@@ -1307,7 +1307,7 @@ def _record_recurrence_measurement(
     direct_result_event_identity: str,
     coordinate_count: int,
     locality_identity: str,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     boundary = ledger.append_boundary()
     source_position_results = _source_position_results_at_boundary(
@@ -1316,7 +1316,7 @@ def _record_recurrence_measurement(
         coordinate_count=coordinate_count,
         boundary=boundary,
         locality_identity=locality_identity,
-        _validated=_validated,
+        _exact_readings=_exact_readings,
     )
     if not source_position_results:
         raise ValueError("recurrence Measurement requires exact source-position results")
@@ -1349,11 +1349,11 @@ def get_recorded_source_position_recurrence(
     ledger: EventLedger,
     result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
     cache_key = ("recurrence_result", result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     result = _recorded_occurrence(
         ledger,
         result_event_identity,
@@ -1377,7 +1377,7 @@ def get_recorded_source_position_recurrence(
         coordinate_count=material.get("coordinate_count"),
         boundary=EventLedgerBoundary(boundary_identity),
         locality_identity=result.locality_identity,
-        _validated=_validated,
+        _exact_readings=_exact_readings,
     )
     expected_payload = {
         "direct_position_result_occurrence": material[
@@ -1409,8 +1409,8 @@ def get_recorded_source_position_recurrence(
     ):
         raise ValueError("source-position recurrence result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(material)}
-    if _validated is not None:
-        _validated[cache_key] = reading
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = reading
     return reading
 
 
@@ -1419,10 +1419,10 @@ def _extend_recurrent_source_positions(
     *,
     recurrence_result: Event,
     direct_coordinates: tuple[dict[str, Any], ...],
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> tuple[Event, ...]:
     recurrence = get_recorded_source_position_recurrence(
-        ledger, recurrence_result.identity, _validated=_validated
+        ledger, recurrence_result.identity, _exact_readings=_exact_readings
     )
     extended = []
     for finding in recurrence["findings"]:
@@ -1435,7 +1435,7 @@ def _extend_recurrent_source_positions(
                 message="recurrence carries no exact producing source-position result",
             )
             prior = get_recorded_source_position_measurement(
-                ledger, prior_event.identity, _validated=_validated
+                ledger, prior_event.identity, _exact_readings=_exact_readings
             )
             if reference["result_reference"] != prior["result_identity"]:
                 raise ValueError("recurrence carries no exact producing source-position result")
@@ -1474,7 +1474,7 @@ def _extend_recurrent_source_positions(
                     compare_results=(*prior_compare_events, *new_results),
                     newly_introduced_compare_results=new_results,
                     prior_source_position_result=prior_event,
-                    _validated=_validated,
+                    _exact_readings=_exact_readings,
                 )
             )
     return tuple(extended)
@@ -1489,9 +1489,9 @@ def _record_source_position_measurements(
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source-position recording requires an EventLedger")
-    validated: dict[tuple[str, str], Any] = {}
+    exact_readings: dict[tuple[str, str], Any] = {}
     direct_coordinates = _direct_coordinates(
-        ledger, direct_result_event_identity, _validated=validated
+        ledger, direct_result_event_identity, _exact_readings=exact_readings
     )
     locality_identity = direct_coordinates[0]["locality_identity"]
     current_coordinates = _require_current_measurement_subject(
@@ -1521,7 +1521,7 @@ def _record_source_position_measurements(
                 compare_results=(compare,),
                 newly_introduced_compare_results=(compare,),
                 prior_source_position_result=None,
-                _validated=validated,
+                _exact_readings=exact_readings,
             )
         )
     recurrence = _record_recurrence_measurement(
@@ -1529,7 +1529,7 @@ def _record_source_position_measurements(
         direct_result_event_identity=direct_result_event_identity,
         coordinate_count=2,
         locality_identity=locality_identity,
-        _validated=validated,
+        _exact_readings=exact_readings,
     )
     steps.append(
         SourcePositionMeasurementStep(2, tuple(minimal), recurrence, len(ledger.list()) - before)
@@ -1541,7 +1541,7 @@ def _record_source_position_measurements(
             ledger,
             recurrence_result=recurrence,
             direct_coordinates=direct_coordinates,
-            _validated=validated,
+            _exact_readings=exact_readings,
         )
         if not source_position_results:
             break
@@ -1551,7 +1551,7 @@ def _record_source_position_measurements(
             direct_result_event_identity=direct_result_event_identity,
             coordinate_count=coordinate_count,
             locality_identity=locality_identity,
-            _validated=validated,
+            _exact_readings=exact_readings,
         )
         steps.append(
             SourcePositionMeasurementStep(
@@ -1588,14 +1588,14 @@ def _coordinate_findings(
     ledger: EventLedger,
     recurrence_finding: dict[str, Any],
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> list[dict[str, Any]]:
     productions = []
     for reference in recurrence_finding["support_result_references"]:
         material = get_recorded_source_position_measurement(
             ledger,
             reference["recorded_occurrence_reference"],
-            _validated=_validated,
+            _exact_readings=_exact_readings,
         )
         if reference["result_reference"] != material["result_identity"]:
             raise ValueError("coordinate Measurement carries no exact production")
@@ -1671,9 +1671,9 @@ def _record_corresponding_coordinate_material_measurements(
         current_coordinates=current_coordinates,
     )
     locality_event_count = len(ledger.list_locality(locality_identity))
-    validated: dict[tuple[str, str], Any] = {}
+    exact_readings: dict[tuple[str, str], Any] = {}
     recurrence = get_recorded_source_position_recurrence(
-        ledger, recurrence_result_event_identity, _validated=validated
+        ledger, recurrence_result_event_identity, _exact_readings=exact_readings
     )
     recorded = []
     for finding in recurrence["findings"]:
@@ -1690,7 +1690,7 @@ def _record_corresponding_coordinate_material_measurements(
                 "completeness_boundary_reference"
             ],
             "findings": _coordinate_findings(
-                ledger, finding, _validated=validated
+                ledger, finding, _exact_readings=exact_readings
             ),
         }
         _act, result = _record_yielded_result(
@@ -1735,11 +1735,11 @@ def get_recorded_corresponding_coordinate_material_measurement(
     ledger: EventLedger,
     result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
     cache_key = ("coordinate_result", result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     result = _recorded_occurrence(
         ledger,
         result_event_identity,
@@ -1758,7 +1758,7 @@ def get_recorded_corresponding_coordinate_material_measurement(
     recurrence = get_recorded_source_position_recurrence(
         ledger,
         source_reference.get("recorded_occurrence_reference"),
-        _validated=_validated,
+        _exact_readings=_exact_readings,
     )
     if source_reference.get("result_reference") != recurrence["result_identity"]:
         raise ValueError("coordinate Measurement carries no exact recurrence result")
@@ -1782,7 +1782,7 @@ def get_recorded_corresponding_coordinate_material_measurement(
             "completeness_boundary_reference"
         ],
         "findings": _coordinate_findings(
-            ledger, finding, _validated=_validated
+            ledger, finding, _exact_readings=_exact_readings
         ),
     }
     carried_payload = {
@@ -1801,8 +1801,8 @@ def get_recorded_corresponding_coordinate_material_measurement(
     if carried_payload != payload or _coordinates(act.material).get("subject") != payload:
         raise ValueError("corresponding-coordinate Measurement result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(material)}
-    if _validated is not None:
-        _validated[cache_key] = reading
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = reading
     return reading
 
 
@@ -1997,7 +1997,7 @@ def _coordinate_measurements_for_recurrence(
     recurrence_event: Event,
     recurrence: dict[str, Any],
     current_coordinates: dict[str, Any],
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[int, tuple[Event, dict[str, Any]]]:
     recurrent_groups = {
         finding["finding_position"]: finding
@@ -2025,7 +2025,7 @@ def _coordinate_measurements_for_recurrence(
         if event.identity not in carried_measurements:
             raise ValueError("exact-material Measurement input is not current")
         measurement = get_recorded_corresponding_coordinate_material_measurement(
-            ledger, event.identity, _validated=_validated
+            ledger, event.identity, _exact_readings=_exact_readings
         )
         position = measurement["source_recurrence_finding_position"]
         if position not in recurrent_groups or position in found:
@@ -2053,16 +2053,16 @@ def _record_recurrent_result_material_measurements(
         measurement_result_event_identity=recurrence_event.identity,
         current_coordinates=current_coordinates,
     )
-    validated: dict[tuple[str, str], Any] = {}
+    exact_readings: dict[tuple[str, str], Any] = {}
     recurrence = get_recorded_source_position_recurrence(
-        ledger, recurrence_event.identity, _validated=validated
+        ledger, recurrence_event.identity, _exact_readings=exact_readings
     )
     coordinate_measurements = _coordinate_measurements_for_recurrence(
         ledger,
         recurrence_event=recurrence_event,
         recurrence=recurrence,
         current_coordinates=current_coordinates,
-        _validated=validated,
+        _exact_readings=exact_readings,
     )
     for event in ledger.list_locality(recurrence_event.locality_identity):
         coordinates = event.material.get("coordinates")
@@ -2146,11 +2146,11 @@ def get_recorded_recurrent_result_material_measurement(
     ledger: EventLedger,
     result_event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, Any]:
     cache_key = ("recurrent_result_material_result", result_event_identity)
-    if _validated is not None and cache_key in _validated:
-        return _validated[cache_key]
+    if _exact_readings is not None and cache_key in _exact_readings:
+        return _exact_readings[cache_key]
     result = ledger.get(
         _identity(result_event_identity, "exact-material Measurement requires one result")
     )
@@ -2228,8 +2228,8 @@ def get_recorded_recurrent_result_material_measurement(
     ):
         raise ValueError("exact-material Measurement result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(material)}
-    if _validated is not None:
-        _validated[cache_key] = reading
+    if _exact_readings is not None:
+        _exact_readings[cache_key] = reading
     return reading
 
 
@@ -2237,7 +2237,7 @@ def validate_source_position_recurrence_event(
     ledger: EventLedger,
     event_identity: str,
     *,
-    _validated: dict[tuple[str, str], Any] | None = None,
+    _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> Event:
     """Validate every occurrence exposed by the source-position proof road."""
 
@@ -2269,7 +2269,7 @@ def validate_source_position_recurrence_event(
         }
         reading = result_readings.get(exact_act)
         if reading is not None:
-            reading(ledger, event.identity, _validated=_validated)
+            reading(ledger, event.identity, _exact_readings=_exact_readings)
             return event
         if exact_act != COMPARE_APPLICABILITY_ACT:
             raise ValueError("source-position result carries no exact Act")
@@ -2290,7 +2290,7 @@ def validate_source_position_recurrence_event(
         direct = _direct_coordinates(
             ledger,
             subject.get("direct_position_result_occurrence"),
-            _validated=_validated,
+            _exact_readings=_exact_readings,
         )
         coordinates = subject.get("source_position_coordinates")
         compare_subject = subject.get("compare_subject")

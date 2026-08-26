@@ -462,7 +462,7 @@ def test_changed_recurrence_finding_positions_are_refused():
         findings[0]["finding_position"] = exact_position
 
 
-def test_source_position_recording_reuses_validated_direct_coordinates(
+def test_source_position_recording_reuses_exact_direct_coordinate_readings(
     monkeypatch,
 ):
     ledger = EventLedger()
@@ -495,7 +495,7 @@ def test_source_position_recording_reuses_validated_direct_coordinates(
 
     # The recording boundary and its bounded current coordinates advance each validate
     # the direct result. Sibling Compare/Measurement results reuse those exact
-    # validated coordinates instead of reconstructing all source occurrences.
+    # coordinate readings instead of reconstructing all source occurrences.
     assert calls == 2
 
 
@@ -553,16 +553,16 @@ def test_sqlite_restart_recovers_source_position_readers(tmp_path):
     measurement_identities = tuple(
         measurement.result_occurrence.identity for measurement in measurements
     )
-    validated = {}
+    exact_readings = {}
     expected_source_positions = get_recorded_source_position_measurement(
-        ledger, source_position_identity, _validated=validated
+        ledger, source_position_identity, _exact_readings=exact_readings
     )
     expected_recurrence = get_recorded_source_position_recurrence(
-        ledger, recurrence_identity, _validated=validated
+        ledger, recurrence_identity, _exact_readings=exact_readings
     )
     expected_measurements = tuple(
         get_recorded_corresponding_coordinate_material_measurement(
-            ledger, identity, _validated=validated
+            ledger, identity, _exact_readings=exact_readings
         )
         for identity in measurement_identities
     )
@@ -572,19 +572,19 @@ def test_sqlite_restart_recovers_source_position_readers(tmp_path):
 
     sqlite_ledger = SQLiteEventLedger(str(database))
     try:
-        validated = {}
+        exact_readings = {}
         assert get_recorded_source_position_measurement(
-            sqlite_ledger, source_position_identity, _validated=validated
+            sqlite_ledger, source_position_identity, _exact_readings=exact_readings
         ) == expected_source_positions
         assert (
             get_recorded_source_position_recurrence(
-                sqlite_ledger, recurrence_identity, _validated=validated
+                sqlite_ledger, recurrence_identity, _exact_readings=exact_readings
             )
             == expected_recurrence
         )
         assert tuple(
             get_recorded_corresponding_coordinate_material_measurement(
-                sqlite_ledger, identity, _validated=validated
+                sqlite_ledger, identity, _exact_readings=exact_readings
             )
             for identity in measurement_identities
         ) == expected_measurements
