@@ -1350,7 +1350,6 @@ def _applicability_result_material(
                     inputs.shared_position_coordinate_reference
                 ),
             },
-            "source_provenance": "exact recorded position Assertions",
         },
         "exact_act": APPLICABILITY_ACT,
         "addressed_act_identity": measurement_binding.material[
@@ -1795,7 +1794,6 @@ def _path_assertion(
         "dimensions": {
             "position": 0,
             "content": content,
-            "source_provenance": "exact recorded pair position Assertions",
         },
         "result": "ordered_relation_path",
         "assertion_subject": subject,
@@ -1820,7 +1818,6 @@ def _measurement_result_material(
         "dimensions": {
             "identity": binding.material["measurement_result_identity"],
             "content": "one exact ordered relation-path Assertion",
-            "source_provenance": "exact recorded pair position Assertions",
         },
         "exact_act": MEASUREMENT_ACT,
         "addressed_act_identity": binding.material["exact_act_identity"],
