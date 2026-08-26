@@ -13,7 +13,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     _record_yield_relation,
@@ -268,14 +267,16 @@ def record_locality_continuation_subject_to_act_binding(
             source_through_event_occurrence_identity
         ),
     )
-    destination_locality_identity = new_identity("standing_locality")
+    destination_locality_identity = ledger.mint_identity(
+        "locality_continuation_destination_locality"
+    )
     if ledger.has_locality(destination_locality_identity):
         raise LocalityContinuationError(
             "Locality continuation requires one fresh destination Locality"
         )
-    exact_act_identity = new_identity("standing_locality_continuation_act")
-    result_boundary_identity = new_identity(
-        "standing_locality_continuation_result_boundary"
+    exact_act_identity = ledger.mint_identity("locality_continuation_act")
+    result_boundary_identity = ledger.mint_identity(
+        "locality_continuation_result_boundary"
     )
     return ledger.append(
         LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -345,11 +346,11 @@ def record_locality_continuation_act_occurrence(
     source_reference = binding.material["subject_reference"]
     destination_locality_identity = binding.locality_identity
     continuation_act_identity = binding.material["exact_act_identity"]
-    act_occurrence_identity = new_identity(
-        "standing_locality_continuation_occurrence"
+    act_occurrence_identity = ledger.mint_identity(
+        "locality_continuation_act_occurrence"
     )
-    locality_relation_occurrence_identity = new_identity(
-        "standing_locality_continuation_relation_occurrence"
+    locality_relation_occurrence_identity = ledger.mint_identity(
+        "locality_continuation_relation_occurrence"
     )
     return ledger.append(
         LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,

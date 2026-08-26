@@ -661,11 +661,6 @@ class SQLiteEventLedger(EventLedger):
         "recurrent_result_exact_material_measurement_act",
         "recurrent_result_exact_material_measurement_act_occurrence",
         "recurrent_result_exact_material_measurement_result",
-        "standing_locality",
-        "standing_locality_continuation_act",
-        "standing_locality_continuation_occurrence",
-        "standing_locality_continuation_relation_occurrence",
-        "standing_locality_continuation_result_boundary",
     })
 
     def __init__(self, database_path: str) -> None:
