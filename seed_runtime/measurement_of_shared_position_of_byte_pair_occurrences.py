@@ -1418,7 +1418,7 @@ def record_shared_position_applicability_result(
             if coordinate != "act_occurrence_event_identity"
         },
         occurrence_boundary="shared_pair_position_applicability",
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
     )
@@ -1471,7 +1471,7 @@ def _require_yield(
     occurrence_boundary: str,
     result_kind: str,
     result_occurrence_coordinate: str = "act_occurrence_identity",
-    responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
+    yielding_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> None:
     yield_relation_identity = event.material.get("yield_relation_identity")
     yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
@@ -1481,8 +1481,8 @@ def _require_yield(
         yield_relation_event_identity=yield_relation_identity,
         act_occurrence_event_identity=act.identity,
         recorded_result_occurrence_coordinate=result_occurrence_coordinate,
-        responsible_act_occurrence_coordinate=(
-            responsible_act_occurrence_coordinate
+        yielding_act_occurrence_coordinate=(
+            yielding_act_occurrence_coordinate
         ),
     )
     if (
@@ -1536,7 +1536,7 @@ def _read_applicability_result(
         occurrence_boundary=APPLICABILITY_BOUNDARY,
         result_kind=APPLICABILITY_RESULT_KIND,
         result_occurrence_coordinate="applicability_act_occurrence_identity",
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
     )

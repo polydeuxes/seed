@@ -1173,7 +1173,7 @@ def test_ordered_path_and_recorded_findings_are_read_from_sqlite(tmp_path):
     durable.close()
 
 
-def test_carried_current_coordinates_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings():
+def test_advanced_current_coordinates_equal_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     prior = _current_coordinates(ledger)
     prior_count = len(ledger.list_locality(LOCALITY))
@@ -1181,10 +1181,10 @@ def test_carried_current_coordinates_equals_replay_for_comparison_of_ordered_rel
     later = tuple(
         event.identity for event in ledger.list_locality(LOCALITY)[prior_count:]
     )
-    carried = advance_operator_current_coordinates(
+    advanced = advance_operator_current_coordinates(
         ledger, later, locality_identity=LOCALITY, prior=prior
     )
-    assert carried == _current_coordinates(ledger)
+    assert advanced == _current_coordinates(ledger)
 
 
 
@@ -1195,6 +1195,6 @@ FIDELITY_DISTINCTIONS = {
     ),
     ("book_coordinates", "01.Source.D", "result"): (
         test_ordered_path_and_recorded_findings_are_read_from_sqlite,
-        test_carried_current_coordinates_equals_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+        test_advanced_current_coordinates_equal_replay_for_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     ),
 }

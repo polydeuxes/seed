@@ -1043,7 +1043,7 @@ def _record_applicability_yield_relation(
         occurrence_boundary=(
             "addressed_byte_occurrence_reference_determination_applicability"
         ),
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
     )
@@ -1067,7 +1067,7 @@ def _record_determination_yield_relation(
         result_identity=material["result_identity"],
         result_content=material,
         occurrence_boundary="addressed_byte_occurrence_reference_determination",
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "determination_act_occurrence_identity"
         ),
     )
@@ -1273,7 +1273,7 @@ def _require_yield(
             yield_relation_event_identity=yield_relation_identity,
             act_occurrence_event_identity=act.identity,
             recorded_result_occurrence_coordinate=occurrence_coordinate,
-            responsible_act_occurrence_coordinate=occurrence_coordinate,
+            yielding_act_occurrence_coordinate=occurrence_coordinate,
         )
     except (TypeError, ValueError):
         requirements = {}

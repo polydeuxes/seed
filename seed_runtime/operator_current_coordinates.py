@@ -1944,7 +1944,7 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
             yield_relation_event_identity=yield_relation_identity,
             act_occurrence_event_identity=act_occurrence.identity,
             recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
-            responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
+            yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
         )
         ledger.occurrences_in_append_order(
             (

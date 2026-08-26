@@ -1577,7 +1577,7 @@ def _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appl
             if key != "act_occurrence_identity"
         },
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
     )
@@ -1603,7 +1603,7 @@ def _read_yielded(
 ) -> Event:
     event = _event(ledger, event_identity, kind=kind, message="yielded result is absent")
     yield_relation_identity = event.material.get("yield_relation_identity")
-    carried = {
+    result_coordinates = {
         key: value
         for key, value in event.material.items()
         if key != "yield_relation_identity"
@@ -1615,11 +1615,11 @@ def _read_yielded(
         yield_relation_event_identity=yield_relation_identity,
         act_occurrence_event_identity=act.identity,
         recorded_result_occurrence_coordinate=occurrence_coordinate,
-        responsible_act_occurrence_coordinate=occurrence_coordinate,
+        yielding_act_occurrence_coordinate=occurrence_coordinate,
     )
     if (
         event.locality_identity != act.locality_identity
-        or carried != expected
+        or result_coordinates != expected
         or yield_relation is None
         or yield_relation.material.get("occurrence_boundary") != occurrence_boundary
         or yield_relation.material.get("result_kind") != result_name
@@ -2029,7 +2029,7 @@ def recorded_distinction_pins_from_current_coordinates(
     locality_identity: str,
     current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedDistinctionPin, ...]:
-    """Read every exact finding-reference branch from carried results."""
+    """Read every exact finding-reference branch from recorded results."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recorded distinction pins require an EventLedger")

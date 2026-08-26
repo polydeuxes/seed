@@ -684,7 +684,7 @@ def _read_yielded(
         yield_relation_event_identity=yield_relation_identity,
         act_occurrence_event_identity=act.identity,
         recorded_result_occurrence_coordinate=occurrence_coordinate,
-        responsible_act_occurrence_coordinate=occurrence_coordinate,
+        yielding_act_occurrence_coordinate=occurrence_coordinate,
     )
     if (
         event.locality_identity != act.locality_identity
@@ -916,7 +916,7 @@ def _yield_result(
             if key != "act_occurrence_identity"
         },
         occurrence_boundary=occurrence_boundary,
-        responsible_act_occurrence_coordinate=occurrence_coordinate,
+        yielding_act_occurrence_coordinate=occurrence_coordinate,
     )
 
 

@@ -152,7 +152,7 @@ def _require_exact_result_yield(
         yield_relation_event_identity=yield_relation.identity,
         act_occurrence_event_identity=act_occurrence.identity,
         recorded_result_occurrence_coordinate=occurrence_coordinate,
-        responsible_act_occurrence_coordinate=occurrence_coordinate,
+        yielding_act_occurrence_coordinate=occurrence_coordinate,
     )
     if not all(requirements.values()):
         raise ByteMeasurementError(
@@ -1333,7 +1333,7 @@ def _append_assertion_locality_movement_result(
         result_identity=binding.material["movement_result_identity"],
         result_content=result_material,
         occurrence_boundary="assertion_locality_movement",
-        responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
+        yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
     _require_exact_movement_binding_and_source(ledger, binding)
@@ -1774,7 +1774,7 @@ def _validate_moved_byte_assertion(
                 "act_occurrence_event_identity"
             ),
         recorded_result_occurrence_coordinate="movement_act_occurrence_identity",
-        responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
+        yielding_act_occurrence_coordinate="movement_act_occurrence_identity",
     )
     yield_relation = ledger.get(
         movement.material.get("yield_relation_identity")
@@ -3696,7 +3696,7 @@ def _require_exact_pair_applicability_result_event(
             recorded_result_occurrence_coordinate=(
                 "applicability_act_occurrence_identity"
             ),
-            responsible_act_occurrence_coordinate=(
+            yielding_act_occurrence_coordinate=(
                 "applicability_act_occurrence_identity"
             ),
         )
@@ -3768,7 +3768,7 @@ def _record_pair_input_applicability_result_from_carried_act(
         result_identity=binding.material["applicability_result_identity"],
         result_content=result_material,
         occurrence_boundary="byte_pair_applicability",
-        responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
+        yielding_act_occurrence_coordinate="applicability_act_occurrence_identity",
     )
     if (
         ledger.get(yield_relation.identity) != yield_relation

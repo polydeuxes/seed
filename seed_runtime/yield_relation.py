@@ -135,7 +135,7 @@ def read_requirements_of_yield_relation(
     yield_relation_event_identity: str | None,
     act_occurrence_event_identity: str | None,
     recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
-    responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
+    yielding_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> dict[str, bool]:
     """Read the three witness-grammar requirements of one exact Yield relation.
 
@@ -177,8 +177,8 @@ def read_requirements_of_yield_relation(
         recorded_result_occurrence_coordinate
     ):
         raise TypeError("the event occurrence coordinate must be exact")
-    if not isinstance(responsible_act_occurrence_coordinate, str) or not (
-        responsible_act_occurrence_coordinate
+    if not isinstance(yielding_act_occurrence_coordinate, str) or not (
+        yielding_act_occurrence_coordinate
     ):
         raise TypeError("the responsible-Act occurrence coordinate must be exact")
 
@@ -192,7 +192,7 @@ def read_requirements_of_yield_relation(
     if act_occurrence is not None:
         same_occurrence = same_occurrence and act_occurrence_identity_of_recorded_result == (
             act_occurrence.material.get(
-                responsible_act_occurrence_coordinate
+                yielding_act_occurrence_coordinate
             )
         )
     else:
@@ -283,7 +283,7 @@ def _record_yield_relation(
     result_identity: str,
     result_content: dict[str, Any],
     occurrence_boundary: str,
-    responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
+    yielding_act_occurrence_coordinate: str = "act_occurrence_identity",
     coordinates_of_recorded_result: dict[str, tuple[str, ...]] | None = None,
     result_exact_material: bytes | None = None,
 ) -> Event:
@@ -297,14 +297,14 @@ def _record_yield_relation(
     ):
         raise ValueError("Yield requires one exact Act occurrence")
     if (
-        not isinstance(responsible_act_occurrence_coordinate, str)
-        or not responsible_act_occurrence_coordinate
+        not isinstance(yielding_act_occurrence_coordinate, str)
+        or not yielding_act_occurrence_coordinate
     ):
         raise ValueError("Yield requires one exact Act occurrence coordinate")
     act_occurrence = ledger.get(act_occurrence_event_identity)
     if (
         act_occurrence is None
-        or act_occurrence.material.get(responsible_act_occurrence_coordinate)
+        or act_occurrence.material.get(yielding_act_occurrence_coordinate)
         != act_occurrence_identity
         or act_occurrence.material.get("act") != exact_act
         or ledger.integrity_of(act_occurrence_event_identity) == CORRUPTED

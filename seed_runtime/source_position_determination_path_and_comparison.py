@@ -175,7 +175,7 @@ def _record_shared_path(
             if coordinate != "act_occurrence_identity"
         },
         occurrence_boundary="shared_pair_position_applicability",
-        responsible_act_occurrence_coordinate=(
+        yielding_act_occurrence_coordinate=(
             "applicability_act_occurrence_identity"
         ),
     )
