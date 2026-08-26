@@ -2764,7 +2764,10 @@ def _carry_pair_measurement_act_into_current_coordinates(
         event,
         binding=binding,
         applicability_binding=_pair_applicability_binding_of_result(
-            ledger, applicability_event, source=source
+            ledger,
+            applicability_event,
+            source=source,
+            prior_coordinates=current_coordinates,
         ),
         source=source,
         applicability_event=applicability_event,
@@ -2799,6 +2802,7 @@ def _carry_pair_measurement_result_into_current_coordinates(
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
+        prior_coordinates=current_coordinates,
     )
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,

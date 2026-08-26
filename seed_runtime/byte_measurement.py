@@ -4131,6 +4131,7 @@ def _record_pair_measurement_act_from_carried_applicability(
             applicability_reference.get("recorded_occurrence_identity")
             if type(applicability_reference) is dict
             else None,
+            prior_coordinates=current_coordinates,
         )
     )
     if applicability_source.reference != source.reference:
@@ -4304,7 +4305,10 @@ def _record_pair_measurement_result_from_carried_act(
     current_coordinates: dict[str, Any],
 ) -> Event:
     applicability_binding = _pair_applicability_binding_of_result(
-        ledger, applicability_event, source=source
+        ledger,
+        applicability_event,
+        source=source,
+        prior_coordinates=current_coordinates,
     )
     _require_exact_pair_measurement_act_event(
         ledger,
@@ -4418,9 +4422,13 @@ def _require_exact_pair_measurement_result_event(
     source: RecordedByteAssertion,
     applicability_event: Event,
     applicability_act_occurrence: Event,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> None:
     applicability_binding = _pair_applicability_binding_of_result(
-        ledger, applicability_event, source=source
+        ledger,
+        applicability_event,
+        source=source,
+        prior_coordinates=prior_coordinates,
     )
     _require_exact_pair_measurement_act_event(
         ledger,

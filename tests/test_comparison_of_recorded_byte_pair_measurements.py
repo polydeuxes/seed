@@ -731,14 +731,14 @@ def test_console_addresses_the_latest_carried_pair_after_a_compare_result():
 
 
 @pytest.mark.parametrize(
-    ("exact_material", "exact_ab_count", "has_recurrence"),
+    ("exact_material", "exact_pair", "exact_pair_count", "has_recurrence"),
     (
-        (b"ab", 1, False),
-        (b"abxxab", 2, True),
+        (b"ab", b"ab", 1, False),
+        (b"aaa", b"aa", 2, True),
     ),
 )
 def test_first_exact_material_records_pair_counts(
-    exact_material, exact_ab_count, has_recurrence
+    exact_material, exact_pair, exact_pair_count, has_recurrence
 ):
     ledger = EventLedger()
 
@@ -757,18 +757,18 @@ def test_first_exact_material_records_pair_counts(
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurements[0].identity
     )
-    ab_assertions = tuple(
+    pair_assertions = tuple(
         assertion
         for assertion in assertions or ()
-        if assertion.content == (ord("a"), ord("b"))
+        if assertion.content == tuple(exact_pair)
     )
     count_assertion = next(
-        assertion for assertion in ab_assertions if assertion.result == "count"
+        assertion for assertion in pair_assertions if assertion.result == "count"
     )
     assert (
         count_assertion.material["dimensions"]["content"]["count"]
-        == exact_ab_count
+        == exact_pair_count
     )
     assert any(
-        assertion.result == "recurrence" for assertion in ab_assertions
+        assertion.result == "recurrence" for assertion in pair_assertions
     ) is has_recurrence
