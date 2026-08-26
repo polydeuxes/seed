@@ -374,7 +374,7 @@ class EventLedger:
 
         The occurrence identity remains the caller's address.  This returns
         the ledger's already-derived prefix identity at that exact occurrence;
-        it does not mint another boundary or consult the moving tip.
+        it does not mint another boundary or consult the current append boundary.
         """
 
         if type(event_identity) is not str or not event_identity:

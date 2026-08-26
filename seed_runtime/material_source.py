@@ -21,7 +21,7 @@ def _append_exact_material_result_occurrence(
     *,
     result_event: Event,
 ) -> Event:
-    """Append family-built material only after its exact prior Act and Yield."""
+    """Append source-built material only after its exact prior Act and Yield."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("exact material result requires one EventLedger")

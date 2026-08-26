@@ -288,7 +288,7 @@ def test_a_schema_without_occurrence_material_identity_is_refused(path, rows):
     supported path on which a durable occurrence carried no integrity. A later
     representation refused populated pre-material identity stores but migrated
     empty ones, which meant a new database was created by running a
-    migration over the very shape being rejected.
+    migration over the exact schema being rejected.
     """
     _incomplete_store(path, rows=rows)
     with pytest.raises(LedgerIntegrityError, match="current occurrence fields"):
@@ -350,7 +350,7 @@ def test_no_durable_occurrence_is_ever_unverifiable(ledger):
 
 
 def test_an_in_memory_ledger_reports_unverifiable():
-    """Objects, not stored bytes — the one storage shape that cannot verify."""
+    """Objects, not stored bytes — the one storage representation that cannot verify."""
     led = EventLedger()
     assert led.integrity_of(led.append("k", {"a": 1}).identity) == UNVERIFIABLE
 

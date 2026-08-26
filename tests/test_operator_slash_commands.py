@@ -75,12 +75,12 @@ def test_eof_ends_input_without_establishing_a_material_result():
     assert _acquired_bytes(ledger) == []
 
 
-def test_slash_frame_invokes_the_exact_registered_implementation_function():
+def test_slash_frame_invokes_the_exact_registered_witness_function():
     received = []
 
     def inspect(addressed_command):
         received.append(addressed_command)
-        return {"return shape is not constrained": object()}
+        return {"returned material is not constrained": object()}
 
     ledger = _run(b"/inspect \xff\x00\n", handlers={b"inspect": inspect})
 
