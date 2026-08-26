@@ -169,7 +169,6 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
             "dimensions",
             "result",
             "assertion_subject",
-            "input_support",
             "conflicts",
             "unknown",
         }

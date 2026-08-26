@@ -1097,15 +1097,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "input_support": {
-                    "assertion_references": [
-                        finding.pair_reference.assertion_reference
-                    ],
-                    "occurrence_references": [
-                        finding.source_material_result_occurrence_identity
-                    ],
-                    "local_assertion_references": [],
-                },
                 "conflicts": "Unknown",
                 "unknown": [],
             }
