@@ -925,7 +925,6 @@ def test_command_handler_receives_no_constitutional_write_capability():
     names = {field.name for field in fields(AddressedOperatorCommand)}
     assert "ledger" not in names
     assert names == {
-        "command_identity",
         "locality_identity",
         "addressed_through_event_occurrence_identity",
         "frame",

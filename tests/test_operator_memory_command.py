@@ -37,7 +37,6 @@ def _skip_unrelated_measurement_work(monkeypatch):
 
 def _command(exact_bytes: bytes, arguments: bytes = b""):
     return AddressedOperatorCommand(
-        command_identity="command",
         locality_identity="source",
         addressed_through_event_occurrence_identity="boundary",
         frame=OperatorCommandFrame(

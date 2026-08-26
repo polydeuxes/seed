@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
-from seed_runtime.identities import new_identity
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 
 
@@ -24,7 +23,6 @@ class OperatorCommandFrame:
 
 @dataclass(frozen=True)
 class AddressedOperatorCommand:
-    command_identity: str
     locality_identity: str
     addressed_through_event_occurrence_identity: str
     frame: OperatorCommandFrame
@@ -85,9 +83,7 @@ def run_operator_command(
     ):
         raise OperatorCommandError("command handlers require exact non-empty byte names")
 
-    command_identity = new_identity("operator_command")
     addressed_command = AddressedOperatorCommand(
-        command_identity=command_identity,
         locality_identity=locality_identity,
         addressed_through_event_occurrence_identity=(
             addressed_through_event_occurrence_identity

@@ -31,7 +31,6 @@ from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 def _command(locality_identity: str, boundary_identity: str) -> AddressedOperatorCommand:
     return AddressedOperatorCommand(
-        command_identity="fixture-command",
         locality_identity=locality_identity,
         addressed_through_event_occurrence_identity=boundary_identity,
         frame=OperatorCommandFrame(
@@ -170,7 +169,6 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
 @pytest.mark.parametrize("exact", (b"/checkpoint x\n", b"/checkpoint \n"))
 def test_checkpoint_operator_shorthand_refuses_payload(exact):
     command = AddressedOperatorCommand(
-        command_identity="command",
         locality_identity="source",
         addressed_through_event_occurrence_identity="boundary",
         frame=OperatorCommandFrame(

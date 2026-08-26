@@ -37,7 +37,6 @@ from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 def _command(exact_bytes=b"/checkout\n", arguments=b""):
     return AddressedOperatorCommand(
-        command_identity="command",
         locality_identity="source",
         addressed_through_event_occurrence_identity="current_coordinates-boundary",
         frame=OperatorCommandFrame(
