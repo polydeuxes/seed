@@ -2051,13 +2051,13 @@ def _byte_measurement_source_material(
     return tuple(source_material)
 
 
-def _byte_measurement_binding_reference(assignment: Event) -> dict[str, Any]:
+def _byte_measurement_binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "exact_act_identity": assignment.material["exact_act_identity"],
-        "subject_reference": deepcopy(assignment.material["subject_reference"]),
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
@@ -2373,7 +2373,7 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
     """Record one binding through an exact earlier occurrence."""
 
     localities = tuple(dict.fromkeys(source_localities))
-    through_event_occurrence_identity, responsible_source_material = (
+    through_event_occurrence_identity, through_occurrence_source_material = (
         _require_exact_byte_measurement_through_occurrence(
             ledger,
             source_localities=localities,
@@ -2390,7 +2390,7 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
     )
     if (
         current_localities != localities
-        or current_source_material != responsible_source_material
+        or current_source_material != through_occurrence_source_material
     ):
         raise ByteMeasurementError(
             "byte Measurement source material changed after its through-occurrence boundary"
