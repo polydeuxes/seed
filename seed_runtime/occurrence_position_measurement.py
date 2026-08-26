@@ -7,7 +7,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.identities import new_identity
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     _record_yield_relation,
@@ -452,13 +451,13 @@ def _record_occurrence_position_measurement_subject_to_act_binding(
             "occurrence position Measurement requires exact current coordinates"
         )
     identities = {
-        "measurement_act_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
             "occurrence_position_measurement_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "occurrence_position_measurement_occurrence"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "occurrence_position_measurement_result"
         ),
     }
