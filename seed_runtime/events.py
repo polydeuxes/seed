@@ -572,8 +572,6 @@ class SQLiteEventLedger(EventLedger):
         "occurrence_position_measurement_assignment_subject",
         "occurrence_position_measurement_occurrence",
         "occurrence_position_measurement_result",
-        "addressed_byte_occurrence_reference_assignment",
-        "addressed_byte_occurrence_reference_assignment_subject",
         "addressed_byte_occurrence_reference_applicability_act",
         "addressed_byte_occurrence_reference_applicability_act_occurrence",
         "addressed_byte_occurrence_reference_applicability_result",
