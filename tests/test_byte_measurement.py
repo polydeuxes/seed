@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 
-import seed_runtime.operator_locality_standing as operator_standing_module
+import seed_runtime.operator_current_coordinates as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -46,14 +46,14 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _carry_assertion_locality_movement_act_into_standing,
     _carry_assertion_locality_movement_binding_into_current_coordinates,
     _carry_assertion_locality_movement_result_into_standing,
     _carry_byte_measurement_binding_into_current_coordinates,
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
-    read_operator_locality_standing_through,
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
+    read_operator_current_coordinates_through,
 )
 from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 from seed_runtime.material_source import (
@@ -86,14 +86,14 @@ def _record_byte_measurement(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
@@ -110,14 +110,14 @@ def _record_byte_measurement_binding_and_act(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
@@ -197,10 +197,10 @@ def _movement_source(ledger):
 def _movement_carry_phase(ledger, phase):
     source_result, source = _movement_source(ledger)
     source_event = ledger.get(source.recorded_occurrence_identity)
-    source_standing = read_operator_locality_standing(
+    source_standing = read_operator_current_coordinates(
         ledger, locality_identity=source_result.locality_identity
     )
-    destination_standing = read_operator_locality_standing(
+    destination_standing = read_operator_current_coordinates(
         ledger, locality_identity="movement-carry"
     )
     assignment = _record_movement_binding_from_current_coordinates(
@@ -344,11 +344,11 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
 
@@ -391,7 +391,7 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
 
 def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
     ledger = _ledger(b"a\n")
-    stale_coordinates = read_operator_locality_standing(
+    stale_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     assignment = record_byte_measurement_subject_to_act_binding(
@@ -401,7 +401,7 @@ def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
         current_coordinates=stale_coordinates,
     )
     shaped = deepcopy(
-        read_operator_locality_standing(ledger, locality_identity="measurement")
+        read_operator_current_coordinates(ledger, locality_identity="measurement")
     )
     shaped["subject_to_act_binding_occurrences"] = {
         "same-shaped-assignment": None
@@ -435,7 +435,7 @@ def test_binding_read_refuses_corrupted_unrelated_prior_coordinate_carrier():
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
@@ -466,12 +466,12 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
     original_read_through = (
-        coordinates_module.read_operator_locality_standing_through
+        coordinates_module.read_operator_current_coordinates_through
     )
 
     def refuse_nested_replay(*_args, **_kwargs):
@@ -479,10 +479,10 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
 
     monkeypatch.setattr(
         coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         refuse_nested_replay,
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     assert current_coordinates["measurement_occurrences"][first.identity]
@@ -492,7 +492,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
 
     monkeypatch.setattr(
         coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         original_read_through,
     )
     assert get_byte_measurement_subject_to_act_binding(
@@ -504,7 +504,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
 
 
 def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _operator_standing_replay_validation,
         _set_operator_standing_validation_context,
     )
@@ -525,11 +525,11 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
-    exact = read_operator_locality_standing(
+    exact = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     copied_measurements = deepcopy(exact["measurement_occurrences"])
@@ -577,7 +577,7 @@ def test_binding_act_and_result_replay_across_distinct_sqlite_restarts(tmp_path)
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
@@ -590,7 +590,7 @@ def test_binding_act_and_result_replay_across_distinct_sqlite_restarts(tmp_path)
     act = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="measurement"
         ),
     )
@@ -639,7 +639,7 @@ def test_console_exact_byte_same_call_path_uses_carried_current_coordinates(
 
 def test_call_local_binding_carry_requires_the_exact_binding_at_tip():
     ledger = _ledger(b"a\n")
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     prior_boundary = current_coordinates["through_event_occurrence_identity"]
@@ -672,7 +672,7 @@ def test_call_local_result_requires_the_exact_act_at_tip():
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     _record_operator_material_source(
@@ -702,7 +702,7 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
         source_localities=("source",),
         recording_locality_identity="measurement",
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
     original = byte_measurement._material_result_bytes
@@ -1656,7 +1656,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         applicability.material["act_occurrence_event_identity"]
     )
     measurement_act = ledger.get(result.material["act_occurrence_event_identity"])
-    standing = read_operator_locality_standing_through(
+    standing = read_operator_current_coordinates_through(
         ledger,
         locality_identity="measurement",
         through_event_occurrence_identity=assignment.identity,
@@ -1729,7 +1729,7 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
 
 def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts():
     from seed_runtime import byte_measurement
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _carry_pair_applicability_act_into_standing,
         _carry_pair_applicability_binding_into_standing,
         _carry_pair_applicability_result_into_standing,
@@ -1744,7 +1744,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         source_measurement_event_identity=source_event.identity,
         measurement_locality_identity="byte-measurement",
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="byte-measurement"
     )
     boundary = byte_measurement._require_carried_pair_measurement_standing_at_tip(
@@ -2014,7 +2014,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     assignment = get_assertion_locality_movement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
 
@@ -2045,10 +2045,10 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_result.locality_identity
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
@@ -2063,7 +2063,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
             )
         ),
     }
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
 
@@ -2079,7 +2079,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
 def test_movement_assignment_refuses_stale_or_shaped_source_standing():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    stale = read_operator_locality_standing(
+    stale = read_operator_current_coordinates(
         ledger, locality_identity=source_result.locality_identity
     )
     shaped = deepcopy(stale)
@@ -2092,7 +2092,7 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
         exact_bytes=b"later",
         source_boundary="after source Standing",
     )
-    destination = read_operator_locality_standing(
+    destination = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
 
@@ -2110,20 +2110,20 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
 def test_movement_act_requires_current_destination_standing_carrying_assignment():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    stale_destination = read_operator_locality_standing(
+    stale_destination = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_result.locality_identity
         ),
         destination_current_coordinates=stale_destination,
     )
     shaped = deepcopy(
-        read_operator_locality_standing(ledger, locality_identity="movement")
+        read_operator_current_coordinates(ledger, locality_identity="movement")
     )
     shaped["subject_to_act_binding_occurrences"] = {
         "same-shaped-assignment": None
@@ -2147,14 +2147,14 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_result.locality_identity
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     act = record_assertion_locality_movement_act_occurrence(
@@ -2166,7 +2166,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         record_assertion_locality_movement_act_occurrence(
             ledger,
             subject_to_act_binding_event_identity=assignment.identity,
-            current_coordinates=read_operator_locality_standing(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="movement"
             ),
         )
@@ -2187,14 +2187,14 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_result.locality_identity
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
-    stale = read_operator_locality_standing(
+    stale = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     _record_operator_material_source(
@@ -2236,10 +2236,10 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="source-measurement"
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
@@ -2252,7 +2252,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
@@ -2293,10 +2293,10 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="source-measurement"
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
     )
@@ -2336,25 +2336,25 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
 def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    prior = read_operator_locality_standing(
+    prior = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_result.locality_identity
         ),
         destination_current_coordinates=deepcopy(prior),
     )
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (assignment.identity,),
         locality_identity="movement",
         prior=prior,
     )
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     act = record_assertion_locality_movement_act_occurrence(
@@ -2365,7 +2365,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     movement = record_assertion_locality_movement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (
             act.identity,
@@ -2375,7 +2375,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
         locality_identity="movement",
         prior=carried,
     )
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
 
@@ -2405,7 +2405,7 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
         sources=sources,
         destination_locality="movement-batch",
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="movement-batch"
     )
     movements = tuple(
@@ -2512,7 +2512,7 @@ def test_movement_batch_exact_carry_equals_public_replay():
 
     carried, exact = _carry_movement_phase(ledger, state)
 
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         ledger, locality_identity="movement-carry"
     )
     assert exact == _validate_moved_byte_assertion(
@@ -2524,7 +2524,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
     tmp_path, monkeypatch
 ):
     import seed_runtime.byte_measurement as byte_measurement_module
-    import seed_runtime.operator_locality_standing as standing_module
+    import seed_runtime.operator_current_coordinates as standing_module
 
     path = tmp_path / "movement-batch-carry.sqlite"
     ledger = SQLiteEventLedger(path)
@@ -2576,7 +2576,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
             _validate_moved_byte_assertion(reopened, identity)
             for identity in movement_identities
         ) == moved
-        assert read_operator_locality_standing(
+        assert read_operator_current_coordinates(
             reopened, locality_identity="movement-batch"
         )["through_event_occurrence_identity"] == movement_identities[-1]
     finally:

@@ -855,9 +855,9 @@ def _require_current_movement_source_coordinates(
     source_event: Event,
     current_coordinates: dict[str, Any],
 ) -> str:
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity=source_event.locality_identity
     )
     boundary = current_coordinates.get("through_event_occurrence_identity")
@@ -880,9 +880,9 @@ def _require_current_movement_destination_coordinates(
     current_coordinates: dict[str, Any],
     binding_identity: str | None = None,
 ) -> str | None:
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity=destination_locality
     )
     boundary = current_coordinates.get("through_event_occurrence_identity")
@@ -1112,18 +1112,18 @@ def _read_assertion_locality_movement_subject_to_act_binding(
         raise ByteMeasurementError(
             "Assertion movement binding coordinates are not exact"
         )
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing_through,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates_through,
     )
 
     try:
-        source_coordinates = read_operator_locality_standing_through(
+        source_coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=source_event.locality_identity,
             through_event_occurrence_identity=source_boundary,
         )
         if prior_destination_coordinates is None:
-            prior_destination_coordinates = read_operator_locality_standing_through(
+            prior_destination_coordinates = read_operator_current_coordinates_through(
                 ledger,
                 locality_identity=binding.locality_identity,
                 through_event_occurrence_identity=destination_boundary,
@@ -1464,23 +1464,23 @@ def _move_byte_assertion_to_locality(
         raise ByteMeasurementError("Assertion locality movement requires its source")
     if source_event.locality_identity == destination_locality:
         return source
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
     binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality=destination_locality,
-        source_current_coordinates=read_operator_locality_standing(
+        source_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=source_event.locality_identity
         ),
-        destination_current_coordinates=read_operator_locality_standing(
+        destination_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=destination_locality
         ),
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=destination_locality
         ),
     )
@@ -1523,20 +1523,20 @@ def _move_assertion_reference_to_locality(
         )
     if source_event.locality_identity == destination_locality:
         raise ByteMeasurementError("same-Locality Assertion requires no movement")
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _carry_assertion_locality_movement_act_into_standing,
         _carry_assertion_locality_movement_binding_into_current_coordinates,
         _carry_assertion_locality_movement_result_into_standing,
-        read_operator_locality_standing,
+        read_operator_current_coordinates,
     )
 
-    source_coordinates = read_operator_locality_standing(
+    source_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=source_event.locality_identity
     )
     _require_current_movement_source_coordinates(
         ledger, source_event=source_event, current_coordinates=source_coordinates
     )
-    destination_coordinates = read_operator_locality_standing(
+    destination_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=destination_locality
     )
     _require_current_movement_destination_coordinates(
@@ -1686,20 +1686,20 @@ def move_recorded_byte_assertions_to_locality(
         raise ByteMeasurementError(
             "bounded Assertion movement requires each exact source Assertion"
         )
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _carry_assertion_locality_movement_act_into_standing,
         _carry_assertion_locality_movement_binding_into_current_coordinates,
         _carry_assertion_locality_movement_result_into_standing,
-        read_operator_locality_standing,
+        read_operator_current_coordinates,
     )
 
-    source_coordinates = read_operator_locality_standing(
+    source_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=source_event.locality_identity
     )
     _require_current_movement_source_coordinates(
         ledger, source_event=source_event, current_coordinates=source_coordinates
     )
-    destination_coordinates = read_operator_locality_standing(
+    destination_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=destination_locality
     )
     _require_current_movement_destination_coordinates(
@@ -2141,11 +2141,11 @@ def _require_current_byte_measurement_coordinates(
         raise ByteMeasurementError(
             "byte Measurement requires exact current Locality coordinates"
         )
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates,
     )
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity=recording_locality_identity
     )
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
@@ -2515,9 +2515,9 @@ def _read_byte_measurement_subject_to_act_binding(
             "byte Measurement subject-to-Act binding coordinates are not exact"
         )
     if prior_coordinates is None:
-        from seed_runtime.operator_locality_standing import (
+        from seed_runtime.operator_current_coordinates import (
             _operator_standing_validation_context,
-            read_operator_locality_standing_through,
+            read_operator_current_coordinates_through,
         )
 
         prior_coordinates = _operator_standing_validation_context(
@@ -2525,7 +2525,7 @@ def _read_byte_measurement_subject_to_act_binding(
         )
         if prior_coordinates is None:
             try:
-                prior_coordinates = read_operator_locality_standing_through(
+                prior_coordinates = read_operator_current_coordinates_through(
                     ledger,
                     locality_identity=binding.locality_identity,
                     through_event_occurrence_identity=through_event_occurrence_identity,
@@ -3532,9 +3532,9 @@ def _prior_standing_for_pair_subject_to_act_binding(
     binding: Event,
     boundary: str,
 ) -> dict[str, Any]:
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _operator_standing_validation_context,
-        read_operator_locality_standing_through,
+        read_operator_current_coordinates_through,
     )
 
     prior_standing = _operator_standing_validation_context(
@@ -3543,7 +3543,7 @@ def _prior_standing_for_pair_subject_to_act_binding(
     if prior_standing is not None:
         return prior_standing
     try:
-        return read_operator_locality_standing_through(
+        return read_operator_current_coordinates_through(
             ledger,
             locality_identity=binding.locality_identity,
             through_event_occurrence_identity=boundary,
@@ -4505,7 +4505,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
     recording_locality_identity: str,
     standing: dict[str, Any],
 ) -> tuple[Event, dict[str, Any]]:
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _carry_pair_applicability_act_into_standing,
         _carry_pair_applicability_result_into_standing,
         _carry_pair_measurement_act_into_standing,
@@ -4680,9 +4680,9 @@ def record_byte_position_pair_count_layer(
         source_measurement_event_identity=source_measurement_event_identity,
         measurement_locality_identity=recording_locality_identity,
     )
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=recording_locality_identity
     )
     result, _standing = _record_byte_position_pair_count_layer_from_carried_standing(

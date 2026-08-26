@@ -16,11 +16,11 @@ from seed_runtime.operator_checkpoint import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     CarriedCoordinateReferenceError,
-    advance_operator_locality_standing,
+    advance_operator_current_coordinates,
     read_current_coordinates_through_carried_reference,
-    read_operator_locality_standing,
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_locality_continuation import (
     LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -72,7 +72,7 @@ def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
         locality_identity="source",
         recorded_occurrence_identity=checkpoint.identity,
     )
-    current = read_operator_locality_standing(ledger, locality_identity="source")
+    current = read_operator_current_coordinates(ledger, locality_identity="source")
 
     assert reading["current_coordinates"]["through_event_occurrence_identity"] == reading[
         "source_coordinate_reference"
@@ -103,7 +103,7 @@ def test_memory_makes_one_prior_boundary_available_without_copying_source_coordi
         locality_identity=destination,
         recorded_occurrence_identity=continuation.identity,
     )
-    destination_coordinates = read_operator_locality_standing(
+    destination_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
 

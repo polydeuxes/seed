@@ -33,7 +33,7 @@ from typing import Any
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-import seed_runtime.operator_locality_standing as standing_module
+import seed_runtime.operator_current_coordinates as standing_module
 
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_SUPPLIED_STANDING"
 
@@ -188,8 +188,8 @@ def pytest_configure(config: object) -> None:
         for method_name in ("append", "append_many"):
             _wrap_append(cls, method_name)
     for name in (
-        "read_operator_locality_standing",
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates",
+        "read_operator_current_coordinates_through",
     ):
         _wrap_reconstruction(name)
     for info in pkgutil.iter_modules(seed_runtime.__path__):

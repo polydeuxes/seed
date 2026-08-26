@@ -18,7 +18,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import (
     record_witness_material_source,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 from compiled_format_invocation import (
     admission_result_added_position_occurrences,
@@ -53,14 +53,14 @@ def measured_material():
         ledger,
         source_localities=("compiled-material-source",),
         recording_locality_identity="compiled-material-measurement",
-        locality_standing=read_operator_locality_standing(
+        locality_standing=read_operator_current_coordinates(
             ledger, locality_identity="compiled-material-measurement"
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="compiled-material-measurement"
         ),
     )

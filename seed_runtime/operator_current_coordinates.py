@@ -811,7 +811,7 @@ def _shared_position_binding_identity(event: Event) -> str | None:
     return identity if type(identity) is str and identity else None
 
 
-def read_operator_locality_standing(
+def read_operator_current_coordinates(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
     """Read bounded Locality-local Standing by replaying the whole Locality.
@@ -820,10 +820,10 @@ def read_operator_locality_standing(
     `#2376` established that advancing from a prior Standing over only the
     occurrences after its boundary yields the same result, so a caller that
     already holds its Standing and knows what it just recorded should use
-    :func:`advance_operator_locality_standing` instead of replaying.
+    :func:`advance_operator_current_coordinates` instead of replaying.
     """
 
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         (
             event.identity
@@ -833,7 +833,7 @@ def read_operator_locality_standing(
     )
 
 
-def read_operator_locality_standing_through(
+def read_operator_current_coordinates_through(
     ledger: EventLedger,
     *,
     locality_identity: str,
@@ -872,7 +872,7 @@ def read_operator_locality_standing_through(
                 locality_identity, through=boundary
             )
         )
-    standing = advance_operator_locality_standing(
+    standing = advance_operator_current_coordinates(
         ledger,
         event_identities,
         locality_identity=locality_identity,
@@ -948,7 +948,7 @@ def read_current_coordinates_through_carried_reference(
         recorded_occurrence_identity,
         "carried coordinate read requires one exact occurrence",
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     direct_references = current_coordinates[
@@ -1003,7 +1003,7 @@ def read_current_coordinates_through_carried_reference(
             through_event_occurrence_identity,
             "coordinate reference carries no exact through occurrence",
         )
-    source_current_coordinates = read_operator_locality_standing_through(
+    source_current_coordinates = read_operator_current_coordinates_through(
         ledger,
         locality_identity=source_locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
@@ -1016,7 +1016,7 @@ def read_current_coordinates_through_carried_reference(
 
 
 @_operator_standing_replay_validation
-def advance_operator_locality_standing(
+def advance_operator_current_coordinates(
     ledger: EventLedger,
     event_identities: Iterable[str],
     *,

@@ -39,7 +39,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 HELD = (
     "responsibility",
@@ -65,7 +65,7 @@ def main() -> int:
         localities = sorted({e.locality_identity for e in ledger.list()})
         print(f"\n  one recorded road: {len(localities)} Locality(ies)")
         for locality in localities:
-            standing = read_operator_locality_standing(
+            standing = read_operator_current_coordinates(
                 ledger, locality_identity=locality
             )
             branches = standing.get("subject_to_act_binding_occurrences") or {}
@@ -116,7 +116,7 @@ def main() -> int:
                 localities = sorted({e.locality_identity for e in ledger.list()})
                 print(f"\n  {corpus.name}: {len(localities)} Locality(ies)")
                 for locality in localities:
-                    standing = read_operator_locality_standing(
+                    standing = read_operator_current_coordinates(
                         ledger, locality_identity=locality
                     )
                     branches = standing.get(

@@ -19,7 +19,7 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as position_module
-import seed_runtime.operator_locality_standing as standing_module
+import seed_runtime.operator_current_coordinates as standing_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     AddressedByteOccurrenceReferenceDeterminationError,
     _current_standing,
@@ -45,7 +45,7 @@ def _position_material():
         exact=b"2+2=5\n",
         source_boundary="exact supplied material boundary",
     )
-    return ledger, source, standing_module.read_operator_locality_standing(
+    return ledger, source, standing_module.read_operator_current_coordinates(
         ledger, locality_identity="entrance-witness"
     )
 
@@ -167,10 +167,10 @@ def test_this_standing_validation_reconstructs_no_locality_standing(monkeypatch)
         raise AssertionError("this validation reconstructed Locality Standing")
 
     monkeypatch.setattr(
-        standing_module, "read_operator_locality_standing", refuse
+        standing_module, "read_operator_current_coordinates", refuse
     )
     monkeypatch.setattr(
-        standing_module, "read_operator_locality_standing_through", refuse
+        standing_module, "read_operator_current_coordinates_through", refuse
     )
 
     validated = _current_standing(

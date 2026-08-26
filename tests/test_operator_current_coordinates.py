@@ -4,7 +4,7 @@ from tests.binary_input import binary_input
 import pytest
 
 
-import seed_runtime.operator_locality_standing as operator_standing_module
+import seed_runtime.operator_current_coordinates as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
@@ -33,9 +33,9 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 
 
@@ -50,14 +50,14 @@ def _record_byte_measurement(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
@@ -89,7 +89,7 @@ def _attempt(ledger, text, *, locality="s", locality_standing=None):
 
 
 def _standing(ledger, *, locality="s"):
-    return read_operator_locality_standing(
+    return read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
 
@@ -321,7 +321,7 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
     standing["measurement_occurrences"] = carrier
 
     with pytest.raises(ValueError, match="exact Measurement occurrences"):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger,
             (),
             locality_identity="s",

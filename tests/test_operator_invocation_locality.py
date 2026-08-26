@@ -8,9 +8,9 @@ from seed_runtime.material_source import exact_material_result_bytes
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -43,14 +43,14 @@ def _relation(ledger, command):
     binding = record_operator_invocation_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=command.locality_identity
         ),
     )
     act = record_operator_invocation_locality_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=binding.locality_identity
         ),
     )
@@ -115,10 +115,10 @@ def test_witness_material_occurs_only_in_the_related_locality():
         command.identity,
         relation.identity,
     ]
-    operator_standing = read_operator_locality_standing(
+    operator_standing = read_operator_current_coordinates(
         ledger, locality_identity="operator"
     )
-    witness_standing = read_operator_locality_standing(
+    witness_standing = read_operator_current_coordinates(
         ledger, locality_identity=relation.locality_identity
     )
     assert [
@@ -171,7 +171,7 @@ def test_one_operator_occurrence_cannot_assign_two_invocation_localities():
         record_operator_invocation_locality_subject_to_act_binding(
             ledger,
             operator_material_occurrence_reference=command.identity,
-            current_coordinates=read_operator_locality_standing(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="operator"
             ),
         )
@@ -180,7 +180,7 @@ def test_one_operator_occurrence_cannot_assign_two_invocation_localities():
 def test_binding_requires_a_carried_exact_operator_invocation():
     ledger = EventLedger()
     command = _command(ledger)
-    empty_coordinates = read_operator_locality_standing(
+    empty_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="other"
     )
     with pytest.raises(
@@ -198,7 +198,7 @@ def test_binding_requires_a_carried_exact_operator_invocation():
         record_operator_invocation_locality_subject_to_act_binding(
             ledger,
             operator_material_occurrence_reference=not_invocation.identity,
-            current_coordinates=read_operator_locality_standing(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="operator"
             ),
         )
@@ -210,14 +210,14 @@ def test_one_invocation_locality_act_cannot_yield_twice():
     binding = record_operator_invocation_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="operator"
         ),
     )
     act = record_operator_invocation_locality_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=binding.locality_identity
         ),
     )
@@ -256,19 +256,19 @@ def test_invocation_locality_act_requires_binding_in_current_destination_coordin
     binding = record_operator_invocation_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="operator"
         ),
     )
     destination_coordinates_without_binding = {
-        **read_operator_locality_standing(
+        **read_operator_current_coordinates(
             ledger, locality_identity=binding.locality_identity
         ),
         "subject_to_act_binding_occurrences": {},
     }
 
     for current_coordinates in (
-        read_operator_locality_standing(ledger, locality_identity="operator"),
+        read_operator_current_coordinates(ledger, locality_identity="operator"),
         destination_coordinates_without_binding,
     ):
         with pytest.raises(OperatorInvocationLocalityError, match="carried binding"):
@@ -284,7 +284,7 @@ def test_carried_witness_standing_equals_full_replay():
     command = _command(ledger)
     binding, act, relation = _relation(ledger, command)
     locality = relation.locality_identity
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (
             binding.identity,
@@ -294,7 +294,7 @@ def test_carried_witness_standing_equals_full_replay():
         ),
         locality_identity=locality,
     )
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
 
@@ -313,7 +313,7 @@ def test_invocation_locality_relation_reopens_with_exact_standing(tmp_path):
         recorded = get_recorded_operator_invocation_locality(
             reopened, relation_identity
         )
-        standing = read_operator_locality_standing(
+        standing = read_operator_current_coordinates(
             reopened, locality_identity=locality
         )
     finally:

@@ -31,12 +31,12 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
 )
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _carry_byte_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 # The source-position proof remains explicitly invoked. Importing its first and
 # later Measurements keeps the current runtime road reachable without
@@ -94,7 +94,7 @@ def _advance(
     *,
     locality_identity: str,
 ) -> dict[str, Any]:
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         event_identities,
         locality_identity=locality_identity,
@@ -447,7 +447,7 @@ def record_declared_measurements_from_current_bounded_locality_replay(
 ) -> RecordedDeclaredMeasurements:
     """Read one bounded Locality replay and record all exact subjects."""
 
-    bounded_locality_replay = read_operator_locality_standing(
+    bounded_locality_replay = read_operator_current_coordinates(
         ledger,
         locality_identity=locality_identity,
     )

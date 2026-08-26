@@ -16,7 +16,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 
 def _record_byte_measurement(
@@ -26,14 +26,14 @@ def _record_byte_measurement(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=recording_locality_identity
         ),
     )

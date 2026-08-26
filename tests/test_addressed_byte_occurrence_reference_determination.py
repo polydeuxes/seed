@@ -35,9 +35,9 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
 )
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 
 
@@ -54,7 +54,7 @@ class CallbackEventLedger(EventLedger):
 
 
 def _advance(ledger, standing, *events):
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         (event.identity for event in events),
         locality_identity=standing["locality_identity"],
@@ -69,7 +69,7 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
         exact=exact,
         source_boundary="exact supplied material boundary",
     )
-    standing = read_operator_locality_standing(ledger, locality_identity=locality)
+    standing = read_operator_current_coordinates(ledger, locality_identity=locality)
     assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
@@ -252,7 +252,7 @@ def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically
         exact_bytes=b"later",
         source_boundary="exact supplied material boundary",
     )
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity="addressed-byte"
     )
     before = len(ledger.list())
@@ -408,7 +408,7 @@ def test_one_act_cannot_append_a_second_yield_or_result():
 def test_call_local_standing_equals_full_replay():
     ledger = EventLedger()
     recorded = _record(ledger)
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity=recorded["source"].locality_identity
     )
     assert recorded["standing"] == replayed
@@ -464,7 +464,7 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     assert get_recorded_addressed_byte_occurrence_reference_determination(
         reopened, result_identity
     ) == expected
-    assert result_identity in read_operator_locality_standing(
+    assert result_identity in read_operator_current_coordinates(
         reopened, locality_identity=locality
     )["measurement_occurrences"]
     for prefix, identity in carried_identities.items():
@@ -493,7 +493,7 @@ def test_carried_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     assert get_recorded_addressed_byte_occurrence_reference_determination(
         reopened, result_identity
     ) == expected
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         reopened, locality_identity=locality_identity
     )
     reopened.close()
@@ -559,7 +559,7 @@ def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
     assert result_calls == [direct_result.identity]
     assert standing == supplied_standing
     assert result.identity in carried["measurement_occurrences"]
-    assert carried == read_operator_locality_standing(
+    assert carried == read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     )
 
@@ -628,7 +628,7 @@ def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypa
         for event in ledger.list()
     )
     assert standing == prior
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     ) == prior
 
@@ -708,7 +708,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert standing == prior
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     ) == prior
 
@@ -774,6 +774,6 @@ def test_determination_result_refuses_iterator_append_without_yield():
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
     assert standing == prior
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity=recorded["source"].locality_identity
     ) == prior

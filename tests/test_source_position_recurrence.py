@@ -6,7 +6,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.source_position_recurrence import (
     get_recorded_recurrent_result_material_measurement,
     get_recorded_corresponding_coordinate_material_measurement,
@@ -30,7 +30,7 @@ def _direct_result(ledger, *, locality, exact):
         exact=exact,
         source_boundary="exact source-position material boundary",
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     assignment = (
@@ -43,7 +43,7 @@ def _direct_result(ledger, *, locality, exact):
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
         binding_event_identity=assignment.identity,
-        binding_current_coordinates=read_operator_locality_standing(
+        binding_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )
@@ -391,7 +391,7 @@ def test_changed_source_position_coordinate_is_refused():
     ]
     yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
     try:
-        read_operator_locality_standing(
+        read_operator_current_coordinates(
             ledger, locality_identity="source-position-integrity"
         )
     except ValueError:

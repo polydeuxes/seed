@@ -321,16 +321,16 @@ def _read_applicability_act(
         raise ValueError("source position Compare identities are not exact")
     boundary = material.get("standing_boundary_identity")
     if prior_standing is None:
-        from seed_runtime.operator_locality_standing import (
+        from seed_runtime.operator_current_coordinates import (
             _operator_standing_validation_context,
-            read_operator_locality_standing_through,
+            read_operator_current_coordinates_through,
         )
 
         prior_standing = _operator_standing_validation_context(
             ledger, locality_identity=event.locality_identity
         )
         if prior_standing is None:
-            prior_standing = read_operator_locality_standing_through(
+            prior_standing = read_operator_current_coordinates_through(
                 ledger,
                 locality_identity=event.locality_identity,
                 through_event_occurrence_identity=boundary,
@@ -831,7 +831,7 @@ def _record_ordered_path_source_position_material_comparison(
         prior_standing=standing,
     )
     identities = _new_identities()
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _exact_standing_additions,
         _record_distinct,
     )

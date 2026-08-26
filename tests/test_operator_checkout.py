@@ -18,9 +18,9 @@ from seed_runtime.operator_checkout import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.recorded_boundary_locality import (
     RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -70,7 +70,7 @@ def _coordinates_with_through_occurrence_reference(ledger, *, locality="source")
         for event in ledger.list_locality(locality)
         if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
-    return reference_result, read_operator_locality_standing(
+    return reference_result, read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
 
@@ -82,7 +82,7 @@ def _binding(ledger, current_coordinates):
 
 
 def _act(ledger, binding):
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=binding.locality_identity
     )
     return record_recorded_boundary_locality_act_occurrence(
@@ -108,7 +108,7 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
     reference_result, source_coordinates = _coordinates_with_through_occurrence_reference(ledger)
     binding = _binding(ledger, source_coordinates)
     destination = binding.locality_identity
-    after_binding = read_operator_locality_standing(
+    after_binding = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
     act = record_recorded_boundary_locality_act_occurrence(
@@ -116,7 +116,7 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=after_binding,
     )
-    before_result = read_operator_locality_standing(
+    before_result = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
     result = record_recorded_boundary_locality_result(
@@ -169,13 +169,13 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "occurrence_witness": True,
         "intact_occurrence": True,
     }
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (result.material["yield_relation_identity"], result.identity),
         locality_identity=destination,
         prior=before_result,
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
     assert carried == replayed
@@ -195,7 +195,7 @@ def test_relation_descendants_carry_one_exact_reference():
             ledger, _binding(ledger, source_coordinates)
         ).identity,
     )
-    first_coordinates = read_operator_locality_standing(
+    first_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=first.locality_identity
     )
     second = record_recorded_boundary_locality_result(
@@ -223,7 +223,7 @@ def test_relation_descendants_carry_one_exact_reference():
 
 def test_zero_and_two_carried_references_both_refuse_selection():
     ledger = EventLedger()
-    empty = read_operator_locality_standing(ledger, locality_identity="source")
+    empty = read_operator_current_coordinates(ledger, locality_identity="source")
     with pytest.raises(
         RecordedBoundaryLocalityError, match="exactly one carried reference"
     ):
@@ -234,7 +234,7 @@ def test_zero_and_two_carried_references_both_refuse_selection():
         locality_identity="source",
         input_stream=BytesIO(b"/checkpoint\n/checkpoint\n"),
     )
-    ambiguous = read_operator_locality_standing(
+    ambiguous = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     with pytest.raises(
@@ -318,7 +318,7 @@ def test_reference_and_relation_survive_restart_without_copying_source_history(
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
-    first_coordinates = read_operator_locality_standing(
+    first_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=first.locality_identity
     )
     second = record_recorded_boundary_locality_result(
@@ -391,13 +391,13 @@ def test_prior_relation_carrier_must_remain_an_identity_dictionary():
             ledger, _binding(ledger, current_coordinates)
         ).identity,
     )
-    prior = read_operator_locality_standing(
+    prior = read_operator_current_coordinates(
         ledger, locality_identity=result.locality_identity
     )
     broken = deepcopy(prior)
     broken["recorded_boundary_locality_relations"] = [result.identity]
     with pytest.raises(ValueError, match="boundary Locality relations"):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger,
             (),
             locality_identity=result.locality_identity,

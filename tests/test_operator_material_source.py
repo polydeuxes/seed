@@ -18,9 +18,9 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
@@ -43,7 +43,7 @@ from tests.operator_material_source_test_witness import (
 
 
 def _context(ledger, locality_identity="source"):
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     return standing, standing["through_event_occurrence_identity"]
@@ -59,7 +59,7 @@ def _binding(ledger, standing, locality_identity="source"):
 
 
 def _act(ledger, binding):
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=binding.locality_identity
     )
     return record_operator_material_source_act_occurrence(
@@ -82,7 +82,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     binding = _binding(ledger, standing)
-    after_binding = read_operator_locality_standing(
+    after_binding = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     act_occurrence = record_operator_material_source_act_occurrence(
@@ -90,7 +90,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=after_binding,
     )
-    before_result = read_operator_locality_standing(
+    before_result = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     result = record_operator_material_source_result(
@@ -166,13 +166,13 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         }
     ) == 8
 
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (result.material["yield_relation_identity"], result.identity),
         locality_identity="source",
         prior=before_result,
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     assert carried == replayed
@@ -328,7 +328,7 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
         if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
     ]
     assert len(sources) == 1
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     assert standing["material_locality_relation_occurrences"] == {
@@ -427,7 +427,7 @@ def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
         bindings.append(binding)
         acts.append(act)
         results.append(result)
-        standing = read_operator_locality_standing(
+        standing = read_operator_current_coordinates(
             ledger, locality_identity="source"
         )
 
@@ -741,12 +741,12 @@ def test_prior_source_act_carrier_must_remain_an_identity_dictionary():
     standing, standing_boundary = _context(ledger)
     binding = _binding(ledger, standing)
     _act(ledger, binding)
-    prior = read_operator_locality_standing(ledger, locality_identity="source")
+    prior = read_operator_current_coordinates(ledger, locality_identity="source")
     broken = deepcopy(prior)
     broken["operator_material_source_act_occurrences"] = []
 
     with pytest.raises(ValueError, match="source Act occurrences"):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger,
             (),
             locality_identity="source",
@@ -763,7 +763,7 @@ def test_prior_source_locality_relations_must_remain_an_identity_dictionary():
         act_occurrence_event_identity=act.identity,
         boundary_material=_boundary(),
     )
-    prior = read_operator_locality_standing(ledger, locality_identity="source")
+    prior = read_operator_current_coordinates(ledger, locality_identity="source")
     assert result.identity in prior[
         "material_locality_relation_occurrences"
     ]
@@ -771,7 +771,7 @@ def test_prior_source_locality_relations_must_remain_an_identity_dictionary():
     broken["material_locality_relation_occurrences"] = []
 
     with pytest.raises(ValueError, match="material Locality relation occurrences"):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger,
             (),
             locality_identity="source",
@@ -788,7 +788,7 @@ def test_binding_and_act_remain_addressable_after_restart_before_result(tmp_path
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
-    before = read_operator_locality_standing(ledger, locality_identity="source")
+    before = read_operator_current_coordinates(ledger, locality_identity="source")
     assert before["subject_to_act_binding_occurrences"][binding.identity] is None
     assert before["operator_material_source_act_occurrences"] == {
         act.identity: None
@@ -817,7 +817,7 @@ def test_binding_alone_remains_addressable_and_can_record_its_act(
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
-    after_binding = read_operator_locality_standing(
+    after_binding = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     assert after_binding["subject_to_act_binding_occurrences"] == {

@@ -27,7 +27,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as position_module
 
 from tests.operator_material_source_test_witness import (
@@ -87,7 +87,7 @@ def _material() -> tuple[EventLedger, Any, dict[str, Any]]:
         exact=EXACT,
         source_boundary="exact supplied material boundary",
     )
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     return ledger, source, standing
 
 

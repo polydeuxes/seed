@@ -26,8 +26,8 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
@@ -201,14 +201,14 @@ def _operator_invocation_relation(ledger, command):
     binding = record_operator_invocation_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=command.locality_identity
         ),
     )
     act = record_operator_invocation_locality_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=binding.locality_identity
         ),
     )
@@ -448,10 +448,10 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
         ]
     ) == 4
-    operator_standing = read_operator_locality_standing(
+    operator_standing = read_operator_current_coordinates(
         ledger, locality_identity="locality"
     )
-    witness_standing = read_operator_locality_standing(
+    witness_standing = read_operator_current_coordinates(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
@@ -648,7 +648,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     kinds = tuple(event.kind for event in ledger.list())
     assert kinds.count(BYTE_PAIR_MEASUREMENT_RECORDED_KIND) == 2
     assert RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND not in kinds
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [

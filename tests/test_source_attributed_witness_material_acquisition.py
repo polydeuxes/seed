@@ -15,7 +15,7 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,7 +73,7 @@ def acquired_source_attributed_witness_material():
             ledger,
             recording_locality_identity="source-attributed-witness-material",
             finding=positions,
-            locality_standing=read_operator_locality_standing(
+            locality_standing=read_operator_current_coordinates(
                 ledger, locality_identity="source-attributed-witness-material"
             ),
         )
@@ -82,7 +82,7 @@ def acquired_source_attributed_witness_material():
         record_occurrence_position_measurement_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=position_assignment.identity,
-            responsibility_assignment_standing=read_operator_locality_standing(
+            responsibility_assignment_standing=read_operator_current_coordinates(
                 ledger, locality_identity="source-attributed-witness-material"
             ),
         )

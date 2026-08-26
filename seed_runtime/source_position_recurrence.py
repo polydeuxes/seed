@@ -849,10 +849,10 @@ def _require_current_measurement_subject(
     measurement_result_event_identity: str,
     locality_standing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from seed_runtime.operator_locality_standing import read_operator_locality_standing
+    from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
     standing = (
-        read_operator_locality_standing(ledger, locality_identity=locality_identity)
+        read_operator_current_coordinates(ledger, locality_identity=locality_identity)
         if locality_standing is None
         else locality_standing
     )
@@ -883,13 +883,13 @@ def _carry_recorded_events(
     advance is the exact contract and does not reread the earlier Locality.
     """
 
-    from seed_runtime.operator_locality_standing import (
-        advance_operator_locality_standing,
+    from seed_runtime.operator_current_coordinates import (
+        advance_operator_current_coordinates,
     )
 
     if not events:
         return standing
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         (event.identity for event in events),
         locality_identity=events[0].locality_identity,

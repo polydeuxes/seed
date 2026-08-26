@@ -9,7 +9,7 @@ from tests.operator_material_source_test_witness import (
 
 import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
-import seed_runtime.operator_locality_standing as operator_standing_module
+import seed_runtime.operator_current_coordinates as operator_standing_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
@@ -30,7 +30,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.operator_console import (
     _latest_carried_pair_premise,
     run_persistent_operator_console,
@@ -44,14 +44,14 @@ def _pair_measurement(ledger):
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),
     )
@@ -159,14 +159,14 @@ def _inputs():
 
 def _comparison():
     ledger, earlier_source, added, earlier, later = _inputs()
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
         locality_standing=standing,
     )
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     applicability_act = (
         record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
@@ -178,7 +178,7 @@ def _comparison():
         ledger,
         act_occurrence_event_identity=applicability_act.identity,
     )
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     compare_act = record_recorded_pair_measurement_comparison_act_occurrence(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
@@ -193,7 +193,7 @@ def _comparison():
 
 def test_changed_pair_crossing_a_callback_cannot_enter_compare_standing():
     ledger, _earlier_source, _added, earlier, later = _inputs()
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     standing_before = deepcopy(standing)
     event_count_before = len(ledger.list())
     earlier.material["assertions"][0]["dimensions"]["content"]["count"] += 1
@@ -243,7 +243,7 @@ def _operator_inputs(*, acquisition_before_earlier_measurement=False):
 
 def test_operator_acquisition_carries_the_prior_pair_measurement_into_compare():
     ledger, _source, acquired, added, earlier, later = _operator_inputs()
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
     assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
         ledger,
@@ -299,7 +299,7 @@ def test_operator_acquisition_before_the_premise_cannot_supply_compare():
             ledger,
             earlier_result_event_identity=earlier.identity,
             later_result_event_identity=later.identity,
-            locality_standing=read_operator_locality_standing(
+            locality_standing=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
@@ -348,7 +348,7 @@ def test_produced_measurements_enter_one_responsible_compare():
     )
     assert findings["unknown_findings"] == []
 
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     assert result.identity in standing["comparison_result_occurrences"]
 
 
@@ -391,7 +391,7 @@ def test_witness_provenance_does_not_supply_the_carried_compare_rung(monkeypatch
 
 def test_measurement_availability_without_standing_cannot_supply_compare():
     ledger, _source, _added, earlier, later = _inputs()
-    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    standing = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     standing["measurement_occurrences"].pop(earlier.identity)
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
@@ -491,7 +491,7 @@ def test_standing_replay_carries_one_validated_assignment_across_comparison_stag
     )
     monkeypatch.setattr(comparison_module, "_assignment_reading", witnessed)
 
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )
     assignment_identity = result.material[
@@ -540,13 +540,13 @@ def test_standing_replay_carry_refuses_callback_change_and_leaks_no_state(
         cross_after_assignment,
     )
     with pytest.raises(RecordedPairMeasurementComparisonError):
-        read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+        read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
     assignment.material.clear()
     assignment.material.update(assignment_material)
     earlier.material.clear()
     earlier.material.update(earlier_material)
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )["comparison_result_occurrences"]
 
@@ -559,7 +559,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
-        locality_standing=read_operator_locality_standing(
+        locality_standing=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),
     )
@@ -567,7 +567,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
-        locality_standing=read_operator_locality_standing(
+        locality_standing=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),
     )
@@ -576,7 +576,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         applicability_act = record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
-            locality_standing=read_operator_locality_standing(
+            locality_standing=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
@@ -588,7 +588,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
             ledger,
             responsibility_assignment_event_identity=assignment.identity,
             applicability_result_event_identity=applicability.identity,
-            locality_standing=read_operator_locality_standing(
+            locality_standing=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
@@ -611,7 +611,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         "_recorded_pair_comparison_assignment_reading",
         witnessed,
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )
 
@@ -696,7 +696,7 @@ def test_pair_premise_remains_carried_across_the_prior_compare_result():
             ledger,
             earlier_result_event_identity=second.identity,
             later_result_event_identity=third.identity,
-            locality_standing=read_operator_locality_standing(
+            locality_standing=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
@@ -718,7 +718,7 @@ def test_console_addresses_the_latest_carried_pair_after_a_compare_result():
     ledger, _first_source, _added, _first, second, *_middle, _comparison_result = (
         _comparison()
     )
-    current = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    current = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
     carried, premise = _latest_carried_pair_premise(
         ledger,

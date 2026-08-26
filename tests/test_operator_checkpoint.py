@@ -22,9 +22,9 @@ from seed_runtime.operator_checkpoint import (
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.witness_material_source import record_witness_material_source
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
@@ -43,7 +43,7 @@ def _command(locality_identity: str, boundary_identity: str) -> AddressedOperato
 
 
 def _context(ledger, locality_identity="source"):
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     boundary = record_witness_material_source(
@@ -52,7 +52,7 @@ def _context(ledger, locality_identity="source"):
         exact_bytes=b"checkpoint boundary",
         source_boundary="checkpoint source boundary",
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     return standing, boundary, _command(locality_identity, boundary.identity)
@@ -67,7 +67,7 @@ def _binding(ledger, current_coordinates, command):
 
 
 def _act(ledger, binding):
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=binding.locality_identity
     )
     return record_through_occurrence_boundary_reference_act_occurrence(
@@ -81,7 +81,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     ledger = EventLedger()
     standing, boundary, command = _context(ledger)
     binding = _binding(ledger, standing, command)
-    after_binding = read_operator_locality_standing(
+    after_binding = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     act = record_through_occurrence_boundary_reference_act_occurrence(
@@ -89,7 +89,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=after_binding,
     )
-    before_result = read_operator_locality_standing(
+    before_result = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     result = record_through_occurrence_boundary_reference_result(
@@ -128,13 +128,13 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
         "occurrence_witness": True,
         "intact_occurrence": True,
     }
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (result.material["yield_relation_identity"], result.identity),
         locality_identity="source",
         prior=before_result,
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     assert carried == replayed
@@ -162,7 +162,7 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
         recorded["source_reference"]["through_event_occurrence_identity"]
     )
     assert boundary is not None
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity="source"
     )["recorded_through_occurrence_boundary_references"] == {result.identity: None}
 
@@ -277,7 +277,7 @@ def test_binding_and_act_survive_restart_before_result(tmp_path):
     result = record_through_occurrence_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
     assert replayed["recorded_through_occurrence_boundary_references"] == {
@@ -321,10 +321,10 @@ def test_prior_record_carrier_must_remain_an_identity_dictionary():
             ledger, _binding(ledger, standing, command)
         ).identity,
     )
-    prior = read_operator_locality_standing(ledger, locality_identity="source")
+    prior = read_operator_current_coordinates(ledger, locality_identity="source")
     broken = deepcopy(prior)
     broken["recorded_through_occurrence_boundary_references"] = [result.identity]
     with pytest.raises(ValueError, match="through-occurrence boundary references"):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger, (), locality_identity="source", prior=broken
         )

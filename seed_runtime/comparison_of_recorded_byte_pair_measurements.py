@@ -124,8 +124,8 @@ def _operator_source_current_coordinate_reference(
     earlier_measurement: Event,
     earlier_source_occurrence_references: tuple[str, ...],
 ) -> dict[str, str]:
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing_through,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates_through,
     )
 
     reference = source_material.get("current_coordinate_reference")
@@ -139,7 +139,7 @@ def _operator_source_current_coordinate_reference(
             "later Measurement requires one exact operator source occurrence"
         )
     try:
-        coordinates = read_operator_locality_standing_through(
+        coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=earlier_measurement.locality_identity,
             through_event_occurrence_identity=reference[
@@ -1631,7 +1631,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
 ) -> tuple[Event, dict[str, Any]]:
     """Record one complete Compare from results carried by this console call."""
 
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _carry_recorded_pair_comparison_occurrence_into_standing,
     )
 

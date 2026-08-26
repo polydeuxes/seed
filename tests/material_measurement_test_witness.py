@@ -12,7 +12,7 @@ from seed_runtime.events import EventLedger
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,14 +33,14 @@ def measured_material(exact: bytes):
         ledger,
         source_localities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="one-byte-measurement"
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="one-byte-measurement"
         ),
     )

@@ -27,7 +27,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from scripts.observe_cross_surface_structure import SOURCE_GROUPS, _projections
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -55,7 +55,7 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         exact=exact,
         source_boundary="cross-surface antecedent source",
     )
-    coordinates_before = read_operator_locality_standing(
+    coordinates_before = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     assignment = record_byte_measurement_responsibility_assignment(
@@ -64,7 +64,7 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         recording_locality_identity=locality,
         locality_standing=coordinates_before,
     )
-    coordinates_with_binding = read_operator_locality_standing(
+    coordinates_with_binding = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     act = record_byte_measurement_act_occurrence(
@@ -75,7 +75,7 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    coordinates_after = read_operator_locality_standing(
+    coordinates_after = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     assertions = assertions_of_recorded_byte_measurement(ledger, result.identity)

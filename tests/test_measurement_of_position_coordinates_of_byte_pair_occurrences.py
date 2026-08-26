@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
-import seed_runtime.operator_locality_standing as standing_module
+import seed_runtime.operator_current_coordinates as standing_module
 from seed_runtime.yield_relation import _record_yield_relation
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -71,14 +71,14 @@ class MovementSourceChangeLedger(EventLedger):
             source = self.get(self.source_event_identity)
             source.material["unknown"] = ["changed after movement occurrence"]
         return event
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
-    read_operator_locality_standing,
+    read_operator_current_coordinates,
 )
 
 
 def _standing(ledger, locality):
-    return read_operator_locality_standing(ledger, locality_identity=locality)
+    return read_operator_current_coordinates(ledger, locality_identity=locality)
 
 
 def _source(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
@@ -874,7 +874,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
 
     monkeypatch.setattr(
         standing_module,
-        "read_operator_locality_standing",
+        "read_operator_current_coordinates",
         standing_replay_is_not_available,
     )
     assignment = (

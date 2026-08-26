@@ -60,12 +60,12 @@ from seed_runtime.recorded_boundary_locality import (
     record_recorded_boundary_locality_act_occurrence,
     record_recorded_boundary_locality_result,
 )
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _carry_occurrence_position_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_result_into_standing,
     _carry_operator_material_source_occurrence_into_standing,
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.occurrence_position_measurement import (
     _record_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
@@ -97,7 +97,7 @@ def _advance_over(ledger, current_coordinates, event_identities, *, locality_ide
     identity.
     """
 
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         event_identities,
         locality_identity=locality_identity,
@@ -418,7 +418,7 @@ def run_persistent_operator_console(
     handlers[b"memory"] = request_operator_memory
     # Each produced result enters the current Locality Standing.  This
     # Standing is the input of the next interaction.
-    locality_standing = read_operator_locality_standing(
+    locality_standing = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     measured_material_references = _recorded_byte_measurement_material_references(
@@ -523,7 +523,7 @@ def run_persistent_operator_console(
                 invocation_locality_identity = relation_binding.material[
                     "destination_locality_identity"
                 ]
-                witness_standing = read_operator_locality_standing(
+                witness_standing = read_operator_current_coordinates(
                     ledger, locality_identity=invocation_locality_identity
                 )
                 relation_act = record_operator_invocation_locality_act_occurrence(
@@ -645,7 +645,7 @@ def run_persistent_operator_console(
                 )
                 locality_identity = binding.locality_identity
                 pair_premise = None
-                locality_standing = read_operator_locality_standing(
+                locality_standing = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
                 )
                 continuation_act_occurrence = (
@@ -727,7 +727,7 @@ def run_persistent_operator_console(
                 )
                 locality_identity = binding.locality_identity
                 pair_premise = None
-                locality_standing = read_operator_locality_standing(
+                locality_standing = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
                 )
                 act_occurrence = (

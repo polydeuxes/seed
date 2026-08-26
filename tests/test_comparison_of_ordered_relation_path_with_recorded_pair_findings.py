@@ -53,9 +53,9 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     record_shared_position_measurement_result,
     record_shared_position_subject_to_act_binding,
 )
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -66,7 +66,7 @@ LOCALITY = "ordered-relation-path-pair-finding-comparison"
 
 
 def _current_coordinates(ledger):
-    return read_operator_locality_standing(
+    return read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )
 
@@ -145,14 +145,14 @@ def _record_path(ledger, pair_measurement, source):
         binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             finding=finding,
-            current_coordinates=read_operator_locality_standing(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
         act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
-            current_coordinates=read_operator_locality_standing(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
         )
@@ -1011,7 +1011,7 @@ def test_carried_standing_equals_replay_for_comparison_of_ordered_relation_path_
     later = tuple(
         event.identity for event in ledger.list_locality(LOCALITY)[prior_count:]
     )
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger, later, locality_identity=LOCALITY, prior=prior
     )
     assert carried == _current_coordinates(ledger)

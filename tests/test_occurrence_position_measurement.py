@@ -19,7 +19,7 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     read_requirements_of_yield_relation,
@@ -56,7 +56,7 @@ def occurrence_road():
 
 
 def _standing(ledger, locality="measurement"):
-    return read_operator_locality_standing(
+    return read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
 

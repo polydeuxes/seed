@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
@@ -42,7 +42,7 @@ def _owned_results(standing: dict) -> dict:
 def main() -> int:
     ledger = EventLedger()
 
-    empty = read_operator_locality_standing(
+    empty = read_operator_current_coordinates(
         ledger, locality_identity="first-locality"
     )
     first = record_operator_material_occurrence(
@@ -52,7 +52,7 @@ def main() -> int:
         source_boundary="first exact observer boundary",
     )
     boundary_after_first = ledger.append_boundary()
-    first_at_first_boundary = read_operator_locality_standing(
+    first_at_first_boundary = read_operator_current_coordinates(
         ledger, locality_identity="first-locality"
     )
 
@@ -63,10 +63,10 @@ def main() -> int:
         source_boundary="second exact observer boundary",
     )
     boundary_after_second = ledger.append_boundary()
-    first_after_other_locality = read_operator_locality_standing(
+    first_after_other_locality = read_operator_current_coordinates(
         ledger, locality_identity="first-locality"
     )
-    second_standing = read_operator_locality_standing(
+    second_standing = read_operator_current_coordinates(
         ledger, locality_identity="second-locality"
     )
 
@@ -76,7 +76,7 @@ def main() -> int:
         exact=b"third",
         source_boundary="third exact observer boundary",
     )
-    first_after_own_append = read_operator_locality_standing(
+    first_after_own_append = read_operator_current_coordinates(
         ledger, locality_identity="first-locality"
     )
 

@@ -60,9 +60,9 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.declared_measurement_responsibilities import (
     record_declared_measurements_from_current_bounded_locality_replay,
@@ -75,7 +75,7 @@ ADDRESSED_POSITION = 3
 
 
 def _advance(ledger, standing, *events):
-    return advance_operator_locality_standing(
+    return advance_operator_current_coordinates(
         ledger,
         (event.identity for event in events),
         locality_identity=standing["locality_identity"],
@@ -84,7 +84,7 @@ def _advance(ledger, standing, *events):
 
 
 def _standing(ledger):
-    return read_operator_locality_standing(
+    return read_operator_current_coordinates(
         ledger, locality_identity="calculator-claim"
     )
 
@@ -404,7 +404,7 @@ def test_calculator_result_preserves_its_own_occurrence_and_provenance(
     references = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
         witness["ledger"], witness["stdout_result"].identity
     )
-    witness_standing = read_operator_locality_standing(
+    witness_standing = read_operator_current_coordinates(
         witness["ledger"], locality_identity=witness["invocation_locality"]
     )
 
@@ -481,7 +481,7 @@ def test_two_assertion_movements_construct_one_locality_without_a_relation(
         source_assertion_reference=calculator_position.assertion_reference,
         destination_locality=destination,
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
     movements = standing["assertion_locality_movement_occurrences"]
@@ -550,7 +550,7 @@ def test_position_assertion_coordinates_stay_distinct_from_movement_coordinates(
             "recorded_occurrence_identity"
         ]
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=movement.locality_identity
     )
     coordinates = standing["assertion_locality_movement_occurrences"][
@@ -619,7 +619,7 @@ def _assert_assertion_movement_standing_requires_exact_source(
     source.material["unknown"] = ["changed after both movement results"]
     try:
         with pytest.raises((ByteMeasurementError, ValueError)):
-            read_operator_locality_standing(
+            read_operator_current_coordinates(
                 ledger, locality_identity=destination
             )
     finally:
@@ -664,7 +664,7 @@ def test_calculator_witness_material_remains_available_without_measurement_after
         provenance_occurrence_references=(claim_source.identity,),
     )
     expected = deepcopy(
-        read_operator_locality_standing(
+        read_operator_current_coordinates(
             ledger, locality_identity=calculator_source.locality_identity
         )
     )
@@ -672,7 +672,7 @@ def test_calculator_witness_material_remains_available_without_measurement_after
 
     reopened = SQLiteEventLedger(path)
     try:
-        replayed = read_operator_locality_standing(
+        replayed = read_operator_current_coordinates(
             reopened, locality_identity=calculator_source.locality_identity
         )
         assert replayed == expected

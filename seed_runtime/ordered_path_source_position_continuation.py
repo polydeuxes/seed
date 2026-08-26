@@ -28,7 +28,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _exact_standing_additions,
     _record_distinct,
 )

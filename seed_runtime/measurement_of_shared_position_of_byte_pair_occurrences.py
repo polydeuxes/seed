@@ -993,12 +993,12 @@ def _read_binding(
             else None
         )
         if prior_coordinates is None:
-            from seed_runtime.operator_locality_standing import (
-                read_operator_locality_standing_through,
+            from seed_runtime.operator_current_coordinates import (
+                read_operator_current_coordinates_through,
             )
 
             try:
-                prior_coordinates = read_operator_locality_standing_through(
+                prior_coordinates = read_operator_current_coordinates_through(
                     ledger,
                     locality_identity=event.locality_identity,
                     through_event_occurrence_identity=boundary,

@@ -1,7 +1,7 @@
 """Exact O1 material source for tests that require an operator source."""
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.operator_material_source import (
     record_operator_material_source_subject_to_act_binding,
     record_operator_material_source_act_occurrence,
@@ -19,7 +19,7 @@ def record_operator_material_occurrence(
 ):
     """Record O1 through its exact Source.G physiology."""
 
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     binding = record_operator_material_source_subject_to_act_binding(
@@ -31,7 +31,7 @@ def record_operator_material_occurrence(
     act_occurrence = record_operator_material_source_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality_identity
         ),
     )

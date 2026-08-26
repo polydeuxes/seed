@@ -8,7 +8,7 @@ import pytest
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as recurrent_position_module
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position_module
-import seed_runtime.operator_locality_standing as operator_current_coordinates_module
+import seed_runtime.operator_current_coordinates as operator_current_coordinates_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
@@ -63,14 +63,14 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     record_shared_position_subject_to_act_binding,
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 
 
 def _current_coordinates(ledger: EventLedger, locality: str):
-    return read_operator_locality_standing(
+    return read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
 
@@ -158,14 +158,14 @@ def _build_fixture(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )
     byte_act = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=byte_assignment.identity,
-        current_coordinates=read_operator_locality_standing(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )
@@ -527,7 +527,7 @@ def test_ordered_source_positions_are_adjacent_to_the_path_assertion():
 def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch):
     ledger, locality, _source, first, second = _fixture()
     standing_reads = []
-    original = operator_current_coordinates_module.read_operator_locality_standing_through
+    original = operator_current_coordinates_module.read_operator_current_coordinates_through
 
     def witnessed(
         ledger,
@@ -546,7 +546,7 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         witnessed,
     )
     inputs = shared_position_module._inputs(
@@ -603,7 +603,7 @@ def test_shared_binding_threads_explicit_prior_without_replay_or_ambient_overrid
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         replay_must_not_run,
     )
     monkeypatch.setattr(
@@ -641,7 +641,7 @@ def test_shared_binding_refuses_changed_explicit_prior_coordinates(changed_prior
     changed_coordinates = deepcopy(exact_prior)
     if changed_prior == "stale":
         first_act = _recurrent_result_coordinates(ledger, first)["act"]
-        changed_coordinates = operator_current_coordinates_module.read_operator_locality_standing_through(
+        changed_coordinates = operator_current_coordinates_module.read_operator_current_coordinates_through(
             ledger,
             locality_identity=locality,
             through_event_occurrence_identity=first_act.identity,
@@ -701,7 +701,7 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coord
         changed_occurrence
     ]
     original_material = deepcopy(changed.material)
-    original = operator_current_coordinates_module.read_operator_locality_standing_through
+    original = operator_current_coordinates_module.read_operator_current_coordinates_through
     changed_once = False
 
     def change_after_standing(*args, **kwargs):
@@ -721,7 +721,7 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coord
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         change_after_standing,
     )
     identities = {
@@ -742,7 +742,7 @@ def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_a
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
-    original = operator_current_coordinates_module.read_operator_locality_standing_through
+    original = operator_current_coordinates_module.read_operator_current_coordinates_through
     appended = False
 
     def append_after_standing(*args, **kwargs):
@@ -759,7 +759,7 @@ def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_a
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
-        "read_operator_locality_standing_through",
+        "read_operator_current_coordinates_through",
         append_after_standing,
     )
     inputs = shared_position_module._inputs(
@@ -1619,7 +1619,7 @@ def test_operator_replay_passes_prior_coordinates_to_d2_derived_shared_readers(
         ledger, locality=locality
     )
     _record_d2_shared_path(ledger, locality, determination_result)
-    import seed_runtime.operator_locality_standing as standing_module
+    import seed_runtime.operator_current_coordinates as standing_module
     original = standing_module._read_shared_position_binding
     calls = []
 
@@ -1632,7 +1632,7 @@ def test_operator_replay_passes_prior_coordinates_to_d2_derived_shared_readers(
         )[1],
     )
 
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     assert replayed["through_event_occurrence_identity"] == ledger.list_locality(
@@ -1651,7 +1651,7 @@ def test_current_coordinates_match_replay_for_the_complete_elevator():
         event.identity for event in ledger.list_locality(locality)[prior_count:]
     )
 
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         later,
         locality_identity=locality,

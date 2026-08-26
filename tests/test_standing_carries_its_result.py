@@ -7,11 +7,11 @@ from copy import deepcopy
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_locality_standing import (
+from seed_runtime.operator_current_coordinates import (
     _carry_operator_material_source_occurrence_into_standing,
     _subject_to_act_binding_of_exact_result,
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_material_source import (
@@ -46,7 +46,7 @@ def _recorded(ledger: EventLedger, locality: str = "probe", exact: bytes = b"abc
 def _current_result_binding(
     ledger: EventLedger, locality: str, result_identity: str
 ):
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger,
         locality_identity=locality,
     )
@@ -82,8 +82,8 @@ def test_complete_replay_reads_the_same_result_binding():
     ledger = EventLedger()
     result = _recorded(ledger)
 
-    current = read_operator_locality_standing(ledger, locality_identity="probe")
-    replayed = advance_operator_locality_standing(
+    current = read_operator_current_coordinates(ledger, locality_identity="probe")
+    replayed = advance_operator_current_coordinates(
         ledger,
         [occurrence.identity for occurrence in ledger.list_locality("probe")],
         locality_identity="probe",
@@ -148,7 +148,7 @@ def test_witness_result_without_a_recorded_binding_adds_no_current_binding():
         source_boundary="fixture boundary",
     )
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger,
         locality_identity="witness",
     )
@@ -159,7 +159,7 @@ def test_witness_result_without_a_recorded_binding_adds_no_current_binding():
 def test_incremental_carry_and_complete_replay_read_the_same_binding():
     ledger = EventLedger()
     locality = "incremental"
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger,
         locality_identity=locality,
     )
@@ -202,7 +202,7 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
         result,
         prior_through_event_occurrence_identity=act_occurrence.identity,
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger,
         locality_identity=locality,
     )

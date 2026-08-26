@@ -628,14 +628,14 @@ def _require_current_binding_coordinates(
         raise ValueError(
             "pair occurrence Measurement requires exact current coordinates"
         )
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates,
     )
     from seed_runtime.material_source import (
         read_material_locality_relation_requirements,
     )
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity=finding.source_locality_identity
     )
     measurements = current_coordinates.get("measurement_occurrences")
@@ -768,7 +768,7 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
         "through_event_occurrence_identity"
     ]
     if prior_coordinates is None:
-        from seed_runtime.operator_locality_standing import (
+        from seed_runtime.operator_current_coordinates import (
             _operator_standing_validation_context,
         )
 
@@ -776,11 +776,11 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
             ledger, locality_identity=binding.locality_identity
         )
         if prior_coordinates is None:
-            from seed_runtime.operator_locality_standing import (
-                read_operator_locality_standing_through,
+            from seed_runtime.operator_current_coordinates import (
+                read_operator_current_coordinates_through,
             )
 
-            prior_coordinates = read_operator_locality_standing_through(
+            prior_coordinates = read_operator_current_coordinates_through(
                 ledger,
                 locality_identity=binding.locality_identity,
                 through_event_occurrence_identity=through_event_occurrence_identity,
@@ -1551,11 +1551,11 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
                 "addressed pair-position through-occurrences cannot be ordered in one Locality"
             )
     if prior_coordinates is None:
-        from seed_runtime.operator_locality_standing import (
-            read_operator_locality_standing_through,
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates_through,
         )
 
-        prior_coordinates = read_operator_locality_standing_through(
+        prior_coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=localities[0],
             through_event_occurrence_identity=later_boundary,

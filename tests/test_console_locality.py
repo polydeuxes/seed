@@ -12,8 +12,8 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime import process_entry
-from seed_runtime.operator_locality_standing import (
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    read_operator_current_coordinates,
 )
 from seed_runtime.material_source import (
     exact_material_result_bytes,
@@ -134,10 +134,10 @@ def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
 
 def test_a_reopened_console_has_distinct_current_coordinates(two_lifetimes):
     first, second = _localities(two_lifetimes)
-    prior = read_operator_locality_standing(
+    prior = read_operator_current_coordinates(
         two_lifetimes, locality_identity=first
     )
-    later = read_operator_locality_standing(
+    later = read_operator_current_coordinates(
         two_lifetimes, locality_identity=second
     )
 
@@ -178,7 +178,7 @@ def test_a_fresh_locality_reads_none_of_the_history(two_lifetimes):
     """The console's startup read, which is the growing read."""
     assert two_lifetimes.list()
     assert two_lifetimes.list_locality("never-recorded") == []
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         two_lifetimes, locality_identity="never-recorded"
     )
     assert current["exact_result_occurrences"] == {}

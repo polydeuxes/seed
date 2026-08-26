@@ -462,11 +462,11 @@ def read_unbound_position_coordinate_measurement_material_results_through(
     relation nor a subject-to-Act binding for any returned result.
     """
 
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing_through,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates_through,
     )
 
-    bounded_locality_replay = read_operator_locality_standing_through(
+    bounded_locality_replay = read_operator_current_coordinates_through(
         ledger,
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
@@ -986,12 +986,12 @@ def _read_binding(
         )
     ):
         raise ValueError("byte-pair position-coordinate binding coordinates are not exact")
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing_through,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates_through,
     )
 
     try:
-        prior = read_operator_locality_standing_through(
+        prior = read_operator_current_coordinates_through(
             ledger,
             locality_identity=finding.source_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,

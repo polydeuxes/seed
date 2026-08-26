@@ -7,9 +7,9 @@ import pytest
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
-from seed_runtime.operator_locality_standing import (
-    advance_operator_locality_standing,
-    read_operator_locality_standing,
+from seed_runtime.operator_current_coordinates import (
+    advance_operator_current_coordinates,
+    read_operator_current_coordinates,
 )
 from seed_runtime.operator_locality_continuation import (
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
@@ -61,7 +61,7 @@ def _act(
         boundary,
         source_locality_identity=source_locality_identity,
     )
-    current_coordinates = read_operator_locality_standing(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=binding.locality_identity
     )
     return record_locality_continuation_act_occurrence(
@@ -83,7 +83,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     binding = get_locality_continuation_subject_to_act_binding(
         ledger, binding_reference["recorded_occurrence_identity"]
     )
-    after_act = read_operator_locality_standing(
+    after_act = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
 
@@ -183,13 +183,13 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         "intact_occurrence": True,
     }
 
-    carried = advance_operator_locality_standing(
+    carried = advance_operator_current_coordinates(
         ledger,
         (result.material["yield_relation_identity"], result.identity),
         locality_identity=destination,
         prior=after_act,
     )
-    replayed = read_operator_locality_standing(
+    replayed = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
     assert carried == replayed
@@ -260,7 +260,7 @@ def test_act_refuses_a_binding_absent_from_current_coordinates():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
     binding = _binding(ledger, boundary)
-    source_coordinates = read_operator_locality_standing(
+    source_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
 
@@ -373,7 +373,7 @@ def test_continuation_carries_only_its_direct_source_coordinates():
         "source_locality_identity": first_destination,
         "source_through_event_occurrence_identity": first_result.identity,
     }
-    assert read_operator_locality_standing(
+    assert read_operator_current_coordinates(
         ledger, locality_identity=second_result.locality_identity
     )["recorded_relation_Standing"] == {second_result.identity: None}
 
@@ -456,7 +456,7 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
     _source, boundary = _source_boundary(ledger)
     act_occurrence = _act(ledger, boundary)
 
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=act_occurrence.locality_identity
     )
 
@@ -477,7 +477,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
     result = record_locality_continuation_result(
         ledger, act_occurrence_event_identity=act_occurrence.identity
     )
-    standing = read_operator_locality_standing(
+    standing = read_operator_current_coordinates(
         ledger, locality_identity=result.locality_identity
     )
     broken = deepcopy(standing)
@@ -486,7 +486,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
     with pytest.raises(
         ValueError, match="exact recorded relation occurrences"
     ):
-        advance_operator_locality_standing(
+        advance_operator_current_coordinates(
             ledger,
             (),
             locality_identity=result.locality_identity,

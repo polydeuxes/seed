@@ -530,11 +530,11 @@ def _read_binding(
             "determination assignment coordinates are not exact"
         )
     if prior_standing is None:
-        from seed_runtime.operator_locality_standing import (
-            read_operator_locality_standing_through,
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates_through,
         )
 
-        prior_standing = read_operator_locality_standing_through(
+        prior_standing = read_operator_current_coordinates_through(
             ledger,
             locality_identity=source_result.locality_identity,
             through_event_occurrence_identity=standing_boundary,
@@ -1724,7 +1724,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
 ) -> tuple[dict[str, Any], Event]:
     """Record one D.2 lifecycle while carrying its exact stage readings."""
 
-    from seed_runtime.operator_locality_standing import (
+    from seed_runtime.operator_current_coordinates import (
         _exact_standing_additions,
         _record_distinct,
     )

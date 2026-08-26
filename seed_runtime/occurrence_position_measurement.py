@@ -370,11 +370,11 @@ def _require_current_locality_standing(
         )
     # Imported here because the Standing reader imports this module's event
     # contract. Recording is runtime work after both modules are initialized.
-    from seed_runtime.operator_locality_standing import (
-        read_operator_locality_standing,
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates,
     )
 
-    current = read_operator_locality_standing(
+    current = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     carried = locality_standing.get("subject_to_act_binding_occurrences")
