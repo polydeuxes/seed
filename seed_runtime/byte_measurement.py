@@ -1323,7 +1323,6 @@ def _movement_result_material(
                 "movement_act_occurrence_identity"
             ],
         },
-        "movement_scope": "Locality movement for this exact Assertion",
     }
 
 

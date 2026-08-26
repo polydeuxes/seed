@@ -2036,6 +2036,19 @@ def test_locality_movement_binding_carries_the_exact_source():
         ledger, locality_identity="measurement"
     )
 
+    assert set(movement.material) == {
+        "result_identity",
+        "movement_act_identity",
+        "movement_act_occurrence_identity",
+        "subject_to_act_binding_reference",
+        "source_assertion_reference",
+        "source_assertion_coordinates",
+        "source_locality",
+        "destination_locality",
+        "locality_relation",
+        "act_occurrence_event_identity",
+        "yield_relation_identity",
+    }
     assert binding.kind == (
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
     )
