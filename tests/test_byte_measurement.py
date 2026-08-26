@@ -607,7 +607,7 @@ def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
     ledger.close()
 
 
-def test_console_exact_byte_same_call_path_does_not_reread_current_coordinates(
+def test_console_exact_byte_same_call_path_uses_carried_current_coordinates(
     monkeypatch,
 ):
     from seed_runtime import byte_measurement
@@ -987,7 +987,7 @@ def test_one_responsible_act_occurrence_cannot_yield_twice(monkeypatch):
 
 @pytest.mark.parametrize("identity", ("missing", None))
 def test_yield_refuses_missing_act_occurrence(identity):
-    with pytest.raises(ByteMeasurementError, match="exact responsible Act occurrence"):
+    with pytest.raises(ByteMeasurementError, match="exact Act occurrence"):
         record_byte_measurement_result(
             EventLedger(),
             act_occurrence_event_identity=identity,
@@ -998,7 +998,7 @@ def test_yield_refuses_a_different_occurrence_kind():
     ledger = _ledger(b"a\n")
     wrong = next(event for event in ledger.list() if event.locality_identity == "source")
 
-    with pytest.raises(ByteMeasurementError, match="exact responsible Act occurrence"):
+    with pytest.raises(ByteMeasurementError, match="exact Act occurrence"):
         record_byte_measurement_result(
             ledger,
             act_occurrence_event_identity=wrong.identity,

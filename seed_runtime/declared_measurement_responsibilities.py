@@ -366,7 +366,7 @@ def _record_byte_measurement(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
-        responsibility_boundary_identity=responsibility_boundary_identity,
+        through_event_occurrence_identity=responsibility_boundary_identity,
     )
     return _complete_byte_measurement(
         ledger,
