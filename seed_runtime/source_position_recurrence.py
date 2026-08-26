@@ -288,7 +288,6 @@ def _require_preserved_result(
 
 def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str, Any]:
     keys = {
-        "identity",
         "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
@@ -298,8 +297,6 @@ def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str,
     if (
         type(coordinate) is not dict
         or set(coordinate) != keys
-        or type(coordinate.get("identity")) is not str
-        or not coordinate["identity"]
         or type(coordinate.get("source_material_result_occurrence_identity"))
         is not str
         or not coordinate["source_material_result_occurrence_identity"]

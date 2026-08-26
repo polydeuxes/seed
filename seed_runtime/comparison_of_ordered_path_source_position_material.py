@@ -140,7 +140,14 @@ def _path_input(
     for coordinate in positions:
         material = coordinate.get("exact_material")
         if (
-            type(coordinate.get("identity")) is not str
+            set(coordinate)
+            != {
+                "source_material_result_occurrence_identity",
+                "locality_identity",
+                "completeness_boundary_identity",
+                "position",
+                "exact_material",
+            }
             or type(coordinate.get("position")) is not int
             or type(material) is not list
             or len(material) != 1
@@ -168,6 +175,7 @@ def _path_input(
     if (
         type(assertions) is not dict
         or assertions.get(event.identity) != _result_reference(event)
+        or path.get("dimensions", {}).get("position") != 0
     ):
         raise ValueError("current Standing carries no exact ordered path result")
     return {
@@ -176,7 +184,7 @@ def _path_input(
         "path": path,
         "path_assertion_reference": {
             "recorded_occurrence_identity": event.identity,
-            "assertion_identity": path["dimensions"]["identity"],
+            "assertion_position": 0,
         },
         "positions": tuple(deepcopy(position) for position in positions),
         "path_position_pair": path_position_pair,
