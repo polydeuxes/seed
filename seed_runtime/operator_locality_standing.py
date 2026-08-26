@@ -890,7 +890,7 @@ def _source_reference_from_checkpoint(
     source = recorded["source_reference"]
     return {
         "source_locality_identity": source["source_locality_identity"],
-        "source_standing_through_event_occurrence_identity": source[
+        "source_through_event_occurrence_identity": source[
             "standing_boundary_event_identity"
         ],
     }
@@ -981,7 +981,7 @@ def read_carried_recorded_standing(
         continuation = get_recorded_standing_locality_continuation(
             ledger, recorded_occurrence_identity
         )
-        source_reference = deepcopy(continuation["source_standing_reference"])
+        source_reference = deepcopy(continuation["source_coordinate_reference"])
     else:
         source_reference = _source_reference_from_checkout(
             ledger, recorded_occurrence_identity
@@ -992,7 +992,7 @@ def read_carried_recorded_standing(
         "recorded Standing reference carries no exact source Locality",
     )
     through_event_occurrence_identity = source_reference.get(
-        "source_standing_through_event_occurrence_identity"
+        "source_through_event_occurrence_identity"
     )
     if through_event_occurrence_identity is not None:
         _require_recorded_standing_identity(

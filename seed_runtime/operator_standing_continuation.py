@@ -57,23 +57,23 @@ def _require_identity(value: Any, message: str) -> str:
     return value
 
 
-def _source_standing_reference(
+def _source_coordinate_reference(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
-    standing_boundary_event_identity: str,
+    source_through_event_occurrence_identity: str,
 ) -> dict[str, str | None]:
-    """Resolve one intact exact source Standing boundary."""
+    """Resolve one intact exact source occurrence boundary."""
 
     _require_identity(
         source_locality_identity,
         "Standing Locality continuation requires one exact source Locality",
     )
     _require_identity(
-        standing_boundary_event_identity,
-        "Standing Locality continuation requires one exact Standing boundary",
+        source_through_event_occurrence_identity,
+        "Standing Locality continuation requires one exact source occurrence boundary",
     )
-    source_boundary = ledger.get(standing_boundary_event_identity)
+    source_boundary = ledger.get(source_through_event_occurrence_identity)
     if (
         source_boundary is None
         or source_boundary.locality_identity != source_locality_identity
@@ -84,25 +84,25 @@ def _source_standing_reference(
         )
     occurrences = ledger.list_locality(source_locality_identity)
     positions = {event.identity: position for position, event in enumerate(occurrences)}
-    if positions.get(standing_boundary_event_identity) is None:
+    if positions.get(source_through_event_occurrence_identity) is None:
         raise StandingLocalityContinuationError(
-            "the source Standing boundary is absent from its source Locality"
+            "the source occurrence boundary is absent from its source Locality"
         )
     return {
         "source_locality_identity": source_locality_identity,
-        "source_standing_through_event_occurrence_identity": (
-            standing_boundary_event_identity
+        "source_through_event_occurrence_identity": (
+            source_through_event_occurrence_identity
         ),
     }
 
 
 def _participation(
-    source_standing_reference: dict[str, str | None],
+    source_coordinate_reference: dict[str, str | None],
     *,
     act_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
-        "subject_reference": deepcopy(source_standing_reference),
+        "subject_reference": deepcopy(source_coordinate_reference),
         "role": STANDING_LOCALITY_CONTINUATION_INPUT_ROLE,
         "act_occurrence_identity": act_occurrence_identity,
     }
@@ -112,7 +112,7 @@ def _binding_material(
     *,
     exact_act_identity: str,
     result_boundary_identity: str,
-    source_standing_reference: dict[str, str | None],
+    source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
@@ -120,14 +120,14 @@ def _binding_material(
             STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE
         ),
         "exact_act_identity": exact_act_identity,
-        "subject_reference": deepcopy(source_standing_reference),
+        "subject_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
-            "source_locality_identity": source_standing_reference[
+            "source_locality_identity": source_coordinate_reference[
                 "source_locality_identity"
             ],
-            "source_standing_through_event_occurrence_identity": source_standing_reference[
-                "source_standing_through_event_occurrence_identity"
+            "source_through_event_occurrence_identity": source_coordinate_reference[
+                "source_through_event_occurrence_identity"
             ],
             "destination_locality_identity": destination_locality_identity,
         },
@@ -156,7 +156,7 @@ def _act_occurrence_material(
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
-    source_standing_reference: dict[str, str | None],
+    source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
@@ -169,10 +169,10 @@ def _act_occurrence_material(
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
         ),
-        "source_standing_reference": deepcopy(source_standing_reference),
+        "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
         "participation": _participation(
-            source_standing_reference,
+            source_coordinate_reference,
             act_occurrence_identity=act_occurrence_identity,
         ),
     }
@@ -185,11 +185,11 @@ def _result_material(
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
-    source_standing_reference: dict[str, str | None],
+    source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     participation = _participation(
-        source_standing_reference,
+        source_coordinate_reference,
         act_occurrence_identity=act_occurrence_identity,
     )
     return {
@@ -203,11 +203,11 @@ def _result_material(
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
         ),
-        "source_standing_reference": deepcopy(source_standing_reference),
+        "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
         "participation": participation,
         "locality_relation": {
-            "first_subject": deepcopy(source_standing_reference),
+            "first_subject": deepcopy(source_coordinate_reference),
             "second_subject": destination_locality_identity,
             "relation_occurrence_identity": locality_relation_occurrence_identity,
         },
@@ -238,8 +238,8 @@ def _recorded_result_material(
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
         ],
-        "source_standing_reference": result_material[
-            "source_standing_reference"
+        "source_coordinate_reference": result_material[
+            "source_coordinate_reference"
         ],
         "destination_locality_identity": result_material[
             "destination_locality_identity"
@@ -256,16 +256,18 @@ def record_standing_locality_continuation_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
-    standing_boundary_event_identity: str,
+    source_through_event_occurrence_identity: str,
 ) -> Event:
     """Bind one source-boundary Locality relation to its exact Act."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("Standing Locality continuation requires one EventLedger")
-    source_reference = _source_standing_reference(
+    source_reference = _source_coordinate_reference(
         ledger,
         source_locality_identity=source_locality_identity,
-        standing_boundary_event_identity=standing_boundary_event_identity,
+        source_through_event_occurrence_identity=(
+            source_through_event_occurrence_identity
+        ),
     )
     destination_locality_identity = new_identity("standing_locality")
     if ledger.has_locality(destination_locality_identity):
@@ -281,7 +283,7 @@ def record_standing_locality_continuation_subject_to_act_binding(
         _binding_material(
             exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
-            source_standing_reference=source_reference,
+            source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
         locality_identity=destination_locality_identity,
@@ -359,7 +361,7 @@ def record_standing_locality_continuation_act_occurrence(
                 locality_relation_occurrence_identity
             ),
             subject_to_act_binding_reference=_binding_reference(binding),
-            source_standing_reference=source_reference,
+            source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
         locality_identity=destination_locality_identity,
@@ -386,16 +388,16 @@ def _validated_act_occurrence(
             "Standing Locality continuation result requires intact Act occurrence"
         )
     material = act_occurrence.material
-    source_reference = material.get("source_standing_reference")
+    source_reference = material.get("source_coordinate_reference")
     if type(source_reference) is not dict:
         raise StandingLocalityContinuationError(
             "Standing Locality continuation Act occurrence carries no exact source boundary"
         )
-    expected_reference = _source_standing_reference(
+    expected_reference = _source_coordinate_reference(
         ledger,
         source_locality_identity=source_reference.get("source_locality_identity"),
-        standing_boundary_event_identity=source_reference.get(
-            "source_standing_through_event_occurrence_identity"
+        source_through_event_occurrence_identity=source_reference.get(
+            "source_through_event_occurrence_identity"
         ),
     )
     if source_reference != expected_reference:
@@ -450,7 +452,7 @@ def _validated_act_occurrence(
                 locality_relation_occurrence_identity
             ),
             subject_to_act_binding_reference=binding_reference,
-            source_standing_reference=expected_reference,
+            source_coordinate_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
         )
     ):
@@ -515,7 +517,7 @@ def record_standing_locality_continuation_result(
         subject_to_act_binding_reference=material[
             "subject_to_act_binding_reference"
         ],
-        source_standing_reference=material["source_standing_reference"],
+        source_coordinate_reference=material["source_coordinate_reference"],
         destination_locality_identity=locality_identity,
     )
     yield_relation = _record_yield_relation(
@@ -577,8 +579,8 @@ def get_recorded_standing_locality_continuation(
         subject_to_act_binding_reference=act_occurrence.material[
             "subject_to_act_binding_reference"
         ],
-        source_standing_reference=act_occurrence.material[
-            "source_standing_reference"
+        source_coordinate_reference=act_occurrence.material[
+            "source_coordinate_reference"
         ],
         destination_locality_identity=event.locality_identity,
     )
@@ -637,11 +639,11 @@ def get_standing_locality_continuation_subject_to_act_binding(
         raise StandingLocalityContinuationError(
             "the binding carries no exact source boundary"
         )
-    expected_reference = _source_standing_reference(
+    expected_reference = _source_coordinate_reference(
         ledger,
         source_locality_identity=source_reference.get("source_locality_identity"),
-        standing_boundary_event_identity=source_reference.get(
-            "source_standing_through_event_occurrence_identity"
+        source_through_event_occurrence_identity=source_reference.get(
+            "source_through_event_occurrence_identity"
         ),
     )
     exact_act_identity = material.get("exact_act_identity")
@@ -657,7 +659,7 @@ def get_standing_locality_continuation_subject_to_act_binding(
         != _binding_material(
             exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
-            source_standing_reference=expected_reference,
+            source_coordinate_reference=expected_reference,
             destination_locality_identity=binding.locality_identity,
         )
     ):

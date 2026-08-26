@@ -77,7 +77,7 @@ def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
 
     assert reading["standing"]["through_event_occurrence_identity"] == reading[
         "source_standing_reference"
-    ]["source_standing_through_event_occurrence_identity"]
+    ]["source_through_event_occurrence_identity"]
     assert _acquired_materials(ledger, reading["standing"]) == [
         b"a\n",
         b"/checkpoint\n",

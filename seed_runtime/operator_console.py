@@ -638,7 +638,7 @@ def run_persistent_operator_console(
                     record_standing_locality_continuation_subject_to_act_binding(
                         ledger,
                         source_locality_identity=locality_identity,
-                        standing_boundary_event_identity=(
+                        source_through_event_occurrence_identity=(
                             command_run.addressed.addressed_at_standing_boundary_event_identity
                         ),
                     )

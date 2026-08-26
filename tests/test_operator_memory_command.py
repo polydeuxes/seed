@@ -94,8 +94,8 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
         ledger, result.identity
     )
     addressed = ledger.get(
-        recorded["source_standing_reference"][
-            "source_standing_through_event_occurrence_identity"
+        recorded["source_coordinate_reference"][
+            "source_through_event_occurrence_identity"
         ]
     )
     assert addressed.locality_identity == "source"
@@ -140,8 +140,8 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
     )
 
     assert {
-        recorded["source_standing_reference"][
-            "source_standing_through_event_occurrence_identity"
+        recorded["source_coordinate_reference"][
+            "source_through_event_occurrence_identity"
         ],
     } <= source_identities
     for event in destination:

@@ -46,7 +46,7 @@ def _binding(
     return record_standing_locality_continuation_subject_to_act_binding(
         ledger,
         source_locality_identity=source_locality_identity,
-        standing_boundary_event_identity=boundary,
+        source_through_event_occurrence_identity=boundary,
     )
 
 
@@ -99,7 +99,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         "subject_to_act_binding_occurrences"
     ]
     assert binding.material["subject_reference"][
-        "source_standing_through_event_occurrence_identity"
+        "source_through_event_occurrence_identity"
     ] == boundary
     assert binding_reference == {
         "recorded_occurrence_identity": binding.identity,
@@ -136,13 +136,13 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     recorded = get_recorded_standing_locality_continuation(
         ledger, result.identity
     )
-    source_reference = recorded["source_standing_reference"]
+    source_reference = recorded["source_coordinate_reference"]
 
     assert result.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
     assert result.exact_material is None
     assert source_reference == {
         "source_locality_identity": "source",
-        "source_standing_through_event_occurrence_identity": source.identity,
+        "source_through_event_occurrence_identity": source.identity,
     }
     assert recorded["locality_relation"] == {
         "first_subject": source_reference,
@@ -302,10 +302,10 @@ def test_later_source_occurrences_do_not_move_the_exact_source_cut():
     )
     reference = get_recorded_standing_locality_continuation(
         ledger, result.identity
-    )["source_standing_reference"]
+    )["source_coordinate_reference"]
 
-    assert reference["source_standing_through_event_occurrence_identity"] == source.identity
-    assert reference["source_standing_through_event_occurrence_identity"] != later.identity
+    assert reference["source_through_event_occurrence_identity"] == source.identity
+    assert reference["source_through_event_occurrence_identity"] != later.identity
 
 
 def test_exact_empty_source_boundary_remains_empty():
@@ -327,9 +327,9 @@ def test_exact_empty_source_boundary_remains_empty():
 
     assert get_recorded_standing_locality_continuation(
         ledger, result.identity
-    )["source_standing_reference"] == {
+    )["source_coordinate_reference"] == {
         "source_locality_identity": "empty-source",
-        "source_standing_through_event_occurrence_identity": None,
+        "source_through_event_occurrence_identity": None,
         "addressed_boundary_event_identity": boundary[
             "boundary_event_identity"
         ],
@@ -371,14 +371,14 @@ def test_continuation_is_direct_and_does_not_carry_an_earlier_relation():
         ledger, second_result.identity
     )
 
-    assert second_recorded["source_standing_reference"] == {
+    assert second_recorded["source_coordinate_reference"] == {
         "source_locality_identity": first_destination,
-        "source_standing_through_event_occurrence_identity": first_result.identity,
+        "source_through_event_occurrence_identity": first_result.identity,
         "addressed_boundary_event_identity": second_source_boundary[
             "boundary_event_identity"
         ],
     }
-    first_source_boundary = first_recorded["source_standing_reference"][
+    first_source_boundary = first_recorded["source_coordinate_reference"][
         "addressed_boundary_event_identity"
     ]
     assert first_source_boundary not in repr(second_recorded)
@@ -424,9 +424,9 @@ def test_missing_different_or_changed_source_coordinates_are_refused():
 
     act_occurrence = _act(ledger, boundary)
     changed = ledger.get(act_occurrence.identity)
-    changed.material["source_standing_reference"] = {
-        **changed.material["source_standing_reference"],
-        "source_standing_through_event_occurrence_identity": "missing-cut",
+    changed.material["source_coordinate_reference"] = {
+        **changed.material["source_coordinate_reference"],
+        "source_through_event_occurrence_identity": "missing-cut",
     }
     with pytest.raises(
         StandingLocalityContinuationError,
@@ -441,7 +441,7 @@ def test_missing_different_or_changed_source_coordinates_are_refused():
 @pytest.mark.parametrize(
     "coordinate",
     (
-        "source_standing_reference",
+        "source_coordinate_reference",
         "destination_locality_identity",
         "participation",
         "locality_relation",
