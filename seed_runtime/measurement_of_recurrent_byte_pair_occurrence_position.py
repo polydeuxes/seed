@@ -117,7 +117,7 @@ def _exact_material_result_availability_coordinates(
 
 
 class ReferenceToRecordedRecurrentBytePair(NamedTuple):
-    """Exact address of one recurrence Assertion and its count support."""
+    """Exact address of one recurrence Assertion and its count Assertion."""
 
     recorded_occurrence_identity: str
     recurrence_assertion_position: int
@@ -351,7 +351,7 @@ def _references_to_recorded_recurrent_byte_pairs(
             or referenced_positions[0] < 0
         ):
             raise ValueError(
-                "the recurrent pair carries no exact count Assertion support"
+                "the recurrent pair carries no exact count Assertion reference"
             )
         count = findings_by_position.get(referenced_positions[0])
         if (
@@ -360,7 +360,7 @@ def _references_to_recorded_recurrent_byte_pairs(
             or count.exact_pair != recurrence.exact_pair
         ):
             raise ValueError(
-                "the recurrent pair count support carries another exact Assertion reference"
+                "the recurrent pair references another exact count Assertion"
             )
         reference = ReferenceToRecordedRecurrentBytePair(
             recorded_occurrence_identity=event.identity,

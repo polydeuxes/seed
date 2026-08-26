@@ -1940,7 +1940,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
         item: MeasuredByteCount,
         content: dict[str, Any],
         provenance: str,
-        local_support_references: list[int],
+        referenced_assertion_positions: list[int],
     ):
         subject = {"content": item.content}
         position = len(results)
@@ -1952,7 +1952,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "referenced_assertion_positions": local_support_references,
+            "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
             "unknown": ["Participation: Unknown"],
         }
@@ -1968,7 +1968,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             item=item,
             content=count_content,
             provenance="the exact source-material Assertion carried here",
-            local_support_references=[0],
+            referenced_assertion_positions=[0],
         )
         results.append(count)
         if item.count > 1:
@@ -1978,7 +1978,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                     item=item,
                     content={"recurrence_established": True},
                     provenance="the exact count Assertion carried here",
-                    local_support_references=[count["dimensions"]["position"]],
+                    referenced_assertion_positions=[count["dimensions"]["position"]],
                 )
             )
     return results
@@ -3054,8 +3054,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
         item: MeasuredBytePairCount,
         content: dict[str, Any],
         provenance: str,
-        local_support_references: list[int],
-        source_support_references: list[dict[str, Any]],
+        referenced_assertion_positions: list[int],
+        referenced_assertions: list[dict[str, Any]],
     ) -> dict[str, Any]:
         subject = {"content": list(item.content)}
         position = len(results)
@@ -3067,8 +3067,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "referenced_assertions": source_support_references,
-            "referenced_assertion_positions": local_support_references,
+            "referenced_assertions": referenced_assertions,
+            "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
             "unknown": list(BYTE_PAIR_UNKNOWN),
         }
@@ -3083,8 +3083,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "count": item.count,
             },
             provenance="the exact source-material Assertion referenced here",
-            local_support_references=[],
-            source_support_references=[measured.source_assertion_reference],
+            referenced_assertion_positions=[],
+            referenced_assertions=[measured.source_assertion_reference],
         )
         results.append(count)
         if item.count > 1:
@@ -3094,8 +3094,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                     item=item,
                     content={"recurrence_established": True},
                     provenance="the exact count Assertion carried here",
-                    local_support_references=[count["dimensions"]["position"]],
-                    source_support_references=[],
+                    referenced_assertion_positions=[count["dimensions"]["position"]],
+                    referenced_assertions=[],
                 )
             )
     return results
@@ -4889,7 +4889,9 @@ def _validated_recorded_byte_position_pair_measurement(
             or recurrence["referenced_assertion_positions"]
             != [count["dimensions"]["position"]]
         ):
-            raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
+            raise ByteMeasurementError(
+                f"{event_identity} carries an unlawful recurrence Assertion reference"
+            )
     validated_results = []
     for assertion in assertions:
         if findings_only:
