@@ -390,17 +390,17 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         _record_path(ledger, locality, first, second)
     )
     assert applicability_act.material["addressed_act_identity"] == (
-        binding.material["measurement_act_identity"]
+        binding.material["exact_act_identity"]
     )
     assert {
         relation["addressed_act_identity"]
         for relation in applicability_act.material["input_relations"]
-    } == {binding.material["measurement_act_identity"]}
+    } == {binding.material["exact_act_identity"]}
     applicability_reading = get_recorded_shared_position_applicability(
         ledger, applicability.identity
     )
     assert applicability_reading["addressed_act_identity"] == (
-        binding.material["measurement_act_identity"]
+        binding.material["exact_act_identity"]
     )
     assert applicability.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND
     assert applicability_reading["applicability"] == "applicable"

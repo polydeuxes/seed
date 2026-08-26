@@ -606,12 +606,11 @@ def _binding_material(
     determination_result_reference: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     material = {
-        "exact_act_identity": identities["measurement_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "subject_reference": {
             "first_position_assertion": _reference_material(inputs.first),
             "second_position_assertion": _reference_material(inputs.second),
         },
-        "measurement_act_identity": identities["measurement_act_identity"],
         "measurement_act_occurrence_identity": identities[
             "measurement_act_occurrence_identity"
         ],
@@ -698,7 +697,7 @@ def _applicability_binding_material(
 
 
 _IDENTITY_COORDINATES = (
-    "measurement_act_identity",
+    "exact_act_identity",
     "measurement_act_occurrence_identity",
     "measurement_result_identity",
 )
@@ -706,7 +705,7 @@ _IDENTITY_COORDINATES = (
 
 def _mint_measurement_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "measurement_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "shared_pair_position_measurement_act_identity"
         ),
         "measurement_act_occurrence_identity": ledger.mint_identity(
@@ -1402,7 +1401,7 @@ def _applicability_result_material(
         },
         "exact_act": APPLICABILITY_ACT,
         "addressed_act_identity": measurement_binding.material[
-            "measurement_act_identity"
+            "exact_act_identity"
         ],
         "addressed_act_occurrence_identity": (
             measurement_binding.material["measurement_act_occurrence_identity"]
@@ -1641,7 +1640,7 @@ def _measurement_act_material(
     through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
@@ -1892,7 +1891,7 @@ def _measurement_result_material(
             "scope": binding.material["scope"],
         },
         "exact_act": MEASUREMENT_ACT,
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
