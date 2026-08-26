@@ -328,7 +328,7 @@ def _latest_carried_pair_premise(
         ):
             continue
         reference = (
-            event.material.get("responsibility_assignment_reference")
+            event.material.get("subject_to_act_binding_reference")
             if type(event.material) is dict
             else None
         )

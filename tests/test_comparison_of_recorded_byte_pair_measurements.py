@@ -31,7 +31,10 @@ from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
-from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_console import (
+    _latest_carried_pair_premise,
+    run_persistent_operator_console,
+)
 from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOccurrence
 
 
@@ -709,6 +712,22 @@ def test_pair_premise_remains_carried_across_the_prior_compare_result():
     assert second_binding.material["earlier_measurement_reference"][
         "result_identity"
     ] == second.material["result_identity"]
+
+
+def test_console_addresses_the_latest_carried_pair_after_a_compare_result():
+    ledger, _first_source, _added, _first, second, *_middle, _comparison_result = (
+        _comparison()
+    )
+    current = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+
+    carried, premise = _latest_carried_pair_premise(
+        ledger,
+        current,
+        locality_identity=LOCALITY,
+    )
+
+    assert carried == current
+    assert premise == second
 
 
 @pytest.mark.parametrize(
