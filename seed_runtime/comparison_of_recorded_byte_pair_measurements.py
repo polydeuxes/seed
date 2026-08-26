@@ -360,7 +360,7 @@ def _comparison_inputs(
         )
     source_role = added.material.get("source_role")
     operator_material_source_result_event_identity = None
-    operator_material_source_standing_reference = None
+    operator_material_source_current_coordinate_reference = None
     if source_role == "this Witness":
         raise RecordedPairMeasurementComparisonError(
             "Witness provenance establishes no comparison input relation"
@@ -373,45 +373,47 @@ def _comparison_inputs(
         acquired_event, acquired = _operator_acquisition_for_material_result(
             ledger, added
         )
-        source_standing_reference = acquired.get("source_standing_reference")
+        source_coordinate_reference = acquired.get("current_coordinate_reference")
         if (
-            type(source_standing_reference) is not dict
-            or source_standing_reference.get("locality_identity")
+            type(source_coordinate_reference) is not dict
+            or source_coordinate_reference.get("locality_identity")
             != earlier.locality_identity
+            or source_coordinate_reference.get("through_event_occurrence_identity")
+            != earlier.identity
         ):
             raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one exact operator acquisition occurrence"
+                "later Measurement requires one exact operator source occurrence"
             )
         try:
-            source_standing = read_operator_locality_standing_through(
+            source_coordinates = read_operator_locality_standing_through(
                 ledger,
                 locality_identity=earlier.locality_identity,
-                through_event_occurrence_identity=source_standing_reference.get(
-                    "standing_boundary_event_identity"
-                ),
+                through_event_occurrence_identity=source_coordinate_reference[
+                    "through_event_occurrence_identity"
+                ],
             )
         except (TypeError, ValueError) as error:
             raise RecordedPairMeasurementComparisonError(
-                "operator acquisition carries no exact prior Standing"
+                "operator source occurrence carries no exact prior coordinates"
             ) from error
         carried_sources = {
             occurrence.get("result_occurrence_identity")
-            for occurrence in source_standing.get("material_acquisition_result_occurrences", ())
+            for occurrence in source_coordinates.get("material_acquisition_result_occurrences", ())
             if type(occurrence) is dict
         }
         if (
             earlier.identity
-            not in source_standing.get("measurement_occurrences", {})
+            not in source_coordinates.get("measurement_occurrences", {})
             or any(reference not in carried_sources for reference in earlier_sources)
         ):
             raise RecordedPairMeasurementComparisonError(
-                "operator acquisition carries no exact prior Standing"
+                "operator source occurrence carries no exact prior coordinates"
             )
         operator_material_source_result_event_identity = acquired_event.identity
-        operator_material_source_standing_reference = deepcopy(
-            source_standing_reference
+        operator_material_source_current_coordinate_reference = deepcopy(
+            source_coordinate_reference
         )
-        input_relation = "operator material acquisition at prior Standing"
+        input_relation = "operator material source occurrence after prior coordinates"
     else:
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact operator occurrence"
@@ -454,8 +456,8 @@ def _comparison_inputs(
         "operator_material_source_result_event_identity": (
             operator_material_source_result_event_identity
         ),
-        "operator_material_source_standing_reference": (
-            operator_material_source_standing_reference
+        "operator_material_source_current_coordinate_reference": (
+            operator_material_source_current_coordinate_reference
         ),
         "operator_invocation_locality_relation_event_identity": (
             invocation_relation.identity if invocation_relation is not None else None
@@ -555,43 +557,31 @@ def _comparison_inputs_from_carried_measurements(
         )
     source_role = added.material.get("source_role")
     acquisition_identity = None
-    source_standing_reference = None
+    source_coordinate_reference = None
     if source_role == "this operator":
         acquired, acquired_material = _operator_acquisition_for_material_result(
             ledger, added
         )
         exact_results = locality_standing.get("exact_result_occurrences")
-        source_standing_reference = acquired_material.get(
-            "source_standing_reference"
+        source_coordinate_reference = acquired_material.get(
+            "current_coordinate_reference"
         )
         if (
             acquired.locality_identity != earlier.locality_identity
             or acquired.exact_material != added.exact_material
             or type(exact_results) is not dict
             or acquired.identity not in exact_results
-            or type(source_standing_reference) is not dict
-            or source_standing_reference.get("locality_identity")
+            or type(source_coordinate_reference) is not dict
+            or source_coordinate_reference.get("locality_identity")
             != earlier.locality_identity
+            or source_coordinate_reference.get("through_event_occurrence_identity")
+            != earlier.identity
         ):
             raise RecordedPairMeasurementComparisonError(
-                "operator acquisition carries no exact prior Standing"
+                "operator source occurrence carries no exact prior coordinates"
             )
-        try:
-            ledger.occurrences_in_append_order(
-                (
-                    earlier.identity,
-                    source_standing_reference[
-                        "standing_boundary_event_identity"
-                    ],
-                ),
-                locality_identity=earlier.locality_identity,
-            )
-        except (KeyError, TypeError, ValueError) as error:
-            raise RecordedPairMeasurementComparisonError(
-                "operator acquisition carries no exact prior Standing"
-            ) from error
         acquisition_identity = acquired.identity
-        input_relation = "operator material acquisition at prior Standing"
+        input_relation = "operator material source occurrence after prior coordinates"
         operator_locality_identity = earlier.locality_identity
     elif source_role == "this Witness":
         raise RecordedPairMeasurementComparisonError(
@@ -634,8 +624,8 @@ def _comparison_inputs_from_carried_measurements(
         "added_provenance": tuple(provenance),
         "input_relation": input_relation,
         "operator_material_source_result_event_identity": acquisition_identity,
-        "operator_material_source_standing_reference": deepcopy(
-            source_standing_reference
+        "operator_material_source_current_coordinate_reference": deepcopy(
+            source_coordinate_reference
         ),
         "operator_invocation_locality_relation_event_identity": (
             invocation_relation.identity if invocation_relation is not None else None
@@ -760,8 +750,8 @@ def _assignment_material(
         "operator_material_source_result_event_identity": inputs[
             "operator_material_source_result_event_identity"
         ],
-        "operator_material_source_standing_reference": deepcopy(
-            inputs["operator_material_source_standing_reference"]
+        "operator_material_source_current_coordinate_reference": deepcopy(
+            inputs["operator_material_source_current_coordinate_reference"]
         ),
         "destination_operator_locality_identity": inputs[
             "operator_locality_identity"
@@ -778,8 +768,8 @@ def _assignment_material(
             "operator_material_source_result_event_identity": inputs[
                 "operator_material_source_result_event_identity"
             ],
-            "operator_material_source_standing_reference": deepcopy(
-                inputs["operator_material_source_standing_reference"]
+            "operator_material_source_current_coordinate_reference": deepcopy(
+                inputs["operator_material_source_current_coordinate_reference"]
             ),
             "destination_operator_locality_identity": inputs[
                 "operator_locality_identity"

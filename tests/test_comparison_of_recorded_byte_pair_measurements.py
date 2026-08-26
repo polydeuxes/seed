@@ -251,14 +251,14 @@ def test_operator_acquisition_carries_the_prior_pair_measurement_into_compare():
 
     assert assignment.material["added_occurrence_reference"] == added.identity
     assert assignment.material["input_relation"] == (
-        "operator material acquisition at prior Standing"
+        "operator material source occurrence after prior coordinates"
     )
     assert assignment.material[
         "operator_material_source_result_event_identity"
     ] == acquired.identity
     assert assignment.material[
-        "operator_material_source_standing_reference"
-    ] == acquired.material["source_standing_reference"]
+        "operator_material_source_current_coordinate_reference"
+    ] == acquired.material["current_coordinate_reference"]
     assert assignment.material["destination_operator_locality_identity"] == LOCALITY
 
 
