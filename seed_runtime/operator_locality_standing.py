@@ -2764,55 +2764,55 @@ def _carry_pair_measurement_result_into_standing(
     )
 
 
-def _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
+def _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     finding,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Carry the byte-pair position assignment produced beside this Standing."""
+    """Carry one byte-pair position binding into current coordinates."""
 
     if (
-        type(locality_standing) is not dict
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
         raise ValueError(
-            "byte-pair position assignment must follow its carried finding"
+            "byte-pair position binding requires its carried finding"
         )
     _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
         ledger,
-        responsibility_assignment=event,
+        binding=event,
         finding=finding,
     )
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    event_count = locality_standing.get("event_count")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    event_count = current_coordinates.get("event_count")
     if (
-        type(assignments) is not dict
-        or event.identity in assignments
+        type(bindings) is not dict
+        or event.identity in bindings
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("byte-pair position assignment Standing is not exact")
-    standing_additions = _exact_standing_additions(
-        locality_standing,
+        raise ValueError("byte-pair position binding coordinates are not exact")
+    coordinate_additions = _exact_standing_additions(
+        current_coordinates,
         event,
-        error_message="byte-pair position assignment Standing is not exact",
+        error_message="byte-pair position binding coordinates are not exact",
     )
-    assignments[event.identity] = None
-    for key, added in standing_additions.items():
+    bindings[event.identity] = None
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
-def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
-    locality_standing: dict[str, Any],
+def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
+    current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
@@ -2820,33 +2820,33 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
     """Carry the position-coordinate result produced by this console call."""
 
     if (
-        type(locality_standing) is not dict
+        type(current_coordinates) is not dict
         or event.kind != BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
         raise ValueError(
             "position-coordinate Measurement must follow its carried Act and Yield"
         )
-    measurements = locality_standing.get("measurement_occurrences")
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    acquisition_results = locality_standing.get("material_result_occurrences")
-    assignment = event.material.get("subject_to_act_binding_reference")
+    measurements = current_coordinates.get("measurement_occurrences")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    material_results = current_coordinates.get("material_result_occurrences")
+    binding = event.material.get("subject_to_act_binding_reference")
     source_identity = event.material.get("source_material_result_occurrence_identity")
-    event_count = locality_standing.get("event_count")
+    event_count = current_coordinates.get("event_count")
     if (
         type(measurements) is not dict
-        or type(assignments) is not dict
-        or type(acquisition_results) is not list
-        or type(assignment) is not dict
-        or assignment.get("recorded_occurrence_identity") not in assignments
+        or type(bindings) is not dict
+        or type(material_results) is not list
+        or type(binding) is not dict
+        or binding.get("recorded_occurrence_identity") not in bindings
         or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
         or not any(
             type(occurrence) is dict
             and occurrence.get("result_occurrence_identity") == source_identity
-            for occurrence in acquisition_results
+            for occurrence in material_results
         )
         or type(event.material.get("yield_relation_identity"))
         is not str
@@ -2855,19 +2855,19 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("position-coordinate Measurement Standing is not exact")
-    standing_additions = _exact_standing_additions(
-        locality_standing,
+        raise ValueError("position-coordinate Measurement coordinates are not exact")
+    coordinate_additions = _exact_standing_additions(
+        current_coordinates,
         event,
-        error_message="position-coordinate Measurement Standing is not exact",
+        error_message="position-coordinate Measurement coordinates are not exact",
     )
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
 def _carry_operator_material_source_occurrence_into_standing(

@@ -1,10 +1,9 @@
 """Record all declared Measurement subjects through B.
 
 Each declaration names one existing Book-assigned Measurement Responsibility.
-All subjects are recovered once from one exact bounded
-Locality replay.  Each assignment preserves that same responsible boundary;
-durable writes remain serial without making an earlier Measurement lifecycle
-an input to a later assignment.
+All subjects are read once from one exact bounded Locality replay. Each binding
+preserves that same through-occurrence boundary; durable writes remain serial
+without making an earlier Measurement lifecycle an input to a later binding.
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding,
-    _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary,
+    _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
     _material_result_identities_with_exact_locality_from_bounded_replay,
     _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
@@ -34,8 +33,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 from seed_runtime.operator_locality_standing import (
     _carry_byte_measurement_binding_into_current_coordinates,
-    _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
-    _carry_byte_pair_occurrence_position_measurement_result_into_standing,
+    _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates,
+    _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
@@ -184,7 +183,7 @@ def _complete_direct_measurement(
 ) -> tuple[dict[str, Any], Event]:
     prior_boundary = recording_replay["through_event_occurrence_identity"]
     recording_replay = (
-        _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
+        _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates(
             ledger,
             recording_replay,
             assignment,
@@ -211,7 +210,7 @@ def _complete_direct_measurement(
         finding=finding,
     )
     recording_replay = (
-        _carry_byte_pair_occurrence_position_measurement_result_into_standing(
+        _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
             recording_replay,
             result,
             prior_through_event_occurrence_identity=act.identity,
@@ -223,7 +222,7 @@ def _complete_direct_measurement(
 def _record_direct_measurement(
     ledger: EventLedger,
     recording_replay: dict[str, Any],
-    responsibility_boundary_replay: dict[str, Any],
+    through_occurrence_coordinates: dict[str, Any],
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
@@ -237,13 +236,13 @@ def _record_direct_measurement(
     )
     if finding.source_locality_identity != locality_identity:
         raise ValueError("direct Measurement subject belongs to another Locality")
-    responsibility_boundary_identity = responsibility_boundary_replay.get(
+    through_event_occurrence_identity = through_occurrence_coordinates.get(
         "through_event_occurrence_identity"
     )
-    assignment = _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary(
+    assignment = _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence(
         ledger,
         finding=finding,
-        responsibility_boundary_identity=responsibility_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return _complete_direct_measurement(
         ledger, recording_replay, locality_identity, assignment, finding
@@ -352,28 +351,28 @@ def _complete_byte_measurement(
 def _record_byte_measurement(
     ledger: EventLedger,
     recording_replay: dict[str, Any],
-    responsibility_boundary_replay: dict[str, Any],
+    through_occurrence_coordinates: dict[str, Any],
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
 ) -> tuple[dict[str, Any], Event]:
     _require_exact_byte_occurrence_measurement_subject(
-        ledger, responsibility_boundary_replay, subject
+        ledger, through_occurrence_coordinates, subject
     )
-    responsibility_boundary_identity = responsibility_boundary_replay.get(
+    through_event_occurrence_identity = through_occurrence_coordinates.get(
         "through_event_occurrence_identity"
     )
     assignment = _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
-        through_event_occurrence_identity=responsibility_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return _complete_byte_measurement(
         ledger,
         recording_replay,
         locality_identity,
         assignment,
-        responsibility_boundary_replay,
+        through_occurrence_coordinates,
     )
 
 
@@ -403,14 +402,14 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
     *,
     locality_identity: str,
 ) -> RecordedDeclaredMeasurements:
-    """Record every exact subject recovered at one responsible boundary."""
+    """Record every exact subject carried through one exact occurrence."""
 
-    responsibility_boundary_replay = bounded_locality_replay
+    through_occurrence_coordinates = bounded_locality_replay
     recording_replay = deepcopy(bounded_locality_replay)
     results: list[Event] = []
     _require_current_replay_boundary(
         ledger,
-        responsibility_boundary_replay,
+        through_occurrence_coordinates,
         locality_identity=locality_identity,
     )
     complete_subjects = tuple(
@@ -418,7 +417,7 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         for declaration in DECLARED_MEASUREMENT_RESPONSIBILITIES
         for subject in declaration.discover(
             ledger,
-            responsibility_boundary_replay,
+            through_occurrence_coordinates,
             locality_identity,
         )
     )
@@ -431,7 +430,7 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         recording_replay, result = declaration.record(
             ledger,
             recording_replay,
-            responsibility_boundary_replay,
+            through_occurrence_coordinates,
             locality_identity,
             subject,
         )

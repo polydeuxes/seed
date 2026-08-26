@@ -693,42 +693,42 @@ def _require_current_coordinates(
     return boundary
 
 
-def _require_exact_responsibility_boundary(
+def _require_exact_through_event_occurrence(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    responsibility_boundary_identity: str,
+    through_event_occurrence_identity: str,
     source_material_result_occurrence_identity: str,
 ) -> str:
     """Validate the exact earlier boundary that supplies this binding subject."""
 
     if (
-        type(responsibility_boundary_identity) is not str
-        or not responsibility_boundary_identity
+        type(through_event_occurrence_identity) is not str
+        or not through_event_occurrence_identity
     ):
         raise ValueError(
             "byte-pair position-coordinate binding requires one exact "
-            "responsible boundary"
+            "through-occurrence boundary"
         )
-    boundary_event = ledger.get(responsibility_boundary_identity)
+    boundary_event = ledger.get(through_event_occurrence_identity)
     try:
         boundary = ledger.append_boundary_through_occurrence(
-            responsibility_boundary_identity
+            through_event_occurrence_identity
         )
         order = (source_material_result_occurrence_identity,)
         if (
             source_material_result_occurrence_identity
-            != responsibility_boundary_identity
+            != through_event_occurrence_identity
         ):
             order = (
                 source_material_result_occurrence_identity,
-                responsibility_boundary_identity,
+                through_event_occurrence_identity,
             )
         ledger.occurrences_in_append_order(order, locality_identity=locality_identity)
     except ValueError as error:
         raise ValueError(
             "byte-pair position-coordinate binding requires one exact "
-            "responsible boundary"
+            "through-occurrence boundary"
         ) from error
     if (
         boundary_event is None
@@ -740,7 +740,7 @@ def _require_exact_responsibility_boundary(
     ):
         raise ValueError(
             "byte-pair position-coordinate binding requires one exact "
-            "responsible boundary"
+            "through-occurrence boundary"
         )
     source = read_exact_material_result(
         ledger, source_material_result_occurrence_identity
@@ -755,9 +755,9 @@ def _require_exact_responsibility_boundary(
     ):
         raise ValueError(
             "byte-pair position-coordinate binding requires one exact "
-            "responsible boundary"
+            "through-occurrence boundary"
         )
-    return responsibility_boundary_identity
+    return through_event_occurrence_identity
 
 
 def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
@@ -853,20 +853,20 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
     )
 
 
-def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary(
+def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence(
     ledger: EventLedger,
     *,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
-    responsibility_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> Event:
-    """Record one binding preserving its exact earlier responsible boundary."""
+    """Record one binding through an exact earlier occurrence."""
 
     global_recording_boundary = ledger.append_boundary()
     _validate_finding(finding)
-    through_event_occurrence_identity = _require_exact_responsibility_boundary(
+    through_event_occurrence_identity = _require_exact_through_event_occurrence(
         ledger,
         locality_identity=finding.source_locality_identity,
-        responsibility_boundary_identity=responsibility_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         source_material_result_occurrence_identity=(
             finding.source_material_result_occurrence_identity
         ),
@@ -885,7 +885,7 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
     ):
         raise ValueError(
             "byte-pair position-coordinate binding requires one exact "
-            "unassigned subject at its responsibility boundary"
+            "unbound subject through the supplied occurrence"
         )
     identities = {
         "measurement_act_identity": new_identity(
@@ -924,7 +924,7 @@ def record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
     source_material_result_occurrence_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Assign the exact source result to this declared Measurement."""
+    """Bind the exact source result to this declared Measurement."""
 
     return _record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,

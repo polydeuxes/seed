@@ -72,7 +72,7 @@ class MovementSourceChangeLedger(EventLedger):
             source.material["unknown"] = ["changed after movement occurrence"]
         return event
 from seed_runtime.operator_locality_standing import (
-    _carry_byte_pair_occurrence_position_measurement_result_into_standing,
+    _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
     read_operator_locality_standing,
 )
 
@@ -1004,7 +1004,7 @@ def test_same_call_result_carry_equals_full_standing_replay():
         act_occurrence_event_identity=act.identity,
     )
 
-    carried = _carry_byte_pair_occurrence_position_measurement_result_into_standing(
+    carried = _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
         before_result,
         result,
         prior_through_event_occurrence_identity=act.identity,
@@ -1036,8 +1036,8 @@ def test_refused_same_call_result_does_not_change_prior_standing():
     malformed = deepcopy(result)
     malformed.material["unknown"] = "not one exact list"
 
-    with pytest.raises(ValueError, match="Standing is not exact"):
-        _carry_byte_pair_occurrence_position_measurement_result_into_standing(
+    with pytest.raises(ValueError, match="coordinates are not exact"):
+        _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
             prior,
             malformed,
             prior_through_event_occurrence_identity=act.identity,
