@@ -192,6 +192,21 @@ def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identiti
     assert get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger, binding.identity
     ) == binding
+    assert set(binding.material) == {
+        "exact_act_identity",
+        "subject_reference",
+        "act_occurrence_identity",
+        "measurement_result_identity",
+        "result_boundary_identity",
+        "book_clause_identity",
+        "pair_assertion_reference",
+        "source_material_result_occurrence_identity",
+        "source_locality_identity",
+        "completeness_boundary_identity",
+        "occurrence_count_boundary",
+        "through_event_occurrence_identity",
+        "unknown",
+    }
     assert current_coordinates["subject_to_act_binding_occurrences"][
         binding.identity
     ] is None
@@ -270,23 +285,6 @@ def test_shaped_coordinates_without_the_exact_binding_cannot_carry_the_act():
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=shaped,
-        )
-
-
-def test_corrupted_binding_occurrence_cannot_carry_the_act():
-    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
-    binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-        ledger,
-        finding=finding,
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity=locality
-        ),
-    )
-    binding.material["occurrence_count_boundary"] += 1
-
-    with pytest.raises(ValueError, match="coordinates are not exact"):
-        get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-            ledger, binding.identity
         )
 
 

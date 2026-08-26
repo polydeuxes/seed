@@ -600,13 +600,6 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "occurrence_count_boundary": finding.occurrence_count_boundary,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "source_locality_identity": finding.source_locality_identity,
-            "completeness_boundary_identity": (
-                finding.completeness_boundary.identity
-            ),
-            "occurrence_count_boundary": finding.occurrence_count_boundary,
-        },
         "unknown": [],
     }
 
