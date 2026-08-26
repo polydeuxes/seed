@@ -64,52 +64,49 @@ byte-measurement family prefix                   not the distinction
 The digest is a compact witness-side proxy for already-carried coordinates. It
 does not add a grammatical discriminator.
 
-## Bounded plain-byte build
+## Free-token falsification
 
-The plain-byte road now mints one result-local Assertion address through the
-Ledger for each exact Assertion before Yield/result recording. Reconstruction
-receives those recorded addresses and still compares the complete source-derived
-Assertion material. Count-to-recurrence support and movement retain their exact
-addresses across durable reopen without JSON, UTF-8, or SHA.
-
-This proves that the hash was not the Assertion distinction on the plain-byte
-road.
-
-## Pair build
-
-The adjacent pair road now uses the same Ledger-owned result-local Assertion
-address. Its reader validates that each address is exact and distinct, then
-validates the complete pair Assertion coordinates and local count-to-recurrence
-support. The optimized hand-built JSON/SHA path and its UTF-8 conversion are
-gone.
-
-Two exact address shapes had remained possible:
+The first encoder removal replaced each digest with a Ledger-minted string.
+Address-only mutation then exposed a loss on both byte roads:
 
 ```text
-recorded result occurrence
-+ exact result-local Assertion occurrence identity
+record result
+change one leaf Assertion address to another unique nonempty string
+make the Yield carry that changed result
+read
+→ accepted
 ```
 
-or:
+The reader had no independently recorded mint relation. It read the token from
+the result and used that same token to construct the material it compared. A
+minted string therefore did not establish its own address.
+
+## Exact result-local address
+
+Both byte roads now address an Assertion as:
 
 ```text
-recorded result occurrence
-+ exact carried Assertion coordinates
+exact recorded result occurrence
++ exact Assertion position within that result
 ```
 
-The first is now proven by both roads: the Ledger can mint and preserve
-the local Assertion address before Yield/result recording, then replay the
-stored address while validating all independently reconstructed coordinates.
-The second would carry a larger exact reference and may still be investigated
-later; it is not required to remove the internal encoders.
+The result derives positions directly from source-ordered Assertion formation.
+Readers reconstruct the same positions independently. Changing one leaf
+position or removing an Assertion changes that address surface and is refused.
+Local count-to-recurrence support carries the exact result-local position, and
+movement carries the complete occurrence-plus-position reference.
+
+The same subtraction removed the UTF-8/SHA address used by the immediately
+following recurrent-pair position Measurement. Its Assertions are likewise
+addressed by recorded result occurrence plus exact result-local position.
 
 No encoder, decoder, hash, schema-family label, or compatibility field is
 warranted by the recovered distinction.
 
 ## Disposition
 
-The hash identities are not constitutional grammar. Both byte Measurement hash
-paths have been removed while preserving:
+The hash identities and replacement free tokens are not constitutional grammar.
+The active byte paths now preserve:
 
 ```text
 count Assertion → recurrence support
