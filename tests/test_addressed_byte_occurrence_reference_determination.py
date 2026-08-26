@@ -626,7 +626,7 @@ def test_binding_refuses_unrelated_append_during_source_revalidation(monkeypatch
     prior = deepcopy(current_coordinates)
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="append tip",
+        match="current append boundary",
     ):
         record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
             ledger,
@@ -710,7 +710,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
 
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="append tip",
+        match="current append boundary",
     ):
         record_addressed_byte_occurrence_reference_determination_applicability_result(
             ledger, applicability_act_occurrence_event_identity=act.identity
@@ -776,7 +776,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
 
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="append tip",
+        match="current append boundary",
     ):
         record_addressed_byte_occurrence_reference_determination_result(
             ledger, determination_act_occurrence_event_identity=act.identity

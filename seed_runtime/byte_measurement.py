@@ -446,7 +446,7 @@ def _recorded_input_assertion_coordinates(
         != source.locality_movement_event_identity
     ):
         raise ByteMeasurementError(
-            "byte-position-pair Applicability requires exact input Standing"
+            "byte-position-pair Applicability requires exact input coordinates"
         )
     return exact, {
         "recorded_measurement_result_occurrence_identity": (
@@ -1438,7 +1438,7 @@ def _record_assertion_locality_movement_result_from_current_coordinates(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "Assertion movement result requires its exact carried Act at the append tip"
+            "Assertion movement result requires its exact carried Act at the current append boundary"
         )
     return _append_assertion_locality_movement_result(
         ledger, act=act, binding=binding
@@ -2915,7 +2915,7 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "byte Measurement result requires its exact Act at the append tip"
+            "byte Measurement result requires its exact Act at the current append boundary"
         )
     return _record_byte_measurement_result_from_exact_inputs(
         ledger,
@@ -3388,7 +3388,7 @@ def _pair_source_is_carried(
     )
 
 
-def _require_carried_pair_measurement_standing_at_tip(
+def _require_carried_pair_measurement_at_current_append_boundary(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
@@ -3432,7 +3432,7 @@ def _require_carried_pair_measurement_standing_at_tip(
         )
     ):
         raise ByteMeasurementError(
-            "byte-position-pair Measurement requires exact carried Standing at the append tip"
+            "byte-position-pair Measurement requires exact carried coordinates at the current append boundary"
         )
     return boundary
 
@@ -3544,7 +3544,7 @@ def _prior_standing_for_pair_subject_to_act_binding(
         )
     except (TypeError, ValueError) as error:
         raise ByteMeasurementError(
-            "byte-position-pair subject-to-Act binding has no exact prior Standing"
+            "byte-position-pair subject-to-Act binding has no exact prior coordinates"
         ) from error
 
 
@@ -3574,7 +3574,7 @@ def _read_pair_subject_to_act_binding(
     boundary = material.get("through_event_occurrence_identity")
     if type(boundary) is not str or not boundary:
         raise ByteMeasurementError(
-            "byte-position-pair Measurement assignment carries no Standing boundary"
+            "byte-position-pair Measurement binding carries no through-occurrence boundary"
         )
     if movement_identity is None:
         if prior_standing is None:
@@ -3633,7 +3633,7 @@ def _read_pair_subject_to_act_binding(
         or not (boundary_is_exact or assignment_is_carried)
     ):
         raise ByteMeasurementError(
-            "byte-position-pair subject-to-Act binding has no exact prior Standing"
+            "byte-position-pair subject-to-Act binding has no exact prior coordinates"
         )
     order = (boundary, binding.identity)
     if assignment_is_carried and standing_boundary != binding.identity:
@@ -3739,7 +3739,7 @@ def _record_pair_input_applicability_act_from_carried_assignment(
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
     _require_exact_pair_subject_to_act_binding_event(ledger, assignment, source)
-    _require_carried_pair_measurement_standing_at_tip(
+    _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
@@ -3877,7 +3877,7 @@ def _record_pair_input_applicability_result_from_carried_act(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "pair Applicability result requires its exact Act at the append tip"
+            "pair Applicability result requires its exact Act at the current append boundary"
         )
     result_material = _pair_applicability_result_material(
         assignment, source, applicability_assertion
@@ -3903,7 +3903,7 @@ def _record_pair_input_applicability_result_from_carried_act(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "pair Applicability result requires its exact Yield at the append tip"
+            "pair Applicability result requires its exact Yield at the current append boundary"
         )
     recorded_material = {
         **_pair_applicability_result_material(
@@ -4144,7 +4144,7 @@ def _record_pair_measurement_act_from_carried_applicability(
         source=source,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    _require_carried_pair_measurement_standing_at_tip(
+    _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
@@ -4158,7 +4158,7 @@ def _record_pair_measurement_act_from_carried_applicability(
         or applicability_event.material["dimensions"]["applicability"] != "applicable"
     ):
         raise ByteMeasurementError(
-            "pair Measurement Act requires exact applicable Standing at the append tip"
+            "pair Measurement Act requires exact applicable coordinates at the current append boundary"
         )
     return ledger.append(
         BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -4315,7 +4315,7 @@ def _record_pair_measurement_result_from_carried_act(
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    _require_carried_pair_measurement_standing_at_tip(
+    _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
@@ -4338,7 +4338,7 @@ def _record_pair_measurement_result_from_carried_act(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "pair Measurement result requires its exact Act at the append tip"
+            "pair Measurement result requires its exact Act at the current append boundary"
         )
     scope = source.material["assertion_scope"]
     content = source.material["dimensions"]["content"]
@@ -4363,7 +4363,7 @@ def _record_pair_measurement_result_from_carried_act(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "pair Measurement result requires its exact Act at the append tip"
+            "pair Measurement result requires its exact Act at the current append boundary"
         )
     result_material = _pair_measurement_result_material(
         measured,
@@ -4390,7 +4390,7 @@ def _record_pair_measurement_result_from_carried_act(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "pair Measurement result requires its exact Yield at the append tip"
+            "pair Measurement result requires its exact Yield at the current append boundary"
         )
     recorded_material = {
         **_pair_measurement_result_material(
@@ -4508,7 +4508,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         _carry_pair_measurement_result_into_standing,
     )
 
-    boundary = _require_carried_pair_measurement_standing_at_tip(
+    boundary = _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity=recording_locality_identity,
@@ -4641,7 +4641,7 @@ def _record_byte_position_pair_count_layer_from_carried_locality_standing(
         source_measurement_event_identity=source_measurement_event_identity,
         measurement_locality_identity=recording_locality_identity,
     )
-    _require_carried_pair_measurement_standing_at_tip(
+    _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity=recording_locality_identity,

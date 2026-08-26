@@ -280,7 +280,7 @@ def _require_exact_current_coordinates(
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires current coordinates at the append tip"
+            "determination requires current coordinates through the append boundary"
         )
     return current_coordinates
 
@@ -482,7 +482,7 @@ def record_addressed_byte_occurrence_reference_determination_subject_to_act_bind
     _require_stage_at_append_tip(
         ledger,
         event=ledger.get(current["through_event_occurrence_identity"]),
-        message="determination binding coordinates left the append tip",
+        message="determination binding coordinates left the current append boundary",
     )
     return ledger.append(
         DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -786,7 +786,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
     _require_stage_at_append_tip(
         ledger,
         event=determination_binding,
-        message="determination binding left the append tip",
+        message="determination binding left the current append boundary",
     )
     identities = {
         "applicability_act_identity": ledger.mint_identity(
@@ -1035,7 +1035,7 @@ def _prepare_result_yield(
     )
     if ledger.append_boundary_through_occurrence(act.identity) != ledger.append_boundary():
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result requires its exact Act at the append tip"
+            "determination result requires its exact Act at the current append boundary"
         )
 
 
@@ -1048,7 +1048,7 @@ def _require_yield_at_append_tip(ledger: EventLedger, yield_relation: Event) -> 
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result requires exact Yield relation at the append tip"
+            "determination result requires exact Yield relation at the current append boundary"
         )
 
 
@@ -1213,7 +1213,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         if read != recorded:
             raise AddressedByteOccurrenceReferenceDeterminationError(message)
     _require_stage_at_append_tip(
-        ledger, event=act, message="Applicability Act left the append tip"
+        ledger, event=act, message="Applicability Act left the current append boundary"
     )
     yield_relation = _record_applicability_yield_relation(
         ledger,
@@ -1538,7 +1538,7 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     _require_stage_at_append_tip(
         ledger,
         event=applicability,
-        message="determination Measurement Applicability left the append tip",
+        message="determination Measurement Applicability left the current append boundary",
     )
     return ledger.append(
         DETERMINATION_ACT_OCCURRENCE_EVENT,
@@ -1778,7 +1778,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
     _require_stage_at_append_tip(
         ledger,
         event=act,
-        message="determination Measurement Act left the append tip",
+        message="determination Measurement Act left the current append boundary",
     )
     yield_relation = _record_determination_yield_relation(
         ledger,
@@ -1951,7 +1951,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     _require_stage_at_append_tip(
         ledger,
         event=ledger.get(boundary),
-        message="determination binding coordinates left the append tip",
+        message="determination binding coordinates left the current append boundary",
     )
     source_material = deepcopy(source_result.material)
     identities = {
@@ -1994,12 +1994,12 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
                 message="determination requires each carried stage intact",
             )
 
-    def require_prior_at_tip(event: Event) -> None:
+    def require_prior_at_current_append_boundary(event: Event) -> None:
         require_intact()
         _require_stage_at_append_tip(
             ledger,
             event=event,
-            message="determination carried stage left the append tip",
+            message="determination carried stage left the current append boundary",
         )
 
     def carry(event: Event, *, prior: str) -> None:
@@ -2094,7 +2094,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         through_event_occurrence_identity=boundary,
         identities=identities,
     )
-    require_prior_at_tip(ledger.get(boundary))
+    require_prior_at_current_append_boundary(ledger.get(boundary))
     determination_binding = ledger.append(
         DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _determination_binding_material(
@@ -2143,7 +2143,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         ],
         identities=applicability_identities,
     )
-    require_prior_at_tip(determination_binding)
+    require_prior_at_current_append_boundary(determination_binding)
     applicability_binding = ledger.append(
         APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         applicability_binding_material,
@@ -2168,7 +2168,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     applicability_act_material = _applicability_act_material(
         binding=applicability_binding, source_result=source_result
     )
-    require_prior_at_tip(applicability_binding)
+    require_prior_at_current_append_boundary(applicability_binding)
     applicability_act = ledger.append(
         APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
@@ -2199,7 +2199,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         occurrence_coordinate="applicability_act_occurrence_identity",
         result_event_kind=APPLICABILITY_RESULT_KIND,
     )
-    require_prior_at_tip(applicability_act)
+    require_prior_at_current_append_boundary(applicability_act)
     applicability_yield_relation = _record_applicability_yield_relation(
         ledger,
         act=applicability_act,
@@ -2245,7 +2245,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         source_result=source_result,
         applicability_result=applicability,
     )
-    require_prior_at_tip(applicability)
+    require_prior_at_current_append_boundary(applicability)
     act = ledger.append(
         DETERMINATION_ACT_OCCURRENCE_EVENT,
         _determination_act_material(
@@ -2274,7 +2274,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         occurrence_coordinate="determination_act_occurrence_identity",
         result_event_kind=DETERMINATION_RESULT_KIND,
     )
-    require_prior_at_tip(act)
+    require_prior_at_current_append_boundary(act)
     yield_relation = _record_determination_yield_relation(
         ledger,
         act=act,

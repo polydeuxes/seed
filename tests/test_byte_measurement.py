@@ -637,7 +637,7 @@ def test_console_exact_byte_same_call_path_uses_carried_current_coordinates(
     )
 
 
-def test_call_local_binding_carry_requires_the_exact_binding_at_tip():
+def test_call_local_binding_carry_requires_the_exact_binding_at_current_append_boundary():
     ledger = _ledger(b"a\n")
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
@@ -665,7 +665,7 @@ def test_call_local_binding_carry_requires_the_exact_binding_at_tip():
         )
 
 
-def test_call_local_result_requires_the_exact_act_at_tip():
+def test_call_local_result_requires_the_exact_act_at_current_append_boundary():
     ledger = _ledger(b"a\n")
     assignment, act = _record_byte_measurement_binding_and_act(
         ledger,
@@ -693,7 +693,7 @@ def test_call_local_result_requires_the_exact_act_at_tip():
         )
 
 
-def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
+def test_call_local_result_rechecks_current_append_boundary_after_source_callback(monkeypatch):
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"a\n")
@@ -722,7 +722,7 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
         "_material_result_bytes",
         record_public_result_during_source_read,
     )
-    with pytest.raises(ByteMeasurementError, match="Act at the append tip"):
+    with pytest.raises(ByteMeasurementError, match="Act at the current append boundary"):
         _record_byte_measurement_result_from_carried_act_occurrence(
             ledger,
             act_occurrence=act,
@@ -1747,7 +1747,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
     standing = read_operator_current_coordinates(
         ledger, locality_identity="byte-measurement"
     )
-    boundary = byte_measurement._require_carried_pair_measurement_standing_at_tip(
+    boundary = byte_measurement._require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity="byte-measurement",
@@ -1906,7 +1906,7 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
     assert counts[(97, 98)] == 2
 
 
-def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypatch):
+def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_source_callback(monkeypatch):
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"abab\n")
@@ -1921,11 +1921,11 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
     def append_during_pair_measurement(ledger, acquisition_result):
         nonlocal callback_recorded
         events = ledger.list()
-        tip = events[-1] if events else None
+        last_event = events[-1] if events else None
         if (
             not callback_recorded
-            and tip is not None
-            and tip.kind
+            and last_event is not None
+            and last_event.kind
             == "operator.measurement.byte_position_pair_act_occurrenced"
         ):
             callback_recorded = True
@@ -2180,7 +2180,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
         )
 
 
-def test_movement_act_refuses_standing_before_a_later_destination_tip():
+def test_movement_act_refuses_coordinates_before_a_later_destination_append_boundary():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     assignment = record_assertion_locality_movement_subject_to_act_binding(
@@ -2439,7 +2439,7 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
 
 
 @pytest.mark.parametrize("phase", ("assignment", "act", "result"))
-def test_movement_batch_carry_phases_refuse_a_later_append_tip_without_mutation(
+def test_movement_batch_carry_phases_refuse_a_later_append_boundary_without_mutation(
     phase,
 ):
     ledger = _ledger(b"ta\n")
