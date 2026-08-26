@@ -1,4 +1,4 @@
-"""01.Current.A.1 reads an exact result beside its subject-to-Act binding."""
+"""01.Current.A.1 reads an exact result with its subject-to-Act binding."""
 
 from __future__ import annotations
 
