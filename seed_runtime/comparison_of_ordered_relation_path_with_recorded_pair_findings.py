@@ -109,7 +109,7 @@ def _identity(value: Any, message: str) -> str:
     return value
 
 
-def _advance_carried_current_coordinates(
+def _advance_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event_identities: tuple[str, ...],
@@ -271,7 +271,12 @@ def _comparison_finding_references(
     return tuple(references)
 
 
-def _comparison_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any]:
+def _comparison_input(
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     event = _event(
         ledger,
         event_identity,
@@ -279,7 +284,11 @@ def _comparison_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any
         message="comparison of ordered relation path with recorded pair findings requires one exact recorded comparison result",
     )
     material, binding_reading = (
-        _recorded_pair_measurement_comparison_reading(ledger, event.identity)
+        _recorded_pair_measurement_comparison_reading(
+            ledger,
+            event.identity,
+            prior_coordinates=prior_coordinates,
+        )
     )
     binding = binding_reading[0]
     binding_reference = material.get("subject_to_act_binding_reference")
@@ -355,7 +364,11 @@ def _inputs(
             path_result_event_identity,
             prior_coordinates=prior_coordinates,
         ),
-        _comparison_input(ledger, comparison_result_event_identity),
+        _comparison_input(
+            ledger,
+            comparison_result_event_identity,
+            prior_coordinates=prior_coordinates,
+        ),
     )
 
 
@@ -503,7 +516,7 @@ def record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
             current_coordinates=current_coordinates,
         )
         bindings.append(binding)
-        current_coordinates = _advance_carried_current_coordinates(
+        current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
             (binding.identity,),
@@ -559,7 +572,10 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
         reading[0].identity: reading for reading in comparison_binding_readings
     }
 
-    applicability_bindings_by_compare_act: dict[str, Event] = {}
+    applicability_binding_readings_by_compare_act: dict[
+        str,
+        tuple[Event, dict[str, Any], tuple[Event, dict[str, Any]]],
+    ] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
@@ -587,53 +603,65 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
         compare_act_identity = comparison_binding_reading[0].material[
             "exact_act_identity"
         ]
-        if compare_act_identity in applicability_bindings_by_compare_act:
+        if compare_act_identity in applicability_binding_readings_by_compare_act:
             raise ValueError(
                 "ordered-path Compare carries repeated Applicability binding"
             )
-        applicability_bindings_by_compare_act[compare_act_identity] = (
-            applicability_binding
+        applicability_binding_readings_by_compare_act[compare_act_identity] = (
+            applicability_binding,
+            _inputs,
+            comparison_binding_reading,
         )
 
     for comparison_binding_reading in comparison_binding_readings:
         binding = comparison_binding_reading[0]
         compare_act_identity = binding.material["exact_act_identity"]
-        if compare_act_identity in applicability_bindings_by_compare_act:
+        if compare_act_identity in applicability_binding_readings_by_compare_act:
             continue
         applicability_binding = _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding_from_reading(
             ledger,
             comparison_binding_reading=comparison_binding_reading,
             current_coordinates=current_coordinates,
         )
-        applicability_bindings_by_compare_act[compare_act_identity] = (
-            applicability_binding
+        applicability_binding_readings_by_compare_act[compare_act_identity] = (
+            applicability_binding,
+            comparison_binding_reading[1],
+            comparison_binding_reading,
         )
-        current_coordinates = _advance_carried_current_coordinates(
+        current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
             (applicability_binding.identity,),
             locality_identity=locality_identity,
         )
 
-    applicability_bindings = tuple(
-        applicability_bindings_by_compare_act[binding.material["exact_act_identity"]]
+    applicability_binding_readings = tuple(
+        applicability_binding_readings_by_compare_act[
+            binding.material["exact_act_identity"]
+        ]
         for binding in bindings
     )
-    acts_by_binding: dict[str, Event] = {}
+    applicability_act_readings_by_binding: dict[
+        str,
+        tuple[Event, Event, dict[str, Any], tuple[Event, dict[str, Any]]],
+    ] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     ):
-        act, binding, _inputs_reading, _comparison_binding_reading = _read_applicability_act(
+        applicability_act_reading = _read_applicability_act(
             ledger,
             occurrence.identity,
             prior_coordinates=current_coordinates,
         )
-        if binding.identity in acts_by_binding:
+        binding = applicability_act_reading[1]
+        if binding.identity in applicability_act_readings_by_binding:
             raise ValueError(
                 "ordered-path Compare binding carries repeated Applicability Act occurrence"
             )
-        acts_by_binding[binding.identity] = act
+        applicability_act_readings_by_binding[binding.identity] = (
+            applicability_act_reading
+        )
 
     results_by_binding: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
@@ -651,38 +679,62 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
             )
         results_by_binding[binding.identity] = result
 
-    recorded: list[Event] = []
-    for binding in applicability_bindings:
+    recorded_act_identities: list[str] = []
+    for applicability_binding_reading in applicability_binding_readings:
+        binding = applicability_binding_reading[0]
         if binding.identity in results_by_binding:
             continue
-        act = acts_by_binding.get(binding.identity)
-        if act is None:
-            act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
+        applicability_act_reading = applicability_act_readings_by_binding.get(
+            binding.identity
+        )
+        if applicability_act_reading is None:
+            act = _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence_from_reading(
                 ledger,
-                applicability_binding_event_identity=binding.identity,
+                applicability_binding_reading=applicability_binding_reading,
                 current_coordinates=current_coordinates,
             )
-            acts_by_binding[binding.identity] = act
-            current_coordinates = _advance_carried_current_coordinates(
-                ledger,
-                current_coordinates,
-                (act.identity,),
-                locality_identity=locality_identity,
+            applicability_act_reading = (
+                act,
+                binding,
+                applicability_binding_reading[1],
+                applicability_binding_reading[2],
             )
-        result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+            applicability_act_readings_by_binding[binding.identity] = (
+                applicability_act_reading
+            )
+            recorded_act_identities.append(act.identity)
+    if recorded_act_identities:
+        current_coordinates = _advance_current_coordinates(
             ledger,
-            act_occurrence_event_identity=act.identity,
+            current_coordinates,
+            tuple(recorded_act_identities),
+            locality_identity=locality_identity,
+        )
+
+    recorded: list[Event] = []
+    recorded_result_identities: list[str] = []
+    for applicability_binding_reading in applicability_binding_readings:
+        binding = applicability_binding_reading[0]
+        if binding.identity in results_by_binding:
+            continue
+        applicability_act_reading = applicability_act_readings_by_binding[
+            binding.identity
+        ]
+        result = _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result_from_reading(
+            ledger,
+            applicability_act_reading=applicability_act_reading,
             current_coordinates=current_coordinates,
         )
         results_by_binding[binding.identity] = result
         recorded.append(result)
-        current_coordinates = _advance_carried_current_coordinates(
+        recorded_result_identities.extend(
+            (result.material["yield_relation_identity"], result.identity)
+        )
+    if recorded_result_identities:
+        current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
-            (
-                result.material["yield_relation_identity"],
-                result.identity,
-            ),
+            tuple(recorded_result_identities),
             locality_identity=locality_identity,
         )
 
@@ -772,7 +824,7 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
         )
         acts_by_applicability[applicability.identity] = act
         recorded.append(act)
-        current_coordinates = _advance_carried_current_coordinates(
+        current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
             (act.identity,),
@@ -847,7 +899,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_coordinates(
         )
         results_by_act[act.identity] = result
         recorded.append(result)
-        current_coordinates = _advance_carried_current_coordinates(
+        current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
             (
@@ -1311,11 +1363,27 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     applicability_binding_event_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    binding, _inputs, _comparison_binding_reading = _read_applicability_binding(
+    applicability_binding_reading = _read_applicability_binding(
         ledger,
         applicability_binding_event_identity,
         prior_coordinates=current_coordinates,
     )
+    return _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence_from_reading(
+        ledger,
+        applicability_binding_reading=applicability_binding_reading,
+        current_coordinates=current_coordinates,
+    )
+
+
+def _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence_from_reading(
+    ledger: EventLedger,
+    *,
+    applicability_binding_reading: tuple[
+        Event, dict[str, Any], tuple[Event, dict[str, Any]]
+    ],
+    current_coordinates: dict[str, Any],
+) -> Event:
+    binding = applicability_binding_reading[0]
     _require_binding_current_coordinates(binding, current_coordinates)
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
@@ -1466,11 +1534,27 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     act_occurrence_event_identity: str,
     current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    act, binding, inputs, _comparison_binding_reading = _read_applicability_act(
+    applicability_act_reading = _read_applicability_act(
         ledger,
         act_occurrence_event_identity,
         prior_coordinates=current_coordinates,
     )
+    return _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result_from_reading(
+        ledger,
+        applicability_act_reading=applicability_act_reading,
+        current_coordinates=current_coordinates,
+    )
+
+
+def _record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result_from_reading(
+    ledger: EventLedger,
+    *,
+    applicability_act_reading: tuple[
+        Event, Event, dict[str, Any], tuple[Event, dict[str, Any]]
+    ],
+    current_coordinates: dict[str, Any] | None,
+) -> Event:
+    act, binding, inputs, _comparison_binding_reading = applicability_act_reading
     result = _applicability_result_material(act, binding, inputs)
     _refuse_result(
         ledger,
@@ -1940,7 +2024,10 @@ class RecordedDistinctionPin(NamedTuple):
 
 
 def recorded_distinction_pins_from_current_coordinates(
-    ledger: EventLedger, *, locality_identity: str
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedDistinctionPin, ...]:
     """Read every exact finding-reference branch from carried results."""
 
@@ -1952,9 +2039,12 @@ def recorded_distinction_pins_from_current_coordinates(
         read_operator_current_coordinates,
     )
 
-    current_coordinates = read_operator_current_coordinates(
-        ledger, locality_identity=locality_identity
-    )
+    if current_coordinates is None:
+        current_coordinates = read_operator_current_coordinates(
+            ledger, locality_identity=locality_identity
+        )
+    elif current_coordinates.get("locality_identity") != locality_identity:
+        raise ValueError("recorded distinction pins require exact current coordinates")
     boundary = current_coordinates.get("through_event_occurrence_identity")
     comparisons = current_coordinates.get("comparison_result_occurrences")
     if type(comparisons) is not dict:
@@ -1987,7 +2077,9 @@ def recorded_distinction_pins_from_current_coordinates(
         if coordinates is not None:
             raise ValueError("recorded distinction pin source current coordinates is not exact")
         reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
-            ledger, occurrence_identity
+            ledger,
+            occurrence_identity,
+            prior_coordinates=current_coordinates,
         )
         finding = reading.get("finding")
         subject = finding.get("subject") if type(finding) is dict else None

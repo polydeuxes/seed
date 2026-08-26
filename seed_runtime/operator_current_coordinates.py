@@ -178,11 +178,11 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_subject_to_act_binding,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
-    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
-    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
+    _read_binding as _ordered_relation_path_compare_binding_reading,
+    _read_applicability_binding as _ordered_relation_path_compare_applicability_binding_reading,
+    _read_applicability_act as _ordered_relation_path_compare_applicability_act_reading,
+    _read_applicability_result as _ordered_relation_path_compare_applicability_result_reading,
+    _read_compare_act as _ordered_relation_path_compare_act_reading,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
@@ -1411,36 +1411,48 @@ def advance_operator_current_coordinates(
             comparison_result_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_subject_to_act_binding(
-                ledger, event.identity
+            _ordered_relation_path_compare_binding_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
-                ledger, event.identity
+            _ordered_relation_path_compare_applicability_binding_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
-                ledger, event.identity
+            _ordered_relation_path_compare_applicability_act_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND:
-            get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability(
-                ledger, event.identity
+            _ordered_relation_path_compare_applicability_result_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT:
-            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
-                ledger, event.identity
+            _ordered_relation_path_compare_act_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND:
             get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
-                ledger, event.identity
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             comparison_result_occurrences[event.identity] = None
             continue
@@ -2342,13 +2354,23 @@ def _carry_pair_measurement_result_into_current_coordinates(
         applicability_act_occurrence=applicability_act_occurrence,
         prior_coordinates=current_coordinates,
     )
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
+    exact_results = current_coordinates.get("exact_result_occurrences")
+    exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
+    if (
+        type(exact_results) is not dict
+        or event.identity in exact_results
+        or exact_result is None
+    ):
+        raise ValueError("pair Measurement result coordinates are not exact")
+    current_coordinates = _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
         current_coordinates,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="measurement_occurrences",
     )
+    exact_results[event.identity] = exact_result
+    return current_coordinates
 
 
 def _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates(

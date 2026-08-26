@@ -19,7 +19,7 @@ from seed_runtime.byte_measurement import (
     _measure_byte_counts_through,
     _record_assertion_locality_movement_act_from_current_coordinates,
     _record_assertion_locality_movement_result_from_current_coordinates,
-    _record_byte_measurement_result_from_carried_act_occurrence,
+    _record_byte_measurement_result_from_current_coordinates,
     _record_movement_binding_from_current_coordinates,
     _validate_moved_byte_assertion,
     get_byte_position_pair_measurement_subject_to_act_binding,
@@ -601,7 +601,7 @@ def test_call_local_binding_carry_requires_the_exact_binding_at_current_append_b
 
 def test_call_local_result_requires_the_exact_act_at_current_append_boundary():
     ledger = _ledger(b"a\n")
-    assignment, act = _record_byte_measurement_binding_and_act(
+    binding, act = _record_byte_measurement_binding_and_act(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -617,12 +617,12 @@ def test_call_local_result_requires_the_exact_act_at_current_append_boundary():
     )
 
     with pytest.raises(
-        ByteMeasurementError, match="exact carried lifecycle occurrences"
+        ByteMeasurementError, match="exact lifecycle occurrences in current coordinates"
     ):
-        _record_byte_measurement_result_from_carried_act_occurrence(
+        _record_byte_measurement_result_from_current_coordinates(
             ledger,
             act_occurrence=act,
-            subject_to_act_binding=assignment,
+            subject_to_act_binding=binding,
             current_coordinates=current_coordinates,
         )
 
@@ -631,7 +631,7 @@ def test_call_local_result_rechecks_current_append_boundary_after_source_callbac
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"a\n")
-    assignment, act = _record_byte_measurement_binding_and_act(
+    binding, act = _record_byte_measurement_binding_and_act(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -642,14 +642,14 @@ def test_call_local_result_rechecks_current_append_boundary_after_source_callbac
     original = byte_measurement._material_result_bytes
     callback_recorded = False
 
-    def record_public_result_during_source_read(ledger, acquisition_result):
+    def record_public_result_during_source_read(ledger, material_result):
         nonlocal callback_recorded
         if not callback_recorded:
             callback_recorded = True
             record_byte_measurement_result(
                 ledger, act_occurrence_event_identity=act.identity
             )
-        return original(ledger, acquisition_result)
+        return original(ledger, material_result)
 
     monkeypatch.setattr(
         byte_measurement,
@@ -657,10 +657,10 @@ def test_call_local_result_rechecks_current_append_boundary_after_source_callbac
         record_public_result_during_source_read,
     )
     with pytest.raises(ByteMeasurementError, match="Act at the current append boundary"):
-        _record_byte_measurement_result_from_carried_act_occurrence(
+        _record_byte_measurement_result_from_current_coordinates(
             ledger,
             act_occurrence=act,
-            subject_to_act_binding=assignment,
+            subject_to_act_binding=binding,
             current_coordinates=current_coordinates,
         )
 

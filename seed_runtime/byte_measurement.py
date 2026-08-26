@@ -2575,7 +2575,7 @@ def record_byte_measurement_act_occurrence(
     )
 
 
-def _record_byte_measurement_act_occurrence_from_carried_coordinates(
+def _record_byte_measurement_act_occurrence_from_current_coordinates(
     ledger: EventLedger,
     *,
     subject_to_act_binding: Event,
@@ -2588,7 +2588,7 @@ def _record_byte_measurement_act_occurrence_from_carried_coordinates(
         or ledger.integrity_of(subject_to_act_binding.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires its exact carried binding"
+            "byte Measurement requires its exact binding in current coordinates"
         )
     exact_binding, _localities, _boundary, _source_material = (
         _read_byte_measurement_subject_to_act_binding(
@@ -2599,7 +2599,7 @@ def _record_byte_measurement_act_occurrence_from_carried_coordinates(
     )
     if exact_binding != subject_to_act_binding:
         raise ByteMeasurementError(
-            "byte Measurement requires its exact carried binding"
+            "byte Measurement requires its exact binding in current coordinates"
         )
     _require_carried_byte_measurement_coordinates_at_current_boundary(
         ledger,
@@ -2780,7 +2780,7 @@ def record_byte_measurement_result(
     )
 
 
-def _record_byte_measurement_result_from_carried_act_occurrence(
+def _record_byte_measurement_result_from_current_coordinates(
     ledger: EventLedger,
     *,
     act_occurrence: Event,
@@ -2801,7 +2801,7 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
         != ledger.append_boundary()
     ):
         raise ByteMeasurementError(
-            "byte Measurement result requires exact carried lifecycle occurrences"
+            "byte Measurement result requires exact lifecycle occurrences in current coordinates"
         )
     exact_act, exact_binding, measured = (
         _measurement_of_act_occurrence(
@@ -2815,7 +2815,7 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
         or exact_binding != subject_to_act_binding
     ):
         raise ByteMeasurementError(
-            "byte Measurement result requires exact carried lifecycle occurrences"
+            "byte Measurement result requires exact lifecycle occurrences in current coordinates"
         )
     if (
         ledger.get(act_occurrence.identity) != act_occurrence

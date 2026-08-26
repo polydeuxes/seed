@@ -15,8 +15,8 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence,
-    _record_byte_measurement_act_occurrence_from_carried_coordinates,
-    _record_byte_measurement_result_from_carried_act_occurrence,
+    _record_byte_measurement_act_occurrence_from_current_coordinates,
+    _record_byte_measurement_result_from_current_coordinates,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -301,7 +301,7 @@ def _complete_byte_measurement(
         prior_through_event_occurrence_identity=prior_boundary,
         through_occurrence_coordinates=through_occurrence_coordinates,
     )
-    act = _record_byte_measurement_act_occurrence_from_carried_coordinates(
+    act = _record_byte_measurement_act_occurrence_from_current_coordinates(
         ledger,
         subject_to_act_binding=binding,
         current_coordinates=current_coordinates,
@@ -312,7 +312,7 @@ def _complete_byte_measurement(
         (act.identity,),
         locality_identity=locality_identity,
     )
-    result = _record_byte_measurement_result_from_carried_act_occurrence(
+    result = _record_byte_measurement_result_from_current_coordinates(
         ledger,
         act_occurrence=act,
         subject_to_act_binding=binding,

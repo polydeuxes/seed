@@ -7,11 +7,11 @@ import pytest
 import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as recorded_pair_comparison_module
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_subject_to_act_binding,
+    _record_byte_measurement_act_occurrence_from_current_coordinates,
+    _record_byte_measurement_result_from_current_coordinates,
+    _record_byte_measurement_subject_to_act_binding_from_current_coordinates,
     assertions_of_recorded_byte_position_pair_measurement,
-    record_byte_measurement_act_occurrence,
-    record_byte_measurement_result,
-    record_byte_position_pair_count_layer,
+    _record_byte_position_pair_count_layer_from_current_coordinates,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
@@ -86,7 +86,7 @@ def _advance_since(ledger, current_coordinates, prior_count):
 
 def _pair_measurement(ledger, current_coordinates):
     prior_count = len(ledger.list_locality(LOCALITY))
-    binding = record_byte_measurement_subject_to_act_binding(
+    binding = _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
@@ -94,26 +94,29 @@ def _pair_measurement(ledger, current_coordinates):
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     prior_count = len(ledger.list_locality(LOCALITY))
-    act = record_byte_measurement_act_occurrence(
+    act = _record_byte_measurement_act_occurrence_from_current_coordinates(
         ledger,
-        subject_to_act_binding_event_identity=binding.identity,
+        subject_to_act_binding=binding,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     prior_count = len(ledger.list_locality(LOCALITY))
-    byte_result = record_byte_measurement_result(
+    byte_result = _record_byte_measurement_result_from_current_coordinates(
         ledger,
-        act_occurrence_event_identity=act.identity,
+        act_occurrence=act,
+        subject_to_act_binding=binding,
         current_coordinates=current_coordinates,
     )
     current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
-    prior_count = len(ledger.list_locality(LOCALITY))
-    result = record_byte_position_pair_count_layer(
-        ledger,
-        source_measurement_event_identity=byte_result.identity,
-        recording_locality_identity=LOCALITY,
+    result, current_coordinates = (
+        _record_byte_position_pair_count_layer_from_current_coordinates(
+            ledger,
+            source_measurement_event_identity=byte_result.identity,
+            recording_locality_identity=LOCALITY,
+            current_coordinates=current_coordinates,
+        )
     )
-    return result, _advance_since(ledger, current_coordinates, prior_count)
+    return result, current_coordinates
 
 
 def _record_pair_comparison(ledger, earlier, later, current_coordinates):
@@ -213,7 +216,9 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
         reference
         for result in results
         for reference in references_to_recorded_recurrent_byte_pair_occurrence_positions(
-            ledger, result_occurrence_identity=result.identity
+            ledger,
+            result_occurrence_identity=result.identity,
+            prior_coordinates=current_coordinates,
         )
     )
     first = next(reference for reference in references if reference.exact_pair == b"ab")
@@ -375,7 +380,7 @@ def _ledger_at_story_floor(floor):
             )
             results = reading.compare_result_occurrences
         current_coordinates = reading.current_coordinates
-    return ledger, tuple(results)
+    return ledger, tuple(results), current_coordinates
 
 
 def _record_comparison(ledger, comparison, path):
@@ -673,7 +678,7 @@ def test_every_current_compare_subject_records_one_serial_binding():
     )
 
 def test_every_current_compare_binding_records_one_separate_applicability_result():
-    ledger, bindings = _ledger_at_story_floor(1)
+    ledger, bindings, _current_coordinates_read = _ledger_at_story_floor(1)
     recorded = (
         record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
             ledger, locality_identity=LOCALITY
@@ -745,7 +750,7 @@ def test_applicability_binding_refuses_a_substituted_compare_binding_reference()
 
 
 def test_only_applicable_current_compare_results_record_act_occurrence():
-    ledger, applicability_results = _ledger_at_story_floor(2)
+    ledger, applicability_results, _current_coordinates_read = _ledger_at_story_floor(2)
     bindings = tuple(
         ledger.iter_locality_kind(
             LOCALITY,
@@ -781,7 +786,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
         acts[-1].identity
     )
 def test_every_current_compare_act_records_one_separate_yield_and_result():
-    ledger, acts = _ledger_at_story_floor(3)
+    ledger, acts, _current_coordinates_read = _ledger_at_story_floor(3)
 
     recorded = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
         ledger, locality_identity=LOCALITY
@@ -876,11 +881,13 @@ def test_current_coordinates_fans_one_comparison_into_exact_distinction_pins():
 
 
 def test_every_current_compare_result_exposes_every_exact_finding_reference_branch():
-    ledger, results = _ledger_at_story_floor(4)
+    ledger, results, current_coordinates = _ledger_at_story_floor(4)
     boundary = ledger.append_boundary()
 
     pins = recorded_distinction_pins_from_current_coordinates(
-        ledger, locality_identity=LOCALITY
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
     )
 
     assert len(results) == 2

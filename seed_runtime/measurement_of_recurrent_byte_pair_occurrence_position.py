@@ -1515,6 +1515,7 @@ def references_to_recorded_recurrent_byte_pair_occurrence_positions(
     ledger: EventLedger,
     *,
     result_occurrence_identity: str,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedRecurrentBytePairOccurrencePosition, ...]:
     """Read one intact result and address each exact position Assertion once."""
 
@@ -1525,14 +1526,13 @@ def references_to_recorded_recurrent_byte_pair_occurrence_positions(
         or not result_occurrence_identity
     ):
         raise ValueError("pair-position references require one exact result occurrence")
-    finding = (
-        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
-            ledger, result_occurrence_identity
+    event, finding = (
+        _recorded_result_of_recurrent_pair_position_measurement_reading(
+            ledger,
+            result_occurrence_identity,
+            prior_coordinates=prior_coordinates,
         )
     )
-    event = ledger.get(result_occurrence_identity)
-    if event is None:
-        raise ValueError("pair-position result disappeared after validation")
     return _references_from_recorded_recurrent_pair_position_result(
         event, finding
     )
