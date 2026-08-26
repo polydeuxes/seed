@@ -117,6 +117,60 @@ def _operator_acquisition_for_material_result(
     return acquired_event, acquired
 
 
+def _operator_source_current_coordinate_reference(
+    ledger: EventLedger,
+    *,
+    source_material: dict[str, Any],
+    earlier_measurement: Event,
+    earlier_source_occurrence_references: tuple[str, ...],
+) -> dict[str, str]:
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing_through,
+    )
+
+    reference = source_material.get("current_coordinate_reference")
+    if (
+        type(reference) is not dict
+        or reference.get("locality_identity")
+        != earlier_measurement.locality_identity
+        or type(reference.get("through_event_occurrence_identity")) is not str
+    ):
+        raise RecordedPairMeasurementComparisonError(
+            "later Measurement requires one exact operator source occurrence"
+        )
+    try:
+        coordinates = read_operator_locality_standing_through(
+            ledger,
+            locality_identity=earlier_measurement.locality_identity,
+            through_event_occurrence_identity=reference[
+                "through_event_occurrence_identity"
+            ],
+        )
+    except (TypeError, ValueError) as error:
+        raise RecordedPairMeasurementComparisonError(
+            "operator source occurrence carries no exact prior coordinates"
+        ) from error
+    carried_sources = {
+        occurrence.get("result_occurrence_identity")
+        for occurrence in coordinates.get(
+            "material_acquisition_result_occurrences", ()
+        )
+        if type(occurrence) is dict
+    }
+    if (
+        earlier_measurement.identity
+        not in coordinates.get("measurement_occurrences", {})
+        or any(
+            occurrence not in carried_sources
+            for occurrence in earlier_source_occurrence_references
+        )
+    ):
+        raise RecordedPairMeasurementComparisonError(
+            "operator source occurrence carries no exact prior coordinates"
+        )
+    return deepcopy(reference)
+
+
 def _measurement_reference(event: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
@@ -366,49 +420,17 @@ def _comparison_inputs(
             "Witness provenance establishes no comparison input relation"
         )
     elif source_role == "this operator":
-        from seed_runtime.operator_locality_standing import (
-            read_operator_locality_standing_through,
-        )
-
         acquired_event, acquired = _operator_acquisition_for_material_result(
             ledger, added
         )
-        source_coordinate_reference = acquired.get("current_coordinate_reference")
-        if (
-            type(source_coordinate_reference) is not dict
-            or source_coordinate_reference.get("locality_identity")
-            != earlier.locality_identity
-            or source_coordinate_reference.get("through_event_occurrence_identity")
-            != earlier.identity
-        ):
-            raise RecordedPairMeasurementComparisonError(
-                "later Measurement requires one exact operator source occurrence"
-            )
-        try:
-            source_coordinates = read_operator_locality_standing_through(
+        source_coordinate_reference = (
+            _operator_source_current_coordinate_reference(
                 ledger,
-                locality_identity=earlier.locality_identity,
-                through_event_occurrence_identity=source_coordinate_reference[
-                    "through_event_occurrence_identity"
-                ],
+                source_material=acquired,
+                earlier_measurement=earlier,
+                earlier_source_occurrence_references=earlier_sources,
             )
-        except (TypeError, ValueError) as error:
-            raise RecordedPairMeasurementComparisonError(
-                "operator source occurrence carries no exact prior coordinates"
-            ) from error
-        carried_sources = {
-            occurrence.get("result_occurrence_identity")
-            for occurrence in source_coordinates.get("material_acquisition_result_occurrences", ())
-            if type(occurrence) is dict
-        }
-        if (
-            earlier.identity
-            not in source_coordinates.get("measurement_occurrences", {})
-            or any(reference not in carried_sources for reference in earlier_sources)
-        ):
-            raise RecordedPairMeasurementComparisonError(
-                "operator source occurrence carries no exact prior coordinates"
-            )
+        )
         operator_material_source_result_event_identity = acquired_event.identity
         operator_material_source_current_coordinate_reference = deepcopy(
             source_coordinate_reference
@@ -564,23 +586,23 @@ def _comparison_inputs_from_carried_measurements(
             ledger, added
         )
         exact_results = locality_standing.get("exact_result_occurrences")
-        source_coordinate_reference = acquired_material.get(
-            "current_coordinate_reference"
-        )
         if (
             acquired.locality_identity != earlier.locality_identity
             or acquired.exact_material != added.exact_material
             or type(exact_results) is not dict
             or acquired.identity not in exact_results
-            or type(source_coordinate_reference) is not dict
-            or source_coordinate_reference.get("locality_identity")
-            != earlier.locality_identity
-            or source_coordinate_reference.get("through_event_occurrence_identity")
-            != earlier.identity
         ):
             raise RecordedPairMeasurementComparisonError(
                 "operator source occurrence carries no exact prior coordinates"
             )
+        source_coordinate_reference = (
+            _operator_source_current_coordinate_reference(
+                ledger,
+                source_material=acquired_material,
+                earlier_measurement=earlier,
+                earlier_source_occurrence_references=earlier_sources,
+            )
+        )
         acquisition_identity = acquired.identity
         input_relation = "operator material source occurrence after prior coordinates"
         operator_locality_identity = earlier.locality_identity

@@ -681,6 +681,36 @@ def test_supplied_local_material_records_pair_measurements():
     assert kinds.count("operator.measurement.byte_position_pair_counts_recorded") == 2
 
 
+def test_pair_premise_remains_carried_across_the_prior_compare_result():
+    ledger, _first_source, _added, _first, second, *_middle, first_compare = (
+        _comparison()
+    )
+    third_source = _operator_acquisition(ledger, b"abad\n")
+    third = _pair_measurement(ledger)
+
+    second_binding = (
+        record_recorded_pair_measurement_comparison_responsibility_assignment(
+            ledger,
+            earlier_result_event_identity=second.identity,
+            later_result_event_identity=third.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+    )
+
+    assert third_source.material["current_coordinate_reference"] == {
+        "locality_identity": LOCALITY,
+        "through_event_occurrence_identity": first_compare.identity,
+    }
+    assert second_binding.material["earlier_measurement_reference"][
+        "recorded_occurrence_identity"
+    ] == second.identity
+    assert second_binding.material["earlier_measurement_reference"][
+        "result_identity"
+    ] == second.material["result_identity"]
+
+
 @pytest.mark.parametrize(
     ("exact_material", "exact_ab_count", "has_recurrence"),
     (
