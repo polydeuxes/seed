@@ -406,7 +406,6 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
     (
         "source_coordinate_reference",
         "destination_locality_identity",
-        "participation",
         "locality_relation",
         "act_occurrence_identity",
         "locality_relation_occurrence_identity",

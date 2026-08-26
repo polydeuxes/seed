@@ -33,9 +33,6 @@ LOCALITY_CONTINUATION_RESULT_KIND = (
     "source-boundary Locality relation result"
 )
 LOCALITY_CONTINUATION_ACT = "source-boundary Locality relation"
-LOCALITY_CONTINUATION_INPUT_ROLE = (
-    "exact source through-occurrence boundary"
-)
 EVENT_KIND_BOOK_CLAUSES = {
     LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.B"
@@ -95,18 +92,6 @@ def _source_coordinate_reference(
     }
 
 
-def _participation(
-    source_coordinate_reference: dict[str, str | None],
-    *,
-    act_occurrence_identity: str,
-) -> dict[str, Any]:
-    return {
-        "subject_reference": deepcopy(source_coordinate_reference),
-        "role": LOCALITY_CONTINUATION_INPUT_ROLE,
-        "act_occurrence_identity": act_occurrence_identity,
-    }
-
-
 def _binding_material(
     *,
     exact_act_identity: str,
@@ -160,10 +145,6 @@ def _act_occurrence_material(
         ),
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
-        "participation": _participation(
-            source_coordinate_reference,
-            act_occurrence_identity=act_occurrence_identity,
-        ),
     }
 
 
@@ -177,10 +158,6 @@ def _result_material(
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
-    participation = _participation(
-        source_coordinate_reference,
-        act_occurrence_identity=act_occurrence_identity,
-    )
     return {
         "result_identity": result_identity,
         "continuation_act_identity": continuation_act_identity,
@@ -194,7 +171,6 @@ def _result_material(
         ),
         "source_coordinate_reference": deepcopy(source_coordinate_reference),
         "destination_locality_identity": destination_locality_identity,
-        "participation": participation,
         "locality_relation": {
             "first_subject": deepcopy(source_coordinate_reference),
             "second_subject": destination_locality_identity,
@@ -233,7 +209,6 @@ def _recorded_result_material(
         "destination_locality_identity": result_material[
             "destination_locality_identity"
         ],
-        "participation": result_material["participation"],
         "locality_relation": result_material["locality_relation"],
         "unknown": result_material["unknown"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
