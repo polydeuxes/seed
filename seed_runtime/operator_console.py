@@ -174,9 +174,9 @@ def _record_occurrence_position_after_declared_measurements(
     )
     if len(byte_measurements) != 1:
         raise ValueError(
-            "one exact-byte Measurement is required after this responsible boundary"
+            "one exact-byte Measurement is required through this occurrence boundary"
         )
-    standing = recorded.bounded_locality_replay
+    current_coordinates = recorded.bounded_locality_replay
     direct_measurements = tuple(
         event
         for event in recorded.result_occurrences
@@ -186,15 +186,15 @@ def _record_occurrence_position_after_declared_measurements(
         for continuation in yield_ordered_path_source_position_continuations(
             ledger,
             direct_result_event_identity=direct_measurement.identity,
-            locality_standing=standing,
+            current_coordinates=current_coordinates,
         ):
-            standing = continuation.locality_standing
-    standing = _record_occurrence_position_measurement(
+            current_coordinates = continuation.current_coordinates
+    current_coordinates = _record_occurrence_position_measurement(
         ledger,
-        standing,
+        current_coordinates,
         locality_identity=locality_identity,
     )
-    return standing, byte_measurements[0]
+    return current_coordinates, byte_measurements[0]
 
 
 def _record_measurements_from_bounded_locality_replay(

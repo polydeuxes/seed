@@ -21,7 +21,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
     _direct_d2,
     _record_d2_shared_path,
-    _standing,
+    _current_coordinates,
 )
 from seed_runtime.ordered_path_source_position_continuation import (
     yield_ordered_path_source_position_continuations,
@@ -47,7 +47,7 @@ def _comparisons(ledger, *, locality, exact, position=1):
         yield_ordered_path_source_position_material_comparisons(
             ledger,
             path_result_event_identity=path.identity,
-            locality_standing=_standing(ledger, locality),
+            locality_standing=_current_coordinates(ledger, locality),
         )
     )
     return path, recorded
@@ -64,13 +64,13 @@ def _direct_position_result(ledger, *, locality, exact):
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
-            current_coordinates=_standing(ledger, locality),
+            current_coordinates=_current_coordinates(ledger, locality),
         )
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
         binding_event_identity=assignment.identity,
-        binding_current_coordinates=_standing(ledger, locality),
+        binding_current_coordinates=_current_coordinates(ledger, locality),
     )
     result = record_byte_pair_occurrence_position_measurement_result(
         ledger,
@@ -220,7 +220,7 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
         yield_ordered_path_source_position_continuations(
             ledger,
             direct_result_event_identity=direct.identity,
-            locality_standing=_standing(ledger, locality),
+            current_coordinates=_current_coordinates(ledger, locality),
         )
     )
 
@@ -263,7 +263,7 @@ def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
     continuations = yield_ordered_path_source_position_continuations(
         ledger,
         direct_result_event_identity=direct.identity,
-        locality_standing=_standing(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
 
     first = next(continuations)
@@ -286,7 +286,7 @@ def test_one_path_pair_yields_before_its_sibling_pairs():
     comparisons = yield_ordered_path_source_position_material_comparisons(
         ledger,
         path_result_event_identity=path.identity,
-        locality_standing=_standing(ledger, locality),
+        locality_standing=_current_coordinates(ledger, locality),
     )
 
     first = next(comparisons)

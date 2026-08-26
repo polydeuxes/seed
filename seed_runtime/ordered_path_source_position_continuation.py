@@ -39,7 +39,7 @@ class OrderedPathSourcePositionContinuation(NamedTuple):
     determination_result: Event
     ordered_path_result: Event | None
     comparison_result: Event | None
-    locality_standing: dict[str, Any]
+    current_coordinates: dict[str, Any]
 
 
 def _advance(
@@ -240,13 +240,12 @@ def _yield_ordered_path_source_position_continuations(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Iterator[OrderedPathSourcePositionContinuation]:
     """Yield each bounded source-position continuation before its siblings."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source-position continuation requires one EventLedger")
-    current_coordinates = locality_standing
     for coordinate in source_position_coordinate_references_of_recorded_position_measurement(
         ledger, direct_result_event_identity
     ):
@@ -300,7 +299,7 @@ def yield_ordered_path_source_position_continuations(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Iterator[OrderedPathSourcePositionContinuation]:
     """Yield bounded continuations from one validated direct-result reading."""
 
@@ -310,7 +309,7 @@ def yield_ordered_path_source_position_continuations(
         for continuation in _yield_ordered_path_source_position_continuations(
             ledger,
             direct_result_event_identity=direct_result_event_identity,
-            locality_standing=locality_standing,
+            current_coordinates=current_coordinates,
         ):
             _require_carried_position_measurement_source_unchanged()
             yield continuation
