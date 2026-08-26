@@ -21,6 +21,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
     record_recorded_pair_measurement_comparison_subject_to_act_binding,
+    record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_applicability_act_occurrence,
     record_recorded_pair_measurement_comparison_applicability_result,
     record_recorded_pair_measurement_comparison_act_occurrence,
@@ -167,10 +168,18 @@ def _comparison():
         current_coordinates=current_coordinates,
     )
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
+    applicability_binding = (
+        record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding(
+            ledger,
+            comparison_binding_event_identity=binding.identity,
+            current_coordinates=current_coordinates,
+        )
+    )
+    current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     applicability_act = (
         record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            applicability_binding_event_identity=applicability_binding.identity,
             current_coordinates=current_coordinates,
         )
     )
@@ -310,7 +319,23 @@ def test_produced_measurements_enter_one_compare():
         _comparison()
     )
     recorded = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    applicability_binding = ledger.get(
+        applicability.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
 
+    assert applicability_binding is not None
+    assert applicability_binding.identity != binding.identity
+    assert binding.material["exact_act_identity"] == binding.material[
+        "comparison_act_identity"
+    ]
+    assert applicability_binding.material["exact_act_identity"] == (
+        applicability_binding.material["applicability_act_identity"]
+    )
+    assert applicability_binding.material["addressed_act_identity"] == (
+        binding.material["comparison_act_identity"]
+    )
     assert binding.material["earlier_measurement_reference"][
         "recorded_occurrence_identity"
     ] == earlier.identity
@@ -573,9 +598,18 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_binding_readings(
     )
 
     def finish(binding):
+        applicability_binding = (
+            record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding(
+                ledger,
+                comparison_binding_event_identity=binding.identity,
+                current_coordinates=read_operator_current_coordinates(
+                    ledger, locality_identity=LOCALITY
+                ),
+            )
+        )
         applicability_act = record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            applicability_binding_event_identity=applicability_binding.identity,
             current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),

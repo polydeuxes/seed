@@ -164,12 +164,14 @@ from seed_runtime.operator_invocation_locality import (
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     _binding_reading as _recorded_pair_comparison_binding_reading,
+    _applicability_binding_reading as _recorded_pair_comparison_applicability_binding_reading,
     _applicability_act_reading as _recorded_pair_comparison_applicability_act_reading,
     _applicability_reading as _recorded_pair_comparison_applicability_reading,
     _comparison_act_reading as _recorded_pair_comparison_act_reading,
@@ -235,16 +237,21 @@ def _recorded_pair_comparison_replay_carry(
 ) -> dict[str, Any]:
     if (
         type(binding_reading) is not tuple
-        or len(binding_reading) != 2
+        or len(binding_reading) not in (2, 3)
         or type(binding_reading[1]) is not dict
     ):
         raise RecordedPairMeasurementComparisonError(
             "comparison replay requires one exact binding reading"
         )
-    binding, inputs = binding_reading
+    binding, inputs = binding_reading[:2]
     earlier = inputs.get("earlier_event")
     later = inputs.get("later_event")
-    occurrences = (binding, earlier, later)
+    addressed_binding = binding_reading[2][0] if len(binding_reading) == 3 else None
+    occurrences = tuple(
+        event
+        for event in (binding, addressed_binding, earlier, later)
+        if event is not None
+    )
     if any(
         event is None
         or type(event.identity) is not str
@@ -284,7 +291,7 @@ def _validate_recorded_pair_comparison_replay_carry(
             "occurrences",
         }
         or type(carry["occurrences"]) is not tuple
-        or len(carry["occurrences"]) != 3
+        or len(carry["occurrences"]) not in (3, 4)
         or ledger.append_boundary() != carry["exact_boundary"]
     ):
         raise RecordedPairMeasurementComparisonError(
@@ -469,6 +476,7 @@ _OPERATOR_INVOCATION_LOCALITY_KINDS = {
 }
 _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
@@ -1354,6 +1362,39 @@ def advance_operator_current_coordinates(
             continue
         if (
             event.kind
+            == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND
+        ):
+            addressed_act_identity = event.material.get("addressed_act_identity")
+            comparison_binding_readings = tuple(
+                reading
+                for carry in recorded_pair_comparison_replay_carries.values()
+                for reading in (
+                    _validate_recorded_pair_comparison_replay_carry(ledger, carry),
+                )
+                if len(reading) == 2
+                and reading[0].material.get("exact_act_identity")
+                == addressed_act_identity
+            )
+            if len(comparison_binding_readings) != 1:
+                raise RecordedPairMeasurementComparisonError(
+                    "comparison Applicability binding addresses no carried Compare binding"
+                )
+            binding_reading = (
+                _recorded_pair_comparison_applicability_binding_reading(
+                    ledger,
+                    event.identity,
+                    comparison_binding_reading=comparison_binding_readings[0],
+                )
+            )
+            recorded_pair_comparison_replay_carries[event.identity] = (
+                _recorded_pair_comparison_replay_carry(
+                    ledger, binding_reading
+                )
+            )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
             == ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         ):
             _read_assertion_locality_movement_subject_to_act_binding(
@@ -1715,7 +1756,7 @@ def advance_operator_current_coordinates(
                     _recorded_pair_comparison_applicability_act_reading(
                         ledger,
                         event.identity,
-                        binding_reading=(
+                        applicability_binding_reading=(
                             _validate_recorded_pair_comparison_replay_carry(
                                 ledger, carry
                             )
@@ -1757,7 +1798,7 @@ def advance_operator_current_coordinates(
                     _recorded_pair_comparison_applicability_reading(
                         ledger,
                         event.identity,
-                        binding_reading=(
+                        applicability_binding_reading=(
                             _validate_recorded_pair_comparison_replay_carry(
                                 ledger, carry
                             )
@@ -3060,6 +3101,26 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
             or event.identity in bindings
         ):
             raise ValueError("recorded pair comparison binding is not exact")
+    elif (
+        event.kind
+        == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND
+    ):
+        applicability_binding, _inputs, comparison_binding_reading = (
+            _recorded_pair_comparison_applicability_binding_reading(
+                ledger, event.identity
+            )
+        )
+        comparison_binding = comparison_binding_reading[0]
+        if (
+            applicability_binding is not event
+            or comparison_binding.identity not in bindings
+            or event.material.get("through_event_occurrence_identity")
+            != prior_through_event_occurrence_identity
+            or event.identity in bindings
+        ):
+            raise ValueError(
+                "recorded pair comparison Applicability binding is not exact"
+            )
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT:
         binding = event.material.get("subject_to_act_binding_reference")
         if (
@@ -3109,7 +3170,10 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
         event,
         error_message="recorded pair comparison coordinates are not exact",
     )
-    if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND:
+    if event.kind in {
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
+        RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+    }:
         bindings[event.identity] = None
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND:
         applicability[event.identity] = None
