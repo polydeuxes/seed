@@ -722,10 +722,6 @@ def _assignment_material(
     comparison_act_identity: str,
     comparison_act_occurrence_identity: str,
     comparison_result_identity: str,
-    earlier_input_relation_identity: str,
-    later_input_relation_identity: str,
-    earlier_participation_relation_identity: str,
-    later_participation_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
@@ -744,14 +740,6 @@ def _assignment_material(
         "comparison_act_occurrence_identity": comparison_act_occurrence_identity,
         "comparison_result_identity": comparison_result_identity,
         "result_boundary_identity": comparison_result_identity,
-        "earlier_input_relation_identity": earlier_input_relation_identity,
-        "later_input_relation_identity": later_input_relation_identity,
-        "earlier_participation_relation_identity": (
-            earlier_participation_relation_identity
-        ),
-        "later_participation_relation_identity": (
-            later_participation_relation_identity
-        ),
         "book_clause_identity": RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE,
         "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
@@ -848,18 +836,6 @@ def _record_comparison_responsibility_assignment(
         "comparison_result_identity": new_identity(
             "recorded_pair_comparison_result"
         ),
-        "earlier_input_relation_identity": new_identity(
-            "recorded_pair_comparison_earlier_input_relation"
-        ),
-        "later_input_relation_identity": new_identity(
-            "recorded_pair_comparison_later_input_relation"
-        ),
-        "earlier_participation_relation_identity": new_identity(
-            "recorded_pair_comparison_earlier_participation"
-        ),
-        "later_participation_relation_identity": new_identity(
-            "recorded_pair_comparison_later_participation"
-        ),
     }
     if len(set(identities.values())) != len(identities):
         raise RecordedPairMeasurementComparisonError(
@@ -883,18 +859,6 @@ def _record_comparison_responsibility_assignment(
             ],
             comparison_result_identity=identities[
                 "comparison_result_identity"
-            ],
-            earlier_input_relation_identity=identities[
-                "earlier_input_relation_identity"
-            ],
-            later_input_relation_identity=identities[
-                "later_input_relation_identity"
-            ],
-            earlier_participation_relation_identity=identities[
-                "earlier_participation_relation_identity"
-            ],
-            later_participation_relation_identity=identities[
-                "later_participation_relation_identity"
             ],
         ),
         locality_identity=inputs["locality_identity"],
@@ -936,10 +900,6 @@ def _assignment_reading(
         "comparison_act_identity",
         "comparison_act_occurrence_identity",
         "comparison_result_identity",
-        "earlier_input_relation_identity",
-        "later_input_relation_identity",
-        "earlier_participation_relation_identity",
-        "later_participation_relation_identity",
     )
     identities = {key: material.get(key) for key in identity_keys}
     if any(type(value) is not str or not value for value in identities.values()) or len(
@@ -1017,14 +977,12 @@ def _applicability_of_input_to_compare(assignment: Event) -> list[dict[str, Any]
     material = assignment.material
     return [
         {
-            "relation_identity": material["earlier_input_relation_identity"],
             "input_role": "earlier recorded pair Measurement result",
             "input_reference": deepcopy(material["earlier_measurement_reference"]),
             "addressed_act_identity": material["comparison_act_identity"],
             "standing": "applicable",
         },
         {
-            "relation_identity": material["later_input_relation_identity"],
             "input_role": "later recorded pair Measurement result",
             "input_reference": deepcopy(material["later_measurement_reference"]),
             "addressed_act_identity": material["comparison_act_identity"],
@@ -1295,9 +1253,6 @@ def _participation_of_input_in_compare(assignment: Event) -> list[dict[str, Any]
     material = assignment.material
     return [
         {
-            "relation_identity": material[
-                "earlier_participation_relation_identity"
-            ],
             "subject_reference": deepcopy(material["earlier_measurement_reference"]),
             "role": "earlier recorded pair Measurement result",
             "act_occurrence_identity": material[
@@ -1305,9 +1260,6 @@ def _participation_of_input_in_compare(assignment: Event) -> list[dict[str, Any]
             ],
         },
         {
-            "relation_identity": material[
-                "later_participation_relation_identity"
-            ],
             "subject_reference": deepcopy(material["later_measurement_reference"]),
             "role": "later recorded pair Measurement result",
             "act_occurrence_identity": material[
