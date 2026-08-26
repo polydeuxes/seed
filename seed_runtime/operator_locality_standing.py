@@ -130,12 +130,12 @@ from seed_runtime.operator_locality_continuation import (
     get_locality_continuation_subject_to_act_binding,
 )
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    get_recorded_standing_boundary_reference,
-    get_standing_boundary_reference_act_occurrence,
-    get_standing_boundary_reference_subject_to_act_binding,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    get_recorded_through_occurrence_boundary_reference,
+    get_through_occurrence_boundary_reference_act_occurrence,
+    get_through_occurrence_boundary_reference_subject_to_act_binding,
 )
 from seed_runtime.standing_boundary_locality import (
     RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -446,10 +446,10 @@ _LOCALITY_CONTINUATION_KINDS = {
     LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     LOCALITY_CONTINUATION_RECORDED_KIND,
 }
-_STANDING_BOUNDARY_REFERENCE_KINDS = {
-    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
+_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS = {
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
 }
 _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS = {
     RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -529,7 +529,7 @@ _SUPPORTED_KINDS = {
     *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
     *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
     *_LOCALITY_CONTINUATION_KINDS,
-    *_STANDING_BOUNDARY_REFERENCE_KINDS,
+    *_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_SOURCE_KINDS,
     *_OPERATOR_INVOCATION_LOCALITY_KINDS,
@@ -895,14 +895,14 @@ def _require_recorded_standing_identity(value: Any, message: str) -> str:
 def _source_reference_from_checkpoint(
     ledger: EventLedger, recorded_occurrence_identity: str
 ) -> dict[str, str | None]:
-    recorded = get_recorded_standing_boundary_reference(
+    recorded = get_recorded_through_occurrence_boundary_reference(
         ledger, recorded_occurrence_identity
     )
     source = recorded["source_reference"]
     return {
         "source_locality_identity": source["source_locality_identity"],
         "source_through_event_occurrence_identity": source[
-            "standing_boundary_event_identity"
+            "through_event_occurrence_identity"
         ],
     }
 
@@ -918,7 +918,7 @@ def _source_reference_from_checkout(
         anchor.get("recorded_occurrence_identity"),
         "recorded Standing Locality relation carries no exact boundary reference",
     )
-    recorded = get_recorded_standing_boundary_reference(
+    recorded = get_recorded_through_occurrence_boundary_reference(
         ledger, anchor_occurrence_identity
     )
     if anchor.get("result_identity") != recorded["result_identity"]:
@@ -956,7 +956,7 @@ def read_carried_recorded_standing(
     carriers = (
         (
             "checkpoint",
-            locality_standing["recorded_standing_boundary_references"],
+            locality_standing["recorded_through_occurrence_boundary_references"],
         ),
         ("continuation", locality_standing["recorded_relation_Standing"]),
         (
@@ -1073,7 +1073,7 @@ def advance_operator_locality_standing(
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
     recorded_relation_Standing: dict[str, None] = {}
-    recorded_standing_boundary_references: dict[str, None] = {}
+    recorded_through_occurrence_boundary_references: dict[str, None] = {}
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
     operator_invocation_locality_relations: dict[str, None] = {}
     subject_to_act_binding_occurrences: dict[str, None] = {}
@@ -1124,12 +1124,13 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact recorded relation occurrences"
             )
-        recorded_standing_boundary_references = prior[
-            "recorded_standing_boundary_references"
+        recorded_through_occurrence_boundary_references = prior[
+            "recorded_through_occurrence_boundary_references"
         ]
-        if type(recorded_standing_boundary_references) is not dict:
+        if type(recorded_through_occurrence_boundary_references) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact recorded Standing boundary references"
+                "prior current coordinates require exact through-occurrence boundary "
+                "references"
             )
         recorded_standing_boundary_locality_relations = prior[
             "recorded_standing_boundary_locality_relations"
@@ -1248,7 +1249,7 @@ def advance_operator_locality_standing(
             or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
             or event.kind in _LOCALITY_CONTINUATION_KINDS
-            or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
+            or event.kind in _THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_SOURCE_KINDS
             or event.kind in _OPERATOR_INVOCATION_LOCALITY_KINDS
@@ -1440,19 +1441,19 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_standing_boundary_reference_subject_to_act_binding(
+            get_through_occurrence_boundary_reference_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT:
-            get_standing_boundary_reference_act_occurrence(ledger, event.identity)
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT:
+            get_through_occurrence_boundary_reference_act_occurrence(ledger, event.identity)
             continue
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND:
-            get_recorded_standing_boundary_reference(ledger, event.identity)
-            recorded_standing_boundary_references[event.identity] = None
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND:
+            get_recorded_through_occurrence_boundary_reference(ledger, event.identity)
+            recorded_through_occurrence_boundary_references[event.identity] = None
             continue
         if (
             event.kind
@@ -2092,8 +2093,8 @@ def advance_operator_locality_standing(
         # Exactly the relation standings recorded by Locality events;
         # emptiness is absence of record only.
         "recorded_relation_Standing": recorded_relation_Standing,
-        "recorded_standing_boundary_references": (
-            recorded_standing_boundary_references
+        "recorded_through_occurrence_boundary_references": (
+            recorded_through_occurrence_boundary_references
         ),
         "recorded_standing_boundary_locality_relations": (
             recorded_standing_boundary_locality_relations

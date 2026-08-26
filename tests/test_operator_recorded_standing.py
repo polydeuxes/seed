@@ -11,9 +11,9 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    record_standing_boundary_reference_act_occurrence,
-    record_standing_boundary_reference_result,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
+    record_through_occurrence_boundary_reference_act_occurrence,
+    record_through_occurrence_boundary_reference_result,
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -65,7 +65,7 @@ def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
     checkpoint = next(
         event
         for event in ledger.list_locality("source")
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
 
     reading = read_carried_recorded_standing(
@@ -143,7 +143,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
         b"a\n",
         b"/checkpoint\n",
     ]
-    assert reading["standing"]["recorded_standing_boundary_references"] == {}
+    assert reading["standing"]["recorded_through_occurrence_boundary_references"] == {}
     assert reading["standing"]["recorded_standing_boundary_locality_relations"] == {}
 
 
@@ -152,7 +152,7 @@ def test_an_exact_reference_is_not_globally_available_by_identity():
     checkpoint = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     relation = next(
         event
@@ -179,7 +179,7 @@ def test_the_read_adds_no_applicability_admission_or_compare_coordinate():
     checkpoint = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
 
     reading = read_carried_recorded_standing(
@@ -201,7 +201,7 @@ def test_unrelated_occurrences_do_not_change_the_recorded_read():
     checkpoint = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     before = read_carried_recorded_standing(
         ledger,
@@ -234,7 +234,7 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
     checkpoint = next(
         event
         for event in ledger.list_locality("source")
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     checkpoint_identity = checkpoint.identity
     ledger.close()

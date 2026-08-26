@@ -42,7 +42,7 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "source_position_recurrence_measurement",
         "recurrence_corresponding_source_position_material_measurement",
         "recurrent_result_exact_material_measurement",
-        "standing_boundary_reference",
+        "through_occurrence_boundary_reference",
         "locality_continuation",
     }
 )

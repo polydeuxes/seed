@@ -7,7 +7,7 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.operator_checkpoint import get_recorded_standing_boundary_reference
+from seed_runtime.operator_checkpoint import get_recorded_through_occurrence_boundary_reference
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     _record_yield_relation,
@@ -51,7 +51,7 @@ def _require_identity(value: Any, message: str) -> str:
 
 
 def _anchor_reference(ledger: EventLedger, anchor_event_identity: str) -> dict[str, str]:
-    recorded = get_recorded_standing_boundary_reference(
+    recorded = get_recorded_through_occurrence_boundary_reference(
         ledger, anchor_event_identity
     )
     return {
@@ -74,7 +74,7 @@ def _resolve_one_carried_anchor(
         "recorded Standing boundary Locality requires one source Locality",
     )
     anchors = source_current_coordinates.get(
-        "recorded_standing_boundary_references"
+        "recorded_through_occurrence_boundary_references"
     )
     relations = source_current_coordinates.get(
         "recorded_standing_boundary_locality_relations"

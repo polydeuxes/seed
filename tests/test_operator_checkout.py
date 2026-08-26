@@ -9,8 +9,8 @@ import pytest
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    get_recorded_standing_boundary_reference,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
+    get_recorded_through_occurrence_boundary_reference,
 )
 from seed_runtime.operator_checkout import (
     OperatorCheckoutRequest,
@@ -68,7 +68,7 @@ def _standing_with_recorded_boundary_reference(ledger, *, locality="source"):
     anchor = next(
         event
         for event in ledger.list_locality(locality)
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     return anchor, read_operator_locality_standing(
         ledger, locality_identity=locality
@@ -183,7 +183,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
         result.identity: None
     }
     assert replayed["recorded_relation_Standing"] == {}
-    assert replayed["recorded_standing_boundary_references"] == {}
+    assert replayed["recorded_through_occurrence_boundary_references"] == {}
 
 
 def test_relation_descendants_retain_one_immutable_anchor():
@@ -217,8 +217,8 @@ def test_relation_descendants_retain_one_immutable_anchor():
         ]
         for relation in relations
     ] == [expected, expected]
-    before = get_recorded_standing_boundary_reference(ledger, anchor.identity)
-    assert get_recorded_standing_boundary_reference(ledger, anchor.identity) == before
+    before = get_recorded_through_occurrence_boundary_reference(ledger, anchor.identity)
+    assert get_recorded_through_occurrence_boundary_reference(ledger, anchor.identity) == before
 
 
 def test_no_anchor_and_two_anchors_both_refuse_selection():

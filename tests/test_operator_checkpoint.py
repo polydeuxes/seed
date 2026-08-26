@@ -8,15 +8,15 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
-    STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
-    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
-    STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
+    THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OperatorCheckpointError,
-    get_recorded_standing_boundary_reference,
-    get_standing_boundary_reference_subject_to_act_binding,
-    record_standing_boundary_reference_subject_to_act_binding,
-    record_standing_boundary_reference_act_occurrence,
-    record_standing_boundary_reference_result,
+    get_recorded_through_occurrence_boundary_reference,
+    get_through_occurrence_boundary_reference_subject_to_act_binding,
+    record_through_occurrence_boundary_reference_subject_to_act_binding,
+    record_through_occurrence_boundary_reference_act_occurrence,
+    record_through_occurrence_boundary_reference_result,
     request_operator_checkpoint,
 )
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
@@ -59,10 +59,10 @@ def _context(ledger, locality_identity="source"):
 
 
 def _binding(ledger, current_coordinates, command):
-    return record_standing_boundary_reference_subject_to_act_binding(
+    return record_through_occurrence_boundary_reference_subject_to_act_binding(
         ledger,
         addressed_command=command,
-        locality_standing=current_coordinates,
+        current_coordinates=current_coordinates,
     )
 
 
@@ -70,7 +70,7 @@ def _act(ledger, binding):
     current_coordinates = read_operator_locality_standing(
         ledger, locality_identity=binding.locality_identity
     )
-    return record_standing_boundary_reference_act_occurrence(
+    return record_through_occurrence_boundary_reference_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=current_coordinates,
@@ -84,7 +84,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     after_binding = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    act = record_standing_boundary_reference_act_occurrence(
+    act = record_through_occurrence_boundary_reference_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=after_binding,
@@ -92,20 +92,20 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     before_result = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    result = record_standing_boundary_reference_result(
+    result = record_through_occurrence_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    recorded = get_recorded_standing_boundary_reference(ledger, result.identity)
+    recorded = get_recorded_through_occurrence_boundary_reference(ledger, result.identity)
 
     assert binding.kind == (
-        STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert act.kind == STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT
-    assert result.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+    assert act.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT
+    assert result.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     assert {event.locality_identity for event in ledger.list()} == {"source"}
     assert recorded["source_reference"] == {
         "source_locality_identity": "source",
-        "standing_boundary_event_identity": boundary.identity,
+        "through_event_occurrence_identity": boundary.identity,
     }
     assert len(
         {
@@ -138,7 +138,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
         ledger, locality_identity="source"
     )
     assert carried == replayed
-    assert replayed["recorded_standing_boundary_references"] == {
+    assert replayed["recorded_through_occurrence_boundary_references"] == {
         result.identity: None
     }
 
@@ -155,16 +155,16 @@ def test_console_checkpoint_records_at_current_locality_and_does_not_move():
     result = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
-    recorded = get_recorded_standing_boundary_reference(ledger, result.identity)
+    recorded = get_recorded_through_occurrence_boundary_reference(ledger, result.identity)
     boundary = ledger.get(
-        recorded["source_reference"]["standing_boundary_event_identity"]
+        recorded["source_reference"]["through_event_occurrence_identity"]
     )
     assert boundary is not None
     assert read_operator_locality_standing(
         ledger, locality_identity="source"
-    )["recorded_standing_boundary_references"] == {result.identity: None}
+    )["recorded_through_occurrence_boundary_references"] == {result.identity: None}
 
 
 @pytest.mark.parametrize("exact", (b"/checkpoint x\n", b"/checkpoint \n"))
@@ -186,20 +186,20 @@ def test_checkpoint_operator_shorthand_refuses_payload(exact):
 def test_recorded_reference_does_not_drift_when_the_source_advances():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    result = record_standing_boundary_reference_result(
+    result = record_through_occurrence_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
             ledger, _binding(ledger, standing, command)
         ).identity,
     )
-    before = get_recorded_standing_boundary_reference(ledger, result.identity)
+    before = get_recorded_through_occurrence_boundary_reference(ledger, result.identity)
     record_witness_material_source(
         ledger,
         locality_identity="source",
         exact_bytes=b"later\n",
         source_boundary="fixture boundary",
     )
-    assert get_recorded_standing_boundary_reference(ledger, result.identity) == before
+    assert get_recorded_through_occurrence_boundary_reference(ledger, result.identity) == before
 
 
 def test_act_requires_the_exact_carried_binding():
@@ -207,7 +207,7 @@ def test_act_requires_the_exact_carried_binding():
     standing, _boundary, command = _context(ledger)
     binding = _binding(ledger, standing, command)
     with pytest.raises(OperatorCheckpointError, match="carried binding"):
-        record_standing_boundary_reference_act_occurrence(
+        record_through_occurrence_boundary_reference_act_occurrence(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=standing,
@@ -218,11 +218,11 @@ def test_one_recording_act_cannot_yield_twice():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
     act = _act(ledger, _binding(ledger, standing, command))
-    record_standing_boundary_reference_result(
+    record_through_occurrence_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
     with pytest.raises(OperatorCheckpointError, match="already carries a Yield"):
-        record_standing_boundary_reference_result(
+        record_through_occurrence_boundary_reference_result(
             ledger, act_occurrence_event_identity=act.identity
         )
 
@@ -260,7 +260,7 @@ def test_changed_binding_coordinates_are_refused(coordinate):
     else:
         changed.material[coordinate] = "different"
     with pytest.raises((OperatorCheckpointError, TypeError, ValueError)):
-        get_standing_boundary_reference_subject_to_act_binding(
+        get_through_occurrence_boundary_reference_subject_to_act_binding(
             ledger, binding.identity
         )
 
@@ -274,13 +274,13 @@ def test_binding_and_act_survive_restart_before_result(tmp_path):
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
-    result = record_standing_boundary_reference_result(
+    result = record_through_occurrence_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
     replayed = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
-    assert replayed["recorded_standing_boundary_references"] == {
+    assert replayed["recorded_through_occurrence_boundary_references"] == {
         result.identity: None
     }
     ledger.close()
@@ -289,7 +289,7 @@ def test_binding_and_act_survive_restart_before_result(tmp_path):
 def test_durable_values_do_not_import_operator_shorthand():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    result = record_standing_boundary_reference_result(
+    result = record_through_occurrence_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
             ledger, _binding(ledger, standing, command)
@@ -304,7 +304,7 @@ def test_durable_values_do_not_import_operator_shorthand():
                 result.material["act_occurrence_identity"],
                 result.material["yield_relation_identity"],
             }
-            or "standing_boundary_reference" in event.kind
+            or "through_occurrence_boundary_reference" in event.kind
         ]
     ).lower()
     assert "checkpoint" not in durable
@@ -315,7 +315,7 @@ def test_durable_values_do_not_import_operator_shorthand():
 def test_prior_record_carrier_must_remain_an_identity_dictionary():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
-    result = record_standing_boundary_reference_result(
+    result = record_through_occurrence_boundary_reference_result(
         ledger,
         act_occurrence_event_identity=_act(
             ledger, _binding(ledger, standing, command)
@@ -323,8 +323,8 @@ def test_prior_record_carrier_must_remain_an_identity_dictionary():
     )
     prior = read_operator_locality_standing(ledger, locality_identity="source")
     broken = deepcopy(prior)
-    broken["recorded_standing_boundary_references"] = [result.identity]
-    with pytest.raises(ValueError, match="Standing boundary references"):
+    broken["recorded_through_occurrence_boundary_references"] = [result.identity]
+    with pytest.raises(ValueError, match="through-occurrence boundary references"):
         advance_operator_locality_standing(
             ledger, (), locality_identity="source", prior=broken
         )

@@ -7,7 +7,7 @@ from io import BytesIO
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+from seed_runtime.operator_checkpoint import THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -115,7 +115,7 @@ def test_checkpoint_records_one_boundary_reference():
     ledger = _run(b"before\n/checkpoint\nafter\n")
     checkpoint = next(
         event for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     assert checkpoint.locality_identity == "root-locality"
 
@@ -130,7 +130,7 @@ def test_repeated_checkpoints_record_distinct_exact_references_without_a_chain()
     ledger = _run(b"/checkpoint\n/checkpoint\n")
     records = [
         event for event in ledger.list()
-        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     ]
 
     assert len(records) == 2
