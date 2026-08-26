@@ -112,12 +112,10 @@ def _current_coordinate_reference(
 
 def _scope(
     *,
-    scope_identity: str,
     current_coordinate_reference: dict[str, str | None],
     result_boundary_identity: str,
 ) -> dict[str, str | None]:
     return {
-        "scope_identity": scope_identity,
         **deepcopy(current_coordinate_reference),
         "result_boundary_identity": result_boundary_identity,
     }
@@ -127,7 +125,6 @@ def _subject_to_act_binding_material(
     *,
     exact_act_identity: str,
     act_occurrence_identity: str,
-    scope_identity: str,
     result_boundary_identity: str,
     source_boundary: str,
     current_coordinate_reference: dict[str, str | None],
@@ -147,7 +144,6 @@ def _subject_to_act_binding_material(
             current_coordinate_reference
         ),
         "scope": _scope(
-            scope_identity=scope_identity,
             current_coordinate_reference=current_coordinate_reference,
             result_boundary_identity=result_boundary_identity,
         ),
@@ -342,7 +338,6 @@ def _record_operator_material_source_subject_to_act_binding(
     act_occurrence_identity = ledger.mint_identity(
         "operator_material_source_act_occurrence"
     )
-    scope_identity = ledger.mint_identity("operator_material_source_scope")
     result_boundary_identity = ledger.mint_identity(
         "operator_material_source_result_boundary"
     )
@@ -351,7 +346,6 @@ def _record_operator_material_source_subject_to_act_binding(
         _subject_to_act_binding_material(
             exact_act_identity=exact_act_identity,
             act_occurrence_identity=act_occurrence_identity,
-            scope_identity=scope_identity,
             result_boundary_identity=result_boundary_identity,
             source_boundary=source_boundary,
             current_coordinate_reference=current_reference,
@@ -389,7 +383,6 @@ def get_operator_material_source_subject_to_act_binding(
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
-        scope.get("scope_identity") if type(scope) is dict else None,
         material.get("result_boundary_identity"),
     )
     if (
@@ -419,8 +412,7 @@ def get_operator_material_source_subject_to_act_binding(
     exact_binding_material = _subject_to_act_binding_material(
         exact_act_identity=identities[0],
         act_occurrence_identity=identities[1],
-        scope_identity=identities[2],
-        result_boundary_identity=identities[3],
+        result_boundary_identity=identities[2],
         source_boundary=subject_reference["source_boundary"],
         current_coordinate_reference=exact_current_reference,
     )

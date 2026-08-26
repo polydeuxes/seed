@@ -156,7 +156,6 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert len(
         {
             binding.identity,
-            binding.material["scope"]["scope_identity"],
             binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
             binding.material["result_boundary_identity"],
@@ -164,7 +163,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 8
+    ) == 7
 
     carried = advance_operator_current_coordinates(
         ledger,
@@ -445,9 +444,6 @@ def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
     assert acts[0].material["act_occurrence_identity"] != acts[1].material[
         "act_occurrence_identity"
     ]
-    assert bindings[0].material["scope"]["scope_identity"] != bindings[
-        1
-    ].material["scope"]["scope_identity"]
 
 
 def test_one_source_act_cannot_yield_twice():
