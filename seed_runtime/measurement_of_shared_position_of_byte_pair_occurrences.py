@@ -935,10 +935,10 @@ def _read_binding(
     if type(first) is not dict or type(second) is not dict:
         raise SharedPairPositionError("shared-position binding carries no exact inputs")
     boundary = event.material.get("through_event_occurrence_identity")
-    provenance_present = D2_RESULT_REFERENCE_COORDINATE in event.material
+    d2_result_reference_present = D2_RESULT_REFERENCE_COORDINATE in event.material
     determination_result = None
     determination_reference = None
-    if provenance_present:
+    if d2_result_reference_present:
         determination_reference = event.material.get(
             D2_RESULT_REFERENCE_COORDINATE
         )
@@ -977,7 +977,7 @@ def _read_binding(
             determination_result
         ):
             raise SharedPairPositionError(
-                "shared-position binding carries no exact D.2 provenance"
+                "shared-position binding carries no exact D.2 result reference"
             )
     else:
         inputs = _inputs_from_binding_material(
