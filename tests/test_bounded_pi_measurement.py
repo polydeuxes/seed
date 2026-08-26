@@ -23,14 +23,14 @@ def _record_byte_measurement(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        locality_standing=read_operator_locality_standing(
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=recording_locality_identity
         ),
     )
@@ -106,7 +106,7 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
 
     short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
     long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
-    assert short_source.assertion_identity != long_source.assertion_identity
+    assert short_source.reference != long_source.reference
     assert short_bytes.material == short_material
     assert _pair_counts(short_pairs) == short_pair_counts
     assert _pair_counts(long_pairs)[b"26"] == 1

@@ -1333,7 +1333,7 @@ def advance_operator_locality_standing(
             _read_byte_measurement_subject_to_act_binding(
                 ledger,
                 event.identity,
-                prior_standing={
+                prior_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
@@ -2072,57 +2072,59 @@ def advance_operator_locality_standing(
     }
 
 
-def _carry_byte_measurement_assignment_into_standing(
+def _carry_byte_measurement_binding_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
-    responsibility_boundary_replay: dict[str, Any] | None = None,
+    through_occurrence_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Carry the exact-byte assignment produced beside this Standing."""
+    """Carry the exact-byte binding produced beside these coordinates."""
 
     if (
-        type(locality_standing) is not dict
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
         or event.identity == prior_through_event_occurrence_identity
         or ledger.get(event.identity) != event
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("byte Measurement assignment must follow carried Standing")
+        raise ValueError(
+            "byte Measurement binding is not recorded from the supplied current coordinates"
+        )
     _read_byte_measurement_subject_to_act_binding(
         ledger,
         event.identity,
-        prior_standing=(
-            locality_standing
-            if responsibility_boundary_replay is None
-            else responsibility_boundary_replay
+        prior_coordinates=(
+            current_coordinates
+            if through_occurrence_coordinates is None
+            else through_occurrence_coordinates
         ),
     )
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    event_count = locality_standing.get("event_count")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    event_count = current_coordinates.get("event_count")
     if (
-        type(assignments) is not dict
-        or event.identity in assignments
+        type(bindings) is not dict
+        or event.identity in bindings
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("byte Measurement assignment Standing is not exact")
+        raise ValueError("byte Measurement binding coordinates are not exact")
     standing_additions = _exact_standing_additions(
-        locality_standing,
+        current_coordinates,
         event,
-        error_message="byte Measurement assignment Standing is not exact",
+        error_message="byte Measurement binding coordinates are not exact",
     )
-    assignments[event.identity] = None
+    bindings[event.identity] = None
     for key, added in standing_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
 def _carry_assertion_locality_movement_binding_into_current_coordinates(

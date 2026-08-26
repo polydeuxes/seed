@@ -2298,7 +2298,7 @@ def record_byte_measurement_subject_to_act_binding(
     *,
     source_localities: Iterable[str],
     recording_locality_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     """Record one exact-byte Measurement subject-to-Act binding."""
 
@@ -2312,7 +2312,7 @@ def record_byte_measurement_subject_to_act_binding(
     through_event_occurrence_identity = _require_current_byte_measurement_coordinates(
         ledger,
         recording_locality_identity=recording_locality_identity,
-        current_coordinates=locality_standing,
+        current_coordinates=current_coordinates,
     )
     if ledger.append_boundary() != boundary:
         raise ByteMeasurementError(
@@ -2333,7 +2333,7 @@ def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
     *,
     source_localities: Iterable[str],
     recording_locality_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     localities, boundary, source_material = (
         _prepare_byte_measurement_subject_to_act_binding(
@@ -2346,7 +2346,7 @@ def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
         _require_carried_byte_measurement_coordinates_at_current_boundary(
             ledger,
             recording_locality_identity=recording_locality_identity,
-            current_coordinates=locality_standing,
+            current_coordinates=current_coordinates,
         )
     )
     if ledger.append_boundary() != boundary:
@@ -2399,14 +2399,14 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
         raise ByteMeasurementError(
             "byte Measurement current coordinates changed before binding recording"
         )
-    responsibility_completeness_boundary = (
+    through_occurrence_boundary = (
         ledger.append_boundary_through_occurrence(through_event_occurrence_identity)
     )
     return _append_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=localities,
         source_material=current_source_material,
-        completeness_boundary_identity=responsibility_completeness_boundary.identity,
+        completeness_boundary_identity=through_occurrence_boundary.identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
@@ -2416,25 +2416,25 @@ def _read_byte_measurement_subject_to_act_binding(
     ledger: EventLedger,
     binding_event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, tuple[str, ...], EventLedgerBoundary, tuple[dict[str, str], ...]]:
     if type(binding_event_identity) is not str or not binding_event_identity:
         raise ByteMeasurementError(
             "byte Measurement requires one exact subject-to-Act binding"
         )
-    assignment = ledger.get(binding_event_identity)
+    binding = ledger.get(binding_event_identity)
     if (
-        assignment is None
-        or assignment.kind
+        binding is None
+        or binding.kind
         != BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        or type(assignment.locality_identity) is not str
-        or not assignment.locality_identity
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        or type(binding.locality_identity) is not str
+        or not binding.locality_identity
+        or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
             "byte Measurement subject-to-Act binding is absent or corrupted"
         )
-    material = assignment.material
+    material = binding.material
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
@@ -2484,85 +2484,85 @@ def _read_byte_measurement_subject_to_act_binding(
         raise ByteMeasurementError(
             "byte Measurement subject-to-Act binding coordinates are not exact"
         )
-    if prior_standing is None:
+    if prior_coordinates is None:
         from seed_runtime.operator_locality_standing import (
             _operator_standing_validation_context,
             read_operator_locality_standing_through,
         )
 
-        prior_standing = _operator_standing_validation_context(
-            ledger, locality_identity=assignment.locality_identity
+        prior_coordinates = _operator_standing_validation_context(
+            ledger, locality_identity=binding.locality_identity
         )
-        if prior_standing is None:
+        if prior_coordinates is None:
             try:
-                prior_standing = read_operator_locality_standing_through(
+                prior_coordinates = read_operator_locality_standing_through(
                     ledger,
-                    locality_identity=assignment.locality_identity,
+                    locality_identity=binding.locality_identity,
                     through_event_occurrence_identity=through_event_occurrence_identity,
                 )
             except (TypeError, ValueError) as error:
                 raise ByteMeasurementError(
                     "byte Measurement binding has no exact prior coordinates"
                 ) from error
-    carried_assignments = prior_standing.get(
+    carried_bindings = prior_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
-    prior_boundary_identity = prior_standing.get(
+    prior_boundary_identity = prior_coordinates.get(
         "through_event_occurrence_identity"
     )
     boundary_is_exact = prior_boundary_identity == through_event_occurrence_identity
-    assignment_is_carried_later = bool(
+    binding_is_carried_later = bool(
         type(prior_boundary_identity) is str
         and prior_boundary_identity
-        and type(carried_assignments) is dict
-        and carried_assignments.get(assignment.identity, object()) is None
+        and type(carried_bindings) is dict
+        and carried_bindings.get(binding.identity, object()) is None
     )
-    recording_boundary_precedes_assignment = bool(
+    recording_boundary_precedes_binding = bool(
         type(prior_boundary_identity) is str
         and prior_boundary_identity
         and prior_boundary_identity != through_event_occurrence_identity
-        and not assignment_is_carried_later
+        and not binding_is_carried_later
     )
     if (
-        prior_standing.get("locality_identity") != assignment.locality_identity
+        prior_coordinates.get("locality_identity") != binding.locality_identity
         or not (
             boundary_is_exact
-            or assignment_is_carried_later
-            or recording_boundary_precedes_assignment
+            or binding_is_carried_later
+            or recording_boundary_precedes_binding
         )
     ):
         raise ByteMeasurementError(
             "byte Measurement binding has no exact prior coordinates"
         )
     if boundary_is_exact:
-        order = (assignment.identity,)
+        order = (binding.identity,)
         if through_event_occurrence_identity is not None:
-            order = (through_event_occurrence_identity, assignment.identity)
-    elif prior_boundary_identity == assignment.identity:
-        order = (assignment.identity,)
-    elif recording_boundary_precedes_assignment:
+            order = (through_event_occurrence_identity, binding.identity)
+    elif prior_boundary_identity == binding.identity:
+        order = (binding.identity,)
+    elif recording_boundary_precedes_binding:
         order = (
             through_event_occurrence_identity,
             prior_boundary_identity,
-            assignment.identity,
+            binding.identity,
         )
     else:
-        order = (assignment.identity, prior_boundary_identity)
+        order = (binding.identity, prior_boundary_identity)
         if through_event_occurrence_identity is not None:
             order = (
                 through_event_occurrence_identity,
-                assignment.identity,
+                binding.identity,
                 prior_boundary_identity,
             )
     try:
         ledger.occurrences_in_append_order(
-            order, locality_identity=assignment.locality_identity
+            order, locality_identity=binding.locality_identity
         )
     except ValueError as error:
         raise ByteMeasurementError(
             "byte Measurement binding order is false"
         ) from error
-    return assignment, localities, boundary, source_material
+    return binding, localities, boundary, source_material
 
 
 def get_byte_measurement_subject_to_act_binding(
@@ -2574,108 +2574,108 @@ def get_byte_measurement_subject_to_act_binding(
 
 
 def _byte_measurement_act_occurrence_material(
-    assignment: Event,
+    binding: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": assignment.material[
+        "addressed_act_identity": binding.material[
             "measurement_act_identity"
         ],
-        "act_occurrence_identity": assignment.material[
+        "act_occurrence_identity": binding.material[
             "act_occurrence_identity"
         ],
         "act": "declared exact-byte Measurement",
         "subject_to_act_binding_reference": (
-            _byte_measurement_binding_reference(assignment)
+            _byte_measurement_binding_reference(binding)
         ),
-        "source_localities": list(assignment.material["source_localities"]),
+        "source_localities": list(binding.material["source_localities"]),
     }
 
 
 def _append_byte_measurement_act_occurrence(
     ledger: EventLedger,
     *,
-    assignment: Event,
+    binding: Event,
 ) -> Event:
     for prior_act in ledger.iter_locality_kind(
-        assignment.locality_identity,
+        binding.locality_identity,
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ):
         if (
             prior_act.material.get("subject_to_act_binding_reference")
-            == _byte_measurement_binding_reference(assignment)
+            == _byte_measurement_binding_reference(binding)
             or prior_act.material.get("act_occurrence_identity")
-            == assignment.material["act_occurrence_identity"]
+            == binding.material["act_occurrence_identity"]
         ):
             raise ByteMeasurementError(
                 "byte Measurement binding already carries an Act"
             )
     return ledger.append(
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
-        _byte_measurement_act_occurrence_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _byte_measurement_act_occurrence_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
 def record_byte_measurement_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
     """Record one exact byte Measurement Act occurrence from its binding."""
 
-    assignment, _localities, _boundary, _source_material = (
+    binding, _localities, _boundary, _source_material = (
         _read_byte_measurement_subject_to_act_binding(
-            ledger, responsibility_assignment_event_identity
+            ledger, subject_to_act_binding_event_identity
         )
     )
     _require_current_byte_measurement_coordinates(
         ledger,
-        recording_locality_identity=assignment.locality_identity,
-        current_coordinates=responsibility_assignment_standing,
-        required_binding_occurrence_identity=assignment.identity,
+        recording_locality_identity=binding.locality_identity,
+        current_coordinates=current_coordinates,
+        required_binding_occurrence_identity=binding.identity,
     )
     return _append_byte_measurement_act_occurrence(
         ledger,
-        assignment=assignment,
+        binding=binding,
     )
 
 
-def _record_byte_measurement_act_occurrence_from_carried_standing(
+def _record_byte_measurement_act_occurrence_from_carried_coordinates(
     ledger: EventLedger,
     *,
-    responsibility_assignment: Event,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding: Event,
+    current_coordinates: dict[str, Any],
 ) -> Event:
     if (
-        type(responsibility_assignment) is not Event
-        or responsibility_assignment.kind
+        type(subject_to_act_binding) is not Event
+        or subject_to_act_binding.kind
         != BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-        or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED
+        or ledger.integrity_of(subject_to_act_binding.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
             "byte Measurement requires its exact carried binding"
         )
-    exact_assignment, _localities, _boundary, _source_material = (
+    exact_binding, _localities, _boundary, _source_material = (
         _read_byte_measurement_subject_to_act_binding(
             ledger,
-            responsibility_assignment.identity,
-            prior_standing=responsibility_assignment_standing,
+            subject_to_act_binding.identity,
+            prior_coordinates=current_coordinates,
         )
     )
-    if exact_assignment != responsibility_assignment:
+    if exact_binding != subject_to_act_binding:
         raise ByteMeasurementError(
             "byte Measurement requires its exact carried binding"
         )
     _require_carried_byte_measurement_coordinates_at_current_boundary(
         ledger,
-        recording_locality_identity=responsibility_assignment.locality_identity,
-        current_coordinates=responsibility_assignment_standing,
-        required_binding_occurrence_identity=responsibility_assignment.identity,
+        recording_locality_identity=subject_to_act_binding.locality_identity,
+        current_coordinates=current_coordinates,
+        required_binding_occurrence_identity=subject_to_act_binding.identity,
     )
     return _append_byte_measurement_act_occurrence(
         ledger,
-        assignment=responsibility_assignment,
+        binding=subject_to_act_binding,
     )
 
 
@@ -2683,7 +2683,7 @@ def _measurement_of_act_occurrence(
     ledger: EventLedger,
     act_occurrence_event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Any, Event, MeasuredByteInputs]:
     event = ledger.get(act_occurrence_event_identity)
     if (
@@ -2695,10 +2695,10 @@ def _measurement_of_act_occurrence(
             "byte Measurement Yield requires one exact Act occurrence"
         )
     material = event.material
-    assignment_reference = material.get("subject_to_act_binding_reference")
+    binding_reference = material.get("subject_to_act_binding_reference")
     if (
-        type(assignment_reference) is not dict
-        or set(assignment_reference)
+        type(binding_reference) is not dict
+        or set(binding_reference)
             != {
                 "recorded_occurrence_identity",
                 "book_clause_identity",
@@ -2712,11 +2712,11 @@ def _measurement_of_act_occurrence(
         raise ByteMeasurementError(
             "byte Measurement Act occurrence carries malformed coordinates"
         )
-    assignment, localities, boundary, _source_material = (
+    binding, localities, boundary, _source_material = (
         _read_byte_measurement_subject_to_act_binding(
             ledger,
-            assignment_reference.get("recorded_occurrence_identity"),
-            prior_standing=prior_standing,
+            binding_reference.get("recorded_occurrence_identity"),
+            prior_coordinates=prior_coordinates,
         )
     )
     measured = _measure_byte_counts_through(
@@ -2724,17 +2724,17 @@ def _measurement_of_act_occurrence(
         localities=localities,
         boundary=boundary,
     )
-    expected = _byte_measurement_act_occurrence_material(assignment)
+    expected = _byte_measurement_act_occurrence_material(binding)
     if (
-        assignment_reference
-        != _byte_measurement_binding_reference(assignment)
-        or event.locality_identity != assignment.locality_identity
+        binding_reference
+        != _byte_measurement_binding_reference(binding)
+        or event.locality_identity != binding.locality_identity
         or material != expected
     ):
         raise ByteMeasurementError(
             "byte Measurement Act occurrence is not exact"
         )
-    return event, assignment, measured
+    return event, binding, measured
 
 
 def _require_byte_measurement_act_without_result(
@@ -2758,10 +2758,10 @@ def _record_byte_measurement_result_from_exact_inputs(
     ledger: EventLedger,
     *,
     act_occurrence: Event,
-    assignment: Event,
+    binding: Event,
     measured: MeasuredByteInputs,
 ) -> Event:
-    result_identity = assignment.material["measurement_result_identity"]
+    result_identity = binding.material["measurement_result_identity"]
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
@@ -2779,7 +2779,7 @@ def _record_byte_measurement_result_from_exact_inputs(
             "act_occurrence_identity"
         ],
         "subject_to_act_binding_reference": (
-            _byte_measurement_binding_reference(assignment)
+            _byte_measurement_binding_reference(binding)
         ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_localities": list(measured.source_localities),
@@ -2831,7 +2831,7 @@ def record_byte_measurement_result(
         )
     _require_byte_measurement_act_without_result(ledger, supplied)
 
-    act_occurrence, assignment, measured = (
+    act_occurrence, binding, measured = (
         _measurement_of_act_occurrence(
             ledger, supplied.identity
         )
@@ -2840,7 +2840,7 @@ def record_byte_measurement_result(
     return _record_byte_measurement_result_from_exact_inputs(
         ledger,
         act_occurrence=act_occurrence,
-        assignment=assignment,
+        binding=binding,
         measured=measured,
     )
 
@@ -2849,12 +2849,12 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
     ledger: EventLedger,
     *,
     act_occurrence: Event,
-    responsibility_assignment: Event,
-    locality_standing: dict[str, Any],
+    subject_to_act_binding: Event,
+    current_coordinates: dict[str, Any],
 ) -> Event:
     if (
         type(act_occurrence) is not Event
-        or type(responsibility_assignment) is not Event
+        or type(subject_to_act_binding) is not Event
         or ledger.get(act_occurrence.identity)
         != act_occurrence
         or act_occurrence.kind
@@ -2868,16 +2868,16 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
         raise ByteMeasurementError(
             "byte Measurement result requires exact carried lifecycle occurrences"
         )
-    exact_act, exact_assignment, measured = (
+    exact_act, exact_binding, measured = (
         _measurement_of_act_occurrence(
             ledger,
             act_occurrence.identity,
-            prior_standing=locality_standing,
+            prior_coordinates=current_coordinates,
         )
     )
     if (
         exact_act != act_occurrence
-        or exact_assignment != responsibility_assignment
+        or exact_binding != subject_to_act_binding
     ):
         raise ByteMeasurementError(
             "byte Measurement result requires exact carried lifecycle occurrences"
@@ -2896,7 +2896,7 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
     return _record_byte_measurement_result_from_exact_inputs(
         ledger,
         act_occurrence=act_occurrence,
-        assignment=responsibility_assignment,
+        binding=subject_to_act_binding,
         measured=measured,
     )
 
@@ -2905,7 +2905,7 @@ def _assertions_of_recorded_byte_measurement(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedByteAssertion, ...] | None:
     event = ledger.get(event_identity)
     if event is None:
@@ -2982,13 +2982,13 @@ def _assertions_of_recorded_byte_measurement(
         or act_occurrence.material != expected_act_occurrence
     ):
         raise ByteMeasurementError(
-            f"{event_identity} names no exact responsible byte Measurement Act occurrence"
+            f"{event_identity} names no exact byte Measurement Act occurrence"
         )
-    _validated_act, assignment, measured = (
+    _validated_act, binding, measured = (
         _measurement_of_act_occurrence(
             ledger,
             act_occurrence.identity,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     _require_exact_result_yield(
@@ -3015,7 +3015,7 @@ def _assertions_of_recorded_byte_measurement(
         )
     if (
         material.get("subject_to_act_binding_reference")
-        != _byte_measurement_binding_reference(assignment)
+        != _byte_measurement_binding_reference(binding)
         or measured.completeness_boundary.identity != boundary_value["identity"]
         or list(measured.source_localities) != localities_value
     ):
@@ -3559,7 +3559,7 @@ def _read_pair_subject_to_act_binding(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_standing,
         )
         source = next(
             (

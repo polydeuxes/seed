@@ -76,12 +76,12 @@ def _pair_measurement(ledger):
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=_standing(ledger),
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=_standing(ledger),
     )
     byte_result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity

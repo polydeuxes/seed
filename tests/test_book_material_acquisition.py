@@ -26,14 +26,14 @@ def _record_byte_measurement(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
-        locality_standing=read_operator_locality_standing(
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=recording_locality_identity
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=recording_locality_identity
         ),
     )

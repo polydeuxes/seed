@@ -160,14 +160,14 @@ def _build_fixture(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
-        locality_standing=read_operator_locality_standing(
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )
     byte_act = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=byte_assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=byte_assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=locality
         ),
     )

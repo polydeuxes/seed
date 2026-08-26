@@ -17,7 +17,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence,
-    _record_byte_measurement_act_occurrence_from_carried_standing,
+    _record_byte_measurement_act_occurrence_from_carried_coordinates,
     _record_byte_measurement_result_from_carried_act_occurrence,
 )
 from seed_runtime.event import Event
@@ -33,7 +33,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     measure_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.operator_locality_standing import (
-    _carry_byte_measurement_assignment_into_standing,
+    _carry_byte_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_assignment_into_standing,
     _carry_byte_pair_occurrence_position_measurement_result_into_standing,
     advance_operator_locality_standing,
@@ -309,21 +309,21 @@ def _complete_byte_measurement(
     ledger: EventLedger,
     recording_replay: dict[str, Any],
     locality_identity: str,
-    assignment: Event,
-    responsibility_boundary_replay: dict[str, Any],
+    binding: Event,
+    through_occurrence_coordinates: dict[str, Any],
 ) -> tuple[dict[str, Any], Event]:
     prior_boundary = recording_replay["through_event_occurrence_identity"]
-    recording_replay = _carry_byte_measurement_assignment_into_standing(
+    recording_replay = _carry_byte_measurement_binding_into_current_coordinates(
         ledger,
         recording_replay,
-        assignment,
+        binding,
         prior_through_event_occurrence_identity=prior_boundary,
-        responsibility_boundary_replay=responsibility_boundary_replay,
+        through_occurrence_coordinates=through_occurrence_coordinates,
     )
-    act = _record_byte_measurement_act_occurrence_from_carried_standing(
+    act = _record_byte_measurement_act_occurrence_from_carried_coordinates(
         ledger,
-        responsibility_assignment=assignment,
-        responsibility_assignment_standing=recording_replay,
+        subject_to_act_binding=binding,
+        current_coordinates=recording_replay,
     )
     recording_replay = _advance(
         ledger,
@@ -334,8 +334,8 @@ def _complete_byte_measurement(
     result = _record_byte_measurement_result_from_carried_act_occurrence(
         ledger,
         act_occurrence=act,
-        responsibility_assignment=assignment,
-        locality_standing=recording_replay,
+        subject_to_act_binding=binding,
+        current_coordinates=recording_replay,
     )
     recording_replay = _advance(
         ledger,

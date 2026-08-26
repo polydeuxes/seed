@@ -59,8 +59,8 @@ def measured_material():
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity="compiled-material-measurement"
         ),
     )

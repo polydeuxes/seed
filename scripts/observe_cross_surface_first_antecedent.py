@@ -55,27 +55,27 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         exact=exact,
         source_boundary="cross-surface antecedent source",
     )
-    standing_before = read_operator_locality_standing(
+    coordinates_before = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
     assignment = record_byte_measurement_responsibility_assignment(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
-        locality_standing=standing_before,
+        locality_standing=coordinates_before,
     )
-    standing_with_assignment = read_operator_locality_standing(
+    coordinates_with_binding = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing_with_assignment,
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=coordinates_with_binding,
     )
     result = record_byte_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    standing_after = read_operator_locality_standing(
+    coordinates_after = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
     assertions = assertions_of_recorded_byte_measurement(ledger, result.identity)
