@@ -1699,7 +1699,7 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="source",
-        input_stream=binary_input("tata\n"),
+        input_stream=binary_input("ab"),
     )
     source = _byte_source(ledger)
     recorded_before = sum(
