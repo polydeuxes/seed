@@ -6,7 +6,6 @@ import seed_runtime.occurrence_position_measurement as position_measurement
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
-    OCCURRENCE_POSITION_MEASUREMENT_RULE,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_COORDINATES,
@@ -608,9 +607,6 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         "act_occurrence_event_identity",
         "yield_relation_identity",
     }
-    assert recorded.material["measurement_rule"] == (
-        OCCURRENCE_POSITION_MEASUREMENT_RULE
-    )
     assert recorded.material["source_localities"] == ["a"]
     assert recorded.material["completeness_boundary"] == {
         "identity": boundary.identity
@@ -641,8 +637,6 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert all(
         item["assertion_scope"] == {"source_localities": ["a"]}
         and item["result"] == "position"
-        and item["assertion_subject"]["measurement_rule"]
-        == OCCURRENCE_POSITION_MEASUREMENT_RULE
         for item in assertions
     )
 
@@ -672,7 +666,6 @@ def test_missing_reordered_duplicated_or_substituted_assertions_are_refused(muta
 @pytest.mark.parametrize(
     "coordinate, value",
     (
-        ("measurement_rule", "another Measurement rule"),
         ("source_localities", ["b"]),
         ("completeness_boundary", {"identity": "another-boundary"}),
     ),

@@ -22,10 +22,6 @@ OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT = (
 )
 OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
-OCCURRENCE_POSITION_MEASUREMENT_RULE = (
-    "preserve each exact occurrence in one exact Locality with its source-order "
-    "position coordinate within one completeness boundary"
-)
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
         "result_identity",
@@ -33,7 +29,6 @@ OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
         "act_occurrence_identity",
         "exact_act",
         "subject_to_act_binding_reference",
-        "measurement_rule",
         "source_localities",
         "completeness_boundary",
         "assertions",
@@ -142,7 +137,6 @@ def _occurrence_position_result_material(
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
-        "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
@@ -183,7 +177,6 @@ def _binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -202,10 +195,7 @@ def _position_assertions(
     for occurrence_identity, position in finding.occurrences:
         scope = {"source_localities": [finding.source_locality_identity]}
         boundary = {"identity": finding.completeness_boundary.identity}
-        subject = {
-            "occurrence_identity": occurrence_identity,
-            "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
-        }
+        subject = {"occurrence_identity": occurrence_identity}
         content = {
             "position": position,
             "completeness_boundary": boundary,
@@ -893,7 +883,6 @@ def _record_occurrence_position_measurement_result(
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
         ],
-        "measurement_rule": result_material["measurement_rule"],
         "source_localities": result_material["source_localities"],
         "completeness_boundary": result_material["completeness_boundary"],
         "assertions": result_material["assertions"],
@@ -1009,8 +998,6 @@ def get_recorded_occurrence_position_measurement(
     boundary = material.get("completeness_boundary")
     if (
         material.get("exact_act") != OCCURRENCE_POSITION_ACT
-        or material.get("measurement_rule")
-        != OCCURRENCE_POSITION_MEASUREMENT_RULE
         or type(source_localities) is not list
         or len(source_localities) != 1
         or type(source_localities[0]) is not str
