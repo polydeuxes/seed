@@ -371,7 +371,6 @@ def _preserved_binding_material(material):
             "through_event_occurrence_identity"
         ],
         "exact_act_identity": material["act_identity"],
-        "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
         "rule": material["rule"],
@@ -518,7 +517,7 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "exact_act_identity": binding.material["act_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
         "result_boundary_identity": binding.material["result_boundary_identity"],
     }
@@ -713,7 +712,7 @@ def _require_binding(
         or binding.locality_identity != act.locality_identity
         or ledger.integrity_of(binding.identity) == CORRUPTED
         or reference != _binding_reference(binding)
-        or binding.material.get("act_identity") != act.material.get("act_identity")
+        or binding.material.get("exact_act_identity") != act.material.get("act_identity")
         or binding.material.get("act_occurrence_identity")
         != act.material.get("act_occurrence_identity")
         or binding.material.get("exact_act") != act.material.get("act")
@@ -760,8 +759,8 @@ def _require_recorded_binding(
         or not material["result_boundary_identity"]
         or type(material.get("through_event_occurrence_identity")) is not str
         or not material["through_event_occurrence_identity"]
-        or type(material.get("act_identity")) is not str
-        or not material["act_identity"]
+        or type(material.get("exact_act_identity")) is not str
+        or not material["exact_act_identity"]
         or type(material.get("act_occurrence_identity")) is not str
         or not material["act_occurrence_identity"]
         or type(material.get("exact_act")) is not str
