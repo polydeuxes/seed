@@ -1104,7 +1104,6 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "exact_act",
         "subject_to_act_binding_reference",
         "input_relation",
-        "measurement_rule",
         "source_localities",
         "source_material_result_occurrence_identity",
         "completeness_boundary",

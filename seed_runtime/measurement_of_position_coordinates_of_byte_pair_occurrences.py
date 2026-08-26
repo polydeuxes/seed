@@ -80,10 +80,6 @@ def _require_carried_position_measurement_source_unchanged() -> None:
 
 
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
-MEASUREMENT_RULE = (
-    "each exact byte-pair occurrence with its first position and second position "
-    "in source occurrence order within one exact material result"
-)
 
 EVENT_KIND_BOOK_CLAUSES = {
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
@@ -608,7 +604,6 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relation": input_relation,
-        "measurement_rule": MEASUREMENT_RULE,
         "scope": {
             "source_material_result_occurrence_identity": (
                 finding.source_material_result_occurrence_identity
@@ -1271,7 +1266,6 @@ def _assertion_coordinates(
             finding.source_material_result_occurrence_identity
         ),
         "exact_pair": list(exact_pair),
-        "measurement_rule": MEASUREMENT_RULE,
     }
     scope = {
         "source_locality_identity": finding.source_locality_identity,
@@ -1351,7 +1345,6 @@ def _assertion_result_coordinates(
 ) -> dict[str, Any]:
     return {
         "result": "position",
-        "measurement_rule": MEASUREMENT_RULE,
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
         ),
@@ -1388,7 +1381,6 @@ def _result_material(
         "exact_act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "input_relation": binding.material["input_relation"],
-        "measurement_rule": MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
@@ -1469,7 +1461,6 @@ def _record_byte_pair_occurrence_position_measurement_result(
                 "subject_to_act_binding_reference"
             ],
             "input_relation": result["input_relation"],
-            "measurement_rule": result["measurement_rule"],
             "source_localities": result["source_localities"],
             "source_material_result_occurrence_identity": result[
                 "source_material_result_occurrence_identity"
