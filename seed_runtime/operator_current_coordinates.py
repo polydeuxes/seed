@@ -3067,6 +3067,7 @@ def _carry_operator_material_source_occurrence_into_current_coordinates(
 
 
 def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+    ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
     *,

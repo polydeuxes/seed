@@ -274,6 +274,24 @@ def test_operator_source_carries_the_prior_pair_measurement_into_compare():
     assert binding.material["destination_operator_locality_identity"] == LOCALITY
 
 
+def test_carried_measurements_record_one_complete_comparison():
+    ledger, _source, _source_event, _added, earlier, later = _operator_inputs()
+    result, current_coordinates = (
+        _record_recorded_pair_measurement_comparison_from_carried_measurements(
+            ledger,
+            earlier_measurement=earlier,
+            later_measurement=later,
+            current_coordinates=read_operator_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+    )
+
+    reading = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    assert reading["result_identity"] == result.material["result_identity"]
+    assert result.identity in current_coordinates["comparison_result_occurrences"]
+
+
 def test_witness_provenance_does_not_establish_a_compare_input_relation(monkeypatch):
     ledger, earlier_source, added, earlier, later, current_coordinates = (
         _witness_compare_input_testimony(monkeypatch)

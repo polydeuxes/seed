@@ -236,7 +236,7 @@ def _findings_from_carried_measurement(
             "comparison requires one carried pair Measurement"
         )
     findings = []
-    identities = set()
+    positions = set()
     for assertion in assertions:
         dimensions = assertion.get("dimensions") if type(assertion) is dict else None
         subject = (
@@ -246,9 +246,13 @@ def _findings_from_carried_measurement(
         )
         support = assertion.get("input_support") if type(assertion) is dict else None
         result = assertion.get("result") if type(assertion) is dict else None
-        identity = dimensions.get("identity") if type(dimensions) is dict else None
-        content = dimensions.get("content") if type(dimensions) is dict else None
-        content = (
+        assertion_position = (
+            dimensions.get("position") if type(dimensions) is dict else None
+        )
+        content_coordinates = (
+            dimensions.get("content") if type(dimensions) is dict else None
+        )
+        exact_pair = (
             subject.get("content") if type(subject) is dict else None
         )
         local_support = (
@@ -257,49 +261,58 @@ def _findings_from_carried_measurement(
             else None
         )
         if (
-            type(identity) is not str
-            or not identity
-            or identity in identities
-            or type(content) is not list
-            or len(content) != 2
-            or any(type(value) is not int for value in content)
+            type(assertion_position) is not int
+            or assertion_position < 0
+            or assertion_position in positions
+            or type(exact_pair) is not list
+            or len(exact_pair) != 2
+            or any(
+                type(value) is not int or not 0 <= value <= 255
+                for value in exact_pair
+            )
             or result not in {"count", "recurrence"}
-            or type(content) is not dict
+            or type(content_coordinates) is not dict
             or type(local_support) is not list
-            or any(type(value) is not str or not value for value in local_support)
+            or any(type(value) is not int or value < 0 for value in local_support)
         ):
             raise RecordedPairMeasurementComparisonError(
                 "comparison carried finding coordinates are not exact"
             )
         if result == "recurrence":
-            if set(content) != {"recurrence_established"} or type(
-                content["recurrence_established"]
+            if set(content_coordinates) != {"recurrence_established"} or type(
+                content_coordinates["recurrence_established"]
             ) is not bool:
                 raise RecordedPairMeasurementComparisonError(
                     "comparison carried finding content is not exact"
                 )
-            content_coordinates = content["recurrence_established"]
+            carried_content: tuple[int, int, int] | bool = content_coordinates[
+                "recurrence_established"
+            ]
         else:
-            if set(content) != {"input_count", "occurrences_carrying", "count"}:
+            if set(content_coordinates) != {
+                "input_count",
+                "occurrences_carrying",
+                "count",
+            }:
                 raise RecordedPairMeasurementComparisonError(
                     "comparison carried finding content is not exact"
                 )
-            content_coordinates = tuple(
-                content[key]
+            carried_content = tuple(
+                content_coordinates[key]
                 for key in ("input_count", "occurrences_carrying", "count")
             )
-            if any(type(value) is not int for value in content_coordinates):
+            if any(type(value) is not int for value in carried_content):
                 raise RecordedPairMeasurementComparisonError(
                     "comparison carried finding content is not exact"
                 )
-        identities.add(identity)
+        positions.add(assertion_position)
         findings.append(
             _RecordedBytePairFinding(
-                assertion_identity=identity,
+                assertion_position=assertion_position,
                 recorded_occurrence_identity=event.identity,
-                content=tuple(content),
+                exact_pair=tuple(exact_pair),
                 result=result,
-                _content_coordinates=content_coordinates,
+                _content_coordinates=carried_content,
                 _local_support_assertion_positions=tuple(local_support),
             )
         )
@@ -1750,6 +1763,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         ledger, inputs=inputs, through_event_occurrence_identity=boundary
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         binding,
         prior_through_event_occurrence_identity=boundary,
@@ -1763,6 +1777,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         )
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         applicability_binding,
         prior_through_event_occurrence_identity=binding.identity,
@@ -1774,6 +1789,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         locality_identity=applicability_binding.locality_identity,
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         applicability_act,
         prior_through_event_occurrence_identity=applicability_binding.identity,
@@ -1783,6 +1799,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         ledger, act=applicability_act, result=applicability_material
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         applicability,
         prior_through_event_occurrence_identity=applicability_act.identity,
@@ -1796,6 +1813,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         locality_identity=binding.locality_identity,
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         comparison_act,
         prior_through_event_occurrence_identity=applicability.identity,
@@ -1808,6 +1826,7 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
         ledger, act=comparison_act, result=result_material
     )
     current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        ledger,
         current_coordinates,
         result,
         prior_through_event_occurrence_identity=comparison_act.identity,
