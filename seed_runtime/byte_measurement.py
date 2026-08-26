@@ -2744,7 +2744,6 @@ def _record_byte_measurement_result_from_exact_inputs(
                 "content": (
                     "exact source material, byte count, and same-content Assertions"
                 ),
-                "source_provenance": "complete declared material result within one boundary",
         },
         "exact_act": "declared exact-byte Measurement",
         "addressed_act_identity": act_occurrence.material[
@@ -2912,9 +2911,6 @@ def _assertions_of_recorded_byte_measurement(
                 "content": (
                     "exact source material, byte count, and same-content Assertions"
                 ),
-            "source_provenance": (
-                "complete declared material result within one boundary"
-            ),
         }
     ):
         raise ByteMeasurementError(
