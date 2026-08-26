@@ -184,7 +184,7 @@ def _path_input(
     material = get_recorded_shared_position_measurement(
         ledger,
         event.identity,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_standing,
     )
     assertions = material.get("assertions")
     if type(assertions) is not list or len(assertions) != 1:

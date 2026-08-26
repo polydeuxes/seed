@@ -176,12 +176,12 @@ def _record_path(ledger, pair_measurement, source):
         first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
         second_assertion_address=second.assertion_address,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         assignment_event_identity=assignment.identity,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     applicability = record_shared_position_applicability_result(
         ledger,
@@ -190,7 +190,7 @@ def _record_path(ledger, pair_measurement, source):
     act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
-        locality_standing=_standing(ledger),
+        current_coordinates=_standing(ledger),
     )
     return record_shared_position_measurement_result(
         ledger, measurement_act_occurrence_event_identity=act.identity

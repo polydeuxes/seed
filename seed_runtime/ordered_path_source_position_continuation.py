@@ -44,11 +44,11 @@ class OrderedPathSourcePositionContinuation(NamedTuple):
 
 def _advance(
     ledger: EventLedger,
-    standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     *events: Event,
 ) -> dict[str, Any]:
-    locality_identity = standing["locality_identity"]
-    prior = standing["through_event_occurrence_identity"]
+    locality_identity = current_coordinates["locality_identity"]
+    prior = current_coordinates["through_event_occurrence_identity"]
     ordered = ledger.occurrences_in_append_order(
         (prior, *(event.identity for event in events)),
         locality_identity=locality_identity,
@@ -62,19 +62,25 @@ def _advance(
         raise ValueError("source-position continuation left its exact boundary")
     for event in events:
         additions = _exact_standing_additions(
-            standing,
+            current_coordinates,
             event,
-            error_message="source-position continuation Standing is not exact",
+            error_message=(
+                "source-position continuation current coordinates are not exact"
+            ),
         )
         if event.kind in {
             SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         }:
-            standing["subject_to_act_binding_occurrences"][event.identity] = None
+            current_coordinates["subject_to_act_binding_occurrences"][
+                event.identity
+            ] = None
         elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            standing["applicability_result_occurrences"][event.identity] = None
+            current_coordinates["applicability_result_occurrences"][
+                event.identity
+            ] = None
         elif event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
-            standing["measurement_occurrences"][event.identity] = {
+            current_coordinates["measurement_occurrences"][event.identity] = {
                 "recorded_occurrence_identity": event.identity,
                 "result_identity": event.material["result_identity"],
                 "act_occurrence_identity": event.material["act_occurrence_identity"],
@@ -87,15 +93,15 @@ def _advance(
             }
         for key, values in additions.items():
             for value in values:
-                _record_distinct(standing[key], value)
-        standing["through_event_occurrence_identity"] = event.identity
-        standing["event_count"] += 1
-    return standing
+                _record_distinct(current_coordinates[key], value)
+        current_coordinates["through_event_occurrence_identity"] = event.identity
+        current_coordinates["event_count"] += 1
+    return current_coordinates
 
 
 def _record_shared_path(
     ledger: EventLedger,
-    standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     determination: Event,
 ) -> tuple[dict[str, Any], Event]:
     """Record the existing shared-position lifecycle from carried coordinates."""
@@ -103,20 +109,22 @@ def _record_shared_path(
     measurement_binding = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_result_event_identity=determination.identity,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
     _result, inputs = shared_position._d2_result_inputs(
         ledger,
         result_event_identity=determination.identity,
-        prior_standing=standing,
+        prior_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, measurement_binding)
+    current_coordinates = _advance(
+        ledger, current_coordinates, measurement_binding
+    )
     applicability_identities = shared_position._mint_applicability_identities(ledger)
     applicability_binding = ledger.append(
         shared_position.SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         shared_position._applicability_binding_material(
             inputs=inputs,
-            through_event_occurrence_identity=standing[
+            through_event_occurrence_identity=current_coordinates[
                 "through_event_occurrence_identity"
             ],
             measurement_act_identity=measurement_binding.material[
@@ -129,19 +137,21 @@ def _record_shared_path(
         ),
         locality_identity=measurement_binding.locality_identity,
     )
-    standing = _advance(ledger, standing, applicability_binding)
+    current_coordinates = _advance(
+        ledger, current_coordinates, applicability_binding
+    )
     applicability_act = ledger.append(
         shared_position.SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         shared_position._applicability_act_material(
             assignment=applicability_binding,
             inputs=inputs,
-            through_event_occurrence_identity=standing[
+            through_event_occurrence_identity=current_coordinates[
                 "through_event_occurrence_identity"
             ],
         ),
         locality_identity=measurement_binding.locality_identity,
     )
-    standing = _advance(ledger, standing, applicability_act)
+    current_coordinates = _advance(ledger, current_coordinates, applicability_act)
     applicability_material = shared_position._applicability_result_material(
         ledger=ledger,
         act=applicability_act,
@@ -176,8 +186,8 @@ def _record_shared_path(
         ),
         locality_identity=measurement_binding.locality_identity,
     )
-    standing = _advance(
-        ledger, standing, applicability_yield, applicability
+    current_coordinates = _advance(
+        ledger, current_coordinates, applicability_yield, applicability
     )
     measurement_act = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
@@ -185,13 +195,13 @@ def _record_shared_path(
             assignment=measurement_binding,
             inputs=inputs,
             applicability=applicability,
-            through_event_occurrence_identity=standing[
+            through_event_occurrence_identity=current_coordinates[
                 "through_event_occurrence_identity"
             ],
         ),
         locality_identity=measurement_binding.locality_identity,
     )
-    standing = _advance(ledger, standing, measurement_act)
+    current_coordinates = _advance(ledger, current_coordinates, measurement_act)
     result_material = shared_position._measurement_result_material(
         act=measurement_act,
         assignment=measurement_binding,
@@ -223,7 +233,7 @@ def _record_shared_path(
         ),
         locality_identity=measurement_binding.locality_identity,
     )
-    return _advance(ledger, standing, path_yield, path), path
+    return _advance(ledger, current_coordinates, path_yield, path), path
 
 
 def _yield_ordered_path_source_position_continuations(
@@ -236,25 +246,25 @@ def _yield_ordered_path_source_position_continuations(
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source-position continuation requires one EventLedger")
-    standing = locality_standing
+    current_coordinates = locality_standing
     for coordinate in source_position_coordinate_references_of_recorded_position_measurement(
         ledger, direct_result_event_identity
     ):
         with ledger.batched():
-            standing, determination = (
+            current_coordinates, determination = (
                 _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
                     ledger,
                     direct_result_event_identity=direct_result_event_identity,
                     addressed_source_byte_position_coordinate_reference=coordinate,
-                    locality_standing=standing,
+                    locality_standing=current_coordinates,
                     mutate_locality_standing=True,
                 )
             )
             if len(determination.material["ordered_assertion_references"]) != 2:
                 path = None
             else:
-                standing, path = _record_shared_path(
-                    ledger, standing, determination
+                current_coordinates, path = _record_shared_path(
+                    ledger, current_coordinates, determination
                 )
         if path is None:
             yield OrderedPathSourcePositionContinuation(
@@ -262,13 +272,13 @@ def _yield_ordered_path_source_position_continuations(
                 determination,
                 None,
                 None,
-                standing,
+                current_coordinates,
             )
             continue
         comparisons = yield_ordered_path_source_position_material_comparisons(
             ledger,
             path_result_event_identity=path.identity,
-            locality_standing=standing,
+            locality_standing=current_coordinates,
         )
         while True:
             with ledger.batched():
@@ -276,13 +286,13 @@ def _yield_ordered_path_source_position_continuations(
                     comparison = next(comparisons)
                 except StopIteration:
                     break
-            standing = comparison.locality_standing
+            current_coordinates = comparison.locality_standing
             yield OrderedPathSourcePositionContinuation(
                 coordinate,
                 determination,
                 path,
                 comparison.result_occurrence,
-                standing,
+                current_coordinates,
             )
 
 

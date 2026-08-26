@@ -792,7 +792,7 @@ def _shared_position_binding_reading(
     return _read_shared_position_binding(
         ledger,
         assignment_identity,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_standing,
     )
 
 

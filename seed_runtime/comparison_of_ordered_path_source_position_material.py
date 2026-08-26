@@ -128,7 +128,7 @@ def _path_input(
     )
     path, positions = (
         ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
-            ledger, event.identity, prior_standing=prior_standing
+            ledger, event.identity, prior_coordinates=prior_standing
         )
     )
     if len(positions) != 3:
