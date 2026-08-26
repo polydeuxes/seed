@@ -2007,14 +2007,6 @@ def _recurrent_result_material_payload(
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"
         ],
-        "scope": {
-            "locality_identity": recurrence_event.locality_identity,
-            "recurrence_result_reference": recurrence_result_reference,
-            "recurrence_finding_position": recurrence_finding["finding_position"],
-            "completeness_boundary_reference": recurrence[
-                "completeness_boundary_reference"
-            ],
-        },
         "locality": {"locality_identity": recurrence_event.locality_identity},
         "conflicts": [],
         "unknown": [
