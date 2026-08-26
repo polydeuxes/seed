@@ -666,8 +666,6 @@ class SQLiteEventLedger(EventLedger):
         "standing_locality_continuation_occurrence",
         "standing_locality_continuation_relation_occurrence",
         "standing_locality_continuation_result_boundary",
-        "standing_locality_continuation_responsibility_assignment",
-        "standing_locality_continuation_responsibility_subject",
     })
 
     def __init__(self, database_path: str) -> None:

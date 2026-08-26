@@ -103,11 +103,9 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     ] == boundary
     assert assignment_reference == {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": "06.Locality.B",
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": assignment.material["subject_reference"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
@@ -115,14 +113,13 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert len(
         {
             assignment.identity,
-            assignment.material["assignment_identity"],
-            assignment.material["assignment_subject_identity"],
+            assignment.material["exact_act_identity"],
             assignment.material["result_boundary_identity"],
             act_occurrence.material["continuation_act_identity"],
             act_occurrence.material["act_occurrence_identity"],
             act_occurrence.material["locality_relation_occurrence_identity"],
         }
-    ) == 7
+    ) == 5
     assert after_act["event_count"] == 2
     assert after_act["recorded_relation_Standing"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {
@@ -168,8 +165,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         recorded["act_occurrence_identity"],
         recorded["locality_relation_occurrence_identity"],
         assignment.identity,
-        assignment.material["assignment_identity"],
-        assignment.material["assignment_subject_identity"],
+        assignment.material["exact_act_identity"],
     }
     assert recorded["standing"] == "preserved"
     assert recorded["responsibility_assignment_reference"] == assignment_reference

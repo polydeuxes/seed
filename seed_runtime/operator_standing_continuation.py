@@ -113,18 +113,17 @@ def _participation(
 
 def _assignment_material(
     *,
-    assignment_identity: str,
-    assignment_subject_identity: str,
+    exact_act_identity: str,
     result_boundary_identity: str,
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "book_clause_identity": (
             STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE
         ),
+        "exact_act_identity": exact_act_identity,
+        "subject_reference": deepcopy(source_standing_reference),
         "responsible_boundary": "this Seed",
         "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
         "source_standing_reference": deepcopy(source_standing_reference),
@@ -145,14 +144,12 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _assignment_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": deepcopy(assignment.material["subject_reference"]),
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
@@ -164,7 +161,7 @@ def _act_occurrence_material(
     continuation_act_identity: str,
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
-    responsibility_assignment_reference: dict[str, str],
+    responsibility_assignment_reference: dict[str, Any],
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -195,7 +192,7 @@ def _result_material(
     continuation_act_identity: str,
     act_occurrence_identity: str,
     locality_relation_occurrence_identity: str,
-    responsibility_assignment_reference: dict[str, str],
+    responsibility_assignment_reference: dict[str, Any],
     source_standing_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -289,20 +286,14 @@ def record_standing_locality_continuation_responsibility_assignment(
         raise StandingLocalityContinuationError(
             "Standing Locality continuation requires one fresh destination Locality"
         )
-    assignment_identity = new_identity(
-        "standing_locality_continuation_responsibility_assignment"
-    )
-    assignment_subject_identity = new_identity(
-        "standing_locality_continuation_responsibility_subject"
-    )
+    exact_act_identity = new_identity("standing_locality_continuation_act")
     result_boundary_identity = new_identity(
         "standing_locality_continuation_result_boundary"
     )
     return ledger.append(
         STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
         _assignment_material(
-            assignment_identity=assignment_identity,
-            assignment_subject_identity=assignment_subject_identity,
+            exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
             source_standing_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
@@ -367,7 +358,7 @@ def record_standing_locality_continuation_act_occurrence(
 
     source_reference = assignment.material["source_standing_reference"]
     destination_locality_identity = assignment.locality_identity
-    continuation_act_identity = new_identity("standing_locality_continuation_act")
+    continuation_act_identity = assignment.material["exact_act_identity"]
     act_occurrence_identity = new_identity(
         "standing_locality_continuation_occurrence"
     )
@@ -452,15 +443,13 @@ def _validated_act_occurrence(
         or len(
             {
                 assignment.identity,
-                assignment.material["assignment_identity"],
-                assignment.material["assignment_subject_identity"],
                 assignment.material["result_boundary_identity"],
                 continuation_act_identity,
                 act_occurrence_identity,
                 locality_relation_occurrence_identity,
             }
         )
-        != 7
+        != 5
         or assignment_reference != _assignment_reference(assignment)
         or assignment.locality_identity != act_occurrence.locality_identity
         or assignment.material["responsibility"]
@@ -673,29 +662,18 @@ def get_standing_locality_continuation_responsibility_assignment(
             "source_standing_through_event_occurrence_identity"
         ),
     )
-    assignment_identity = material.get("assignment_identity")
-    assignment_subject_identity = material.get("assignment_subject_identity")
+    exact_act_identity = material.get("exact_act_identity")
     result_boundary_identity = material.get("result_boundary_identity")
     if (
-        type(assignment_identity) is not str
-        or not assignment_identity
-        or type(assignment_subject_identity) is not str
-        or not assignment_subject_identity
+        type(exact_act_identity) is not str
+        or not exact_act_identity
         or type(result_boundary_identity) is not str
         or not result_boundary_identity
-        or len(
-            {
-                assignment_identity,
-                assignment_subject_identity,
-                result_boundary_identity,
-            }
-        )
-        != 3
+        or exact_act_identity == result_boundary_identity
         or source_reference != expected_reference
         or material
         != _assignment_material(
-            assignment_identity=assignment_identity,
-            assignment_subject_identity=assignment_subject_identity,
+            exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
             source_standing_reference=expected_reference,
             destination_locality_identity=assignment.locality_identity,
