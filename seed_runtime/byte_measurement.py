@@ -2145,7 +2145,7 @@ def _byte_measurement_binding_material(
     source_localities: tuple[str, ...],
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
-    standing_boundary_identity: str | None,
+    through_event_occurrence_identity: str | None,
     measurement_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
@@ -2168,9 +2168,8 @@ def _byte_measurement_binding_material(
             dict(reference) for reference in source_material
         ],
         "completeness_boundary_identity": completeness_boundary_identity,
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": {
-            "recording_standing_boundary_identity": standing_boundary_identity,
             "source_localities": list(source_localities),
             "completeness_boundary_identity": completeness_boundary_identity,
         },
@@ -2342,7 +2341,7 @@ def _append_byte_measurement_subject_to_act_binding(
     source_localities: tuple[str, ...],
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
-    standing_boundary_identity: str | None,
+    through_event_occurrence_identity: str | None,
     recording_locality_identity: str,
 ) -> Event:
     identities = {
@@ -2360,7 +2359,7 @@ def _append_byte_measurement_subject_to_act_binding(
             source_localities=source_localities,
             source_material=source_material,
             completeness_boundary_identity=completeness_boundary_identity,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             **identities,
         ),
         locality_identity=recording_locality_identity,
@@ -2383,7 +2382,7 @@ def record_byte_measurement_subject_to_act_binding(
             recording_locality_identity=recording_locality_identity,
         )
     )
-    standing_boundary_identity = _require_current_byte_measurement_standing(
+    through_event_occurrence_identity = _require_current_byte_measurement_standing(
         ledger,
         recording_locality_identity=recording_locality_identity,
         locality_standing=locality_standing,
@@ -2397,7 +2396,7 @@ def record_byte_measurement_subject_to_act_binding(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=boundary.identity,
-        standing_boundary_identity=standing_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2416,7 +2415,7 @@ def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
             recording_locality_identity=recording_locality_identity,
         )
     )
-    standing_boundary_identity = (
+    through_event_occurrence_identity = (
         _require_carried_byte_measurement_replay_at_current_boundary(
             ledger,
             recording_locality_identity=recording_locality_identity,
@@ -2432,7 +2431,7 @@ def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=boundary.identity,
-        standing_boundary_identity=standing_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2447,7 +2446,7 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
     """Record one assignment preserving its exact earlier responsible boundary."""
 
     localities = tuple(dict.fromkeys(source_localities))
-    standing_boundary_identity, responsible_source_material = (
+    through_event_occurrence_identity, responsible_source_material = (
         _require_exact_byte_measurement_responsibility_boundary(
             ledger,
             source_localities=localities,
@@ -2474,14 +2473,14 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
             "byte Measurement global recording boundary changed before assignment"
         )
     responsibility_completeness_boundary = (
-        ledger.append_boundary_through_occurrence(standing_boundary_identity)
+        ledger.append_boundary_through_occurrence(through_event_occurrence_identity)
     )
     return _append_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=localities,
         source_material=current_source_material,
         completeness_boundary_identity=responsibility_completeness_boundary.identity,
-        standing_boundary_identity=standing_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         recording_locality_identity=recording_locality_identity,
     )
 
@@ -2521,7 +2520,7 @@ def _read_byte_measurement_subject_to_act_binding(
     completeness_boundary_identity = material.get(
         "completeness_boundary_identity"
     )
-    standing_boundary_identity = material.get("standing_boundary_identity")
+    through_event_occurrence_identity = material.get("through_event_occurrence_identity")
     if (
         any(type(identity) is not str or not identity for identity in identities.values())
         or len(set(identities.values())) != len(identities)
@@ -2532,10 +2531,10 @@ def _read_byte_measurement_subject_to_act_binding(
         or type(completeness_boundary_identity) is not str
         or not completeness_boundary_identity
         or (
-            standing_boundary_identity is not None
+            through_event_occurrence_identity is not None
             and (
-                type(standing_boundary_identity) is not str
-                or not standing_boundary_identity
+                type(through_event_occurrence_identity) is not str
+                or not through_event_occurrence_identity
             )
         )
     ):
@@ -2551,7 +2550,7 @@ def _read_byte_measurement_subject_to_act_binding(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=completeness_boundary_identity,
-        standing_boundary_identity=standing_boundary_identity,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         **identities,
     )
     if material != expected:
@@ -2572,7 +2571,7 @@ def _read_byte_measurement_subject_to_act_binding(
                 prior_standing = read_operator_locality_standing_through(
                     ledger,
                     locality_identity=assignment.locality_identity,
-                    through_event_occurrence_identity=standing_boundary_identity,
+                    through_event_occurrence_identity=through_event_occurrence_identity,
                 )
             except (TypeError, ValueError) as error:
                 raise ByteMeasurementError(
@@ -2584,7 +2583,7 @@ def _read_byte_measurement_subject_to_act_binding(
     prior_boundary_identity = prior_standing.get(
         "through_event_occurrence_identity"
     )
-    boundary_is_exact = prior_boundary_identity == standing_boundary_identity
+    boundary_is_exact = prior_boundary_identity == through_event_occurrence_identity
     assignment_is_carried_later = bool(
         type(prior_boundary_identity) is str
         and prior_boundary_identity
@@ -2594,7 +2593,7 @@ def _read_byte_measurement_subject_to_act_binding(
     recording_boundary_precedes_assignment = bool(
         type(prior_boundary_identity) is str
         and prior_boundary_identity
-        and prior_boundary_identity != standing_boundary_identity
+        and prior_boundary_identity != through_event_occurrence_identity
         and not assignment_is_carried_later
     )
     if (
@@ -2610,21 +2609,21 @@ def _read_byte_measurement_subject_to_act_binding(
         )
     if boundary_is_exact:
         order = (assignment.identity,)
-        if standing_boundary_identity is not None:
-            order = (standing_boundary_identity, assignment.identity)
+        if through_event_occurrence_identity is not None:
+            order = (through_event_occurrence_identity, assignment.identity)
     elif prior_boundary_identity == assignment.identity:
         order = (assignment.identity,)
     elif recording_boundary_precedes_assignment:
         order = (
-            standing_boundary_identity,
+            through_event_occurrence_identity,
             prior_boundary_identity,
             assignment.identity,
         )
     else:
         order = (assignment.identity, prior_boundary_identity)
-        if standing_boundary_identity is not None:
+        if through_event_occurrence_identity is not None:
             order = (
-                standing_boundary_identity,
+                through_event_occurrence_identity,
                 assignment.identity,
                 prior_boundary_identity,
             )
