@@ -239,21 +239,21 @@ class RecordedByteAssertion:
     recorded_occurrence_identity: str
     content: int | None
     result: str
-    _material_json: str
-    _support_assertion_refs_json: str
+    _material: dict[str, Any]
+    _support_assertion_references: tuple[dict[str, str], ...]
     locality_movement_event_identity: str | None = None
 
     @property
     def material(self) -> dict[str, Any]:
-        """Return one detached copy of the recorded JSON content."""
+        """Return one detached copy of the recorded content."""
 
-        return json.loads(self._material_json)
+        return deepcopy(self._material)
 
     @property
     def support_assertion_references(self) -> tuple[dict[str, str], ...]:
         """Return detached occurrence-bound local support addresses."""
 
-        return tuple(json.loads(self._support_assertion_refs_json))
+        return deepcopy(self._support_assertion_references)
 
     @property
     def reference(self) -> dict[str, str]:
@@ -270,7 +270,7 @@ class RecordedAssertionCarriedByLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
     locality_movement_event_identity: str
-    _source_assertion_coordinates_json: str
+    _source_assertion_coordinates: dict[str, Any]
 
     @property
     def source_assertion_reference(self) -> dict[str, str]:
@@ -281,14 +281,14 @@ class RecordedAssertionCarriedByLocalityMovement:
 
     @property
     def source_assertion_coordinates(self) -> dict[str, Any]:
-        return json.loads(self._source_assertion_coordinates_json)
+        return deepcopy(self._source_assertion_coordinates)
 
 
 @dataclass(frozen=True)
 class _RecordedPositionAssertionForLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
-    _source_assertion_coordinates_json: str
+    _source_assertion_coordinates: dict[str, Any]
 
     @property
     def assertion_reference(self) -> dict[str, str]:
@@ -299,14 +299,14 @@ class _RecordedPositionAssertionForLocalityMovement:
 
     @property
     def source_assertion_coordinates(self) -> dict[str, Any]:
-        return json.loads(self._source_assertion_coordinates_json)
+        return deepcopy(self._source_assertion_coordinates)
 
 
 @dataclass(frozen=True)
 class _RecordedPathComparisonFindingAssertionForLocalityMovement:
     recorded_occurrence_identity: str
     assertion_identity: str
-    _source_assertion_coordinates_json: str
+    _source_assertion_coordinates: dict[str, Any]
 
     @property
     def assertion_reference(self) -> dict[str, str]:
@@ -317,7 +317,7 @@ class _RecordedPathComparisonFindingAssertionForLocalityMovement:
 
     @property
     def source_assertion_coordinates(self) -> dict[str, Any]:
-        return json.loads(self._source_assertion_coordinates_json)
+        return deepcopy(self._source_assertion_coordinates)
 
 
 _AssertionLocalityMovementSource = (
@@ -333,16 +333,16 @@ class RecordedBytePairAssertion:
     recorded_occurrence_identity: str
     content: tuple[int, int] | None
     result: str
-    _material_json: str
-    _support_assertion_refs_json: str
+    _material: dict[str, Any]
+    _support_assertion_references: tuple[dict[str, str], ...]
 
     @property
     def material(self) -> dict[str, Any]:
-        return json.loads(self._material_json)
+        return deepcopy(self._material)
 
     @property
     def support_assertion_references(self) -> tuple[dict[str, str], ...]:
-        return tuple(json.loads(self._support_assertion_refs_json))
+        return deepcopy(self._support_assertion_references)
 
     @property
     def reference(self) -> dict[str, str]:
@@ -815,7 +815,7 @@ def _source_assertion_from_reference(
             return _RecordedPositionAssertionForLocalityMovement(
                 recorded_occurrence_identity=source_event.identity,
                 assertion_identity=reference["assertion_identity"],
-                _source_assertion_coordinates_json=_exact_json(coordinates),
+                _source_assertion_coordinates=deepcopy(coordinates),
             ), source_event
 
     from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
@@ -839,7 +839,7 @@ def _source_assertion_from_reference(
             return _RecordedPathComparisonFindingAssertionForLocalityMovement(
                 recorded_occurrence_identity=source_event.identity,
                 assertion_identity=reference["assertion_identity"],
-                _source_assertion_coordinates_json=_exact_json(coordinates),
+                _source_assertion_coordinates=deepcopy(coordinates),
             ), source_event
     raise ByteMeasurementError("Assertion movement source cannot be read")
 
@@ -1817,19 +1817,15 @@ def _assertion_carried_by_locality_movement_result(
             recorded_occurrence_identity=source.recorded_occurrence_identity,
             content=source.content,
             result=source.result,
-            _material_json=_exact_json(source.material),
-            _support_assertion_refs_json=_exact_json(
-                list(source.support_assertion_references)
-            ),
+            _material=source.material,
+            _support_assertion_references=source.support_assertion_references,
             locality_movement_event_identity=movement.identity,
         )
     return RecordedAssertionCarriedByLocalityMovement(
         recorded_occurrence_identity=source.recorded_occurrence_identity,
         assertion_identity=source.assertion_identity,
         locality_movement_event_identity=movement.identity,
-        _source_assertion_coordinates_json=_exact_json(
-            _source_assertion_coordinates(source)
-        ),
+        _source_assertion_coordinates=_source_assertion_coordinates(source),
     )
 
 
@@ -3112,15 +3108,13 @@ def _assertions_of_recorded_byte_measurement(
                 recorded_occurrence_identity=event.identity,
                 content=assertion["assertion_subject"].get("content"),
                 result=assertion["result"],
-                _material_json=_exact_json(assertion),
-                _support_assertion_refs_json=_exact_json(
-                    [
-                        {
-                            "recorded_occurrence_identity": event.identity,
-                            "assertion_identity": local_identity,
-                        }
-                        for local_identity in local_identities
-                    ]
+                _material=deepcopy(assertion),
+                _support_assertion_references=tuple(
+                    {
+                        "recorded_occurrence_identity": event.identity,
+                        "assertion_identity": local_identity,
+                    }
+                    for local_identity in local_identities
                 ),
             )
         )
@@ -4052,7 +4046,7 @@ def _read_recorded_pair_input_applicability(
         source=source,
         applicability_act_occurrence=act_occurrence,
     )
-    return json.loads(_exact_json(applicability))
+    return deepcopy(applicability)
 def get_recorded_pair_input_applicability(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any] | None:
@@ -5057,8 +5051,8 @@ def _validated_recorded_byte_position_pair_measurement(
             recorded_occurrence_identity=event.identity,
             content=tuple(assertion["assertion_subject"]["content"]),
             result=assertion["result"],
-            _material_json=_exact_json(assertion),
-            _support_assertion_refs_json=_exact_json(support_references),
+            _material=deepcopy(assertion),
+            _support_assertion_references=tuple(deepcopy(support_references)),
         ))
     return _RecordedBytePairMeasurementReading(
         results=tuple(validated_results),
@@ -5157,4 +5151,4 @@ def input_applicability_of_recorded_byte_position_pair_measurement(
     if read is None:
         return None
     event = ledger.get(event_identity)
-    return json.loads(_exact_json(event.material["input_applicability"]))
+    return deepcopy(event.material["input_applicability"])
