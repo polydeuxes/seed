@@ -200,9 +200,6 @@ def _position_assertions(
                 "dimensions": {
                     "identity": occurrence_identity,
                     "content": content,
-                    "source_provenance": (
-                        "complete exact Locality through one boundary"
-                    ),
                 },
                 "result": "position",
                 "assertion_subject": subject,
