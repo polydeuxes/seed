@@ -389,7 +389,7 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
     assert "responsibility_assignment" not in result.material
 
 
-def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
+def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
     ledger = _ledger(b"a\n")
     stale = read_operator_locality_standing(
         ledger, locality_identity="measurement"
@@ -407,14 +407,14 @@ def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
         "same-shaped-assignment": None
     }
 
-    for standing in (stale, shaped):
+    for coordinates in (stale, shaped):
         with pytest.raises(
-            ByteMeasurementError, match="exact current Locality Standing"
+            ByteMeasurementError, match="exact current Locality coordinates"
         ):
             record_byte_measurement_act_occurrence(
                 ledger,
                 responsibility_assignment_event_identity=assignment.identity,
-                responsibility_assignment_standing=standing,
+                responsibility_assignment_standing=coordinates,
             )
 
 
@@ -607,17 +607,17 @@ def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
     ledger.close()
 
 
-def test_console_exact_byte_same_call_path_does_not_use_public_standing_gate(
+def test_console_exact_byte_same_call_path_does_not_reread_current_coordinates(
     monkeypatch,
 ):
     from seed_runtime import byte_measurement
 
     def forbidden(*args, **kwargs):
-        raise AssertionError("console byte lifecycle must use carried Standing")
+        raise AssertionError("console byte lifecycle must use carried coordinates")
 
     monkeypatch.setattr(
         byte_measurement,
-        "_require_current_byte_measurement_standing",
+        "_require_current_byte_measurement_coordinates",
         forbidden,
     )
     monkeypatch.setattr(

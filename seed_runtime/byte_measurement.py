@@ -2100,16 +2100,16 @@ def _byte_measurement_binding_material(
     }
 
 
-def _require_current_byte_measurement_standing(
+def _require_current_byte_measurement_coordinates(
     ledger: EventLedger,
     *,
     recording_locality_identity: str,
-    locality_standing: dict[str, Any],
-    required_assignment_identity: str | None = None,
+    current_coordinates: dict[str, Any],
+    required_binding_occurrence_identity: str | None = None,
 ) -> str | None:
-    if type(locality_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise ByteMeasurementError(
-            "byte Measurement requires exact current Locality Standing"
+            "byte Measurement requires exact current Locality coordinates"
         )
     from seed_runtime.operator_locality_standing import (
         read_operator_locality_standing,
@@ -2118,57 +2118,57 @@ def _require_current_byte_measurement_standing(
     current = read_operator_locality_standing(
         ledger, locality_identity=recording_locality_identity
     )
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    boundary = locality_standing.get("through_event_occurrence_identity")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
     if (
-        locality_standing != current
-        or locality_standing.get("locality_identity")
+        current_coordinates != current
+        or current_coordinates.get("locality_identity")
         != recording_locality_identity
         or (boundary is not None and (type(boundary) is not str or not boundary))
         or (
-            required_assignment_identity is not None
+            required_binding_occurrence_identity is not None
             and (
-                type(assignments) is not dict
-                or assignments.get(required_assignment_identity, object())
+                type(bindings) is not dict
+                or bindings.get(required_binding_occurrence_identity, object())
                 is not None
             )
         )
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires exact current Locality Standing"
+            "byte Measurement requires exact current Locality coordinates"
         )
     return boundary
 
 
-def _require_carried_byte_measurement_replay_at_current_boundary(
+def _require_carried_byte_measurement_coordinates_at_current_boundary(
     ledger: EventLedger,
     *,
     recording_locality_identity: str,
-    locality_standing: dict[str, Any],
-    required_assignment_identity: str | None = None,
+    current_coordinates: dict[str, Any],
+    required_binding_occurrence_identity: str | None = None,
 ) -> str:
-    if type(locality_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise ByteMeasurementError(
-            "byte Measurement requires exact current Locality Standing"
+            "byte Measurement requires exact current Locality coordinates"
         )
-    boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     if (
-        locality_standing.get("locality_identity")
+        current_coordinates.get("locality_identity")
         != recording_locality_identity
         or type(boundary) is not str
         or not boundary
         or (
-            required_assignment_identity is not None
+            required_binding_occurrence_identity is not None
             and (
-                type(assignments) is not dict
-                or assignments.get(required_assignment_identity, object())
+                type(bindings) is not dict
+                or bindings.get(required_binding_occurrence_identity, object())
                 is not None
             )
         )
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires exact current Locality Standing"
+            "byte Measurement requires exact current Locality coordinates"
         )
     event = ledger.get(boundary)
     locality_events = (
@@ -2184,31 +2184,31 @@ def _require_carried_byte_measurement_replay_at_current_boundary(
         or locality_events[-1].identity != boundary
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires exact current Locality Standing"
+            "byte Measurement requires exact current Locality coordinates"
         )
     return boundary
 
 
-def _require_exact_byte_measurement_responsibility_boundary(
+def _require_exact_byte_measurement_through_occurrence(
     ledger: EventLedger,
     *,
     source_localities: tuple[str, ...],
     recording_locality_identity: str,
-    responsibility_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> tuple[str, tuple[dict[str, str], ...]]:
     """Validate one earlier boundary carrying the exact source population."""
 
     if (
-        type(responsibility_boundary_identity) is not str
-        or not responsibility_boundary_identity
+        type(through_event_occurrence_identity) is not str
+        or not through_event_occurrence_identity
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires one exact responsible boundary"
+            "byte Measurement requires one exact through-occurrence boundary"
         )
-    boundary_event = ledger.get(responsibility_boundary_identity)
+    boundary_event = ledger.get(through_event_occurrence_identity)
     try:
         boundary = ledger.append_boundary_through_occurrence(
-            responsibility_boundary_identity
+            through_event_occurrence_identity
         )
         source_material = _byte_measurement_source_material(
             ledger,
@@ -2217,7 +2217,7 @@ def _require_exact_byte_measurement_responsibility_boundary(
         )
     except (TypeError, ValueError) as error:
         raise ByteMeasurementError(
-            "byte Measurement requires one exact responsible boundary"
+            "byte Measurement requires one exact through-occurrence boundary"
         ) from error
     if (
         boundary_event is None
@@ -2225,9 +2225,9 @@ def _require_exact_byte_measurement_responsibility_boundary(
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "byte Measurement requires one exact responsible boundary"
+            "byte Measurement requires one exact through-occurrence boundary"
         )
-    return responsibility_boundary_identity, source_material
+    return through_event_occurrence_identity, source_material
 
 
 def _prepare_byte_measurement_subject_to_act_binding(
@@ -2309,10 +2309,10 @@ def record_byte_measurement_subject_to_act_binding(
             recording_locality_identity=recording_locality_identity,
         )
     )
-    through_event_occurrence_identity = _require_current_byte_measurement_standing(
+    through_event_occurrence_identity = _require_current_byte_measurement_coordinates(
         ledger,
         recording_locality_identity=recording_locality_identity,
-        locality_standing=locality_standing,
+        current_coordinates=locality_standing,
     )
     if ledger.append_boundary() != boundary:
         raise ByteMeasurementError(
@@ -2343,10 +2343,10 @@ def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
         )
     )
     through_event_occurrence_identity = (
-        _require_carried_byte_measurement_replay_at_current_boundary(
+        _require_carried_byte_measurement_coordinates_at_current_boundary(
             ledger,
             recording_locality_identity=recording_locality_identity,
-            locality_standing=locality_standing,
+            current_coordinates=locality_standing,
         )
     )
     if ledger.append_boundary() != boundary:
@@ -2374,11 +2374,11 @@ def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrenc
 
     localities = tuple(dict.fromkeys(source_localities))
     through_event_occurrence_identity, responsible_source_material = (
-        _require_exact_byte_measurement_responsibility_boundary(
+        _require_exact_byte_measurement_through_occurrence(
             ledger,
             source_localities=localities,
             recording_locality_identity=recording_locality_identity,
-            responsibility_boundary_identity=responsibility_boundary_identity,
+            through_event_occurrence_identity=responsibility_boundary_identity,
         )
     )
     current_localities, boundary, current_source_material = (
@@ -2629,11 +2629,11 @@ def record_byte_measurement_act_occurrence(
             ledger, responsibility_assignment_event_identity
         )
     )
-    _require_current_byte_measurement_standing(
+    _require_current_byte_measurement_coordinates(
         ledger,
         recording_locality_identity=assignment.locality_identity,
-        locality_standing=responsibility_assignment_standing,
-        required_assignment_identity=assignment.identity,
+        current_coordinates=responsibility_assignment_standing,
+        required_binding_occurrence_identity=assignment.identity,
     )
     return _append_byte_measurement_act_occurrence(
         ledger,
@@ -2667,11 +2667,11 @@ def _record_byte_measurement_act_occurrence_from_carried_standing(
         raise ByteMeasurementError(
             "byte Measurement requires its exact carried assignment"
         )
-    _require_carried_byte_measurement_replay_at_current_boundary(
+    _require_carried_byte_measurement_coordinates_at_current_boundary(
         ledger,
         recording_locality_identity=responsibility_assignment.locality_identity,
-        locality_standing=responsibility_assignment_standing,
-        required_assignment_identity=responsibility_assignment.identity,
+        current_coordinates=responsibility_assignment_standing,
+        required_binding_occurrence_identity=responsibility_assignment.identity,
     )
     return _append_byte_measurement_act_occurrence(
         ledger,
