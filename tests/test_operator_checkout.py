@@ -128,9 +128,11 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
         RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
     assert "standing_boundary_reference" not in binding.material
+    assert "destination_locality_identity" not in binding.material
     assert binding.material["subject_reference"] == binding.material["scope"][
         "standing_boundary_reference"
     ]
+    assert binding.material["scope"]["destination_locality_identity"] == destination
     assert act.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
     assert destination != "source"

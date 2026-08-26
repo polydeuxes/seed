@@ -126,7 +126,6 @@ def _binding_material(
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
         "subject_reference": deepcopy(standing_boundary_reference),
-        "destination_locality_identity": destination_locality_identity,
         "scope": {
             "standing_boundary_reference": deepcopy(standing_boundary_reference),
             "destination_locality_identity": destination_locality_identity,
