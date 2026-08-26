@@ -26,7 +26,7 @@ from seed_runtime.byte_measurement import (
     _record_assertion_locality_movement_act_from_carried_standing,
     _record_assertion_locality_movement_result_from_carried_act,
     _record_byte_measurement_result_from_carried_act_occurrence,
-    _record_movement_assignment_from_carried_standings,
+    _record_movement_binding_from_current_coordinates,
     _validate_moved_byte_assertion,
     _identity,
     _pair_assertion_identity,
@@ -238,13 +238,13 @@ def _movement_carry_phase(ledger, phase):
     destination_standing = read_operator_locality_standing(
         ledger, locality_identity="movement-carry"
     )
-    assignment = _record_movement_assignment_from_carried_standings(
+    assignment = _record_movement_binding_from_current_coordinates(
         ledger,
         source=source,
         source_event=source_event,
-        source_standing=source_standing,
+        source_coordinates=source_standing,
         destination_locality="movement-carry",
-        destination_standing=destination_standing,
+        destination_coordinates=destination_standing,
     )
     state = {
         "phase": phase,

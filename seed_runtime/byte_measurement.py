@@ -1587,13 +1587,13 @@ def _move_assertion_reference_to_locality(
         destination_locality=destination_locality,
         locality_standing=destination_standing,
     )
-    assignment = _record_movement_assignment_from_carried_standings(
+    assignment = _record_movement_binding_from_current_coordinates(
         ledger,
         source=source,
         source_event=source_event,
-        source_standing=source_standing,
+        source_coordinates=source_standing,
         destination_locality=destination_locality,
-        destination_standing=destination_standing,
+        destination_coordinates=destination_standing,
     )
     destination_standing = (
         _carry_assertion_locality_movement_assignment_into_standing(
@@ -1639,25 +1639,25 @@ def _move_assertion_reference_to_locality(
     return carried
 
 
-def _record_movement_assignment_from_carried_standings(
+def _record_movement_binding_from_current_coordinates(
     ledger: EventLedger,
     *,
     source: _AssertionLocalityMovementSource,
     source_event: Event,
-    source_standing: dict[str, Any],
+    source_coordinates: dict[str, Any],
     destination_locality: str,
-    destination_standing: dict[str, Any],
+    destination_coordinates: dict[str, Any],
 ) -> Event:
-    source_boundary = source_standing.get("through_event_occurrence_identity")
-    destination_boundary = destination_standing.get(
+    source_boundary = source_coordinates.get("through_event_occurrence_identity")
+    destination_boundary = destination_coordinates.get(
         "through_event_occurrence_identity"
     )
     if (
-        source_standing.get("locality_identity") != source_event.locality_identity
+        source_coordinates.get("locality_identity") != source_event.locality_identity
         or type(source_boundary) is not str
         or not source_boundary
-        or not _source_assertion_is_carried(source_event, source_standing)
-        or destination_standing.get("locality_identity") != destination_locality
+        or not _source_assertion_is_carried(source_event, source_coordinates)
+        or destination_coordinates.get("locality_identity") != destination_locality
         or (
             destination_boundary is not None
             and (
@@ -1667,7 +1667,7 @@ def _record_movement_assignment_from_carried_standings(
         )
     ):
         raise ByteMeasurementError(
-            "Assertion movement assignment requires exact carried source and destination Standing"
+            "Assertion movement binding requires exact current source and destination coordinates"
     )
     identities = {
         "movement_act_identity": ledger.mint_identity("assertion_locality_movement_act"),
@@ -1752,13 +1752,13 @@ def move_recorded_byte_assertions_to_locality(
     )
     moved = []
     for source in sources:
-        assignment = _record_movement_assignment_from_carried_standings(
+        assignment = _record_movement_binding_from_current_coordinates(
             ledger,
             source=source,
             source_event=source_event,
-            source_standing=source_standing,
+            source_coordinates=source_standing,
             destination_locality=destination_locality,
-            destination_standing=destination_standing,
+            destination_coordinates=destination_standing,
         )
         destination_standing = (
             _carry_assertion_locality_movement_assignment_into_standing(
