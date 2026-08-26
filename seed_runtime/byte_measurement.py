@@ -754,11 +754,11 @@ def _prepare_pair_source(
     return source, scope, content
 
 
-def _movement_assignment_reference(assignment: Event) -> dict[str, str]:
+def _movement_binding_reference(binding: Event) -> dict[str, str]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
@@ -1224,7 +1224,7 @@ def get_assertion_locality_movement_responsibility_assignment(
 def _movement_act_material(assignment: Event) -> dict[str, Any]:
     return {
         "act": "Assertion Locality movement",
-        "responsibility_assignment_reference": _movement_assignment_reference(
+        "subject_to_act_binding_reference": _movement_binding_reference(
             assignment
         ),
         "movement_act_identity": assignment.material["movement_act_identity"],
@@ -1267,8 +1267,8 @@ def record_assertion_locality_movement_act_occurrence(
         assignment.locality_identity,
         ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ):
-        if prior.material.get("responsibility_assignment_reference") == (
-            _movement_assignment_reference(assignment)
+        if prior.material.get("subject_to_act_binding_reference") == (
+            _movement_binding_reference(assignment)
         ):
             raise ByteMeasurementError(
                 "Assertion movement Responsibility assignment already carries an Act"
@@ -1331,7 +1331,7 @@ def _read_assertion_locality_movement_act_occurrence(
         or ledger.integrity_of(act.identity) == CORRUPTED
     ):
         raise ByteMeasurementError("Assertion movement Act occurrence is absent or corrupted")
-    reference = act.material.get("responsibility_assignment_reference")
+    reference = act.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise ByteMeasurementError("Assertion movement Act carries no exact assignment")
     assignment, source, _source_event = (
@@ -1342,7 +1342,7 @@ def _read_assertion_locality_movement_act_occurrence(
         )
     )
     if (
-        reference != _movement_assignment_reference(assignment)
+        reference != _movement_binding_reference(assignment)
         or act.locality_identity != assignment.locality_identity
         or act.material != _movement_act_material(assignment)
     ):
@@ -1366,7 +1366,7 @@ def _movement_result_material(
         "movement_act_occurrence_identity": assignment.material[
             "movement_act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": _movement_assignment_reference(
+        "subject_to_act_binding_reference": _movement_binding_reference(
             assignment
         ),
         "source_assertion_reference": assignment.material[
@@ -1810,8 +1810,8 @@ def _assertion_carried_by_locality_movement_result(
     """Carry the source Assertion with one exact validated movement result."""
 
     if (
-        movement.material.get("responsibility_assignment_reference")
-        != _movement_assignment_reference(responsibility_assignment)
+        movement.material.get("subject_to_act_binding_reference")
+        != _movement_binding_reference(responsibility_assignment)
         or responsibility_assignment.material.get("source_assertion_reference")
         != _source_assertion_reference(source)
         or movement.material.get("source_assertion_reference")
@@ -1862,8 +1862,8 @@ def _validate_moved_byte_assertion(
     )
     if (
         movement.locality_identity != assignment.locality_identity
-        or movement.material.get("responsibility_assignment_reference")
-        != _movement_assignment_reference(assignment)
+        or movement.material.get("subject_to_act_binding_reference")
+        != _movement_binding_reference(assignment)
     ):
         raise ByteMeasurementError(
             "Assertion locality movement carries no exact assignment"

@@ -2028,7 +2028,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
         recording_locality_identity="measurement",
     )
     movement = ledger.get(pair.material["source_movement_event_identity"])
-    reference = movement.material["responsibility_assignment_reference"]
+    reference = movement.material["subject_to_act_binding_reference"]
     assignment = get_assertion_locality_movement_responsibility_assignment(
         ledger, reference["recorded_occurrence_identity"]
     )
@@ -2432,7 +2432,7 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
     )
     assignments = tuple(
         ledger.get(
-            movement.material["responsibility_assignment_reference"][
+            movement.material["subject_to_act_binding_reference"][
                 "recorded_occurrence_identity"
             ]
         )

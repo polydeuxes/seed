@@ -586,8 +586,8 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
 def _assertion_locality_movement_occurrence_coordinates(
     ledger: EventLedger, event: Event
 ) -> dict[str, Any]:
-    assignment_reference = event.material["responsibility_assignment_reference"]
-    assignment = ledger.get(assignment_reference["recorded_occurrence_identity"])
+    binding_reference = event.material["subject_to_act_binding_reference"]
+    assignment = ledger.get(binding_reference["recorded_occurrence_identity"])
     if assignment is None:
         raise ValueError("Assertion Locality movement Standing is not exact")
     source_reference = assignment.material["source_assertion_reference"]
@@ -604,7 +604,7 @@ def _assertion_locality_movement_occurrence_coordinates(
         "source_standing_boundary_identity": assignment.material[
             "source_standing_boundary_identity"
         ],
-        "responsibility_assignment_reference": deepcopy(assignment_reference),
+        "subject_to_act_binding_reference": deepcopy(binding_reference),
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
