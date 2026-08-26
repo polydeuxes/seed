@@ -199,7 +199,7 @@ def _comparison():
     return ledger, earlier_source, added, earlier, later, binding, applicability, result
 
 
-def test_changed_pair_crossing_a_callback_cannot_enter_compare_current_coordinates():
+def test_changed_pair_between_coordinate_read_and_recording_cannot_enter_compare_current_coordinates():
     ledger, _earlier_source, _added, earlier, later = _inputs()
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     coordinates_before = deepcopy(current_coordinates)

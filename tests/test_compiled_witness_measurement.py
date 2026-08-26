@@ -487,7 +487,7 @@ def test_sql_occurrence_preserves_exact_statement_material():
     assert result["sql"]["SELECT value FROM exact_material"] == 1
 
 
-def test_existing_sql_trace_callback_receives_the_same_statement():
+def test_existing_sql_trace_receiver_receives_the_exact_statement():
     carried = []
     measured.begin()
     try:
@@ -562,7 +562,7 @@ FIDELITY_DISTINCTIONS = {
         test_stable_catalog_is_separate_from_sparse_observation,
         test_reference_pair_measurement_contains_each_preserved_function,
         test_sql_occurrence_preserves_exact_statement_material,
-        test_existing_sql_trace_callback_receives_the_same_statement,
+        test_existing_sql_trace_receiver_receives_the_exact_statement,
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
         test_fidelity_distinctions_resolve_current_book_coordinates,
     )

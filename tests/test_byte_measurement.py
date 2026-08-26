@@ -134,23 +134,23 @@ class IntegrityCountingLedger(EventLedger):
         return super().integrity_of(event_identity)
 
 
-class YieldCallbackLedger(EventLedger):
+class YieldInterveningActLedger(EventLedger):
     def __init__(self):
         super().__init__()
-        self.callback_boundary = None
-        self.callback_recorded = False
+        self.intervening_boundary = None
+        self.intervening_act_recorded = False
 
     def append(self, kind, material, **kwargs):
         event = super().append(kind, material, **kwargs)
         if (
-            not self.callback_recorded
-            and self.callback_boundary is not None
+            not self.intervening_act_recorded
+            and self.intervening_boundary is not None
             and kind == RECORDED_YIELD_RELATION_EVENT
-            and material.get("occurrence_boundary") == self.callback_boundary
+            and material.get("occurrence_boundary") == self.intervening_boundary
         ):
-            self.callback_recorded = True
+            self.intervening_act_recorded = True
             super().append(
-                "test.unrelated_callback",
+                "test.unrelated_after_yield",
                 {"unknown": ["unrelated append after Yield"]},
                 locality_identity="unrelated",
             )
@@ -627,7 +627,7 @@ def test_call_local_result_requires_the_exact_act_at_current_append_boundary():
         )
 
 
-def test_call_local_result_rechecks_current_append_boundary_after_source_callback(monkeypatch):
+def test_call_local_result_rechecks_current_append_boundary_after_source_read(monkeypatch):
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"a\n")
@@ -640,12 +640,12 @@ def test_call_local_result_rechecks_current_append_boundary_after_source_callbac
         ledger, locality_identity="measurement"
     )
     original = byte_measurement._material_result_bytes
-    callback_recorded = False
+    intervening_result_recorded = False
 
     def record_public_result_during_source_read(ledger, material_result):
-        nonlocal callback_recorded
-        if not callback_recorded:
-            callback_recorded = True
+        nonlocal intervening_result_recorded
+        if not intervening_result_recorded:
+            intervening_result_recorded = True
             record_byte_measurement_result(
                 ledger, act_occurrence_event_identity=act.identity
             )
@@ -1646,7 +1646,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     ),
 )
 def test_pair_result_refuses_an_append_between_yield_and_result(boundary, message):
-    ledger = YieldCallbackLedger()
+    ledger = YieldInterveningActLedger()
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="source",
@@ -1657,7 +1657,7 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
     )
-    ledger.callback_boundary = boundary
+    ledger.intervening_boundary = boundary
 
     with pytest.raises(ByteMeasurementError, match=message):
         record_byte_position_pair_count_layer(
@@ -1666,7 +1666,7 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
             recording_locality_identity="measurement",
         )
 
-    assert ledger.callback_recorded is True
+    assert ledger.intervening_act_recorded is True
     assert sum(
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
@@ -1852,7 +1852,7 @@ def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument(
     assert counts[(97, 98)] == 2
 
 
-def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_source_callback(monkeypatch):
+def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_source_read(monkeypatch):
     from seed_runtime import byte_measurement
 
     ledger = _ledger(b"abab\n")
@@ -1862,25 +1862,25 @@ def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_s
         for event in ledger.list()
     )
     original = byte_measurement._material_result_bytes
-    callback_recorded = False
+    intervening_act_recorded = False
 
-    def append_during_pair_measurement(ledger, acquisition_result):
-        nonlocal callback_recorded
+    def append_during_pair_measurement(ledger, material_result):
+        nonlocal intervening_act_recorded
         events = ledger.list()
         last_event = events[-1] if events else None
         if (
-            not callback_recorded
+            not intervening_act_recorded
             and last_event is not None
             and last_event.kind
             == "operator.measurement.byte_position_pair_act_occurrenced"
         ):
-            callback_recorded = True
+            intervening_act_recorded = True
             ledger.append(
-                "test.unrelated_pair_measurement_callback",
+                "test.unrelated_during_pair_measurement",
                 {"unknown": ["unrelated append during pair Measurement"]},
                 locality_identity="unrelated",
             )
-        return original(ledger, acquisition_result)
+        return original(ledger, material_result)
 
     monkeypatch.setattr(
         byte_measurement, "_material_result_bytes", append_during_pair_measurement
@@ -1892,7 +1892,7 @@ def test_pair_result_rechecks_measurement_act_at_current_append_boundary_after_s
             recording_locality_identity="measurement",
         )
 
-    assert callback_recorded is True
+    assert intervening_act_recorded is True
     assert sum(
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()

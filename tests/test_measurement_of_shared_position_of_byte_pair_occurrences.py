@@ -1013,12 +1013,12 @@ def test_d2_result_corruption_invalidates_shared_binding_reader():
         )
 
 
-@pytest.mark.parametrize("callback_kind", ("append", "mutate"))
-def test_d2_shared_binding_revalidates_after_callback_atomically(
-    monkeypatch, callback_kind
+@pytest.mark.parametrize("intervening_act", ("append", "mutate"))
+def test_d2_shared_binding_rechecks_after_intervening_act_atomically(
+    monkeypatch, intervening_act
 ):
     ledger = EventLedger()
-    locality = "callback-d2-pair-position"
+    locality = "intervening-act-d2-pair-position"
     _source, _direct_result, determination_result = _direct_d2(
         ledger, locality=locality
     )
@@ -1027,27 +1027,27 @@ def test_d2_shared_binding_revalidates_after_callback_atomically(
     original = shared_position_module._d2_result_inputs
     calls = 0
 
-    def callback_after_read(*args, **kwargs):
+    def act_after_read(*args, **kwargs):
         nonlocal calls
         reading = original(*args, **kwargs)
         calls += 1
         if calls == 3:
-            if callback_kind == "append":
+            if intervening_act == "append":
                 ledger.append(
-                    "test.callback.unrelated",
-                    {"source": "callback"},
+                    "test.intervening.unrelated",
+                    {"source": "intervening Act"},
                     locality_identity=locality,
                 )
             else:
                 determination_result.material["determination_rule"] = (
-                    "changed during callback"
+                    "changed during source read"
                 )
         return reading
 
     monkeypatch.setattr(
         shared_position_module,
         "_d2_result_inputs",
-        callback_after_read,
+        act_after_read,
     )
     before_assignments = len(
         tuple(ledger.iter_locality_kind(

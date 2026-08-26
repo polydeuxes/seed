@@ -41,15 +41,15 @@ from seed_runtime.operator_current_coordinates import (
 )
 
 
-class CallbackEventLedger(EventLedger):
-    callback = None
+class InterveningActEventLedger(EventLedger):
+    act_during_kind_read = None
 
     def iter_locality_kind(self, locality_identity, kind):
         events = super().iter_locality_kind(locality_identity, kind)
-        callback = self.callback
-        if callback is not None:
-            self.callback = None
-            callback()
+        intervening_act = self.act_during_kind_read
+        if intervening_act is not None:
+            self.act_during_kind_read = None
+            intervening_act()
         return events
 
 
@@ -573,7 +573,7 @@ def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
 
 
 def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_coordinates():
-    ledger = CallbackEventLedger()
+    ledger = InterveningActEventLedger()
     source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
     supplied_coordinates = deepcopy(current_coordinates)
@@ -582,7 +582,7 @@ def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplie
     def replace_source_material_after_reading():
         direct_result.material["unknown"] = ["later material after determination_binding"]
 
-    ledger.callback = replace_source_material_after_reading
+    ledger.act_during_kind_read = replace_source_material_after_reading
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
             ledger,
@@ -609,8 +609,8 @@ def test_binding_refuses_unrelated_append_during_source_revalidation(monkeypatch
         calls += 1
         if calls == 2:
             ledger.append(
-                "test.callback.unrelated",
-                {"source": "callback"},
+                "test.intervening.unrelated",
+                {"source": "intervening Act"},
                 locality_identity=source.locality_identity,
             )
         return references
@@ -643,7 +643,7 @@ def test_binding_refuses_unrelated_append_during_source_revalidation(monkeypatch
 
 
 def test_act_requires_intact_retained_binding_during_duplicate_iterator():
-    ledger = CallbackEventLedger()
+    ledger = InterveningActEventLedger()
     source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
     determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
@@ -654,7 +654,7 @@ def test_act_requires_intact_retained_binding_during_duplicate_iterator():
     )
     current_coordinates = _advance(ledger, current_coordinates, determination_binding)
     prior = deepcopy(current_coordinates)
-    ledger.callback = lambda: determination_binding.material.__setitem__(
+    ledger.act_during_kind_read = lambda: determination_binding.material.__setitem__(
         "unknown", ["changed coordinate"]
     )
 
@@ -672,7 +672,7 @@ def test_act_requires_intact_retained_binding_during_duplicate_iterator():
 
 
 def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield():
-    ledger = CallbackEventLedger()
+    ledger = InterveningActEventLedger()
     source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
     determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
@@ -699,9 +699,9 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         for event in ledger.list()
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     )
-    ledger.callback = lambda: ledger.append(
-        "test.callback.unrelated",
-        {"source": "callback"},
+    ledger.act_during_kind_read = lambda: ledger.append(
+        "test.intervening.unrelated",
+        {"source": "intervening Act"},
         locality_identity=source.locality_identity,
     )
 
@@ -728,10 +728,10 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
 
 
 def test_determination_act_requires_intact_applicability_during_iterator():
-    ledger = CallbackEventLedger()
+    ledger = InterveningActEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
     prior = deepcopy(recorded["current_coordinates"])
-    ledger.callback = lambda: recorded["applicability"].material.__setitem__(
+    ledger.act_during_kind_read = lambda: recorded["applicability"].material.__setitem__(
         "unknown", ["changed coordinate"]
     )
 
@@ -751,7 +751,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
 
 
 def test_determination_result_refuses_iterator_append_without_yield():
-    ledger = CallbackEventLedger()
+    ledger = InterveningActEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
     act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
@@ -765,9 +765,9 @@ def test_determination_result_refuses_iterator_append_without_yield():
         for event in ledger.list()
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     )
-    ledger.callback = lambda: ledger.append(
-        "test.callback.unrelated",
-        {"source": "callback"},
+    ledger.act_during_kind_read = lambda: ledger.append(
+        "test.intervening.unrelated",
+        {"source": "intervening Act"},
         locality_identity=recorded["source"].locality_identity,
     )
 
