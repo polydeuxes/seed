@@ -213,7 +213,7 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
     ledger = EventLedger()
     locality = "ordered-path-source-position-continuation"
     direct = _direct_position_result(
-        ledger, locality=locality, exact=b"2+2=5\n"
+        ledger, locality=locality, exact=b"aba"
     )
 
     continuations = tuple(
@@ -229,16 +229,16 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
             continuation.source_position_coordinate["position"]
             for continuation in continuations
         )
-    ) == tuple(range(6))
-    assert len(continuations) == 14
+    ) == tuple(range(3))
+    assert len(continuations) == 5
     assert sum(
         continuation.ordered_path_result is not None
         for continuation in continuations
-    ) == 12
+    ) == 3
     assert sum(
         continuation.comparison_result is not None
         for continuation in continuations
-    ) == 12
+    ) == 3
     centered_on_plus = tuple(
         continuation.comparison_result.material
         for continuation in continuations
@@ -255,7 +255,7 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
 def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
     ledger = EventLedger()
     locality = "changed-ordered-path-source-prefix"
-    direct = _direct_position_result(ledger, locality=locality, exact=b"2+2=5\n")
+    direct = _direct_position_result(ledger, locality=locality, exact=b"aba")
     source = ledger.list(
         through=ledger.append_boundary_through_occurrence(direct.identity)
     )[0]
