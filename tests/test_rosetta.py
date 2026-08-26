@@ -59,8 +59,16 @@ def _relation_line(name: str, coordinates: dict[str, object]) -> str:
     return f"{source} ── {relation}"
 
 
+def _exact_relation_coordinates(grammar: dict) -> dict[str, dict[str, object]]:
+    coordinates = grammar["book_coordinates"]
+    return {
+        "yield": coordinates["02.Acts.A"]["Yield"],
+        "locality": coordinates["06.Locality.A"]["Locality"],
+    }
+
+
 def _assert_rosetta_relation_order(grammar: dict, rosetta: str) -> None:
-    for name, coordinates in grammar["relations"].items():
+    for name, coordinates in _exact_relation_coordinates(grammar).items():
         line_start = _relation_line(name, coordinates)
         matching = [
             line.strip()

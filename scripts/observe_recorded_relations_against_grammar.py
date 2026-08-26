@@ -49,12 +49,17 @@ def main() -> int:
     from tests.test_byte_measurement import _ledger, _movement_source
 
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    stated = set(grammar["relations"])
+    coordinates = grammar["book_coordinates"]
+    stated_coordinates = (
+        coordinates["02.Acts.A"]["Yield"],
+        coordinates["06.Locality.A"]["Locality"],
+    )
+    stated = {spec["relation"] for spec in stated_coordinates}
     requires = sorted(
-        {item for spec in grammar["relations"].values() for item in spec["requires"]}
+        {item for spec in stated_coordinates for item in spec["requires"]}
     )
 
-    ledger = _ledger("ta\n")
+    ledger = _ledger(b"ta\n")
     _movement_source(ledger)
     occurrences = ledger.list()
 

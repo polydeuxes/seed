@@ -68,8 +68,12 @@ def main() -> int:
 
     from tests.test_byte_measurement import _ledger, _movement_source
 
-    stated = set(json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"])
-    ledger = _ledger("ta\n")
+    coordinates = json.loads(GRAMMAR.read_text(encoding="utf-8"))["book_coordinates"]
+    stated = {
+        coordinates["02.Acts.A"]["Yield"]["relation"],
+        coordinates["06.Locality.A"]["Locality"]["relation"],
+    }
+    ledger = _ledger(b"ta\n")
     _movement_source(ledger)
 
     signatures: dict[tuple, list[str]] = defaultdict(list)

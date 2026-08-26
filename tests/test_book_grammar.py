@@ -70,7 +70,7 @@ def test_witness_grammar_has_no_retired_scaffolding():
 def test_machine_grammar_carries_current_coordinates_without_retired_objects():
     grammar = _grammar()
 
-    assert set(grammar) == {"relations", "book_coordinates"}
+    assert set(grammar) == {"book_coordinates"}
     assert grammar["book_coordinates"]["01.Current.G"] == {
         "subject": "this_Seed",
         "current_coordinates": [],
@@ -95,7 +95,7 @@ def test_applicability_remains_separate_from_the_governed_act():
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
         assert compare["requires"] == ["Applicability_result"]
-        assert compare["relations"] == ["yield"]
+        assert compare["Yield"] == "02.Acts.A.Yield"
 
 def test_compare_clause_carries_its_exact_subjects_and_act():
     compare = _grammar()["book_coordinates"]["04.Compare"]
@@ -125,44 +125,40 @@ def test_addressed_position_coordinates_carry_the_bounded_subjects():
 def test_subject_to_act_binding_is_direct_clause_coordinates():
     act = _grammar()["book_coordinates"]["02.Acts.A"]
 
-    assert act == {
-        "subject": "exact_subject",
-        "exact_Act": "exact_Act",
-        "requires": [
-            "Locality",
-        ],
-        "relations": ["yield"],
-        "result": "exact_result",
-    }
+    assert act["subject"] == "exact_subject"
+    assert act["exact_Act"] == "exact_Act"
+    assert act["requires"] == ["Locality"]
+    assert act["result"] == "exact_result"
+    assert act["Yield"]["relation"] == "yield"
 
 
 def test_exact_relations_are_direct():
     grammar = _grammar()
-    assert set(grammar["relations"]) == {"yield", "locality"}
     expected = {
         "yield": (
+            grammar["book_coordinates"]["02.Acts.A"]["Yield"],
             "exact_Act_occurrence",
             "exact_result",
-            "02.Acts.A",
+            "02.Acts.A.Yield",
         ),
         "locality": (
+            grammar["book_coordinates"]["06.Locality.A"]["Locality"],
             "exact_subject",
             "exact_subject",
-            "06.Locality.A",
+            "06.Locality.A.Locality",
         ),
     }
-    for relation, (first, second, book_reference) in expected.items():
-        coordinates = grammar["relations"][relation]
+    for relation, (coordinates, first, second, address) in expected.items():
         assert coordinates["first_subject"] == first
         assert coordinates["relation"] == relation
         assert coordinates["second_subject"] == second
-        assert coordinates["book_reference"] == book_reference
         assert "relation_occurrence" in coordinates["requires"]
-        assert book_reference in grammar["book_coordinates"]
+        clause, coordinate = address.rsplit(".", 1)
+        assert grammar["book_coordinates"][clause][coordinate] == coordinates
 
 
 def test_yield_has_no_interposed_node():
-    yield_relation = _grammar()["relations"]["yield"]
+    yield_relation = _grammar()["book_coordinates"]["02.Acts.A"]["Yield"]
     assert yield_relation["first_subject"] == "exact_Act_occurrence"
     assert yield_relation["second_subject"] == "exact_result"
     assert yield_relation["relation"] == "yield"
@@ -212,17 +208,16 @@ def test_only_clauses_naming_an_Act_project_one():
 
 def test_declared_relation_references_resolve():
     grammar = _grammar()
+    coordinates = grammar["book_coordinates"]
+    exact = {
+        "Yield": "02.Acts.A.Yield",
+        "Locality": "06.Locality.A.Locality",
+    }
     unresolved = {
-        reference: sorted(
-            relation
-            for relation in coordinates.get("relations", [])
-            if relation not in grammar["relations"]
-        )
-        for reference, coordinates in grammar["book_coordinates"].items()
-        if any(
-            relation not in grammar["relations"]
-            for relation in coordinates.get("relations", [])
-        )
+        reference: (name, value)
+        for reference, body in coordinates.items()
+        for name, value in body.items()
+        if name in exact and type(value) is str and value != exact[name]
     }
     assert unresolved == {}
 

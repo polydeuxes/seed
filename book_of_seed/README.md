@@ -30,8 +30,8 @@ Act occurrence, Yield, result, and current coordinates are separately exact.
 
 An exact Act occurrence carries its exact Act, subjects, and Locality.
 
-Yield and Locality are exact relations. Yield carries one Act occurrence to
-its result:
+Yield is an exact relation from one Act occurrence to its result. Locality is
+an exact relation with its exact subjects.
 
 ```
 Act occurrence ── Yield ──> result

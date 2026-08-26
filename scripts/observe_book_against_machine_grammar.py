@@ -54,7 +54,10 @@ def main() -> int:
 
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     coordinates = set(grammar["book_coordinates"])
-    relations = grammar["relations"]
+    relations = (
+        grammar["book_coordinates"]["02.Acts.A"]["Yield"]["relation"],
+        grammar["book_coordinates"]["06.Locality.A"]["Locality"]["relation"],
+    )
 
     print(f"  Book clauses carrying an identifier: {len(identified)}")
     print(f"  coordinates the grammar declares:    {len(coordinates)}")

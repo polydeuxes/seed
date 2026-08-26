@@ -308,9 +308,8 @@ def main() -> int:
     relevant_grammar = {
         "current_coordinates": grammar["book_coordinates"]["01.Current.A"],
         "subject_to_act_binding": grammar["book_coordinates"]["02.Acts.A"],
-        "participation": grammar["relations"]["participation"],
-        "yield": grammar["relations"]["yield"],
-        "locality": grammar["relations"]["locality"],
+        "yield": grammar["book_coordinates"]["02.Acts.A"]["Yield"],
+        "locality": grammar["book_coordinates"]["06.Locality.A"]["Locality"],
         "book_coordinates": {
             identity: grammar["book_coordinates"].get(identity)
             for identity in compared_clause_identities

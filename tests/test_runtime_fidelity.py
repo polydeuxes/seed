@@ -730,14 +730,10 @@ def test_every_relation_occurrence_carries_its_exact_relation_position():
 
 
 def test_witness_grammar_declares_the_exact_relations():
-    grammar_relations = set(
-        json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
-    )
+    coordinates = json.loads(GRAMMAR.read_text(encoding="utf-8"))["book_coordinates"]
 
-    assert grammar_relations == {
-        "yield",
-        "locality",
-    }
+    assert coordinates["02.Acts.A"]["Yield"]["relation"] == "yield"
+    assert coordinates["06.Locality.A"]["Locality"]["relation"] == "locality"
 
 
 def test_every_recorded_yield_result_names_its_occurrence_and_exact_occurrence():

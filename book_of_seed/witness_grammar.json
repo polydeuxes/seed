@@ -1,28 +1,4 @@
 {
-  "relations": {
-    "yield": {
-      "book_reference": "02.Acts.A",
-      "first_subject": "exact_Act_occurrence",
-      "relation": "yield",
-      "second_subject": "exact_result",
-      "requires": [
-        "relation_occurrence",
-        "Locality",
-        "Unknown"
-      ]
-    },
-    "locality": {
-      "book_reference": "06.Locality.A",
-      "first_subject": "exact_subject",
-      "relation": "locality",
-      "second_subject": "exact_subject",
-      "requires": [
-        "relation_occurrence",
-        "exact_Act",
-        "Unknown"
-      ]
-    }
-  },
   "book_coordinates": {
     "01.Current.G": {
       "subject": "this_Seed",
@@ -80,18 +56,14 @@
     "01.Source.G": {
       "subject": "operator_material_boundary",
       "exact_Act": "preserve_supplied_operator_material",
-      "relations": [
-        "yield",
-        "locality"
-      ],
+      "Yield": "02.Acts.A.Yield",
+      "Locality": "06.Locality.A.Locality",
       "result": "exact_operator_material_result"
     },
     "01.Source.H": {
       "subject": "supplied_material",
       "exact_Act": "preserve_supplied_material",
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "exact_material_result",
       "carried_coordinates": [
         "source_role",
@@ -176,9 +148,16 @@
       "requires": [
         "Locality"
       ],
-      "relations": [
-        "yield"
-      ],
+      "Yield": {
+        "first_subject": "exact_Act_occurrence",
+        "relation": "yield",
+        "second_subject": "exact_result",
+        "requires": [
+          "relation_occurrence",
+          "Locality",
+          "Unknown"
+        ]
+      },
       "result": "exact_result"
     },
     "03.Movement.A": {
@@ -191,17 +170,13 @@
         "Locality",
         "Unknown"
       ],
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "exact_movement_result"
     },
     "04.Compare": {
       "subject": "exact_Compare_subjects",
       "exact_Act": "Compare",
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "exact_Compare_result",
       "requires": [
         "Applicability_result"
@@ -214,9 +189,7 @@
         "earlier_byte_pair_position_Measurement_result",
         "later_byte_pair_position_Measurement_result"
       ],
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "recorded_pair_finding_Compare_result",
       "requires": [
         "Applicability_result"
@@ -229,9 +202,7 @@
         "ordered_relation_path_Assertion",
         "recorded_pair_finding_Compare_result"
       ],
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "ordered_relation_path_Compare_result",
       "requires": [
         "Applicability_result"
@@ -253,9 +224,7 @@
       "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
       "exact_Act": "recording",
       "requires_current_coordinates": "exact_addressed_occurrence",
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "one_reference",
       "carried_coordinates": [
         "addressed_occurrence",
@@ -268,9 +237,7 @@
     "05.Recording.E": {
       "subject": "exact_record",
       "exact_Act": "recording",
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "carried_coordinates": [
         "material",
         "source_coordinates",
@@ -281,36 +248,37 @@
     "06.Locality.A": {
       "subject": "Locality_relation",
       "exact_Act": "establish_exact_Locality_relation",
-      "relations": [
-        "locality"
-      ],
+      "Locality": {
+        "first_subject": "exact_subject",
+        "relation": "locality",
+        "second_subject": "exact_subject",
+        "requires": [
+          "relation_occurrence",
+          "exact_Act",
+          "Unknown"
+        ]
+      },
       "result": "Locality_relation"
     },
     "06.Locality.B": {
       "subject": "through_occurrence_boundary_at_destination_Locality",
       "exact_Act": "preserve_through_occurrence_boundary_at_destination_Locality",
-      "relations": [
-        "yield",
-        "locality"
-      ],
+      "Yield": "02.Acts.A.Yield",
+      "Locality": "06.Locality.A.Locality",
       "result": "through_occurrence_boundary_at_destination_Locality"
     },
     "06.Locality.C": {
       "subject": "recorded_through_occurrence_boundary_reference",
       "exact_Act": "establish_recorded_boundary_Locality_relation",
-      "relations": [
-        "yield",
-        "locality"
-      ],
+      "Yield": "02.Acts.A.Yield",
+      "Locality": "06.Locality.A.Locality",
       "result": "recorded_boundary_Locality_relation"
     },
     "06.Locality.D": {
       "subject": "operator_invocation_Locality",
       "exact_Act": "establish_operator_invocation_Locality",
-      "relations": [
-        "yield",
-        "locality"
-      ],
+      "Yield": "02.Acts.A.Yield",
+      "Locality": "06.Locality.A.Locality",
       "result": "operator_invocation_Locality"
     },
     "07.Emission.A": {
@@ -326,9 +294,7 @@
     },
     "07.Emission.C": {
       "subject": "exact_material_boundary_write",
-      "relations": [
-        "yield"
-      ],
+      "Yield": "02.Acts.A.Yield",
       "result": "exact_destination_boundary_result",
       "carried_coordinates": [
         "accepted_material",
