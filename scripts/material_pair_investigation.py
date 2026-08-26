@@ -78,7 +78,7 @@ def exact_references_to_recurrent_material_pairs(
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, measurement_occurrence_identity
     )
-    reference = event.material["responsibility_assignment_reference"]
+    reference = event.material["subject_to_act_binding_reference"]
     assignment = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     ).material

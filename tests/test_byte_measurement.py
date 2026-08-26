@@ -1639,7 +1639,7 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
         ledger, second_result.identity
     )
     first_assignment = ledger.get(
-        first["responsibility_assignment_reference"][
+        first["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ],
     )
@@ -1648,8 +1648,8 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     assert first_assignment.kind == (
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert "assignment_identity" not in first["responsibility_assignment_reference"]
-    assert "assignment_subject_identity" not in first["responsibility_assignment_reference"]
+    assert "assignment_identity" not in first["subject_to_act_binding_reference"]
+    assert "assignment_subject_identity" not in first["subject_to_act_binding_reference"]
     assert first["addressed_act_identity"] == first_assignment.material[
         "addressed_act_identity"
     ]
@@ -1666,7 +1666,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     )
     assignment = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger,
-        result.material["responsibility_assignment_reference"][
+        result.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ],
     )
@@ -1685,7 +1685,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         assignment.identity, object()
     ) is None
     applicability_binding = ledger.get(
-        applicability_act.material["responsibility_assignment_reference"][
+        applicability_act.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
@@ -1707,11 +1707,11 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         assert "responsibility_assignment" not in event.material
         assert "responsibility" not in event.material
         assert "responsible_boundary" not in event.material
-    assert applicability_act.material["responsibility_assignment_reference"] != (
-        result.material["responsibility_assignment_reference"]
+    assert applicability_act.material["subject_to_act_binding_reference"] != (
+        result.material["subject_to_act_binding_reference"]
     )
-    assert measurement_act.material["responsibility_assignment_reference"] == (
-        result.material["responsibility_assignment_reference"]
+    assert measurement_act.material["subject_to_act_binding_reference"] == (
+        result.material["subject_to_act_binding_reference"]
     )
 
 

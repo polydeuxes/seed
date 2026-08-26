@@ -254,7 +254,7 @@ def _findings_from_carried_measurement(
 def _source_occurrence_references(
     ledger: EventLedger, event: Event
 ) -> tuple[str, ...]:
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     assignment_event = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger,
         reference.get("recorded_occurrence_identity")

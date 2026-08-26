@@ -81,6 +81,7 @@ BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "responsibility",
     "responsible_boundary",
+    "responsibility_assignment_reference",
 } | {
     "addressed_act_identity",
     "act_occurrence_identity",
@@ -89,6 +90,7 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "input_applicability",
     "input_applicability_event_identity",
     "input_role",
+    "subject_to_act_binding_reference",
 }
 BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.byte_position_pair_act_occurrenced"
@@ -102,7 +104,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "result_identity",
         "dimensions",
         "exact_act",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "applicability_act_identity",
         "applicability_act_occurrence_identity",
         "addressed_act_identity",
@@ -580,7 +582,7 @@ def _pair_input_applicability_from_exact_source(
         "addressed_act": "declared byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
         "applicability_act_identity": assignment.material[
@@ -621,7 +623,7 @@ def _pair_input_applicability_from_exact_source(
         "addressed_act_occurrence_identity": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
         "applicability_act_identity": assignment.material[
@@ -3828,7 +3830,7 @@ def _pair_applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": "input Applicability",
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(applicability_binding)
         ),
         "input_assertion_reference": source.reference,
@@ -3895,7 +3897,7 @@ def _pair_applicability_result_material(
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
         },
         "exact_act": "input Applicability",
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
         "applicability_act_identity": applicability_assertion["applicability_act_identity"],
@@ -4062,7 +4064,7 @@ def _read_pair_applicability_act_occurrence(
         raise ByteMeasurementError(
             "pair Applicability Act occurrence is absent or corrupted"
         )
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     assignment, source, _scope, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
@@ -4113,7 +4115,7 @@ def _read_recorded_pair_input_applicability(
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact Applicability result surface"
         )
-    assignment_reference = material.get("responsibility_assignment_reference")
+    assignment_reference = material.get("subject_to_act_binding_reference")
     assignment, source, _scope, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
@@ -4158,7 +4160,7 @@ def _pair_applicability_binding_of_result(
     source: RecordedByteAssertion,
     prior_standing: dict[str, Any] | None = None,
 ) -> Event:
-    reference = applicability_event.material.get("responsibility_assignment_reference")
+    reference = applicability_event.material.get("subject_to_act_binding_reference")
     binding, applicability_source, _scope, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
@@ -4189,7 +4191,7 @@ def _pair_measurement_act_material(
             "measurement_act_occurrence_identity"
         ],
         "act": "declared byte-position-pair Measurement",
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
@@ -4251,7 +4253,7 @@ def _record_pair_measurement_act_from_carried_applicability(
             "pair Measurement Act requires exact recorded assignment and Applicability"
         )
     applicability_reference = applicability_event.material.get(
-        "responsibility_assignment_reference"
+        "subject_to_act_binding_reference"
     )
     applicability_binding, applicability_source, _scope, _content = (
         _read_pair_applicability_subject_to_act_binding(
@@ -4310,7 +4312,7 @@ def _read_pair_measurement_act_occurrence(
         raise ByteMeasurementError(
             "pair Measurement Act occurrence is absent or corrupted"
         )
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     assignment, source, _scope, _content = (
         _read_pair_measurement_subject_to_act_binding(
             ledger,
@@ -4329,7 +4331,7 @@ def _read_pair_measurement_act_occurrence(
         else None
     )
     applicability_reference = (
-        applicability.material.get("responsibility_assignment_reference")
+        applicability.material.get("subject_to_act_binding_reference")
         if applicability is not None
         else None
     )
@@ -4404,7 +4406,7 @@ def _pair_measurement_result_material(
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
@@ -4847,7 +4849,7 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact pair result and recording surfaces"
         )
-    assignment_reference = material.get("responsibility_assignment_reference")
+    assignment_reference = material.get("subject_to_act_binding_reference")
     act_occurrence_identity = material.get("act_occurrence_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     act_occurrence, assignment, source, applicability_event = (
