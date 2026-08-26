@@ -905,8 +905,7 @@ def _applicability_binding_material(
                 "addressed_act_identity": addressed_act_identity,
             },
         },
-        "exact_act_identity": identities["applicability_act_identity"],
-        "applicability_act_identity": identities["applicability_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "applicability_act_occurrence_identity": identities[
             "applicability_act_occurrence_identity"
         ],
@@ -1072,7 +1071,7 @@ def _read_applicability_binding(
         )
     comparison_binding, inputs = comparison_binding_reading
     identity_keys = (
-        "applicability_act_identity",
+        "exact_act_identity",
         "applicability_act_occurrence_identity",
         "applicability_result_identity",
     )
@@ -1129,7 +1128,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
         "Applicability binding requires one exact through-occurrence boundary",
     )
     identities = {
-        "applicability_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act"
         ),
         "applicability_act_occurrence_identity": ledger.mint_identity(
@@ -1180,7 +1179,7 @@ def _require_binding_current_coordinates(binding: Event, current_coordinates: An
 def _applicability_act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "applicability_act_identity": material["applicability_act_identity"],
+        "applicability_act_identity": material["exact_act_identity"],
         "applicability_act_occurrence_identity": material[
             "applicability_act_occurrence_identity"
         ],
@@ -1296,7 +1295,7 @@ def _applicability_result_material(
             else None
         ),
         "applicability_act_identity": binding.material[
-            "applicability_act_identity"
+            "exact_act_identity"
         ],
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
