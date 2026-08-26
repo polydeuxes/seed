@@ -3280,8 +3280,6 @@ def _pair_binding_source_coordinates(
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
     return {
-        "subject_reference": source.reference,
-        "source_assertion_reference": source.reference,
         "source_movement_event_identity": source.locality_movement_event_identity,
         "source_localities": list(scope["source_localities"]),
         "source_occurrence_references": list(content["source_material"]),
@@ -3313,6 +3311,7 @@ def _pair_applicability_binding_material(
             recording_locality_identity=recording_locality_identity,
             standing_boundary_identity=standing_boundary_identity,
         ),
+        "source_assertion_reference": source.reference,
         "subject_reference": {
             "input_assertion_reference": source.reference,
             "input_movement_event_identity": source.locality_movement_event_identity,
@@ -3358,6 +3357,7 @@ def _pair_measurement_binding_material(
             recording_locality_identity=recording_locality_identity,
             standing_boundary_identity=standing_boundary_identity,
         ),
+        "subject_reference": source.reference,
         "exact_act_identity": measurement_act_identity,
         "measurement_act_identity": measurement_act_identity,
         "measurement_act_occurrence_identity": measurement_act_occurrence_identity,
@@ -3375,6 +3375,12 @@ def _pair_measurement_binding_material(
         },
         "unknown": [],
     }
+
+
+def _pair_binding_source_reference(binding: Event) -> Any:
+    if binding.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        return binding.material.get("subject_reference")
+    return binding.material.get("source_assertion_reference")
 
 
 def _require_exact_pair_subject_to_act_binding_event(
@@ -3444,7 +3450,7 @@ def _require_exact_pair_subject_to_act_binding_event(
             measurement_result_identity=identities["measurement_result_identity"],
         )
     if (
-        source.reference != material.get("source_assertion_reference")
+        source.reference != _pair_binding_source_reference(binding)
         or source.locality_movement_event_identity
         != material.get("source_movement_event_identity")
         or type(boundary) is not str
@@ -3663,7 +3669,7 @@ def _read_pair_subject_to_act_binding(
             "byte-position-pair subject-to-Act binding is absent or corrupted"
         )
     material = binding.material
-    reference = material.get("source_assertion_reference")
+    reference = _pair_binding_source_reference(binding)
     movement_identity = material.get("source_movement_event_identity")
     boundary = material.get("standing_boundary_identity")
     if type(boundary) is not str or not boundary:

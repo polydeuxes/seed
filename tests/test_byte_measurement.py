@@ -1692,6 +1692,9 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     )
     assert assignment.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     assert applicability_binding.identity != assignment.identity
+    assert assignment.material["subject_reference"] == applicability_binding.material[
+        "source_assertion_reference"
+    ]
     assert applicability_binding.material["addressed_act_identity"] == (
         assignment.material["exact_act_identity"]
     )
