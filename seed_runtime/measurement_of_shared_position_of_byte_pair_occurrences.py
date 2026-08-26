@@ -1078,7 +1078,7 @@ def get_shared_position_responsibility_assignment(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event, _inputs_reading = _read_binding(ledger, event_identity)
-    return json.loads(json.dumps(event.material))
+    return deepcopy(event.material)
 
 
 def _applicability_act_material(
@@ -1215,7 +1215,7 @@ def get_shared_position_applicability_act_occurrence(
     event, _assignment, _inputs_reading = _read_applicability_act(
         ledger, event_identity
     )
-    return json.loads(json.dumps(event.material))
+    return deepcopy(event.material)
 
 
 def _applicability_result_material(
@@ -1489,9 +1489,7 @@ def _read_applicability_result(
 def get_recorded_shared_position_applicability(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    return json.loads(
-        json.dumps(_read_applicability_result(ledger, event_identity)[4])
-    )
+    return deepcopy(_read_applicability_result(ledger, event_identity)[4])
 
 
 def _measurement_act_material(
@@ -1662,7 +1660,7 @@ def get_shared_position_measurement_act_occurrence(
     event, _assignment, _applicability, _inputs_reading = _read_measurement_act(
         ledger, event_identity
     )
-    return json.loads(json.dumps(event.material))
+    return deepcopy(event.material)
 
 
 def _path_assertion(
@@ -2288,7 +2286,7 @@ def get_recorded_shared_position_measurement(
         event_identity,
         prior_standing=prior_standing,
     )
-    return json.loads(json.dumps(carried))
+    return deepcopy(carried)
 
 
 def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
