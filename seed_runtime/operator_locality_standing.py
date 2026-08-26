@@ -42,6 +42,7 @@ from seed_runtime.byte_measurement import (
     _source_assertion_from_reference,
     _source_assertion_reference,
     _findings_of_recorded_byte_position_pair_measurement,
+    _bounded_pair_binding_readings,
     _read_assertion_locality_movement_subject_to_act_binding,
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_binding_and_source,
@@ -332,7 +333,8 @@ def _operator_standing_replay_validation(function):
         token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
         exact_token = _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(None)
         try:
-            return function(*args, **kwargs)
+            with _bounded_pair_binding_readings():
+                return function(*args, **kwargs)
         finally:
             _OPERATOR_STANDING_EXACT_ACCUMULATORS.reset(exact_token)
             _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)

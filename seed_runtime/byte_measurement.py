@@ -15,6 +15,8 @@ from __future__ import annotations
 
 
 from collections import Counter
+from contextlib import contextmanager
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Iterable
@@ -31,6 +33,25 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
 )
+
+
+_PAIR_BINDING_READINGS: ContextVar[
+    dict[str, tuple[Event, "RecordedByteAssertion", dict[str, Any], dict[str, Any]]]
+    | None
+] = ContextVar("pair_binding_readings", default=None)
+
+
+@contextmanager
+def _bounded_pair_binding_readings():
+    """Reuse exact pair bindings only within one bounded coordinate read."""
+
+    token = _PAIR_BINDING_READINGS.set({})
+    try:
+        yield
+    finally:
+        _PAIR_BINDING_READINGS.reset(token)
+
+
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
@@ -3550,6 +3571,9 @@ def _read_pair_subject_to_act_binding(
         raise ByteMeasurementError(
             "byte-position-pair subject-to-Act binding is absent or corrupted"
         )
+    bounded_readings = _PAIR_BINDING_READINGS.get()
+    if bounded_readings is not None and binding.identity in bounded_readings:
+        return bounded_readings[binding.identity]
     material = binding.material
     reference = _pair_binding_source_reference(binding)
     movement_identity = material.get("source_movement_event_identity")
@@ -3629,7 +3653,10 @@ def _read_pair_subject_to_act_binding(
         raise ByteMeasurementError(
             "byte-position-pair subject-to-Act binding order is false"
         ) from error
-    return binding, source, scope, content
+    reading = (binding, source, scope, content)
+    if bounded_readings is not None:
+        bounded_readings[binding.identity] = reading
+    return reading
 
 
 def _read_pair_measurement_subject_to_act_binding(
