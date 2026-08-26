@@ -160,15 +160,6 @@ BYTE_MEASUREMENT_RESPONSIBILITY = (
     "bounded exact-byte Measurement and Yield with findings from its exact "
     "source occurrences, rule, and Scope"
 )
-BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
-    "Yield exact byte-position-pair findings from an applicable exact bounded "
-    "source material within its Scope, provenance, occurrence references, "
-    "and Unknown"
-)
-BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
-    "Applicability of one exact source-material Assertion to one "
-    "exact byte-position-pair Measurement Act"
-)
 BYTE_PAIR_UNKNOWN = (
     "Participation: Unknown",
 )
@@ -580,8 +571,6 @@ def _pair_input_applicability_from_exact_source(
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": assignment.material["addressed_act_identity"],
         "addressed_act": "declared byte-position-pair Measurement",
-        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
@@ -621,8 +610,6 @@ def _pair_input_applicability_from_exact_source(
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": assignment.material["addressed_act_identity"],
         "addressed_act_occurrence_identity": None,
-        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
