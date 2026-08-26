@@ -41,7 +41,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     measure_positions_for_recurrent_byte_pair_assertions,
-    record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
+    record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
@@ -142,17 +142,17 @@ def _record_path(ledger, pair_measurement, source):
     )
     results = []
     for finding in findings:
-        assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             finding=finding,
-            locality_standing=read_operator_locality_standing(
+            current_coordinates=read_operator_locality_standing(
                 ledger, locality_identity=LOCALITY
             ),
         )
         act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=read_operator_locality_standing(
+            subject_to_act_binding_event_identity=binding.identity,
+            current_coordinates=read_operator_locality_standing(
                 ledger, locality_identity=LOCALITY
             ),
         )

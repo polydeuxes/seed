@@ -19,7 +19,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
-    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
     _references_from_recorded_recurrent_pair_position_result,
@@ -389,7 +389,7 @@ def _inputs(
                             second_assertion_address,
                         ),
                     ),
-                    prior_standing=prior_coordinates,
+                    prior_coordinates=prior_coordinates,
                 )
             )
             return _validated_inputs(first, second)
@@ -2095,7 +2095,7 @@ def _require_shared_position_replay_occurrence(
         )
 
 
-def _recurrent_result_assignment_act_and_yield_relation(
+def _recurrent_result_binding_act_and_yield_relation(
     ledger: EventLedger,
     result: Event,
 ) -> tuple[Event, Event, Event]:
@@ -2112,40 +2112,40 @@ def _recurrent_result_assignment_act_and_yield_relation(
     yield_relation = (
         ledger.get(yield_identity) if type(yield_identity) is str else None
     )
-    assignment_reference = (
-        act.material.get("responsibility_assignment_reference")
+    binding_reference = (
+        act.material.get("subject_to_act_binding_reference")
         if act is not None
         else None
     )
-    assignment_identity = (
-        assignment_reference.get("recorded_occurrence_identity")
-        if type(assignment_reference) is dict
+    binding_identity = (
+        binding_reference.get("recorded_occurrence_identity")
+        if type(binding_reference) is dict
         else None
     )
-    assignment = (
-        ledger.get(assignment_identity)
-        if type(assignment_identity) is str
+    binding = (
+        ledger.get(binding_identity)
+        if type(binding_identity) is str
         else None
     )
     if (
         act is None
         or act.kind
         != RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT
-        or assignment is None
-        or assignment.kind
-        != RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+        or binding is None
+        or binding.kind
+        != RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND
         or yield_relation is None
         or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
         or any(
             occurrence.locality_identity != result.locality_identity
-            for occurrence in (assignment, act, yield_relation)
+            for occurrence in (binding, act, yield_relation)
         )
     ):
         raise SharedPairPositionError(
-            "shared-position replay recurrent result carries no exact assignment, "
+            "shared-position replay recurrent result carries no exact binding, "
             "Act occurrence, or Yield relation"
         )
-    return assignment, act, yield_relation
+    return binding, act, yield_relation
 
 
 def _shared_position_replay_occurrence_coordinates(
@@ -2164,7 +2164,7 @@ def _shared_position_replay_occurrence_coordinates(
     result_identities: list[str] = []
     source_identities: list[str] = []
     pair_result_identities: list[str] = []
-    responsibility_assignments: list[Event] = []
+    subject_to_act_bindings: list[Event] = []
     act_occurrence_occurrences: list[Event] = []
     yield_relations: list[Event] = []
     for reference in inputs:
@@ -2184,10 +2184,10 @@ def _shared_position_replay_occurrence_coordinates(
                 raise SharedPairPositionError(
                     "shared-position replay recurrent input result is absent"
                 )
-            responsibility_assignment, act_occurrence, yield_relation = (
-                _recurrent_result_assignment_act_and_yield_relation(ledger, result)
+            subject_to_act_binding, act_occurrence, yield_relation = (
+                _recurrent_result_binding_act_and_yield_relation(ledger, result)
             )
-            responsibility_assignments.append(responsibility_assignment)
+            subject_to_act_bindings.append(subject_to_act_binding)
             act_occurrence_occurrences.append(act_occurrence)
             yield_relations.append(yield_relation)
 
@@ -2218,7 +2218,7 @@ def _shared_position_replay_occurrence_coordinates(
         occurrences_at_identities(result_identities),
         occurrences_at_identities(source_identities),
         occurrences_at_identities(pair_result_identities),
-        occurrences_for_events(responsibility_assignments),
+        occurrences_for_events(subject_to_act_bindings),
         occurrences_for_events(act_occurrence_occurrences),
         occurrences_for_events(yield_relations),
     )
@@ -2237,7 +2237,7 @@ def _shared_position_replay_reading(
         input_results,
         sources,
         pair_measurement_results,
-        responsibility_assignments,
+        subject_to_act_bindings,
         act_occurrence,
         yield_relations,
     ) = _shared_position_replay_occurrence_coordinates(ledger, inputs)
@@ -2251,7 +2251,7 @@ def _shared_position_replay_reading(
         input_result_occurrences=input_results,
         source_occurrences=sources,
         pair_measurement_result_occurrences=pair_measurement_results,
-        subject_to_act_binding_occurrences=responsibility_assignments,
+        subject_to_act_binding_occurrences=subject_to_act_bindings,
         act_occurrence_occurrences=act_occurrence,
         yield_relation_occurrences=yield_relations,
     )

@@ -77,10 +77,10 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
-    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position,
+    _read_recurrent_byte_pair_occurrence_position_measurement_binding,
     _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -414,7 +414,7 @@ _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -1422,12 +1422,12 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+            == RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND
         ):
-            _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            _read_recurrent_byte_pair_occurrence_position_measurement_binding(
                 ledger,
                 event.identity,
-                prior_standing={
+                prior_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
@@ -1972,7 +1972,7 @@ def advance_operator_locality_standing(
             _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
                 ledger,
                 event.identity,
-                prior_standing={
+                prior_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
