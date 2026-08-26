@@ -3054,9 +3054,6 @@ def assertions_of_recorded_byte_measurement(
 
 
 def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
-    scope = {
-        "source_localities": list(measured.source_localities),
-    }
     results: list[dict[str, Any]] = []
 
     def assertion(
@@ -3078,7 +3075,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "assertion_scope": scope,
             "input_support": {
                 "assertion_references": source_support_references,
                 "local_assertion_references": local_support_references,
@@ -4822,9 +4818,6 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not name its exact recorded input Applicability"
         )
-    expected_scope = {
-        "source_localities": localities_value,
-    }
     assertions = material.get("assertions")
     if not isinstance(assertions, list):
         raise ByteMeasurementError(f"{event_identity} carries no pair result Assertions")
@@ -4833,7 +4826,6 @@ def _validated_recorded_byte_position_pair_measurement(
         "dimensions",
         "result",
         "assertion_subject",
-        "assertion_scope",
         "input_support",
         "conflicts",
         "unknown",
@@ -4859,7 +4851,6 @@ def _validated_recorded_byte_position_pair_measurement(
                 "content": exact_pair,
             }
             or result not in {"count", "recurrence"}
-            or assertion.get("assertion_scope") != expected_scope
             or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
