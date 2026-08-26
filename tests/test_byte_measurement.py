@@ -2089,7 +2089,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
     assert standing["subject_to_act_binding_occurrences"] == {
         assignment.identity: None
     }
-    assert assignment.material["source_standing_boundary_identity"] == (
+    assert assignment.material["source_through_event_occurrence_identity"] == (
         source_result.identity
     )
 

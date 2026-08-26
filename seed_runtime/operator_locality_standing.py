@@ -601,8 +601,8 @@ def _assertion_locality_movement_occurrence_coordinates(
         "source_assertion_coordinates": deepcopy(
             assignment.material["source_assertion_coordinates"]
         ),
-        "source_standing_boundary_identity": assignment.material[
-            "source_standing_boundary_identity"
+        "source_through_event_occurrence_identity": assignment.material[
+            "source_through_event_occurrence_identity"
         ],
         "subject_to_act_binding_reference": deepcopy(binding_reference),
         "act_occurrence_event_identity": event.material[
@@ -2182,8 +2182,8 @@ def _carry_assertion_locality_movement_assignment_into_standing(
             source_event=source_event,
             source_locality=source_event.locality_identity,
             destination_locality=event.locality_identity,
-            source_standing_boundary_identity=source_boundary,
-            destination_standing_boundary_identity=(
+            source_through_event_occurrence_identity=source_boundary,
+            destination_through_event_occurrence_identity=(
                 locality_standing.get("through_event_occurrence_identity")
                 if type(locality_standing) is dict
                 else None

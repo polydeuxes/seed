@@ -951,8 +951,8 @@ def _movement_assignment_material(
     source_event: Event,
     source_locality: str,
     destination_locality: str,
-    source_standing_boundary_identity: str,
-    destination_standing_boundary_identity: str | None,
+    source_through_event_occurrence_identity: str,
+    destination_through_event_occurrence_identity: str | None,
     movement_act_identity: str,
     movement_act_occurrence_identity: str,
     movement_result_identity: str,
@@ -967,18 +967,18 @@ def _movement_assignment_material(
         "source_assertion_coordinates": _source_assertion_coordinates(source),
         "source_locality": source_locality,
         "destination_locality": destination_locality,
-        "source_standing_boundary_identity": source_standing_boundary_identity,
-        "destination_standing_boundary_identity": (
-            destination_standing_boundary_identity
+        "source_through_event_occurrence_identity": source_through_event_occurrence_identity,
+        "destination_through_event_occurrence_identity": (
+            destination_through_event_occurrence_identity
         ),
         "determination": (
             "the exact preserved Assertion in another Locality"
         ),
         "scope": {
             "source_assertion_reference": _source_assertion_reference(source),
-            "source_standing_boundary_identity": source_standing_boundary_identity,
-            "destination_standing_boundary_identity": (
-                destination_standing_boundary_identity
+            "source_through_event_occurrence_identity": source_through_event_occurrence_identity,
+            "destination_through_event_occurrence_identity": (
+                destination_through_event_occurrence_identity
             ),
         },
         "unknown": [],
@@ -1011,9 +1011,9 @@ def _require_exact_movement_assignment_and_source(
         coordinate: assignment.material.get(coordinate)
         for coordinate in identity_coordinates
     }
-    source_boundary = assignment.material.get("source_standing_boundary_identity")
+    source_boundary = assignment.material.get("source_through_event_occurrence_identity")
     destination_boundary = assignment.material.get(
-        "destination_standing_boundary_identity"
+        "destination_through_event_occurrence_identity"
     )
     if (
         type(source_boundary) is not str
@@ -1029,8 +1029,8 @@ def _require_exact_movement_assignment_and_source(
             source_event=source_event,
             source_locality=source_event.locality_identity,
             destination_locality=assignment.locality_identity,
-            source_standing_boundary_identity=source_boundary,
-            destination_standing_boundary_identity=destination_boundary,
+            source_through_event_occurrence_identity=source_boundary,
+            destination_through_event_occurrence_identity=destination_boundary,
             **identities,
         )
     ):
@@ -1087,8 +1087,8 @@ def record_assertion_locality_movement_subject_to_act_binding(
             source_event=source_event,
             source_locality=source_event.locality_identity,
             destination_locality=destination_locality,
-            source_standing_boundary_identity=source_boundary,
-            destination_standing_boundary_identity=destination_boundary,
+            source_through_event_occurrence_identity=source_boundary,
+            destination_through_event_occurrence_identity=destination_boundary,
             **identities,
         ),
         locality_identity=destination_locality,
@@ -1124,8 +1124,8 @@ def _read_assertion_locality_movement_subject_to_act_binding(
             "movement_result_identity",
         )
     }
-    source_boundary = material.get("source_standing_boundary_identity")
-    destination_boundary = material.get("destination_standing_boundary_identity")
+    source_boundary = material.get("source_through_event_occurrence_identity")
+    destination_boundary = material.get("destination_through_event_occurrence_identity")
     if (
         any(type(identity) is not str or not identity for identity in identities.values())
         or len(set(identities.values())) != len(identities)
@@ -1144,8 +1144,8 @@ def _read_assertion_locality_movement_subject_to_act_binding(
         source_event=source_event,
         source_locality=source_event.locality_identity,
         destination_locality=assignment.locality_identity,
-        source_standing_boundary_identity=source_boundary,
-        destination_standing_boundary_identity=destination_boundary,
+        source_through_event_occurrence_identity=source_boundary,
+        destination_through_event_occurrence_identity=destination_boundary,
         **identities,
     )
     if material != expected:
@@ -1687,8 +1687,8 @@ def _record_movement_assignment_from_carried_standings(
             source_event=source_event,
             source_locality=source_event.locality_identity,
             destination_locality=destination_locality,
-            source_standing_boundary_identity=source_boundary,
-            destination_standing_boundary_identity=destination_boundary,
+            source_through_event_occurrence_identity=source_boundary,
+            destination_through_event_occurrence_identity=destination_boundary,
             **identities,
         ),
         locality_identity=destination_locality,
