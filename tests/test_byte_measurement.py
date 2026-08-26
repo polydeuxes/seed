@@ -15,7 +15,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
-    BYTE_PAIR_MEASUREMENT_RULE,
     ByteMeasurementError,
     _measure_byte_counts_through,
     _record_assertion_locality_movement_act_from_current_coordinates,

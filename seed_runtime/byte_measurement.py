@@ -92,7 +92,6 @@ BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "subject_to_act_binding_reference",
 } | {
-    "measurement_rule",
     "addressed_act_identity",
     "act_occurrence_identity",
     "source_assertion_reference",
@@ -149,10 +148,6 @@ EVENT_KIND_BOOK_CLAUSES = {
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
-BYTE_PAIR_MEASUREMENT_RULE = (
-    "each exact byte-pair occurrence in source order within one exact recorded material "
-    "result with the same exact pair material and source order"
-)
 BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact count of byte-pair occurrences in source order within the exact "
     "bounded source material"
@@ -3091,10 +3086,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
         local_support_references: list[int],
         source_support_references: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        subject = {
-            "content": list(item.content),
-            "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
-        }
+        subject = {"content": list(item.content)}
         position = len(results)
         return {
             "dimensions": {
@@ -3243,7 +3235,6 @@ def _pair_measurement_binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "scope": {
             "recording_locality_identity": recording_locality_identity,
             "source_localities": list(scope["source_localities"]),
@@ -4261,7 +4252,6 @@ def _pair_measurement_result_material(
         "subject_to_act_binding_reference": (
             _pair_subject_to_act_binding_reference(binding)
         ),
-        "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "source_assertion_reference": measured.source_assertion_reference,
         "source_movement_event_identity": measured.source_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
@@ -4749,7 +4739,6 @@ def _validated_recorded_byte_position_pair_measurement(
         or not material["act_occurrence_identity"]
         or material["addressed_act_identity"] == material["act_occurrence_identity"]
         or material.get("dimensions") != expected_dimensions
-        or material.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
     ):
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact pair Measurement Assertion"
@@ -4889,7 +4878,6 @@ def _validated_recorded_byte_position_pair_measurement(
             or subject
             != {
                 "content": exact_pair,
-                "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
             }
             or result not in {"count", "recurrence"}
             or assertion.get("assertion_scope") != expected_scope
