@@ -223,7 +223,6 @@ def record_witness_material_source(
         **result,
         "dimensions": {
             "identity": result_identity,
-            "source_provenance": source_boundary,
         },
     }
     yield_relation = _record_yield_relation(
@@ -373,7 +372,6 @@ def _read_witness_material_source_result(
         **result,
         "dimensions": {
             "identity": result_identity,
-            "source_provenance": source_boundary,
         },
         "act_occurrence_event_identity": act_occurrence.identity,
         "yield_relation_identity": yield_identity,
