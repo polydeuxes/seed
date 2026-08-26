@@ -26,7 +26,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
@@ -811,13 +810,13 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
-        "measurement_act_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act_occurrence"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_result"
         ),
     }
@@ -888,13 +887,13 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
             "unbound subject through the supplied occurrence"
         )
     identities = {
-        "measurement_act_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act_occurrence"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_result"
         ),
     }
