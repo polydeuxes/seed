@@ -438,7 +438,7 @@ def test_call_local_standing_equals_full_replay():
 
 
 def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
-    from seed_runtime.identities import _next_values, new_identity
+    from seed_runtime.identities import _next_values
 
     path = tmp_path / "addressed-byte.sqlite"
     ledger = SQLiteEventLedger(path)
@@ -480,7 +480,7 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     )["measurement_occurrences"]
     for prefix, identity in carried_identities.items():
         prior_number = int(identity.rsplit("_", 1)[1])
-        assert new_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
+        assert reopened.mint_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
     reopened.close()
 
 

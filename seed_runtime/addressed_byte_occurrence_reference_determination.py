@@ -19,7 +19,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     ReferenceToRecordedPositionOfBytePairOccurrence,
@@ -456,13 +455,13 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         ledger, source_result=source_result, locality_standing=locality_standing
     )
     identities = {
-        "determination_act_identity": new_identity(
+        "determination_act_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_determination_measurement_act"
         ),
-        "determination_act_occurrence_identity": new_identity(
+        "determination_act_occurrence_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_determination_measurement_act_occurrence"
         ),
-        "determination_result_identity": new_identity(
+        "determination_result_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_determination_measurement_result"
         ),
     }
@@ -797,13 +796,13 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
         message="determination binding left the append tip",
     )
     identities = {
-        "applicability_act_identity": new_identity(
+        "applicability_act_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_applicability_act"
         ),
-        "applicability_act_occurrence_identity": new_identity(
+        "applicability_act_occurrence_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_applicability_act_occurrence"
         ),
-        "applicability_result_identity": new_identity(
+        "applicability_result_identity": ledger.mint_identity(
             "addressed_byte_occurrence_reference_applicability_result"
         ),
     }
@@ -1963,7 +1962,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     )
     source_material = deepcopy(source_result.material)
     identities = {
-        name: new_identity(prefix)
+        name: ledger.mint_identity(prefix)
         for name, prefix in (
             (
                 "determination_act_identity",
@@ -2126,7 +2125,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     carry(determination_binding, prior=boundary)
 
     applicability_identities = {
-        name: new_identity(prefix)
+        name: ledger.mint_identity(prefix)
         for name, prefix in (
             (
                 "applicability_act_identity",
