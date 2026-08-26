@@ -253,25 +253,18 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
     )
     assert reference == {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": assignment.material["subject_reference"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
     }
-    assert "standing" not in recorded.material[
-        "responsibility_assignment"
-    ]
     assert assignment.identity in _standing(ledger)[
         "subject_to_act_binding_occurrences"
     ]
     assert len(
         {
-            assignment.material["assignment_identity"],
-            assignment.material["assignment_subject_identity"],
             assignment.material["measurement_act_identity"],
             assignment.material["act_occurrence_identity"],
             assignment.material["measurement_result_identity"],
@@ -280,7 +273,7 @@ def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
             yielded.identity,
             recorded.identity,
         }
-    ) == 9
+    ) == 7
 
 
 def test_act_requires_current_standing_that_carries_its_assignment():
@@ -777,12 +770,6 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
         act_occurrence_event_identity=act_occurrence.identity,
     )
     carried = {
-        "occurrence_position_measurement_assignment": assignment.material[
-            "assignment_identity"
-        ],
-        "occurrence_position_measurement_assignment_subject": assignment.material[
-            "assignment_subject_identity"
-        ],
         "occurrence_position_measurement_act": recorded.material[
             "addressed_act_identity"
         ],
