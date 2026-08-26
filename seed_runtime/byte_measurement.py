@@ -3216,10 +3216,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "identity": identity,
                 "content": content,
                 "source_provenance": provenance,
-                "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
             },
             "subject_kind": "assertion",
-            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -4966,7 +4964,6 @@ def _validated_recorded_byte_position_pair_measurement(
     exact_keys = {
         "dimensions",
         "subject_kind",
-        "responsible_boundary",
         "result",
         "assertion_subject",
         "assertion_scope",
@@ -4999,7 +4996,6 @@ def _validated_recorded_byte_position_pair_measurement(
             or result not in {"count", "recurrence"}
             or assertion.get("assertion_scope") != expected_scope
             or assertion.get("subject_kind") != "assertion"
-            or assertion.get("responsible_boundary") != "this recorded assertion"
             or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
@@ -5007,9 +5003,7 @@ def _validated_recorded_byte_position_pair_measurement(
                     "identity",
                     "content",
                     "source_provenance",
-                    "responsibility",
                 }
-            or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
