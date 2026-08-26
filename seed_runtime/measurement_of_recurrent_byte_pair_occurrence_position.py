@@ -1069,7 +1069,6 @@ def _finding_of_measurement_from_act_occurrence(
 
 
 def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccurrencePositions) -> list[dict[str, Any]]:
-    scope = {"source_localities": [finding.source_locality_identity]}
     subject = {
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
         "source_material_result_occurrence_identity": (
@@ -1098,7 +1097,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "assertion_scope": scope,
                 "input_support": {
                     "assertion_references": [
                         finding.pair_reference.assertion_reference

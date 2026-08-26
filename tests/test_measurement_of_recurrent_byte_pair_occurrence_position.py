@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import json
-
 import pytest
 
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
@@ -166,13 +164,19 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
         "intact_occurrence": True,
     }
     assert all(
-        set(assertion["dimensions"]["content"])
+        set(assertion)
+        == {
+            "dimensions",
+            "result",
+            "assertion_subject",
+            "input_support",
+            "conflicts",
+            "unknown",
+        }
+        and set(assertion["dimensions"]["content"])
         == {"first_position", "second_position", "completeness_boundary"}
         for assertion in result.material["assertions"]
     )
-    serialized = json.dumps(result.material).lower()
-    assert "direction" not in serialized
-    assert "displacement" not in serialized
 
 
 def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identities():
