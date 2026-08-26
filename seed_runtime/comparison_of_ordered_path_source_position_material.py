@@ -25,6 +25,14 @@ APPLICABILITY_ACT_KIND = (
     "operator.comparison_of_ordered_path_source_position_material."
     "applicability_act_recorded"
 )
+COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT = (
+    "operator.comparison_of_ordered_path_source_position_material."
+    "compare_subject_to_act_binding_recorded"
+)
+APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT = (
+    "operator.comparison_of_ordered_path_source_position_material."
+    "applicability_subject_to_act_binding_recorded"
+)
 APPLICABILITY_RESULT_KIND = (
     "operator.comparison_of_ordered_path_source_position_material."
     "applicability_result_recorded"
@@ -50,6 +58,8 @@ APPLICABILITY_BOUNDARY = (
 COMPARE_BOUNDARY = "comparison_of_ordered_path_source_position_material_compare"
 
 EVENT_KIND_RESPONSIBILITIES = {
+    COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "04.Compare",
+    APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT: "01.Current.E.1",
     APPLICABILITY_ACT_KIND: "02.Acts.A",
     APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     COMPARE_ACT_KIND: "02.Acts.A",
@@ -70,6 +80,8 @@ _IDENTITY_COORDINATES = (
     "compare_act_occurrence_identity",
     "compare_result_identity",
 )
+_APPLICABILITY_IDENTITY_COORDINATES = _IDENTITY_COORDINATES[:3]
+_COMPARE_IDENTITY_COORDINATES = _IDENTITY_COORDINATES[3:]
 
 _PATH_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
 
@@ -206,22 +218,35 @@ def _new_identities() -> dict[str, str]:
     }
 
 
-def _applicability_act_material(
+def _binding_reference(event: Event) -> dict[str, Any]:
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "book_clause_identity": event.material["book_clause_identity"],
+        "exact_act_identity": event.material["exact_act_identity"],
+        "subject_reference": deepcopy(event.material["subject_reference"]),
+        "result_boundary_identity": event.material["result_boundary_identity"],
+    }
+
+
+def _compare_binding_material(
     inputs: dict[str, Any], boundary: str, identities: dict[str, str]
 ) -> dict[str, Any]:
     return {
-        "applicability_act_identity": identities["applicability_act_identity"],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
-        "applicability_result_identity": identities[
-            "applicability_result_identity"
-        ],
+        "subject_reference": {
+            "path_assertion_reference": deepcopy(
+                inputs["path_assertion_reference"]
+            ),
+            "path_position_pair": list(inputs["path_position_pair"]),
+            "first_source_position_coordinate": deepcopy(inputs["first"]),
+            "second_source_position_coordinate": deepcopy(inputs["second"]),
+        },
+        "exact_act_identity": identities["compare_act_identity"],
         "compare_act_identity": identities["compare_act_identity"],
         "compare_act_occurrence_identity": identities[
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": identities["compare_result_identity"],
+        "result_boundary_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
@@ -230,12 +255,70 @@ def _applicability_act_material(
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
         "through_event_occurrence_identity": boundary,
-        "act_identity": identities["applicability_act_identity"],
-        "act": APPLICABILITY_ACT,
+        "exact_act": COMPARE_ACT,
+        "scope": {
+            "locality_identity": inputs["locality_identity"],
+            "source_material_result_occurrence_identity": inputs[
+                "source_occurrence_identity"
+            ],
+            "completeness_boundary_identity": inputs[
+                "completeness_boundary_identity"
+            ],
+        },
+        "unknown": [],
+        "conflicts": [],
+    }
+
+
+def _applicability_binding_material(
+    *,
+    compare_binding: Event,
+    inputs: dict[str, Any],
+    boundary: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    return {
+        "subject_reference": {
+            "first_input": {
+                "subject": deepcopy(inputs["first"]),
+                "addressed_act_identity": identities["compare_act_identity"],
+                "role": f"path position {inputs['first_path_position']}",
+            },
+            "second_input": {
+                "subject": deepcopy(inputs["second"]),
+                "addressed_act_identity": identities["compare_act_identity"],
+                "role": f"path position {inputs['second_path_position']}",
+            },
+        },
+        "exact_act_identity": identities["applicability_act_identity"],
+        "applicability_act_identity": identities["applicability_act_identity"],
+        "applicability_act_occurrence_identity": identities[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": identities[
+            "applicability_result_identity"
+        ],
+        "result_boundary_identity": identities["applicability_result_identity"],
         "addressed_act_identity": identities["compare_act_identity"],
         "addressed_act_occurrence_identity": identities[
             "compare_act_occurrence_identity"
         ],
+        "compare_act_identity": identities["compare_act_identity"],
+        "compare_act_occurrence_identity": identities[
+            "compare_act_occurrence_identity"
+        ],
+        "compare_result_identity": identities["compare_result_identity"],
+        "compare_subject_to_act_binding_reference": _binding_reference(
+            compare_binding
+        ),
+        "book_clause_identity": "01.Current.E.1",
+        "comparison_rule": RULE,
+        "path_result_reference": deepcopy(inputs["reference"]),
+        "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
+        "path_position_pair": list(inputs["path_position_pair"]),
+        "first_source_position_coordinate": deepcopy(inputs["first"]),
+        "second_source_position_coordinate": deepcopy(inputs["second"]),
+        "through_event_occurrence_identity": boundary,
         "applicability_of_input_to_compare": [
             {
                 "first_subject": deepcopy(inputs["first"]),
@@ -262,19 +345,79 @@ def _applicability_act_material(
         ],
         "scope": {
             "locality_identity": inputs["locality_identity"],
-            "source_material_result_occurrence_identity": inputs[
-                "source_occurrence_identity"
-            ],
-            "completeness_boundary_identity": inputs[
-                "completeness_boundary_identity"
-            ],
+            "addressed_act_identity": identities["compare_act_identity"],
         },
         "unknown": [],
         "conflicts": [],
     }
 
 
-def _read_applicability_act(
+def _applicability_act_material(binding: Event) -> dict[str, Any]:
+    material = binding.material
+    return {
+        "act_identity": material["applicability_act_identity"],
+        "applicability_act_identity": material["applicability_act_identity"],
+        "applicability_act_occurrence_identity": material[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": material["applicability_result_identity"],
+        "compare_subject_to_act_binding_reference": deepcopy(
+            material["compare_subject_to_act_binding_reference"]
+        ),
+        "applicability_subject_to_act_binding_reference": _binding_reference(
+            binding
+        ),
+        "act": APPLICABILITY_ACT,
+        "addressed_act_identity": material["addressed_act_identity"],
+        "addressed_act_occurrence_identity": material[
+            "addressed_act_occurrence_identity"
+        ],
+        "compare_act_identity": material["compare_act_identity"],
+        "compare_act_occurrence_identity": material[
+            "compare_act_occurrence_identity"
+        ],
+        "compare_result_identity": material["compare_result_identity"],
+        "comparison_rule": RULE,
+        "path_result_reference": deepcopy(material["path_result_reference"]),
+        "path_assertion_reference": deepcopy(material["path_assertion_reference"]),
+        "path_position_pair": list(material["path_position_pair"]),
+        "first_source_position_coordinate": deepcopy(
+            material["first_source_position_coordinate"]
+        ),
+        "second_source_position_coordinate": deepcopy(
+            material["second_source_position_coordinate"]
+        ),
+        "through_event_occurrence_identity": binding.identity,
+        "applicability_of_input_to_compare": deepcopy(
+            material["applicability_of_input_to_compare"]
+        ),
+        "scope": deepcopy(material["scope"]),
+        "unknown": [],
+        "conflicts": [],
+    }
+
+
+def _current_coordinates_through(
+    ledger: EventLedger, *, locality_identity: str, boundary: Any
+) -> dict[str, Any]:
+    from seed_runtime.operator_current_coordinates import (
+        _operator_current_coordinate_validation_context,
+        read_operator_current_coordinates_through,
+    )
+
+    current_coordinates = _operator_current_coordinate_validation_context(
+        ledger, locality_identity=locality_identity
+    )
+    if current_coordinates is not None:
+        return current_coordinates
+    return read_operator_current_coordinates_through(
+        ledger,
+        locality_identity=locality_identity,
+        through_event_occurrence_identity=boundary,
+    )
+
+
+def _read_compare_binding(
     ledger: EventLedger,
     event_identity: Any,
     *,
@@ -283,32 +426,25 @@ def _read_applicability_act(
     event = _event(
         ledger,
         event_identity,
-        event_kind=APPLICABILITY_ACT_KIND,
-        message="source position Compare requires an exact Applicability Act",
+        event_kind=COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        message="source position Compare requires one exact subject-to-Act binding",
     )
     material = event.material
-    identities = {name: material.get(name) for name in _IDENTITY_COORDINATES}
+    identities = {
+        name: material.get(name) for name in _COMPARE_IDENTITY_COORDINATES
+    }
     if (
         any(type(value) is not str or not value for value in identities.values())
         or len(set(identities.values())) != len(identities)
     ):
-        raise ValueError("source position Compare identities are not exact")
+        raise ValueError("source position Compare binding identities are not exact")
     boundary = material.get("through_event_occurrence_identity")
     if current_coordinates is None:
-        from seed_runtime.operator_current_coordinates import (
-            _operator_current_coordinate_validation_context,
-            read_operator_current_coordinates_through,
+        current_coordinates = _current_coordinates_through(
+            ledger,
+            locality_identity=event.locality_identity,
+            boundary=boundary,
         )
-
-        current_coordinates = _operator_current_coordinate_validation_context(
-            ledger, locality_identity=event.locality_identity
-        )
-        if current_coordinates is None:
-            current_coordinates = read_operator_current_coordinates_through(
-                ledger,
-                locality_identity=event.locality_identity,
-                through_event_occurrence_identity=boundary,
-            )
     path_reference = material.get("path_result_reference")
     inputs = _path_input(
         ledger,
@@ -327,16 +463,98 @@ def _read_applicability_act(
         boundary_event is None
         or boundary_event.locality_identity != event.locality_identity
         or event.locality_identity != inputs["locality_identity"]
-        or material != _applicability_act_material(inputs, boundary, identities)
+        or material != _compare_binding_material(inputs, boundary, identities)
     ):
-        raise ValueError("source position Compare Applicability Act is not exact")
+        raise ValueError("source position Compare binding is not exact")
     ledger.occurrences_in_append_order(
-        (inputs["event"].identity, boundary, event.identity)
-        if inputs["event"].identity != boundary
-        else (boundary, event.identity),
+        (
+            (inputs["event"].identity, boundary, event.identity)
+            if inputs["event"].identity != boundary
+            else (boundary, event.identity)
+        ),
         locality_identity=event.locality_identity,
     )
     return event, inputs
+
+
+def _read_applicability_binding(
+    ledger: EventLedger, event_identity: Any
+) -> tuple[Event, Event, dict[str, Any]]:
+    event = _event(
+        ledger,
+        event_identity,
+        event_kind=APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        message=(
+            "source position Compare requires one exact Applicability "
+            "subject-to-Act binding"
+        ),
+    )
+    material = event.material
+    reference = material.get("compare_subject_to_act_binding_reference")
+    compare_binding, inputs = _read_compare_binding(
+        ledger,
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
+        else None,
+    )
+    identities = {
+        name: material.get(name) for name in _APPLICABILITY_IDENTITY_COORDINATES
+    }
+    identities.update(
+        {
+            name: compare_binding.material[name]
+            for name in _COMPARE_IDENTITY_COORDINATES
+        }
+    )
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or material.get("through_event_occurrence_identity")
+        != compare_binding.identity
+        or material
+        != _applicability_binding_material(
+            compare_binding=compare_binding,
+            inputs=inputs,
+            boundary=compare_binding.identity,
+            identities=identities,
+        )
+    ):
+        raise ValueError("source position Compare Applicability binding is not exact")
+    ledger.occurrences_in_append_order(
+        (compare_binding.identity, event.identity),
+        locality_identity=event.locality_identity,
+    )
+    return event, compare_binding, inputs
+
+
+def _read_applicability_act(
+    ledger: EventLedger,
+    event_identity: Any,
+) -> tuple[Event, Event, Event, dict[str, Any]]:
+    event = _event(
+        ledger,
+        event_identity,
+        event_kind=APPLICABILITY_ACT_KIND,
+        message="source position Compare requires an exact Applicability Act",
+    )
+    material = event.material
+    reference = material.get("applicability_subject_to_act_binding_reference")
+    binding, compare_binding, inputs = _read_applicability_binding(
+        ledger,
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
+        else None,
+    )
+    if (
+        event.locality_identity != binding.locality_identity
+        or material != _applicability_act_material(binding)
+    ):
+        raise ValueError("source position Compare Applicability Act is not exact")
+    ledger.occurrences_in_append_order(
+        (binding.identity, event.identity),
+        locality_identity=event.locality_identity,
+    )
+    return event, binding, compare_binding, inputs
 
 
 def _applicability_result_material(act: Event) -> dict[str, Any]:
@@ -448,6 +666,9 @@ def _recorded_compare_result_material(
         "compare_act_identity": material["compare_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": material["act"],
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
+        ),
         "applicability_result_event_identity": material[
             "applicability_result_event_identity"
         ],
@@ -511,8 +732,8 @@ def _read_applicability_result(
     ledger: EventLedger,
     event_identity: Any,
     *,
-    act_reading: tuple[Event, dict[str, Any]] | None = None,
-) -> tuple[Event, Event, dict[str, Any]]:
+    act_reading: tuple[Event, Event, Event, dict[str, Any]] | None = None,
+) -> tuple[Event, Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     if act_reading is None:
         act_reading = _read_applicability_act(
@@ -521,7 +742,7 @@ def _read_applicability_result(
             if candidate is not None
             else None,
         )
-    act, inputs = act_reading
+    act, binding, compare_binding, inputs = act_reading
     event = _read_yielded(
         ledger,
         event_identity,
@@ -532,16 +753,19 @@ def _read_applicability_result(
         result_kind="Applicability result of ordered path source position material",
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
-    return event, act, inputs
+    return event, act, binding, compare_binding, inputs
 
 
-def _compare_act_material(applicability: Event) -> dict[str, Any]:
-    material = applicability.material
+def _compare_act_material(
+    compare_binding: Event, applicability: Event
+) -> dict[str, Any]:
+    material = compare_binding.material
     return {
         "act_identity": material["compare_act_identity"],
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
         "compare_result_identity": material["compare_result_identity"],
         "act": COMPARE_ACT,
+        "subject_to_act_binding_reference": _binding_reference(compare_binding),
         "applicability_result_event_identity": applicability.identity,
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -586,23 +810,38 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
 
 def _read_compare_act(
     ledger: EventLedger, event_identity: Any
-) -> tuple[Event, Event, dict[str, Any]]:
+) -> tuple[Event, Event, Event, dict[str, Any]]:
     event = _event(
         ledger,
         event_identity,
         event_kind=COMPARE_ACT_KIND,
         message="source position Compare requires an exact Compare Act",
     )
-    applicability, _applicability_act, inputs = _read_applicability_result(
+    reference = event.material.get("subject_to_act_binding_reference")
+    compare_binding, inputs = _read_compare_binding(
+        ledger,
+        reference.get("recorded_occurrence_identity")
+        if type(reference) is dict
+        else None,
+    )
+    (
+        applicability,
+        _applicability_act,
+        _applicability_binding,
+        applicability_compare_binding,
+        applicability_inputs,
+    ) = _read_applicability_result(
         ledger,
         event.material.get("applicability_result_event_identity"),
     )
     if (
-        event.locality_identity != applicability.locality_identity
-        or event.material != _compare_act_material(applicability)
+        applicability_compare_binding.identity != compare_binding.identity
+        or applicability_inputs != inputs
+        or event.locality_identity != applicability.locality_identity
+        or event.material != _compare_act_material(compare_binding, applicability)
     ):
         raise ValueError("source position Compare Act is not exact")
-    return event, applicability, inputs
+    return event, compare_binding, applicability, inputs
 
 
 def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
@@ -649,6 +888,9 @@ def _compare_result_material(
         "compare_act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": COMPARE_ACT,
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
+        ),
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
@@ -669,9 +911,9 @@ def _compare_result_material(
 
 def _read_compare_result(
     ledger: EventLedger, event_identity: Any
-) -> tuple[Event, Event, Event, dict[str, Any]]:
+) -> tuple[Event, Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
-    act, applicability, inputs = _read_compare_act(
+    act, compare_binding, applicability, inputs = _read_compare_act(
         ledger,
         candidate.material.get("act_occurrence_event_identity")
         if candidate is not None
@@ -687,7 +929,7 @@ def _read_compare_result(
         result_kind="Compare result of ordered path source position material",
         occurrence_coordinate="act_occurrence_identity",
     )
-    return event, act, applicability, inputs
+    return event, act, compare_binding, applicability, inputs
 
 
 def get_recorded_ordered_path_source_position_material_comparison(
@@ -702,6 +944,10 @@ def validate_ordered_path_source_position_material_comparison_event(
     event = ledger.get(event_identity)
     if event is None:
         raise ValueError("source position Compare occurrence is not exact")
+    if event.kind == COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT:
+        return _read_compare_binding(ledger, event.identity)[0]
+    if event.kind == APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT:
+        return _read_applicability_binding(ledger, event.identity)[0]
     if event.kind == APPLICABILITY_ACT_KIND:
         return _read_applicability_act(ledger, event.identity)[0]
     if event.kind == APPLICABILITY_RESULT_KIND:
@@ -801,7 +1047,14 @@ def _record_ordered_path_source_position_material_comparison(
                 carried,
                 error_message="source position Compare current coordinates are not exact",
             )
-            if carried.kind == APPLICABILITY_RESULT_KIND:
+            if carried.kind in {
+                COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+                APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+            }:
+                current_coordinates["subject_to_act_binding_occurrences"][
+                    carried.identity
+                ] = None
+            elif carried.kind == APPLICABILITY_RESULT_KIND:
                 current_coordinates["applicability_result_occurrences"][
                     carried.identity
                 ] = None
@@ -815,9 +1068,26 @@ def _record_ordered_path_source_position_material_comparison(
             current_coordinates["through_event_occurrence_identity"] = carried.identity
             current_coordinates["event_count"] += 1
 
+    compare_binding = ledger.append(
+        COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        _compare_binding_material(inputs, boundary, identities),
+        locality_identity=locality_identity,
+    )
+    carry(compare_binding)
+    applicability_binding = ledger.append(
+        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        _applicability_binding_material(
+            compare_binding=compare_binding,
+            inputs=inputs,
+            boundary=compare_binding.identity,
+            identities=identities,
+        ),
+        locality_identity=locality_identity,
+    )
+    carry(applicability_binding)
     applicability_act = ledger.append(
         APPLICABILITY_ACT_KIND,
-        _applicability_act_material(inputs, boundary, identities),
+        _applicability_act_material(applicability_binding),
         locality_identity=locality_identity,
     )
     carry(applicability_act)
@@ -843,7 +1113,7 @@ def _record_ordered_path_source_position_material_comparison(
     carry(applicability_yield, applicability)
     compare_act = ledger.append(
         COMPARE_ACT_KIND,
-        _compare_act_material(applicability),
+        _compare_act_material(compare_binding, applicability),
         locality_identity=locality_identity,
     )
     carry(compare_act)

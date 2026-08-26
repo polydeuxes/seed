@@ -5,6 +5,8 @@ from copy import deepcopy
 import pytest
 
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
+    APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+    COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
     COMPARE_RESULT_KIND,
     get_recorded_ordered_path_source_position_material_comparison,
     yield_ordered_path_source_position_material_comparisons,
@@ -60,7 +62,7 @@ def _direct_position_result(ledger, *, locality, exact):
         exact=exact,
         source_boundary="exact material boundary",
     )
-    assignment = (
+    binding = (
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
@@ -69,7 +71,7 @@ def _direct_position_result(ledger, *, locality, exact):
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        binding_event_identity=assignment.identity,
+        binding_event_identity=binding.identity,
         binding_current_coordinates=_current_coordinates(ledger, locality),
     )
     result = record_byte_pair_occurrence_position_measurement_result(
@@ -128,6 +130,26 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
         in comparison.current_coordinates["comparison_result_occurrences"]
         for comparison in recorded
     )
+    binding_occurrences = tuple(
+        ledger.get(identity)
+        for identity in recorded[-1].current_coordinates[
+            "subject_to_act_binding_occurrences"
+        ]
+        if ledger.get(identity).kind
+        in {
+            COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        }
+    )
+    assert tuple(event.kind for event in binding_occurrences) == (
+        COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
+    ) * 3
+    assert all(
+        binding_occurrences[position].material["exact_act_identity"]
+        != binding_occurrences[position + 1].material["exact_act_identity"]
+        for position in range(0, len(binding_occurrences), 2)
+    )
 
 
 def test_three_different_path_coordinates_yield_three_differences():
@@ -184,8 +206,19 @@ def test_path_pair_comparisons_survive_sqlite_restart(tmp_path):
     database = tmp_path / "ordered-path-pair-compare.sqlite"
     ledger = SQLiteEventLedger(str(database))
     with ledger.batched():
-        _path_result, recorded = _comparisons(
+        path = _path(
             ledger, locality="ordered-path-pair-restart", exact=b"aba"
+        )
+        recorded = (
+            next(
+                yield_ordered_path_source_position_material_comparisons(
+                    ledger,
+                    path_result_event_identity=path.identity,
+                    current_coordinates=_current_coordinates(
+                        ledger, "ordered-path-pair-restart"
+                    ),
+                )
+            ),
         )
     identities = tuple(
         comparison.result_occurrence.identity for comparison in recorded
