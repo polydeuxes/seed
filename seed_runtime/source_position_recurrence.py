@@ -1000,10 +1000,6 @@ def _record_compare(
         result_payload={
             "subject": compare_subject,
             "finding": {
-                "finding_reference": _digest(
-                    "source-position-compare",
-                    {"subject": subject, "result": finding},
-                ),
                 "subject": subject,
                 "result": finding,
             },
@@ -1124,11 +1120,6 @@ def get_recorded_source_position_compare(
         or type(finding) is not dict
         or finding.get("subject") != expected_pair_subject
         or finding.get("result") != expected_result
-        or finding.get("finding_reference")
-        != _digest(
-            "source-position-compare",
-            {"subject": expected_pair_subject, "result": expected_result},
-        )
     ):
         raise ValueError("source-position Compare result is not exact")
     reading = {**deepcopy(result.material), **deepcopy(result_coordinates)}
