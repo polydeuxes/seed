@@ -7,15 +7,14 @@ This is the smallest live proof of two separate declared Measurements:
 * material recurrence at corresponding exact source positions across the
   exact source-position results carried by the first recurrence result.
 
-The public producer begins with all complete adjacent coordinates and
-continues only while exact recurrent results make a next source coordinate
-addressable.  No caller chooses the final coordinate count.  Each Act has an
-exact preceding Responsibility, so every yielded result remains owned
-by the subject that Responsibility addressed in current Standing.  The later
-Measurement accepts the complete recurrence result, not a selected recurrence
-finding, source position, or value.  The explicit call from the recurrence
-result to that Measurement is deliberately
-left visible: this module does not claim a general result-uptake dispatcher.
+The public producer begins with all complete adjacent coordinates and records
+another source coordinate only while exact recurrent results make that
+coordinate addressable. No caller chooses the final coordinate count. Each Act
+has an exact preceding subject-to-Act binding. The later Measurement accepts
+the complete recurrence result, not a selected recurrence finding, source
+position, or value. The explicit call from the recurrence result to that
+Measurement remains visible: this module does not claim a general result-uptake
+dispatcher.
 """
 
 from __future__ import annotations
@@ -196,7 +195,7 @@ class SourcePositionMeasurements(NamedTuple):
     direct_result_event_identity: str
     steps: tuple[SourcePositionMeasurementStep, ...]
     exhausted: bool
-    locality_standing: dict[str, Any]
+    current_coordinates: dict[str, Any]
 
 
 class CorrespondingCoordinateMeasurement(NamedTuple):
@@ -206,7 +205,7 @@ class CorrespondingCoordinateMeasurement(NamedTuple):
 
 class CorrespondingCoordinateMeasurements(NamedTuple):
     measurements: tuple[CorrespondingCoordinateMeasurement, ...]
-    locality_standing: dict[str, Any]
+    current_coordinates: dict[str, Any]
 
 
 class RecurrentResultMaterialMeasurement(NamedTuple):
@@ -216,7 +215,7 @@ class RecurrentResultMaterialMeasurement(NamedTuple):
 
 class RecurrentResultMaterialMeasurements(NamedTuple):
     measurements: tuple[RecurrentResultMaterialMeasurement, ...]
-    locality_standing: dict[str, Any]
+    current_coordinates: dict[str, Any]
 
 
 def _exact_json(value: Any) -> str:
@@ -816,40 +815,40 @@ def _require_current_measurement_subject(
     *,
     locality_identity: str,
     measurement_result_event_identity: str,
-    locality_standing: dict[str, Any] | None = None,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 
-    standing = (
+    current_coordinates = (
         read_operator_current_coordinates(ledger, locality_identity=locality_identity)
-        if locality_standing is None
-        else locality_standing
+        if current_coordinates is None
+        else current_coordinates
     )
     locality_events = ledger.list_locality(locality_identity)
     if (
-        type(standing) is not dict
-        or standing.get("locality_identity") != locality_identity
+        type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != locality_identity
         or not locality_events
-        or standing.get("through_event_occurrence_identity")
+        or current_coordinates.get("through_event_occurrence_identity")
         != locality_events[-1].identity
         or measurement_result_event_identity
-        not in standing.get("measurement_occurrences", {})
+        not in current_coordinates.get("measurement_occurrences", {})
     ):
-        raise ValueError("current Standing carries no exact Measurement subject")
-    return standing
+        raise ValueError("current coordinates carry no exact Measurement subject")
+    return current_coordinates
 
 
 def _carry_recorded_events(
     ledger: EventLedger,
-    standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     events: tuple[Event, ...],
 ) -> dict[str, Any]:
-    """Advance through the exact new occurrences using the Standing reader.
+    """Advance current coordinates through the exact recorded occurrences.
 
-    Standing deliberately does not count every durable lifecycle occurrence.
-    Keeping a second partial implementation here made its carried coordinates
-    agree with replay while its boundary count did not.  The existing bounded
-    advance is the exact contract and does not reread the earlier Locality.
+    Current coordinates do not include every durable lifecycle occurrence.
+    Keeping a second partial reader here made the coordinates agree with replay
+    while the boundary count did not. The bounded advance is the exact contract
+    and does not read the earlier Locality again.
     """
 
     from seed_runtime.operator_current_coordinates import (
@@ -857,12 +856,12 @@ def _carry_recorded_events(
     )
 
     if not events:
-        return standing
+        return current_coordinates
     return advance_operator_current_coordinates(
         ledger,
         (event.identity for event in events),
         locality_identity=events[0].locality_identity,
-        prior=standing,
+        prior=current_coordinates,
     )
 
 
@@ -1540,7 +1539,7 @@ def _record_source_position_measurements(
         ledger, direct_result_event_identity, _validated=validated
     )
     locality_identity = direct_coordinates[0]["locality_identity"]
-    standing = _require_current_measurement_subject(
+    current_coordinates = _require_current_measurement_subject(
         ledger,
         locality_identity=locality_identity,
         measurement_result_event_identity=direct_result_event_identity,
@@ -1612,7 +1611,7 @@ def _record_source_position_measurements(
         direct_result_event_identity,
         tuple(steps),
         True,
-        _carry_recorded_events(ledger, standing, new_events),
+        _carry_recorded_events(ledger, current_coordinates, new_events),
     )
 
 
@@ -1707,7 +1706,7 @@ def _record_corresponding_coordinate_material_measurements(
     ledger: EventLedger,
     *,
     recurrence_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> CorrespondingCoordinateMeasurements:
     """Measure material at every corresponding exact source position."""
 
@@ -1717,11 +1716,11 @@ def _record_corresponding_coordinate_material_measurements(
         message="coordinate Measurement requires an exact recurrence result",
     )
     locality_identity = recurrence_event.locality_identity
-    standing = _require_current_measurement_subject(
+    current_coordinates = _require_current_measurement_subject(
         ledger,
         locality_identity=locality_identity,
         measurement_result_event_identity=recurrence_result_event_identity,
-        locality_standing=locality_standing,
+        current_coordinates=current_coordinates,
     )
     locality_event_count = len(ledger.list_locality(locality_identity))
     validated: dict[tuple[str, str], Any] = {}
@@ -1765,7 +1764,7 @@ def _record_corresponding_coordinate_material_measurements(
     new_events = tuple(ledger.list_locality(locality_identity)[locality_event_count:])
     return CorrespondingCoordinateMeasurements(
         tuple(recorded),
-        _carry_recorded_events(ledger, standing, new_events),
+        _carry_recorded_events(ledger, current_coordinates, new_events),
     )
 
 
@@ -1773,7 +1772,7 @@ def record_corresponding_coordinate_material_measurements(
     ledger: EventLedger,
     *,
     recurrence_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> CorrespondingCoordinateMeasurements:
     """Record all corresponding-coordinate Measurement results."""
 
@@ -1781,7 +1780,7 @@ def record_corresponding_coordinate_material_measurements(
         return _record_corresponding_coordinate_material_measurements(
             ledger,
             recurrence_result_event_identity=recurrence_result_event_identity,
-            locality_standing=locality_standing,
+            current_coordinates=current_coordinates,
         )
 
 
@@ -2052,7 +2051,7 @@ def _coordinate_measurements_for_recurrence(
     *,
     recurrence_event: Event,
     recurrence: dict[str, Any],
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     _validated: dict[tuple[str, str], Any] | None = None,
 ) -> dict[str, tuple[Event, dict[str, Any]]]:
     recurrent_groups = {
@@ -2060,7 +2059,7 @@ def _coordinate_measurements_for_recurrence(
         for finding in recurrence["findings"]
         if "recurrence" in finding
     }
-    carried_measurements = locality_standing.get("measurement_occurrences")
+    carried_measurements = current_coordinates.get("measurement_occurrences")
     if type(carried_measurements) is not dict:
         raise ValueError("exact-material Measurement requires current Measurement results")
     found: dict[str, tuple[Event, dict[str, Any]]] = {}
@@ -2096,18 +2095,18 @@ def _record_recurrent_result_material_measurements(
     ledger: EventLedger,
     *,
     recurrence_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> RecurrentResultMaterialMeasurements:
     recurrence_event = _recorded_occurrence(
         ledger,
         recurrence_result_event_identity,
         message="exact-material Measurement requires one exact recurrence result",
     )
-    standing = _require_current_measurement_subject(
+    current_coordinates = _require_current_measurement_subject(
         ledger,
         locality_identity=recurrence_event.locality_identity,
         measurement_result_event_identity=recurrence_event.identity,
-        locality_standing=locality_standing,
+        current_coordinates=current_coordinates,
     )
     validated: dict[tuple[str, str], Any] = {}
     recurrence = get_recorded_source_position_recurrence(
@@ -2117,7 +2116,7 @@ def _record_recurrent_result_material_measurements(
         ledger,
         recurrence_event=recurrence_event,
         recurrence=recurrence,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
         _validated=validated,
     )
     for event in ledger.list_locality(recurrence_event.locality_identity):
@@ -2178,7 +2177,8 @@ def _record_recurrent_result_material_measurements(
         ]
     )
     return RecurrentResultMaterialMeasurements(
-        tuple(recorded), _carry_recorded_events(ledger, standing, new_events)
+        tuple(recorded),
+        _carry_recorded_events(ledger, current_coordinates, new_events),
     )
 
 
@@ -2186,7 +2186,7 @@ def record_recurrent_result_material_measurements(
     ledger: EventLedger,
     *,
     recurrence_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> RecurrentResultMaterialMeasurements:
     """Measure exact material shared by every exact recurrent result."""
 
@@ -2194,7 +2194,7 @@ def record_recurrent_result_material_measurements(
         return _record_recurrent_result_material_measurements(
             ledger,
             recurrence_result_event_identity=recurrence_result_event_identity,
-            locality_standing=locality_standing,
+            current_coordinates=current_coordinates,
         )
 
 
