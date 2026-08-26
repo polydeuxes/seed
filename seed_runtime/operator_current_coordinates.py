@@ -65,11 +65,11 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_KIND,
-    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     _occurrence_position_result_material,
     _position_assertions,
-    _require_carried_occurrence_position_assignment,
-    get_occurrence_position_measurement_responsibility_assignment,
+    _require_carried_occurrence_position_binding,
+    get_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_occurrence_position_measurement,
 )
 from seed_runtime.yield_relation import (
@@ -414,7 +414,7 @@ _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
 }
 _MEASUREMENT_BINDING_KINDS = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
@@ -1403,9 +1403,9 @@ def advance_operator_current_coordinates(
             continue
         if (
             event.kind
-            == OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            == OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_occurrence_position_measurement_responsibility_assignment(
+            get_occurrence_position_measurement_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
@@ -2472,7 +2472,7 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
     return current_coordinates, exact
 
 
-def _carry_occurrence_position_measurement_assignment_into_current_coordinates(
+def _carry_occurrence_position_measurement_binding_into_current_coordinates(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
@@ -2480,7 +2480,7 @@ def _carry_occurrence_position_measurement_assignment_into_current_coordinates(
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Carry the occurrence-position assignment into current coordinates."""
+    """Carry the occurrence-position binding into current coordinates."""
 
     if (
         type(current_coordinates) is not dict
@@ -2489,28 +2489,28 @@ def _carry_occurrence_position_measurement_assignment_into_current_coordinates(
         != prior_through_event_occurrence_identity
     ):
         raise ValueError(
-            "occurrence position assignment must follow its carried finding"
+            "occurrence position binding must follow its carried finding"
         )
-    _require_carried_occurrence_position_assignment(
+    _require_carried_occurrence_position_binding(
         ledger,
-        responsibility_assignment=event,
+        binding=event,
         finding=finding,
     )
-    assignments = current_coordinates.get("subject_to_act_binding_occurrences")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     event_count = current_coordinates.get("event_count")
     if (
-        type(assignments) is not dict
-        or event.identity in assignments
+        type(bindings) is not dict
+        or event.identity in bindings
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("occurrence position assignment coordinates are not exact")
+        raise ValueError("occurrence position binding coordinates are not exact")
     coordinate_additions = _exact_current_coordinate_additions(
         current_coordinates,
         event,
-        error_message="occurrence position assignment coordinates are not exact",
+        error_message="occurrence position binding coordinates are not exact",
     )
-    assignments[event.identity] = None
+    bindings[event.identity] = None
     for key, added in coordinate_additions.items():
         for value in added:
             _record_distinct(current_coordinates[key], value)
@@ -2525,17 +2525,17 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     event,
     *,
     act_occurrence,
-    responsibility_assignment,
+    binding,
     finding,
 ) -> dict[str, Any]:
-    """Carry the occurrence-position result produced beside its exact Act."""
+    """Carry the occurrence-position result produced by its exact Act."""
 
     measurements = (
         current_coordinates.get("measurement_occurrences")
         if type(current_coordinates) is dict
         else None
     )
-    assignments = (
+    bindings = (
         current_coordinates.get("subject_to_act_binding_occurrences")
         if type(current_coordinates) is dict
         else None
@@ -2548,7 +2548,7 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     assertions = _position_assertions(finding)
     result_material = _occurrence_position_result_material(
         finding,
-        assignment=responsibility_assignment,
+        binding=binding,
         assertions=assertions,
     )
     expected = {
@@ -2571,15 +2571,15 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
         requirements = {}
     if (
         event.kind != OCCURRENCE_POSITION_RECORDED_KIND
-        or event.locality_identity != responsibility_assignment.locality_identity
+        or event.locality_identity != binding.locality_identity
         or event.material != expected
         or current_coordinates.get("locality_identity") != event.locality_identity
         or current_coordinates.get("through_event_occurrence_identity")
         != act_occurrence.identity
         or type(measurements) is not dict
         or event.identity in measurements
-        or type(assignments) is not dict
-        or responsibility_assignment.identity not in assignments
+        or type(bindings) is not dict
+        or binding.identity not in bindings
         or yield_relation is None
         or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
         or yield_relation.material.get("occurrence_boundary")

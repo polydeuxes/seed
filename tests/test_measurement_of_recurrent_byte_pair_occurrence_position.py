@@ -39,7 +39,7 @@ from seed_runtime.operator_current_coordinates import (
 )
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
-    record_occurrence_position_measurement_responsibility_assignment,
+    record_occurrence_position_measurement_subject_to_act_binding,
 )
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
@@ -295,11 +295,11 @@ def test_binding_read_refuses_a_corrupted_unrelated_coordinate_carrier():
     occurrence_finding = measure_occurrence_position(
         ledger, source_locality_identity=locality
     )
-    unrelated = record_occurrence_position_measurement_responsibility_assignment(
+    unrelated = record_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         recording_locality_identity=locality,
         finding=occurrence_finding,
-        locality_standing=read_operator_current_coordinates(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
     )

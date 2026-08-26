@@ -11,7 +11,7 @@ from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
-    record_occurrence_position_measurement_responsibility_assignment,
+    record_occurrence_position_measurement_subject_to_act_binding,
     record_occurrence_position_measurement_act_occurrence,
     record_occurrence_position_measurement_result,
 )
@@ -69,11 +69,11 @@ def acquired_source_attributed_witness_material():
         through=boundary,
     )
     position_assignment = (
-        record_occurrence_position_measurement_responsibility_assignment(
+        record_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             recording_locality_identity="source-attributed-witness-material",
             finding=positions,
-            locality_standing=read_operator_current_coordinates(
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="source-attributed-witness-material"
             ),
         )
@@ -81,8 +81,8 @@ def acquired_source_attributed_witness_material():
     position_act_occurrence = (
         record_occurrence_position_measurement_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=position_assignment.identity,
-            responsibility_assignment_standing=read_operator_current_coordinates(
+            binding_event_identity=position_assignment.identity,
+            current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="source-attributed-witness-material"
             ),
         )
