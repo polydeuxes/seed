@@ -7,7 +7,7 @@ from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.declared_measurements import (
-    record_declared_measurements_from_current_bounded_locality_replay,
+    record_declared_measurements_from_current_coordinates,
 )
 
 
@@ -32,16 +32,16 @@ def test_book_material_acquisition_locality_exposes_declared_measurements():
         result.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         for result in acquisition_results
     )
-    bounded_replay = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="book-material"
     )
-    assert bounded_replay["material_locality_relation_occurrences"]
-    assert bounded_replay["measurement_occurrences"] == {}
-    recorded = record_declared_measurements_from_current_bounded_locality_replay(
+    assert current_coordinates["material_locality_relation_occurrences"]
+    assert current_coordinates["measurement_occurrences"] == {}
+    recorded = record_declared_measurements_from_current_coordinates(
         ledger, locality_identity="book-material"
     )
     assert recorded.result_occurrences
     assert len(recorded.result_occurrences) == len(acquisition_results) + 1
-    assert set(recorded.bounded_locality_replay["measurement_occurrences"]) == {
+    assert set(recorded.current_coordinates["measurement_occurrences"]) == {
         result.identity for result in recorded.result_occurrences
     }

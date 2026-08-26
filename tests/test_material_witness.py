@@ -20,7 +20,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from seed_runtime.declared_measurements import (
-    record_declared_measurements_from_current_bounded_locality_replay,
+    record_declared_measurements_from_current_coordinates,
 )
 
 
@@ -539,28 +539,28 @@ def test_book_witness_material_locality_is_available_before_measurement(
     book_material_acquisitions,
 ):
     ledger, _supplied_material, acquisition_results = book_material_acquisitions
-    bounded_replay = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="book-material"
     )
 
     assert tuple(
         occurrence["result_occurrence_identity"]
-        for occurrence in bounded_replay["material_result_occurrences"]
+        for occurrence in current_coordinates["material_result_occurrences"]
     ) == tuple(result.identity for result in acquisition_results)
-    assert bounded_replay["material_locality_relation_occurrences"] == {
+    assert current_coordinates["material_locality_relation_occurrences"] == {
         result.identity: {
             "locality_relation": result.material["locality_relation"]
         }
         for result in acquisition_results
     }
-    assert bounded_replay["measurement_occurrences"] == {}
+    assert current_coordinates["measurement_occurrences"] == {}
 
 
 def test_book_witness_locality_records_declared_measurements(
     book_material_acquisitions,
 ):
     ledger, _supplied_material, _acquisition_results = book_material_acquisitions
-    recorded = record_declared_measurements_from_current_bounded_locality_replay(
+    recorded = record_declared_measurements_from_current_coordinates(
         ledger, locality_identity="book-material"
     )
 

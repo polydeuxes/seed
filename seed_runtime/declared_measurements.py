@@ -1,6 +1,6 @@
 """Record all Measurement subjects declared through B.
 
-All subjects are read once from one exact bounded Locality replay. Each binding
+All subjects are read once from one exact current-coordinate projection. Each binding
 preserves that same through-occurrence boundary; durable writes remain serial
 without making an earlier Measurement lifecycle an input to a later binding.
 """
@@ -61,13 +61,13 @@ DeclaredMeasurementSubject = (
 
 
 class RecordedDeclaredMeasurements(NamedTuple):
-    bounded_locality_replay: dict[str, Any]
+    current_coordinates: dict[str, Any]
     result_occurrences: tuple[Event, ...]
 
 
 def _advance(
     ledger: EventLedger,
-    recording_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event_identities: tuple[str, ...],
     *,
     locality_identity: str,
@@ -76,13 +76,13 @@ def _advance(
         ledger,
         event_identities,
         locality_identity=locality_identity,
-        prior=recording_replay,
+        prior=current_coordinates,
     )
 
 
-def _require_current_replay_boundary(
+def _require_current_coordinate_boundary(
     ledger: EventLedger,
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     *,
     locality_identity: str,
 ) -> None:
@@ -90,25 +90,24 @@ def _require_current_replay_boundary(
         not isinstance(ledger, EventLedger)
         or type(locality_identity) is not str
         or not locality_identity
-        or type(bounded_locality_replay) is not dict
-        or bounded_locality_replay.get("locality_identity") != locality_identity
+        or type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != locality_identity
         or type(
-            bounded_locality_replay.get(
+            current_coordinates.get(
                 "material_result_occurrences"
             )
         )
         is not list
-        or type(bounded_locality_replay.get("measurement_occurrences")) is not dict
+        or type(current_coordinates.get("measurement_occurrences")) is not dict
         or type(
-            bounded_locality_replay.get("subject_to_act_binding_occurrences")
+            current_coordinates.get("subject_to_act_binding_occurrences")
         )
         is not dict
     ):
         raise ValueError(
-            "declared Measurement recording requires exact current bounded "
-            "Locality replay"
+            "declared Measurement recording requires exact current coordinates"
         )
-    boundary = bounded_locality_replay.get("through_event_occurrence_identity")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
     event = ledger.get(boundary) if type(boundary) is str and boundary else None
     locality_events = (
         ledger.list_locality(locality_identity) if event is not None else ()
@@ -121,27 +120,26 @@ def _require_current_replay_boundary(
         or locality_events[-1].identity != event.identity
     ):
         raise ValueError(
-            "declared Measurement recording requires the current bounded "
-            "Locality replay boundary"
+            "declared Measurement recording requires the exact current boundary"
         )
 
 
 def _material_result_identities(
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> tuple[str, ...]:
     return _material_result_identities_with_exact_locality_from_bounded_replay(
-        bounded_locality_replay
+        current_coordinates
     )
 
 
 def _discover_direct_measurements(
     ledger: EventLedger,
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     locality_identity: str,
 ) -> tuple[PositionCoordinateMeasurementSubject, ...]:
     sources = _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
         ledger,
-        bounded_locality_replay,
+        current_coordinates,
         locality_identity=locality_identity,
     )
     return tuple(
@@ -154,16 +152,16 @@ def _discover_direct_measurements(
 
 def _complete_direct_measurement(
     ledger: EventLedger,
-    recording_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     locality_identity: str,
     binding: Event,
     finding,
 ) -> tuple[dict[str, Any], Event]:
-    prior_boundary = recording_replay["through_event_occurrence_identity"]
-    recording_replay = (
+    prior_boundary = current_coordinates["through_event_occurrence_identity"]
+    current_coordinates = (
         _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates(
             ledger,
-            recording_replay,
+            current_coordinates,
             binding,
             finding,
             prior_through_event_occurrence_identity=prior_boundary,
@@ -173,11 +171,11 @@ def _complete_direct_measurement(
         ledger,
         binding=binding,
         finding=finding,
-        binding_current_coordinates=recording_replay,
+        binding_current_coordinates=current_coordinates,
     )
-    recording_replay = _advance(
+    current_coordinates = _advance(
         ledger,
-        recording_replay,
+        current_coordinates,
         (act.identity,),
         locality_identity=locality_identity,
     )
@@ -187,19 +185,19 @@ def _complete_direct_measurement(
         binding=binding,
         finding=finding,
     )
-    recording_replay = (
+    current_coordinates = (
         _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
-            recording_replay,
+            current_coordinates,
             result,
             prior_through_event_occurrence_identity=act.identity,
         )
     )
-    return recording_replay, result
+    return current_coordinates, result
 
 
 def _record_direct_measurement(
     ledger: EventLedger,
-    recording_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     through_occurrence_coordinates: dict[str, Any],
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
@@ -223,7 +221,7 @@ def _record_direct_measurement(
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return _complete_direct_measurement(
-        ledger, recording_replay, locality_identity, binding, finding
+        ledger, current_coordinates, locality_identity, binding, finding
     )
 
 
@@ -256,10 +254,10 @@ def _byte_binding_source_sets(
 
 def _discover_byte_measurements(
     ledger: EventLedger,
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     locality_identity: str,
 ) -> tuple[ExactByteOccurrenceMeasurementSubject, ...]:
-    current_sources = _material_result_identities(bounded_locality_replay)
+    current_sources = _material_result_identities(current_coordinates)
     if not current_sources:
         return ()
     if current_sources in _byte_binding_source_sets(ledger, locality_identity):
@@ -269,12 +267,12 @@ def _discover_byte_measurements(
 
 def _require_exact_byte_occurrence_measurement_subject(
     ledger: EventLedger,
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     subject: DeclaredMeasurementSubject,
 ) -> tuple[str, ...]:
     if type(subject) is not ExactByteOccurrenceMeasurementSubject:
         raise ValueError("exact-byte Measurement requires its exact subject")
-    current_sources = _material_result_identities(bounded_locality_replay)
+    current_sources = _material_result_identities(current_coordinates)
     if subject.source_material_result_occurrence_identities != current_sources:
         raise ValueError(
             "exact-byte Measurement subject differs from the current material-result set"
@@ -284,15 +282,15 @@ def _require_exact_byte_occurrence_measurement_subject(
 
 def _complete_byte_measurement(
     ledger: EventLedger,
-    recording_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     locality_identity: str,
     binding: Event,
     through_occurrence_coordinates: dict[str, Any],
 ) -> tuple[dict[str, Any], Event]:
-    prior_boundary = recording_replay["through_event_occurrence_identity"]
-    recording_replay = _carry_byte_measurement_binding_into_current_coordinates(
+    prior_boundary = current_coordinates["through_event_occurrence_identity"]
+    current_coordinates = _carry_byte_measurement_binding_into_current_coordinates(
         ledger,
-        recording_replay,
+        current_coordinates,
         binding,
         prior_through_event_occurrence_identity=prior_boundary,
         through_occurrence_coordinates=through_occurrence_coordinates,
@@ -300,11 +298,11 @@ def _complete_byte_measurement(
     act = _record_byte_measurement_act_occurrence_from_carried_coordinates(
         ledger,
         subject_to_act_binding=binding,
-        current_coordinates=recording_replay,
+        current_coordinates=current_coordinates,
     )
-    recording_replay = _advance(
+    current_coordinates = _advance(
         ledger,
-        recording_replay,
+        current_coordinates,
         (act.identity,),
         locality_identity=locality_identity,
     )
@@ -312,23 +310,23 @@ def _complete_byte_measurement(
         ledger,
         act_occurrence=act,
         subject_to_act_binding=binding,
-        current_coordinates=recording_replay,
+        current_coordinates=current_coordinates,
     )
-    recording_replay = _advance(
+    current_coordinates = _advance(
         ledger,
-        recording_replay,
+        current_coordinates,
         (
             result.material["yield_relation_identity"],
             result.identity,
         ),
         locality_identity=locality_identity,
     )
-    return recording_replay, result
+    return current_coordinates, result
 
 
 def _record_byte_measurement(
     ledger: EventLedger,
-    recording_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     through_occurrence_coordinates: dict[str, Any],
     locality_identity: str,
     subject: DeclaredMeasurementSubject,
@@ -347,7 +345,7 @@ def _record_byte_measurement(
     )
     return _complete_byte_measurement(
         ledger,
-        recording_replay,
+        current_coordinates,
         locality_identity,
         binding,
         through_occurrence_coordinates,
@@ -368,18 +366,18 @@ _DECLARED_MEASUREMENTS = (
 )
 
 
-def _record_declared_measurements_from_carried_bounded_locality_replay(
+def _record_declared_measurements_from_carried_current_coordinates(
     ledger: EventLedger,
-    bounded_locality_replay: dict[str, Any],
+    current_coordinates: dict[str, Any],
     *,
     locality_identity: str,
 ) -> RecordedDeclaredMeasurements:
     """Record every exact subject carried through one exact occurrence."""
 
-    through_occurrence_coordinates = bounded_locality_replay
-    recording_replay = deepcopy(bounded_locality_replay)
+    through_occurrence_coordinates = current_coordinates
+    current_coordinates = deepcopy(current_coordinates)
     results: list[Event] = []
-    _require_current_replay_boundary(
+    _require_current_coordinate_boundary(
         ledger,
         through_occurrence_coordinates,
         locality_identity=locality_identity,
@@ -394,14 +392,14 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         )
     )
     for result_kind, record, subject in complete_subjects:
-        _require_current_replay_boundary(
+        _require_current_coordinate_boundary(
             ledger,
-            recording_replay,
+            current_coordinates,
             locality_identity=locality_identity,
         )
-        recording_replay, result = record(
+        current_coordinates, result = record(
             ledger,
-            recording_replay,
+            current_coordinates,
             through_occurrence_coordinates,
             locality_identity,
             subject,
@@ -409,22 +407,22 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         if result.kind != result_kind:
             raise ValueError("declared Measurement recorded another result kind")
         results.append(result)
-    return RecordedDeclaredMeasurements(recording_replay, tuple(results))
+    return RecordedDeclaredMeasurements(current_coordinates, tuple(results))
 
 
-def record_declared_measurements_from_current_bounded_locality_replay(
+def record_declared_measurements_from_current_coordinates(
     ledger: EventLedger,
     *,
     locality_identity: str,
 ) -> RecordedDeclaredMeasurements:
-    """Read one bounded Locality replay and record all exact subjects."""
+    """Read current coordinates once and record all exact subjects."""
 
-    bounded_locality_replay = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger,
         locality_identity=locality_identity,
     )
-    return _record_declared_measurements_from_carried_bounded_locality_replay(
+    return _record_declared_measurements_from_carried_current_coordinates(
         ledger,
-        bounded_locality_replay,
+        current_coordinates,
         locality_identity=locality_identity,
     )

@@ -80,7 +80,7 @@ from seed_runtime.source_position_determination_path_and_comparison import (
     yield_source_position_determinations_paths_and_comparisons,
 )
 from seed_runtime.declared_measurements import (
-    _record_declared_measurements_from_carried_bounded_locality_replay,
+    _record_declared_measurements_from_carried_current_coordinates,
 )
 from seed_runtime.supplied_invocation_material import (
     OperatorInvocationProvider,
@@ -176,7 +176,7 @@ def _record_occurrence_position_after_declared_measurements(
         raise ValueError(
             "one exact-byte Measurement is required through this occurrence boundary"
         )
-    current_coordinates = recorded.bounded_locality_replay
+    current_coordinates = recorded.current_coordinates
     direct_measurements = tuple(
         event
         for event in recorded.result_occurrences
@@ -197,17 +197,17 @@ def _record_occurrence_position_after_declared_measurements(
     return current_coordinates, byte_measurements[0]
 
 
-def _record_measurements_from_bounded_locality_replay(
+def _record_measurements_from_current_coordinates(
     ledger,
-    bounded_locality_replay,
+    current_coordinates,
     *,
     locality_identity,
 ):
     """Record declared Measurements, then the explicit Locality road."""
 
-    recorded = _record_declared_measurements_from_carried_bounded_locality_replay(
+    recorded = _record_declared_measurements_from_carried_current_coordinates(
         ledger,
-        bounded_locality_replay,
+        current_coordinates,
         locality_identity=locality_identity,
     )
     return _record_occurrence_position_after_declared_measurements(
@@ -245,7 +245,7 @@ def _record_pair_measurements_after_declared_measurements(
 ):
     """Record each pair Measurement whose exact-byte result was just recorded."""
 
-    current_coordinates = recorded.bounded_locality_replay
+    current_coordinates = recorded.current_coordinates
     pair_measurements = []
     for byte_measurement in recorded.result_occurrences:
         if byte_measurement.kind != BYTE_MEASUREMENT_RECORDED_KIND:
@@ -505,7 +505,7 @@ def run_persistent_operator_console(
                 )
                 if command_material_reference not in measured_material_references:
                     current_coordinates, _byte_measurement = (
-                        _record_measurements_from_bounded_locality_replay(
+                        _record_measurements_from_current_coordinates(
                             ledger,
                             current_coordinates,
                             locality_identity=locality_identity,
@@ -598,7 +598,7 @@ def run_persistent_operator_console(
                 )
                 if supplied_material_reference not in measured_material_references:
                     recorded_witness_measurements = (
-                        _record_declared_measurements_from_carried_bounded_locality_replay(
+                        _record_declared_measurements_from_carried_current_coordinates(
                             ledger,
                             witness_current_coordinates,
                             locality_identity=invocation_locality_identity,
@@ -767,7 +767,7 @@ def run_persistent_operator_console(
             )
             if source_material_reference not in measured_material_references:
                 current_coordinates, byte_measurement = (
-                    _record_measurements_from_bounded_locality_replay(
+                    _record_measurements_from_current_coordinates(
                         ledger,
                         current_coordinates,
                         locality_identity=locality_identity,
