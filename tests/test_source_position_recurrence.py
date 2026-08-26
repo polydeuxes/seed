@@ -10,6 +10,7 @@ from seed_runtime.operator_current_coordinates import read_operator_current_coor
 from seed_runtime.source_position_recurrence import (
     get_recorded_recurrent_result_material_measurement,
     get_recorded_corresponding_coordinate_material_measurement,
+    get_recorded_source_position_compare,
     get_recorded_source_position_measurement,
     get_recorded_source_position_recurrence,
     iter_recurrent_coordinate_material_findings,
@@ -325,6 +326,81 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             recurrent[(1, 4), b"+"]["finding_position"],
         }
     ) == (((1, 4), 2),)
+
+
+def test_compare_applicability_addresses_the_exact_preceding_compare_binding():
+    ledger = EventLedger()
+    direct = _direct_result(
+        ledger,
+        locality="source-position-applicability-address",
+        exact=b"ab",
+    )
+    record_source_position_measurements(
+        ledger,
+        direct_result_event_identity=direct.identity,
+    )
+    compare_result = next(
+        event
+        for event in ledger.list_locality("source-position-applicability-address")
+        if event.kind == source_position_recurrence.COMPARE_RESULT_KIND
+    )
+    compare_reading = get_recorded_source_position_compare(
+        ledger, compare_result.identity
+    )
+    compare_act = ledger.get(
+        compare_result.material["act_occurrence_event_identity"]
+    )
+    compare_binding_reference = compare_act.material[
+        "subject_to_act_binding_reference"
+    ]
+    compare_binding = ledger.get(
+        compare_binding_reference["recorded_occurrence_identity"]
+    )
+    applicability_result = ledger.get(
+        compare_reading["applicability_result_reference"][
+            "recorded_occurrence_reference"
+        ]
+    )
+    applicability_act = ledger.get(
+        applicability_result.material["act_occurrence_event_identity"]
+    )
+    applicability_binding = ledger.get(
+        applicability_act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    applicability_subject = applicability_binding.material["subject_reference"]
+
+    assert applicability_subject == {
+        **compare_binding.material["subject_reference"],
+        "addressed_act_identity": compare_binding.material["exact_act_identity"],
+        "compare_subject_to_act_binding_reference": compare_binding_reference,
+    }
+    assert tuple(
+        event.identity
+        for event in ledger.occurrences_in_append_order(
+            (
+                compare_binding.identity,
+                applicability_binding.identity,
+                applicability_act.identity,
+                applicability_result.material["yield_relation_identity"],
+                applicability_result.identity,
+                compare_act.identity,
+                compare_result.material["yield_relation_identity"],
+                compare_result.identity,
+            ),
+            locality_identity="source-position-applicability-address",
+        )
+    ) == (
+        compare_binding.identity,
+        applicability_binding.identity,
+        applicability_act.identity,
+        applicability_result.material["yield_relation_identity"],
+        applicability_result.identity,
+        compare_act.identity,
+        compare_result.material["yield_relation_identity"],
+        compare_result.identity,
+    )
 
 
 def test_same_compare_surface_does_not_create_common_material():

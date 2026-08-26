@@ -583,6 +583,51 @@ def _record_yielded_result(
         result_identity=result_identity,
         subject=subject,
     )
+    return _record_yielded_result_from_binding(
+        ledger,
+        binding=binding,
+        act_kind=act_kind,
+        result_kind=result_kind,
+        exact_act=exact_act,
+        book_reference=book_reference,
+        occurrence_boundary=occurrence_boundary,
+        locality_identity=locality_identity,
+        act_payload=act_payload,
+        result_payload=result_payload,
+        result_exact_material=result_exact_material,
+    )
+
+
+def _record_yielded_result_from_binding(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    act_kind: str,
+    result_kind: str,
+    exact_act: str,
+    book_reference: str,
+    occurrence_boundary: str,
+    locality_identity: str,
+    act_payload: dict[str, Any],
+    result_payload: dict[str, Any],
+    result_exact_material: bytes | None = None,
+) -> tuple[Event, Event]:
+    subject = act_payload.get("subject")
+    _require_recorded_binding(ledger, binding)
+    if (
+        binding.kind != _ACT_SUBJECT_TO_ACT_BINDING_EVENTS.get(act_kind)
+        or binding.locality_identity != locality_identity
+        or binding.material.get("book_clause_identity") != book_reference
+        or binding.material.get("exact_act") != exact_act
+        or binding.material.get("subject_reference") != subject
+    ):
+        raise ValueError("source-position lifecycle requires its exact subject-to-Act binding")
+    through_event_occurrence_identity = binding.material[
+        "through_event_occurrence_identity"
+    ]
+    act_identity = binding.material["exact_act_identity"]
+    act_occurrence_identity = binding.material["act_occurrence_identity"]
+    result_identity = binding.material["result_boundary_identity"]
     binding_reference = _binding_reference(binding)
     act = _EVENT_APPENDERS[act_kind](
         ledger,
@@ -874,11 +919,39 @@ def _record_compare(
 ) -> Event:
     subject = _pair_subject(coordinates, pair)
     locality_identity = coordinates[0]["locality_identity"]
-    applicability_subject = {
+    compare_subject = {
         "direct_position_result_occurrence": direct_result_event_identity,
         "source_position_coordinates": list(coordinates),
         "compare_subject": subject,
         "prior_result_reference": prior_result_reference,
+    }
+    latest_locality_event = ledger.latest_locality_event(locality_identity)
+    if latest_locality_event is None:
+        raise ValueError("source-position Compare requires an exact Locality boundary")
+    compare_act_identity = ledger.mint_identity("source_position_compare_act")
+    compare_act_occurrence_identity = ledger.mint_identity(
+        "source_position_compare_act_occurrence"
+    )
+    compare_result_identity = ledger.mint_identity("source_position_compare_result")
+    compare_binding = _record_subject_to_act_binding(
+        ledger,
+        act_kind=COMPARE_ACT_KIND,
+        exact_act=COMPARE_ACT,
+        rule=COMPARE_RULE,
+        book_reference="04.Compare",
+        locality_identity=locality_identity,
+        through_event_occurrence_identity=latest_locality_event.identity,
+        act_identity=compare_act_identity,
+        act_occurrence_identity=compare_act_occurrence_identity,
+        result_identity=compare_result_identity,
+        subject=compare_subject,
+    )
+    applicability_subject = {
+        **compare_subject,
+        "addressed_act_identity": compare_act_identity,
+        "compare_subject_to_act_binding_reference": _binding_reference(
+            compare_binding
+        ),
     }
     _applicability_act, applicability = _record_yielded_result(
         ledger,
@@ -901,12 +974,10 @@ def _record_compare(
         == subject["second_source_position_coordinate"]["exact_material"]
         else "difference"
     )
-    compare_subject = {
-        **applicability_subject,
-        "applicability_result_reference": _result_reference(applicability),
-    }
-    _compare_act, result = _record_yielded_result(
+    applicability_result_reference = _result_reference(applicability)
+    _compare_act, result = _record_yielded_result_from_binding(
         ledger,
+        binding=compare_binding,
         act_kind=COMPARE_ACT_KIND,
         result_kind=COMPARE_RESULT_KIND,
         exact_act=COMPARE_ACT,
@@ -915,6 +986,7 @@ def _record_compare(
         locality_identity=locality_identity,
         act_payload={
             "subject": compare_subject,
+            "applicability_result_reference": applicability_result_reference,
             "participation_relations": [
                 {
                     "first_subject": subject["first_source_position_coordinate"],
@@ -930,12 +1002,12 @@ def _record_compare(
         },
         result_payload={
             "subject": compare_subject,
+            "applicability_result_reference": applicability_result_reference,
             "finding": {
                 "subject": subject,
                 "result": finding,
             },
         },
-        identity_prefix="source_position_compare",
     )
     return result
 
@@ -978,10 +1050,15 @@ def get_recorded_source_position_compare(
     )
     pair = _coordinate_numbers(coordinate_tuple, compare_subject)
     expected_pair_subject = _pair_subject(coordinate_tuple, pair)
+    applicability_result_reference = result_coordinates.get(
+        "applicability_result_reference"
+    )
     applicability = _recorded_occurrence(
         ledger,
-        subject.get("applicability_result_reference", {}).get(
-            "recorded_occurrence_reference"
+        (
+            applicability_result_reference.get("recorded_occurrence_reference")
+            if type(applicability_result_reference) is dict
+            else None
         ),
         message="source-position Compare carries no exact Applicability result",
     )
@@ -998,10 +1075,13 @@ def get_recorded_source_position_compare(
         == expected_pair_subject["second_source_position_coordinate"]["exact_material"]
         else "difference"
     )
+    compare_binding = _require_binding(ledger, act, result)
     expected_applicability_subject = {
-        key: deepcopy(value)
-        for key, value in subject.items()
-        if key != "applicability_result_reference"
+        **deepcopy(subject),
+        "addressed_act_identity": act.material["act_identity"],
+        "compare_subject_to_act_binding_reference": _binding_reference(
+            compare_binding
+        ),
     }
     prior_reference = subject.get("prior_result_reference")
     if prior_reference is None:
@@ -1036,8 +1116,7 @@ def get_recorded_source_position_compare(
     if (
         coordinate_tuple != expected_source
         or not exact_prior
-        or subject["applicability_result_reference"]
-        != _result_reference(applicability)
+        or applicability_result_reference != _result_reference(applicability)
         or _coordinates(applicability.material).get("subject")
         != expected_applicability_subject
         or _coordinates(applicability.material).get("applicability")
@@ -1045,6 +1124,8 @@ def get_recorded_source_position_compare(
         or _coordinates(applicability_act.material).get("subject")
         != expected_applicability_subject
         or _coordinates(act.material).get("subject") != subject
+        or _coordinates(act.material).get("applicability_result_reference")
+        != applicability_result_reference
         or not exact_participation
         or type(finding) is not dict
         or finding.get("subject") != expected_pair_subject
