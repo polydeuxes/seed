@@ -10,7 +10,6 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_COORDINATES,
-    MEASURED_ASSERTION_RESPONSIBILITY,
     OccurrencePositionFinding,
     get_occurrence_position_measurement_responsibility_assignment,
     get_recorded_occurrence_position_measurement,
@@ -220,9 +219,6 @@ def test_recorded_position_measurement_has_exact_act_and_yield_relation():
     assert act_occurrence.material["act_occurrence_identity"] == recorded.material[
         "act_occurrence_identity"
     ]
-    assert act_occurrence.material["responsibility_assignment"] == (
-        recorded.material["responsibility_assignment"]
-    )
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=recorded.identity,
@@ -631,10 +627,6 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
     assert len({item["dimensions"]["identity"] for item in assertions}) == len(
         assertions
     )
-    assert {
-        item["dimensions"]["responsibility"] for item in assertions
-    } == {MEASURED_ASSERTION_RESPONSIBILITY}
-    assert all("standing" not in item["dimensions"] for item in assertions)
     assert _standing(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
         "result_identity": recorded.material["result_identity"],

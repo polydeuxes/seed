@@ -25,15 +25,9 @@ OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT = (
 )
 OCCURRENCE_POSITION_RESULT_KIND = "occurrence position Measurement result"
 OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
-OCCURRENCE_POSITION_RESPONSIBILITY = (
-    "establish each occurrence position within one exact Locality and boundary"
-)
 OCCURRENCE_POSITION_MEASUREMENT_RULE = (
     "preserve each exact occurrence in one exact Locality with its source-order "
     "position coordinate within one completeness boundary"
-)
-MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve this measured Assertion's carried Standing coordinates"
 )
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
@@ -41,9 +35,6 @@ OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
         "addressed_act_identity",
         "act_occurrence_identity",
         "exact_act",
-        "responsibility",
-        "responsible_boundary",
-        "responsibility_assignment",
         "responsibility_assignment_reference",
         "measurement_rule",
         "source_localities",
@@ -153,9 +144,6 @@ def _occurrence_position_result_material(
         "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
-        "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment": _responsibility_assignment(finding),
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
@@ -163,20 +151,6 @@ def _occurrence_position_result_material(
             "identity": finding.completeness_boundary.identity,
         },
         "assertions": assertions,
-    }
-
-
-def _responsibility_assignment(
-    finding: OccurrencePositionFinding,
-) -> dict[str, Any]:
-    return {
-        "responsible_boundary": "this Seed",
-        "source_occurrence_references": [
-            {"occurrence_identity": identity}
-            for identity, _position in finding.occurrences
-        ],
-        "completeness_boundary": finding.completeness_boundary.identity,
-        "determination": OCCURRENCE_POSITION_MEASUREMENT_RULE,
     }
 
 
@@ -213,9 +187,6 @@ def _assignment_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment": _responsibility_assignment(finding),
         "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -277,10 +248,7 @@ def _position_assertions(
                     "source_provenance": (
                         "complete exact Locality through one boundary"
                     ),
-                    "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
                 },
-                "subject_kind": "assertion",
-                "responsible_boundary": "this recorded assertion",
                 "result": "position",
                 "assertion_subject": subject,
                 "assertion_scope": scope,
@@ -349,9 +317,6 @@ def _occurrence_position_act_occurrence_material(
         "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": OCCURRENCE_POSITION_ACT,
-        "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment": _responsibility_assignment(finding),
         "responsibility_assignment_reference": _assignment_reference(assignment),
         "source_locality_identity": finding.source_locality_identity,
         "participation": participation,
@@ -953,11 +918,6 @@ def _record_occurrence_position_measurement_result(
         "addressed_act_identity": result_material["addressed_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
-        "responsibility": result_material["responsibility"],
-        "responsible_boundary": result_material["responsible_boundary"],
-        "responsibility_assignment": result_material[
-            "responsibility_assignment"
-        ],
         "responsibility_assignment_reference": result_material[
             "responsibility_assignment_reference"
         ],
@@ -1077,8 +1037,6 @@ def get_recorded_occurrence_position_measurement(
     boundary = material.get("completeness_boundary")
     if (
         material.get("exact_act") != OCCURRENCE_POSITION_ACT
-        or material.get("responsibility") != OCCURRENCE_POSITION_RESPONSIBILITY
-        or material.get("responsible_boundary") != "this Seed"
         or material.get("measurement_rule")
         != OCCURRENCE_POSITION_MEASUREMENT_RULE
         or type(source_localities) is not list
