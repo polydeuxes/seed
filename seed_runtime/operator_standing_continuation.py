@@ -24,8 +24,8 @@ from seed_runtime.yield_relation import (
 STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT = (
     "operator.standing.locality_continuation_act_occurrence_recorded"
 )
-STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.standing.locality_continuation_responsibility_assignment_recorded"
+STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.standing.locality_continuation_subject_to_act_binding_recorded"
 )
 STANDING_LOCALITY_CONTINUATION_RECORDED_KIND = (
     "operator.standing.locality_continuation_recorded"
@@ -38,7 +38,7 @@ STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact prior Locality Standing boundary"
 )
 EVENT_KIND_RESPONSIBILITIES = {
-    STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.B"
     ),
     STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -108,7 +108,7 @@ def _participation(
     }
 
 
-def _assignment_material(
+def _binding_material(
     *,
     exact_act_identity: str,
     result_boundary_identity: str,
@@ -138,13 +138,13 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, Any]:
+def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "exact_act_identity": assignment.material["exact_act_identity"],
-        "subject_reference": deepcopy(assignment.material["subject_reference"]),
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
@@ -252,13 +252,13 @@ def _recorded_result_material(
     }
 
 
-def record_standing_locality_continuation_responsibility_assignment(
+def record_standing_locality_continuation_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
     standing_boundary_event_identity: str,
 ) -> Event:
-    """Record one bounded assignment at one fresh destination Locality."""
+    """Bind one source-boundary Locality relation to its exact Act."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("Standing Locality continuation requires one EventLedger")
@@ -277,8 +277,8 @@ def record_standing_locality_continuation_responsibility_assignment(
         "standing_locality_continuation_result_boundary"
     )
     return ledger.append(
-        STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _assignment_material(
+        STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
             exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
             source_standing_reference=source_reference,
@@ -291,34 +291,33 @@ def record_standing_locality_continuation_responsibility_assignment(
 def record_standing_locality_continuation_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record one Act from one exact prior carried assignment Standing."""
+    """Record one Act from one exact carried subject-to-Act binding."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("Standing Locality continuation requires one EventLedger")
-    assignment = get_standing_locality_continuation_responsibility_assignment(
-        ledger, responsibility_assignment_event_identity
+    binding = get_standing_locality_continuation_subject_to_act_binding(
+        ledger, subject_to_act_binding_event_identity
     )
-    if type(responsibility_assignment_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires carried assignment Standing"
+            "Standing Locality continuation Act requires current coordinates"
         )
-    assignment_occurrences = responsibility_assignment_standing.get(
+    binding_occurrences = current_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
     if (
-        responsibility_assignment_standing.get("locality_identity")
-        != assignment.locality_identity
-        or type(assignment_occurrences) is not dict
-        or assignment.identity not in assignment_occurrences
-        or assignment_occurrences[assignment.identity] is not None
+        current_coordinates.get("locality_identity") != binding.locality_identity
+        or type(binding_occurrences) is not dict
+        or binding.identity not in binding_occurrences
+        or binding_occurrences[binding.identity] is not None
     ):
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires its exact prior carried assignment"
+            "Standing Locality continuation Act requires its exact carried binding"
         )
-    standing_boundary = responsibility_assignment_standing.get(
+    standing_boundary = current_coordinates.get(
         "through_event_occurrence_identity"
     )
     standing_boundary_event = ledger.get(standing_boundary)
@@ -326,25 +325,25 @@ def record_standing_locality_continuation_act_occurrence(
         type(standing_boundary) is not str
         or not standing_boundary
         or standing_boundary_event is None
-        or standing_boundary_event.locality_identity != assignment.locality_identity
+        or standing_boundary_event.locality_identity != binding.locality_identity
     ):
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires one exact assignment Standing boundary"
+            "Standing Locality continuation Act requires one exact current-coordinate boundary"
         )
-    if standing_boundary != assignment.identity:
+    if standing_boundary != binding.identity:
         try:
             ledger.occurrences_in_append_order(
-                (assignment.identity, standing_boundary),
-                locality_identity=assignment.locality_identity,
+                (binding.identity, standing_boundary),
+                locality_identity=binding.locality_identity,
             )
         except ValueError as error:
             raise StandingLocalityContinuationError(
-                "Standing Locality continuation Act requires a prior assignment occurrence"
+                "Standing Locality continuation Act requires its prior binding occurrence"
             ) from error
 
-    source_reference = assignment.material["subject_reference"]
-    destination_locality_identity = assignment.locality_identity
-    continuation_act_identity = assignment.material["exact_act_identity"]
+    source_reference = binding.material["subject_reference"]
+    destination_locality_identity = binding.locality_identity
+    continuation_act_identity = binding.material["exact_act_identity"]
     act_occurrence_identity = new_identity(
         "standing_locality_continuation_occurrence"
     )
@@ -359,7 +358,7 @@ def record_standing_locality_continuation_act_occurrence(
             locality_relation_occurrence_identity=(
                 locality_relation_occurrence_identity
             ),
-            subject_to_act_binding_reference=_assignment_reference(assignment),
+            subject_to_act_binding_reference=_binding_reference(binding),
             source_standing_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
@@ -408,13 +407,13 @@ def _validated_act_occurrence(
     locality_relation_occurrence_identity = material.get(
         "locality_relation_occurrence_identity"
     )
-    assignment_reference = material.get("subject_to_act_binding_reference")
-    if type(assignment_reference) is not dict:
+    binding_reference = material.get("subject_to_act_binding_reference")
+    if type(binding_reference) is not dict:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act occurrence carries no exact Responsibility assignment"
+            "Standing Locality continuation Act occurrence carries no exact subject-to-Act binding"
         )
-    assignment = get_standing_locality_continuation_responsibility_assignment(
-        ledger, assignment_reference.get("recorded_occurrence_identity")
+    binding = get_standing_locality_continuation_subject_to_act_binding(
+        ledger, binding_reference.get("recorded_occurrence_identity")
     )
     if (
         type(continuation_act_identity) is not str
@@ -428,18 +427,18 @@ def _validated_act_occurrence(
         in {continuation_act_identity, act_occurrence_identity}
         or len(
             {
-                assignment.identity,
-                assignment.material["result_boundary_identity"],
+                binding.identity,
+                binding.material["result_boundary_identity"],
                 continuation_act_identity,
                 act_occurrence_identity,
                 locality_relation_occurrence_identity,
             }
         )
         != 5
-        or assignment_reference != _assignment_reference(assignment)
-        or assignment.locality_identity != act_occurrence.locality_identity
-        or assignment.material["subject_reference"] != expected_reference
-        or assignment.material["destination_locality_identity"]
+        or binding_reference != _binding_reference(binding)
+        or binding.locality_identity != act_occurrence.locality_identity
+        or binding.material["subject_reference"] != expected_reference
+        or binding.material["destination_locality_identity"]
         != act_occurrence.locality_identity
         or material.get("destination_locality_identity")
         != act_occurrence.locality_identity
@@ -450,7 +449,7 @@ def _validated_act_occurrence(
             locality_relation_occurrence_identity=(
                 locality_relation_occurrence_identity
             ),
-            subject_to_act_binding_reference=assignment_reference,
+            subject_to_act_binding_reference=binding_reference,
             source_standing_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
         )
@@ -610,33 +609,33 @@ def get_recorded_standing_locality_continuation(
     return deepcopy(event.material)
 
 
-def get_standing_locality_continuation_responsibility_assignment(
-    ledger: EventLedger, recorded_assignment_event_identity: str
+def get_standing_locality_continuation_subject_to_act_binding(
+    ledger: EventLedger, recorded_binding_event_identity: str
 ) -> Event:
-    """Read one Book-bounded Responsibility assignment Standing occurrence."""
+    """Read one exact subject-to-Act binding occurrence."""
 
     _require_identity(
-        recorded_assignment_event_identity,
-        "Standing Locality continuation requires one exact Responsibility assignment occurrence",
+        recorded_binding_event_identity,
+        "Standing Locality continuation requires one exact binding occurrence",
     )
-    assignment = ledger.get(recorded_assignment_event_identity)
+    binding = ledger.get(recorded_binding_event_identity)
     if (
-        assignment is None
-        or assignment.kind
-        != STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
-        or type(assignment.locality_identity) is not str
-        or not assignment.locality_identity
-        or assignment.exact_material is not None
-        or ledger.integrity_of(assignment.identity) == CORRUPTED
+        binding is None
+        or binding.kind
+        != STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or type(binding.locality_identity) is not str
+        or not binding.locality_identity
+        or binding.exact_material is not None
+        or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
         raise StandingLocalityContinuationError(
-            "the Standing Locality continuation Responsibility assignment is absent or corrupted"
+            "the Standing Locality continuation binding is absent or corrupted"
         )
-    material = assignment.material
+    material = binding.material
     source_reference = material.get("subject_reference")
     if type(source_reference) is not dict:
         raise StandingLocalityContinuationError(
-            "the Responsibility assignment carries no exact source boundary"
+            "the binding carries no exact source boundary"
         )
     expected_reference = _source_standing_reference(
         ledger,
@@ -655,14 +654,14 @@ def get_standing_locality_continuation_responsibility_assignment(
         or exact_act_identity == result_boundary_identity
         or source_reference != expected_reference
         or material
-        != _assignment_material(
+        != _binding_material(
             exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
             source_standing_reference=expected_reference,
-            destination_locality_identity=assignment.locality_identity,
+            destination_locality_identity=binding.locality_identity,
         )
     ):
         raise StandingLocalityContinuationError(
-            "the Standing Locality continuation Responsibility assignment is not exact"
+            "the Standing Locality continuation binding is not exact"
         )
-    return assignment
+    return binding

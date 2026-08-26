@@ -14,11 +14,11 @@ from seed_runtime.operator_locality_standing import (
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
-    STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     StandingLocalityContinuationError,
     get_recorded_standing_locality_continuation,
-    get_standing_locality_continuation_responsibility_assignment,
-    record_standing_locality_continuation_responsibility_assignment,
+    get_standing_locality_continuation_subject_to_act_binding,
+    record_standing_locality_continuation_subject_to_act_binding,
     record_standing_locality_continuation_act_occurrence,
     record_standing_locality_continuation_result,
 )
@@ -37,13 +37,13 @@ def _source_boundary(
     return source, source.identity
 
 
-def _assignment(
+def _binding(
     ledger: EventLedger,
     boundary: str,
     *,
     source_locality_identity: str = "source",
 ):
-    return record_standing_locality_continuation_responsibility_assignment(
+    return record_standing_locality_continuation_subject_to_act_binding(
         ledger,
         source_locality_identity=source_locality_identity,
         standing_boundary_event_identity=boundary,
@@ -56,18 +56,18 @@ def _act(
     *,
     source_locality_identity: str = "source",
 ):
-    assignment = _assignment(
+    binding = _binding(
         ledger,
         boundary,
         source_locality_identity=source_locality_identity,
     )
-    assignment_standing = read_operator_locality_standing(
-        ledger, locality_identity=assignment.locality_identity
+    current_coordinates = read_operator_locality_standing(
+        ledger, locality_identity=binding.locality_identity
     )
     return record_standing_locality_continuation_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=assignment_standing,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=current_coordinates,
     )
 
 
@@ -77,11 +77,11 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
 
     act_occurrence = _act(ledger, boundary)
     destination = act_occurrence.locality_identity
-    assignment_reference = act_occurrence.material[
+    binding_reference = act_occurrence.material[
         "subject_to_act_binding_reference"
     ]
-    assignment = get_standing_locality_continuation_responsibility_assignment(
-        ledger, assignment_reference["recorded_occurrence_identity"]
+    binding = get_standing_locality_continuation_subject_to_act_binding(
+        ledger, binding_reference["recorded_occurrence_identity"]
     )
     after_act = read_operator_locality_standing(
         ledger, locality_identity=destination
@@ -90,31 +90,31 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert act_occurrence.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
     assert destination != "source"
     assert act_occurrence.exact_material is None
-    assert assignment.kind == (
-        STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    assert binding.kind == (
+        STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert assignment.locality_identity == destination
-    assert assignment.material["book_clause_identity"] == "06.Locality.B"
-    assert assignment.identity in after_act[
+    assert binding.locality_identity == destination
+    assert binding.material["book_clause_identity"] == "06.Locality.B"
+    assert binding.identity in after_act[
         "subject_to_act_binding_occurrences"
     ]
-    assert assignment.material["subject_reference"][
+    assert binding.material["subject_reference"][
         "source_standing_through_event_occurrence_identity"
     ] == boundary
-    assert assignment_reference == {
-        "recorded_occurrence_identity": assignment.identity,
+    assert binding_reference == {
+        "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": "06.Locality.B",
-        "exact_act_identity": assignment.material["exact_act_identity"],
-        "subject_reference": assignment.material["subject_reference"],
-        "result_boundary_identity": assignment.material[
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": binding.material["subject_reference"],
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
     assert len(
         {
-            assignment.identity,
-            assignment.material["exact_act_identity"],
-            assignment.material["result_boundary_identity"],
+            binding.identity,
+            binding.material["exact_act_identity"],
+            binding.material["result_boundary_identity"],
             act_occurrence.material["continuation_act_identity"],
             act_occurrence.material["act_occurrence_identity"],
             act_occurrence.material["locality_relation_occurrence_identity"],
@@ -123,7 +123,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert after_act["event_count"] == 2
     assert after_act["recorded_relation_Standing"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {
-        assignment.identity: None
+        binding.identity: None
     }
     assert after_act["material_acquisition_result_occurrences"] == []
     assert after_act["measurement_occurrences"] == {}
@@ -156,7 +156,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         recorded["act_occurrence_identity"],
         recorded["result_identity"],
     }
-    assert recorded["result_identity"] == assignment.material[
+    assert recorded["result_identity"] == binding.material[
         "result_boundary_identity"
     ]
     assert result.identity not in {
@@ -164,10 +164,10 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         recorded["continuation_act_identity"],
         recorded["act_occurrence_identity"],
         recorded["locality_relation_occurrence_identity"],
-        assignment.identity,
-        assignment.material["exact_act_identity"],
+        binding.identity,
+        binding.material["exact_act_identity"],
     }
-    assert recorded["subject_to_act_binding_reference"] == assignment_reference
+    assert recorded["subject_to_act_binding_reference"] == binding_reference
     assert "applicability" not in recorded
     assert "priority" not in recorded
     assert read_requirements_of_yield_relation(
@@ -193,76 +193,76 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert carried == replayed
     assert replayed["recorded_relation_Standing"] == {result.identity: None}
     assert replayed["subject_to_act_binding_occurrences"] == {
-        assignment.identity: None
+        binding.identity: None
     }
     assert replayed["material_acquisition_result_occurrences"] == []
     assert replayed["measurement_occurrences"] == {}
     assert replayed["exact_result_occurrences"] == {
-        result.identity: assignment_reference,
+        result.identity: binding_reference,
     }
 
 
-def test_assignment_survives_without_an_act_and_one_later_cut_can_carry_it(
+def test_binding_remains_current_without_an_act_and_one_later_cut_can_carry_it(
     tmp_path,
 ):
     path = tmp_path / "continuation.sqlite"
     ledger = SQLiteEventLedger(str(path))
     _source, boundary = _source_boundary(ledger)
-    assignment = _assignment(ledger, boundary)
-    destination = assignment.locality_identity
+    binding = _binding(ledger, boundary)
+    destination = binding.locality_identity
 
     assert [
         event.kind for event in ledger.list_locality(destination)
-    ] == [STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND]
+    ] == [STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND]
     ledger.close()
 
     ledger = SQLiteEventLedger(str(path))
-    assignment_standing = read_operator_locality_standing(
+    current_coordinates = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
-    assert assignment_standing["subject_to_act_binding_occurrences"] == {
-        assignment.identity: None
+    assert current_coordinates["subject_to_act_binding_occurrences"] == {
+        binding.identity: None
     }
-    assert assignment_standing["recorded_relation_Standing"] == {}
-    boundary_after_assignment = record_operator_boundary(
+    assert current_coordinates["recorded_relation_Standing"] == {}
+    boundary_after_binding = record_operator_boundary(
         ledger,
         locality_identity=destination,
-        locality_standing=assignment_standing,
+        locality_standing=current_coordinates,
     )
-    carried_assignment_standing = read_operator_locality_standing(
+    carried_coordinates = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
 
     act_occurrence = record_standing_locality_continuation_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=carried_assignment_standing,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=carried_coordinates,
     )
 
-    assert boundary_after_assignment[
+    assert boundary_after_binding[
         "locality_standing_through_event_occurrence_identity"
-    ] == assignment.identity
+    ] == binding.identity
     assert act_occurrence.locality_identity == destination
     assert act_occurrence.material["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"
-    ] == assignment.identity
+    ] == binding.identity
 
 
-def test_act_refuses_an_assignment_that_its_supplied_standing_does_not_carry():
+def test_act_refuses_a_binding_absent_from_current_coordinates():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
-    assignment = _assignment(ledger, boundary)
-    source_standing = read_operator_locality_standing(
+    binding = _binding(ledger, boundary)
+    source_coordinates = read_operator_locality_standing(
         ledger, locality_identity="source"
     )
 
     with pytest.raises(
-        StandingLocalityContinuationError, match="prior carried assignment"
+        StandingLocalityContinuationError, match="exact carried binding"
     ):
         record_standing_locality_continuation_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=source_standing,
+            subject_to_act_binding_event_identity=binding.identity,
+            current_coordinates=source_coordinates,
         )
 
 
@@ -416,7 +416,7 @@ def test_missing_different_or_changed_source_coordinates_are_refused():
     with pytest.raises(
         StandingLocalityContinuationError, match="intact addressed Standing boundary"
     ):
-        record_standing_locality_continuation_responsibility_assignment(
+        record_standing_locality_continuation_subject_to_act_binding(
             ledger,
             source_locality_identity="source",
             addressed_boundary_event_identity="missing",
@@ -503,11 +503,11 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
     )
 
     assert standing["recorded_relation_Standing"] == {}
-    assignment_identity = act_occurrence.material[
+    binding_identity = act_occurrence.material[
         "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
     assert standing["subject_to_act_binding_occurrences"] == {
-        assignment_identity: None
+        binding_identity: None
     }
     assert standing["through_event_occurrence_identity"] == act_occurrence.identity
 
@@ -536,7 +536,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         )
 
 
-def test_act_occurrence_cannot_cite_another_exact_assignment():
+def test_act_occurrence_cannot_cite_another_exact_binding():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
     first = _act(ledger, boundary)
