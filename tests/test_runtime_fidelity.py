@@ -739,7 +739,6 @@ def test_witness_grammar_declares_the_exact_relations():
         "carriage",
         "yield",
         "locality",
-        "support",
     }
 
 
