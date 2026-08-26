@@ -2091,9 +2091,7 @@ def advance_operator_current_coordinates(
                 source_result.material["locality_relation"]
             ),
         }
-        material_result_reference = source_result.material["dimensions"][
-            "identity"
-        ]
+        material_result_reference = source_result.material["result_identity"]
         occurrence = {
             "subject_reference": material_result_reference,
             "result_occurrence_identity": source_result.identity,
