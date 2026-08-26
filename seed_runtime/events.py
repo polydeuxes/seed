@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections import defaultdict
 from contextlib import contextmanager
 from copy import deepcopy
-from itertools import chain
 from dataclasses import dataclass
 from datetime import datetime
 import hashlib
@@ -534,21 +533,6 @@ class EventLedger:
 class SQLiteEventLedger(EventLedger):
     """SQLite-backed ledger with the same public API as EventLedger."""
 
-    # Every minted-identity prefix this ledger stores and a later process may mint
-    # again. A prefix missing here is a collision waiting for the second
-    # process: `new_identity` counts from 1 per process, so the second console
-    # lifetime against a durable ledger reissues the first one's identities.
-    #
-    # The four operator-console prefixes were absent until `#2413` connected
-    # the console to a durable ledger, at which point the second `seed --db`
-    # invocation aborted on a duplicate minted identity. Nothing was
-    # wrong with them before: no console had ever written durable history.
-    # Every entry is minted by current runtime code and may be carried by a
-    # durable occurrence.
-    _RESERVABLE_PREFIXES = frozenset({
-        "operator_material", "checkpoint_locality", "locality",
-    })
-
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
         self._batch_depth = 0
@@ -744,19 +728,11 @@ class SQLiteEventLedger(EventLedger):
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [deepcopy(event) for event in events]
         self._validate_sqlite_batch(stored_events)
-        # One transaction, occurrences and their identity reservations
-        # together. `#2428` stated that a reservation is written in the same
-        # transaction as the occurrence that carried the identity, and
-        # `append` does that; this path did not. A failure between the two
-        # commits left durable occurrences carrying identities whose counters
-        # were stale on reopen, which is the collision `#2428` exists to
-        # prevent. `evt` is partly shielded because open reads the maximum
-        # event identity separately; the material and Locality prefixes are not.
+        # One transaction keeps this exact ordered append population together.
         with self._connection:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_identity(event, event_rowid)
-                self._persist_reservations(self._reservable_identity_numbers(event))
         for event in stored_events:
             self._advance_event_counter(event.identity)
         return stored_events
@@ -1035,17 +1011,14 @@ class SQLiteEventLedger(EventLedger):
     def _write_without_commit(self, event: Event) -> None:
         event_rowid = self._insert_without_commit(event)
         self._insert_prefix_identity(event, event_rowid)
-        self._persist_reservations(self._reservable_identity_numbers(event))
 
     @contextmanager
     def batched(self) -> Iterator[None]:
         """Hold one transaction open across appends until this scope closes.
 
-        What differences is how many times the store is committed, not what a
-        commit contains: each occurrence still reaches the store paired with
-        its prefix identity, because both are written before either is
-        committed. A store that loses this scope loses whole occurrences and
-        keeps a chain that accounts for exactly the ones it kept.
+        What differs is how many times the store is committed, not what a
+        commit contains. A store that loses this scope loses whole occurrences
+        and keeps a chain that accounts for exactly the ones it kept.
 
         Occurrences appended inside are not durable until the scope closes or
         :meth:`flush` is called. An act that must not proceed until an
@@ -1352,38 +1325,6 @@ class SQLiteEventLedger(EventLedger):
             """).fetchone()
         return int(row["max_number"] or 0)
 
-    def _reservable_identity_numbers(self, event: Event) -> dict[str, int]:
-        """Every reservable identity this one occurrence carries.
-
-        A reservable identity is a known prefix, an underscore, and digits.
-        The digits therefore run to the end of the string and begin just after
-        its **last** underscore, so one split locates the only candidate split
-        place rather than testing the value against each prefix in turn.
-
-        `#2483` measured why that matters on a Compare material: testing every
-        walked value against every prefix cost 53.6 million calls over 3,984
-        appended occurrences, and the materials grow with what the layer
-        compares.
-        """
-        found: dict[str, int] = {}
-        reservable = self._RESERVABLE_PREFIXES
-        values = _walk_values(event.material)
-        if event.locality_identity is not None:
-            values = chain(values, (event.locality_identity,))
-        for value in values:
-            if not isinstance(value, str):
-                continue
-            divided = value.rsplit("_", 1)
-            if len(divided) != 2:
-                continue
-            prefix, digits = divided
-            if prefix not in reservable or not digits.isdigit():
-                continue
-            number = int(digits)
-            if number > found.get(prefix, 0):
-                found[prefix] = number
-        return found
-
     def _persist_reservations(self, reservations: dict[str, int]) -> None:
         for prefix, max_number in reservations.items():
             self._connection.execute(
@@ -1392,18 +1333,6 @@ class SQLiteEventLedger(EventLedger):
                 (prefix, max_number, max_number),
             )
             reserve_identity_prefix(prefix, max_number)
-
-def _walk_values(value: Any) -> Iterable[Any]:
-    if isinstance(value, dict):
-        for key, nested in value.items():
-            yield key
-            yield from _walk_values(nested)
-    elif isinstance(value, list):
-        for nested in value:
-            yield from _walk_values(nested)
-    else:
-        yield value
-
 
 def _numeric_number(value: str, prefix: str) -> int | None:
     marker = f"{prefix}_"

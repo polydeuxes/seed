@@ -7,7 +7,6 @@ import sys
 from typing import Sequence
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.identities import new_identity
 from seed_runtime.operator_console import run_persistent_operator_console
 from scripts.operator_host_provider import invoke_operator_host
 from scripts.primordial_host_escape import primordial_host_input
@@ -27,7 +26,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         run_persistent_operator_console(
             ledger=ledger,
-            locality_identity=new_identity("locality"),
+            locality_identity=ledger.mint_identity("locality"),
             input_stream=primordial_host_input(raw_input_stream),
             operator_invocation_provider=invoke_operator_host,
         )
