@@ -1052,7 +1052,6 @@ def advance_operator_current_coordinates(
         event_identities,
         locality_identity=locality_identity,
     )
-    scope = f"locality:{locality_identity}"
     material_result_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
