@@ -9,7 +9,7 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 
 RECORDED_YIELD_RELATION_EVENT = "operator.yield_relation_recorded"
-EVENT_KIND_RESPONSIBILITIES = {
+EVENT_KIND_BOOK_CLAUSES = {
     RECORDED_YIELD_RELATION_EVENT: "02.Acts.A",
 }
 OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(

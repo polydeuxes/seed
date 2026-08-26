@@ -100,7 +100,7 @@ def _runtime_event_kinds() -> dict[str, list[str]]:
     return found
 
 
-def _legacy_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
+def _declared_event_kind_book_clauses() -> dict[str, list[tuple[str, str]]]:
     found: dict[str, list[tuple[str, str]]] = {}
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
@@ -109,7 +109,7 @@ def _legacy_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
                 continue
             if not any(
                 isinstance(name, ast.Name)
-                and name.id == "EVENT_KIND_RESPONSIBILITIES"
+                and name.id == "EVENT_KIND_BOOK_CLAUSES"
                 for name in node.targets
             ):
                 continue
@@ -168,14 +168,14 @@ def _event_material_book_references() -> dict[str, list[tuple[str, str]]]:
     }
 
 
-def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
+def _runtime_event_kind_book_clauses() -> dict[str, list[tuple[str, str]]]:
     """Prefer carried Book references over storage-stream declarations."""
 
-    legacy = _legacy_event_kind_responsibilities()
+    declared = _declared_event_kind_book_clauses()
     carried = _event_material_book_references()
     return {
         stream: carried.get(stream, declarations)
-        for stream, declarations in (legacy | carried).items()
+        for stream, declarations in (declared | carried).items()
     }
 
 
@@ -561,22 +561,22 @@ def test_unresolved_event_material_expansion_remains_visible():
     ) == [1]
 
 
-def test_every_runtime_event_kind_declares_its_witness_grammar_responsibility():
+def test_every_runtime_event_kind_declares_its_witness_grammar_book_clause():
     """A new event species cannot gain constitutional force from its name."""
 
     declared = _runtime_event_kinds()
-    accounted = _runtime_event_kind_responsibilities()
+    accounted = _runtime_event_kind_book_clauses()
 
     assert set(declared) == set(accounted), (
-        "\nLive event kinds and witness-grammar responsibilities disagree."
+        "\nLive event kinds and witness-grammar Book clauses disagree."
         f"\n  only live: {sorted(set(declared) - set(accounted))}"
-        f"\n  only responsibility declaration: {sorted(set(accounted) - set(declared))}"
+        f"\n  only Book-clause declaration: {sorted(set(accounted) - set(declared))}"
     )
 
 
 def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    accounted = _runtime_event_kind_responsibilities()
+    accounted = _runtime_event_kind_book_clauses()
     clauses = set(
         grammar.get("book_coordinates", grammar.get("clause_coordinates", {}))
     )
@@ -881,7 +881,7 @@ def _standing_values(node) -> list[str]:
 
 
 def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
-    accounted = set(_runtime_event_kind_responsibilities())
+    accounted = set(_runtime_event_kind_book_clauses())
     unaccounted = []
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)

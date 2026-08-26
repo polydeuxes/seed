@@ -31,7 +31,7 @@ RECORDED_BOUNDARY_LOCALITY_ACT = (
     "Preserve one exact recorded boundary result at one destination Locality"
 )
 RECORDED_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
-EVENT_KIND_RESPONSIBILITIES = {
+EVENT_KIND_BOOK_CLAUSES = {
     RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.C"
     ),

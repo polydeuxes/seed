@@ -36,7 +36,7 @@ LOCALITY_CONTINUATION_ACT = "source-boundary Locality relation"
 LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact source through-occurrence boundary"
 )
-EVENT_KIND_RESPONSIBILITIES = {
+EVENT_KIND_BOOK_CLAUSES = {
     LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.B"
     ),
