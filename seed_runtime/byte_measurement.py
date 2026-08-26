@@ -463,7 +463,7 @@ def _pair_input_applicability(
     ledger: EventLedger,
     source: RecordedByteAssertion,
     *,
-    assignment: Event,
+    binding: Event,
     measurement_locality_identity: str,
 ) -> dict[str, Any]:
     """Determine this source Assertion's use by this exact pair Measurement."""
@@ -475,7 +475,7 @@ def _pair_input_applicability(
     )
     return _pair_input_applicability_from_exact_source(
         source,
-        assignment=assignment,
+        binding=binding,
         measurement_locality_identity=measurement_locality_identity,
         input_coordinates=input_coordinates,
     )
@@ -484,7 +484,7 @@ def _pair_input_applicability(
 def _pair_input_applicability_from_exact_source(
     source: RecordedByteAssertion,
     *,
-    assignment: Event,
+    binding: Event,
     measurement_locality_identity: str,
     input_coordinates: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
@@ -506,15 +506,15 @@ def _pair_input_applicability_from_exact_source(
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "addressed_act_identity": assignment.material["addressed_act_identity"],
+        "addressed_act_identity": binding.material["addressed_act_identity"],
         "addressed_act": "declared byte-position-pair Measurement",
         "subject_to_act_binding_reference": (
-            _pair_subject_to_act_binding_reference(assignment)
+            _pair_subject_to_act_binding_reference(binding)
         ),
-        "applicability_act_identity": assignment.material[
+        "applicability_act_identity": binding.material[
             "applicability_act_identity"
         ],
-        "applicability_act_occurrence_identity": assignment.material[
+        "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
@@ -523,7 +523,7 @@ def _pair_input_applicability_from_exact_source(
     applicability_scope = scope
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
-    identity = assignment.material["applicability_result_identity"]
+    identity = binding.material["applicability_result_identity"]
     return {
         "dimensions": {
             "identity": identity,
@@ -535,15 +535,15 @@ def _pair_input_applicability_from_exact_source(
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "addressed_act_identity": assignment.material["addressed_act_identity"],
+        "addressed_act_identity": binding.material["addressed_act_identity"],
         "addressed_act_occurrence_identity": None,
         "subject_to_act_binding_reference": (
-            _pair_subject_to_act_binding_reference(assignment)
+            _pair_subject_to_act_binding_reference(binding)
         ),
-        "applicability_act_identity": assignment.material[
+        "applicability_act_identity": binding.material[
             "applicability_act_identity"
         ],
-        "applicability_act_occurrence_identity": assignment.material[
+        "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
         "addressed_act": "declared byte-position-pair Measurement",
@@ -3798,7 +3798,7 @@ def _require_exact_pair_applicability_result_event(
     )
     expected_applicability = _pair_input_applicability_from_exact_source(
         source,
-        assignment=assignment,
+        binding=assignment,
         measurement_locality_identity=assignment.locality_identity,
     )
     expected_material = {
@@ -3866,7 +3866,7 @@ def _record_pair_input_applicability_result_from_carried_act(
     )
     expected_applicability = _pair_input_applicability_from_exact_source(
         source,
-        assignment=assignment,
+        binding=assignment,
         measurement_locality_identity=assignment.locality_identity,
     )
     if (
@@ -4550,7 +4550,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
     applicability = _pair_input_applicability(
         ledger,
         source,
-        assignment=applicability_binding,
+        binding=applicability_binding,
         measurement_locality_identity=recording_locality_identity,
     )
     applicability_act = (
