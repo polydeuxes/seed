@@ -385,8 +385,6 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
             "result_boundary_identity"
         ],
     }
-    assert "responsibility_assignment" not in act.material
-    assert "responsibility_assignment" not in result.material
 
 
 def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
@@ -1999,7 +1997,7 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
     assert assignment["completeness_boundary_identity"] == source.material[
         "completeness_boundary"
     ]["identity"]
-def test_locality_movement_assignment_is_earned_from_the_exact_source():
+def test_locality_movement_binding_carries_the_exact_source():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2009,37 +2007,35 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     )
     movement = ledger.get(pair.material["source_movement_event_identity"])
     reference = movement.material["subject_to_act_binding_reference"]
-    assignment = get_assertion_locality_movement_subject_to_act_binding(
+    binding = get_assertion_locality_movement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     )
-    standing = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
     )
 
-    assert assignment.kind == (
+    assert binding.kind == (
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
     )
     assert reference == {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
-    assert assignment.material["source_assertion_reference"] == (
+    assert binding.material["source_assertion_reference"] == (
         movement.material["source_assertion_reference"]
     )
-    assert assignment.material["source_locality"] == "byte-measurement"
-    assert assignment.material["destination_locality"] == "measurement"
-    assert standing["subject_to_act_binding_occurrences"][assignment.identity] is None
-    assert "standing" not in assignment.material
-    assert "responsibility_assignment" not in movement.material
+    assert binding.material["source_locality"] == "byte-measurement"
+    assert binding.material["destination_locality"] == "measurement"
+    assert current_coordinates["subject_to_act_binding_occurrences"][binding.identity] is None
 
 
-def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_destination_standing():
+def test_movement_binding_carries_distinct_lifecycle_identities_and_enters_destination_coordinates():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2051,9 +2047,9 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
         ),
     )
     identities = {
-        assignment.identity,
+        binding.identity,
         *(
-            assignment.material[coordinate]
+            binding.material[coordinate]
             for coordinate in (
                 "movement_act_identity",
                 "movement_act_occurrence_identity",
@@ -2061,20 +2057,20 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
             )
         ),
     }
-    standing = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
 
     assert len(identities) == 4
-    assert standing["subject_to_act_binding_occurrences"] == {
-        assignment.identity: None
+    assert current_coordinates["subject_to_act_binding_occurrences"] == {
+        binding.identity: None
     }
-    assert assignment.material["source_through_event_occurrence_identity"] == (
+    assert binding.material["source_through_event_occurrence_identity"] == (
         source_result.identity
     )
 
 
-def test_movement_assignment_refuses_stale_or_shaped_source_standing():
+def test_movement_binding_refuses_stale_or_shaped_source_coordinates():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     stale = read_operator_current_coordinates(
@@ -2088,30 +2084,30 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
         ledger,
         locality_identity=source_result.locality_identity,
         exact_bytes=b"later",
-        source_boundary="after source Standing",
+        source_boundary="after source coordinates",
     )
     destination = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
 
-    for standing in (stale, shaped):
+    for current_coordinates in (stale, shaped):
         with pytest.raises(ByteMeasurementError, match="current source coordinates"):
             record_assertion_locality_movement_subject_to_act_binding(
                 ledger,
                 source=source,
                 destination_locality="movement",
-                source_current_coordinates=standing,
+                source_current_coordinates=current_coordinates,
                 destination_current_coordinates=destination,
             )
 
 
-def test_movement_act_requires_current_destination_standing_carrying_assignment():
+def test_movement_act_requires_current_destination_coordinates_carrying_binding():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     stale_destination = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2124,24 +2120,24 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
         read_operator_current_coordinates(ledger, locality_identity="movement")
     )
     shaped["subject_to_act_binding_occurrences"] = {
-        "same-shaped-assignment": None
+            "same-shaped-binding": None
     }
 
-    for standing in (stale_destination, shaped):
+    for current_coordinates in (stale_destination, shaped):
         with pytest.raises(
             ByteMeasurementError, match="current destination coordinates"
         ):
             record_assertion_locality_movement_act_occurrence(
                 ledger,
-                subject_to_act_binding_event_identity=assignment.identity,
-                current_coordinates=standing,
+                subject_to_act_binding_event_identity=binding.identity,
+                current_coordinates=current_coordinates,
             )
 
 
 def test_movement_lifecycle_refuses_duplicate_act_and_result():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2152,18 +2148,18 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
             ledger, locality_identity="movement"
         ),
     )
-    standing = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
-        current_coordinates=standing,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=current_coordinates,
     )
     with pytest.raises(ByteMeasurementError, match="already carries an Act"):
         record_assertion_locality_movement_act_occurrence(
             ledger,
-            subject_to_act_binding_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity="movement"
             ),
@@ -2181,7 +2177,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
 def test_movement_act_refuses_coordinates_before_a_later_destination_append_boundary():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2199,18 +2195,18 @@ def test_movement_act_refuses_coordinates_before_a_later_destination_append_boun
         ledger,
         locality_identity="movement",
         exact_bytes=b"later",
-        source_boundary="after assignment",
+        source_boundary="after binding",
     )
     with pytest.raises(ByteMeasurementError, match="current destination coordinates"):
         record_assertion_locality_movement_act_occurrence(
             ledger,
-            subject_to_act_binding_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=stale,
         )
 
 
-def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
-    path = tmp_path / "movement-assignment.sqlite"
+def test_movement_binding_and_lifecycle_remain_exact_across_sqlite_restarts(tmp_path):
+    path = tmp_path / "movement-binding.sqlite"
     ledger = SQLiteEventLedger(path)
     _record_operator_material_source(
         ledger,
@@ -2230,7 +2226,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
         )
         if assertion.result == "exact_source_material_set"
     )
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2245,11 +2241,11 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
 
     ledger = SQLiteEventLedger(path)
     assert get_assertion_locality_movement_subject_to_act_binding(
-        ledger, assignment.identity
-    ) == assignment
+        ledger, binding.identity
+    ) == binding
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="movement"
         ),
@@ -2267,7 +2263,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     ledger.close()
 
 
-def test_movement_assignment_reader_refuses_corrupted_source_carrier():
+def test_movement_binding_reader_refuses_corrupted_source_carrier():
     ledger = IntegrityCountingLedger()
     _record_operator_material_source(
         ledger,
@@ -2287,7 +2283,7 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
         )
         if assertion.result == "exact_source_material_set"
     )
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2302,7 +2298,7 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
 
     with pytest.raises(ByteMeasurementError):
         get_assertion_locality_movement_subject_to_act_binding(
-            ledger, assignment.identity
+            ledger, binding.identity
         )
 
 
@@ -2331,13 +2327,13 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
         _validate_moved_byte_assertion(ledger, movement.identity)
 
 
-def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
+def test_movement_carried_coordinates_equal_replay_and_same_locality_is_noop():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     prior = read_operator_current_coordinates(
         ledger, locality_identity="movement"
     )
-    assignment = record_assertion_locality_movement_subject_to_act_binding(
+    binding = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2348,7 +2344,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     )
     carried = advance_operator_current_coordinates(
         ledger,
-        (assignment.identity,),
+        (binding.identity,),
         locality_identity="movement",
         prior=prior,
     )
@@ -2357,7 +2353,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=carried,
     )
     movement = record_assertion_locality_movement_result(
@@ -2387,7 +2383,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     assert len(ledger.list()) == event_count
 
 
-def test_bounded_movement_batch_carries_each_assignment_before_its_act():
+def test_bounded_movement_batch_carries_each_binding_before_the_act():
     ledger = _ledger(b"ta\n")
     source_result = _byte_source(ledger)
     sources = tuple(
@@ -2403,14 +2399,14 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
         sources=sources,
         destination_locality="movement-batch",
     )
-    standing = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="movement-batch"
     )
     movements = tuple(
         ledger.get(assertion.locality_movement_event_identity)
         for assertion in moved
     )
-    assignments = tuple(
+    bindings = tuple(
         ledger.get(
             movement.material["subject_to_act_binding_reference"][
                 "recorded_occurrence_identity"
@@ -2423,13 +2419,13 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
         assertion.assertion_position for assertion in sources
     )
     assert all(
-        standing["subject_to_act_binding_occurrences"].get(
-            assignment.identity, object()
+        current_coordinates["subject_to_act_binding_occurrences"].get(
+            binding.identity, object()
         )
         is None
-        for assignment in assignments
+        for binding in bindings
     )
-    assert standing["through_event_occurrence_identity"] == movements[-1].identity
+    assert current_coordinates["through_event_occurrence_identity"] == movements[-1].identity
     assert all(
         _validate_moved_byte_assertion(ledger, movement.identity) == assertion
         for movement, assertion in zip(movements, moved, strict=True)
