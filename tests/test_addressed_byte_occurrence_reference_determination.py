@@ -313,7 +313,9 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
     ledger = EventLedger()
     recorded = _record(ledger)
 
-    recorded["determination_binding"].material["scope"]["locality_identity"] = "changed"
+    recorded["determination_binding"].material[
+        "through_event_occurrence_identity"
+    ] = "changed"
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
             ledger, recorded["applicability_act"].identity

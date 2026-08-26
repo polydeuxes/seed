@@ -193,22 +193,6 @@ def _source(
     return event, references
 
 
-def _scope(
-    *,
-    source_result: Event,
-    coordinate_reference: dict[str, Any],
-) -> dict[str, str]:
-    return {
-        "locality_identity": source_result.locality_identity,
-        "source_material_result_occurrence_identity": coordinate_reference[
-            "source_material_result_occurrence_identity"
-        ],
-        "completeness_boundary_identity": coordinate_reference[
-            "completeness_boundary_identity"
-        ],
-    }
-
-
 def _current_coordinates_carry_source(
     ledger: EventLedger,
     *,
@@ -361,10 +345,6 @@ def _determination_binding_material(
             coordinate_reference
         ),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": _scope(
-            source_result=source_result,
-            coordinate_reference=coordinate_reference,
-        ),
         "unknown": list(UNKNOWN),
     }
 
@@ -408,13 +388,6 @@ def _applicability_binding_material(
             coordinate_reference
         ),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            **_scope(
-                source_result=source_result,
-                coordinate_reference=coordinate_reference,
-            ),
-            "addressed_act_identity": determination_act_identity,
-        },
         "unknown": list(UNKNOWN),
     }
 
@@ -720,7 +693,6 @@ def _applicability_act_material(
             ]
         ),
         "addressed_act_identity": binding.material["addressed_act_identity"],
-        "scope": deepcopy(binding.material["scope"]),
         "unknown": list(binding.material["unknown"]),
     }
 
@@ -986,7 +958,6 @@ def _applicability_result_material(
             determination_binding=determination_binding,
             source_result=source_result,
         ),
-        "scope": deepcopy(applicability_binding.material["scope"]),
         "unknown": list(applicability_binding.material["unknown"]),
     }
 
@@ -1126,7 +1097,6 @@ def _recorded_applicability_result_material(
             material["addressed_source_byte_position_coordinate_reference"]
         ),
         "applicability_finding": deepcopy(material["applicability_finding"]),
-        "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,
@@ -1441,7 +1411,6 @@ def _determination_act_material(
             ]
         ),
         "result_identity": binding.material["determination_result_identity"],
-        "scope": deepcopy(binding.material["scope"]),
         "unknown": list(binding.material["unknown"]),
     }
 
@@ -1655,7 +1624,9 @@ def _determination_result_material(
             ]
         ),
         "completeness_boundary": {
-            "identity": binding.material["scope"][
+            "identity": binding.material[
+                "addressed_source_byte_position_coordinate_reference"
+            ][
                 "completeness_boundary_identity"
             ]
         },
