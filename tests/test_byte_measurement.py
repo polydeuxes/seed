@@ -1032,7 +1032,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
     )
     assert len(measured.source_material) == 2
     assert all(
-        set(item) == {"material_acquisition_occurrence_identity"}
+        set(item) == {"material_result_occurrence_identity"}
         for item in measured.source_material
     )
     assert measured.completeness_boundary.identity

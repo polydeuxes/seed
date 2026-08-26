@@ -610,7 +610,7 @@ def _measure_byte_counts_through(
                     "one material result occurrence cannot enter a byte Measurement twice"
                 )
             seen_material.add(material_result.identity)
-            source_material.append({"material_acquisition_occurrence_identity": material_result.identity})
+            source_material.append({"material_result_occurrence_identity": material_result.identity})
             for value, count in Counter(exact).items():
                 carrying[value] += 1
                 totals[value] += count
@@ -1873,7 +1873,7 @@ def _measure_byte_position_pair_counts_through(
                     "one material result occurrence cannot enter a pair Measurement twice"
                 )
             seen_material.add(material_result.identity)
-            source_material.append({"material_acquisition_occurrence_identity": material_result.identity})
+            source_material.append({"material_result_occurrence_identity": material_result.identity})
             seen: set[bytes] = set()
             for index in range(len(exact) - 1):
                 pair = exact[index : index + 2]
@@ -1931,7 +1931,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_scope": scope,
             "input_support": {
                 "occurrence_references": [
-                    item["material_acquisition_occurrence_identity"]
+                    item["material_result_occurrence_identity"]
                     for item in measured.source_material
                 ],
                 "local_assertion_references": [],
@@ -2040,7 +2040,7 @@ def _byte_measurement_source_material(
                 )
             seen_material.add(material_result.identity)
             source_material.append(
-                {"material_acquisition_occurrence_identity": material_result.identity}
+                {"material_result_occurrence_identity": material_result.identity}
             )
     if not source_material:
         raise ByteMeasurementError(

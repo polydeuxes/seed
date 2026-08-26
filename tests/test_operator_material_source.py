@@ -365,7 +365,7 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
     )
     assert byte_results[0].material["assertions"][0]["dimensions"]["content"][
         "source_material"
-    ] == [{"material_acquisition_occurrence_identity": sources[0].identity}]
+    ] == [{"material_result_occurrence_identity": sources[0].identity}]
 
 
 def test_operator_result_kind_without_source_g_physiology_is_not_source():

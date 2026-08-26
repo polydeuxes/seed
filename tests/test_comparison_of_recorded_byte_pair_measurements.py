@@ -96,7 +96,7 @@ def _witness_compare_input_testimony(monkeypatch):
         material={
             "source_occurrence_references": [
                 {
-                    "material_acquisition_occurrence_identity": (
+                    "material_result_occurrence_identity": (
                         earlier_source.identity
                     )
                 }
@@ -111,11 +111,11 @@ def _witness_compare_input_testimony(monkeypatch):
         material={
             "source_occurrence_references": [
                 {
-                    "material_acquisition_occurrence_identity": (
+                    "material_result_occurrence_identity": (
                         earlier_source.identity
                     )
                 },
-                {"material_acquisition_occurrence_identity": added.identity},
+                {"material_result_occurrence_identity": added.identity},
             ]
         },
         exact_material=None,

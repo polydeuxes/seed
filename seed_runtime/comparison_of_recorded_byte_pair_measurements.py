@@ -332,7 +332,7 @@ def _source_occurrence_references_from_assignment(
             "comparison input carries no exact source occurrence sequence"
         )
     references = tuple(
-        item.get("material_acquisition_occurrence_identity") if type(item) is dict else None
+        item.get("material_result_occurrence_identity") if type(item) is dict else None
         for item in source_material
     )
     if (

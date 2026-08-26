@@ -267,12 +267,12 @@ def _byte_assignment_source_sets(
         for reference in references:
             if (
                 type(reference) is not dict
-                or set(reference) != {"material_acquisition_occurrence_identity"}
-                or type(reference["material_acquisition_occurrence_identity"]) is not str
-                or not reference["material_acquisition_occurrence_identity"]
+                or set(reference) != {"material_result_occurrence_identity"}
+                or type(reference["material_result_occurrence_identity"]) is not str
+                or not reference["material_result_occurrence_identity"]
             ):
                 raise ValueError("recorded byte Measurement source is malformed")
-            identities.append(reference["material_acquisition_occurrence_identity"])
+            identities.append(reference["material_result_occurrence_identity"])
         source_sets.add(tuple(identities))
     return source_sets
 

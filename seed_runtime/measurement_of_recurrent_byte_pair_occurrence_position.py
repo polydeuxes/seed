@@ -337,9 +337,9 @@ def _references_to_recorded_recurrent_byte_pairs(
         or not sources
         or any(
             type(reference) is not dict
-            or set(reference) != {"material_acquisition_occurrence_identity"}
-            or type(reference["material_acquisition_occurrence_identity"]) is not str
-            or not reference["material_acquisition_occurrence_identity"]
+            or set(reference) != {"material_result_occurrence_identity"}
+            or type(reference["material_result_occurrence_identity"]) is not str
+            or not reference["material_result_occurrence_identity"]
             for reference in sources
         )
         or type(boundary) is not dict
@@ -349,7 +349,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     ):
         raise ValueError("the recurrent pair carries no exact source boundary")
     source_occurrence_identities = tuple(
-        reference["material_acquisition_occurrence_identity"] for reference in sources
+        reference["material_result_occurrence_identity"] for reference in sources
     )
     found = []
     for recurrence_assertion_position in recurrence_assertion_positions:

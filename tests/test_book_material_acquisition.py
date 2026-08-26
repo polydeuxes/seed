@@ -479,7 +479,7 @@ def test_book_measurements_retain_every_exact_file_occurrence(
     )
 
     assert tuple(
-        reference["material_acquisition_occurrence_identity"] for reference in source_references
+        reference["material_result_occurrence_identity"] for reference in source_references
     ) == tuple(occurrence.identity for occurrence in acquisition_results)
     assert byte_measurement.material["source_localities"] == [
         "book-material-acquisition"

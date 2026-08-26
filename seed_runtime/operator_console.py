@@ -285,7 +285,7 @@ def _recorded_byte_measurement_material_references(ledger):
             raise ValueError("recorded byte Measurement source is malformed")
         for occurrence_reference in source_material:
             occurrence_identity = (
-                occurrence_reference.get("material_acquisition_occurrence_identity")
+                occurrence_reference.get("material_result_occurrence_identity")
                 if type(occurrence_reference) is dict
                 else None
             )
@@ -353,7 +353,7 @@ def _latest_carried_pair_premise(
                 type(source_reference) is dict
                 and type(
                     source_reference.get(
-                        "material_acquisition_occurrence_identity"
+                        "material_result_occurrence_identity"
                     )
                 )
                 is str
@@ -364,7 +364,7 @@ def _latest_carried_pair_premise(
                     read_material_locality_relation_requirements(
                         ledger,
                         recorded_result_event_identity=source_reference[
-                            "material_acquisition_occurrence_identity"
+                            "material_result_occurrence_identity"
                         ],
                     ).values()
                 )
