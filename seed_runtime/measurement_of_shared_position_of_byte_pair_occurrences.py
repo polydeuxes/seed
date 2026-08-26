@@ -1638,7 +1638,6 @@ def get_shared_position_measurement_act_occurrence(
 
 def _path_assertion(
     *,
-    assignment: Event,
     inputs: SharedPairPositionInputs,
     applicability: Event,
 ) -> dict[str, Any]:
@@ -1692,7 +1691,6 @@ def _measurement_result_material(
     inputs: SharedPairPositionInputs,
 ) -> dict[str, Any]:
     assertion = _path_assertion(
-        assignment=assignment,
         inputs=inputs,
         applicability=applicability,
     )
