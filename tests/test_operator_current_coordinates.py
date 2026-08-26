@@ -36,6 +36,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
+    read_operator_current_coordinates_through,
 )
 
 
@@ -327,6 +328,48 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
             locality_identity="s",
             prior=standing,
         )
+
+
+def test_advance_uses_an_exact_later_occurrence_without_inferring_an_intervening_occurrence():
+    ledger = EventLedger()
+    first = record_witness_material_source(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"first",
+        source_boundary="first test boundary",
+    )
+    intervening = record_witness_material_source(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"intervening",
+        source_boundary="intervening test boundary",
+    )
+    later = record_witness_material_source(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"later",
+        source_boundary="later test boundary",
+    )
+    prior = read_operator_current_coordinates_through(
+        ledger,
+        locality_identity="s",
+        through_event_occurrence_identity=first.identity,
+    )
+
+    current_coordinates = advance_operator_current_coordinates(
+        ledger,
+        (later.identity,),
+        locality_identity="s",
+        prior=prior,
+    )
+
+    recorded_occurrences = {
+        occurrence["result_occurrence_identity"]
+        for occurrence in current_coordinates["material_result_occurrences"]
+    }
+    assert recorded_occurrences == {first.identity, later.identity}
+    assert intervening.identity not in recorded_occurrences
+    assert current_coordinates["through_event_occurrence_identity"] == later.identity
 
 
 def test_current_coordinates_carry_only_exact_yielded_result_identities():
