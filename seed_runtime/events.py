@@ -673,9 +673,8 @@ class SQLiteEventLedger(EventLedger):
             ON events(locality_identity, kind)
             """)
         self._ensure_prefix_identities()
+        self._ensure_event_identity_reservation()
         self._connection.commit()
-        max_event_number = self._max_event_identity_number()
-        self._next_event_number = max_event_number + 1
 
     def append(
         self,
@@ -733,8 +732,7 @@ class SQLiteEventLedger(EventLedger):
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_identity(event, event_rowid)
-        for event in stored_events:
-            self._advance_event_counter(event.identity)
+                self._advance_event_counter_without_commit(event.identity)
         return stored_events
 
     def get(self, event_identity: str) -> Event | None:
@@ -1006,7 +1004,6 @@ class SQLiteEventLedger(EventLedger):
         else:
             with self._connection:
                 self._write_without_commit(event)
-        self._advance_event_counter(event.identity)
 
     def _write_without_commit(self, event: Event) -> None:
         event_rowid = self._insert_without_commit(event)
@@ -1303,15 +1300,31 @@ class SQLiteEventLedger(EventLedger):
         )
 
     def _new_event_identity(self) -> str:
-        event_identity = f"evt_{self._next_event_number:06d}"
-        self._next_event_number += 1
-        return event_identity
+        return self.mint_identity("evt")
 
     def _advance_event_counter(self, event_identity: str) -> None:
+        if self._batch_depth:
+            self._advance_event_counter_without_commit(event_identity)
+            return
+        with self._connection:
+            self._advance_event_counter_without_commit(event_identity)
+
+    def _advance_event_counter_without_commit(self, event_identity: str) -> None:
         number = _numeric_number(event_identity, "evt")
         if number is None:
             return
-        self._next_event_number = max(self._next_event_number, number + 1)
+        self._connection.execute(
+            "INSERT INTO identity_reservations (prefix, max_number) "
+            "VALUES ('evt', ?) "
+            "ON CONFLICT(prefix) DO UPDATE "
+            "SET max_number = MAX(max_number, excluded.max_number)",
+            (number,),
+        )
+
+    def _ensure_event_identity_reservation(self) -> None:
+        self._advance_event_counter_without_commit(
+            f"evt_{self._max_event_identity_number():06d}"
+        )
 
     def _max_event_identity_number(self) -> int:
         row = self._connection.execute("""

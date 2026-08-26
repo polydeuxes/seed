@@ -43,6 +43,30 @@ def test_append_many_advances_the_process_local_event_identity_number():
     assert ledger.append("later.occurrence").identity == "evt_000004"
 
 
+def test_ledgers_share_minted_and_appended_event_identity_domain(tmp_path):
+    memory = EventLedger()
+    assert (
+        memory.mint_identity("evt"),
+        memory.append("later.occurrence").identity,
+    ) == ("evt_000001", "evt_000002")
+
+    database = str(tmp_path / "shared-event-identity-domain.db")
+    durable = SQLiteEventLedger(database)
+    try:
+        assert (
+            durable.mint_identity("evt"),
+            durable.append("later.occurrence").identity,
+        ) == ("evt_000001", "evt_000002")
+    finally:
+        durable.close()
+
+    reopened = SQLiteEventLedger(database)
+    try:
+        assert reopened.allocate_event_identity() == "evt_000003"
+    finally:
+        reopened.close()
+
+
 def test_an_allocated_identity_can_be_carried_by_its_prebuilt_occurrence():
     ledger = EventLedger()
 
