@@ -956,7 +956,7 @@ def read_current_coordinates_through_carried_reference(
     direct_references = current_coordinates[
         "recorded_through_occurrence_boundary_references"
     ]
-    continuations = current_coordinates["recorded_relation_Standing"]
+    continuations = current_coordinates["locality_continuation_relation_occurrences"]
     locality_relations = current_coordinates["recorded_boundary_locality_relations"]
     carriers = (direct_references, continuations, locality_relations)
     for carrier in carriers:
@@ -1065,7 +1065,7 @@ def advance_operator_current_coordinates(
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
-    recorded_relation_Standing: dict[str, None] = {}
+    locality_continuation_relation_occurrences: dict[str, None] = {}
     recorded_through_occurrence_boundary_references: dict[str, None] = {}
     recorded_boundary_locality_relations: dict[str, None] = {}
     operator_invocation_locality_relations: dict[str, None] = {}
@@ -1112,8 +1112,10 @@ def advance_operator_current_coordinates(
                 "prior Locality Standing requires exact Assertion Locality movement occurrences"
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
-        recorded_relation_Standing = prior["recorded_relation_Standing"]
-        if type(recorded_relation_Standing) is not dict:
+        locality_continuation_relation_occurrences = prior[
+            "locality_continuation_relation_occurrences"
+        ]
+        if type(locality_continuation_relation_occurrences) is not dict:
             raise ValueError(
                 "prior Locality Standing requires exact recorded relation occurrences"
             )
@@ -1951,7 +1953,7 @@ def advance_operator_current_coordinates(
             continue
         if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND:
             get_recorded_locality_continuation(ledger, event.identity)
-            recorded_relation_Standing[event.identity] = None
+            locality_continuation_relation_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
@@ -2086,9 +2088,9 @@ def advance_operator_current_coordinates(
             assertion_locality_movement_occurrences
         ),
         "exact_result_occurrences": exact_result_occurrences,
-        # Exactly the relation standings recorded by Locality events;
-        # emptiness is absence of record only.
-        "recorded_relation_Standing": recorded_relation_Standing,
+        "locality_continuation_relation_occurrences": (
+            locality_continuation_relation_occurrences
+        ),
         "recorded_through_occurrence_boundary_references": (
             recorded_through_occurrence_boundary_references
         ),

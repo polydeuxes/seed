@@ -123,7 +123,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         }
     ) == 5
     assert after_act["event_count"] == 2
-    assert after_act["recorded_relation_Standing"] == {}
+    assert after_act["locality_continuation_relation_occurrences"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {
         binding.identity: None
     }
@@ -193,7 +193,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         ledger, locality_identity=destination
     )
     assert carried == replayed
-    assert replayed["recorded_relation_Standing"] == {result.identity: None}
+    assert replayed["locality_continuation_relation_occurrences"] == {result.identity: None}
     assert replayed["subject_to_act_binding_occurrences"] == {
         binding.identity: None
     }
@@ -375,7 +375,7 @@ def test_continuation_carries_only_its_direct_source_coordinates():
     }
     assert read_operator_current_coordinates(
         ledger, locality_identity=second_result.locality_identity
-    )["recorded_relation_Standing"] == {second_result.identity: None}
+    )["locality_continuation_relation_occurrences"] == {second_result.identity: None}
 
 
 def test_one_continuation_act_cannot_yield_or_record_twice():
@@ -460,7 +460,7 @@ def test_incomplete_act_occurrence_is_not_carried_as_a_relation():
         ledger, locality_identity=act_occurrence.locality_identity
     )
 
-    assert standing["recorded_relation_Standing"] == {}
+    assert standing["locality_continuation_relation_occurrences"] == {}
     binding_identity = act_occurrence.material[
         "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
@@ -481,7 +481,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         ledger, locality_identity=result.locality_identity
     )
     broken = deepcopy(standing)
-    broken["recorded_relation_Standing"] = [result.identity]
+    broken["locality_continuation_relation_occurrences"] = [result.identity]
 
     with pytest.raises(
         ValueError, match="exact recorded relation occurrences"

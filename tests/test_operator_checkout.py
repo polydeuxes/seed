@@ -182,7 +182,7 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
     assert replayed["recorded_boundary_locality_relations"] == {
         result.identity: None
     }
-    assert replayed["recorded_relation_Standing"] == {}
+    assert replayed["locality_continuation_relation_occurrences"] == {}
     assert replayed["recorded_through_occurrence_boundary_references"] == {}
 
 

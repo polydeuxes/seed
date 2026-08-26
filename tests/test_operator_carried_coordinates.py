@@ -115,8 +115,8 @@ def test_memory_makes_one_prior_boundary_available_without_copying_source_coordi
     assert _material_results(ledger, destination_coordinates) == [
         b"b\n"
     ]
-    assert reading["current_coordinates"]["recorded_relation_Standing"] == {}
-    assert destination_coordinates["recorded_relation_Standing"] == {
+    assert reading["current_coordinates"]["locality_continuation_relation_occurrences"] == {}
+    assert destination_coordinates["locality_continuation_relation_occurrences"] == {
         continuation.identity: None
     }
 
