@@ -78,7 +78,6 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "source_movement_event_identity",
     "input_applicability",
     "input_applicability_event_identity",
-    "input_role",
     "subject_to_act_binding_reference",
 }
 BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT = (
@@ -99,7 +98,6 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "addressed_act_identity",
         "input_assertion_reference",
         "input_movement_event_identity",
-        "input_role",
         "applicability",
     }
 )
@@ -132,7 +130,6 @@ BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact count of byte-pair occurrences in source order within the exact "
     "bounded source material"
 )
-BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 class ByteMeasurementError(ValueError):
     """The exact byte Measurement could not be performed as declared."""
 
@@ -472,7 +469,6 @@ def _pair_input_applicability_from_exact_source(
     content = {
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": binding.material["addressed_act_identity"],
         "addressed_act": "declared byte-position-pair Measurement",
         "subject_to_act_binding_reference": (
@@ -496,7 +492,6 @@ def _pair_input_applicability_from_exact_source(
         "result": "input_applicability",
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": binding.material["addressed_act_identity"],
         "addressed_act_occurrence_identity": None,
         "subject_to_act_binding_reference": (
@@ -3116,7 +3111,6 @@ def _pair_applicability_binding_material(
         "subject_reference": {
             "input_assertion_reference": source.reference,
             "input_movement_event_identity": source.locality_movement_event_identity,
-            "input_role": BYTE_PAIR_INPUT_ROLE,
             "addressed_act_identity": measurement_act_identity,
         },
         "exact_act_identity": exact_act_identity,
@@ -3127,7 +3121,6 @@ def _pair_applicability_binding_material(
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "unknown": [],
     }
 
@@ -3580,7 +3573,6 @@ def _pair_applicability_act_material(
         ),
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "addressed_act_identity": applicability_binding.material[
             "addressed_act_identity"
         ],
@@ -3651,7 +3643,6 @@ def _pair_applicability_result_material(
         "addressed_act_identity": applicability_assertion["addressed_act_identity"],
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "applicability": applicability_assertion,
     }
 
@@ -3944,7 +3935,6 @@ def _pair_measurement_act_material(
         ],
         "input_applicability_event_identity": applicability_event.identity,
         "input_assertion_reference": source.reference,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
     }
 
 
@@ -4155,7 +4145,6 @@ def _pair_measurement_result_material(
         ),
         "source_assertion_reference": measured.source_assertion_reference,
         "source_movement_event_identity": measured.source_movement_event_identity,
-        "input_role": BYTE_PAIR_INPUT_ROLE,
         "input_applicability": measured.input_applicability,
         "input_applicability_event_identity": applicability_event.identity,
         "source_localities": list(measured.source_localities),
