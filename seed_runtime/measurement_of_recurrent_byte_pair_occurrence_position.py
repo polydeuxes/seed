@@ -576,14 +576,12 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     )
 
 
-def _responsibility_assignment_reference(assignment: Event) -> dict[str, str]:
+def _responsibility_assignment_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": assignment.material["subject_reference"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
@@ -593,16 +591,20 @@ def _responsibility_assignment_reference(assignment: Event) -> dict[str, str]:
 def _responsibility_assignment_material(
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     *,
-    assignment_identity: str,
-    assignment_subject_identity: str,
     measurement_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
+    subject_reference = {
+        "pair_assertion_reference": finding.pair_reference.assertion_reference,
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
+        ),
+    }
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
+        "exact_act_identity": measurement_act_identity,
+        "subject_reference": subject_reference,
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
@@ -707,12 +709,6 @@ def record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occu
         ledger, finding=finding, locality_standing=locality_standing
     )
     identities = {
-        "assignment_identity": new_identity(
-            "recurrent_pair_position_measurement_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "recurrent_pair_position_measurement_assignment_subject"
-        ),
         "measurement_act_identity": new_identity(
             "act_of_measurement_of_recurrent_byte_pair_occurrence_position"
         ),
@@ -758,8 +754,6 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "measurement_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
@@ -1076,9 +1070,9 @@ def _finding_of_measurement_from_act_occurrence(
         or set(assignment_reference)
         != {
             "recorded_occurrence_identity",
-            "assignment_identity",
-            "assignment_subject_identity",
             "book_clause_identity",
+            "exact_act_identity",
+            "subject_reference",
             "result_boundary_identity",
         }
     ):
