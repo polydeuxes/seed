@@ -658,16 +658,16 @@ def test_supplied_local_material_records_pair_measurements():
     ledger = EventLedger()
 
     def provider(command, supply):
-        assert command == b"!opaque\n"
+        assert command == b"!\n"
         supply(
             SuppliedWitnessMaterialOccurrence(
-                exact_bytes=b"first",
+                exact_bytes=b"a",
                 source_boundary="first opaque occurrence",
             )
         )
         supply(
             SuppliedWitnessMaterialOccurrence(
-                exact_bytes=b"second",
+                exact_bytes=b"b",
                 source_boundary="second opaque occurrence",
             )
         )
@@ -675,7 +675,7 @@ def test_supplied_local_material_records_pair_measurements():
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="operator-locality",
-        input_stream=binary_input(b"!opaque\n"),
+        input_stream=binary_input(b"!\n"),
         operator_invocation_provider=provider,
     )
 
