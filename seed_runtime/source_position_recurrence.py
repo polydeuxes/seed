@@ -2003,7 +2003,6 @@ def _recurrent_result_material_payload(
         "subject": subject,
         "exact_material": exact_material,
         "coordinate_material_findings": consumed_findings,
-        "support_result_references": deepcopy(support_references),
         "support_occurrences": support_occurrences,
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"

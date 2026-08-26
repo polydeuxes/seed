@@ -656,7 +656,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
         == ("exact_material", "recurrence_finding_position")
         for finding in reading["coordinate_material_findings"]
     )
-    assert reading["support_result_references"] == finding[
+    assert reading["subject"]["support_result_references"] == finding[
         "support_result_references"
     ]
     assert all(
@@ -739,8 +739,8 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
     finding = _target_finding(ledger, recurrence)
     event, _reading = _material_for_finding(ledger, material_measurements, finding)
 
-    support = event.material["coordinates"]["support_result_references"]
-    event.material["coordinates"]["support_result_references"] = list(
+    support = event.material["coordinates"]["subject"]["support_result_references"]
+    event.material["coordinates"]["subject"]["support_result_references"] = list(
         reversed(support)
     )
     try:
@@ -749,7 +749,7 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         pass
     else:
         raise AssertionError("changed support references were accepted")
-    event.material["coordinates"]["support_result_references"] = support
+    event.material["coordinates"]["subject"]["support_result_references"] = support
 
     material = event.material["coordinates"]["coordinate_material_findings"][1][
         "subject"
