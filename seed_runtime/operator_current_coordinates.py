@@ -3029,7 +3029,7 @@ def _carry_operator_material_source_occurrence_into_current_coordinates(
         }
         material_result_occurrences.append(
             {
-                "subject_reference": event.material["dimensions"]["identity"],
+                "subject_reference": event.material["result_identity"],
                 "result_occurrence_identity": event.identity,
                 "source_role": event.material["source_role"],
             }
