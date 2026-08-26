@@ -13,7 +13,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _determination_result_reference,
     _read_determination_result,
@@ -703,29 +702,29 @@ _IDENTITY_COORDINATES = (
 )
 
 
-def _new_measurement_identities() -> dict[str, str]:
+def _mint_measurement_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "measurement_act_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
             "shared_pair_position_measurement_act_identity"
         ),
-        "measurement_act_occurrence_identity": new_identity(
+        "measurement_act_occurrence_identity": ledger.mint_identity(
             "shared_pair_position_measurement_act_occurrence_identity"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "shared_pair_position_measurement_result_identity"
         ),
     }
 
 
-def _new_applicability_identities() -> dict[str, str]:
+def _mint_applicability_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "applicability_act_identity": new_identity(
+        "applicability_act_identity": ledger.mint_identity(
             "shared_pair_position_applicability_act_identity"
         ),
-        "applicability_act_occurrence_identity": new_identity(
+        "applicability_act_occurrence_identity": ledger.mint_identity(
             "shared_pair_position_applicability_act_occurrence_identity"
         ),
-        "applicability_result_identity": new_identity(
+        "applicability_result_identity": ledger.mint_identity(
             "shared_pair_position_applicability_result_identity"
         ),
     }
@@ -745,7 +744,7 @@ def _record_shared_position_binding(
         carried_coordinate="measurement_occurrences",
         required_occurrences=required_occurrences,
     )
-    identities = _new_measurement_identities()
+    identities = _mint_measurement_identities(ledger)
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError(
             "shared-position Measurement occurrence identities collapsed"
@@ -869,7 +868,7 @@ def record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence
         inputs=inputs,
         locality_standing=current,
     )
-    identities = _new_measurement_identities()
+    identities = _mint_measurement_identities(ledger)
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError(
             "shared-position Measurement occurrence identities collapsed"
@@ -1175,7 +1174,7 @@ def record_shared_position_applicability_act_occurrence(
         carried_coordinate="subject_to_act_binding_occurrences",
         required_occurrences=(measurement_binding.identity,),
     )
-    identities = _new_applicability_identities()
+    identities = _mint_applicability_identities(ledger)
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError(
             "shared-position Applicability occurrence identities collapsed"

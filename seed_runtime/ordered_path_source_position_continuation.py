@@ -111,7 +111,7 @@ def _record_shared_path(
         prior_standing=standing,
     )
     standing = _advance(ledger, standing, measurement_binding)
-    applicability_identities = shared_position._new_applicability_identities()
+    applicability_identities = shared_position._mint_applicability_identities(ledger)
     applicability_binding = ledger.append(
         shared_position.SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         shared_position._applicability_binding_material(
