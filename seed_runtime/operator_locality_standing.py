@@ -882,13 +882,13 @@ def read_operator_locality_standing_through(
     return standing
 
 
-class CarriedRecordedStandingError(ValueError):
-    """One carried recorded Standing reference could not be resolved."""
+class CarriedCoordinateReferenceError(ValueError):
+    """One carried coordinate reference could not be resolved."""
 
 
-def _require_recorded_standing_identity(value: Any, message: str) -> str:
+def _require_carried_reference_identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
-        raise CarriedRecordedStandingError(message)
+        raise CarriedCoordinateReferenceError(message)
     return value
 
 
@@ -913,82 +913,75 @@ def _source_reference_from_checkout(
     relation = get_recorded_boundary_locality(
         ledger, recorded_occurrence_identity
     )
-    anchor = relation["through_occurrence_boundary_reference"]
-    anchor_occurrence_identity = _require_recorded_standing_identity(
-        anchor.get("recorded_occurrence_identity"),
-        "recorded Standing Locality relation carries no exact boundary reference",
+    reference = relation["through_occurrence_boundary_reference"]
+    reference_occurrence_identity = _require_carried_reference_identity(
+        reference.get("recorded_occurrence_identity"),
+        "recorded boundary Locality relation carries no exact boundary reference",
     )
     recorded = get_recorded_through_occurrence_boundary_reference(
-        ledger, anchor_occurrence_identity
+        ledger, reference_occurrence_identity
     )
-    if anchor.get("result_identity") != recorded["result_identity"]:
-        raise CarriedRecordedStandingError(
-            "recorded Standing Locality relation names a different boundary result"
+    if reference.get("result_identity") != recorded["result_identity"]:
+        raise CarriedCoordinateReferenceError(
+            "recorded boundary Locality relation names a different boundary result"
         )
-    return _source_reference_from_checkpoint(ledger, anchor_occurrence_identity)
+    return _source_reference_from_checkpoint(ledger, reference_occurrence_identity)
 
 
-def read_carried_recorded_standing(
+def read_current_coordinates_through_carried_reference(
     ledger: EventLedger,
     *,
     locality_identity: str,
     recorded_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Resolve one exact recorded Standing reference carried at one Locality.
+    """Read source coordinates through one reference carried at one Locality.
 
-    Checkpoint, Standing-continuation, and recorded-boundary Locality relations
-    remain distinct durable occurrences.  This reader only gives their common
-    source coordinates a common transient read.  It establishes no
-    Applicability, Admission, Participation, Compare, or copied Standing at the
-    addressing Locality.
+    Through-occurrence reference, Locality continuation, and recorded-boundary
+    Locality relation results remain distinct recorded occurrences. This read
+    projects only the exact source Locality through the exact source occurrence.
     """
 
-    _require_recorded_standing_identity(
-        locality_identity, "recorded Standing read requires a Locality"
+    _require_carried_reference_identity(
+        locality_identity, "carried coordinate read requires a Locality"
     )
-    _require_recorded_standing_identity(
+    _require_carried_reference_identity(
         recorded_occurrence_identity,
-        "recorded Standing read requires one exact carried occurrence",
+        "carried coordinate read requires one exact occurrence",
     )
-    locality_standing = read_operator_locality_standing(
+    current_coordinates = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
-    carriers = (
-        (
-            "checkpoint",
-            locality_standing["recorded_through_occurrence_boundary_references"],
-        ),
-        ("continuation", locality_standing["recorded_relation_Standing"]),
-        (
-            "checkout",
-            locality_standing["recorded_boundary_locality_relations"],
-        ),
-    )
-    matches = []
-    for carrier_name, carrier in carriers:
+    direct_references = current_coordinates[
+        "recorded_through_occurrence_boundary_references"
+    ]
+    continuations = current_coordinates["recorded_relation_Standing"]
+    locality_relations = current_coordinates["recorded_boundary_locality_relations"]
+    carriers = (direct_references, continuations, locality_relations)
+    for carrier in carriers:
         if type(carrier) is not dict or any(
             value is not None for value in carrier.values()
         ):
-            raise CarriedRecordedStandingError(
-                "recorded Standing carrier is not exact"
+            raise CarriedCoordinateReferenceError(
+                "carried coordinate reference is not exact"
             )
-        if recorded_occurrence_identity in carrier:
-            matches.append(carrier_name)
-    if len(matches) != 1:
-        raise CarriedRecordedStandingError(
-            "recorded Standing occurrence is not carried exactly once at this Locality"
+    matches = sum(
+        recorded_occurrence_identity in carrier for carrier in carriers
+    )
+    if matches != 1:
+        raise CarriedCoordinateReferenceError(
+            "coordinate reference is not carried exactly once at this Locality"
         )
     event = ledger.get(recorded_occurrence_identity)
     if event is None or event.locality_identity != locality_identity:
-        raise CarriedRecordedStandingError(
-            "recorded Standing occurrence has a different carrying Locality"
+        raise CarriedCoordinateReferenceError(
+            "coordinate reference has a different carrying Locality"
         )
 
-    if matches[0] == "checkpoint":
+    if recorded_occurrence_identity in direct_references:
         source_reference = _source_reference_from_checkpoint(
             ledger, recorded_occurrence_identity
         )
-    elif matches[0] == "continuation":
+    elif recorded_occurrence_identity in continuations:
         continuation = get_recorded_locality_continuation(
             ledger, recorded_occurrence_identity
         )
@@ -998,27 +991,27 @@ def read_carried_recorded_standing(
             ledger, recorded_occurrence_identity
         )
 
-    source_locality_identity = _require_recorded_standing_identity(
+    source_locality_identity = _require_carried_reference_identity(
         source_reference.get("source_locality_identity"),
-        "recorded Standing reference carries no exact source Locality",
+        "coordinate reference carries no exact source Locality",
     )
     through_event_occurrence_identity = source_reference.get(
         "source_through_event_occurrence_identity"
     )
     if through_event_occurrence_identity is not None:
-        _require_recorded_standing_identity(
+        _require_carried_reference_identity(
             through_event_occurrence_identity,
-            "recorded Standing reference carries no exact Standing boundary",
+            "coordinate reference carries no exact through occurrence",
         )
-    standing = read_operator_locality_standing_through(
+    source_current_coordinates = read_operator_locality_standing_through(
         ledger,
         locality_identity=source_locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return {
         "recorded_occurrence_identity": recorded_occurrence_identity,
-        "source_standing_reference": source_reference,
-        "standing": standing,
+        "source_coordinate_reference": source_reference,
+        "current_coordinates": source_current_coordinates,
     }
 
 

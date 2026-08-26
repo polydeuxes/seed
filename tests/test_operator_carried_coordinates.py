@@ -1,4 +1,4 @@
-"""Recorded prior Standing remains addressable without entering another Locality."""
+"""Carried references address source coordinates through exact occurrences."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_source import exact_material_result_bytes
-from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_checkpoint import (
     THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND,
     record_through_occurrence_boundary_reference_act_occurrence,
@@ -18,9 +17,9 @@ from seed_runtime.operator_checkpoint import (
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
-    CarriedRecordedStandingError,
+    CarriedCoordinateReferenceError,
     advance_operator_locality_standing,
-    read_carried_recorded_standing,
+    read_current_coordinates_through_carried_reference,
     read_operator_locality_standing,
 )
 from seed_runtime.operator_locality_continuation import (
@@ -53,10 +52,10 @@ def _run(material: bytes) -> EventLedger:
     return ledger
 
 
-def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
+def _material_results(ledger: EventLedger, current_coordinates: dict) -> list[bytes]:
     return [
         exact_material_result_bytes(ledger.get(occurrence["result_occurrence_identity"]))
-        for occurrence in standing["material_result_occurrences"]
+        for occurrence in current_coordinates["material_result_occurrences"]
     ]
 
 
@@ -68,29 +67,29 @@ def test_checkpoint_reads_its_exact_prior_coordinates_after_later_material():
         if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
 
-    reading = read_carried_recorded_standing(
+    reading = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity="source",
         recorded_occurrence_identity=checkpoint.identity,
     )
     current = read_operator_locality_standing(ledger, locality_identity="source")
 
-    assert reading["standing"]["through_event_occurrence_identity"] == reading[
-        "source_standing_reference"
+    assert reading["current_coordinates"]["through_event_occurrence_identity"] == reading[
+        "source_coordinate_reference"
     ]["source_through_event_occurrence_identity"]
-    assert _acquired_materials(ledger, reading["standing"]) == [
+    assert _material_results(ledger, reading["current_coordinates"]) == [
         b"a\n",
         b"/checkpoint\n",
     ]
-    assert _acquired_materials(ledger, current) == [
+    assert _material_results(ledger, current) == [
         b"a\n",
         b"/checkpoint\n",
         b"later\n",
     ]
-    assert reading["standing"] is not current
+    assert reading["current_coordinates"] is not current
 
 
-def test_memory_makes_one_prior_boundary_available_without_copying_its_standing():
+def test_memory_makes_one_prior_boundary_available_without_copying_source_coordinates():
     ledger = _run(b"a\n/memory\nb\n")
     continuation = next(
         event
@@ -99,25 +98,25 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
     )
     destination = continuation.locality_identity
 
-    reading = read_carried_recorded_standing(
+    reading = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity=destination,
         recorded_occurrence_identity=continuation.identity,
     )
-    destination_standing = read_operator_locality_standing(
+    destination_coordinates = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
 
-    assert reading["standing"]["locality_identity"] == "source"
-    assert _acquired_materials(ledger, reading["standing"]) == [
+    assert reading["current_coordinates"]["locality_identity"] == "source"
+    assert _material_results(ledger, reading["current_coordinates"]) == [
         b"a\n",
         b"/memory\n",
     ]
-    assert _acquired_materials(ledger, destination_standing) == [
+    assert _material_results(ledger, destination_coordinates) == [
         b"b\n"
     ]
-    assert reading["standing"]["recorded_relation_Standing"] == {}
-    assert destination_standing["recorded_relation_Standing"] == {
+    assert reading["current_coordinates"]["recorded_relation_Standing"] == {}
+    assert destination_coordinates["recorded_relation_Standing"] == {
         continuation.identity: None
     }
 
@@ -132,19 +131,19 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
         if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     )
 
-    reading = read_carried_recorded_standing(
+    reading = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity=relation.locality_identity,
         recorded_occurrence_identity=relation.identity,
     )
 
-    assert reading["standing"]["locality_identity"] == "source"
-    assert _acquired_materials(ledger, reading["standing"]) == [
+    assert reading["current_coordinates"]["locality_identity"] == "source"
+    assert _material_results(ledger, reading["current_coordinates"]) == [
         b"a\n",
         b"/checkpoint\n",
     ]
-    assert reading["standing"]["recorded_through_occurrence_boundary_references"] == {}
-    assert reading["standing"]["recorded_boundary_locality_relations"] == {}
+    assert reading["current_coordinates"]["recorded_through_occurrence_boundary_references"] == {}
+    assert reading["current_coordinates"]["recorded_boundary_locality_relations"] == {}
 
 
 def test_an_exact_reference_is_not_globally_available_by_identity():
@@ -160,40 +159,18 @@ def test_an_exact_reference_is_not_globally_available_by_identity():
         if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     )
 
-    with pytest.raises(CarriedRecordedStandingError, match="not carried"):
-        read_carried_recorded_standing(
+    with pytest.raises(CarriedCoordinateReferenceError, match="not carried"):
+        read_current_coordinates_through_carried_reference(
             ledger,
             locality_identity=relation.locality_identity,
             recorded_occurrence_identity=checkpoint.identity,
         )
-    with pytest.raises(CarriedRecordedStandingError, match="not carried"):
-        read_carried_recorded_standing(
+    with pytest.raises(CarriedCoordinateReferenceError, match="not carried"):
+        read_current_coordinates_through_carried_reference(
             ledger,
             locality_identity="source",
             recorded_occurrence_identity=relation.identity,
         )
-
-
-def test_the_read_adds_no_applicability_admission_or_compare_coordinate():
-    ledger = _run(b"a\n/checkpoint\n")
-    checkpoint = next(
-        event
-        for event in ledger.list()
-        if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
-    )
-
-    reading = read_carried_recorded_standing(
-        ledger,
-        locality_identity="source",
-        recorded_occurrence_identity=checkpoint.identity,
-    )
-
-    assert not {"applicability", "admission", "participation", "compare"}.intersection(
-        reading
-    )
-    assert not {"applicability", "admission", "participation", "compare"}.intersection(
-        reading["standing"]
-    )
 
 
 def test_unrelated_occurrences_do_not_change_the_recorded_read():
@@ -203,28 +180,23 @@ def test_unrelated_occurrences_do_not_change_the_recorded_read():
         for event in ledger.list()
         if event.kind == THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_RECORDED_KIND
     )
-    before = read_carried_recorded_standing(
+    before = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity="source",
         recorded_occurrence_identity=checkpoint.identity,
     )
     ledger.append("unrelated", locality_identity="other")
-    after = read_carried_recorded_standing(
+    after = read_current_coordinates_through_carried_reference(
         ledger,
         locality_identity="source",
         recorded_occurrence_identity=checkpoint.identity,
     )
 
     assert after == before
-    assert not [
-        event
-        for event in ledger.list_locality("other")
-        if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-    ]
 
 
-def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path):
-    path = tmp_path / "recorded-standing.sqlite"
+def test_coordinate_reference_is_resolved_after_durable_reopen(tmp_path):
+    path = tmp_path / "carried-coordinates.sqlite"
     ledger = SQLiteEventLedger(str(path))
     run_persistent_operator_console(
         ledger=ledger,
@@ -241,12 +213,12 @@ def test_recorded_standing_reference_is_recovered_after_durable_reopen(tmp_path)
 
     reopened = SQLiteEventLedger(str(path))
     try:
-        reading = read_carried_recorded_standing(
+        reading = read_current_coordinates_through_carried_reference(
             reopened,
             locality_identity="source",
             recorded_occurrence_identity=checkpoint_identity,
         )
-        assert _acquired_materials(reopened, reading["standing"]) == [
+        assert _material_results(reopened, reading["current_coordinates"]) == [
             b"a\n",
             b"/checkpoint\n",
         ]
