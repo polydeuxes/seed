@@ -2915,9 +2915,9 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
     return current_coordinates
 
 
-def _carry_operator_material_source_occurrence_into_standing(
+def _carry_operator_material_source_occurrence_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
@@ -2925,21 +2925,21 @@ def _carry_operator_material_source_occurrence_into_standing(
     """Carry one source occurrence produced by this console call."""
 
     if (
-        type(locality_standing) is not dict
+        type(current_coordinates) is not dict
         or event.kind not in _OPERATOR_MATERIAL_SOURCE_KINDS
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
         raise ValueError("operator material source coordinates are not exact")
-    bindings = locality_standing.get("subject_to_act_binding_occurrences")
-    acts = locality_standing.get("operator_material_source_act_occurrences")
-    locality_relations = locality_standing.get(
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    acts = current_coordinates.get("operator_material_source_act_occurrences")
+    locality_relations = current_coordinates.get(
         "material_locality_relation_occurrences"
     )
-    material_result_occurrences = locality_standing.get("material_result_occurrences")
-    exact_results = locality_standing.get("exact_result_occurrences")
-    event_count = locality_standing.get("event_count")
+    material_result_occurrences = current_coordinates.get("material_result_occurrences")
+    exact_results = current_coordinates.get("exact_result_occurrences")
+    event_count = current_coordinates.get("event_count")
     if (
         type(bindings) is not dict
         or type(acts) is not dict
@@ -2981,8 +2981,8 @@ def _carry_operator_material_source_occurrence_into_standing(
             or event.identity in locality_relations
         ):
             raise ValueError("operator material source result is not exact")
-    standing_additions = _exact_current_coordinate_additions(
-        locality_standing,
+    coordinate_additions = _exact_current_coordinate_additions(
+        current_coordinates,
         event,
         error_message="operator material source coordinates are not exact",
     )
@@ -3004,12 +3004,12 @@ def _carry_operator_material_source_occurrence_into_standing(
                 "source_role": event.material["source_role"],
             }
         )
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
 def _carry_recorded_pair_comparison_occurrence_into_standing(

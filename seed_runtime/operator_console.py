@@ -63,7 +63,7 @@ from seed_runtime.recorded_boundary_locality import (
 from seed_runtime.operator_current_coordinates import (
     _carry_occurrence_position_measurement_assignment_into_standing,
     _carry_occurrence_position_measurement_result_into_standing,
-    _carry_operator_material_source_occurrence_into_standing,
+    _carry_operator_material_source_occurrence_into_current_coordinates,
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
@@ -443,7 +443,7 @@ def run_persistent_operator_console(
             )
         )
         locality_standing = (
-            _carry_operator_material_source_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
                 locality_standing,
                 source_binding,
@@ -458,7 +458,7 @@ def run_persistent_operator_console(
             )
         )
         locality_standing = (
-            _carry_operator_material_source_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
                 locality_standing,
                 source_act_occurrence,
@@ -483,7 +483,7 @@ def run_persistent_operator_console(
             boundary_material=boundary_material,
         )
         locality_standing = (
-            _carry_operator_material_source_occurrence_into_standing(
+            _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
                 locality_standing,
                 source_material,
