@@ -652,7 +652,7 @@ def _applicability_binding_material(
     first_subject = _reference_material(inputs.first)
     second_subject = _reference_material(inputs.second)
     material = {
-        "exact_act_identity": identities["applicability_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "subject_reference": {
             "first_input": {
                 "subject": first_subject,
@@ -663,7 +663,6 @@ def _applicability_binding_material(
                 "addressed_act_identity": measurement_act_identity,
             },
         },
-        "applicability_act_identity": identities["applicability_act_identity"],
         "applicability_act_occurrence_identity": identities[
             "applicability_act_occurrence_identity"
         ],
@@ -719,7 +718,7 @@ def _mint_measurement_identities(ledger: EventLedger) -> dict[str, str]:
 
 def _mint_applicability_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "applicability_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "shared_pair_position_applicability_act_identity"
         ),
         "applicability_act_occurrence_identity": ledger.mint_identity(
@@ -1035,7 +1034,7 @@ def _read_binding(
         if event.kind
         == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         else (
-            "applicability_act_identity",
+            "exact_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
         )
@@ -1338,7 +1337,7 @@ def _applicability_binding_for_inputs(
     identities = {
         coordinate: binding.material.get(coordinate)
         for coordinate in (
-            "applicability_act_identity",
+            "exact_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
         )
@@ -1409,7 +1408,7 @@ def _applicability_result_material(
             else None
         ),
         "applicability_act_identity": binding.material[
-            "applicability_act_identity"
+            "exact_act_identity"
         ],
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
