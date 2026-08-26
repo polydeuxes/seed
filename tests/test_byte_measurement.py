@@ -1701,6 +1701,8 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     for binding in (applicability_binding, assignment):
         assert "assignment_identity" not in binding.material
         assert "assignment_subject_identity" not in binding.material
+        assert "responsibility" not in binding.material
+        assert "responsible_boundary" not in binding.material
     for event in (assignment, applicability_act, applicability, measurement_act, result):
         assert "standing" not in event.material
         assert "responsibility_assignment" not in event.material

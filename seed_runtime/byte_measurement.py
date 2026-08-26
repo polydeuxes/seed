@@ -3368,8 +3368,6 @@ def _pair_applicability_binding_material(
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
-        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "scope": {
             "recording_standing_boundary_identity": standing_boundary_identity,
@@ -3406,8 +3404,6 @@ def _pair_measurement_binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "scope": {
             "recording_standing_boundary_identity": standing_boundary_identity,
