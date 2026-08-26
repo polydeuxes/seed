@@ -180,10 +180,6 @@ def _binding_material(
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "source_locality_identity": finding.source_locality_identity,
-            "completeness_boundary_identity": finding.completeness_boundary.identity,
-        },
         "unknown": ["Participation: Unknown"],
     }
 

@@ -246,6 +246,18 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
     assert binding.kind == (
         OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
+    assert set(binding.material) == {
+        "subject_reference",
+        "exact_act_identity",
+        "act_occurrence_identity",
+        "measurement_result_identity",
+        "result_boundary_identity",
+        "book_clause_identity",
+        "source_locality_identity",
+        "completeness_boundary_identity",
+        "through_event_occurrence_identity",
+        "unknown",
+    }
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
