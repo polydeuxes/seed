@@ -306,11 +306,11 @@ def main() -> int:
         )
 
     relevant_grammar = {
-        "standing": grammar["standing"],
-        "responsibility": grammar["responsibility"],
+        "current_coordinates": grammar["book_coordinates"]["01.Current.A"],
+        "subject_to_act_binding": grammar["book_coordinates"]["02.Acts.A"],
         "participation": grammar["relations"]["participation"],
-        "carriage": grammar["relations"]["carriage"],
         "yield": grammar["relations"]["yield"],
+        "locality": grammar["relations"]["locality"],
         "book_coordinates": {
             identity: grammar["book_coordinates"].get(identity)
             for identity in compared_clause_identities
@@ -362,7 +362,12 @@ def main() -> int:
         "readme_sections": {
             name: text
             for name, text in _readme_sections().items()
-            if name in ("Standing", "Responsibility", "Act and occurrence")
+            if name
+            in (
+                "Current coordinates",
+                "Subject-to-Act binding",
+                "Act and occurrence",
+            )
         },
         "machine_grammar": relevant_grammar,
         "known_loss": None,
