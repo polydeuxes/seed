@@ -2160,13 +2160,13 @@ def _carry_byte_measurement_binding_into_current_coordinates(
         or event_count < 0
     ):
         raise ValueError("byte Measurement binding coordinates are not exact")
-    standing_additions = _exact_current_coordinate_additions(
+    coordinate_additions = _exact_current_coordinate_additions(
         current_coordinates,
         event,
         error_message="byte Measurement binding coordinates are not exact",
     )
     bindings[event.identity] = None
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
             _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity

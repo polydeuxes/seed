@@ -260,7 +260,7 @@ def test_events_from_different_localities_cannot_influence_one_another():
     }
 
 
-def test_locality_standing_carries_exact_measurement_identities_in_append_order():
+def test_current_coordinates_carry_exact_measurement_identities_in_append_order():
     ledger = _measurement_ledger()
     byte = _record_measurement(ledger, BYTE_MEASUREMENT_RECORDED_KIND)
     pair = record_byte_position_pair_count_layer(
@@ -308,7 +308,7 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
     )
 
 
-def test_locality_standing_carries_no_measurement_without_a_recorded_result():
+def test_current_coordinates_carry_no_measurement_without_a_recorded_result():
     ledger = _measurement_ledger()
 
     assert _standing(ledger)["measurement_occurrences"] == {}
@@ -329,7 +329,7 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
         )
 
 
-def test_locality_standing_carries_only_exact_yielded_result_identities():
+def test_current_coordinates_carry_only_exact_yielded_result_identities():
     ledger = EventLedger()
     source = record_operator_material_occurrence(
         ledger,
