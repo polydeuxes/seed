@@ -130,13 +130,13 @@ def _implementation_functions_available():
 
 
 @pytest.fixture(scope="module")
-def book_material_acquisitions():
+def book_material_results():
     ledger = EventLedger()
     paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
     if any(not path.is_file() for path in paths):
         pytest.skip("supplied fixture material is unavailable")
     supplied_material = supplied_book_material(ROOT)
-    acquisition_results = tuple(
+    material_results = tuple(
         record_witness_material_source(
             ledger,
             locality_identity="book-material",
@@ -145,12 +145,12 @@ def book_material_acquisitions():
         )
         for material in supplied_material
     )
-    return ledger, supplied_material, acquisition_results
+    return ledger, supplied_material, material_results
 
 
 @pytest.fixture(scope="module")
-def measured_book_pairs(book_material_acquisitions):
-    ledger, supplied_material, acquisition_results = book_material_acquisitions
+def measured_book_pairs(book_material_results):
+    ledger, supplied_material, material_results = book_material_results
     pytest.skip(
         "book Witness material stops before declared Measurement until its "
         "material-to-this-Seed Locality relation exists"
@@ -191,7 +191,7 @@ def measured_book_pairs(book_material_acquisitions):
     )
     return (
         supplied_material,
-        acquisition_results,
+        material_results,
         assertions,
         pairs,
         byte_assertions,
@@ -526,19 +526,19 @@ def _return_boundaries(occurrences):
 IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
-def test_every_supplied_material_has_its_own_acquisition(book_material_acquisitions):
-    _ledger, supplied_material, acquisition_results = book_material_acquisitions
+def test_every_supplied_material_has_its_own_result(book_material_results):
+    _ledger, supplied_material, material_results = book_material_results
 
-    assert len(supplied_material) == len(acquisition_results) == 16
-    assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
-    assert len({acquisition_result.identity for acquisition_result in acquisition_results}) == len(supplied_material)
-    assert tuple(acquisition_result.exact_material for acquisition_result in acquisition_results) == supplied_material
+    assert len(supplied_material) == len(material_results) == 16
+    assert {material_result.locality_identity for material_result in material_results} == {"book-material"}
+    assert len({material_result.identity for material_result in material_results}) == len(supplied_material)
+    assert tuple(material_result.exact_material for material_result in material_results) == supplied_material
 
 
 def test_book_witness_material_locality_is_available_before_measurement(
-    book_material_acquisitions,
+    book_material_results,
 ):
-    ledger, _supplied_material, acquisition_results = book_material_acquisitions
+    ledger, _supplied_material, material_results = book_material_results
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="book-material"
     )
@@ -546,25 +546,25 @@ def test_book_witness_material_locality_is_available_before_measurement(
     assert tuple(
         occurrence["result_occurrence_identity"]
         for occurrence in current_coordinates["material_result_occurrences"]
-    ) == tuple(result.identity for result in acquisition_results)
+    ) == tuple(result.identity for result in material_results)
     assert current_coordinates["material_locality_relation_occurrences"] == {
         result.identity: {
             "locality_relation": result.material["locality_relation"]
         }
-        for result in acquisition_results
+        for result in material_results
     }
     assert current_coordinates["measurement_occurrences"] == {}
 
 
 def test_book_witness_locality_records_declared_measurements(
-    book_material_acquisitions,
+    book_material_results,
 ):
-    ledger, _supplied_material, _acquisition_results = book_material_acquisitions
+    ledger, _supplied_material, _material_results = book_material_results
     recorded = record_declared_measurements_from_current_coordinates(
         ledger, locality_identity="book-material"
     )
 
-    assert len(recorded.result_occurrences) == len(_acquisition_results) + 1
+    assert len(recorded.result_occurrences) == len(_material_results) + 1
 
 
 @pytest.mark.skipif(
