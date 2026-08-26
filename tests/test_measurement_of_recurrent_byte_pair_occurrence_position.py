@@ -208,7 +208,7 @@ def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identiti
     yield_relation = ledger.get(result.material["yield_relation_identity"])
     identities = {
         binding.identity,
-        binding.material["measurement_act_identity"],
+        binding.material["exact_act_identity"],
         binding.material["act_occurrence_identity"],
         binding.material["measurement_result_identity"],
         act.identity,
