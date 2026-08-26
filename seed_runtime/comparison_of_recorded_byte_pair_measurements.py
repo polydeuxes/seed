@@ -426,7 +426,8 @@ def _comparison_inputs(
     )
     if len(invocation_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
-            "added occurrence carries several operator invocation Locality relations"
+            f"added occurrence carries {len(invocation_relations)} distinct operator "
+            "invocation Locality relations"
         )
     invocation_relation = invocation_relations[0] if invocation_relations else None
     operator_locality_identity = (
@@ -599,7 +600,8 @@ def _comparison_inputs_from_carried_measurements(
     )
     if len(invocation_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
-            "added occurrence carries several operator invocation Locality relations"
+            f"added occurrence carries {len(invocation_relations)} distinct operator "
+            "invocation Locality relations"
         )
     invocation_relation = invocation_relations[0] if invocation_relations else None
     if invocation_relation is not None:

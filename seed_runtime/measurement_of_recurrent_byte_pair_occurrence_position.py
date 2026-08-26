@@ -273,7 +273,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     recurrence_assertion_identities: tuple[str, ...],
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedRecurrentBytePair, ...]:
-    """Resolve several subjects from one independently validated result read."""
+    """Resolve every exact subject from one independently validated result read."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recurrent pair reference requires one EventLedger")
