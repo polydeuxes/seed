@@ -1556,14 +1556,14 @@ def advance_operator_locality_standing(
             event.kind
             == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            assignment_reading = _shared_position_binding_reading(
+            binding_reading = _shared_position_binding_reading(
                 ledger,
                 event,
                 prior_standing=addressed_byte_reference_prior_standing,
             )
             shared_position_replay_readings[event.identity] = (
                 _shared_position_replay_reading(
-                    ledger, assignment_reading
+                    ledger, binding_reading
                 )
             )
             subject_to_act_binding_occurrences[event.identity] = None
@@ -1584,7 +1584,7 @@ def advance_operator_locality_standing(
                 {
                     id(reading): reading
                     for reading in shared_position_replay_readings.values()
-                    if reading.assignment_reading[0].material.get(
+                    if reading.binding_reading[0].material.get(
                         "exact_act_identity"
                     )
                     == addressed_act_identity
@@ -1603,9 +1603,9 @@ def advance_operator_locality_standing(
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            assignment_identity = _shared_position_binding_identity(event)
+            binding_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
-                assignment_identity
+                binding_identity
             )
             try:
                 if replay_reading is not None:
@@ -1613,7 +1613,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_binding_reading(
+                    binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1621,19 +1621,19 @@ def advance_operator_locality_standing(
                     _read_shared_position_applicability_act(
                         ledger,
                         event.identity,
-                        assignment_reading=assignment_reading,
+                        binding_reading=binding_reading,
                     )
             except Exception:
-                if assignment_identity is not None:
+                if binding_identity is not None:
                     shared_position_replay_readings.pop(
-                        assignment_identity, None
+                        binding_identity, None
                     )
                 raise
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            assignment_identity = _shared_position_binding_identity(event)
+            binding_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
-                assignment_identity
+                binding_identity
             )
             try:
                 if replay_reading is not None:
@@ -1641,7 +1641,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_binding_reading(
+                    binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1649,20 +1649,20 @@ def advance_operator_locality_standing(
                     _read_shared_position_applicability_result(
                         ledger,
                         event.identity,
-                        assignment_reading=assignment_reading,
+                        binding_reading=binding_reading,
                     )
             except Exception:
-                if assignment_identity is not None:
+                if binding_identity is not None:
                     shared_position_replay_readings.pop(
-                        assignment_identity, None
+                        binding_identity, None
                     )
                 raise
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT:
-            assignment_identity = _shared_position_binding_identity(event)
+            binding_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
-                assignment_identity
+                binding_identity
             )
             try:
                 if replay_reading is not None:
@@ -1670,7 +1670,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_binding_reading(
+                    binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1678,12 +1678,12 @@ def advance_operator_locality_standing(
                     _read_shared_position_measurement_act(
                         ledger,
                         event.identity,
-                        assignment_reading=assignment_reading,
+                        binding_reading=binding_reading,
                     )
             except Exception:
-                if assignment_identity is not None:
+                if binding_identity is not None:
                     shared_position_replay_readings.pop(
-                        assignment_identity, None
+                        binding_identity, None
                     )
                 raise
             continue
@@ -1989,9 +1989,9 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
-            assignment_identity = _shared_position_binding_identity(event)
+            binding_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
-                assignment_identity
+                binding_identity
             )
             try:
                 if replay_reading is not None:
@@ -1999,7 +1999,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_binding_reading(
+                    binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -2007,17 +2007,17 @@ def advance_operator_locality_standing(
                     _read_shared_position_measurement_result(
                         ledger,
                         event.identity,
-                        assignment_reading=assignment_reading,
+                        binding_reading=binding_reading,
                     )
             except Exception:
-                if assignment_identity is not None:
+                if binding_identity is not None:
                     shared_position_replay_readings.pop(
-                        assignment_identity, None
+                        binding_identity, None
                     )
                 raise
-            if assignment_identity is not None:
+            if binding_identity is not None:
                 shared_position_replay_readings.pop(
-                    assignment_identity, None
+                    binding_identity, None
                 )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)

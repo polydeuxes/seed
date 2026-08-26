@@ -180,7 +180,7 @@ def _record_path(ledger, pair_measurement, source):
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger),
     )
     applicability = record_shared_position_applicability_result(

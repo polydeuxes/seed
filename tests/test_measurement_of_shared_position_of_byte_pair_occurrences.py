@@ -300,7 +300,7 @@ def _record_path(ledger, locality, first, second):
     assignment = _assignment(ledger, locality, first, second)
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
@@ -345,7 +345,7 @@ def _record_d2_shared_path(ledger, locality, determination_result):
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
@@ -857,7 +857,7 @@ def test_direct_position_coordinate_assertions_compose_without_recurrence_suppor
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
@@ -1015,7 +1015,7 @@ def test_d2_result_corruption_invalidates_shared_assignment_reader():
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
 
@@ -1121,7 +1121,7 @@ def test_later_direct_occurrence_read_requires_assignment_carried_exact_coordina
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
@@ -1150,7 +1150,7 @@ def test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate():
     assignment = _assignment(ledger, locality, first, second)
     act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     result = record_shared_position_applicability_result(
@@ -1174,7 +1174,7 @@ def test_one_act_cannot_yield_two_shared_position_results():
     assignment = _assignment(ledger, locality, first, second)
     act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     record_shared_position_applicability_result(
@@ -1259,7 +1259,7 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
     assignment = _assignment(ledger, locality, first, second)
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        assignment_event_identity=assignment.identity,
+        binding_event_identity=assignment.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_shared_position_applicability_result(
@@ -1477,7 +1477,7 @@ def test_carried_standing_requires_each_exact_occurrence_coordinate_intact(
     assert changed is True
 
 
-def test_carried_standing_requires_its_shared_assignment_occurrence_intact(
+def test_carried_coordinates_require_the_shared_binding_occurrence_intact(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -1491,7 +1491,7 @@ def test_carried_standing_requires_its_shared_assignment_occurrence_intact(
             not changed
             and event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT
         ):
-            reading.assignment_occurrence.event.material[
+            reading.binding_occurrence.event.material[
                 "changed_between_shared_replay_occurrences"
             ] = True
             changed = True
@@ -1566,8 +1566,8 @@ def test_operator_replay_refuses_a_substituted_shared_assignment(monkeypatch):
     def substitute_before_applicability(ledger, reading, event):
         nonlocal substituted
         if not substituted:
-            assignment, inputs = reading.assignment_reading
-            reading.assignment_reading = (deepcopy(assignment), inputs)
+            binding, inputs = reading.binding_reading
+            reading.binding_reading = (deepcopy(binding), inputs)
             substituted = True
         return original(ledger, reading, event)
 
@@ -1674,7 +1674,7 @@ FIDELITY_DISTINCTIONS = {
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
         test_one_complete_shared_measurement_reads_two_exact_bindings,
         test_carried_standing_requires_each_exact_occurrence_coordinate_intact,
-        test_carried_standing_requires_its_shared_assignment_occurrence_intact,
+        test_carried_coordinates_require_the_shared_binding_occurrence_intact,
         test_carried_standing_requires_each_later_shared_occurrence_intact,
         test_operator_replay_refuses_a_substituted_shared_assignment,
         test_operator_shared_replay_starts_fresh_after_exception,
