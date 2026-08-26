@@ -77,7 +77,11 @@ _IDENTITY_COORDINATES = (
     "compare_act_occurrence_identity",
     "compare_result_identity",
 )
-_APPLICABILITY_IDENTITY_COORDINATES = _IDENTITY_COORDINATES[:3]
+_APPLICABILITY_IDENTITY_COORDINATES = (
+    "exact_act_identity",
+    "applicability_act_occurrence_identity",
+    "applicability_result_identity",
+)
 _COMPARE_IDENTITY_COORDINATES = (
     "exact_act_identity",
     "compare_act_occurrence_identity",
@@ -305,8 +309,7 @@ def _applicability_binding_material(
                 "role": f"path position {inputs['second_path_position']}",
             },
         },
-        "exact_act_identity": identities["applicability_act_identity"],
-        "applicability_act_identity": identities["applicability_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "applicability_act_occurrence_identity": identities[
             "applicability_act_occurrence_identity"
         ],
@@ -362,8 +365,8 @@ def _applicability_binding_material(
 def _applicability_act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "act_identity": material["applicability_act_identity"],
-        "applicability_act_identity": material["applicability_act_identity"],
+        "act_identity": material["exact_act_identity"],
+        "applicability_act_identity": material["exact_act_identity"],
         "applicability_act_occurrence_identity": material[
             "applicability_act_occurrence_identity"
         ],
