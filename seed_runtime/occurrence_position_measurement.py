@@ -138,7 +138,7 @@ def _occurrence_position_result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": binding.material["measurement_result_identity"],
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "exact_act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
@@ -167,7 +167,7 @@ def _binding_material(
     finding: OccurrencePositionFinding,
     *,
     through_event_occurrence_identity: str | None,
-    measurement_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
@@ -178,8 +178,7 @@ def _binding_material(
                 for identity, _position in finding.occurrences
             ],
         },
-        "exact_act_identity": measurement_act_identity,
-        "measurement_act_identity": measurement_act_identity,
+        "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
@@ -285,7 +284,7 @@ def _occurrence_position_act_occurrence_material(
     participation: list[dict[str, str]],
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
@@ -424,7 +423,7 @@ def _record_occurrence_position_measurement_subject_to_act_binding(
             "occurrence position Measurement requires exact current coordinates"
         )
     identities = {
-        "measurement_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "occurrence_position_measurement_act"
         ),
         "act_occurrence_identity": ledger.mint_identity(
@@ -508,7 +507,7 @@ def _read_occurrence_position_measurement_subject_to_act_binding(
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "measurement_act_identity",
+            "exact_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
@@ -682,7 +681,7 @@ def _require_carried_occurrence_position_binding(
     identity_coordinates = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "measurement_act_identity",
+            "exact_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )

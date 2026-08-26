@@ -261,7 +261,7 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
     ]
     assert len(
         {
-            binding.material["measurement_act_identity"],
+            binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
             binding.material["measurement_result_identity"],
             binding.identity,
