@@ -202,7 +202,6 @@ def _scope(
     *,
     source_result: Event,
     coordinate_reference: dict[str, Any],
-    standing_boundary_identity: str,
 ) -> dict[str, str]:
     return {
         "locality_identity": source_result.locality_identity,
@@ -212,7 +211,6 @@ def _scope(
         "completeness_boundary_identity": coordinate_reference[
             "completeness_boundary_identity"
         ],
-        "standing_boundary_identity": standing_boundary_identity,
     }
 
 
@@ -379,7 +377,6 @@ def _determination_binding_material(
         "scope": _scope(
             source_result=source_result,
             coordinate_reference=coordinate_reference,
-            standing_boundary_identity=through_event_occurrence_identity,
         ),
         "unknown": list(UNKNOWN),
     }
@@ -429,7 +426,6 @@ def _applicability_binding_material(
             **_scope(
                 source_result=source_result,
                 coordinate_reference=coordinate_reference,
-                standing_boundary_identity=through_event_occurrence_identity,
             ),
             "addressed_act_identity": determination_act_identity,
         },
