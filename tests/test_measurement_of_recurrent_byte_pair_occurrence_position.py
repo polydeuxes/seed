@@ -101,7 +101,7 @@ def _fixture(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_position=recurrence.assertion_position,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
     )
     return ledger, locality, pair, recurrence, source, finding
@@ -520,7 +520,7 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
             reference.pair_measurement_occurrence_identity,
             reference.recurrence_assertion_position,
             reference.count_assertion_position,
-            reference.source_material_acquisition_occurrence_identity,
+            reference.source_material_result_occurrence_identity,
             reference.locality_identity,
             reference.completeness_boundary_identity,
             reference.exact_pair,
@@ -727,7 +727,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 ledger,
                 pair_measurement_occurrence_identity=pair.identity,
                 recurrence_assertion_positions=supplied,
-                source_material_acquisition_occurrence_identity=source.identity,
+                source_material_result_occurrence_identity=source.identity,
                 occurrence_count_boundary=16,
                 through=through,
             )
@@ -739,7 +739,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
                 recurrence.assertion_position,
                 recurrence.assertion_position,
             ),
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=through,
         )
@@ -751,7 +751,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_positions=(count_position,),
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=through,
         )
@@ -760,7 +760,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_positions=(recurrence.assertion_position,),
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=BoundarySubclass(through.identity),
         )
@@ -769,7 +769,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_positions=(recurrence.assertion_position,),
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=ledger.append_boundary_through_occurrence(pair.identity),
         )
@@ -791,7 +791,7 @@ def test_same_boundary_pair_subjects_keep_each_yield_relation_distinct():
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_positions=recurrence_positions,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
         through=ledger.append_boundary(),
     )
@@ -849,7 +849,7 @@ def test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss():
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
         recurrence_assertion_position=recurrence.assertion_position,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=2,
     )
     _act, result = _record(ledger, locality, finding)
@@ -904,7 +904,7 @@ def test_same_bytes_cannot_substitute_another_material_result_occurrence():
         source_boundary="another exact boundary",
     )
     substituted = finding._replace(
-        source_material_acquisition_occurrence_identity=substitute.identity
+        source_material_result_occurrence_identity=substitute.identity
     )
 
     with pytest.raises(ValueError, match="outside its exact boundary"):
@@ -930,7 +930,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_position=recurrence.assertion_position,
-            source_material_acquisition_occurrence_identity=other.identity,
+            source_material_result_occurrence_identity=other.identity,
             occurrence_count_boundary=16,
         )
     boundary_before_source = ledger.append_boundary_through_occurrence(pair.identity)
@@ -939,7 +939,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_position=recurrence.assertion_position,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
             through=boundary_before_source,
         )
@@ -955,7 +955,7 @@ def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
             recurrence_assertion_position=count_position,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             occurrence_count_boundary=16,
         )
     act, _result = _record(ledger, locality, finding)

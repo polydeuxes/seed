@@ -136,7 +136,7 @@ def _record_path(ledger, pair_measurement, source):
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
         recurrence_assertion_positions=(recurrence[(97, 98)], recurrence[(98, 99)]),
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
         through=ledger.append_boundary(),
     )

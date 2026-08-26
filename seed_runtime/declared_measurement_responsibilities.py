@@ -50,12 +50,12 @@ from seed_runtime.source_position_recurrence import (
 
 @dataclass(frozen=True)
 class PositionCoordinateMeasurementSubject:
-    source_material_acquisition_occurrence_identity: str
+    source_material_result_occurrence_identity: str
 
 
 @dataclass(frozen=True)
 class ExactByteOccurrenceMeasurementSubject:
-    source_material_acquisition_occurrence_identities: tuple[str, ...]
+    source_material_result_occurrence_identities: tuple[str, ...]
 
 
 DeclaredMeasurementSubject = (
@@ -169,7 +169,7 @@ def _discover_direct_measurements(
     )
     return tuple(
         PositionCoordinateMeasurementSubject(
-            source.source_material_acquisition_occurrence_identity
+            source.source_material_result_occurrence_identity
         )
         for source in sources
     )
@@ -231,8 +231,8 @@ def _record_direct_measurement(
         raise ValueError("position-coordinate Measurement requires its exact subject")
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=(
-            subject.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            subject.source_material_result_occurrence_identity
         ),
     )
     if finding.source_locality_identity != locality_identity:
@@ -298,7 +298,7 @@ def _require_exact_byte_occurrence_measurement_subject(
     if type(subject) is not ExactByteOccurrenceMeasurementSubject:
         raise ValueError("exact-byte Measurement requires its exact subject")
     current_sources = _material_acquisition_identities(bounded_locality_replay)
-    if subject.source_material_acquisition_occurrence_identities != current_sources:
+    if subject.source_material_result_occurrence_identities != current_sources:
         raise ValueError(
             "exact-byte Measurement subject differs from the current acquisition-result set"
         )

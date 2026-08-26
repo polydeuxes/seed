@@ -176,8 +176,8 @@ def _position_coordinate_reference(
     else:
         raise SharedPairPositionError("one exact pair role is required")
     coordinates = {
-        "source_material_acquisition_occurrence_identity": (
-            reference.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            reference.source_material_result_occurrence_identity
         ),
         "locality_identity": reference.locality_identity,
         "completeness_boundary_identity": (
@@ -209,8 +209,8 @@ def _reference_material(
     material = {
         "recorded_occurrence_identity": reference.recorded_occurrence_identity,
         "assertion_reference": reference.assertion_reference,
-        "source_material_acquisition_occurrence_identity": (
-            reference.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            reference.source_material_result_occurrence_identity
         ),
         "locality_identity": reference.locality_identity,
         "completeness_boundary_identity": (
@@ -431,8 +431,8 @@ def _validated_inputs(
             "one position Assertion cannot occupy first and second path relations"
         )
     if (
-        first.source_material_acquisition_occurrence_identity
-        != second.source_material_acquisition_occurrence_identity
+        first.source_material_result_occurrence_identity
+        != second.source_material_result_occurrence_identity
         or first.locality_identity != second.locality_identity
         or first.completeness_boundary_identity
         != second.completeness_boundary_identity
@@ -664,8 +664,8 @@ def _assignment_material(
         "standing_boundary_identity": standing_boundary_identity,
         "scope": {
             "locality_identity": inputs.first.locality_identity,
-            "source_material_acquisition_occurrence_identity": (
-                inputs.first.source_material_acquisition_occurrence_identity
+            "source_material_result_occurrence_identity": (
+                inputs.first.source_material_result_occurrence_identity
             ),
             "completeness_boundary_identity": (
                 inputs.first.completeness_boundary_identity
@@ -1689,8 +1689,8 @@ def _path_assertion(
         "shared_position_coordinate_reference": (
             inputs.shared_position_coordinate_reference
         ),
-        "source_material_acquisition_occurrence_identity": (
-            inputs.first.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            inputs.first.source_material_result_occurrence_identity
         ),
         "completeness_boundary_identity": (
             inputs.first.completeness_boundary_identity
@@ -1724,7 +1724,7 @@ def _path_assertion(
                 inputs.second.assertion_reference,
             ],
             "occurrence_references": [
-                inputs.first.source_material_acquisition_occurrence_identity,
+                inputs.first.source_material_result_occurrence_identity,
                 applicability.identity,
             ],
             "local_assertion_references": [],
@@ -2060,7 +2060,7 @@ def _shared_position_replay_occurrence_coordinates(
     yield_relations: list[Event] = []
     for reference in inputs:
         result_identities.append(reference.recorded_occurrence_identity)
-        source_identities.append(reference.source_material_acquisition_occurrence_identity)
+        source_identities.append(reference.source_material_result_occurrence_identity)
         pair_result_identity = getattr(
             reference, "pair_measurement_occurrence_identity", None
         )

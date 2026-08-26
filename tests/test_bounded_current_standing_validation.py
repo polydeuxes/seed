@@ -191,7 +191,7 @@ def test_the_position_assignment_refuses_a_forged_standing_boundary():
     with pytest.raises(ValueError):
         position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=forged,
         )
 
@@ -209,7 +209,7 @@ def test_the_position_assignment_authenticates_no_unread_branch():
 
     assignment = position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=unread,
     )
 

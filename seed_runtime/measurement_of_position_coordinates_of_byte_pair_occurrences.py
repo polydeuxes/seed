@@ -100,7 +100,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: "01.Source.D",
 }
 class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
-    source_material_acquisition_occurrence_identity: str
+    source_material_result_occurrence_identity: str
     source_locality_identity: str
     completeness_boundary: EventLedgerBoundary
     exact_material: bytes
@@ -126,7 +126,7 @@ class UnassignedPositionCoordinateMeasurementAcquisitionReading(NamedTuple):
     coordinates, Responsibility assignment, Applicability, Act, or Standing.
     """
 
-    source_material_acquisition_occurrence_identity: str
+    source_material_result_occurrence_identity: str
     source_result_identity: str
     source_locality_identity: str
     source_completeness_boundary_identity: str
@@ -147,7 +147,7 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
 ):
     recorded_occurrence_identity: str
     assertion_identity: str
-    source_material_acquisition_occurrence_identity: str
+    source_material_result_occurrence_identity: str
     locality_identity: str
     completeness_boundary_identity: str
     exact_pair: bytes
@@ -168,8 +168,8 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     @property
     def first_position_coordinate_reference(self) -> dict[str, Any]:
         return _source_position_coordinate_reference(
-            source_material_acquisition_occurrence_identity=(
-                self.source_material_acquisition_occurrence_identity
+            source_material_result_occurrence_identity=(
+                self.source_material_result_occurrence_identity
             ),
             source_locality_identity=self.locality_identity,
             completeness_boundary_identity=(
@@ -182,8 +182,8 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     @property
     def second_position_coordinate_reference(self) -> dict[str, Any]:
         return _source_position_coordinate_reference(
-            source_material_acquisition_occurrence_identity=(
-                self.source_material_acquisition_occurrence_identity
+            source_material_result_occurrence_identity=(
+                self.source_material_result_occurrence_identity
             ),
             source_locality_identity=self.locality_identity,
             completeness_boundary_identity=(
@@ -296,7 +296,7 @@ def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
                     "Measurement occurrence"
                 )
             source_identity = event.material.get(
-                "source_material_acquisition_occurrence_identity"
+                "source_material_result_occurrence_identity"
             )
             if type(source_identity) is not str or not source_identity:
                 raise ValueError(
@@ -409,7 +409,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             raise ValueError("exact material acquisition assignment subject coordinates are malformed")
         sources.append(
             UnassignedPositionCoordinateMeasurementAcquisitionReading(
-                source_material_acquisition_occurrence_identity=source.identity,
+                source_material_result_occurrence_identity=source.identity,
                 source_result_identity=exact_coordinates["result_identity"],
                 source_locality_identity=source.locality_identity,
                 source_completeness_boundary_identity=(
@@ -479,8 +479,8 @@ def _validate_finding(
     if type(finding) is not FindingOfPositionCoordinatesOfBytePairOccurrences:
         raise TypeError("byte-pair position-coordinate Measurement requires one exact finding")
     if (
-        type(finding.source_material_acquisition_occurrence_identity) is not str
-        or not finding.source_material_acquisition_occurrence_identity
+        type(finding.source_material_result_occurrence_identity) is not str
+        or not finding.source_material_result_occurrence_identity
         or type(finding.source_locality_identity) is not str
         or not finding.source_locality_identity
         or type(finding.completeness_boundary) is not EventLedgerBoundary
@@ -492,10 +492,10 @@ def _validate_finding(
 def _measure_through(
     ledger: EventLedger,
     *,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
     boundary: EventLedgerBoundary,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    source = read_exact_material_result(ledger, source_material_acquisition_occurrence_identity)
+    source = read_exact_material_result(ledger, source_material_result_occurrence_identity)
     exact_boundary = ledger.append_boundary_through_occurrence(source.identity)
     if type(boundary) is not EventLedgerBoundary or boundary != exact_boundary:
         raise ValueError(
@@ -503,7 +503,7 @@ def _measure_through(
         )
     exact = exact_material_result_bytes(source)
     finding = FindingOfPositionCoordinatesOfBytePairOccurrences(
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary=boundary,
         exact_material=exact,
@@ -515,22 +515,22 @@ def _measure_through(
 def measure_position_coordinates_of_byte_pair_occurrences(
     ledger: EventLedger,
     *,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
     """Measure each exact byte-pair window in one material acquisition result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("byte-pair position-coordinate Measurement requires one EventLedger")
     if (
-        type(source_material_acquisition_occurrence_identity) is not str
-        or not source_material_acquisition_occurrence_identity
+        type(source_material_result_occurrence_identity) is not str
+        or not source_material_result_occurrence_identity
     ):
         raise ValueError("byte-pair position-coordinate Measurement requires one material acquisition result")
     return _measure_through(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_result_occurrence_identity=source_material_result_occurrence_identity,
         boundary=ledger.append_boundary_through_occurrence(
-            source_material_acquisition_occurrence_identity
+            source_material_result_occurrence_identity
         ),
     )
 
@@ -558,7 +558,7 @@ def _input_relation(
     return {
         "first_subject": {
             "recorded_occurrence_identity": (
-                finding.source_material_acquisition_occurrence_identity
+                finding.source_material_result_occurrence_identity
             )
         },
         "relation": "input_to",
@@ -599,8 +599,8 @@ def _assignment_material(
         "book_clause_identity": "01.Source.D",
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "source_material_acquisition_occurrence_identity": (
-            finding.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -608,8 +608,8 @@ def _assignment_material(
         "input_relation": input_relation,
         "measurement_rule": MEASUREMENT_RULE,
         "scope": {
-            "source_material_acquisition_occurrence_identity": (
-                finding.source_material_acquisition_occurrence_identity
+            "source_material_result_occurrence_identity": (
+                finding.source_material_result_occurrence_identity
             ),
             "source_locality_identity": finding.source_locality_identity,
             "completeness_boundary_identity": (
@@ -628,7 +628,7 @@ def _require_current_standing(
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
-    source_material_acquisition_occurrence_identity: str | None = None,
+    source_material_result_occurrence_identity: str | None = None,
     assignment_identity: str | None = None,
 ) -> str:
     """Validate the exact current Standing coordinates this Responsibility reads.
@@ -652,9 +652,9 @@ def _require_current_standing(
         if type(occurrence) is dict
     }
     source_has_exact_locality = bool(
-        source_material_acquisition_occurrence_identity is None
+        source_material_result_occurrence_identity is None
         or _has_exact_material_locality_to_this_seed(
-            ledger, source_material_acquisition_occurrence_identity
+            ledger, source_material_result_occurrence_identity
         )
     )
     if (
@@ -662,9 +662,9 @@ def _require_current_standing(
         or type(boundary) is not str
         or not boundary
         or (
-            source_material_acquisition_occurrence_identity is not None
+            source_material_result_occurrence_identity is not None
             and (
-                source_material_acquisition_occurrence_identity
+                source_material_result_occurrence_identity
                 not in standing_acquisition_results
                 or not source_has_exact_locality
             )
@@ -704,7 +704,7 @@ def _require_exact_responsibility_boundary(
     *,
     locality_identity: str,
     responsibility_boundary_identity: str,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
 ) -> str:
     """Validate the exact earlier boundary that supplies this assignment subject."""
 
@@ -721,13 +721,13 @@ def _require_exact_responsibility_boundary(
         boundary = ledger.append_boundary_through_occurrence(
             responsibility_boundary_identity
         )
-        order = (source_material_acquisition_occurrence_identity,)
+        order = (source_material_result_occurrence_identity,)
         if (
-            source_material_acquisition_occurrence_identity
+            source_material_result_occurrence_identity
             != responsibility_boundary_identity
         ):
             order = (
-                source_material_acquisition_occurrence_identity,
+                source_material_result_occurrence_identity,
                 responsibility_boundary_identity,
             )
         ledger.occurrences_in_append_order(order, locality_identity=locality_identity)
@@ -741,7 +741,7 @@ def _require_exact_responsibility_boundary(
         or boundary_event.locality_identity != locality_identity
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
         or not _has_exact_material_locality_to_this_seed(
-            ledger, source_material_acquisition_occurrence_identity
+            ledger, source_material_result_occurrence_identity
         )
     ):
         raise ValueError(
@@ -749,7 +749,7 @@ def _require_exact_responsibility_boundary(
             "responsible boundary"
         )
     source = read_exact_material_result(
-        ledger, source_material_acquisition_occurrence_identity
+        ledger, source_material_result_occurrence_identity
     )
     if not any(
         event.identity == source.identity
@@ -769,12 +769,12 @@ def _require_exact_responsibility_boundary(
 def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_result_occurrence_identity=source_material_result_occurrence_identity,
     )
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
         ledger,
@@ -794,8 +794,8 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         ledger,
         locality_identity=finding.source_locality_identity,
         locality_standing=locality_standing,
-        source_material_acquisition_occurrence_identity=(
-            finding.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            finding.source_material_result_occurrence_identity
         ),
     )
     # This runtime refusal prevents malformed or already-recorded sources from
@@ -809,8 +809,8 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             locality_identity=finding.source_locality_identity,
         )
     )
-    if finding.source_material_acquisition_occurrence_identity not in {
-        source.source_material_acquisition_occurrence_identity for source in current_sources
+    if finding.source_material_result_occurrence_identity not in {
+        source.source_material_result_occurrence_identity for source in current_sources
     }:
         raise ValueError(
             "byte-pair position-coordinate assignment requires one exact current unassigned material acquisition result"
@@ -879,13 +879,13 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         ledger,
         locality_identity=finding.source_locality_identity,
         responsibility_boundary_identity=responsibility_boundary_identity,
-        source_material_acquisition_occurrence_identity=(
-            finding.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            finding.source_material_result_occurrence_identity
         ),
     )
     if any(
-        event.material.get("source_material_acquisition_occurrence_identity")
-        == finding.source_material_acquisition_occurrence_identity
+        event.material.get("source_material_result_occurrence_identity")
+        == finding.source_material_result_occurrence_identity
         for kind in (
             BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
@@ -939,14 +939,14 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
 def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
     ledger: EventLedger,
     *,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
     """Assign the exact source result to this declared Measurement."""
 
     return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source_material_acquisition_occurrence_identity,
+        source_material_result_occurrence_identity=source_material_result_occurrence_identity,
         locality_standing=locality_standing,
     )
 
@@ -975,7 +975,7 @@ def _read_assignment(
             "measurement_result_identity",
         )
     }
-    source_identity = material.get("source_material_acquisition_occurrence_identity")
+    source_identity = material.get("source_material_result_occurrence_identity")
     boundary_identity = material.get("completeness_boundary_identity")
     standing_boundary_identity = material.get("standing_boundary_identity")
     if (
@@ -994,7 +994,7 @@ def _read_assignment(
     try:
         finding = _measure_through(
             ledger,
-            source_material_acquisition_occurrence_identity=source_identity,
+            source_material_result_occurrence_identity=source_identity,
             boundary=EventLedgerBoundary(boundary_identity),
         )
     except (TypeError, ValueError) as error:
@@ -1102,7 +1102,7 @@ def _participation(
     act_occurrence_identity: str,
 ) -> dict[str, str]:
     return {
-        "subject_reference": finding.source_material_acquisition_occurrence_identity,
+        "subject_reference": finding.source_material_result_occurrence_identity,
         "role": "input",
         "act_occurrence_identity": act_occurrence_identity,
     }
@@ -1270,14 +1270,14 @@ def _exact_json(value: Any) -> str:
 
 def _source_position_coordinate_reference(
     *,
-    source_material_acquisition_occurrence_identity: str,
+    source_material_result_occurrence_identity: str,
     source_locality_identity: str,
     completeness_boundary_identity: str,
     position: int,
     exact_material: bytes,
 ) -> dict[str, Any]:
     coordinates = {
-        "source_material_acquisition_occurrence_identity": source_material_acquisition_occurrence_identity,
+        "source_material_result_occurrence_identity": source_material_result_occurrence_identity,
         "locality_identity": source_locality_identity,
         "completeness_boundary_identity": completeness_boundary_identity,
         "position": position,
@@ -1298,16 +1298,16 @@ def _assertion_coordinates(
     second_position: int,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, int]]:
     subject = {
-        "source_material_acquisition_occurrence_identity": (
-            finding.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
         ),
         "exact_pair": list(exact_pair),
         "measurement_rule": MEASUREMENT_RULE,
     }
     scope = {
         "source_locality_identity": finding.source_locality_identity,
-        "source_material_acquisition_occurrence_identity": (
-            finding.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
         ),
         "completeness_boundary_identity": finding.completeness_boundary.identity,
     }
@@ -1316,8 +1316,8 @@ def _assertion_coordinates(
         "second_position": second_position,
         "first_position_coordinate_reference": (
             _source_position_coordinate_reference(
-                source_material_acquisition_occurrence_identity=(
-                    finding.source_material_acquisition_occurrence_identity
+                source_material_result_occurrence_identity=(
+                    finding.source_material_result_occurrence_identity
                 ),
                 source_locality_identity=finding.source_locality_identity,
                 completeness_boundary_identity=(
@@ -1329,8 +1329,8 @@ def _assertion_coordinates(
         ),
         "second_position_coordinate_reference": (
             _source_position_coordinate_reference(
-                source_material_acquisition_occurrence_identity=(
-                    finding.source_material_acquisition_occurrence_identity
+                source_material_result_occurrence_identity=(
+                    finding.source_material_result_occurrence_identity
                 ),
                 source_locality_identity=finding.source_locality_identity,
                 completeness_boundary_identity=(
@@ -1376,7 +1376,7 @@ def _assertion(
         "assertion_subject": subject,
         "assertion_scope": scope,
         "input_support": {
-            "occurrence_references": [finding.source_material_acquisition_occurrence_identity],
+            "occurrence_references": [finding.source_material_result_occurrence_identity],
             "local_assertion_references": [],
         },
         "conflicts": "Unknown",
@@ -1416,8 +1416,8 @@ def _assertion_population(
     return {
         "result": "position",
         "measurement_rule": MEASUREMENT_RULE,
-        "source_material_acquisition_occurrence_identity": (
-            finding.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
@@ -1457,8 +1457,8 @@ def _result_material(
         "input_relation": assignment.material["input_relation"],
         "measurement_rule": MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
-        "source_material_acquisition_occurrence_identity": (
-            finding.source_material_acquisition_occurrence_identity
+        "source_material_result_occurrence_identity": (
+            finding.source_material_result_occurrence_identity
         ),
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity
@@ -1540,8 +1540,8 @@ def _record_byte_pair_occurrence_position_measurement_result(
             "input_relation": result["input_relation"],
             "measurement_rule": result["measurement_rule"],
             "source_localities": result["source_localities"],
-            "source_material_acquisition_occurrence_identity": result[
-                "source_material_acquisition_occurrence_identity"
+            "source_material_result_occurrence_identity": result[
+                "source_material_result_occurrence_identity"
             ],
             "completeness_boundary": result["completeness_boundary"],
             "assertions": result["assertions"],
@@ -1748,8 +1748,8 @@ def _recorded_position_reference(
             first_position=first_position,
             second_position=second_position,
         ),
-        source_material_acquisition_occurrence_identity=(
-            finding.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            finding.source_material_result_occurrence_identity
         ),
         locality_identity=finding.source_locality_identity,
         completeness_boundary_identity=finding.completeness_boundary.identity,
@@ -1807,7 +1807,7 @@ def _position_of_exact_source_position_coordinate_reference(
 ) -> int:
     coordinate_keys = {
         "identity",
-        "source_material_acquisition_occurrence_identity",
+        "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
         "position",
@@ -1818,9 +1818,9 @@ def _position_of_exact_source_position_coordinate_reference(
         or set(position_coordinate_reference) != coordinate_keys
         or type(position_coordinate_reference.get("identity")) is not str
         or not position_coordinate_reference["identity"]
-        or type(position_coordinate_reference.get("source_material_acquisition_occurrence_identity"))
+        or type(position_coordinate_reference.get("source_material_result_occurrence_identity"))
         is not str
-        or not position_coordinate_reference["source_material_acquisition_occurrence_identity"]
+        or not position_coordinate_reference["source_material_result_occurrence_identity"]
         or type(position_coordinate_reference.get("locality_identity")) is not str
         or not position_coordinate_reference["locality_identity"]
         or type(
@@ -1843,8 +1843,8 @@ def _position_of_exact_source_position_coordinate_reference(
             "addressed source position is outside the exact material acquisition result"
         )
     expected = _source_position_coordinate_reference(
-        source_material_acquisition_occurrence_identity=(
-            finding.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            finding.source_material_result_occurrence_identity
         ),
         source_locality_identity=finding.source_locality_identity,
         completeness_boundary_identity=finding.completeness_boundary.identity,
@@ -2003,8 +2003,8 @@ def source_position_coordinate_references_of_recorded_position_measurement(
     )
     for position, value in enumerate(finding.exact_material):
         yield _source_position_coordinate_reference(
-            source_material_acquisition_occurrence_identity=(
-                finding.source_material_acquisition_occurrence_identity
+            source_material_result_occurrence_identity=(
+                finding.source_material_result_occurrence_identity
             ),
             source_locality_identity=finding.source_locality_identity,
             completeness_boundary_identity=finding.completeness_boundary.identity,

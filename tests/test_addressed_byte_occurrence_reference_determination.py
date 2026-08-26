@@ -72,7 +72,7 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
     standing = read_operator_locality_standing(ledger, locality_identity=locality)
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=standing,
     )
     standing = _advance(ledger, standing, assignment)
@@ -91,7 +91,7 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
 
 def _coordinate(ledger, source, exact, position):
     return _source_position_coordinate_reference(
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         source_locality_identity=source.locality_identity,
         completeness_boundary_identity=(
             ledger.append_boundary_through_occurrence(source.identity).identity
@@ -180,7 +180,7 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "first_subject",
         "relation",
         "second_subject",
-        "source_material_acquisition_occurrence_identity",
+        "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
         "responsibility_assignment_reference",

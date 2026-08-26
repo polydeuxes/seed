@@ -152,10 +152,10 @@ def _path_input(
                 "source position Compare requires exact position coordinates"
             )
     if (
-        first["source_material_acquisition_occurrence_identity"]
-        != middle["source_material_acquisition_occurrence_identity"]
-        or middle["source_material_acquisition_occurrence_identity"]
-        != final["source_material_acquisition_occurrence_identity"]
+        first["source_material_result_occurrence_identity"]
+        != middle["source_material_result_occurrence_identity"]
+        or middle["source_material_result_occurrence_identity"]
+        != final["source_material_result_occurrence_identity"]
         or first["completeness_boundary_identity"]
         != middle["completeness_boundary_identity"]
         or middle["completeness_boundary_identity"]
@@ -185,7 +185,7 @@ def _path_input(
         "first": deepcopy(positions[first_path_position]),
         "second": deepcopy(positions[second_path_position]),
         "source_occurrence_identity": first[
-            "source_material_acquisition_occurrence_identity"
+            "source_material_result_occurrence_identity"
         ],
         "completeness_boundary_identity": first[
             "completeness_boundary_identity"
@@ -279,7 +279,7 @@ def _applicability_act_material(
         ],
         "scope": {
             "locality_identity": inputs["locality_identity"],
-            "source_material_acquisition_occurrence_identity": inputs[
+            "source_material_result_occurrence_identity": inputs[
                 "source_occurrence_identity"
             ],
             "completeness_boundary_identity": inputs[

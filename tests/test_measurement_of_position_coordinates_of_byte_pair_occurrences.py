@@ -94,7 +94,7 @@ def _record(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
     source = _source(ledger, exact, locality)
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -140,7 +140,7 @@ def test_each_input_pair_has_first_and_second_exact_position_coordinates():
 
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
     )
 
     assert finding.occurrences == (
@@ -150,7 +150,7 @@ def test_each_input_pair_has_first_and_second_exact_position_coordinates():
         (b"=5", 3, 4),
         (b"5\n", 4, 5),
     )
-    assert finding.source_material_acquisition_occurrence_identity == source.identity
+    assert finding.source_material_result_occurrence_identity == source.identity
     assert finding.completeness_boundary == (
         ledger.append_boundary_through_occurrence(source.identity)
     )
@@ -176,10 +176,10 @@ def test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b
 
     assert ledger.append_boundary() == tip_before_read
     assert tuple(
-        subject.source_material_acquisition_occurrence_identity for subject in through_first
+        subject.source_material_result_occurrence_identity for subject in through_first
     ) == (first.identity,)
     assert tuple(
-        subject.source_material_acquisition_occurrence_identity for subject in through_second
+        subject.source_material_result_occurrence_identity for subject in through_second
     ) == (first.identity, second.identity)
     first_source = through_first[0]
     assert first_source.source_result_identity == first.material["result_identity"]
@@ -222,7 +222,7 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     )
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=first.identity,
+        source_material_result_occurrence_identity=first.identity,
         locality_standing=_standing(ledger, "s"),
     )
     tip_after_assignment = ledger.append_boundary()
@@ -245,7 +245,7 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     assert ledger.append_boundary() == tip_after_assignment
     assert same_earlier_read == through_sources
     assert tuple(
-        subject.source_material_acquisition_occurrence_identity for subject in through_assignment
+        subject.source_material_result_occurrence_identity for subject in through_assignment
     ) == (second.identity,)
 
 
@@ -254,7 +254,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     source = _source(ledger, locality="s")
     record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, "s"),
     )
     boundary = ledger.append_boundary()
@@ -262,7 +262,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     with pytest.raises(ValueError, match="one exact current unassigned material acquisition result"):
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=_standing(ledger, "s"),
         )
 
@@ -293,7 +293,7 @@ def test_unassigned_material_acquisition_read_survives_sqlite_restart(tmp_path):
         assert after == before
         assert reopened.append_boundary() == boundary
         assert tuple(
-            subject.source_material_acquisition_occurrence_identity for subject in after
+            subject.source_material_result_occurrence_identity for subject in after
         ) == (first.identity, second.identity)
     finally:
         reopened.close()
@@ -305,7 +305,7 @@ def test_same_pair_material_at_distinct_positions_remains_distinct_occurrences()
 
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
     )
 
     assert finding.occurrences == ((b"aa", 0, 1), (b"aa", 1, 2))
@@ -338,18 +338,18 @@ def test_empty_witness_material_locality_can_acquire_an_empty_measurement_assign
     )
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
     )
     assert finding.occurrences == ()
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(
             ledger, "position-occurrence-position"
         ),
     )
     assert assignment.material[
-        "source_material_acquisition_occurrence_identity"
+        "source_material_result_occurrence_identity"
     ] == source.identity
 
 
@@ -359,7 +359,7 @@ def test_assignment_act_yield_and_result_enter_current_standing():
     locality = source.locality_identity
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     assert assignment.identity in _standing(
@@ -398,7 +398,7 @@ def test_act_requires_current_standing_that_carries_exact_assignment():
     before_assignment = _standing(ledger, locality)
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=before_assignment,
     )
 
@@ -435,11 +435,11 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
     locality = source.locality_identity
     finding = measure_position_coordinates_of_byte_pair_occurrences(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
     )
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -510,7 +510,7 @@ def test_references_preserve_every_exact_pair_occurrence():
         != references[0].second_position_coordinate_reference["identity"]
     )
     assert all(
-        reference.source_material_acquisition_occurrence_identity == source.identity
+        reference.source_material_result_occurrence_identity == source.identity
         and reference.recorded_occurrence_identity == result.identity
         for reference in references
     )
@@ -735,8 +735,8 @@ def test_addressed_source_position_preserves_exact_boundaries(
         ledger, result.identity
     )
     coordinate = direct_position_module._source_position_coordinate_reference(
-        source_material_acquisition_occurrence_identity=(
-            finding.source_material_acquisition_occurrence_identity
+        source_material_result_occurrence_identity=(
+            finding.source_material_result_occurrence_identity
         ),
         source_locality_identity=finding.source_locality_identity,
         completeness_boundary_identity=finding.completeness_boundary.identity,
@@ -837,7 +837,7 @@ def test_result_refuses_an_intact_yield_from_another_exact_family(
     source = _source(ledger)
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, source.locality_identity),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -895,7 +895,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
     assignment = (
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=carried_source,
         )
     )
@@ -921,7 +921,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
     with pytest.raises(ValueError, match="current Locality Standing"):
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=stale_source,
         )
 
@@ -933,7 +933,7 @@ def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
     locality = source.locality_identity
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     assignment_identity = assignment.identity
@@ -990,7 +990,7 @@ def test_same_call_result_carry_equals_full_standing_replay():
     locality = source.locality_identity
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -1019,7 +1019,7 @@ def test_refused_same_call_result_does_not_change_prior_standing():
     locality = source.locality_identity
     assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
-        source_material_acquisition_occurrence_identity=source.identity,
+        source_material_result_occurrence_identity=source.identity,
         locality_standing=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
@@ -1121,7 +1121,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "input_relation",
         "measurement_rule",
         "source_localities",
-        "source_material_acquisition_occurrence_identity",
+        "source_material_result_occurrence_identity",
         "completeness_boundary",
         "assertions",
         "unknown",

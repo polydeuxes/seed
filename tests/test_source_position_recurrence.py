@@ -36,7 +36,7 @@ def _direct_result(ledger, *, locality, exact):
     assignment = (
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=standing,
         )
     )

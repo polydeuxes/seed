@@ -143,7 +143,7 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
     one_assertions = dict(one_positions.material["assertions"])
     split_assertions = dict(split_positions.material["assertions"])
     for coordinate in (
-        "source_material_acquisition_occurrence_identity",
+        "source_material_result_occurrence_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
     ):

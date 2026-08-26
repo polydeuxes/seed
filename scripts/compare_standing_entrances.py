@@ -141,7 +141,7 @@ def main() -> int:
         before[label] = _observed_before(ledger, source, standing)
         assignment = entrance(
             ledger,
-            source_material_acquisition_occurrence_identity=source.identity,
+            source_material_result_occurrence_identity=source.identity,
             locality_standing=standing,
         )
         after[label] = _recorded_assignment(assignment, _position_of(ledger))

@@ -289,7 +289,7 @@ def _require_preserved_result(
 def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str, Any]:
     keys = {
         "identity",
-        "source_material_acquisition_occurrence_identity",
+        "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
         "position",
@@ -300,9 +300,9 @@ def _require_coordinate(coordinate: Any, *, locality_identity: str) -> dict[str,
         or set(coordinate) != keys
         or type(coordinate.get("identity")) is not str
         or not coordinate["identity"]
-        or type(coordinate.get("source_material_acquisition_occurrence_identity"))
+        or type(coordinate.get("source_material_result_occurrence_identity"))
         is not str
-        or not coordinate["source_material_acquisition_occurrence_identity"]
+        or not coordinate["source_material_result_occurrence_identity"]
         or coordinate.get("locality_identity") != locality_identity
         or type(coordinate.get("completeness_boundary_identity")) is not str
         or not coordinate["completeness_boundary_identity"]
@@ -335,14 +335,14 @@ def _direct_coordinates(
         raise ValueError("source-position requires at least two source coordinates")
     locality_identity = coordinates[0]["locality_identity"]
     source_identity = coordinates[0][
-        "source_material_acquisition_occurrence_identity"
+        "source_material_result_occurrence_identity"
     ]
     completeness_boundary = coordinates[0]["completeness_boundary_identity"]
     for position, coordinate in enumerate(coordinates):
         _require_coordinate(coordinate, locality_identity=locality_identity)
         if (
             coordinate["position"] != position
-            or coordinate["source_material_acquisition_occurrence_identity"]
+            or coordinate["source_material_result_occurrence_identity"]
             != source_identity
             or coordinate["completeness_boundary_identity"]
             != completeness_boundary
