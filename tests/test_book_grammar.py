@@ -84,7 +84,7 @@ def test_empty_current_coordinates_are_only_the_first_current_coordinates():
     assert "S0" not in active_book
 
 
-def test_applicability_required_admission_and_participation_remain_separate():
+def test_applicability_admission_and_participation_remain_separate():
     grammar = _grammar()
     boundary = grammar["book_coordinates"]["01.Current.E.1"]
     assert boundary["Applicability"] == {
@@ -114,18 +114,6 @@ def test_applicability_required_admission_and_participation_remain_separate():
         assert "required_Admission" not in compare
         assert compare["relations"] == ["participation", "yield"]
 
-    candidate_compare = grammar["book_coordinates"]["04.Compare.C"]
-    assert candidate_compare["requires"] == [
-        "Applicability_result",
-        "exact_Admission_occurrence",
-        "participation_relation_occurrence",
-    ]
-    assert candidate_compare["Participation"] == {
-        "subject": "Candidate",
-        "role": "Candidate",
-    }
-
-
 def test_generic_compare_carries_its_exact_rule():
     generic_compare = _grammar()["book_coordinates"]["04.Compare"]
 
@@ -135,44 +123,10 @@ def test_generic_compare_carries_its_exact_rule():
     ).read_text(encoding="utf-8")
 
 
-def test_candidate_compare_uses_candidate_as_subject_and_sources_as_coordinates():
-    candidate_compare = _grammar()["book_coordinates"]["04.Compare.C"]
-
-    assert candidate_compare == {
-        "subject": "Candidate",
-        "requires_current_coordinates": "exact_Candidate_result",
-        "exact_Act": "Compare",
-        "rule": "compare_first_and_second_source_Assertion_coordinates",
-        "carried_coordinates": [
-            "first_source_Assertion_reference",
-            "second_source_Assertion_reference",
-            "first_source_role",
-            "second_source_role",
-        ],
-        "requires": [
-            "Applicability_result",
-            "exact_Admission_occurrence",
-            "participation_relation_occurrence",
-        ],
-        "Participation": {
-            "subject": "Candidate",
-            "role": "Candidate",
-        },
-        "relations": ["participation", "yield"],
-        "result": "Candidate_coordinate_Compare_result",
-    }
-    assert candidate_compare["subject"] not in candidate_compare[
-        "carried_coordinates"
-    ]
-    assert candidate_compare["Participation"]["subject"] == candidate_compare[
-        "subject"
-    ]
-
-
 def test_addressed_position_coordinates_carry_the_bounded_subjects():
     measurement = _grammar()["book_coordinates"]["01.Source.D.2"]
     chapter = (
-        CHAPTERS / "07_measurement_and_candidates.md"
+        CHAPTERS / "07_measurement.md"
     ).read_text(encoding="utf-8")
 
     assert measurement["requires_current_coordinates"] == (
@@ -182,63 +136,6 @@ def test_addressed_position_coordinates_carry_the_bounded_subjects():
         "exhaustive_bounded_source_byte_position_references"
     )
     assert "The bounded subjects are exhaustive." in chapter
-
-
-def test_candidate_production_requires_an_exact_rule_and_addressed_subjects():
-    grammar = _grammar()
-    candidate = grammar["book_coordinates"]["01.Source.E.1"]
-
-    assert candidate == {
-        "subject": "exact_subject_required_by_exact_Candidate_rule",
-        "exact_Act": "Candidate",
-        "rule": "exact_Candidate_rule",
-        "requires": [
-            "exact_Candidate_rule",
-            "exact_required_subject",
-            "Applicability_result",
-            "participation_relation_occurrence",
-        ],
-        "required_Admission": (
-            "exact_Admission_occurrence_prior_to_Participation"
-        ),
-        "completeness_boundary": "exact_rule_and_subject_boundary",
-        "relations": ["participation", "yield"],
-        "result": "exact_Candidate_result",
-    }
-    candidate_book = (
-        CHAPTERS / "07_measurement_and_candidates.md"
-    ).read_text(encoding="utf-8")
-    compare_book = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
-    assert (
-        "The rule and\n"
-        "subject boundary are exact prior to the Candidate Act."
-    ) in candidate_book
-    assert (
-        "The\nCandidate Act establishes no rule or subject boundary."
-    ) in candidate_book
-    assert (
-        "Each required subject is\n"
-        "separately addressed prior to its Applicability and Participation."
-    ) in candidate_book
-    assert (
-        "Completeness requires one exact Candidate result for every subject "
-        "required by\n"
-        "the exact rule."
-    ) in candidate_book
-    assert "source Assertion pair" not in candidate_book
-    assert "one complete Candidate result" not in compare_book
-    assert "every Candidate in the complete Candidate result" not in compare_book
-
-
-def test_candidate_compare_book_refuses_source_participation_and_relation_promotion():
-    compare = (CHAPTERS / "08_compare.md").read_text(encoding="utf-8")
-
-    assert "The Candidate is the exact Compare subject." in compare
-    assert (
-        "Each admitted\n"
-        "Candidate requires its exact Participation relation to its Compare Act\n"
-        "occurrence under the exact Candidate role."
-    ) in compare
 
 
 def test_subject_to_act_binding_is_direct_clause_coordinates():

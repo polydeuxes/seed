@@ -1,4 +1,4 @@
-# Measurement and Candidate
+# Measurement
 
 ### 01.Source.D — Declared Measurement
 
@@ -37,38 +37,6 @@ The bounded subjects are exhaustive.
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
 preserves every exact pair-position reference for that byte occurrence in source occurrence order.
-
-### 01.Source.E — Candidate preservation
-
-Before one Candidate-preservation Act occurrence, one exact addressed source
-result and that exact Act are exact together. The Candidate result preserves its
-exact source references, Scope, Locality, provenance, and
-Unknown.
-
-### 01.Source.E.1 — Candidate results required by one exact rule
-
-Before one Candidate Act occurrence, its exact rule, one exact subject
-boundary, and every exact subject that rule requires are exact. The rule and
-subject boundary are exact prior to the Candidate Act. The
-Candidate Act establishes no rule or subject boundary. Each required subject is
-separately addressed prior to its Applicability and Participation.
-
-Each required subject requires its exact Applicability result and Participation
-relation to an exact Candidate Act occurrence. Each required Admission requires
-its exact occurrence prior to Participation.
-
-```
-Candidate Act occurrence --Yield--> exact Candidate result
-```
-
-Each result preserves one exact Candidate with the exact subject references,
-coordinates, and Act-local roles required by its rule. A relation requires an
-exact relation occurrence.
-
-Completeness requires one exact Candidate result for every subject required by
-the exact rule. Every Candidate result requires one subject required by the
-exact rule. Its completeness boundary preserves the
-exact rule and subject boundary.
 
 ## References
 

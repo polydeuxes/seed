@@ -119,29 +119,6 @@
       "result": "addressed_byte_occurrence_reference_result",
       "requires_current_coordinates": "exact_byte_pair_position_Measurement_result"
     },
-    "01.Source.E": {
-      "subject": "Candidate",
-      "exact_Act": "preserve_exact_Candidate",
-      "result": "Candidate_result"
-    },
-    "01.Source.E.1": {
-      "subject": "exact_subject_required_by_exact_Candidate_rule",
-      "exact_Act": "Candidate",
-      "rule": "exact_Candidate_rule",
-      "required_Admission": "exact_Admission_occurrence_prior_to_Participation",
-      "completeness_boundary": "exact_rule_and_subject_boundary",
-      "relations": [
-        "participation",
-        "yield"
-      ],
-      "result": "exact_Candidate_result",
-      "requires": [
-        "exact_Candidate_rule",
-        "exact_required_subject",
-        "Applicability_result",
-        "participation_relation_occurrence"
-      ]
-    },
     "01.Source.F": {
       "subject": "material_carrying_relation_Assertion",
       "exact_Act": "preserve_relation_Assertion",
@@ -332,32 +309,6 @@
         "Applicability_result",
         "participation_relation_occurrence"
       ]
-    },
-    "04.Compare.C": {
-      "subject": "Candidate",
-      "exact_Act": "Compare",
-      "rule": "compare_first_and_second_source_Assertion_coordinates",
-      "carried_coordinates": [
-        "first_source_Assertion_reference",
-        "second_source_Assertion_reference",
-        "first_source_role",
-        "second_source_role"
-      ],
-      "Participation": {
-        "subject": "Candidate",
-        "role": "Candidate"
-      },
-      "relations": [
-        "participation",
-        "yield"
-      ],
-      "result": "Candidate_coordinate_Compare_result",
-      "requires": [
-        "Applicability_result",
-        "exact_Admission_occurrence",
-        "participation_relation_occurrence"
-      ],
-      "requires_current_coordinates": "exact_Candidate_result"
     },
     "05.Provenance.A": {
       "subject": "provenance",
