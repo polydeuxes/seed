@@ -1280,40 +1280,37 @@ def _source_position_results_at_boundary(
 
 
 def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dict[str, Any]]:
-    grouped: dict[str, list[Event]] = {}
-    surfaces: dict[str, list[dict[str, Any]]] = {}
+    grouped: list[tuple[list[dict[str, Any]], list[Event]]] = []
     for event in source_position_results:
         event_coordinates = _coordinates(event.material)
         surface = event_coordinates["complete_compare_findings"]
-        key = _exact_json(surface)
-        grouped.setdefault(key, []).append(event)
-        surfaces[key] = surface
+        matching = tuple(
+            productions
+            for exact_surface, productions in grouped
+            if exact_surface == surface
+        )
+        if len(matching) > 1:
+            raise ValueError("recurrence Measurement found duplicate exact surfaces")
+        if matching:
+            matching[0].append(event)
+        else:
+            grouped.append((deepcopy(surface), [event]))
     groups = []
-    for finding_position, key in enumerate(sorted(grouped)):
-        productions = grouped[key]
+    for finding_position, (surface, productions) in enumerate(grouped):
         support = [_result_reference(event) for event in productions]
         subject = {
             "coordinate_count": _coordinates(productions[0].material)["coordinate_count"],
-            "complete_compare_findings": deepcopy(surfaces[key]),
+            "complete_compare_findings": deepcopy(surface),
         }
-        identity = _digest(
-            "source-position-results",
-            {"subject": subject, "support": support},
-        )
         group = {
             "finding_position": finding_position,
-            "finding_reference": identity,
             "subject": subject,
             "support_result_references": support,
             "count": len(productions),
         }
         if len(productions) > 1:
             group["recurrence"] = {
-                "finding_reference": _digest(
-                    "source-position-recurrence",
-                    {"count_finding_reference": identity, "count": len(productions)},
-                ),
-                "count_finding_reference": identity,
+                "count_finding_position": finding_position,
             }
         groups.append(group)
     return groups
