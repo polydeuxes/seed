@@ -3277,7 +3277,7 @@ def _pair_binding_source_coordinates(
     scope: dict[str, Any],
     content: dict[str, Any],
     recording_locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
         "source_movement_event_identity": source.locality_movement_event_identity,
@@ -3286,7 +3286,7 @@ def _pair_binding_source_coordinates(
         "completeness_boundary_identity": content["completeness_boundary"][
             "identity"
         ],
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "recording_locality_identity": recording_locality_identity,
     }
 
@@ -3297,7 +3297,7 @@ def _pair_applicability_binding_material(
     scope: dict[str, Any],
     content: dict[str, Any],
     recording_locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     applicability_act_identity: str,
     applicability_act_occurrence_identity: str,
     applicability_result_identity: str,
@@ -3309,7 +3309,7 @@ def _pair_applicability_binding_material(
             scope=scope,
             content=content,
             recording_locality_identity=recording_locality_identity,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
         ),
         "source_assertion_reference": source.reference,
         "subject_reference": {
@@ -3329,7 +3329,6 @@ def _pair_applicability_binding_material(
         "book_clause_identity": "01.Current.E.1",
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "scope": {
-            "recording_standing_boundary_identity": standing_boundary_identity,
             "recording_locality_identity": recording_locality_identity,
             "source_assertion_reference": source.reference,
             "addressed_act_identity": measurement_act_identity,
@@ -3344,7 +3343,7 @@ def _pair_measurement_binding_material(
     scope: dict[str, Any],
     content: dict[str, Any],
     recording_locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     measurement_act_identity: str,
     measurement_act_occurrence_identity: str,
     measurement_result_identity: str,
@@ -3355,7 +3354,7 @@ def _pair_measurement_binding_material(
             scope=scope,
             content=content,
             recording_locality_identity=recording_locality_identity,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
         ),
         "subject_reference": source.reference,
         "exact_act_identity": measurement_act_identity,
@@ -3366,7 +3365,6 @@ def _pair_measurement_binding_material(
         "book_clause_identity": "01.Source.D",
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "scope": {
-            "recording_standing_boundary_identity": standing_boundary_identity,
             "recording_locality_identity": recording_locality_identity,
             "source_localities": list(scope["source_localities"]),
             "completeness_boundary_identity": content["completeness_boundary"][
@@ -3420,13 +3418,13 @@ def _require_exact_pair_subject_to_act_binding_event(
         )
     )
     identities = {key: material.get(key) for key in identity_keys}
-    boundary = material.get("standing_boundary_identity")
+    boundary = material.get("through_event_occurrence_identity")
     common = dict(
         source=source,
         scope=source.material["assertion_scope"],
         content=source.material["dimensions"]["content"],
         recording_locality_identity=binding.locality_identity,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
     )
     if binding.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
         exact_material = _pair_applicability_binding_material(
@@ -3573,7 +3571,7 @@ def _append_pair_applicability_binding(
     scope: dict[str, Any],
     content: dict[str, Any],
     recording_locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     identities: dict[str, str],
 ) -> Event:
     return ledger.append(
@@ -3583,7 +3581,7 @@ def _append_pair_applicability_binding(
             scope=scope,
             content=content,
             recording_locality_identity=recording_locality_identity,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             applicability_act_identity=identities["applicability_act_identity"],
             applicability_act_occurrence_identity=identities[
                 "applicability_act_occurrence_identity"
@@ -3602,7 +3600,7 @@ def _append_pair_measurement_binding(
     scope: dict[str, Any],
     content: dict[str, Any],
     recording_locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     identities: dict[str, str],
 ) -> Event:
     return ledger.append(
@@ -3612,7 +3610,7 @@ def _append_pair_measurement_binding(
             scope=scope,
             content=content,
             recording_locality_identity=recording_locality_identity,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             measurement_act_identity=identities["measurement_act_identity"],
             measurement_act_occurrence_identity=identities[
                 "measurement_act_occurrence_identity"
@@ -3671,7 +3669,7 @@ def _read_pair_subject_to_act_binding(
     material = binding.material
     reference = _pair_binding_source_reference(binding)
     movement_identity = material.get("source_movement_event_identity")
-    boundary = material.get("standing_boundary_identity")
+    boundary = material.get("through_event_occurrence_identity")
     if type(boundary) is not str or not boundary:
         raise ByteMeasurementError(
             "byte-position-pair Measurement assignment carries no Standing boundary"
@@ -4618,7 +4616,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         scope=scope,
         content=content,
         recording_locality_identity=recording_locality_identity,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
         identities=lifecycle_identities,
     )
     standing = _carry_pair_applicability_binding_into_standing(
@@ -4634,7 +4632,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         scope=scope,
         content=content,
         recording_locality_identity=recording_locality_identity,
-        standing_boundary_identity=applicability_binding.identity,
+        through_event_occurrence_identity=applicability_binding.identity,
         identities=lifecycle_identities,
     )
     standing = _carry_pair_measurement_binding_into_standing(

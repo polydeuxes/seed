@@ -1695,6 +1695,9 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     assert assignment.material["subject_reference"] == applicability_binding.material[
         "source_assertion_reference"
     ]
+    assert assignment.material["through_event_occurrence_identity"] == (
+        applicability_binding.identity
+    )
     assert applicability_binding.material["addressed_act_identity"] == (
         assignment.material["exact_act_identity"]
     )
@@ -1774,7 +1777,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         scope=scope,
         content=content,
         recording_locality_identity="byte-measurement",
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
         identities=identities,
     )
     standing = _carry_pair_applicability_binding_into_standing(
@@ -1790,7 +1793,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         scope=scope,
         content=content,
         recording_locality_identity="byte-measurement",
-        standing_boundary_identity=applicability_binding.identity,
+        through_event_occurrence_identity=applicability_binding.identity,
         identities=identities,
     )
     standing = _carry_pair_measurement_binding_into_standing(
