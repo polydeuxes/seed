@@ -1323,7 +1323,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
         finding = {
             "finding_position": finding_position,
             "subject": subject,
-            "support_result_references": support,
+            "source_result_references": support,
             "count": len(productions),
         }
         if len(productions) > 1:
@@ -1459,7 +1459,7 @@ def _extend_recurrent_source_positions(
     for finding in recurrence["findings"]:
         if "recurrence" not in finding:
             continue
-        for reference in finding["support_result_references"]:
+        for reference in finding["source_result_references"]:
             prior_event = _recorded_occurrence(
                 ledger,
                 reference["recorded_occurrence_reference"],
@@ -1622,7 +1622,7 @@ def _coordinate_findings(
     _exact_readings: dict[tuple[str, str], Any] | None = None,
 ) -> list[dict[str, Any]]:
     productions = []
-    for reference in recurrence_finding["support_result_references"]:
+    for reference in recurrence_finding["source_result_references"]:
         material = get_recorded_source_position_measurement(
             ledger,
             reference["recorded_occurrence_reference"],
@@ -1714,7 +1714,7 @@ def _record_corresponding_coordinate_material_measurements(
                 "result_reference": recurrence["result_identity"],
             },
             "source_recurrence_finding_position": finding["finding_position"],
-            "support_result_references": finding["support_result_references"],
+            "source_result_references": finding["source_result_references"],
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
             ],
@@ -1804,8 +1804,8 @@ def get_recorded_corresponding_coordinate_material_measurement(
     payload = {
         "source_recurrence_result_reference": deepcopy(source_reference),
         "source_recurrence_finding_position": finding["finding_position"],
-        "support_result_references": deepcopy(
-            finding["support_result_references"]
+        "source_result_references": deepcopy(
+            finding["source_result_references"]
         ),
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"
@@ -1862,7 +1862,7 @@ def _recurrent_result_material_payload(
 ) -> dict[str, Any] | None:
     """Return exact material common to every recurrent result, or no result."""
 
-    support_references = recurrence_finding.get("support_result_references")
+    support_references = recurrence_finding.get("source_result_references")
     coordinate_count = recurrence_finding.get("subject", {}).get("coordinate_count")
     coordinate_source = coordinate_measurement.get(
         "source_recurrence_result_reference"
@@ -1879,7 +1879,7 @@ def _recurrent_result_material_payload(
         != recurrence.get("result_identity")
         or coordinate_measurement.get("source_recurrence_finding_position")
         != recurrence_finding.get("finding_position")
-        or coordinate_measurement.get("support_result_references")
+        or coordinate_measurement.get("source_result_references")
         != support_references
         or coordinate_measurement.get("completeness_boundary_reference")
         != recurrence.get("completeness_boundary_reference")
@@ -1990,7 +1990,7 @@ def _recurrent_result_material_payload(
         "coordinate_measurement_result_reference": coordinate_result_reference,
         "recurrence_result_reference": recurrence_result_reference,
         "recurrence_finding_position": recurrence_finding["finding_position"],
-        "support_result_references": deepcopy(support_references),
+        "source_result_references": deepcopy(support_references),
         "coordinate_count": coordinate_count,
     }
     return {

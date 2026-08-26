@@ -256,7 +256,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         get_recorded_source_position_measurement(
             ledger, reference["recorded_occurrence_reference"]
         )["source_position_coordinates"][0]["position"]
-        for reference in finding["support_result_references"]
+        for reference in finding["source_result_references"]
     ) == (0, 3)
 
     # This explicit call from one result to the later Measurement is the
@@ -656,8 +656,8 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
         == ("exact_material", "recurrence_finding_position")
         for finding in reading["coordinate_material_findings"]
     )
-    assert reading["subject"]["support_result_references"] == finding[
-        "support_result_references"
+    assert reading["subject"]["source_result_references"] == finding[
+        "source_result_references"
     ]
     assert tuple(sorted(event.material["coordinates"])) == (
         "completeness_boundary_reference",
@@ -740,8 +740,8 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
     finding = _target_finding(ledger, recurrence)
     event, _reading = _material_for_finding(ledger, material_measurements, finding)
 
-    support = event.material["coordinates"]["subject"]["support_result_references"]
-    event.material["coordinates"]["subject"]["support_result_references"] = list(
+    support = event.material["coordinates"]["subject"]["source_result_references"]
+    event.material["coordinates"]["subject"]["source_result_references"] = list(
         reversed(support)
     )
     try:
@@ -750,7 +750,7 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         pass
     else:
         raise AssertionError("changed support references were accepted")
-    event.material["coordinates"]["subject"]["support_result_references"] = support
+    event.material["coordinates"]["subject"]["source_result_references"] = support
 
     material = event.material["coordinates"]["coordinate_material_findings"][1][
         "subject"
@@ -874,7 +874,7 @@ def test_source_coordinate_not_in_support_does_not_choose_material():
     ) == (b"a", b"+", b"a")
     assert tuple(
         coordinate["position"]
-        for reference in reading["subject"]["support_result_references"]
+        for reference in reading["subject"]["source_result_references"]
         for coordinate in get_recorded_source_position_measurement(
             ledger, reference["recorded_occurrence_reference"]
         )["source_position_coordinates"]
