@@ -37,7 +37,7 @@ class SuppliedWitnessMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
     known_loss: tuple[str, ...] = ()
-    provenance_occurrence_positions: tuple[int, ...] = ()
+    source_occurrence_positions: tuple[int, ...] = ()
     read_occurrences: tuple[SuppliedWitnessReadOccurrence, ...] = ()
 
     def __post_init__(self) -> None:
@@ -50,12 +50,12 @@ class SuppliedWitnessMaterialOccurrence:
         ):
             raise TypeError("exact known loss required")
         if (
-            type(self.provenance_occurrence_positions) is not tuple
-            or len(set(self.provenance_occurrence_positions))
-            != len(self.provenance_occurrence_positions)
+            type(self.source_occurrence_positions) is not tuple
+            or len(set(self.source_occurrence_positions))
+            != len(self.source_occurrence_positions)
             or any(
                 type(position) is not int or position < 0
-                for position in self.provenance_occurrence_positions
+                for position in self.source_occurrence_positions
             )
         ):
             raise TypeError("exact prior supplied occurrence positions required")
@@ -140,7 +140,7 @@ def record_supplied_witness_material_source(
         )
         or any(
             position >= len(prior_supplied_occurrence_references)
-            for position in supplied.provenance_occurrence_positions
+            for position in supplied.source_occurrence_positions
         )
     ):
         raise ValueError("exact prior supplied occurrence references required")
@@ -210,7 +210,7 @@ def record_supplied_witness_material_source(
             operator_invocation_locality_result_event_identity,
             *(
                 prior_supplied_occurrence_references[position]
-                for position in supplied.provenance_occurrence_positions
+                for position in supplied.source_occurrence_positions
             ),
         ),
         read_occurrences=_read_occurrence_coordinates(supplied.read_occurrences),

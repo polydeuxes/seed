@@ -65,7 +65,7 @@ def test_supplied_occurrence_requires_exact_distinct_prior_positions(positions):
         SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            provenance_occurrence_positions=positions,
+            source_occurrence_positions=positions,
         )
 
 
@@ -236,7 +236,7 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            provenance_occurrence_positions=(0,),
+            source_occurrence_positions=(0,),
         ),
         prior_supplied_occurrence_references=(source.identity,),
     )
@@ -276,7 +276,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
             "provider:result",
-            provenance_occurrence_positions=(0, 1),
+            source_occurrence_positions=(0, 1),
         ),
         prior_supplied_occurrence_references=(function.identity, source.identity),
     )
@@ -303,7 +303,7 @@ def test_supplied_result_refuses_a_nonprior_occurrence_position():
             supplied=SuppliedWitnessMaterialOccurrence(
                 b"result",
                 "provider:result",
-                provenance_occurrence_positions=(0,),
+                source_occurrence_positions=(0,),
             ),
         )
 
@@ -336,7 +336,7 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
     supplied = SuppliedWitnessMaterialOccurrence(
         b"result",
         "provider:result",
-        provenance_occurrence_positions=(0,),
+        source_occurrence_positions=(0,),
     )
     before = len(ledger.list())
 
@@ -612,7 +612,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
         SuppliedWitnessMaterialOccurrence(
             b"output",
             "provider:output",
-            provenance_occurrence_positions=(0,),
+            source_occurrence_positions=(0,),
         ),
     )
 
