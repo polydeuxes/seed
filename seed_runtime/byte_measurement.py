@@ -145,14 +145,6 @@ SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_PAIR_UNKNOWN = (
     "Participation: Unknown",
 )
-MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve this measured Assertion's carried Standing coordinates"
-)
-ASSERTION_RESPONSIBILITIES = {
-    MEASURED_ASSERTION_RESPONSIBILITY: "01.Current.D.1",
-}
-
-
 class ByteMeasurementError(ValueError):
     """The exact byte Measurement could not be performed as declared."""
 
@@ -1940,10 +1932,7 @@ def _assertions(
                 "source_provenance": (
                     "complete declared material result within one boundary"
                 ),
-                "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
             },
-            "subject_kind": "assertion",
-            "responsible_boundary": "this recorded assertion",
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
             "assertion_scope": scope,
@@ -1977,10 +1966,7 @@ def _assertions(
                 "identity": identity,
                 "content": content,
                 "source_provenance": provenance,
-                "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
             },
-            "subject_kind": "assertion",
-            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
