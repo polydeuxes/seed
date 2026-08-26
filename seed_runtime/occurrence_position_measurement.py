@@ -189,7 +189,6 @@ def _position_assertions(
 ) -> list[dict[str, Any]]:
     assertions = []
     for occurrence_identity, position in finding.occurrences:
-        scope = {"source_localities": [finding.source_locality_identity]}
         boundary = {"identity": finding.completeness_boundary.identity}
         subject = {"occurrence_identity": occurrence_identity}
         content = {
@@ -207,7 +206,6 @@ def _position_assertions(
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "assertion_scope": scope,
                 "input_support": {
                     "occurrence_references": [occurrence_identity],
                     "local_assertion_references": [],

@@ -647,7 +647,15 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         ],
     }
     assert all(
-        item["assertion_scope"] == {"source_localities": ["a"]}
+        set(item)
+        == {
+            "dimensions",
+            "result",
+            "assertion_subject",
+            "input_support",
+            "conflicts",
+            "unknown",
+        }
         and item["result"] == "position"
         for item in assertions
     )
