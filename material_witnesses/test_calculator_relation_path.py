@@ -17,13 +17,13 @@ import pytest
 
 from scripts.operator_host_provider import invoke_operator_host
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
+    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates,
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     move_recorded_path_comparison_finding_assertion_to_locality,
-    recorded_distinction_pins_from_current_standing,
+    recorded_distinction_pins_from_current_coordinates,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
@@ -197,7 +197,7 @@ def _claim_path(ledger):
         position=ADDRESSED_POSITION,
         exact_material=CLAIM[ADDRESSED_POSITION : ADDRESSED_POSITION + 1],
     )
-    standing, determination_result = _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+    standing, determination_result = _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
@@ -384,7 +384,7 @@ def test_claim_path_reaches_recorded_distinctions_without_acquiring_meaning(
         "comparison_result_occurrences"
     ]
 
-    pins = recorded_distinction_pins_from_current_standing(
+    pins = recorded_distinction_pins_from_current_coordinates(
         witness["ledger"], locality_identity="calculator-claim"
     )
     assert tuple(
@@ -569,8 +569,8 @@ def test_position_assertion_coordinates_stay_distinct_from_movement_coordinates(
         "authority"
     ]
     assert source_coordinates["assertion_scope"] != assignment.material["scope"]
-    assert coordinates["source_standing_boundary_identity"] == assignment.material[
-        "source_standing_boundary_identity"
+    assert coordinates["source_through_event_occurrence_identity"] == assignment.material[
+        "source_through_event_occurrence_identity"
     ]
     source_result = ledger.get(
         coordinates["source_assertion_reference"][
