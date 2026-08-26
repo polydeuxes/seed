@@ -1,4 +1,4 @@
-"""Responsible comparison of earlier and later recorded byte-pair Measurements."""
+"""Comparison of earlier and later recorded byte-pair Measurements."""
 
 from __future__ import annotations
 
@@ -46,10 +46,6 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE = "04.Compare.A"
 RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE = (
     "compare complete exact findings of earlier and later recorded byte-position-pair "
     "Measurement results"
-)
-RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY = (
-    "Applicability and Compare earlier and later exact carried byte-position-pair "
-    "Measurement results within one operator material acquisition at prior Standing"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT = (
     "Compare earlier and later exact carried byte-position-pair Measurement results"
@@ -741,8 +737,6 @@ def _assignment_material(
         "comparison_result_identity": comparison_result_identity,
         "result_boundary_identity": comparison_result_identity,
         "book_clause_identity": RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE,
-        "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "earlier_measurement_reference": _measurement_reference(
             inputs["earlier_event"]
@@ -1000,8 +994,6 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "result_identity": material["applicability_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
-        "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=material["applicability_result_identity"],
@@ -1091,8 +1083,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "applicability_act_identity": act.material["applicability_act_identity"],
         "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
-        "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": deepcopy(
             act.material["responsibility_assignment_reference"]
         ),
@@ -1114,8 +1104,6 @@ def _recorded_applicability_result_material(
         "applicability_act_identity": material["applicability_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             material["responsibility_assignment_reference"]
         ),
@@ -1276,8 +1264,6 @@ def _comparison_act_material(assignment: Event, applicability: Event) -> dict[st
         "act_occurrence_identity": material["comparison_act_occurrence_identity"],
         "result_identity": material["comparison_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
-        "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=material["comparison_result_identity"],
@@ -1479,8 +1465,6 @@ def _comparison_result_material(
         "comparison_act_identity": act.material["comparison_act_identity"],
         "act_occurrence_identity": act.material["act_occurrence_identity"],
         "exact_act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
-        "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": deepcopy(assignment_reference),
         "applicability_result_event_identity": act.material[
             "applicability_result_event_identity"
@@ -1508,8 +1492,6 @@ def _recorded_comparison_result_material(
         "comparison_act_identity": material["comparison_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             material["responsibility_assignment_reference"]
         ),
