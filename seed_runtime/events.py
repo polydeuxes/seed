@@ -363,6 +363,50 @@ class EventLedger:
             prior_position = position
         return events
 
+    def locality_occurrence_interval(
+        self,
+        *,
+        locality_identity: str,
+        after_occurrence_identity: str | None,
+        through_occurrence_identity: str,
+    ) -> list[Event]:
+        """Return every Locality occurrence after one boundary through another."""
+
+        through = self.get(through_occurrence_identity)
+        through_position = self._by_identity_position.get(
+            through_occurrence_identity
+        )
+        if (
+            through is None
+            or through.locality_identity != locality_identity
+            or through_position is None
+        ):
+            raise ValueError("interval end is not an occurrence in this Locality")
+        after_position = 0
+        if after_occurrence_identity is not None:
+            after = self.get(after_occurrence_identity)
+            after_position = self._by_identity_position.get(
+                after_occurrence_identity, 0
+            )
+            if (
+                after is None
+                or after.locality_identity != locality_identity
+                or after_position >= through_position
+            ):
+                raise ValueError(
+                    "interval start is not earlier in this Locality"
+                )
+        interval: list[Event] = []
+        for event in reversed(self._by_locality.get(locality_identity, ())):
+            position = self._by_identity_position[event.identity]
+            if position > through_position:
+                continue
+            if position <= after_position:
+                break
+            interval.append(event)
+        interval.reverse()
+        return interval
+
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current append prefix."""
         return EventLedgerBoundary(self._latest_prefix_identity)
@@ -770,6 +814,48 @@ class SQLiteEventLedger(EventLedger):
             events.append(self._row_to_event(row))
             prior_rowid = rowid
         return events
+
+    def locality_occurrence_interval(
+        self,
+        *,
+        locality_identity: str,
+        after_occurrence_identity: str | None,
+        through_occurrence_identity: str,
+    ) -> list[Event]:
+        """Return every durable Locality occurrence in one exact interval."""
+
+        through_row = self._connection.execute(
+            "SELECT rowid, locality_identity FROM events WHERE identity = ?",
+            (through_occurrence_identity,),
+        ).fetchone()
+        if (
+            through_row is None
+            or through_row["locality_identity"] != locality_identity
+        ):
+            raise ValueError("interval end is not an occurrence in this Locality")
+        after_rowid = 0
+        if after_occurrence_identity is not None:
+            after_row = self._connection.execute(
+                "SELECT rowid, locality_identity FROM events WHERE identity = ?",
+                (after_occurrence_identity,),
+            ).fetchone()
+            if (
+                after_row is None
+                or after_row["locality_identity"] != locality_identity
+                or int(after_row["rowid"]) >= int(through_row["rowid"])
+            ):
+                raise ValueError(
+                    "interval start is not earlier in this Locality"
+                )
+            after_rowid = int(after_row["rowid"])
+        rows = self._connection.execute(
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.locality_identity = ? "
+            "AND events.rowid > ? AND events.rowid <= ? "
+            "ORDER BY events.rowid",
+            (locality_identity, after_rowid, int(through_row["rowid"])),
+        ).fetchall()
+        return [self._row_to_event(row) for row in rows]
 
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current durable append prefix."""

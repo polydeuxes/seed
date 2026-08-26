@@ -330,7 +330,7 @@ def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
         )
 
 
-def test_advance_uses_an_exact_later_occurrence_without_inferring_an_intervening_occurrence():
+def test_advance_refuses_an_omitted_intervening_locality_occurrence():
     ledger = EventLedger()
     first = record_witness_material_source(
         ledger,
@@ -356,19 +356,34 @@ def test_advance_uses_an_exact_later_occurrence_without_inferring_an_intervening
         through_event_occurrence_identity=first.identity,
     )
 
+    with pytest.raises(ValueError, match="complete Locality occurrence interval"):
+        advance_operator_current_coordinates(
+            ledger,
+            (later.identity,),
+            locality_identity="s",
+            prior=prior,
+        )
+
+    interval = ledger.locality_occurrence_interval(
+        locality_identity="s",
+        after_occurrence_identity=first.identity,
+        through_occurrence_identity=later.identity,
+    )
     current_coordinates = advance_operator_current_coordinates(
         ledger,
-        (later.identity,),
+        tuple(event.identity for event in interval),
         locality_identity="s",
         prior=prior,
     )
-
     recorded_occurrences = {
         occurrence["result_occurrence_identity"]
         for occurrence in current_coordinates["material_result_occurrences"]
     }
-    assert recorded_occurrences == {first.identity, later.identity}
-    assert intervening.identity not in recorded_occurrences
+    assert recorded_occurrences == {
+        first.identity,
+        intervening.identity,
+        later.identity,
+    }
     assert current_coordinates["through_event_occurrence_identity"] == later.identity
 
 

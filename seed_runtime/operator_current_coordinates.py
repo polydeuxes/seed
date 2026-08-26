@@ -810,9 +810,9 @@ def advance_operator_current_coordinates(
 
     With no `prior`, this reads the supplied identities from empty coordinates.
     With a `prior`, it begins from the accumulators already established there.
-    The Ledger verifies each identity's Locality and append order. The caller
-    supplies the bounded identities; this function does not infer an omitted
-    occurrence.
+    The Ledger verifies each identity's Locality and append order. The supplied
+    identities must be the complete Locality interval after `prior` through the
+    final supplied occurrence.
 
     The caller supplies exact identities recorded by Act occurrences. The
     Ledger resolves those identities rather than accepting occurrence copies.
@@ -953,6 +953,19 @@ def advance_operator_current_coordinates(
         conflicts = prior["conflicts"]
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
+
+    if events:
+        interval = ledger.locality_occurrence_interval(
+            locality_identity=locality_identity,
+            after_occurrence_identity=through_event_occurrence_identity,
+            through_occurrence_identity=events[-1].identity,
+        )
+        if tuple(event.identity for event in interval) != tuple(
+            event.identity for event in events
+        ):
+            raise ValueError(
+                "current-coordinate advance requires the complete Locality occurrence interval"
+            )
 
     for event in events:
         if event.locality_identity != locality_identity:
