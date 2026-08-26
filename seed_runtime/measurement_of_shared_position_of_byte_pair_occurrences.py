@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any, NamedTuple
 
 from seed_runtime.event import Event
-from seed_runtime.byte_measurement import SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -57,10 +56,6 @@ MEASUREMENT_RULE = (
     "second position-coordinate reference of first exact recorded pair occurrence "
     "Assertion and first position-coordinate reference of second exact recorded pair "
     "occurrence Assertion, each of one exact byte occurrence"
-)
-RESPONSIBILITY = (
-    "Applicability and Yield one ordered path of exact pair occurrence Assertions "
-    "carrying one exact position-coordinate reference"
 )
 APPLICABILITY_ACT = (
     "Applicability of exact pair occurrence position Assertions to one same-position "
@@ -638,8 +633,6 @@ def _assignment_material(
             "second_participation_relation_identity"
         ],
         "book_clause_identity": BOOK_CLAUSE,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
@@ -1083,8 +1076,6 @@ def _applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=assignment.material[
@@ -1233,8 +1224,6 @@ def _applicability_result_material(
             },
             "standing": standing,
             "source_provenance": "exact recorded position Assertions",
-            "responsibility": RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
             "scope": assignment.material["scope"],
         },
         "exact_act": APPLICABILITY_ACT,
@@ -1250,8 +1239,6 @@ def _applicability_result_material(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=assignment.material[
@@ -1373,8 +1360,6 @@ def _recorded_applicability_result_material(
         "applicability_act_occurrence_identity": result[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility": result["responsibility"],
-        "responsible_boundary": result["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),
@@ -1495,8 +1480,6 @@ def _measurement_act_material(
             "measurement_act_occurrence_identity"
         ],
         "act": MEASUREMENT_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=assignment.material[
@@ -1719,8 +1702,6 @@ def _measurement_result_material(
             "identity": assignment.material["measurement_result_identity"],
             "content": "one exact ordered relation-path Assertion",
             "source_provenance": "exact recorded pair position Assertions",
-            "responsibility": RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
             "scope": assignment.material["scope"],
         },
         "exact_act": MEASUREMENT_ACT,
@@ -1728,27 +1709,6 @@ def _measurement_result_material(
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment": {
-            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-            "source_occurrence_references": [
-                {
-                    "occurrence_identity": (
-                        inputs.first.recorded_occurrence_identity
-                    )
-                },
-                {
-                    "occurrence_identity": (
-                        inputs.second.recorded_occurrence_identity
-                    )
-                },
-            ],
-            "completeness_boundary": (
-                inputs.first.completeness_boundary_identity
-            ),
-            "determination": MEASUREMENT_RULE,
-        },
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=assignment.material[
@@ -1828,11 +1788,6 @@ def _recorded_measurement_result_material(
         "exact_act": result["exact_act"],
         "addressed_act_identity": result["addressed_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
-        "responsibility": result["responsibility"],
-        "responsible_boundary": result["responsible_boundary"],
-        "responsibility_assignment": deepcopy(
-            result["responsibility_assignment"]
-        ),
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),

@@ -417,7 +417,7 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
 
     assert result.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
     assert "standing" not in reading["dimensions"]
-    assert "standing" not in reading["responsibility_assignment"]
+    assert "responsibility_assignment" not in reading
     assert reading["responsibility_assignment_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
         "assignment_identity": assignment.material["assignment_identity"],
