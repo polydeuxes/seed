@@ -1,16 +1,5 @@
 {
   "relations": {
-    "participation": {
-      "book_reference": "01.Current.E.1",
-      "first_subject": "exact_subject_and_role",
-      "relation": "participation",
-      "second_subject": "exact_Act_occurrence",
-      "requires": [
-        "relation_occurrence",
-        "Locality",
-        "Unknown"
-      ]
-    },
     "yield": {
       "book_reference": "02.Acts.A",
       "first_subject": "exact_Act_occurrence",
@@ -43,13 +32,6 @@
       "subject": "supplied_material_source_coordinates",
       "exact_Act": "preserve_exact_source_coordinates",
       "result": "exact_source_coordinates"
-    },
-    "01.Source.B": {
-      "subject": "cross_boundary_participation",
-      "exact_Act": "preserve_exact_source_coordinates",
-      "relations": [
-        "participation"
-      ]
     },
     "01.Source.C": {
       "exact_Act": "Compare",
@@ -186,10 +168,6 @@
       "Applicability": {
         "exact_Act": "Applicability",
         "result": "Applicability_result"
-      },
-      "Participation": {
-        "relation": "participation",
-        "occurrence": "exact_participation_relation_occurrence"
       }
     },
     "02.Acts.A": {
@@ -199,7 +177,6 @@
         "Locality"
       ],
       "relations": [
-        "participation",
         "yield"
       ],
       "result": "exact_result"
@@ -223,13 +200,11 @@
       "subject": "exact_Compare_subjects",
       "exact_Act": "Compare",
       "relations": [
-        "participation",
         "yield"
       ],
       "result": "exact_Compare_result",
       "requires": [
-        "Applicability_result",
-        "participation_relation_occurrence"
+        "Applicability_result"
       ]
     },
     "04.Compare.A": {
@@ -240,13 +215,11 @@
         "later_byte_pair_position_Measurement_result"
       ],
       "relations": [
-        "participation",
         "yield"
       ],
       "result": "recorded_pair_finding_Compare_result",
       "requires": [
-        "Applicability_result",
-        "participation_relation_occurrence"
+        "Applicability_result"
       ]
     },
     "04.Compare.B": {
@@ -257,13 +230,11 @@
         "recorded_pair_finding_Compare_result"
       ],
       "relations": [
-        "participation",
         "yield"
       ],
       "result": "ordered_relation_path_Compare_result",
       "requires": [
-        "Applicability_result",
-        "participation_relation_occurrence"
+        "Applicability_result"
       ]
     },
     "05.Recording.A": {

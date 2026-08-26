@@ -49,7 +49,6 @@ content
 coordinate
 coordinates
 count
-cross
 current
 d
 declared
@@ -91,7 +90,6 @@ it
 its
 known
 later
-local
 locality
 loss
 material
@@ -108,7 +106,6 @@ order
 ordered
 own
 pair
-participation
 path
 position
 preservation

@@ -31,18 +31,18 @@ runtime payloads copy a scalar through pre-Act, Act, Yield, and result records,
 but that scalar does not address an exact boundary occurrence or relation. It
 remains runtime cleanup material until such a distinction is established.
 
-Relations recur across live implementation roads:
+Exact Act role and relations recur across live Witness roads:
 
 ```text
-exact subject and role ── Participation → exact Act occurrence
-exact content ── Carriage → exact Act occurrence
+exact subject + role + exact Act occurrence
 exact Act occurrence ── Yield → exact result
 exact subject ── Locality → exact subject
 ```
 
-The endpoints do not supply a relation by co-presence. Each relation requires
-its exact relation occurrence, Locality, and Unknown. These are not
-every relation about which Seed may carry an Assertion.
+The exact Act role coordinates have no additional Participation relation
+or occurrence. Yield and Locality remain exact relations with exact relation
+occurrences. These are not every relation about which Seed may carry an
+Assertion.
 
 ## Live implementation references
 
@@ -97,10 +97,11 @@ Name / label / kind / shape ordinary ways to address material or a grouping; non
 Evidence       communicative shorthand that exact material and exact source and occurrence references address an Assertion; no separate Evidence coordinate
 Authority      retired compression of subject, exact Act, Locality, source and occurrence references, Yield, result, and bounded current coordinates; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
-Consumer       subject + role + Applicability + Participation
-Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
-Consumption    Participation in an exact Act occurrence
-Uptake         availability + Applicability + Participation
+Consumer       subject + role + Applicability + exact Act occurrence
+Participant    subject carried by one exact Act occurrence under one role; not Candidate by identity
+Participation  subject carried by one exact Act occurrence under one role; no additional relation identity or occurrence
+Consumption    subject carried by one exact Act occurrence under one role
+Uptake         availability + Applicability + exact Act occurrence
 Handoff        movement, or a change in exact pre-Act coordinates
 Memory         addressed prior Locality through-occurrence boundary + exact pre-Act coordinates + direct Locality continuation + new Locality; availability != Applicability; another exact Act required
 Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, currentness, temporal relation, or result
@@ -139,7 +140,7 @@ Exposure       exact address / reference resolution + intact occurrence / bounda
 Recover        acquisition Act/result + Measurement + Compare + Admission + bounded current coordinates
 Replay         exact recorded Locality occurrences in recorded order + current-coordinate read from the empty prefix; a recorded Act does not occur
 Store / stored / storage implementation material representation in one ledger mechanism; establishes no recording occurrence, preservation, exact material, currentness, or relation
-Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
+Story          ordered exact occurrences through Localities + Acts / role + results + later Compare
 Addressability of preserved coordinates
 ```
 
@@ -168,7 +169,7 @@ exact coordinates doing the work:
 ### May / sufficient / possible / allowed / capable
 
 These words are ordinary compression. Expand each into its exact subject,
-relation, Act, Applicability, Participation, Act occurrence, source
+relation, Act, Applicability, Act role, Act occurrence, source
 and occurrence references, Locality, Unknown, result, and bounded
 current coordinates.
 The word alone establishes none of them.
@@ -185,7 +186,7 @@ absence of an Act occurrence, Stop, or completion by identity.
 exact named coordinate, occurrence, boundary, or label, each subject carries
 one exact reference of that subject through its own exact relation and exact
 source and occurrence references. The word alone establishes no identity,
-equality, sameness, Locality, Participation, Applicability, currentness,
+equality, sameness, Locality, Act role, Applicability, currentness,
 represented relation, or Act.
 
 ### Identify / identifies / identifying
@@ -210,7 +211,7 @@ exact subject or material
     ↓
 exact subject + exact Act + Locality
     ↓
-Act occurrence + source and occurrence references + Participation
+Act occurrence + source and occurrence references + exact role
     ↓
 Yield or exact Locality relation
     ↓

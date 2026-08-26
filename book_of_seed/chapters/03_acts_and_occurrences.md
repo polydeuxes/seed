@@ -8,12 +8,6 @@ Locality.
 An Act occurrence is one occurrence of that exact Act. It carries the exact
 subject-to-Act binding and its carried coordinates.
 
-Participation carries one subject, one Act-local role, and one Act occurrence:
-
-```
-subject --Participation(role)--> Act occurrence
-```
-
 Yield is the exact relation from one Act occurrence to its exact result:
 
 ```

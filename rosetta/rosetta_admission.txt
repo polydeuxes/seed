@@ -85,7 +85,6 @@ cannot
 capability
 capable
 capitalisation
-carriage
 carried
 carrier
 carries
@@ -99,7 +98,6 @@ classification
 clause
 cleanup
 closure
-co
 collapse
 communicative
 compare
@@ -176,7 +174,6 @@ emission
 emitted
 emphasis
 empty
-endpoints
 english
 enter
 entries
@@ -378,7 +375,6 @@ possible
 posture
 pre
 prefix
-presence
 present
 presentation
 presented
@@ -496,7 +492,6 @@ sufficient
 suggests
 supplied
 supplies
-supply
 support
 supports
 tell

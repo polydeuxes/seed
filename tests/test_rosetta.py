@@ -123,13 +123,13 @@ def test_rosetta_implementation_references_resolve():
         _assert_live_reference(reference)
 
 
-def test_rosetta_participant_decompresses_to_the_participation_relation():
+def test_rosetta_participant_decompresses_to_act_occurrence_coordinates():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 
     assert "participant" in _rosetta_admission()
     assert (
-        "Participant    subject + exact Participation relation to one Act "
-        "occurrence under one role; not Candidate by identity"
+        "Participant    subject carried by one exact Act occurrence under one "
+        "role; not Candidate by identity"
     ) in rosetta
 
 

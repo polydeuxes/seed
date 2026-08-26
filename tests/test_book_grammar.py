@@ -84,25 +84,18 @@ def test_empty_current_coordinates_are_only_the_first_current_coordinates():
     assert "S0" not in active_book
 
 
-def test_applicability_and_participation_remain_separate():
+def test_applicability_remains_separate_from_the_governed_act():
     grammar = _grammar()
     boundary = grammar["book_coordinates"]["01.Current.E.1"]
     assert boundary["Applicability"] == {
         "exact_Act": "Applicability",
         "result": "Applicability_result",
     }
-    assert boundary["Participation"] == {
-        "relation": "participation",
-        "occurrence": "exact_participation_relation_occurrence",
-    }
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
-        assert compare["requires"] == [
-            "Applicability_result",
-            "participation_relation_occurrence",
-        ]
-        assert compare["relations"] == ["participation", "yield"]
+        assert compare["requires"] == ["Applicability_result"]
+        assert compare["relations"] == ["yield"]
 
 def test_compare_clause_carries_its_exact_subjects_and_act():
     compare = _grammar()["book_coordinates"]["04.Compare"]
@@ -138,24 +131,15 @@ def test_subject_to_act_binding_is_direct_clause_coordinates():
         "requires": [
             "Locality",
         ],
-        "relations": ["participation", "yield"],
+        "relations": ["yield"],
         "result": "exact_result",
     }
 
 
 def test_exact_relations_are_direct():
     grammar = _grammar()
-    assert set(grammar["relations"]) == {
-        "participation",
-        "yield",
-        "locality",
-    }
+    assert set(grammar["relations"]) == {"yield", "locality"}
     expected = {
-        "participation": (
-            "exact_subject_and_role",
-            "exact_Act_occurrence",
-            "01.Current.E.1",
-        ),
         "yield": (
             "exact_Act_occurrence",
             "exact_result",

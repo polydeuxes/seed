@@ -6,11 +6,6 @@ One exact Act occurrence preserves the supplied material, source role,
 source occurrence, exact source occurrence references, Locality, known loss, conflicts, and
 Unknown carried at its boundary.
 
-### 01.Source.B — Cross-boundary participation
-
-Participation by supplied material preserves every source coordinate
-carried by that exact material.
-
 ### 01.Source.C — Fidelity
 
 Fidelity is one declared Compare Act with this Seed exact occurrence and
