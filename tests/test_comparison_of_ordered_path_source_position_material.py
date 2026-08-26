@@ -183,9 +183,10 @@ def test_path_pair_comparison_refuses_a_changed_path_coordinate():
 def test_path_pair_comparisons_survive_sqlite_restart(tmp_path):
     database = tmp_path / "ordered-path-pair-compare.sqlite"
     ledger = SQLiteEventLedger(str(database))
-    _path_result, recorded = _comparisons(
-        ledger, locality="ordered-path-pair-restart", exact=b"aba"
-    )
+    with ledger.batched():
+        _path_result, recorded = _comparisons(
+            ledger, locality="ordered-path-pair-restart", exact=b"aba"
+        )
     identities = tuple(
         comparison.result_occurrence.identity for comparison in recorded
     )
