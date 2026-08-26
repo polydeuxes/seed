@@ -23,7 +23,6 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
-from seed_runtime.identities import new_identity
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     _record_yield_relation,
@@ -2345,9 +2344,13 @@ def _append_byte_measurement_subject_to_act_binding(
     recording_locality_identity: str,
 ) -> Event:
     identities = {
-        "measurement_act_identity": new_identity("byte_measurement_act"),
-        "act_occurrence_identity": new_identity("byte_measurement_occurrence"),
-        "measurement_result_identity": new_identity("byte_measurement_result"),
+        "measurement_act_identity": ledger.mint_identity("byte_measurement_act"),
+        "act_occurrence_identity": ledger.mint_identity(
+            "byte_measurement_occurrence"
+        ),
+        "measurement_result_identity": ledger.mint_identity(
+            "byte_measurement_result"
+        ),
     }
     if len(set(identities.values())) != len(identities):
         raise ByteMeasurementError(
