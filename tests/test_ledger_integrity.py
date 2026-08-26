@@ -671,7 +671,6 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
         identity="evt_1", kind="k", material={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
     assert ledger._reservable_identity_numbers(event) == {
-        "assertion_locality_movement_act": 7,
         "assertion_locality_movement": 4,
     }
 

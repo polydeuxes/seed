@@ -1070,11 +1070,11 @@ def record_assertion_locality_movement_subject_to_act_binding(
         locality_standing=destination_locality_standing,
     )
     identities = {
-        "movement_act_identity": new_identity("assertion_locality_movement_act"),
-        "movement_act_occurrence_identity": new_identity(
+        "movement_act_identity": ledger.mint_identity("assertion_locality_movement_act"),
+        "movement_act_occurrence_identity": ledger.mint_identity(
             "assertion_locality_movement_occurrence"
         ),
-        "movement_result_identity": new_identity(
+        "movement_result_identity": ledger.mint_identity(
             "assertion_locality_movement_result"
         ),
     }
@@ -1668,13 +1668,13 @@ def _record_movement_assignment_from_carried_standings(
     ):
         raise ByteMeasurementError(
             "Assertion movement assignment requires exact carried source and destination Standing"
-        )
+    )
     identities = {
-        "movement_act_identity": new_identity("assertion_locality_movement_act"),
-        "movement_act_occurrence_identity": new_identity(
+        "movement_act_identity": ledger.mint_identity("assertion_locality_movement_act"),
+        "movement_act_occurrence_identity": ledger.mint_identity(
             "assertion_locality_movement_occurrence"
         ),
-        "movement_result_identity": new_identity(
+        "movement_result_identity": ledger.mint_identity(
             "assertion_locality_movement_result"
         ),
     }
