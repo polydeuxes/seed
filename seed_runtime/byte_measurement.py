@@ -139,9 +139,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
-ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
-    "preserve one exact Assertion in another Locality with its Standing"
-)
 BYTE_MEASUREMENT_RULE = (
     "each exact byte in exact recorded material acquisition material with the same exact byte "
     "material"
@@ -966,8 +963,6 @@ def _movement_assignment_material(
         "movement_result_identity": movement_result_identity,
         "result_boundary_identity": movement_result_identity,
         "book_clause_identity": "03.Movement.A",
-        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "source_assertion_reference": _source_assertion_reference(source),
         "source_assertion_coordinates": _source_assertion_coordinates(source),
         "source_locality": source_locality,
@@ -1229,8 +1224,6 @@ def get_assertion_locality_movement_responsibility_assignment(
 def _movement_act_material(assignment: Event) -> dict[str, Any]:
     return {
         "act": "Assertion Locality movement",
-        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": _movement_assignment_reference(
             assignment
         ),
@@ -1373,8 +1366,6 @@ def _movement_result_material(
         "movement_act_occurrence_identity": assignment.material[
             "movement_act_occurrence_identity"
         ],
-        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": _movement_assignment_reference(
             assignment
         ),
