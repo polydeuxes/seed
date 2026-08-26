@@ -1394,7 +1394,6 @@ def _applicability_result_material(
                     inputs.shared_position_coordinate_reference
                 ),
             },
-            "standing": standing,
             "source_provenance": "exact recorded position Assertions",
             "scope": assignment.material["scope"],
         },
