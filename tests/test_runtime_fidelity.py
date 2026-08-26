@@ -736,7 +736,6 @@ def test_witness_grammar_declares_the_exact_relations():
 
     assert grammar_relations == {
         "participation",
-        "carriage",
         "yield",
         "locality",
     }

@@ -24,22 +24,21 @@ subject
 ```
 
 These coordinates bind each exact subject to the exact Act. Applicability,
-Participation, Carriage, Act occurrence, Yield, result, and current
-coordinates are separately exact.
+Participation, Act occurrence, Yield, result, and current coordinates are
+separately exact.
 
 ## Act and occurrence
 
 An exact Act occurrence carries its exact Act, subjects, and Locality.
 
-Participation and Carriage are exact relations:
+Participation and Yield are exact relations:
 
 ```
 subject ── Participation(role) ──> Act occurrence
-content ── Carriage ─────────────> Act occurrence
 Act occurrence ── Yield ─────────> result
 ```
 
-Participation, Carriage, and Yield each requires exact subjects, relation
+Participation and Yield each requires exact subjects, relation
 occurrence, Locality, and Unknown.
 
 The result carries the exact coordinates established by its Act occurrence.

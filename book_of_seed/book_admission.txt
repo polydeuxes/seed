@@ -36,7 +36,6 @@ bounded
 by
 byte
 c
-carriage
 carried
 carries
 carry

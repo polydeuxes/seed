@@ -11,17 +11,6 @@
         "Unknown"
       ]
     },
-    "carriage": {
-      "book_reference": "02.Acts.A",
-      "first_subject": "exact_content",
-      "relation": "carriage",
-      "second_subject": "exact_Act_occurrence",
-      "requires": [
-        "relation_occurrence",
-        "Locality",
-        "Unknown"
-      ]
-    },
     "yield": {
       "book_reference": "02.Acts.A",
       "first_subject": "exact_Act_occurrence",
@@ -211,7 +200,6 @@
       ],
       "relations": [
         "participation",
-        "carriage",
         "yield"
       ],
       "result": "exact_result"

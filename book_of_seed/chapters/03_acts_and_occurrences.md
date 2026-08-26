@@ -14,12 +14,6 @@ Participation carries one subject, one Act-local role, and one Act occurrence:
 subject --Participation(role)--> Act occurrence
 ```
 
-Carriage carries content and one Act occurrence:
-
-```
-content --Carriage--> Act occurrence
-```
-
 Yield is the exact relation from one Act occurrence to its exact result:
 
 ```

@@ -138,7 +138,7 @@ def test_subject_to_act_binding_is_direct_clause_coordinates():
         "requires": [
             "Locality",
         ],
-        "relations": ["participation", "carriage", "yield"],
+        "relations": ["participation", "yield"],
         "result": "exact_result",
     }
 
@@ -147,7 +147,6 @@ def test_exact_relations_are_direct():
     grammar = _grammar()
     assert set(grammar["relations"]) == {
         "participation",
-        "carriage",
         "yield",
         "locality",
     }
@@ -156,11 +155,6 @@ def test_exact_relations_are_direct():
             "exact_subject_and_role",
             "exact_Act_occurrence",
             "01.Current.E.1",
-        ),
-        "carriage": (
-            "exact_content",
-            "exact_Act_occurrence",
-            "02.Acts.A",
         ),
         "yield": (
             "exact_Act_occurrence",

@@ -24,7 +24,7 @@ exact subject of that Compare Act occurrence.
 ### 01.Source.F — Material carrying a relation Assertion
 
 Supplied material carrying an Assertion carries one exact relation as its
-relation. Carriage preserves the Assertion and its source coordinates.
+relation. The Assertion carries its source coordinates.
 
 ### 01.Source.G — Operator source boundary
 
