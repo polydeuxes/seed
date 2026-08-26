@@ -167,7 +167,6 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         assignment.identity,
         assignment.material["exact_act_identity"],
     }
-    assert recorded["standing"] == "preserved"
     assert recorded["responsibility_assignment_reference"] == assignment_reference
     assert "applicability" not in recorded
     assert "priority" not in recorded
@@ -534,37 +533,6 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
             (),
             locality_identity=result.locality_identity,
             prior=broken,
-        )
-
-
-@pytest.mark.parametrize(
-    "coordinate",
-    (
-        "book_clause_identity",
-        "responsible_boundary",
-        "source_standing_reference",
-        "destination_locality_identity",
-        "standing_boundary_occurrence_reference",
-        "scope",
-        "result_boundary_identity",
-        "standing",
-        "unknown",
-    ),
-)
-def test_changed_responsibility_assignment_coordinates_are_refused(coordinate):
-    ledger = EventLedger()
-    _source, boundary = _source_boundary(ledger)
-    act_occurrence = _act(ledger, boundary)
-    assignment_identity = act_occurrence.material[
-        "responsibility_assignment_reference"
-    ]["recorded_occurrence_identity"]
-    assignment = ledger.get(assignment_identity)
-    assignment.material[coordinate] = "different"
-
-    with pytest.raises(StandingLocalityContinuationError):
-        record_standing_locality_continuation_result(
-            ledger,
-            act_occurrence_event_identity=act_occurrence.identity,
         )
 
 

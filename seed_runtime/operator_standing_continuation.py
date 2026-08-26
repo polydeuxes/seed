@@ -34,9 +34,6 @@ STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
     "Standing Locality relation result"
 )
 STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality relation"
-STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY = (
-    "preserve one exact prior Locality Standing boundary at another exact Locality"
-)
 STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
     "exact prior Locality Standing boundary"
 )
@@ -124,8 +121,6 @@ def _assignment_material(
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_standing_reference),
-        "responsible_boundary": "this Seed",
-        "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
         "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
@@ -172,8 +167,6 @@ def _act_occurrence_material(
             locality_relation_occurrence_identity
         ),
         "act": STANDING_LOCALITY_CONTINUATION_ACT,
-        "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": dict(
             responsibility_assignment_reference
         ),
@@ -208,8 +201,6 @@ def _result_material(
             locality_relation_occurrence_identity
         ),
         "exact_act": STANDING_LOCALITY_CONTINUATION_ACT,
-        "responsibility": STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": dict(
             responsibility_assignment_reference
         ),
@@ -221,7 +212,6 @@ def _result_material(
             "second_subject": destination_locality_identity,
             "relation_occurrence_identity": locality_relation_occurrence_identity,
         },
-        "standing": "preserved",
         "unknown": [
             "Applicability of every carried subject to another Act: Unknown"
         ],
@@ -246,8 +236,6 @@ def _recorded_result_material(
             "locality_relation_occurrence_identity"
         ],
         "exact_act": result_material["exact_act"],
-        "responsibility": result_material["responsibility"],
-        "responsible_boundary": result_material["responsible_boundary"],
         "responsibility_assignment_reference": result_material[
             "responsibility_assignment_reference"
         ],
@@ -259,7 +247,6 @@ def _recorded_result_material(
         ],
         "participation": result_material["participation"],
         "locality_relation": result_material["locality_relation"],
-        "standing": result_material["standing"],
         "unknown": result_material["unknown"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
@@ -452,9 +439,6 @@ def _validated_act_occurrence(
         != 5
         or assignment_reference != _assignment_reference(assignment)
         or assignment.locality_identity != act_occurrence.locality_identity
-        or assignment.material["responsibility"]
-        != STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY
-        or assignment.material["responsible_boundary"] != "this Seed"
         or assignment.material["source_standing_reference"] != expected_reference
         or assignment.material["destination_locality_identity"]
         != act_occurrence.locality_identity
