@@ -535,15 +535,13 @@ def measure_position_coordinates_of_byte_pair_occurrences(
     )
 
 
-def _assignment_reference(assignment: Event) -> dict[str, str]:
+def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "result_boundary_identity": assignment.material[
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
@@ -574,12 +572,10 @@ def _input_relation(
     }
 
 
-def _assignment_material(
+def _binding_material(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
-    standing_boundary_identity: str,
-    assignment_identity: str,
-    assignment_subject_identity: str,
+    through_event_occurrence_identity: str,
     measurement_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
@@ -590,21 +586,23 @@ def _assignment_material(
         act_occurrence_identity=act_occurrence_identity,
     )
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
+        "subject_reference": {
+            "recorded_occurrence_identity": (
+                finding.source_material_result_occurrence_identity
+            )
+        },
+        "exact_act_identity": measurement_act_identity,
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
         ),
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relation": input_relation,
         "measurement_rule": MEASUREMENT_RULE,
         "scope": {
@@ -615,7 +613,6 @@ def _assignment_material(
             "completeness_boundary_identity": (
                 finding.completeness_boundary.identity
             ),
-            "recording_standing_boundary_identity": standing_boundary_identity,
         },
         "unknown": [
             "Participation or content of each exact byte pair: Unknown"
@@ -790,7 +787,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     locality_standing: dict[str, Any],
 ) -> Event:
     _validate_finding(finding)
-    standing_boundary_identity = _require_current_standing(
+    through_event_occurrence_identity = _require_current_standing(
         ledger,
         locality_identity=finding.source_locality_identity,
         locality_standing=locality_standing,
@@ -817,12 +814,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
-        "assignment_identity": new_identity(
-            "byte_pair_occurrence_position_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "byte_pair_occurrence_position_assignment_subject"
-        ),
         "measurement_act_identity": new_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
@@ -841,9 +832,9 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         )
     return ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
-        _assignment_material(
+        _binding_material(
             finding,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             **identities,
         ),
         locality_identity=finding.source_locality_identity,
@@ -875,7 +866,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
 
     global_recording_boundary = ledger.append_boundary()
     _validate_finding(finding)
-    standing_boundary_identity = _require_exact_responsibility_boundary(
+    through_event_occurrence_identity = _require_exact_responsibility_boundary(
         ledger,
         locality_identity=finding.source_locality_identity,
         responsibility_boundary_identity=responsibility_boundary_identity,
@@ -900,12 +891,6 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             "unassigned subject at its responsibility boundary"
         )
     identities = {
-        "assignment_identity": new_identity(
-            "byte_pair_occurrence_position_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "byte_pair_occurrence_position_assignment_subject"
-        ),
         "measurement_act_identity": new_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
@@ -927,9 +912,9 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         )
     return ledger.append(
         BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
-        _assignment_material(
+        _binding_material(
             finding,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             **identities,
         ),
         locality_identity=finding.source_locality_identity,
@@ -968,8 +953,6 @@ def _read_assignment(
     identities = {
         key: material.get(key)
         for key in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "measurement_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
@@ -977,7 +960,9 @@ def _read_assignment(
     }
     source_identity = material.get("source_material_result_occurrence_identity")
     boundary_identity = material.get("completeness_boundary_identity")
-    standing_boundary_identity = material.get("standing_boundary_identity")
+    through_event_occurrence_identity = material.get(
+        "through_event_occurrence_identity"
+    )
     if (
         any(type(value) is not str or not value for value in identities.values())
         or len(set(identities.values())) != len(identities)
@@ -986,7 +971,7 @@ def _read_assignment(
             for value in (
                 source_identity,
                 boundary_identity,
-                standing_boundary_identity,
+                through_event_occurrence_identity,
             )
         )
     ):
@@ -1004,9 +989,9 @@ def _read_assignment(
     if (
         assignment.locality_identity != finding.source_locality_identity
         or material
-        != _assignment_material(
+        != _binding_material(
             finding,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             **identities,
         )
     ):
@@ -1019,10 +1004,10 @@ def _read_assignment(
         prior = read_operator_locality_standing_through(
             ledger,
             locality_identity=finding.source_locality_identity,
-            through_event_occurrence_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
         )
         ledger.occurrences_in_append_order(
-            (standing_boundary_identity, assignment.identity),
+            (through_event_occurrence_identity, assignment.identity),
             locality_identity=finding.source_locality_identity,
         )
     except (TypeError, ValueError) as error:
@@ -1063,14 +1048,14 @@ def _require_carried_byte_pair_occurrence_position_assignment(
     identity_coordinates = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "measurement_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
     }
-    standing_boundary_identity = material.get("standing_boundary_identity")
+    through_event_occurrence_identity = material.get(
+        "through_event_occurrence_identity"
+    )
     if (
         any(
             type(identity) is not str or not identity
@@ -1078,9 +1063,9 @@ def _require_carried_byte_pair_occurrence_position_assignment(
         )
         or len(set(identity_coordinates.values())) != len(identity_coordinates)
         or material
-        != _assignment_material(
+        != _binding_material(
             finding,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             **identity_coordinates,
         )
     ):
@@ -1116,9 +1101,7 @@ def _act_material(
         "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "act": EXACT_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "subject_to_act_binding_reference": _binding_reference(assignment),
         "input_relation": assignment.material["input_relation"],
         "participation": _participation(
             finding,
@@ -1146,8 +1129,8 @@ def _record_byte_pair_occurrence_position_measurement_act_occurrence(
         assignment.locality_identity, BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
     ):
         if (
-            prior.material.get("responsibility_assignment_reference")
-            == _assignment_reference(assignment)
+            prior.material.get("subject_to_act_binding_reference")
+            == _binding_reference(assignment)
             or prior.material.get("act_occurrence_identity")
             == assignment.material["act_occurrence_identity"]
         ):
@@ -1199,8 +1182,8 @@ def _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carrie
         BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     ):
         if (
-            prior.material.get("responsibility_assignment_reference")
-            == _assignment_reference(responsibility_assignment)
+            prior.material.get("subject_to_act_binding_reference")
+            == _binding_reference(responsibility_assignment)
             or prior.material.get("act_occurrence_identity")
             == responsibility_assignment.material["act_occurrence_identity"]
         ):
@@ -1227,7 +1210,7 @@ def _read_act(
         or ledger.integrity_of(act.identity) == CORRUPTED
     ):
         raise ValueError("byte-pair position-coordinate result requires intact Act occurrence")
-    reference = act.material.get("responsibility_assignment_reference")
+    reference = act.material.get("subject_to_act_binding_reference")
     try:
         assignment, finding = _read_assignment(
             ledger,
@@ -1241,7 +1224,7 @@ def _read_act(
         ) from error
     if (
         act.locality_identity != assignment.locality_identity
-        or reference != _assignment_reference(assignment)
+        or reference != _binding_reference(assignment)
         or act.material != _act_material(finding, assignment)
     ):
         raise ValueError("byte-pair position-coordinate result requires intact Act occurrence")
@@ -1451,9 +1434,7 @@ def _result_material(
         "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
         "exact_act": EXACT_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(assignment),
+        "subject_to_act_binding_reference": _binding_reference(assignment),
         "input_relation": assignment.material["input_relation"],
         "measurement_rule": MEASUREMENT_RULE,
         "source_localities": [finding.source_locality_identity],
@@ -1532,10 +1513,8 @@ def _record_byte_pair_occurrence_position_measurement_result(
             "addressed_act_identity": result["addressed_act_identity"],
             "act_occurrence_identity": result["act_occurrence_identity"],
             "exact_act": result["exact_act"],
-            "responsibility": result["responsibility"],
-            "responsible_boundary": result["responsible_boundary"],
-            "responsibility_assignment_reference": result[
-                "responsibility_assignment_reference"
+            "subject_to_act_binding_reference": result[
+                "subject_to_act_binding_reference"
             ],
             "input_relation": result["input_relation"],
             "measurement_rule": result["measurement_rule"],

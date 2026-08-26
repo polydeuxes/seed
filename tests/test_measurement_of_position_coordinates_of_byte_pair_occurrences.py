@@ -1115,9 +1115,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "addressed_act_identity",
         "act_occurrence_identity",
         "exact_act",
-        "responsibility",
-        "responsible_boundary",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "input_relation",
         "measurement_rule",
         "source_localities",
@@ -1125,7 +1123,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "completeness_boundary",
         "assertions",
         "unknown",
-        "act_occurrence_identity",
+        "act_occurrence_event_identity",
         "yield_relation_identity",
     }
     assert "standing" not in assignment.material["input_relation"]

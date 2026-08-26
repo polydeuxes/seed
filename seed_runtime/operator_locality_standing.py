@@ -2832,7 +2832,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
     measurements = locality_standing.get("measurement_occurrences")
     assignments = locality_standing.get("subject_to_act_binding_occurrences")
     acquisition_results = locality_standing.get("material_result_occurrences")
-    assignment = event.material.get("responsibility_assignment_reference")
+    assignment = event.material.get("subject_to_act_binding_reference")
     source_identity = event.material.get("source_material_result_occurrence_identity")
     event_count = locality_standing.get("event_count")
     if (
