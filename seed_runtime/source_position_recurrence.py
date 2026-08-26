@@ -375,7 +375,6 @@ def _preserved_binding_material(material):
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
         "rule": material["rule"],
-        "subject": deepcopy(material["subject"]),
         "subject_reference": deepcopy(material["subject"]),
         "scope": deepcopy(material["scope"]),
         "conflicts": deepcopy(material["conflicts"]),
@@ -520,7 +519,7 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["act_identity"],
-        "subject_reference": deepcopy(binding.material["subject"]),
+        "subject_reference": deepcopy(binding.material["subject_reference"]),
         "result_boundary_identity": binding.material["result_boundary_identity"],
     }
 
@@ -720,7 +719,7 @@ def _require_binding(
         or binding.material.get("exact_act") != act.material.get("act")
         or binding.material.get("rule")
         != _EXACT_ACT_RULES.get(act.material.get("act"))
-        or binding.material.get("subject")
+        or binding.material.get("subject_reference")
         != _coordinates(act.material).get("subject")
         or binding.material.get("through_event_occurrence_identity")
         != _coordinates(act.material).get("through_event_occurrence_identity")
@@ -768,7 +767,7 @@ def _require_recorded_binding(
         or type(material.get("exact_act")) is not str
         or not material["exact_act"]
         or material.get("rule") != _EXACT_ACT_RULES.get(material.get("exact_act"))
-        or type(material.get("subject")) is not dict
+        or type(material.get("subject_reference")) is not dict
         or type(material.get("scope")) is not dict
         or type(material.get("conflicts")) is not list
         or type(material.get("unknown")) is not list

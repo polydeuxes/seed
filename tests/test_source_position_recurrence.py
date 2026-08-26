@@ -221,7 +221,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             assert result.identity in recording.current_coordinates[
                 "measurement_occurrences"
             ]
-        assert binding.material["subject"] == act.material["coordinates"]["subject"]
+        assert binding.material["subject_reference"] == act.material["coordinates"]["subject"]
         assert binding.material["rule"] == source_position_recurrence._EXACT_ACT_RULES[
             binding.material["exact_act"]
         ]
@@ -593,7 +593,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     assert current_coordinates["exact_result_occurrences"][event.identity] == (
         ownership
     )
-    assert binding.material["subject"] == reading["subject"]
+    assert binding.material["subject_reference"] == reading["subject"]
     assert binding.material["result_boundary_identity"] == reading[
         "result_identity"
     ]
@@ -781,7 +781,7 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         assert binding.material["rule"] == (
             source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
         )
-        assert binding.material["subject"] == recorded["subject"]
+        assert binding.material["subject_reference"] == recorded["subject"]
         assert binding.material["result_boundary_identity"] == (
             recorded["result_identity"]
         )
