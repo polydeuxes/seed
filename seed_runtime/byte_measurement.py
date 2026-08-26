@@ -340,15 +340,15 @@ class RecordedBytePairAssertion:
     content: tuple[int, int] | None
     result: str
     _material: dict[str, Any]
-    _support_assertion_references: tuple[dict[str, Any], ...]
+    _referenced_assertions: tuple[dict[str, Any], ...]
 
     @property
     def material(self) -> dict[str, Any]:
         return deepcopy(self._material)
 
     @property
-    def support_assertion_references(self) -> tuple[dict[str, Any], ...]:
-        return deepcopy(self._support_assertion_references)
+    def referenced_assertions(self) -> tuple[dict[str, Any], ...]:
+        return deepcopy(self._referenced_assertions)
 
     @property
     def reference(self) -> dict[str, Any]:
@@ -365,7 +365,7 @@ class _RecordedBytePairFinding:
     exact_pair: tuple[int, int]
     result: str
     _content_coordinates: tuple[int, int, int] | bool
-    _local_support_assertion_positions: tuple[int, ...]
+    _referenced_assertion_positions: tuple[int, ...]
 
     @property
     def content(self) -> dict[str, int | bool]:
@@ -3067,10 +3067,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "input_support": {
-                "assertion_references": source_support_references,
-                "local_assertion_references": local_support_references,
-            },
+            "referenced_assertions": source_support_references,
+            "referenced_assertion_positions": local_support_references,
             "conflicts": "Unknown",
             "unknown": list(BYTE_PAIR_UNKNOWN),
         }
@@ -4818,7 +4816,8 @@ def _validated_recorded_byte_position_pair_measurement(
         "dimensions",
         "result",
         "assertion_subject",
-        "input_support",
+        "referenced_assertions",
+        "referenced_assertion_positions",
         "conflicts",
         "unknown",
     }
@@ -4885,8 +4884,8 @@ def _validated_recorded_byte_position_pair_measurement(
             or any(type(value) is not int or value <= 0 for value in count_content.values())
             or count_content["occurrences_carrying"] > count_content["input_count"]
             or count_content["occurrences_carrying"] > count_content["count"]
-            or count["input_support"]
-            != {"assertion_references": [source_reference], "local_assertion_references": []}
+            or count["referenced_assertions"] != [source_reference]
+            or count["referenced_assertion_positions"] != []
             or count["dimensions"]["source_provenance"]
             != "the exact source-material Assertion referenced here"
         ):
@@ -4898,11 +4897,9 @@ def _validated_recorded_byte_position_pair_measurement(
             recurrence["dimensions"]["content"] != {"recurrence_established": True}
             or recurrence["dimensions"]["source_provenance"]
             != "the exact count Assertion carried here"
-            or recurrence["input_support"]
-            != {
-                "assertion_references": [],
-                "local_assertion_references": [count["dimensions"]["position"]],
-            }
+            or recurrence["referenced_assertions"] != []
+            or recurrence["referenced_assertion_positions"]
+            != [count["dimensions"]["position"]]
         ):
             raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
     validated_results = []
@@ -4927,22 +4924,19 @@ def _validated_recorded_byte_position_pair_measurement(
                     ),
                     result=assertion["result"],
                     _content_coordinates=content_coordinates,
-                    _local_support_assertion_positions=tuple(
-                        assertion["input_support"][
-                            "local_assertion_references"
-                        ]
+                    _referenced_assertion_positions=tuple(
+                        assertion["referenced_assertion_positions"]
                     ),
                 )
             )
             continue
-        support = assertion["input_support"]
-        support_references = list(support["assertion_references"])
-        support_references.extend(
+        referenced_assertions = list(assertion["referenced_assertions"])
+        referenced_assertions.extend(
             {
                 "recorded_occurrence_identity": event.identity,
                 "assertion_position": local_position,
             }
-            for local_position in support["local_assertion_references"]
+            for local_position in assertion["referenced_assertion_positions"]
         )
         validated_results.append(RecordedBytePairAssertion(
             assertion_position=assertion["dimensions"]["position"],
@@ -4950,7 +4944,7 @@ def _validated_recorded_byte_position_pair_measurement(
             content=tuple(assertion["assertion_subject"]["content"]),
             result=assertion["result"],
             _material=deepcopy(assertion),
-            _support_assertion_references=tuple(deepcopy(support_references)),
+            _referenced_assertions=tuple(deepcopy(referenced_assertions)),
         ))
     return _RecordedBytePairMeasurementReading(
         results=tuple(validated_results),

@@ -1367,10 +1367,10 @@ def test_pair_count_and_recurrence_are_separate_results():
 
     assert [item["result"] for item in by_pair[(116, 97)]] == ["count", "recurrence"]
     assert [item["result"] for item in by_pair[(97, 10)]] == ["count"]
-    assert by_pair[(116, 97)][1]["input_support"]["local_assertion_references"] == [
+    assert by_pair[(116, 97)][1]["referenced_assertion_positions"] == [
         by_pair[(116, 97)][0]["dimensions"]["position"]
     ]
-    moved_reference = by_pair[(116, 97)][0]["input_support"]["assertion_references"][0]
+    moved_reference = by_pair[(116, 97)][0]["referenced_assertions"][0]
     original = next(
         item
         for item in assertions_of_recorded_byte_measurement(ledger, source.identity)
@@ -1424,11 +1424,11 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     detached = count.material
     detached["dimensions"]["standing"] = "unsupported"
     assert "standing" not in count.material["dimensions"]
-    assert count.support_assertion_references[0]["recorded_occurrence_identity"] == source.identity
+    assert count.referenced_assertions[0]["recorded_occurrence_identity"] == source.identity
     movement = ledger.get(event.material["source_movement_event_identity"])
     assert movement.material["source_assertion_reference"]["recorded_occurrence_identity"] == source.identity
     assert movement.material["source_assertion_reference"] == (
-        count.support_assertion_references[0]
+        count.referenced_assertions[0]
     )
     assert movement.material["source_locality"] == "byte-measurement"
     assert movement.material["destination_locality"] == "measurement"

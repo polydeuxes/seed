@@ -240,7 +240,6 @@ def _findings_from_carried_measurement(
             if type(assertion) is dict
             else None
         )
-        support = assertion.get("input_support") if type(assertion) is dict else None
         result = assertion.get("result") if type(assertion) is dict else None
         assertion_position = (
             dimensions.get("position") if type(dimensions) is dict else None
@@ -251,9 +250,9 @@ def _findings_from_carried_measurement(
         exact_pair = (
             subject.get("content") if type(subject) is dict else None
         )
-        local_support = (
-            support.get("local_assertion_references")
-            if type(support) is dict
+        referenced_positions = (
+            assertion.get("referenced_assertion_positions")
+            if type(assertion) is dict
             else None
         )
         if (
@@ -268,8 +267,11 @@ def _findings_from_carried_measurement(
             )
             or result not in {"count", "recurrence"}
             or type(content_coordinates) is not dict
-            or type(local_support) is not list
-            or any(type(value) is not int or value < 0 for value in local_support)
+            or type(referenced_positions) is not list
+            or any(
+                type(value) is not int or value < 0
+                for value in referenced_positions
+            )
         ):
             raise RecordedPairMeasurementComparisonError(
                 "comparison carried finding coordinates are not exact"
@@ -309,7 +311,7 @@ def _findings_from_carried_measurement(
                 exact_pair=tuple(exact_pair),
                 result=result,
                 _content_coordinates=carried_content,
-                _local_support_assertion_positions=tuple(local_support),
+                _referenced_assertion_positions=tuple(referenced_positions),
             )
         )
     return tuple(findings)

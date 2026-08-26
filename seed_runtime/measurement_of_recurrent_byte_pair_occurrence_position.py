@@ -345,16 +345,16 @@ def _references_to_recorded_recurrent_byte_pairs(
             raise ValueError(
                 "the addressed pair Assertion does not establish recurrence"
             )
-        support = recurrence._local_support_assertion_positions
+        referenced_positions = recurrence._referenced_assertion_positions
         if (
-            len(support) != 1
-            or type(support[0]) is not int
-            or support[0] < 0
+            len(referenced_positions) != 1
+            or type(referenced_positions[0]) is not int
+            or referenced_positions[0] < 0
         ):
             raise ValueError(
                 "the recurrent pair carries no exact count Assertion support"
             )
-        count = findings_by_position.get(support[0])
+        count = findings_by_position.get(referenced_positions[0])
         if (
             count is None
             or count.result != "count"

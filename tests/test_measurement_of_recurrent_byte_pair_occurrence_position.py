@@ -525,7 +525,7 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
             result.identity,
             pair.identity,
             recurrence.assertion_position,
-            recurrence.support_assertion_references[0]["assertion_position"],
+            recurrence.referenced_assertions[0]["assertion_position"],
             source.identity,
             locality,
             finding.completeness_boundary.identity,
@@ -737,7 +737,7 @@ def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_s
             occurrence_count_boundary=16,
             through=through,
         )
-    count_position = recurrence.support_assertion_references[0][
+    count_position = recurrence.referenced_assertions[0][
         "assertion_position"
     ]
     with pytest.raises(ValueError, match="does not establish recurrence"):
@@ -924,7 +924,7 @@ def test_distinct_locality_and_pre_source_boundary_are_refused():
 
 def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use():
     ledger, locality, pair, recurrence, source, finding = _fixture()
-    count_position = recurrence.support_assertion_references[0][
+    count_position = recurrence.referenced_assertions[0][
         "assertion_position"
     ]
     with pytest.raises(ValueError, match="does not establish recurrence"):
