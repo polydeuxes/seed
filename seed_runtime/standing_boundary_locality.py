@@ -126,7 +126,6 @@ def _binding_material(
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
         "subject_reference": deepcopy(standing_boundary_reference),
-        "standing_boundary_reference": deepcopy(standing_boundary_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
             "standing_boundary_reference": deepcopy(standing_boundary_reference),
@@ -144,7 +143,7 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(
-            binding.material["standing_boundary_reference"]
+            binding.material["subject_reference"]
         ),
         "result_boundary_identity": binding.material[
             "result_boundary_identity"
@@ -173,13 +172,13 @@ def _act_material(binding: Event) -> dict[str, Any]:
         "act": RECORDED_STANDING_BOUNDARY_LOCALITY_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "standing_boundary_reference": deepcopy(
-            material["standing_boundary_reference"]
+            material["subject_reference"]
         ),
         "destination_locality_identity": binding.locality_identity,
         "scope": deepcopy(material["scope"]),
         "result_identity": material["result_identity"],
         "participation": _participation(
-            material["standing_boundary_reference"],
+            material["subject_reference"],
             material["act_occurrence_identity"],
         ),
     }
@@ -307,7 +306,7 @@ def get_recorded_standing_boundary_locality_subject_to_act_binding(
             "recorded boundary relation binding is absent or corrupted"
         )
     material = event.material
-    anchor = material.get("standing_boundary_reference")
+    anchor = material.get("subject_reference")
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
