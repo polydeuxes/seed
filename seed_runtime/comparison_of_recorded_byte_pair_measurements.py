@@ -771,24 +771,6 @@ def _binding_material(
             "operator_locality_identity"
         ],
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "locality_identity": inputs["locality_identity"],
-            "through_event_occurrence_identity": through_event_occurrence_identity,
-            "added_occurrence_reference": inputs["added_reference"],
-            "operator_invocation_locality_relation_event_identity": inputs[
-                "operator_invocation_locality_relation_event_identity"
-            ],
-            "input_relation": inputs["input_relation"],
-            "operator_material_source_result_event_identity": inputs[
-                "operator_material_source_result_event_identity"
-            ],
-            "operator_material_source_current_coordinate_reference": deepcopy(
-                inputs["operator_material_source_current_coordinate_reference"]
-            ),
-            "destination_operator_locality_identity": inputs[
-                "operator_locality_identity"
-            ],
-        },
         "unknown": [],
     }
 
@@ -824,10 +806,6 @@ def _applicability_binding_material(
         "earlier_measurement_reference": earlier_subject,
         "later_measurement_reference": later_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "locality_identity": inputs["locality_identity"],
-            "addressed_act_identity": addressed_act_identity,
-        },
         "unknown": [],
     }
 
@@ -1162,7 +1140,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": (
             _applicability_of_input_to_compare(binding)
         ),
-        "scope": deepcopy(material["scope"]),
     }
 
 
@@ -1256,7 +1233,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
-        "scope": deepcopy(act.material["scope"]),
         "applicability": "applicable",
         "unknown": [],
     }
@@ -1276,7 +1252,6 @@ def _recorded_applicability_result_material(
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
         ),
-        "scope": deepcopy(material["scope"]),
         "applicability": material["applicability"],
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
@@ -1445,7 +1420,6 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
         "participation_of_input_in_compare": (
             _participation_of_input_in_compare(binding)
         ),
-        "scope": deepcopy(material["scope"]),
     }
 
 
@@ -1657,7 +1631,6 @@ def _comparison_result_material(
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
-        "scope": deepcopy(act.material["scope"]),
         "unknown": [],
     }
 
@@ -1683,7 +1656,6 @@ def _recorded_comparison_result_material(
             material["participation_of_input_in_compare"]
         ),
         "findings": deepcopy(material["findings"]),
-        "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
