@@ -14,7 +14,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion,
@@ -209,9 +208,9 @@ def _path_input(
     }
 
 
-def _new_identities() -> dict[str, str]:
+def _new_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        coordinate: new_identity(
+        coordinate: ledger.mint_identity(
             "ordered_path_source_position_material_" + coordinate
         )
         for coordinate in _IDENTITY_COORDINATES
@@ -1022,7 +1021,7 @@ def _record_ordered_path_source_position_material_comparison(
         path_position_pair=path_position_pair,
         current_coordinates=current_coordinates,
     )
-    identities = _new_identities()
+    identities = _new_identities(ledger)
     from seed_runtime.operator_current_coordinates import (
         _exact_current_coordinate_additions,
         _record_distinct,
