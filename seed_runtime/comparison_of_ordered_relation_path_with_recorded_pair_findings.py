@@ -48,10 +48,6 @@ COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCU
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND = "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.recorded"
 
 BOOK_CLAUSE = "04.Compare.B"
-RESPONSIBILITY = (
-    "Applicability and Compare one exact ordered relation path with "
-    "recorded pair findings of its exact source occurrence"
-)
 APPLICABILITY_ACT = (
     "Applicability of one ordered relation path and one recorded pair Compare "
     "result to one Compare"
@@ -870,8 +866,6 @@ def _assignment_material(
         "compare_result_identity": identities["compare_result_identity"],
         "result_boundary_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "comparison_rule": COMPARISON_RULE,
         "path_result_reference": deepcopy(inputs["path"]["reference"]),
         "path_assertion_reference": deepcopy(
@@ -1197,8 +1191,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         ],
         "result_identity": material["applicability_result_identity"],
         "act": APPLICABILITY_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             binding,
             result_boundary_identity=material["applicability_result_identity"],
@@ -1300,8 +1292,6 @@ def _applicability_result_material(
             },
             "standing": standing,
             "source_provenance": "exact yielded path and comparison results",
-            "responsibility": RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
             "scope": deepcopy(binding.material["scope"]),
         },
         "exact_act": APPLICABILITY_ACT,
@@ -1317,8 +1307,6 @@ def _applicability_result_material(
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             binding,
             result_boundary_identity=binding.material[
@@ -1351,8 +1339,6 @@ def _recorded_applicability_result_material(
         "applicability_act_occurrence_identity": result[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility": result["responsibility"],
-        "responsible_boundary": result["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),
@@ -1545,8 +1531,6 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
         "result_identity": material["compare_result_identity"],
         "act": COMPARE_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=material["compare_result_identity"],
@@ -1713,8 +1697,6 @@ def _compare_result_material(
             "compare_act_occurrence_identity"
         ],
         "exact_act": COMPARE_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
             assignment,
             result_boundary_identity=assignment.material[
@@ -1744,8 +1726,6 @@ def _recorded_compare_result_material(
         "compare_act_identity": result["compare_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
         "exact_act": result["exact_act"],
-        "responsibility": result["responsibility"],
-        "responsible_boundary": result["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             result["responsibility_assignment_reference"]
         ),
