@@ -206,10 +206,6 @@ def _position_assertions(
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "input_support": {
-                    "occurrence_references": [occurrence_identity],
-                    "local_assertion_references": [],
-                },
                 "conflicts": "Unknown",
                 "unknown": ["Participation: Unknown"],
             }
