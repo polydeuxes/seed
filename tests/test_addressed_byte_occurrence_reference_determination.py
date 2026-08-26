@@ -209,7 +209,6 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
             for coordinate in coordinates
         }
     ) == 6
-    assert material["determination_rule"] == determination_module.DETERMINATION_RULE
     assert material["completeness_boundary"] == {
         "identity": recorded["coordinate"]["completeness_boundary_identity"]
     }
@@ -222,7 +221,6 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "applicability_result_reference",
         "direct_pair_position_result_reference",
         "addressed_source_byte_position_coordinate_reference",
-        "determination_rule",
         "completeness_boundary",
         "ordered_assertion_references",
         "unknown",

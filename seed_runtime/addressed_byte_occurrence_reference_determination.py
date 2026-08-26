@@ -69,10 +69,6 @@ APPLICABILITY_BOUNDARY = (
     "addressed_byte_occurrence_reference_determination_applicability"
 )
 DETERMINATION_BOUNDARY = "addressed_byte_occurrence_reference_determination"
-DETERMINATION_RULE = (
-    "each exact pair-occurrence position Assertion reference carrying the "
-    "addressed source-byte position-coordinate reference in source occurrence order"
-)
 UNKNOWN = []
 
 EVENT_KIND_BOOK_CLAUSES = {
@@ -364,7 +360,6 @@ def _determination_binding_material(
         "addressed_source_byte_position_coordinate_reference": deepcopy(
             coordinate_reference
         ),
-        "determination_rule": DETERMINATION_RULE,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": _scope(
             source_result=source_result,
@@ -412,7 +407,6 @@ def _applicability_binding_material(
         "addressed_source_byte_position_coordinate_reference": deepcopy(
             coordinate_reference
         ),
-        "determination_rule": DETERMINATION_RULE,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": {
             **_scope(
@@ -725,7 +719,6 @@ def _applicability_act_material(
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
-        "determination_rule": DETERMINATION_RULE,
         "addressed_act_identity": binding.material["addressed_act_identity"],
         "scope": deepcopy(binding.material["scope"]),
         "unknown": list(binding.material["unknown"]),
@@ -988,7 +981,6 @@ def _applicability_result_material(
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
-        "determination_rule": DETERMINATION_RULE,
         "applicability_finding": _applicability_finding(
             applicability_binding=applicability_binding,
             determination_binding=determination_binding,
@@ -1133,7 +1125,6 @@ def _recorded_applicability_result_material(
         "addressed_source_byte_position_coordinate_reference": deepcopy(
             material["addressed_source_byte_position_coordinate_reference"]
         ),
-        "determination_rule": material["determination_rule"],
         "applicability_finding": deepcopy(material["applicability_finding"]),
         "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
@@ -1449,7 +1440,6 @@ def _determination_act_material(
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
-        "determination_rule": DETERMINATION_RULE,
         "result_identity": binding.material["determination_result_identity"],
         "scope": deepcopy(binding.material["scope"]),
         "unknown": list(binding.material["unknown"]),
@@ -1664,7 +1654,6 @@ def _determination_result_material(
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
-        "determination_rule": DETERMINATION_RULE,
         "completeness_boundary": {
             "identity": binding.material["scope"][
                 "completeness_boundary_identity"
@@ -1699,7 +1688,6 @@ def _recorded_determination_result_material(
         "addressed_source_byte_position_coordinate_reference": deepcopy(
             material["addressed_source_byte_position_coordinate_reference"]
         ),
-        "determination_rule": material["determination_rule"],
         "completeness_boundary": deepcopy(material["completeness_boundary"]),
         "ordered_assertion_references": deepcopy(
             material["ordered_assertion_references"]
