@@ -618,12 +618,6 @@ def _binding_material(
             "measurement_result_identity"
         ],
         "result_boundary_identity": identities["measurement_result_identity"],
-        "first_participation_relation_identity": identities[
-            "first_participation_relation_identity"
-        ],
-        "second_participation_relation_identity": identities[
-            "second_participation_relation_identity"
-        ],
         "book_clause_identity": BOOK_CLAUSE,
         "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": _reference_material(inputs.first),
@@ -679,12 +673,6 @@ def _applicability_binding_material(
         ],
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": identities["applicability_result_identity"],
-        "first_input_relation_identity": identities[
-            "first_input_relation_identity"
-        ],
-        "second_input_relation_identity": identities[
-            "second_input_relation_identity"
-        ],
         "book_clause_identity": "01.Current.E.1",
         "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": first_subject,
@@ -714,8 +702,6 @@ _IDENTITY_COORDINATES = (
     "measurement_act_identity",
     "measurement_act_occurrence_identity",
     "measurement_result_identity",
-    "first_participation_relation_identity",
-    "second_participation_relation_identity",
 )
 
 
@@ -730,12 +716,6 @@ def _new_measurement_identities() -> dict[str, str]:
         "measurement_result_identity": new_identity(
             "shared_pair_position_measurement_result_identity"
         ),
-        "first_participation_relation_identity": new_identity(
-            "shared_pair_position_first_participation_relation_identity"
-        ),
-        "second_participation_relation_identity": new_identity(
-            "shared_pair_position_second_participation_relation_identity"
-        ),
     }
 
 
@@ -749,12 +729,6 @@ def _new_applicability_identities() -> dict[str, str]:
         ),
         "applicability_result_identity": new_identity(
             "shared_pair_position_applicability_result_identity"
-        ),
-        "first_input_relation_identity": new_identity(
-            "shared_pair_position_first_input_relation_identity"
-        ),
-        "second_input_relation_identity": new_identity(
-            "shared_pair_position_second_input_relation_identity"
         ),
     }
 
@@ -1066,8 +1040,6 @@ def _read_binding(
             "applicability_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
-            "first_input_relation_identity",
-            "second_input_relation_identity",
         )
     )
     identities = {
@@ -1161,7 +1133,6 @@ def _applicability_act_material(
         "standing_boundary_identity": standing_boundary_identity,
         "input_relations": [
             {
-                "identity": assignment.material["first_input_relation_identity"],
                 "role": "first exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.first),
                 "addressed_act_identity": assignment.material[
@@ -1169,7 +1140,6 @@ def _applicability_act_material(
                 ],
             },
             {
-                "identity": assignment.material["second_input_relation_identity"],
                 "role": "second exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.second),
                 "addressed_act_identity": assignment.material[
@@ -1371,8 +1341,6 @@ def _applicability_binding_for_inputs(
             "applicability_act_identity",
             "applicability_act_occurrence_identity",
             "applicability_result_identity",
-            "first_input_relation_identity",
-            "second_input_relation_identity",
         )
     }
     expected = _applicability_binding_material(
@@ -1454,12 +1422,6 @@ def _applicability_result_material(
             ],
         ),
         "act_occurrence_event_identity": act.identity,
-        "first_input_relation_identity": assignment.material[
-            "first_input_relation_identity"
-        ],
-        "second_input_relation_identity": assignment.material[
-            "second_input_relation_identity"
-        ],
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "measurement_rule": MEASUREMENT_RULE,
@@ -1574,12 +1536,6 @@ def _recorded_applicability_result_material(
         ),
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
-        ],
-        "first_input_relation_identity": result[
-            "first_input_relation_identity"
-        ],
-        "second_input_relation_identity": result[
-            "second_input_relation_identity"
         ],
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
@@ -1704,9 +1660,6 @@ def _measurement_act_material(
         "standing_boundary_identity": standing_boundary_identity,
         "participation": [
             {
-                "identity": assignment.material[
-                    "first_participation_relation_identity"
-                ],
                 "role": "first relation of ordered path",
                 "subject": _reference_material(inputs.first),
                 "act_occurrence_identity": assignment.material[
@@ -1714,9 +1667,6 @@ def _measurement_act_material(
                 ],
             },
             {
-                "identity": assignment.material[
-                    "second_participation_relation_identity"
-                ],
                 "role": "second relation of ordered path",
                 "subject": _reference_material(inputs.second),
                 "act_occurrence_identity": assignment.material[
