@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-import json
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 if TYPE_CHECKING:
@@ -1668,12 +1666,7 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
             inputs["comparison"]["reference"]
         ),
     }
-    exact = json.dumps(
-        {"subject": subject, "roles": roles}, separators=(",", ":")
-    ).encode("utf-8")
     return {
-        "identity": "ordered-relation-path-pair-finding-comparison:"
-        + hashlib.sha256(exact).hexdigest(),
         "subject": subject,
         "relation_findings": roles,
         "source_provenance": (
@@ -1808,7 +1801,7 @@ def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movemen
     ledger: EventLedger,
     *,
     result_event_identity: str,
-    assertion_identity: str,
+    assertion_position: int,
 ) -> dict[str, Any]:
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         ledger, result_event_identity
@@ -1816,7 +1809,7 @@ def _recorded_path_comparison_finding_assertion_coordinates_for_locality_movemen
     finding = reading.get("finding")
     if (
         type(finding) is not dict
-        or finding.get("identity") != assertion_identity
+        or assertion_position != 0
     ):
         raise ValueError(
             "path-comparison finding Locality movement requires exact source coordinates"
@@ -1836,8 +1829,7 @@ def move_recorded_path_comparison_finding_assertion_to_locality(
         ledger, comparison_result_occurrence_identity
     )
     finding = reading.get("finding")
-    assertion_identity = finding.get("identity") if type(finding) is dict else None
-    if type(assertion_identity) is not str or not assertion_identity:
+    if type(finding) is not dict:
         raise ValueError(
             "path-comparison finding Assertion movement requires one exact finding"
         )
@@ -1849,7 +1841,7 @@ def move_recorded_path_comparison_finding_assertion_to_locality(
         ledger,
         source_assertion_reference={
             "recorded_occurrence_identity": comparison_result_occurrence_identity,
-            "assertion_identity": assertion_identity,
+            "assertion_position": 0,
         },
         destination_locality=destination_locality,
     )

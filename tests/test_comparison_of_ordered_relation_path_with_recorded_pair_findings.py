@@ -18,6 +18,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     OrderedPathPairFindingCompareSubject,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
+    move_recorded_path_comparison_finding_assertion_to_locality,
     recorded_distinction_pins_from_current_coordinates,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
@@ -405,6 +406,30 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
     assert first_count["earlier_content"]["count"] == 2
     assert first_count["later_content"]["count"] == 3
     assert result.exact_material is None
+
+
+def test_result_local_position_addresses_finding_movement():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    _binding, _applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
+
+    moved = move_recorded_path_comparison_finding_assertion_to_locality(
+        ledger,
+        comparison_result_occurrence_identity=result.identity,
+        destination_locality="finding-destination",
+    )
+
+    assert moved.source_assertion_reference == {
+        "recorded_occurrence_identity": result.identity,
+        "assertion_position": 0,
+    }
+    with pytest.raises(ValueError, match="exact source coordinates"):
+        comparison_module._recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+            ledger,
+            result_event_identity=result.identity,
+            assertion_position=1,
+        )
 
 
 def test_unassigned_exact_compare_subject_read_records_nothing():

@@ -316,14 +316,14 @@ class _RecordedPositionAssertionForLocalityMovement:
 @dataclass(frozen=True)
 class _RecordedPathComparisonFindingAssertionForLocalityMovement:
     recorded_occurrence_identity: str
-    assertion_identity: str
+    assertion_position: int
     _source_assertion_coordinates: dict[str, Any]
 
     @property
-    def assertion_reference(self) -> dict[str, str]:
+    def assertion_reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
     @property
@@ -792,21 +792,21 @@ def _source_assertion_from_reference(
     ):
         if set(reference) != {
             "recorded_occurrence_identity",
-            "assertion_identity",
-        }:
+            "assertion_position",
+        } or type(reference["assertion_position"]) is not int:
             raise ByteMeasurementError("Assertion movement carries no exact source")
         try:
             coordinates = _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
                 ledger,
                 result_event_identity=source_event.identity,
-                assertion_identity=reference["assertion_identity"],
+                assertion_position=reference["assertion_position"],
             )
         except ValueError:
             pass
         else:
             return _RecordedPathComparisonFindingAssertionForLocalityMovement(
                 recorded_occurrence_identity=source_event.identity,
-                assertion_identity=reference["assertion_identity"],
+                assertion_position=reference["assertion_position"],
                 _source_assertion_coordinates=deepcopy(coordinates),
             ), source_event
     raise ByteMeasurementError("Assertion movement source cannot be read")
@@ -1783,11 +1783,7 @@ def _assertion_carried_by_locality_movement_result(
         )
     return RecordedAssertionCarriedByLocalityMovement(
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        assertion_address=(
-            source.assertion_position
-            if type(source) is _RecordedPositionAssertionForLocalityMovement
-            else source.assertion_identity
-        ),
+        assertion_address=source.assertion_position,
         locality_movement_event_identity=movement.identity,
         _source_assertion_coordinates=_source_assertion_coordinates(source),
     )
