@@ -153,7 +153,7 @@ def _operator_source_current_coordinate_reference(
     carried_sources = {
         occurrence.get("result_occurrence_identity")
         for occurrence in coordinates.get(
-            "material_acquisition_result_occurrences", ()
+            "material_result_occurrences", ()
         )
         if type(occurrence) is dict
     }

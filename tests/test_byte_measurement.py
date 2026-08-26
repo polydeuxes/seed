@@ -533,12 +533,12 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
         ledger, locality_identity="measurement"
     )
     copied_measurements = deepcopy(exact["measurement_occurrences"])
-    copied_acquisition_results = deepcopy(exact["material_acquisition_result_occurrences"])
+    copied_acquisition_results = deepcopy(exact["material_result_occurrences"])
     copied_assignments = deepcopy(exact["subject_to_act_binding_occurrences"])
     assert copied_measurements == exact["measurement_occurrences"]
     assert copied_measurements is not exact["measurement_occurrences"]
-    assert copied_acquisition_results == exact["material_acquisition_result_occurrences"]
-    assert copied_acquisition_results is not exact["material_acquisition_result_occurrences"]
+    assert copied_acquisition_results == exact["material_result_occurrences"]
+    assert copied_acquisition_results is not exact["material_result_occurrences"]
     assert copied_assignments == exact["subject_to_act_binding_occurrences"]
     assert copied_assignments is not exact["subject_to_act_binding_occurrences"]
     ledger.corrupted.add(first.identity)
@@ -553,7 +553,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
                     "through_event_occurrence_identity"
                 ],
                 measurement_occurrences=copied_measurements,
-                material_acquisition_result_occurrences=copied_acquisition_results,
+                material_result_occurrences=copied_acquisition_results,
                 subject_to_act_binding_occurrences=copied_assignments,
             )
         return get_byte_measurement_subject_to_act_binding(

@@ -545,7 +545,7 @@ def test_book_witness_material_locality_is_available_before_measurement(
 
     assert tuple(
         occurrence["result_occurrence_identity"]
-        for occurrence in bounded_replay["material_acquisition_result_occurrences"]
+        for occurrence in bounded_replay["material_result_occurrences"]
     ) == tuple(result.identity for result in acquisition_results)
     assert bounded_replay["material_locality_relation_occurrences"] == {
         result.identity: {

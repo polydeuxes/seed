@@ -653,7 +653,7 @@ def _require_current_assignment_standing(
         ledger, locality_identity=finding.source_locality_identity
     )
     measurements = locality_standing.get("measurement_occurrences")
-    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
+    acquisition_results = locality_standing.get("material_result_occurrences")
     assignments = locality_standing.get("subject_to_act_binding_occurrences")
     boundary = locality_standing.get("through_event_occurrence_identity")
     source_has_exact_locality = all(
@@ -839,7 +839,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
     ):
         raise ValueError("pair occurrence assignment coordinates are not exact")
     measurements = prior_standing.get("measurement_occurrences")
-    acquisition_results = prior_standing.get("material_acquisition_result_occurrences")
+    acquisition_results = prior_standing.get("material_result_occurrences")
     carried_assignments = prior_standing.get(
         "subject_to_act_binding_occurrences"
     )
@@ -858,7 +858,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             ledger, pair_occurrence_identity
         )
     )
-    exact_material_acquisition_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
+    exact_material_result_occurrence = _exact_material_acquisition_result_availability_coordinates(
         ledger, finding.source_material_acquisition_occurrence_identity
     )
     from seed_runtime.material_source import (
@@ -872,7 +872,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
             ),
         ).values()
     )
-    carried_material_acquisition_result_occurrences = (
+    carried_material_result_occurrences = (
         [
             occurrence
             for occurrence in acquisition_results
@@ -887,7 +887,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         type(measurements) is not dict
         or measurements.get(pair_occurrence_identity, object())
         != exact_measurement_occurrence
-        or carried_material_acquisition_result_occurrences != [exact_material_acquisition_result_occurrence]
+        or carried_material_result_occurrences != [exact_material_result_occurrence]
         or not source_has_exact_locality
     ):
         raise ValueError(

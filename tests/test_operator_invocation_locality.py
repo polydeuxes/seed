@@ -123,7 +123,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     )
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in operator_standing["material_acquisition_result_occurrences"]
+        for occurrence in operator_standing["material_result_occurrences"]
     ] == [command.identity]
     assert operator_standing["operator_invocation_locality_relations"] == {}
     assert binding.identity not in operator_standing[
@@ -131,7 +131,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     ]
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in witness_standing["material_acquisition_result_occurrences"]
+        for occurrence in witness_standing["material_result_occurrences"]
     ] == [supplied.identity]
     assert witness_standing["operator_invocation_locality_relations"] == {
         relation.identity: None

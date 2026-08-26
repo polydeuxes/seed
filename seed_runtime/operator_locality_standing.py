@@ -346,7 +346,7 @@ def _set_operator_standing_validation_context(
     locality_identity: str,
     through_event_occurrence_identity: str | None,
     measurement_occurrences: dict[str, Any],
-    material_acquisition_result_occurrences: list[dict[str, Any]],
+    material_result_occurrences: list[dict[str, Any]],
     subject_to_act_binding_occurrences: dict[str, None],
 ) -> None:
     bound = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
@@ -360,7 +360,7 @@ def _set_operator_standing_validation_context(
         or exact[0] is not ledger
         or exact[1] != locality_identity
         or exact[2] is not measurement_occurrences
-        or exact[3] is not material_acquisition_result_occurrences
+        or exact[3] is not material_result_occurrences
         or exact[4] is not subject_to_act_binding_occurrences
     ):
         raise ValueError(
@@ -374,7 +374,7 @@ def _set_operator_standing_validation_context(
                 through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
-            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+            "material_result_occurrences": material_result_occurrences,
             "subject_to_act_binding_occurrences": (
                 subject_to_act_binding_occurrences
             ),
@@ -399,7 +399,7 @@ def _operator_standing_validation_context(
     }
 
 _SUBJECT_BY_KIND = {
-    WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "material_acquisition_result_occurrence",
+    WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "material_result_occurrence",
 }
 _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -1057,7 +1057,7 @@ def advance_operator_locality_standing(
         locality_identity=locality_identity,
     )
     scope = f"locality:{locality_identity}"
-    material_acquisition_result_occurrences: list[dict[str, Any]] = []
+    material_result_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: dict[str, dict[str, str]] = {}
     assertion_locality_movement_occurrences: dict[str, dict[str, Any]] = {}
     exact_result_occurrences: dict[str, dict[str, Any]] = {}
@@ -1094,7 +1094,7 @@ def advance_operator_locality_standing(
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
         # see the shared-accumulator note above.
-        material_acquisition_result_occurrences = prior["material_acquisition_result_occurrences"]
+        material_result_occurrences = prior["material_result_occurrences"]
         measurement_occurrences = prior["measurement_occurrences"]
         if type(measurement_occurrences) is not dict:
             raise ValueError(
@@ -1188,7 +1188,7 @@ def advance_operator_locality_standing(
             ledger,
             locality_identity,
             measurement_occurrences,
-            material_acquisition_result_occurrences,
+            material_result_occurrences,
             subject_to_act_binding_occurrences,
         )
     )
@@ -1200,7 +1200,7 @@ def advance_operator_locality_standing(
                 through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
-            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+            "material_result_occurrences": material_result_occurrences,
             "subject_to_act_binding_occurrences": (
                 subject_to_act_binding_occurrences
             ),
@@ -1224,7 +1224,7 @@ def advance_operator_locality_standing(
                 through_event_occurrence_identity
             ),
             measurement_occurrences=measurement_occurrences,
-            material_acquisition_result_occurrences=material_acquisition_result_occurrences,
+            material_result_occurrences=material_result_occurrences,
             subject_to_act_binding_occurrences=(
                 subject_to_act_binding_occurrences
             ),
@@ -1422,7 +1422,7 @@ def advance_operator_locality_standing(
                         prior_through_event_occurrence_identity
                     ),
                     "measurement_occurrences": measurement_occurrences,
-                    "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+                    "material_result_occurrences": material_result_occurrences,
                 },
             )
             subject_to_act_binding_occurrences[event.identity] = None
@@ -1503,7 +1503,7 @@ def advance_operator_locality_standing(
                 prior_through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
-            "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+            "material_result_occurrences": material_result_occurrences,
             "subject_to_act_binding_occurrences": (
                 subject_to_act_binding_occurrences
             ),
@@ -1930,7 +1930,7 @@ def advance_operator_locality_standing(
                         prior_through_event_occurrence_identity
                     ),
                     "measurement_occurrences": measurement_occurrences,
-                    "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+                    "material_result_occurrences": material_result_occurrences,
                     "subject_to_act_binding_occurrences": (
                         subject_to_act_binding_occurrences
                     ),
@@ -2029,13 +2029,13 @@ def advance_operator_locality_standing(
             "result_occurrence_identity": source_result.identity,
             "source_role": source_result.material["source_role"],
         }
-        material_acquisition_result_occurrences.append(occurrence)
+        material_result_occurrences.append(occurrence)
 
     return {
         "locality_identity": locality_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "event_count": event_count,
-        "material_acquisition_result_occurrences": material_acquisition_result_occurrences,
+        "material_result_occurrences": material_result_occurrences,
         "measurement_occurrences": measurement_occurrences,
         "assertion_locality_movement_occurrences": (
             assertion_locality_movement_occurrences
@@ -2831,7 +2831,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_standing(
         )
     measurements = locality_standing.get("measurement_occurrences")
     assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
+    acquisition_results = locality_standing.get("material_result_occurrences")
     assignment = event.material.get("responsibility_assignment_reference")
     source_identity = event.material.get("source_material_acquisition_occurrence_identity")
     event_count = locality_standing.get("event_count")
@@ -2892,14 +2892,14 @@ def _carry_operator_material_source_occurrence_into_standing(
     locality_relations = locality_standing.get(
         "material_locality_relation_occurrences"
     )
-    material_acquisition_result_occurrences = locality_standing.get("material_acquisition_result_occurrences")
+    material_result_occurrences = locality_standing.get("material_result_occurrences")
     exact_results = locality_standing.get("exact_result_occurrences")
     event_count = locality_standing.get("event_count")
     if (
         type(bindings) is not dict
         or type(acts) is not dict
         or type(locality_relations) is not dict
-        or type(material_acquisition_result_occurrences) is not list
+        or type(material_result_occurrences) is not list
         or type(exact_results) is not dict
         or type(event_count) is not int
         or event_count < 0
@@ -2952,7 +2952,7 @@ def _carry_operator_material_source_occurrence_into_standing(
         locality_relations[event.identity] = {
             "locality_relation": deepcopy(event.material["locality_relation"]),
         }
-        material_acquisition_result_occurrences.append(
+        material_result_occurrences.append(
             {
                 "subject_reference": event.material["dimensions"]["identity"],
                 "result_occurrence_identity": event.identity,

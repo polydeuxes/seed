@@ -456,11 +456,11 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     )
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in operator_standing["material_acquisition_result_occurrences"]
+        for occurrence in operator_standing["material_result_occurrences"]
     ] == [acquisition_results[0].identity]
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in witness_standing["material_acquisition_result_occurrences"]
+        for occurrence in witness_standing["material_result_occurrences"]
     ] == [event.identity for event in acquisition_results[1:]]
     assert operator_standing["admission_result_occurrences"] == {}
     assert witness_standing["admission_result_occurrences"] == {}
@@ -653,7 +653,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     )
     assert [
         occurrence["result_occurrence_identity"]
-        for occurrence in standing["material_acquisition_result_occurrences"][-2:]
+        for occurrence in standing["material_result_occurrences"][-2:]
     ] == [event.identity for event in supplied_acquisition_results]
 
 

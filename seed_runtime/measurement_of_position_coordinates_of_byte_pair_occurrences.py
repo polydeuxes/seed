@@ -223,7 +223,7 @@ def _material_acquisition_identities_with_exact_locality_from_bounded_replay(
     """Resolve exact acquisition sources already validated into bounded replay."""
 
     acquisitions = bounded_locality_replay.get(
-        "material_acquisition_result_occurrences"
+        "material_result_occurrences"
     )
     locality_occurrences = bounded_locality_replay.get(
         "material_locality_relation_occurrences"
@@ -319,7 +319,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         or not locality_identity
         or type(bounded_locality_replay) is not dict
         or bounded_locality_replay.get("locality_identity") != locality_identity
-        or type(bounded_locality_replay.get("material_acquisition_result_occurrences")) is not list
+        or type(bounded_locality_replay.get("material_result_occurrences")) is not list
         or type(
             bounded_locality_replay.get("subject_to_act_binding_occurrences")
         )
@@ -359,7 +359,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
     )
 
     sources: list[UnassignedPositionCoordinateMeasurementAcquisitionReading] = []
-    for occurrence in bounded_locality_replay["material_acquisition_result_occurrences"]:
+    for occurrence in bounded_locality_replay["material_result_occurrences"]:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("result_occurrence_identity")) is not str
@@ -644,7 +644,7 @@ def _require_current_standing(
             "byte-pair position-coordinate Measurement requires current Locality Standing"
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    acquisition_results = locality_standing.get("material_acquisition_result_occurrences")
+    acquisition_results = locality_standing.get("material_result_occurrences")
     assignments = locality_standing.get("subject_to_act_binding_occurrences")
     standing_acquisition_results = {
         occurrence.get("result_occurrence_identity")
@@ -1032,7 +1032,7 @@ def _read_assignment(
     if not any(
         type(occurrence) is dict
         and occurrence.get("result_occurrence_identity") == source_identity
-        for occurrence in prior.get("material_acquisition_result_occurrences", ())
+        for occurrence in prior.get("material_result_occurrences", ())
     ):
         raise ValueError(
             "byte-pair position-coordinate assignment has no exact prior Standing"

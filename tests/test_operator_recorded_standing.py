@@ -56,7 +56,7 @@ def _run(material: bytes) -> EventLedger:
 def _acquired_materials(ledger: EventLedger, standing: dict) -> list[bytes]:
     return [
         exact_material_result_bytes(ledger.get(occurrence["result_occurrence_identity"]))
-        for occurrence in standing["material_acquisition_result_occurrences"]
+        for occurrence in standing["material_result_occurrences"]
     ]
 
 

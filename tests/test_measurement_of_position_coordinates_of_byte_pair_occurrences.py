@@ -917,7 +917,7 @@ def test_private_same_call_recorders_require_exact_carried_tip_membership(monkey
     ) == act
 
     stale_source = deepcopy(carried_source)
-    stale_source["material_acquisition_result_occurrences"] = []
+    stale_source["material_result_occurrences"] = []
     with pytest.raises(ValueError, match="current Locality Standing"):
         record_byte_pair_occurrence_position_measurement_responsibility_assignment(
             ledger,

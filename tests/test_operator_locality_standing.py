@@ -77,7 +77,7 @@ def _attempt(ledger, text, *, locality="s", locality_standing=None):
     )
     standing = {
         "current_standing": {
-            "material_acquisition_result_occurrence": {
+            "material_result_occurrence": {
                 "subject_reference": event.material["result_identity"],
                 "result_occurrence_identity": event.identity,
             }
@@ -243,20 +243,20 @@ def test_events_from_different_localities_cannot_influence_one_another():
     assert standing_two["locality_identity"] == "s2"
     one_subjects = {
         occurrence["subject_reference"]
-        for occurrence in standing_one["material_acquisition_result_occurrences"]
+        for occurrence in standing_one["material_result_occurrences"]
     }
     two_subjects = {
         occurrence["subject_reference"]
-        for occurrence in standing_two["material_acquisition_result_occurrences"]
+        for occurrence in standing_two["material_result_occurrences"]
     }
-    assert one_subjects == {first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
-    assert two_subjects == {second["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]}
+    assert one_subjects == {first["current_standing"]["material_result_occurrence"]["subject_reference"]}
+    assert two_subjects == {second["current_standing"]["material_result_occurrence"]["subject_reference"]}
     assert not {
         occurrence["result_occurrence_identity"]
-        for occurrence in standing_one["material_acquisition_result_occurrences"]
+        for occurrence in standing_one["material_result_occurrences"]
     } & {
         occurrence["result_occurrence_identity"]
-        for occurrence in standing_two["material_acquisition_result_occurrences"]
+        for occurrence in standing_two["material_result_occurrences"]
     }
 
 
@@ -572,11 +572,11 @@ def test_next_attempt_reads_standing_from_earlier_same_locality_events():
     second = _attempt(ledger, "later material\n", locality_standing=standing)
 
     assert second["locality_standing"] is standing
-    inherited = second["locality_standing"]["material_acquisition_result_occurrences"]
+    inherited = second["locality_standing"]["material_result_occurrences"]
     assert [occurrence["subject_reference"] for occurrence in inherited] == [
-        first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"]
+        first["current_standing"]["material_result_occurrence"]["subject_reference"]
     ]
-    assert first["current_standing"]["material_acquisition_result_occurrence"]["subject_reference"] == (
+    assert first["current_standing"]["material_result_occurrence"]["subject_reference"] == (
         inherited[0]["subject_reference"]
     )
 

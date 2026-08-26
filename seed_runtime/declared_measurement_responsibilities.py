@@ -117,7 +117,7 @@ def _require_current_replay_boundary(
         or bounded_locality_replay.get("locality_identity") != locality_identity
         or type(
             bounded_locality_replay.get(
-                "material_acquisition_result_occurrences"
+                "material_result_occurrences"
             )
         )
         is not list

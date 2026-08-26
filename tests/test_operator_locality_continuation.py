@@ -127,7 +127,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert after_act["subject_to_act_binding_occurrences"] == {
         binding.identity: None
     }
-    assert after_act["material_acquisition_result_occurrences"] == []
+    assert after_act["material_result_occurrences"] == []
     assert after_act["measurement_occurrences"] == {}
     assert after_act["exact_result_occurrences"] == {}
 
@@ -197,7 +197,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert replayed["subject_to_act_binding_occurrences"] == {
         binding.identity: None
     }
-    assert replayed["material_acquisition_result_occurrences"] == []
+    assert replayed["material_result_occurrences"] == []
     assert replayed["measurement_occurrences"] == {}
     assert replayed["exact_result_occurrences"] == {
         result.identity: binding_reference,

@@ -344,7 +344,7 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
                     "through_event_occurrence_identity"
                 ],
                 measurement_occurrences=standing["measurement_occurrences"],
-                material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
+                material_result_occurrences=standing["material_result_occurrences"],
                 subject_to_act_binding_occurrences=standing[
                     "subject_to_act_binding_occurrences"
                 ],
@@ -379,7 +379,7 @@ def test_replay_context_before_the_recorded_assignment_boundary_is_refused():
             locality_identity=locality,
             through_event_occurrence_identity=pair.identity,
             measurement_occurrences=standing["measurement_occurrences"],
-            material_acquisition_result_occurrences=standing["material_acquisition_result_occurrences"],
+            material_result_occurrences=standing["material_result_occurrences"],
             subject_to_act_binding_occurrences={
                 **standing["subject_to_act_binding_occurrences"],
                 assignment.identity: None,
@@ -417,7 +417,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
                 "standing_boundary_identity"
             ],
             measurement_occurrences=measurements,
-            material_acquisition_result_occurrences=acquisition_results,
+            material_result_occurrences=acquisition_results,
             subject_to_act_binding_occurrences=standing[
                 "subject_to_act_binding_occurrences"
             ],
@@ -427,7 +427,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
         )
 
     measurements = deepcopy(standing["measurement_occurrences"])
-    acquisition_results = deepcopy(standing["material_acquisition_result_occurrences"])
+    acquisition_results = deepcopy(standing["material_result_occurrences"])
     coordinate = (
         measurements[pair.identity]
         if forged_coordinate == "measurement"
@@ -627,7 +627,7 @@ def test_explicit_prior_standing_binds_each_exact_input_occurrence(changed_input
     else:
         carried = next(
             occurrence
-            for occurrence in forged["material_acquisition_result_occurrences"]
+            for occurrence in forged["material_result_occurrences"]
             if occurrence["result_occurrence_identity"] == source.identity
         )
         carried["result_identity"] = "substituted-result"
@@ -895,7 +895,7 @@ def test_measured_scalar_cannot_impersonate_pair_occurrence_result_standing(carr
         )
 
 
-def test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence():
+def test_same_bytes_cannot_substitute_another_material_result_occurrence():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     substitute = record_operator_material_occurrence(
         ledger,
@@ -1033,7 +1033,7 @@ FIDELITY_DISTINCTIONS = {
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
         test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss,
-        test_same_bytes_cannot_substitute_another_material_acquisition_result_occurrence,
+        test_same_bytes_cannot_substitute_another_material_result_occurrence,
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,
     ),
