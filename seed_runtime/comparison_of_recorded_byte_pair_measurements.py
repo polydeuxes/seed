@@ -76,7 +76,7 @@ def _identity(value: Any, message: str) -> str:
     return value
 
 
-def _operator_acquisition_for_material_result(
+def _operator_source_for_material_result(
     ledger: EventLedger, added: Event
 ) -> tuple[Event, dict[str, Any]]:
     """Read direct O1 or the older generic result carrying O1 provenance."""
@@ -94,23 +94,23 @@ def _operator_acquisition_for_material_result(
         if type(provenance) is list and len(provenance) == 1
         else None
     )
-    acquired_event = ledger.get(reference) if type(reference) is str else None
+    source_event = ledger.get(reference) if type(reference) is str else None
     try:
-        acquired = get_recorded_operator_material_source(ledger, reference)
+        source_material = get_recorded_operator_material_source(ledger, reference)
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one exact operator acquisition occurrence"
+            "later Measurement requires one exact operator source occurrence"
         ) from error
     if (
-        acquired_event is None
-        or acquired_event.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-        or acquired_event.locality_identity != added.locality_identity
-        or acquired_event.exact_material != added.exact_material
+        source_event is None
+        or source_event.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        or source_event.locality_identity != added.locality_identity
+        or source_event.exact_material != added.exact_material
     ):
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one exact operator acquisition occurrence"
+            "later Measurement requires one exact operator source occurrence"
         )
-    return acquired_event, acquired
+    return source_event, source_material
 
 
 def _operator_source_current_coordinate_reference(
@@ -392,7 +392,7 @@ def _comparison_inputs(
             read_exact_material_result(ledger, added.identity)
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one exact acquisition result"
+            "later Measurement requires one exact material result"
         ) from error
     cited_prior = tuple(
         reference
@@ -416,18 +416,18 @@ def _comparison_inputs(
             "Witness provenance establishes no comparison input relation"
         )
     elif source_role == "this operator":
-        acquired_event, acquired = _operator_acquisition_for_material_result(
+        source_event, source_material = _operator_source_for_material_result(
             ledger, added
         )
         source_coordinate_reference = (
             _operator_source_current_coordinate_reference(
                 ledger,
-                source_material=acquired,
+                source_material=source_material,
                 earlier_measurement=earlier,
                 earlier_source_occurrence_references=earlier_sources,
             )
         )
-        operator_material_source_result_event_identity = acquired_event.identity
+        operator_material_source_result_event_identity = source_event.identity
         operator_material_source_current_coordinate_reference = deepcopy(
             source_coordinate_reference
         )
@@ -457,7 +457,7 @@ def _comparison_inputs(
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:
             raise RecordedPairMeasurementComparisonError(
-                "added occurrence carries a crossed invocation Locality relation"
+            "added occurrence carries an invocation relation to another Locality"
             )
         operator_locality_identity = relation["operator_locality_identity"]
     return {
@@ -490,7 +490,7 @@ def _comparison_inputs_from_carried_measurements(
     *,
     earlier: Event,
     later: Event,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
     """Revalidate the older result and carry the newly produced result."""
 
@@ -501,8 +501,8 @@ def _comparison_inputs_from_carried_measurements(
         or later.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         or earlier.identity == later.identity
         or earlier.locality_identity != later.locality_identity
-        or type(locality_standing) is not dict
-        or locality_standing.get("locality_identity") != earlier.locality_identity
+        or type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != earlier.locality_identity
     ):
         raise RecordedPairMeasurementComparisonError(
             "comparison requires first and second carried pair Measurements"
@@ -510,7 +510,7 @@ def _comparison_inputs_from_carried_measurements(
     earlier, earlier_findings, earlier_assignment = _measurement_and_findings(
         ledger, earlier.identity
     )
-    carried = locality_standing.get("measurement_occurrences")
+    carried = current_coordinates.get("measurement_occurrences")
     if (
         type(carried) is not dict
         or earlier.identity not in carried
@@ -558,7 +558,7 @@ def _comparison_inputs_from_carried_measurements(
             read_exact_material_result(ledger, added.identity)
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
-            "later Measurement requires one exact acquisition result"
+            "later Measurement requires one exact material result"
         ) from error
     cited_prior = tuple(
         reference
@@ -575,18 +575,18 @@ def _comparison_inputs_from_carried_measurements(
             "later Measurement requires one added occurrence with exact source coordinates"
         )
     source_role = added.material.get("source_role")
-    acquisition_identity = None
+    operator_source_identity = None
     source_coordinate_reference = None
     if source_role == "this operator":
-        acquired, acquired_material = _operator_acquisition_for_material_result(
+        source_event, source_material = _operator_source_for_material_result(
             ledger, added
         )
-        exact_results = locality_standing.get("exact_result_occurrences")
+        exact_results = current_coordinates.get("exact_result_occurrences")
         if (
-            acquired.locality_identity != earlier.locality_identity
-            or acquired.exact_material != added.exact_material
+            source_event.locality_identity != earlier.locality_identity
+            or source_event.exact_material != added.exact_material
             or type(exact_results) is not dict
-            or acquired.identity not in exact_results
+            or source_event.identity not in exact_results
         ):
             raise RecordedPairMeasurementComparisonError(
                 "operator source occurrence carries no exact prior coordinates"
@@ -594,12 +594,12 @@ def _comparison_inputs_from_carried_measurements(
         source_coordinate_reference = (
             _operator_source_current_coordinate_reference(
                 ledger,
-                source_material=acquired_material,
+                source_material=source_material,
                 earlier_measurement=earlier,
                 earlier_source_occurrence_references=earlier_sources,
             )
         )
-        acquisition_identity = acquired.identity
+        operator_source_identity = source_event.identity
         input_relation = "operator material source occurrence after prior coordinates"
         operator_locality_identity = earlier.locality_identity
     elif source_role == "this Witness":
@@ -628,7 +628,7 @@ def _comparison_inputs_from_carried_measurements(
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:
             raise RecordedPairMeasurementComparisonError(
-                "added occurrence carries a crossed invocation Locality relation"
+                "added occurrence carries an invocation relation to another Locality"
             )
         operator_locality_identity = relation["operator_locality_identity"]
     return {
@@ -643,7 +643,7 @@ def _comparison_inputs_from_carried_measurements(
         "prior_provenance": cited_prior,
         "added_provenance": tuple(provenance),
         "input_relation": input_relation,
-        "operator_material_source_result_event_identity": acquisition_identity,
+        "operator_material_source_result_event_identity": operator_source_identity,
         "operator_material_source_current_coordinate_reference": deepcopy(
             source_coordinate_reference
         ),
@@ -654,31 +654,31 @@ def _comparison_inputs_from_carried_measurements(
     }
 
 
-def _require_measurement_standing(
+def _require_measurement_current_coordinates(
     ledger: EventLedger,
     *,
     inputs: dict[str, Any],
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> str:
-    if type(locality_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires exact current Locality Standing"
+            "comparison requires exact current Locality coordinates"
         )
-    carried = locality_standing.get("measurement_occurrences")
-    boundary_identity = locality_standing.get("through_event_occurrence_identity")
+    carried = current_coordinates.get("measurement_occurrences")
+    boundary_identity = current_coordinates.get("through_event_occurrence_identity")
     required = (
         inputs["earlier_event"].identity,
         inputs["later_event"].identity,
     )
     if (
-        locality_standing.get("locality_identity") != inputs["locality_identity"]
+        current_coordinates.get("locality_identity") != inputs["locality_identity"]
         or type(carried) is not dict
         or any(reference not in carried for reference in required)
         or type(boundary_identity) is not str
         or not boundary_identity
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires each exact Measurement result in current Standing"
+            "comparison requires each exact Measurement result in current coordinates"
         )
     identities = tuple(dict.fromkeys((*required, boundary_identity)))
     try:
@@ -687,11 +687,11 @@ def _require_measurement_standing(
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Standing boundary lacks a required input"
+            "comparison through-occurrence boundary lacks a required input"
         ) from error
     if tuple(event.identity for event in ordered) != identities:
         raise RecordedPairMeasurementComparisonError(
-            "comparison Standing boundary lacks a required input"
+            "comparison through-occurrence boundary lacks a required input"
         )
     return boundary_identity
 
@@ -711,7 +711,7 @@ def _assignment_reference(
 def _assignment_material(
     *,
     inputs: dict[str, Any],
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     applicability_act_identity: str,
     applicability_act_occurrence_identity: str,
     applicability_result_identity: str,
@@ -762,10 +762,10 @@ def _assignment_material(
         "destination_operator_locality_identity": inputs[
             "operator_locality_identity"
         ],
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": {
             "locality_identity": inputs["locality_identity"],
-            "standing_boundary_identity": standing_boundary_identity,
+            "through_event_occurrence_identity": through_event_occurrence_identity,
             "added_occurrence_reference": inputs["added_reference"],
             "operator_invocation_locality_relation_event_identity": inputs[
                 "operator_invocation_locality_relation_event_identity"
@@ -790,7 +790,7 @@ def record_recorded_pair_measurement_comparison_responsibility_assignment(
     *,
     earlier_result_event_identity: str,
     later_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     """Assign one exact Compare through one exact input relation."""
 
@@ -799,11 +799,11 @@ def record_recorded_pair_measurement_comparison_responsibility_assignment(
         earlier_result_event_identity=earlier_result_event_identity,
         later_result_event_identity=later_result_event_identity,
     )
-    boundary = _require_measurement_standing(
-        ledger, inputs=inputs, locality_standing=locality_standing
+    boundary = _require_measurement_current_coordinates(
+        ledger, inputs=inputs, current_coordinates=current_coordinates
     )
     return _record_comparison_responsibility_assignment(
-        ledger, inputs=inputs, standing_boundary_identity=boundary
+        ledger, inputs=inputs, through_event_occurrence_identity=boundary
     )
 
 
@@ -811,7 +811,7 @@ def _record_comparison_responsibility_assignment(
     ledger: EventLedger,
     *,
     inputs: dict[str, Any],
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> Event:
     identities = {
         "applicability_act_identity": new_identity(
@@ -839,7 +839,7 @@ def _record_comparison_responsibility_assignment(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND,
         _assignment_material(
             inputs=inputs,
-            standing_boundary_identity=standing_boundary_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
             applicability_act_identity=identities["applicability_act_identity"],
             applicability_act_occurrence_identity=identities[
                 "applicability_act_occurrence_identity"
@@ -902,7 +902,7 @@ def _assignment_reading(
         raise RecordedPairMeasurementComparisonError(
             "comparison assignment identities are not exact"
         )
-    boundary = material.get("standing_boundary_identity")
+    boundary = material.get("through_event_occurrence_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     if (
         boundary_event is None
@@ -910,11 +910,11 @@ def _assignment_reading(
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison assignment carries no intact Standing boundary"
+            "comparison binding carries no intact through-occurrence boundary"
         )
     expected = _assignment_material(
         inputs=inputs,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
         **identities,
     )
     if event.locality_identity != inputs["locality_identity"] or material != expected:
@@ -949,21 +949,21 @@ def get_recorded_pair_measurement_comparison_responsibility_assignment(
     return _assignment_reading(ledger, event_identity)[0]
 
 
-def _require_assignment_standing(
-    assignment: Event, locality_standing: dict[str, Any]
+def _require_binding_current_coordinates(
+    assignment: Event, current_coordinates: dict[str, Any]
 ) -> None:
     carried = (
-        locality_standing.get("subject_to_act_binding_occurrences")
-        if type(locality_standing) is dict
+        current_coordinates.get("subject_to_act_binding_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     if (
         type(carried) is not dict
         or carried.get(assignment.identity, object()) is not None
-        or locality_standing.get("locality_identity") != assignment.locality_identity
+        or current_coordinates.get("locality_identity") != assignment.locality_identity
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison requires its exact assignment Standing"
+            "comparison requires its exact binding in current coordinates"
         )
 
 
@@ -974,13 +974,13 @@ def _applicability_of_input_to_compare(assignment: Event) -> list[dict[str, Any]
             "input_role": "earlier recorded pair Measurement result",
             "input_reference": deepcopy(material["earlier_measurement_reference"]),
             "addressed_act_identity": material["comparison_act_identity"],
-            "standing": "applicable",
+            "applicability": "applicable",
         },
         {
             "input_role": "later recorded pair Measurement result",
             "input_reference": deepcopy(material["later_measurement_reference"]),
             "addressed_act_identity": material["comparison_act_identity"],
-            "standing": "applicable",
+            "applicability": "applicable",
         },
     ]
 
@@ -1010,12 +1010,12 @@ def record_recorded_pair_measurement_comparison_applicability_act_occurrence(
     ledger: EventLedger,
     *,
     responsibility_assignment_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     assignment = get_recorded_pair_measurement_comparison_responsibility_assignment(
         ledger, responsibility_assignment_event_identity
     )
-    _require_assignment_standing(assignment, locality_standing)
+    _require_binding_current_coordinates(assignment, current_coordinates)
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(assignment),
@@ -1091,7 +1091,7 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(act.material["scope"]),
-        "standing": "applicable",
+        "applicability": "applicable",
         "unknown": [],
     }
 
@@ -1112,7 +1112,7 @@ def _recorded_applicability_result_material(
         ),
         "comparison_rule": material["comparison_rule"],
         "scope": deepcopy(material["scope"]),
-        "standing": material["standing"],
+        "applicability": material["applicability"],
         "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
@@ -1210,30 +1210,30 @@ def get_recorded_pair_measurement_comparison_applicability(
     return _applicability_reading(ledger, event_identity)[0]
 
 
-def _require_applicability_standing(
+def _require_applicability_current_coordinates(
     assignment: Event,
     applicability: Event,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> None:
     assignments = (
-        locality_standing.get("subject_to_act_binding_occurrences")
-        if type(locality_standing) is dict
+        current_coordinates.get("subject_to_act_binding_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     applicable = (
-        locality_standing.get("applicability_result_occurrences")
-        if type(locality_standing) is dict
+        current_coordinates.get("applicability_result_occurrences")
+        if type(current_coordinates) is dict
         else None
     )
     if (
-        locality_standing.get("locality_identity") != assignment.locality_identity
+        current_coordinates.get("locality_identity") != assignment.locality_identity
         or type(assignments) is not dict
         or assignments.get(assignment.identity, object()) is not None
         or type(applicable) is not dict
         or applicable.get(applicability.identity, object()) is not None
     ):
         raise RecordedPairMeasurementComparisonError(
-            "Compare requires its exact assignment and Applicability Standing"
+            "Compare requires its exact binding and Applicability in current coordinates"
         )
 
 
@@ -1285,7 +1285,7 @@ def record_recorded_pair_measurement_comparison_act_occurrence(
     *,
     responsibility_assignment_event_identity: str,
     applicability_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     assignment_reading = _assignment_reading(
         ledger, responsibility_assignment_event_identity
@@ -1311,8 +1311,8 @@ def record_recorded_pair_measurement_comparison_act_occurrence(
         raise RecordedPairMeasurementComparisonError(
             "Compare Applicability names another assignment"
         )
-    _require_applicability_standing(
-        assignment, applicability, locality_standing
+    _require_applicability_current_coordinates(
+        assignment, applicability, current_coordinates
     )
     return ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
@@ -1553,39 +1553,39 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
     *,
     earlier_measurement: Event,
     later_measurement: Event,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> tuple[Event, dict[str, Any]]:
     """Record one complete Compare from results carried by this console call."""
 
     from seed_runtime.operator_current_coordinates import (
-        _carry_recorded_pair_comparison_occurrence_into_standing,
+        _carry_recorded_pair_comparison_occurrence_into_current_coordinates,
     )
 
     inputs = _comparison_inputs_from_carried_measurements(
         ledger,
         earlier=earlier_measurement,
         later=later_measurement,
-        locality_standing=locality_standing,
+        current_coordinates=current_coordinates,
     )
-    boundary = _require_measurement_standing(
-        ledger, inputs=inputs, locality_standing=locality_standing
+    boundary = _require_measurement_current_coordinates(
+        ledger, inputs=inputs, current_coordinates=current_coordinates
     )
     assignment = _record_comparison_responsibility_assignment(
-        ledger, inputs=inputs, standing_boundary_identity=boundary
+        ledger, inputs=inputs, through_event_occurrence_identity=boundary
     )
-    locality_standing = _carry_recorded_pair_comparison_occurrence_into_standing(
-        locality_standing,
+    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        current_coordinates,
         assignment,
         prior_through_event_occurrence_identity=boundary,
     )
-    _require_assignment_standing(assignment, locality_standing)
+    _require_binding_current_coordinates(assignment, current_coordinates)
     applicability_act = ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(assignment),
         locality_identity=assignment.locality_identity,
     )
-    locality_standing = _carry_recorded_pair_comparison_occurrence_into_standing(
-        locality_standing,
+    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        current_coordinates,
         applicability_act,
         prior_through_event_occurrence_identity=assignment.identity,
     )
@@ -1593,21 +1593,21 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
     applicability = _record_applicability_result_from_act(
         ledger, act=applicability_act, result=applicability_material
     )
-    locality_standing = _carry_recorded_pair_comparison_occurrence_into_standing(
-        locality_standing,
+    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        current_coordinates,
         applicability,
         prior_through_event_occurrence_identity=applicability_act.identity,
     )
-    _require_applicability_standing(
-        assignment, applicability, locality_standing
+    _require_applicability_current_coordinates(
+        assignment, applicability, current_coordinates
     )
     comparison_act = ledger.append(
         RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT,
         _comparison_act_material(assignment, applicability),
         locality_identity=assignment.locality_identity,
     )
-    locality_standing = _carry_recorded_pair_comparison_occurrence_into_standing(
-        locality_standing,
+    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        current_coordinates,
         comparison_act,
         prior_through_event_occurrence_identity=applicability.identity,
     )
@@ -1618,12 +1618,12 @@ def _record_recorded_pair_measurement_comparison_from_carried_measurements(
     result = _record_comparison_result_from_act(
         ledger, act=comparison_act, result=result_material
     )
-    locality_standing = _carry_recorded_pair_comparison_occurrence_into_standing(
-        locality_standing,
+    current_coordinates = _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+        current_coordinates,
         result,
         prior_through_event_occurrence_identity=comparison_act.identity,
     )
-    return result, locality_standing
+    return result, current_coordinates
 
 
 def _recorded_pair_measurement_comparison_reading(

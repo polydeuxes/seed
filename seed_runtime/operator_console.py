@@ -399,7 +399,7 @@ def _record_pair_measurement_comparison(
             ledger,
             earlier_measurement=earlier_pair_measurement,
             later_measurement=later_pair_measurement,
-            locality_standing=current_coordinates,
+            current_coordinates=current_coordinates,
         )
     )
     return current_coordinates, result

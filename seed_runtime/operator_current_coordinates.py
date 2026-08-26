@@ -288,7 +288,7 @@ def _validate_recorded_pair_comparison_replay_carry(
         or ledger.append_boundary() != carry["exact_boundary"]
     ):
         raise RecordedPairMeasurementComparisonError(
-            "comparison replay carry crossed its exact boundary"
+            "comparison replay carry differs from its exact boundary"
         )
     for snapshot in carry["occurrences"]:
         if type(snapshot) is not dict:
@@ -309,7 +309,7 @@ def _validate_recorded_pair_comparison_replay_carry(
             )
     if ledger.append_boundary() != carry["exact_boundary"]:
         raise RecordedPairMeasurementComparisonError(
-            "comparison replay carry crossed its exact boundary"
+            "comparison replay carry differs from its exact boundary"
         )
     return carry["responsibility_assignment"]
 
@@ -3016,8 +3016,8 @@ def _carry_operator_material_source_occurrence_into_current_coordinates(
     return current_coordinates
 
 
-def _carry_recorded_pair_comparison_occurrence_into_standing(
-    locality_standing: dict[str, Any],
+def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
+    current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
@@ -3026,17 +3026,17 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
 
     carried_kinds = _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
     if (
-        type(locality_standing) is not dict
+        type(current_coordinates) is not dict
         or event.kind not in carried_kinds
-        or locality_standing.get("locality_identity") != event.locality_identity
-        or locality_standing.get("through_event_occurrence_identity")
+        or current_coordinates.get("locality_identity") != event.locality_identity
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
     ):
-        raise ValueError("recorded pair comparison Standing is not exact")
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    applicability = locality_standing.get("applicability_result_occurrences")
-    comparisons = locality_standing.get("comparison_result_occurrences")
-    event_count = locality_standing.get("event_count")
+        raise ValueError("recorded pair comparison coordinates are not exact")
+    assignments = current_coordinates.get("subject_to_act_binding_occurrences")
+    applicability = current_coordinates.get("applicability_result_occurrences")
+    comparisons = current_coordinates.get("comparison_result_occurrences")
+    event_count = current_coordinates.get("event_count")
     if (
         type(assignments) is not dict
         or type(applicability) is not dict
@@ -3044,9 +3044,9 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
         or type(event_count) is not int
         or event_count < 0
     ):
-        raise ValueError("recorded pair comparison Standing is not exact")
+        raise ValueError("recorded pair comparison coordinates are not exact")
     if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND:
-        measurements = locality_standing.get("measurement_occurrences")
+        measurements = current_coordinates.get("measurement_occurrences")
         earlier = event.material.get("earlier_measurement_reference")
         later = event.material.get("later_measurement_reference")
         if (
@@ -3055,7 +3055,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
             or type(later) is not dict
             or earlier.get("recorded_occurrence_identity") not in measurements
             or later.get("recorded_occurrence_identity") not in measurements
-            or event.material.get("standing_boundary_identity")
+            or event.material.get("through_event_occurrence_identity")
             != prior_through_event_occurrence_identity
             or event.identity in assignments
         ):
@@ -3078,7 +3078,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
             or assignment.get("recorded_occurrence_identity") not in assignments
             or event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
-            or event.material.get("standing") != "applicable"
+            or event.material.get("applicability") != "applicable"
             or event.identity in applicability
         ):
             raise ValueError("recorded pair comparison Applicability is not exact")
@@ -3104,10 +3104,10 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
             or event.identity in comparisons
         ):
             raise ValueError("recorded pair comparison result is not exact")
-    standing_additions = _exact_current_coordinate_additions(
-        locality_standing,
+    coordinate_additions = _exact_current_coordinate_additions(
+        current_coordinates,
         event,
-        error_message="recorded pair comparison Standing is not exact",
+        error_message="recorded pair comparison coordinates are not exact",
     )
     if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND:
         assignments[event.identity] = None
@@ -3115,9 +3115,9 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
         applicability[event.identity] = None
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
         comparisons[event.identity] = None
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
