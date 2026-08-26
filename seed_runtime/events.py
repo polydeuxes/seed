@@ -306,6 +306,14 @@ class EventLedger:
         self._next_identity_numbers[prefix] = number + 1
         return f"{prefix}_{number:06d}"
 
+    def _advance_event_identity_number(self, event_identity: str) -> None:
+        number = _numeric_number(event_identity, "evt")
+        if number is None:
+            return
+        self._next_identity_numbers["evt"] = max(
+            self._next_identity_numbers.get("evt", 1), number + 1
+        )
+
     def append_many(
         self,
         events: Iterable[Event],
@@ -525,6 +533,7 @@ class EventLedger:
         self._prefix_identities_by_position.append(identity)
         self._boundary_positions[identity] = position
         self._by_identity_position[event.identity] = position
+        self._advance_event_identity_number(event.identity)
 
     def _validate_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()

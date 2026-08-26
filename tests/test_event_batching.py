@@ -34,6 +34,15 @@ def test_append_many_preserves_event_ordering():
     ]
 
 
+def test_append_many_advances_the_process_local_event_identity_number():
+    ledger = EventLedger()
+    ledger.append_many(
+        [Event(identity="evt_000003", kind="supplied.occurrence")]
+    )
+
+    assert ledger.append("later.occurrence").identity == "evt_000004"
+
+
 def test_an_allocated_identity_can_be_carried_by_its_prebuilt_occurrence():
     ledger = EventLedger()
 
