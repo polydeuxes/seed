@@ -206,12 +206,21 @@ def _path_input(
     }
 
 
-def _new_identities(ledger: EventLedger) -> dict[str, str]:
+def _mint_compare_identities(ledger: EventLedger) -> dict[str, str]:
     return {
         coordinate: ledger.mint_identity(
             "ordered_path_source_position_material_" + coordinate
         )
-        for coordinate in _IDENTITY_COORDINATES
+        for coordinate in _COMPARE_IDENTITY_COORDINATES
+    }
+
+
+def _mint_applicability_identities(ledger: EventLedger) -> dict[str, str]:
+    return {
+        coordinate: ledger.mint_identity(
+            "ordered_path_source_position_material_" + coordinate
+        )
+        for coordinate in _APPLICABILITY_IDENTITY_COORDINATES
     }
 
 
@@ -1015,7 +1024,7 @@ def _record_ordered_path_source_position_material_comparison(
         path_position_pair=path_position_pair,
         current_coordinates=current_coordinates,
     )
-    identities = _new_identities(ledger)
+    compare_identities = _mint_compare_identities(ledger)
     from seed_runtime.operator_current_coordinates import (
         _exact_current_coordinate_additions,
         _record_distinct,
@@ -1063,10 +1072,14 @@ def _record_ordered_path_source_position_material_comparison(
 
     compare_binding = ledger.append(
         COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
-        _compare_binding_material(inputs, boundary, identities),
+        _compare_binding_material(inputs, boundary, compare_identities),
         locality_identity=locality_identity,
     )
     carry(compare_binding)
+    identities = {
+        **compare_identities,
+        **_mint_applicability_identities(ledger),
+    }
     applicability_binding = ledger.append(
         APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
         _applicability_binding_material(
