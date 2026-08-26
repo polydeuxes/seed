@@ -54,11 +54,6 @@ SHARED_POSITION_MEASUREMENT_RESULT_KIND = (
     "operator.shared_pair_position.measurement_recorded"
 )
 BOOK_CLAUSE = "01.Source.D"
-MEASUREMENT_RULE = (
-    "second position-coordinate reference of first exact recorded pair occurrence "
-    "Assertion and first position-coordinate reference of second exact recorded pair "
-    "occurrence Assertion, each of one exact byte occurrence"
-)
 APPLICABILITY_ACT = (
     "Applicability of exact pair occurrence position Assertions to one same-position "
     "Measurement"
@@ -619,7 +614,6 @@ def _binding_material(
         ],
         "result_boundary_identity": identities["measurement_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -672,7 +666,6 @@ def _applicability_binding_material(
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": identities["applicability_result_identity"],
         "book_clause_identity": "01.Current.E.1",
-        "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": first_subject,
         "second_position_assertion": second_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -1128,7 +1121,6 @@ def _applicability_act_material(
                 "applicability_result_identity"
             ],
         ),
-        "measurement_rule": MEASUREMENT_RULE,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relations": [
             {
@@ -1422,7 +1414,6 @@ def _applicability_result_material(
         "act_occurrence_event_identity": act.identity,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
-        "measurement_rule": MEASUREMENT_RULE,
         "applicability": applicability,
         "scope": binding.material["scope"],
         "unknown": binding.material["unknown"],
@@ -1537,7 +1528,6 @@ def _recorded_applicability_result_material(
         ],
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
-        "measurement_rule": result["measurement_rule"],
         "applicability": result["applicability"],
         "scope": deepcopy(result["scope"]),
         "unknown": list(result["unknown"]),
@@ -1654,7 +1644,6 @@ def _measurement_act_material(
             "recorded_occurrence_identity": applicability.identity,
             "result_identity": applicability.material["result_identity"],
         },
-        "measurement_rule": MEASUREMENT_RULE,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "participation": [
             {
@@ -1831,7 +1820,6 @@ def _path_assertion(
     subject = {
         "first_position_assertion_reference": inputs.first.assertion_reference,
         "second_position_assertion_reference": inputs.second.assertion_reference,
-        "measurement_rule": MEASUREMENT_RULE,
     }
     scope = {"source_localities": [inputs.first.locality_identity]}
     content = {
@@ -1905,7 +1893,6 @@ def _measurement_result_material(
             "recorded_occurrence_identity": applicability.identity,
             "result_identity": applicability.material["result_identity"],
         },
-        "measurement_rule": MEASUREMENT_RULE,
         "source_localities": [inputs.first.locality_identity],
         "completeness_boundary": {
             "identity": inputs.first.completeness_boundary_identity,
@@ -1982,7 +1969,6 @@ def _recorded_measurement_result_material(
         "applicability_result_reference": deepcopy(
             result["applicability_result_reference"]
         ),
-        "measurement_rule": result["measurement_rule"],
         "source_localities": list(result["source_localities"]),
         "completeness_boundary": deepcopy(result["completeness_boundary"]),
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
