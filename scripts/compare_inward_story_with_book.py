@@ -286,8 +286,6 @@ def main() -> int:
         "01.Current.A.1",
         "01.Current.E.1",
         "02.Acts.A",
-        "08.Support.A",
-        "08.Scope.A",
     )
     clauses = _identified_clauses()
     compared_clause_identities = _without_duplicates(
