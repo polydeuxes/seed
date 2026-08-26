@@ -553,8 +553,6 @@ class SQLiteEventLedger(EventLedger):
         "source_position_compare_act",
         "source_position_compare_act_occurrence",
         "source_position_compare_result",
-        "source_position_compare_first_participation",
-        "source_position_compare_second_participation",
         "source_position_measurement_act",
         "source_position_measurement_act_occurrence",
         "source_position_measurement_result",

@@ -963,12 +963,6 @@ def _record_compare(
         },
         identity_prefix="source_position_compare_applicability",
     )
-    first_participation_identity = new_identity(
-        "source_position_compare_first_participation"
-    )
-    second_participation_identity = new_identity(
-        "source_position_compare_second_participation"
-    )
     finding = (
         "same-content"
         if subject["first_source_position_coordinate"]["exact_material"]
@@ -995,13 +989,11 @@ def _record_compare(
                     "first_subject": subject["first_source_position_coordinate"],
                     "relation": "participation",
                     "second_subject": {"role": "first subject"},
-                    "relation_occurrence_reference": first_participation_identity,
                 },
                 {
                     "first_subject": subject["second_source_position_coordinate"],
                     "relation": "participation",
                     "second_subject": {"role": "second subject"},
-                    "relation_occurrence_reference": second_participation_identity,
                 },
             ],
         },
@@ -1115,13 +1107,6 @@ def get_recorded_source_position_compare(
         )
         and tuple(item.get("second_subject") for item in participation)
         == ({"role": "first subject"}, {"role": "second subject"})
-        and all(
-            type(item.get("relation_occurrence_reference")) is str
-            and item["relation_occurrence_reference"]
-            for item in participation
-        )
-        and participation[0]["relation_occurrence_reference"]
-        != participation[1]["relation_occurrence_reference"]
     )
     if (
         coordinate_tuple != expected_source
