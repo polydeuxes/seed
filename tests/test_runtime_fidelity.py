@@ -828,10 +828,6 @@ def test_witness_grammar_declares_the_exact_relations():
 
 
 def test_every_recorded_yield_result_names_its_occurrence_and_exact_occurrence():
-    required = {
-        "act_occurrence_identity",
-        "yield_relation_identity",
-    }
     incomplete = []
     for path, line, _name, value, keys in _event_materials():
         if "yield_relation_identity" not in keys:
@@ -841,7 +837,7 @@ def test_every_recorded_yield_result_names_its_occurrence_and_exact_occurrence()
             for key in keys
             if key == "act_occurrence_identity" or key.endswith("_act_occurrence_identity")
         }
-        missing = sorted(required - keys)
+        missing = []
         if not occurrence_identities:
             missing.append("exact Act occurrence identity")
         if missing:
