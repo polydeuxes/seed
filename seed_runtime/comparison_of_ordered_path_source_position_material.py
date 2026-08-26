@@ -59,7 +59,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 
 
 class OrderedPathSourcePositionMaterialComparison(NamedTuple):
-    locality_standing: dict[str, Any]
+    current_coordinates: dict[str, Any]
     result_occurrence: Event
 
 
@@ -114,7 +114,7 @@ def _path_input(
     path_result_event_identity: Any,
     *,
     path_position_pair: tuple[int, int],
-    prior_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
     event = _event(
         ledger,
@@ -124,7 +124,7 @@ def _path_input(
     )
     path, positions = (
         ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
-            ledger, event.identity, prior_coordinates=prior_standing
+            ledger, event.identity, prior_coordinates=current_coordinates
         )
     )
     if len(positions) != 3:
@@ -167,13 +167,13 @@ def _path_input(
         != (first["position"], first["position"] + 1, first["position"] + 2)
     ):
         raise ValueError("source position Compare requires exact ordered positions")
-    assertions = prior_standing.get("measurement_occurrences")
+    assertions = current_coordinates.get("measurement_occurrences")
     if (
         type(assertions) is not dict
         or assertions.get(event.identity) != _result_reference(event)
         or path.get("dimensions", {}).get("position") != 0
     ):
-        raise ValueError("current Standing carries no exact ordered path result")
+        raise ValueError("current coordinates carry no exact ordered path result")
     return {
         "event": event,
         "reference": _result_reference(event),
@@ -232,7 +232,7 @@ def _applicability_act_material(
         "path_position_pair": list(inputs["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
-        "standing_boundary_identity": boundary,
+        "through_event_occurrence_identity": boundary,
         "act_identity": identities["applicability_act_identity"],
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": identities["compare_act_identity"],
@@ -271,7 +271,6 @@ def _applicability_act_material(
             "completeness_boundary_identity": inputs[
                 "completeness_boundary_identity"
             ],
-            "standing_boundary_identity": boundary,
         },
         "unknown": [],
         "conflicts": [],
@@ -282,7 +281,7 @@ def _read_applicability_act(
     ledger: EventLedger,
     event_identity: Any,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -297,18 +296,18 @@ def _read_applicability_act(
         or len(set(identities.values())) != len(identities)
     ):
         raise ValueError("source position Compare identities are not exact")
-    boundary = material.get("standing_boundary_identity")
-    if prior_standing is None:
+    boundary = material.get("through_event_occurrence_identity")
+    if current_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
             _operator_current_coordinate_validation_context,
             read_operator_current_coordinates_through,
         )
 
-        prior_standing = _operator_current_coordinate_validation_context(
+        current_coordinates = _operator_current_coordinate_validation_context(
             ledger, locality_identity=event.locality_identity
         )
-        if prior_standing is None:
-            prior_standing = read_operator_current_coordinates_through(
+        if current_coordinates is None:
+            current_coordinates = read_operator_current_coordinates_through(
                 ledger,
                 locality_identity=event.locality_identity,
                 through_event_occurrence_identity=boundary,
@@ -324,7 +323,7 @@ def _read_applicability_act(
             if type(material.get("path_position_pair")) is list
             else ()
         ),
-        prior_standing=prior_standing,
+        current_coordinates=current_coordinates,
     )
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     if (
@@ -350,7 +349,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "dimensions": {
             "identity": material["applicability_result_identity"],
             "content": "ordered path source position material",
-            "standing": "applicable",
             "source_provenance": "exact ordered relation path source coordinates",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -388,7 +386,9 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "applicability": "applicable",
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
-        "standing_boundary_identity": material["standing_boundary_identity"],
+        "through_event_occurrence_identity": material[
+            "through_event_occurrence_identity"
+        ],
         "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
@@ -439,7 +439,9 @@ def _recorded_applicability_result_material(
         "applicability": material["applicability"],
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
-        "standing_boundary_identity": material["standing_boundary_identity"],
+        "through_event_occurrence_identity": material[
+            "through_event_occurrence_identity"
+        ],
         "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
@@ -556,7 +558,7 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
         "applicability_result_event_identity": applicability.identity,
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
-        "standing_boundary_identity": applicability.identity,
+        "through_event_occurrence_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
         ),
@@ -765,15 +767,14 @@ def _record_ordered_path_source_position_material_comparison(
     *,
     path_result_event_identity: str,
     path_position_pair: tuple[int, int],
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> OrderedPathSourcePositionMaterialComparison:
     """Record one exact path-ordered pair Compare."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("source position Compare requires an EventLedger")
-    standing = locality_standing
-    locality_identity = standing.get("locality_identity")
-    boundary = standing.get("through_event_occurrence_identity")
+    locality_identity = current_coordinates.get("locality_identity")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
     if (
         type(locality_identity) is not str
         or not locality_identity
@@ -783,12 +784,12 @@ def _record_ordered_path_source_position_material_comparison(
             boundary
         ).identity
     ):
-        raise ValueError("source position Compare requires exact current Standing")
+        raise ValueError("source position Compare requires exact current coordinates")
     inputs = _path_input(
         ledger,
         path_result_event_identity,
         path_position_pair=path_position_pair,
-        prior_standing=standing,
+        current_coordinates=current_coordinates,
     )
     identities = _new_identities()
     from seed_runtime.operator_current_coordinates import (
@@ -797,7 +798,7 @@ def _record_ordered_path_source_position_material_comparison(
     )
 
     def carry(*events: Event) -> None:
-        prior = standing["through_event_occurrence_identity"]
+        prior = current_coordinates["through_event_occurrence_identity"]
         ordered = ledger.occurrences_in_append_order(
             (prior, *(event.identity for event in events)),
             locality_identity=locality_identity,
@@ -811,19 +812,23 @@ def _record_ordered_path_source_position_material_comparison(
             raise ValueError("source position Compare left its exact boundary")
         for carried in events:
             additions = _exact_current_coordinate_additions(
-                standing,
+                current_coordinates,
                 carried,
-                error_message="source position Compare Standing is not exact",
+                error_message="source position Compare current coordinates are not exact",
             )
             if carried.kind == APPLICABILITY_RESULT_KIND:
-                standing["applicability_result_occurrences"][carried.identity] = None
+                current_coordinates["applicability_result_occurrences"][
+                    carried.identity
+                ] = None
             elif carried.kind == COMPARE_RESULT_KIND:
-                standing["comparison_result_occurrences"][carried.identity] = None
+                current_coordinates["comparison_result_occurrences"][
+                    carried.identity
+                ] = None
             for key, values in additions.items():
                 for value in values:
-                    _record_distinct(standing[key], value)
-            standing["through_event_occurrence_identity"] = carried.identity
-            standing["event_count"] += 1
+                    _record_distinct(current_coordinates[key], value)
+            current_coordinates["through_event_occurrence_identity"] = carried.identity
+            current_coordinates["event_count"] += 1
 
     applicability_act = ledger.append(
         APPLICABILITY_ACT_KIND,
@@ -875,24 +880,23 @@ def _record_ordered_path_source_position_material_comparison(
         locality_identity=locality_identity,
     )
     carry(result_yield, result)
-    return OrderedPathSourcePositionMaterialComparison(standing, result)
+    return OrderedPathSourcePositionMaterialComparison(current_coordinates, result)
 
 
 def yield_ordered_path_source_position_material_comparisons(
     ledger: EventLedger,
     *,
     path_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Iterator[OrderedPathSourcePositionMaterialComparison]:
     """Yield every distinct path-ordered coordinate pair before returning."""
 
-    standing = locality_standing
     for path_position_pair in _PATH_POSITION_PAIRS:
         comparison = _record_ordered_path_source_position_material_comparison(
             ledger,
             path_result_event_identity=path_result_event_identity,
             path_position_pair=path_position_pair,
-            locality_standing=standing,
+            current_coordinates=current_coordinates,
         )
-        standing = comparison.locality_standing
+        current_coordinates = comparison.current_coordinates
         yield comparison

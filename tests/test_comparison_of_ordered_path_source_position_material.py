@@ -47,7 +47,7 @@ def _comparisons(ledger, *, locality, exact, position=1):
         yield_ordered_path_source_position_material_comparisons(
             ledger,
             path_result_event_identity=path.identity,
-            locality_standing=_current_coordinates(ledger, locality),
+            current_coordinates=_current_coordinates(ledger, locality),
         )
     )
     return path, recorded
@@ -125,7 +125,7 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
     assert all(
         comparison.result_occurrence.kind == COMPARE_RESULT_KIND
         and comparison.result_occurrence.identity
-        in comparison.locality_standing["comparison_result_occurrences"]
+        in comparison.current_coordinates["comparison_result_occurrences"]
         for comparison in recorded
     )
 
@@ -287,7 +287,7 @@ def test_one_path_pair_yields_before_its_sibling_pairs():
     comparisons = yield_ordered_path_source_position_material_comparisons(
         ledger,
         path_result_event_identity=path.identity,
-        locality_standing=_current_coordinates(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
 
     first = next(comparisons)

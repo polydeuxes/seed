@@ -282,7 +282,7 @@ def _yield_source_position_determinations_paths_and_comparisons(
         comparisons = yield_ordered_path_source_position_material_comparisons(
             ledger,
             path_result_event_identity=path.identity,
-            locality_standing=current_coordinates,
+            current_coordinates=current_coordinates,
         )
         while True:
             with ledger.batched():
@@ -290,7 +290,7 @@ def _yield_source_position_determinations_paths_and_comparisons(
                     comparison = next(comparisons)
                 except StopIteration:
                     break
-            current_coordinates = comparison.locality_standing
+            current_coordinates = comparison.current_coordinates
             yield SourcePositionDeterminationPathAndComparison(
                 coordinate,
                 determination,
