@@ -76,7 +76,7 @@ def _measurement_for_group(ledger, measurements, group):
             ledger, measurement.result_occurrence.identity
         )
         for measurement in measurements
-        if measurement.recurrence_finding_reference == group["finding_reference"]
+        if measurement.recurrence_finding_position == group["finding_position"]
     )
     assert len(matching) == 1
     return matching[0]
@@ -135,7 +135,7 @@ def _material_for_group(ledger, material_measurements_by_recurrence, group):
         measurement
         for measurements in material_measurements_by_recurrence
         for measurement in measurements.measurements
-        if measurement.recurrence_finding_reference == group["finding_reference"]
+        if measurement.recurrence_finding_position == group["finding_position"]
     )
     assert len(matching) == 1
     event = matching[0].result_occurrence
@@ -579,7 +579,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     ) == (b"a", b"+", b"a")
     assert all(
         tuple(sorted(finding["subject"]))
-        == ("exact_material", "recurrence_finding_reference")
+        == ("exact_material", "recurrence_finding_position")
         for finding in reading["coordinate_material_findings"]
     )
     assert reading["support_result_references"] == group[
@@ -641,7 +641,7 @@ def test_varying_coordinate_material_yields_no_common_exact_material():
     group = _target_group(ledger, recurrence)
 
     assert all(
-        measurement.recurrence_finding_reference != group["finding_reference"]
+        measurement.recurrence_finding_position != group["finding_position"]
         for measurements in material_measurements
         for measurement in measurements.measurements
     )
