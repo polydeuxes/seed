@@ -1090,9 +1090,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 "dimensions": {
                     "position": assertion_position,
                     "content": content,
-                    "source_provenance": (
-                        "the exact Yield-carried pair Assertion and later material result"
-                    ),
                 },
                 "result": "position",
                 "assertion_subject": subject,
@@ -1118,10 +1115,6 @@ def _material_of_result_of_measurement(
         "dimensions": {
             "identity": "recurrent-byte-pair-occurrence-position-measurement",
             "content": "exact ordered pair occurrence position Assertions",
-            "source_provenance": (
-                "one recurrence Assertion carried by Yield relation and one later "
-                "exact material result"
-            ),
         },
         "exact_act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "addressed_act_identity": binding.material["exact_act_identity"],
