@@ -106,7 +106,7 @@ Uptake         availability + Applicability + Participation
 Handoff        movement, or a change in exact pre-Act coordinates
 Memory         addressed prior Locality through-occurrence boundary + exact pre-Act coordinates + direct Locality continuation + new Locality; availability != Applicability; another exact Act required
 Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, currentness, temporal relation, or result
-Checkout       exact recorded through-occurrence boundary reference + new Locality + direct Locality relation; no history copy; no persistent Memory
+Checkout       exact recorded through-occurrence boundary reference + destination Locality + direct Locality relation; no history copy; no persistent Memory
 Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence or current-coordinate equality
 Lineage        ordered source and occurrence references beneath Provenance
 Artifact       exact representation, record, Assertion, or result

@@ -26,8 +26,8 @@ from seed_runtime.operator_locality_standing import (
 from seed_runtime.operator_locality_continuation import (
     LOCALITY_CONTINUATION_RECORDED_KIND,
 )
-from seed_runtime.standing_boundary_locality import (
-    RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
+from seed_runtime.recorded_boundary_locality import (
+    RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
 )
 
 
@@ -129,7 +129,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
+        if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     )
 
     reading = read_carried_recorded_standing(
@@ -144,7 +144,7 @@ def test_checkout_resolves_the_checkpoint_cut_not_either_later_branch():
         b"/checkpoint\n",
     ]
     assert reading["standing"]["recorded_through_occurrence_boundary_references"] == {}
-    assert reading["standing"]["recorded_standing_boundary_locality_relations"] == {}
+    assert reading["standing"]["recorded_boundary_locality_relations"] == {}
 
 
 def test_an_exact_reference_is_not_globally_available_by_identity():
@@ -157,7 +157,7 @@ def test_an_exact_reference_is_not_globally_available_by_identity():
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
+        if event.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     )
 
     with pytest.raises(CarriedRecordedStandingError, match="not carried"):

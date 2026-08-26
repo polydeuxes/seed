@@ -55,10 +55,10 @@ from seed_runtime.operator_invocation_locality import (
     record_operator_invocation_locality_act_occurrence,
     record_operator_invocation_locality_result,
 )
-from seed_runtime.standing_boundary_locality import (
-    record_recorded_standing_boundary_locality_subject_to_act_binding,
-    record_recorded_standing_boundary_locality_act_occurrence,
-    record_recorded_standing_boundary_locality_result,
+from seed_runtime.recorded_boundary_locality import (
+    record_recorded_boundary_locality_subject_to_act_binding,
+    record_recorded_boundary_locality_act_occurrence,
+    record_recorded_boundary_locality_result,
 )
 from seed_runtime.operator_locality_standing import (
     _carry_occurrence_position_measurement_assignment_into_standing,
@@ -720,7 +720,7 @@ def run_persistent_operator_console(
                 continue
             if isinstance(request, OperatorCheckoutRequest):
                 binding = (
-                    record_recorded_standing_boundary_locality_subject_to_act_binding(
+                    record_recorded_boundary_locality_subject_to_act_binding(
                         ledger,
                         source_current_coordinates=locality_standing,
                     )
@@ -731,7 +731,7 @@ def run_persistent_operator_console(
                     ledger, locality_identity=locality_identity
                 )
                 act_occurrence = (
-                    record_recorded_standing_boundary_locality_act_occurrence(
+                    record_recorded_boundary_locality_act_occurrence(
                         ledger,
                         subject_to_act_binding_event_identity=binding.identity,
                         current_coordinates=locality_standing,
@@ -743,7 +743,7 @@ def run_persistent_operator_console(
                     (act_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
-                relation = record_recorded_standing_boundary_locality_result(
+                relation = record_recorded_boundary_locality_result(
                     ledger,
                     act_occurrence_event_identity=act_occurrence.identity,
                 )
