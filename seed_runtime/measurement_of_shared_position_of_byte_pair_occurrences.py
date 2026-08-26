@@ -67,9 +67,6 @@ APPLICABILITY_ACT = (
     "Measurement"
 )
 MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"
-SHARED_POSITION_ASSERTION_RESPONSIBILITY = (
-    "preserve exact coordinates of this Measurement Assertion"
-)
 APPLICABILITY_RESULT_KIND = "shared pair-position input Applicability result"
 MEASUREMENT_RESULT_KIND = "shared pair-position Measurement result"
 APPLICABILITY_BOUNDARY = "shared_pair_position_applicability"
@@ -85,11 +82,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     SHARED_POSITION_MEASUREMENT_RESULT_KIND: "01.Source.D",
 }
-ASSERTION_RESPONSIBILITIES = {
-    SHARED_POSITION_ASSERTION_RESPONSIBILITY: "01.Current.D.1"
-}
-
-
 class SharedPairPositionError(ValueError):
     """One shared-position Measurement is incoherent."""
 
@@ -1689,10 +1681,7 @@ def _path_assertion(
             "position": 0,
             "content": content,
             "source_provenance": "exact recorded pair position Assertions",
-            "responsibility": SHARED_POSITION_ASSERTION_RESPONSIBILITY,
         },
-        "subject_kind": "assertion",
-        "responsible_boundary": "this recorded assertion",
         "result": "ordered_relation_path",
         "assertion_subject": subject,
         "assertion_scope": scope,
@@ -2283,9 +2272,9 @@ def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
     *,
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Read one path Assertion beside its two input Assertion contents.
+    """Read one path Assertion beside the two exact input Assertion contents.
 
-    The input contents retain their exact pair and position coordinates.
+    Each input Assertion content has exact pair and position coordinates.
     Returning them beside the path establishes no material carried by the path.
     """
 
