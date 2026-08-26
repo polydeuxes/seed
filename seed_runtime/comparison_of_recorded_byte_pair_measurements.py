@@ -730,7 +730,7 @@ def _binding_material(
     *,
     inputs: dict[str, Any],
     through_event_occurrence_identity: str,
-    comparison_act_identity: str,
+    exact_act_identity: str,
     comparison_act_occurrence_identity: str,
     comparison_result_identity: str,
 ) -> dict[str, Any]:
@@ -743,8 +743,7 @@ def _binding_material(
                 inputs["later_event"]
             ),
         },
-        "exact_act_identity": comparison_act_identity,
-        "comparison_act_identity": comparison_act_identity,
+        "exact_act_identity": exact_act_identity,
         "comparison_act_occurrence_identity": comparison_act_occurrence_identity,
         "comparison_result_identity": comparison_result_identity,
         "result_boundary_identity": comparison_result_identity,
@@ -867,7 +866,7 @@ def _record_comparison_subject_to_act_binding(
     through_event_occurrence_identity: str,
 ) -> Event:
     identities = {
-        "comparison_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "recorded_pair_comparison_act"
         ),
         "comparison_act_occurrence_identity": ledger.mint_identity(
@@ -886,7 +885,7 @@ def _record_comparison_subject_to_act_binding(
         _binding_material(
             inputs=inputs,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            comparison_act_identity=identities["comparison_act_identity"],
+            exact_act_identity=identities["exact_act_identity"],
             comparison_act_occurrence_identity=identities[
                 "comparison_act_occurrence_identity"
             ],
@@ -927,7 +926,7 @@ def _binding_reading(
         later_result_event_identity=later_reference.get("recorded_occurrence_identity"),
     )
     identity_keys = (
-        "comparison_act_identity",
+        "exact_act_identity",
         "comparison_act_occurrence_identity",
         "comparison_result_identity",
     )
@@ -1033,7 +1032,7 @@ def _applicability_binding_reading(
     expected = _applicability_binding_material(
         inputs=inputs,
         through_event_occurrence_identity=boundary,
-        addressed_act_identity=comparison_binding.material["comparison_act_identity"],
+        addressed_act_identity=comparison_binding.material["exact_act_identity"],
         **identities,
     )
     if (
@@ -1108,7 +1107,7 @@ def record_recorded_pair_measurement_comparison_applicability_subject_to_act_bin
             inputs=inputs,
             through_event_occurrence_identity=through_event_occurrence_identity,
             addressed_act_identity=comparison_binding.material[
-                "comparison_act_identity"
+                "exact_act_identity"
             ],
             **identities,
         ),
@@ -1439,7 +1438,7 @@ def _participation_of_input_in_compare(binding: Event) -> list[dict[str, Any]]:
 def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "comparison_act_identity": material["comparison_act_identity"],
+        "comparison_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["comparison_act_occurrence_identity"],
         "result_identity": material["comparison_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
@@ -1488,7 +1487,7 @@ def record_recorded_pair_measurement_comparison_act_occurrence(
     if (
         addressed_binding_reading[0].identity != binding.identity
         or applicability_binding.material["addressed_act_identity"]
-        != binding.material["comparison_act_identity"]
+        != binding.material["exact_act_identity"]
         or applicability_material["subject_to_act_binding_reference"]
         != _binding_reference(
             applicability_binding,
