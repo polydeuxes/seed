@@ -1962,7 +1962,24 @@ def _measure_byte_position_pair_counts_through(
     )
 
 
-def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
+def _byte_assertion_count(measured: MeasuredByteInputs) -> int:
+    return 1 + len(measured.counts) + sum(item.count > 1 for item in measured.counts)
+
+
+def _assertions(
+    measured: MeasuredByteInputs,
+    *,
+    assertion_identities: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    if (
+        len(assertion_identities) != _byte_assertion_count(measured)
+        or any(type(identity) is not str or not identity for identity in assertion_identities)
+        or len(set(assertion_identities)) != len(assertion_identities)
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement requires one exact address for each Assertion"
+        )
+    identities = iter(assertion_identities)
     scope = {
         "source_localities": list(measured.source_localities),
     }
@@ -1973,12 +1990,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "identity": measured.completeness_boundary.identity
         },
     }
-    source_identity = _identity(
-        result="exact_source_material_set",
-        subject=source_subject,
-        scope=scope,
-        content=source_content,
-    )
+    source_identity = next(identities)
     results: list[dict[str, Any]] = [
         {
             "dimensions": {
@@ -2018,7 +2030,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "content": item.content,
             "measurement_rule": BYTE_MEASUREMENT_RULE,
         }
-        identity = _identity(result=result, subject=subject, scope=scope, content=content)
+        identity = next(identities)
         return {
             "dimensions": {
                 "identity": identity,
@@ -2830,6 +2842,10 @@ def _record_byte_measurement_result_from_exact_inputs(
     measured: MeasuredByteInputs,
 ) -> Event:
     result_identity = assignment.material["measurement_result_identity"]
+    assertion_identities = tuple(
+        ledger.mint_identity("byte_assertion")
+        for _ in range(_byte_assertion_count(measured))
+    )
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
@@ -2854,7 +2870,10 @@ def _record_byte_measurement_result_from_exact_inputs(
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
-        "assertions": _assertions(measured),
+        "assertions": _assertions(
+            measured,
+            assertion_identities=assertion_identities,
+        ),
     }
     yield_relation = _record_yield_relation(
         ledger,
@@ -3090,8 +3109,24 @@ def _assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not establish its Seed-native Measurement boundary"
         )
-    expected = _assertions(measured)
-    if material.get("assertions") != expected:
+    recorded_assertions = material.get("assertions")
+    if type(recorded_assertions) is not list:
+        raise ByteMeasurementError(
+            f"{event_identity} does not carry the results of its complete bounded source read"
+        )
+    try:
+        assertion_identities = tuple(
+            assertion["dimensions"]["identity"] for assertion in recorded_assertions
+        )
+        expected = _assertions(
+            measured,
+            assertion_identities=assertion_identities,
+        )
+    except (KeyError, TypeError, ByteMeasurementError) as error:
+        raise ByteMeasurementError(
+            f"{event_identity} does not carry the results of its complete bounded source read"
+        ) from error
+    if recorded_assertions != expected:
         raise ByteMeasurementError(
             f"{event_identity} does not carry the results of its complete bounded source read"
         )

@@ -64,13 +64,25 @@ byte-measurement family prefix                   not the distinction
 The digest is a compact witness-side proxy for already-carried coordinates. It
 does not add a grammatical discriminator.
 
-## Smallest cleanup frontier
+## Bounded plain-byte build
 
-Do not merely delete `assertion_identity`: local support and movement still
-need to name one exact Assertion.
+The plain-byte road now mints one result-local Assertion address through the
+Ledger for each exact Assertion before Yield/result recording. Reconstruction
+receives those recorded addresses and still compares the complete source-derived
+Assertion material. Count-to-recurrence support and movement retain their exact
+addresses across durable reopen without JSON, UTF-8, or SHA.
 
-The next build must replace the proxy with an address owned by the recorded
-result physiology. Two shapes remain possible and are not yet distinguished:
+This proves that the hash was not the Assertion distinction on the plain-byte
+road.
+
+## Remaining cleanup frontier
+
+Do not merely delete `assertion_identity` from the remaining pair road: local
+support and movement still need to name one exact Assertion.
+
+The pair road must replace the proxy with an address owned by the recorded
+result physiology. Two shapes remain possible there and are not yet
+distinguished:
 
 ```text
 recorded result occurrence
@@ -84,19 +96,20 @@ recorded result occurrence
 + exact carried Assertion coordinates
 ```
 
-The first requires the Ledger to mint and preserve the local Assertion address
-before Yield/result recording, then replay the stored address while validating
-all independently reconstructed coordinates. The second carries a larger exact
-reference and may remove the extra identity entirely.
+The first is now proven by the plain-byte road: the Ledger can mint and preserve
+the local Assertion address before Yield/result recording, then replay the
+stored address while validating all independently reconstructed coordinates.
+The second carries a larger exact reference and may remove the extra identity
+entirely.
 
 No encoder, decoder, hash, schema-family label, or compatibility field is
 warranted by the recovered distinction.
 
 ## Disposition
 
-The hash identities are not constitutional grammar and must not remain as the
-internal address mechanism. The Assertion address itself is load-bearing, so
-its removal waits for one bounded plain-byte build that preserves:
+The hash identities are not constitutional grammar and must not remain as an
+internal address mechanism. The plain-byte hash has been removed. The pair hash
+remains until its own bounded build preserves:
 
 ```text
 count Assertion → recurrence support
@@ -104,4 +117,3 @@ recorded Assertion → movement source
 exact replay and refusal
 durable reopen
 ```
-
