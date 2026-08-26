@@ -2427,24 +2427,19 @@ def _read_byte_measurement_subject_to_act_binding(
         )
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_current_coordinate_validation_context,
             read_operator_current_coordinates_through,
         )
 
-        prior_coordinates = _operator_current_coordinate_validation_context(
-            ledger, locality_identity=binding.locality_identity
-        )
-        if prior_coordinates is None:
-            try:
-                prior_coordinates = read_operator_current_coordinates_through(
-                    ledger,
-                    locality_identity=binding.locality_identity,
-                    through_event_occurrence_identity=through_event_occurrence_identity,
-                )
-            except (TypeError, ValueError) as error:
-                raise ByteMeasurementError(
-                    "byte Measurement binding has no exact prior coordinates"
-                ) from error
+        try:
+            prior_coordinates = read_operator_current_coordinates_through(
+                ledger,
+                locality_identity=binding.locality_identity,
+                through_event_occurrence_identity=through_event_occurrence_identity,
+            )
+        except (TypeError, ValueError) as error:
+            raise ByteMeasurementError(
+                "byte Measurement binding has no exact prior coordinates"
+            ) from error
     carried_bindings = prior_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
@@ -2999,12 +2994,17 @@ def _assertions_of_recorded_byte_measurement(
 
 
 def assertions_of_recorded_byte_measurement(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedByteAssertion, ...] | None:
     """Read the exact byte results after replaying their bounded source read."""
 
     return _assertions_of_recorded_byte_measurement(
-        ledger, event_identity
+        ledger,
+        event_identity,
+        prior_coordinates=prior_coordinates,
     )
 
 
@@ -3414,15 +3414,9 @@ def _prior_coordinates_for_pair_subject_to_act_binding(
     boundary: str,
 ) -> dict[str, Any]:
     from seed_runtime.operator_current_coordinates import (
-        _operator_current_coordinate_validation_context,
         read_operator_current_coordinates_through,
     )
 
-    prior_coordinates = _operator_current_coordinate_validation_context(
-        ledger, locality_identity=binding.locality_identity
-    )
-    if prior_coordinates is not None:
-        return prior_coordinates
     try:
         return read_operator_current_coordinates_through(
             ledger,

@@ -393,15 +393,9 @@ def _current_coordinates_through(
     ledger: EventLedger, *, locality_identity: str, boundary: Any
 ) -> dict[str, Any]:
     from seed_runtime.operator_current_coordinates import (
-        _operator_current_coordinate_validation_context,
         read_operator_current_coordinates_through,
     )
 
-    current_coordinates = _operator_current_coordinate_validation_context(
-        ledger, locality_identity=locality_identity
-    )
-    if current_coordinates is not None:
-        return current_coordinates
     return read_operator_current_coordinates_through(
         ledger,
         locality_identity=locality_identity,

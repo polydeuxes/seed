@@ -4,9 +4,7 @@ from __future__ import annotations
 
 
 from bisect import bisect_left
-from contextvars import ContextVar
 from copy import deepcopy
-from functools import wraps
 from typing import Any, Iterable
 
 from seed_runtime.event import Event
@@ -220,91 +218,6 @@ from seed_runtime.source_position_recurrence import (
 # The writer declares the storage-routing values. A reader declaring another
 # copy would create a second contract free to drift from the first.
 
-
-_OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT: ContextVar[
-    dict[str, Any] | None
-] = ContextVar(
-    "operator_current_coordinate_replay_validation_context",
-    default=None,
-)
-_OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS: ContextVar[
-    tuple[Any, Any, Any, Any, Any] | None
-] = ContextVar("operator_current_coordinate_exact_accumulators", default=None)
-
-
-def _operator_current_coordinate_replay_validation(function):
-    """Bound exact replay-only current-coordinate context, including nested reads."""
-
-    @wraps(function)
-    def bounded(*args, **kwargs):
-        token = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(None)
-        exact_token = _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.set(None)
-        try:
-            return function(*args, **kwargs)
-        finally:
-            _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.reset(exact_token)
-            _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.reset(token)
-
-    return bounded
-
-
-def _set_operator_current_coordinate_validation_context(
-    ledger: EventLedger,
-    *,
-    locality_identity: str,
-    through_event_occurrence_identity: str | None,
-    measurement_occurrences: dict[str, Any],
-    material_result_occurrences: list[dict[str, Any]],
-    subject_to_act_binding_occurrences: dict[str, None],
-) -> None:
-    bound = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.get()
-    exact = _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.get()
-    if (
-        type(bound) is not dict
-        or bound.get("ledger") is not ledger
-        or bound.get("locality_identity") != locality_identity
-        or type(exact) is not tuple
-        or len(exact) != 5
-        or exact[0] is not ledger
-        or exact[1] != locality_identity
-        or exact[2] is not measurement_occurrences
-        or exact[3] is not material_result_occurrences
-        or exact[4] is not subject_to_act_binding_occurrences
-    ):
-        raise ValueError(
-            "operator current-coordinate replay context requires exact accumulators"
-        )
-    _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(
-        {
-            "ledger": ledger,
-            "locality_identity": locality_identity,
-            "through_event_occurrence_identity": (
-                through_event_occurrence_identity
-            ),
-            "measurement_occurrences": measurement_occurrences,
-            "material_result_occurrences": material_result_occurrences,
-            "subject_to_act_binding_occurrences": (
-                subject_to_act_binding_occurrences
-            ),
-        }
-    )
-
-
-def _operator_current_coordinate_validation_context(
-    ledger: EventLedger, *, locality_identity: str
-) -> dict[str, Any] | None:
-    context = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.get()
-    if (
-        type(context) is not dict
-        or context.get("ledger") is not ledger
-        or context.get("locality_identity") != locality_identity
-    ):
-        return None
-    return {
-        key: value
-        for key, value in context.items()
-        if key != "ledger"
-    }
 
 _SUBJECT_BY_KIND = {
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND: "material_result_occurrence",
@@ -689,8 +602,8 @@ def read_operator_current_coordinates(
 
     Equivalent to advancing from empty prior coordinates over every recorded
     occurrence. `#2376` established that advancing prior coordinates over only
-    the occurrences after the through-occurrence boundary yields the same
-    result, so a caller that already holds those coordinates should use
+    the occurrences after the through-occurrence boundary yields equal
+    coordinates, so a caller that already holds those coordinates should use
     :func:`advance_operator_current_coordinates` instead of replaying.
     """
 
@@ -714,7 +627,7 @@ def read_operator_current_coordinates_through(
 
     ``None`` addresses coordinates before any occurrence. Otherwise the Ledger
     resolves the occurrence to its existing append boundary and then reads only
-    that prefix.  Later occurrences in the same or another Locality are neither
+    that prefix. Later occurrences in the addressed or another Locality are neither
     selected nor copied into the returned coordinates.
     """
 
@@ -886,7 +799,6 @@ def read_current_coordinates_through_carried_reference(
     }
 
 
-@_operator_current_coordinate_replay_validation
 def advance_operator_current_coordinates(
     ledger: EventLedger,
     event_identities: Iterable[str],
@@ -906,8 +818,8 @@ def advance_operator_current_coordinates(
     Ledger resolves those identities rather than accepting occurrence copies.
 
     Every accumulator read by the live occurrence forms is seeded from `prior`,
-    and the per-occurrence paths and refusals below are the same ones replay
-    uses. Those refusals consult accumulated coordinates rather than the Ledger,
+    and the per-occurrence paths and refusals below are exactly those used during
+    reconstruction. Those refusals consult accumulated coordinates rather than the Ledger,
     which is why seeding preserves them (`#2376`).
 
     **The advance has as input `prior`.** Its accumulators are taken over rather
@@ -1042,45 +954,9 @@ def advance_operator_current_coordinates(
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
-    _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.set(
-        (
-            ledger,
-            locality_identity,
-            measurement_occurrences,
-            material_result_occurrences,
-            subject_to_act_binding_occurrences,
-        )
-    )
-    _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(
-        {
-            "ledger": ledger,
-            "locality_identity": locality_identity,
-            "through_event_occurrence_identity": (
-                through_event_occurrence_identity
-            ),
-            "measurement_occurrences": measurement_occurrences,
-            "material_result_occurrences": material_result_occurrences,
-            "subject_to_act_binding_occurrences": (
-                subject_to_act_binding_occurrences
-            ),
-        }
-    )
-
     for event in events:
         if event.locality_identity != locality_identity:
             continue
-        _set_operator_current_coordinate_validation_context(
-            ledger,
-            locality_identity=locality_identity,
-            through_event_occurrence_identity=(
-                through_event_occurrence_identity
-            ),
-            measurement_occurrences=measurement_occurrences,
-            material_result_occurrences=material_result_occurrences,
-            subject_to_act_binding_occurrences=(
-                subject_to_act_binding_occurrences
-            ),
-        )
         if not (
             event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
             or event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS
@@ -1126,6 +1002,7 @@ def advance_operator_current_coordinates(
                 prior_through_event_occurrence_identity
             ),
             "measurement_occurrences": measurement_occurrences,
+            "material_result_occurrences": material_result_occurrences,
             "assertion_locality_movement_occurrences": (
                 assertion_locality_movement_occurrences
             ),
@@ -1289,7 +1166,9 @@ def advance_operator_current_coordinates(
             continue
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
             get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-                ledger, event.identity
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
@@ -1307,6 +1186,9 @@ def advance_operator_current_coordinates(
                     ),
                     "measurement_occurrences": measurement_occurrences,
                     "material_result_occurrences": material_result_occurrences,
+                    "subject_to_act_binding_occurrences": (
+                        subject_to_act_binding_occurrences
+                    ),
                 },
             )
             subject_to_act_binding_occurrences[event.identity] = None
@@ -1633,7 +1515,11 @@ def advance_operator_current_coordinates(
             locality_continuation_relation_occurrences[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
-            assertions_of_recorded_byte_measurement(ledger, event.identity)
+            assertions_of_recorded_byte_measurement(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
@@ -1675,7 +1561,11 @@ def advance_operator_current_coordinates(
             )
             continue
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
-            get_recorded_byte_pair_occurrence_position_measurement(ledger, event.identity)
+            get_recorded_byte_pair_occurrence_position_measurement(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
@@ -1831,7 +1721,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
     source_event,
     source_current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
-    """Carry one movement binding produced from exact same-call coordinates."""
+    """Carry one movement binding produced from exact carried coordinates."""
 
     bindings = (
         current_coordinates.get("subject_to_act_binding_occurrences")

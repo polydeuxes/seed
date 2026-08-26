@@ -17,8 +17,6 @@ from seed_runtime.yield_relation import (
 )
 import seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences as shared_position
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    _require_carried_position_measurement_source_unchanged,
-    carried_position_measurement_result_reading,
     source_position_coordinate_references_of_recorded_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
@@ -308,13 +306,8 @@ def yield_source_position_determinations_paths_and_comparisons(
 ) -> Iterator[SourcePositionDeterminationPathAndComparison]:
     """Yield determinations and available path Comparisons for every position."""
 
-    with carried_position_measurement_result_reading(
-        ledger, direct_result_event_identity
-    ):
-        for result in _yield_source_position_determinations_paths_and_comparisons(
-            ledger,
-            direct_result_event_identity=direct_result_event_identity,
-            current_coordinates=current_coordinates,
-        ):
-            _require_carried_position_measurement_source_unchanged()
-            yield result
+    yield from _yield_source_position_determinations_paths_and_comparisons(
+        ledger,
+        direct_result_event_identity=direct_result_event_identity,
+        current_coordinates=current_coordinates,
+    )

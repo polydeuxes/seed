@@ -3,7 +3,7 @@
 This declared Measurement carries two distinct occurrence references:
 
 * the recurrence Assertion yielded by an earlier byte-pair Measurement; and
-* one later exact material result in the same Locality.
+* one later exact material result in the addressed Locality.
 
 Ordering and distance are views over the two measured positions.  The result
 carries neither a caller-supplied sign nor a grammatical meaning.
@@ -527,11 +527,11 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     occurrence_count_boundary: int,
     through: EventLedgerBoundary,
 ) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
-    """Measure same-boundary pair subjects after one exact pair-result read."""
+    """Measure pair subjects through one exact boundary after one pair-result read."""
 
     if type(through) is not EventLedgerBoundary:
         raise TypeError(
-            "Measurement of same-boundary pair subjects requires one exact boundary"
+            "Measurement of pair subjects requires one exact boundary"
         )
     if type(occurrence_count_boundary) is not int or occurrence_count_boundary <= 0:
         raise ValueError("pair occurrence Measurement requires a positive exact count boundary")
@@ -755,22 +755,14 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
     ]
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_current_coordinate_validation_context,
+            read_operator_current_coordinates_through,
         )
 
-        prior_coordinates = _operator_current_coordinate_validation_context(
-            ledger, locality_identity=binding.locality_identity
+        prior_coordinates = read_operator_current_coordinates_through(
+            ledger,
+            locality_identity=binding.locality_identity,
+            through_event_occurrence_identity=through_event_occurrence_identity,
         )
-        if prior_coordinates is None:
-            from seed_runtime.operator_current_coordinates import (
-                read_operator_current_coordinates_through,
-            )
-
-            prior_coordinates = read_operator_current_coordinates_through(
-                ledger,
-                locality_identity=binding.locality_identity,
-                through_event_occurrence_identity=through_event_occurrence_identity,
-            )
     pair_validation_coordinates = (
         prior_coordinates
         if type(prior_coordinates.get("subject_to_act_binding_occurrences"))
@@ -816,8 +808,8 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
     )
     # Every current-coordinate read crosses at least one ledger read. Bind the two
     # addressed inputs to their intact occurrence coordinates instead of
-    # trusting shaped membership, whether the carrier came from the bounded
-    # replay context or one family-private same-call reading.
+    # accepting substituted coordinates from a bounded Ledger read or one
+    # private carried reading.
     pair_occurrence_identity = (
         finding.pair_reference.recorded_occurrence_identity
     )

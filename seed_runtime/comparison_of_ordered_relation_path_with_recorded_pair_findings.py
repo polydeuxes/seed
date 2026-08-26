@@ -1035,20 +1035,14 @@ def _read_binding(
     boundary = material.get("through_event_occurrence_identity")
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_current_coordinate_validation_context,
             read_operator_current_coordinates_through,
         )
 
-        prior_coordinates = _operator_current_coordinate_validation_context(
+        prior_coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=event.locality_identity,
+            through_event_occurrence_identity=boundary,
         )
-        if prior_coordinates is None:
-            prior_coordinates = read_operator_current_coordinates_through(
-                ledger,
-                locality_identity=event.locality_identity,
-                through_event_occurrence_identity=boundary,
-            )
     inputs = _inputs(
         ledger,
         path_result_event_identity=(

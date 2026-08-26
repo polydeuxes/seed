@@ -258,8 +258,14 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
     return result, _advance_since(ledger, current_coordinates, prior_count)
 
 
-def _record_inputs(ledger, *, path_source_is_added=True):
-    current_coordinates = _current_coordinates(ledger)
+def _record_inputs_with_coordinates(
+    ledger,
+    *,
+    path_source_is_added=True,
+    current_coordinates=None,
+):
+    if current_coordinates is None:
+        current_coordinates = _current_coordinates(ledger)
     prior_count = len(ledger.list_locality(LOCALITY))
     earlier_source = record_operator_material_occurrence(
         ledger,
@@ -291,10 +297,18 @@ def _record_inputs(ledger, *, path_source_is_added=True):
             source_boundary="unrelated exact occurrence",
         )
         current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
-    path, _current = _record_path(
+    path, current_coordinates = _record_path(
         ledger, earlier, path_source, current_coordinates
     )
-    return ledger, earlier_source, added, comparison, path
+    return ledger, earlier_source, added, comparison, path, current_coordinates
+
+
+def _record_inputs(ledger, *, path_source_is_added=True):
+    recorded = _record_inputs_with_coordinates(
+        ledger,
+        path_source_is_added=path_source_is_added,
+    )
+    return recorded[:-1]
 
 
 def _inputs(*, ledger=None, path_source_is_added=True):
@@ -305,16 +319,31 @@ def _inputs(*, ledger=None, path_source_is_added=True):
 
 
 def _two_inputs():
-    ledger, *first = _inputs()
-    ledger, *second = _record_inputs(ledger)
+    ledger, *first, current_coordinates = _record_inputs_with_coordinates(
+        EventLedger()
+    )
+    ledger, *second, _current_coordinates_read = _record_inputs_with_coordinates(
+        ledger,
+        current_coordinates=current_coordinates,
+    )
     return ledger, *first, *second
+
+
+def _two_inputs_with_coordinates():
+    ledger, *first, current_coordinates = _record_inputs_with_coordinates(
+        EventLedger()
+    )
+    ledger, *second, current_coordinates = _record_inputs_with_coordinates(
+        ledger,
+        current_coordinates=current_coordinates,
+    )
+    return ledger, *first, *second, current_coordinates
 
 
 def _ledger_at_story_floor(floor):
     if floor not in range(5):
         raise ValueError("the exact story floor is absent")
-    ledger, *_inputs_reading = _two_inputs()
-    current_coordinates = _current_coordinates(ledger)
+    ledger, *_inputs_reading, current_coordinates = _two_inputs_with_coordinates()
     results = ()
     for story_floor in range(1, floor + 1):
         if story_floor == 1:

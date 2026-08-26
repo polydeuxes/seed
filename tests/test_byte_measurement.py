@@ -384,7 +384,7 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
     }
 
 
-def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
+def test_stale_and_substituted_coordinates_cannot_carry_exact_byte_act():
     ledger = _ledger(b"a\n")
     stale_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="measurement"
@@ -395,14 +395,14 @@ def test_stale_and_shaped_coordinates_cannot_carry_exact_byte_act():
         recording_locality_identity="measurement",
         current_coordinates=stale_coordinates,
     )
-    shaped = deepcopy(
+    substituted_coordinates = deepcopy(
         read_operator_current_coordinates(ledger, locality_identity="measurement")
     )
-    shaped["subject_to_act_binding_occurrences"] = {
-        "same-shaped-assignment": None
+    substituted_coordinates["subject_to_act_binding_occurrences"] = {
+        "substituted-binding": None
     }
 
-    for coordinates in (stale_coordinates, shaped):
+    for coordinates in (stale_coordinates, substituted_coordinates):
         with pytest.raises(
             ByteMeasurementError, match="exact current Locality coordinates"
         ):
@@ -440,7 +440,7 @@ def test_binding_read_refuses_corrupted_unrelated_prior_coordinate_carrier():
         get_byte_measurement_subject_to_act_binding(ledger, second.identity)
 
 
-def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstruct(
+def test_current_coordinate_read_passes_exact_coordinates_to_byte_result_reader(
     monkeypatch,
 ):
     import seed_runtime.operator_current_coordinates as coordinates_module
@@ -470,7 +470,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
     )
 
     def refuse_nested_replay(*_args, **_kwargs):
-        raise AssertionError("nested current-coordinate replay")
+        raise AssertionError("nested current-coordinate reread")
 
     monkeypatch.setattr(
         coordinates_module,
@@ -482,7 +482,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
     )
     assert current_coordinates["measurement_occurrences"][first.identity]
     assert current_coordinates["subject_to_act_binding_occurrences"][second.identity] is None
-    with pytest.raises(AssertionError, match="nested current-coordinate replay"):
+    with pytest.raises(AssertionError, match="nested current-coordinate reread"):
         get_byte_measurement_subject_to_act_binding(ledger, second.identity)
 
     monkeypatch.setattr(
@@ -496,67 +496,6 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
     ledger.corrupted.add(first.identity)
     with pytest.raises(ByteMeasurementError):
         get_byte_measurement_subject_to_act_binding(ledger, second.identity)
-
-
-def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
-    from seed_runtime.operator_current_coordinates import (
-        _operator_current_coordinate_replay_validation,
-        _set_operator_current_coordinate_validation_context,
-    )
-
-    ledger = IntegrityCountingLedger()
-    _record_operator_material_source(
-        ledger,
-        locality_identity="measurement",
-        exact_bytes=b"ab",
-        source_boundary="test boundary",
-    )
-    first = _record_byte_measurement(
-        ledger,
-        source_localities=("measurement",),
-        recording_locality_identity="measurement",
-    )
-    second = record_byte_measurement_subject_to_act_binding(
-        ledger,
-        source_localities=("measurement",),
-        recording_locality_identity="measurement",
-        current_coordinates=read_operator_current_coordinates(
-            ledger, locality_identity="measurement"
-        ),
-    )
-    exact = read_operator_current_coordinates(
-        ledger, locality_identity="measurement"
-    )
-    copied_measurements = deepcopy(exact["measurement_occurrences"])
-    copied_acquisition_results = deepcopy(exact["material_result_occurrences"])
-    copied_assignments = deepcopy(exact["subject_to_act_binding_occurrences"])
-    assert copied_measurements == exact["measurement_occurrences"]
-    assert copied_measurements is not exact["measurement_occurrences"]
-    assert copied_acquisition_results == exact["material_result_occurrences"]
-    assert copied_acquisition_results is not exact["material_result_occurrences"]
-    assert copied_assignments == exact["subject_to_act_binding_occurrences"]
-    assert copied_assignments is not exact["subject_to_act_binding_occurrences"]
-    ledger.corrupted.add(first.identity)
-
-    @_operator_current_coordinate_replay_validation
-    def read_from_forged_accumulators():
-        with pytest.raises(ValueError, match="exact accumulators"):
-            _set_operator_current_coordinate_validation_context(
-                ledger,
-                locality_identity="measurement",
-                through_event_occurrence_identity=exact[
-                    "through_event_occurrence_identity"
-                ],
-                measurement_occurrences=copied_measurements,
-                material_result_occurrences=copied_acquisition_results,
-                subject_to_act_binding_occurrences=copied_assignments,
-            )
-        return get_byte_measurement_subject_to_act_binding(
-            ledger, second.identity
-        )
-
-    with pytest.raises(ByteMeasurementError):
-        read_from_forged_accumulators()
 
 
 def test_binding_act_and_result_replay_across_distinct_sqlite_restarts(tmp_path):
@@ -2125,14 +2064,14 @@ def test_movement_binding_carries_distinct_lifecycle_identities_and_enters_desti
     )
 
 
-def test_movement_binding_refuses_stale_or_shaped_source_coordinates():
+def test_movement_binding_refuses_stale_or_substituted_source_coordinates():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     stale = read_operator_current_coordinates(
         ledger, locality_identity=source_result.locality_identity
     )
-    shaped = deepcopy(stale)
-    shaped["measurement_occurrences"] = {
+    substituted_coordinates = deepcopy(stale)
+    substituted_coordinates["measurement_occurrences"] = {
         source_result.identity: {"recorded_occurrence_identity": source_result.identity}
     }
     _record_operator_material_source(
@@ -2145,7 +2084,7 @@ def test_movement_binding_refuses_stale_or_shaped_source_coordinates():
         ledger, locality_identity="movement"
     )
 
-    for current_coordinates in (stale, shaped):
+    for current_coordinates in (stale, substituted_coordinates):
         with pytest.raises(ByteMeasurementError, match="current source coordinates"):
             record_assertion_locality_movement_subject_to_act_binding(
                 ledger,
@@ -2171,14 +2110,14 @@ def test_movement_act_requires_current_destination_coordinates_carrying_binding(
         ),
         destination_current_coordinates=stale_destination,
     )
-    shaped = deepcopy(
+    substituted_coordinates = deepcopy(
         read_operator_current_coordinates(ledger, locality_identity="movement")
     )
-    shaped["subject_to_act_binding_occurrences"] = {
-            "same-shaped-binding": None
+    substituted_coordinates["subject_to_act_binding_occurrences"] = {
+            "substituted-binding": None
     }
 
-    for current_coordinates in (stale_destination, shaped):
+    for current_coordinates in (stale_destination, substituted_coordinates):
         with pytest.raises(
             ByteMeasurementError, match="current destination coordinates"
         ):
@@ -2597,7 +2536,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
     )
 
     def refuse_public_movement_read(*_args, **_kwargs):
-        raise AssertionError("same-call movement re-entered a public reader")
+        raise AssertionError("carried movement entered a public reader")
 
     reader_names = (
         "_read_assertion_locality_movement_subject_to_act_binding",

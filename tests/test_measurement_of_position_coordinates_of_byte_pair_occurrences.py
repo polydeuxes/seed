@@ -25,7 +25,6 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _recorded_position_assertion_at_position_for_locality_movement,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
-    carried_position_measurement_result_reading,
     get_byte_pair_occurrence_position_measurement_act_occurrence,
     get_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_recorded_byte_pair_occurrence_position_measurement,
@@ -107,31 +106,6 @@ def _record(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
         act_occurrence_event_identity=act.identity,
     )
     return source, assignment, act, result
-
-
-def test_carried_result_reading_refuses_changed_source_coordinates():
-    ledger = EventLedger()
-    _source_event, _binding, _act, result = _record(ledger)
-    original_material = deepcopy(result.material)
-
-    with pytest.raises(
-        ValueError,
-        match="source changed while its result coordinates were carried",
-    ):
-        with carried_position_measurement_result_reading(ledger, result.identity):
-            assert (
-                get_recorded_byte_pair_occurrence_position_measurement(
-                    ledger, result.identity
-                ).exact_material
-                == b"2+2=5\n"
-            )
-            result.material["unknown"] = ["changed while coordinates were carried"]
-            get_recorded_byte_pair_occurrence_position_measurement(
-                ledger, result.identity
-            )
-
-    result.material.clear()
-    result.material.update(original_material)
 
 
 def test_each_input_pair_has_first_and_second_exact_position_coordinates():
@@ -464,7 +438,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
 
     def history_scan_is_not_available(*_args, **_kwargs):
         raise AssertionError(
-            "same-call result scanned prior Yield or result occurrences"
+            "carried result scanned prior Yield or result occurrences"
         )
 
     monkeypatch.setattr(ledger, "iter_locality_kind", history_scan_is_not_available)
@@ -888,19 +862,19 @@ def test_result_refuses_an_intact_yield_from_another_exact_family(
         get_recorded_byte_pair_occurrence_position_measurement(ledger, result.identity)
 
 
-def test_private_same_call_recorders_require_exact_carried_tip_membership(monkeypatch):
+def test_private_recorders_require_the_exact_carried_boundary(monkeypatch):
     ledger = EventLedger()
     source = _source(ledger)
     locality = source.locality_identity
     carried_source = _standing(ledger, locality)
 
-    def standing_replay_is_not_available(*_args, **_kwargs):
-        raise AssertionError("same-call recorder replayed current Standing")
+    def coordinate_replay_is_not_available(*_args, **_kwargs):
+        raise AssertionError("carried recorder reconstructed current coordinates")
 
     monkeypatch.setattr(
         standing_module,
         "read_operator_current_coordinates",
-        standing_replay_is_not_available,
+        coordinate_replay_is_not_available,
     )
     assignment = (
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(

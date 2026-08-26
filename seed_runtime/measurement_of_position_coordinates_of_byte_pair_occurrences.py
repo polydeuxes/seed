@@ -7,8 +7,6 @@ recurrence, represented relation, character, word, or meaning.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from contextvars import ContextVar
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Iterator, NamedTuple
 
@@ -43,40 +41,6 @@ BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND = (
     "recording_occurrence_of_result"
 )
 RESULT_KIND = "result of Measurement of position coordinates of byte-pair occurrences"
-
-
-class _PositionResultReadingContext(NamedTuple):
-    ledger: EventLedger
-    result_event_identity: str
-    reading: tuple[
-        Event,
-        "FindingOfPositionCoordinatesOfBytePairOccurrences",
-        dict[str, Any],
-    ]
-    result_snapshot: Event
-    prefix_snapshot: tuple[Event, ...]
-
-
-_POSITION_RESULT_READING_CONTEXT: ContextVar[
-    _PositionResultReadingContext | None
-] = ContextVar("position_result_reading_context", default=None)
-
-
-def _require_carried_position_measurement_source_unchanged() -> None:
-    """Refuse changed source coordinates while one result reading is carried."""
-
-    context = _POSITION_RESULT_READING_CONTEXT.get()
-    if context is None:
-        return
-    if any(
-        context.ledger.get(expected.identity) != expected
-        or context.ledger.integrity_of(expected.identity) == CORRUPTED
-        for expected in context.prefix_snapshot
-    ):
-        raise ValueError(
-            "byte-pair position-coordinate source changed while its result "
-            "coordinates were carried"
-        )
 
 
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
@@ -767,10 +731,9 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
             finding.source_material_result_occurrence_identity
         ),
     )
-    # This runtime refusal prevents malformed or already-recorded sources from
-    # crossing the public recorder.  Membership establishes neither the
-    # missing exact Locality relation nor the required binding subject and
-    # coordinates.
+    # This refusal prevents malformed or already-recorded sources from entering
+    # the recorder. The occurrence identity alone establishes neither the exact
+    # Locality relation nor the required binding subject and coordinates.
     current_sources = (
         _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
             ledger,
@@ -911,7 +874,10 @@ def record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
 
 
 def _read_binding(
-    ledger: EventLedger, binding_event_identity: str
+    ledger: EventLedger,
+    binding_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, FindingOfPositionCoordinatesOfBytePairOccurrences]:
     binding = ledger.get(binding_event_identity)
     if (
@@ -970,17 +936,13 @@ def _read_binding(
         )
     ):
         raise ValueError("byte-pair position-coordinate binding coordinates are not exact")
-    from seed_runtime.operator_current_coordinates import (
-        _operator_current_coordinate_validation_context,
-        read_operator_current_coordinates_through,
-    )
-
     try:
-        prior = _operator_current_coordinate_validation_context(
-            ledger, locality_identity=finding.source_locality_identity
-        )
-        if prior is None:
-            prior = read_operator_current_coordinates_through(
+        if prior_coordinates is None:
+            from seed_runtime.operator_current_coordinates import (
+                read_operator_current_coordinates_through,
+            )
+
+            prior_coordinates = read_operator_current_coordinates_through(
                 ledger,
                 locality_identity=finding.source_locality_identity,
                 through_event_occurrence_identity=through_event_occurrence_identity,
@@ -996,7 +958,7 @@ def _read_binding(
     if not any(
         type(occurrence) is dict
         and occurrence.get("result_occurrence_identity") == source_identity
-        for occurrence in prior.get("material_result_occurrences", ())
+        for occurrence in prior_coordinates.get("material_result_occurrences", ())
     ):
         raise ValueError(
             "byte-pair position-coordinate binding has no exact prior coordinates"
@@ -1054,9 +1016,16 @@ def _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
 
 
 def get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
-    ledger: EventLedger, binding_event_identity: str
+    ledger: EventLedger,
+    binding_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    binding, _finding = _read_binding(ledger, binding_event_identity)
+    binding, _finding = _read_binding(
+        ledger,
+        binding_event_identity,
+        prior_coordinates=prior_coordinates,
+    )
     return binding
 
 
@@ -1159,7 +1128,10 @@ def _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carrie
 
 
 def _read_act(
-    ledger: EventLedger, act_occurrence_event_identity: str
+    ledger: EventLedger,
+    act_occurrence_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -1180,6 +1152,7 @@ def _read_act(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else "",
+            prior_coordinates=prior_coordinates,
         )
     except (TypeError, ValueError) as error:
         raise ValueError(
@@ -1491,28 +1464,15 @@ def _record_byte_pair_occurrence_position_measurement_result_from_carried_act_oc
 
 
 def _read_result(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     FindingOfPositionCoordinatesOfBytePairOccurrences,
     dict[str, Any],
 ]:
-    context = _POSITION_RESULT_READING_CONTEXT.get()
-    if (
-        context is not None
-        and context.ledger is ledger
-        and context.result_event_identity == result_event_identity
-    ):
-        if (
-            ledger.get(context.result_snapshot.identity) != context.result_snapshot
-            or ledger.integrity_of(context.result_snapshot.identity) == CORRUPTED
-        ):
-            raise ValueError(
-                "byte-pair position-coordinate source changed while its result "
-                "coordinates were carried"
-            )
-        event, finding, assertions = context.reading
-        return event, finding, assertions
     event = ledger.get(result_event_identity)
     if (
         event is None
@@ -1523,7 +1483,9 @@ def _read_result(
         raise ValueError("byte-pair position-coordinate result is absent or corrupted")
     try:
         act, binding, finding = _read_act(
-            ledger, event.material.get("act_occurrence_event_identity")
+            ledger,
+            event.material.get("act_occurrence_event_identity"),
+            prior_coordinates=prior_coordinates,
         )
     except (TypeError, ValueError) as error:
         raise ValueError("byte-pair position-coordinate result carries no exact Act") from error
@@ -1573,39 +1535,17 @@ def _read_result(
     return event, finding, expected["assertions"]
 
 
-@contextmanager
-def carried_position_measurement_result_reading(
-    ledger: EventLedger, result_event_identity: str
-) -> Iterator[None]:
-    """Keep one exact result reading while later occurrences are recorded."""
-
-    if not isinstance(ledger, EventLedger):
-        raise TypeError("carried position-result reading requires one EventLedger")
-    reading = _read_result(ledger, result_event_identity)
-    boundary = ledger.append_boundary_through_occurrence(result_event_identity)
-    snapshot = tuple(deepcopy(event) for event in ledger.list(through=boundary))
-    token = _POSITION_RESULT_READING_CONTEXT.set(
-        _PositionResultReadingContext(
-            ledger,
-            result_event_identity,
-            reading,
-            deepcopy(reading[0]),
-            snapshot,
-        )
-    )
-    try:
-        yield
-    finally:
-        try:
-            _require_carried_position_measurement_source_unchanged()
-        finally:
-            _POSITION_RESULT_READING_CONTEXT.reset(token)
-
-
 def get_recorded_byte_pair_occurrence_position_measurement(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    _event, finding, _assertions_read = _read_result(ledger, result_event_identity)
+    _event, finding, _assertions_read = _read_result(
+        ledger,
+        result_event_identity,
+        prior_coordinates=prior_coordinates,
+    )
     return finding
 
 

@@ -302,10 +302,7 @@ def test_a_changed_prefix_is_refused_before_another_result_is_exposed():
 
     first = next(results)
     source.material["unknown"] = ["changed after first result"]
-    with pytest.raises(
-        ValueError,
-        match="source changed while its result coordinates were carried",
-    ):
+    with pytest.raises(ValueError):
         next(results)
 
     assert first.source_position_coordinate["position"] == 0

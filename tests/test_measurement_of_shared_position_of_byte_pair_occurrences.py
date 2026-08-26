@@ -520,9 +520,9 @@ def test_ordered_source_positions_are_adjacent_to_the_path_assertion():
     assert ledger.append_boundary() == boundary_before_read
 
 
-def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch):
+def test_two_recurrent_results_share_one_exact_current_coordinate_read(monkeypatch):
     ledger, locality, _source, first, second = _fixture()
-    standing_reads = []
+    coordinate_reads = []
     original = operator_current_coordinates_module.read_operator_current_coordinates_through
 
     def witnessed(
@@ -531,7 +531,7 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
         locality_identity,
         through_event_occurrence_identity,
     ):
-        standing_reads.append(
+        coordinate_reads.append(
             (locality_identity, through_event_occurrence_identity)
         )
         return original(
@@ -558,14 +558,14 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
 
     assert inputs.first == first
     assert inputs.second == second
-    assert standing_reads == [
+    assert coordinate_reads == [
         (
             locality,
             second_binding.material["through_event_occurrence_identity"],
         )
     ]
 
-    standing_reads.clear()
+    coordinate_reads.clear()
     references_to_recorded_recurrent_byte_pair_occurrence_positions(
         ledger,
         result_occurrence_identity=first.recorded_occurrence_identity,
@@ -574,10 +574,10 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
         ledger,
         result_occurrence_identity=second.recorded_occurrence_identity,
     )
-    assert len(standing_reads) == 2
+    assert len(coordinate_reads) == 2
 
 
-def test_shared_binding_threads_explicit_prior_without_replay_or_ambient_override(
+def test_shared_binding_threads_explicit_prior_without_rereading_coordinates(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
@@ -592,22 +592,13 @@ def test_shared_binding_threads_explicit_prior_without_replay_or_ambient_overrid
     )
 
     def replay_must_not_run(*_args, **_kwargs):
-        raise AssertionError("explicit shared-position prior Standing was replayed")
-
-    def ambient_must_not_override(*_args, **_kwargs):
-        raise AssertionError("ambient Standing overrode an explicit carrier")
+        raise AssertionError("explicit shared-position coordinates were reread")
 
     monkeypatch.setattr(
         operator_current_coordinates_module,
         "read_operator_current_coordinates_through",
         replay_must_not_run,
     )
-    monkeypatch.setattr(
-        operator_current_coordinates_module,
-        "_operator_current_coordinate_validation_context",
-        ambient_must_not_override,
-    )
-
     read_binding, inputs = shared_position_module._read_binding(
         ledger,
         binding.identity,
@@ -652,7 +643,7 @@ def test_shared_binding_refuses_changed_explicit_prior_coordinates(changed_prior
             second_binding.identity
         ]
         changed_coordinates["subject_to_act_binding_occurrences"][
-            "substituted-same-shaped-binding"
+            "substituted-binding"
         ] = None
 
     with pytest.raises((SharedPairPositionError, ValueError)):
