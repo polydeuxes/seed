@@ -214,12 +214,12 @@ def read_exact_material_result(
 
     from seed_runtime.operator_material_source import (
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-        get_recorded_operator_material_source,
+        _recorded_operator_material_source_reading,
     )
 
     if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         try:
-            get_recorded_operator_material_source(ledger, event.identity)
+            _recorded_operator_material_source_reading(ledger, event.identity)
         except (TypeError, ValueError) as error:
             raise MaterialSourceError(
                 "operator material source occurrence carries no intact physiology"

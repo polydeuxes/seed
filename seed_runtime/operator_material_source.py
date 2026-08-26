@@ -685,9 +685,9 @@ def read_operator_material_source_locality_relation_requirements(
     }
 
 
-def get_recorded_operator_material_source(
+def _recorded_operator_material_source_reading(
     ledger: EventLedger, result_event_identity: str
-) -> dict[str, Any]:
+) -> Event:
     """Read one exact boundary result through its exact Act and Yield."""
 
     _require_identity(
@@ -753,4 +753,17 @@ def get_recorded_operator_material_source(
         raise OperatorMaterialSourceError(
             "operator material source carries no exact Locality relation"
         )
-    return deepcopy(result.material)
+    return result
+
+
+def get_recorded_operator_material_source(
+    ledger: EventLedger, result_event_identity: str
+) -> dict[str, Any]:
+    """Return detached material from one exact operator source result."""
+
+    return deepcopy(
+        _recorded_operator_material_source_reading(
+            ledger,
+            result_event_identity,
+        ).material
+    )
