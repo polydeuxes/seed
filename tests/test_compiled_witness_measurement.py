@@ -488,16 +488,16 @@ def test_sql_occurrence_preserves_exact_statement_material():
 
 
 def test_existing_sql_trace_receiver_receives_the_exact_statement():
-    carried = []
+    statements = []
     measured.begin()
     try:
         connection = sqlite3.connect(":memory:")
-        connection.set_trace_callback(carried.append)
+        connection.set_trace_callback(statements.append)
         connection.execute("SELECT 1").fetchone()
     finally:
         result = measured.finish()
 
-    assert carried == ["SELECT 1"]
+    assert statements == ["SELECT 1"]
     assert result["sql"]["SELECT 1"] == 1
 
 
