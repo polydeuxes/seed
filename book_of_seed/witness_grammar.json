@@ -207,8 +207,7 @@
       "subject": "exact_subject",
       "exact_Act": "exact_Act",
       "requires": [
-        "Locality",
-        "required_relations"
+        "Locality"
       ],
       "relations": [
         "participation",

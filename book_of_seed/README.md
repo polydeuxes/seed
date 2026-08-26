@@ -20,8 +20,7 @@ Current coordinates are this bounded reading.
 ```
 subject
 ├── exact Act
-├── Locality
-└── required relations
+└── Locality
 ```
 
 These coordinates bind each exact subject to the exact Act. Applicability,

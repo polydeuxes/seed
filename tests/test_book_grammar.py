@@ -137,7 +137,6 @@ def test_subject_to_act_binding_is_direct_clause_coordinates():
         "exact_Act": "exact_Act",
         "requires": [
             "Locality",
-            "required_relations",
         ],
         "relations": ["participation", "carriage", "yield"],
         "result": "exact_result",
