@@ -268,15 +268,6 @@ def _compare_binding_material(
         "path_result_reference": deepcopy(inputs["reference"]),
         "through_event_occurrence_identity": boundary,
         "exact_act": COMPARE_ACT,
-        "scope": {
-            "locality_identity": inputs["locality_identity"],
-            "source_material_result_occurrence_identity": inputs[
-                "source_occurrence_identity"
-            ],
-            "completeness_boundary_identity": inputs[
-                "completeness_boundary_identity"
-            ],
-        },
         "unknown": [],
         "conflicts": [],
     }
@@ -350,10 +341,6 @@ def _applicability_binding_material(
                 },
             },
         ],
-        "scope": {
-            "locality_identity": inputs["locality_identity"],
-            "addressed_act_identity": compare_act_identity,
-        },
         "unknown": [],
         "conflicts": [],
     }
@@ -397,7 +384,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
         ),
-        "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
     }
@@ -566,7 +552,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             "identity": material["applicability_result_identity"],
             "content": "ordered path source position material",
             "source_provenance": "exact ordered relation path source coordinates",
-            "scope": deepcopy(material["scope"]),
         },
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": material["compare_act_identity"],
@@ -600,7 +585,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
-        "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
     }
@@ -650,7 +634,6 @@ def _recorded_applicability_result_material(
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
-        "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
         "yield_relation_identity": yield_relation_identity,
@@ -680,7 +663,6 @@ def _recorded_compare_result_material(
         "finding": deepcopy(material["finding"]),
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
-        "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),
         "conflicts": list(material["conflicts"]),
         "act_occurrence_event_identity": material[
@@ -800,7 +782,6 @@ def _compare_act_material(
                 },
             },
         ],
-        "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
     }
@@ -862,7 +843,6 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "subject": subject,
         "result": result,
         "source_provenance": "exact ordered relation path source coordinates",
-        "scope": {"locality_identity": inputs["locality_identity"]},
         "unknown": [],
         "conflicts": [],
     }
@@ -892,7 +872,6 @@ def _compare_result_material(
         "finding": _finding(inputs),
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
-        "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
         "act_occurrence_event_identity": act.identity,
