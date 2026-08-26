@@ -74,65 +74,100 @@ def _current_coordinates(ledger):
     )
 
 
-def _pair_measurement(ledger):
+def _advance_since(ledger, current_coordinates, prior_count):
+    occurrences = ledger.list_locality(LOCALITY)[prior_count:]
+    return advance_operator_current_coordinates(
+        ledger,
+        tuple(occurrence.identity for occurrence in occurrences),
+        locality_identity=LOCALITY,
+        prior=current_coordinates,
+    )
+
+
+def _pair_measurement(ledger, current_coordinates):
+    prior_count = len(ledger.list_locality(LOCALITY))
     binding = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     act = record_byte_measurement_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     byte_result = record_byte_measurement_result(
-        ledger, act_occurrence_event_identity=act.identity
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        current_coordinates=current_coordinates,
     )
-    return record_byte_position_pair_count_layer(
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
+    result = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_result.identity,
         recording_locality_identity=LOCALITY,
     )
+    return result, _advance_since(ledger, current_coordinates, prior_count)
 
 
-def _record_pair_comparison(ledger, earlier, later):
+def _record_pair_comparison(ledger, earlier, later, current_coordinates):
+    prior_count = len(ledger.list_locality(LOCALITY))
     binding = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     applicability_binding = (
         record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding(
             ledger,
             comparison_binding_event_identity=binding.identity,
-            current_coordinates=_current_coordinates(ledger),
+            current_coordinates=current_coordinates,
         )
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     applicability_act = (
         record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
             applicability_binding_event_identity=applicability_binding.identity,
-            current_coordinates=_current_coordinates(ledger),
+            current_coordinates=current_coordinates,
         )
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     applicability = record_recorded_pair_measurement_comparison_applicability_result(
         ledger,
         act_occurrence_event_identity=applicability_act.identity,
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     act = record_recorded_pair_measurement_comparison_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         applicability_result_event_identity=applicability.identity,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
-    return record_recorded_pair_measurement_comparison_result(
-        ledger, act_occurrence_event_identity=act.identity
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
+    result = record_recorded_pair_measurement_comparison_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        current_coordinates=current_coordinates,
     )
+    return result, _advance_since(ledger, current_coordinates, prior_count)
 
 
-def _record_path(ledger, pair_measurement, source):
+def _record_path(ledger, pair_measurement, source, current_coordinates):
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurement.identity
     )
@@ -152,25 +187,28 @@ def _record_path(ledger, pair_measurement, source):
     )
     results = []
     for finding in findings:
+        prior_count = len(ledger.list_locality(LOCALITY))
         binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             finding=finding,
-            current_coordinates=read_operator_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ),
+            current_coordinates=current_coordinates,
         )
+        current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+        prior_count = len(ledger.list_locality(LOCALITY))
         act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
             subject_to_act_binding_event_identity=binding.identity,
-            current_coordinates=read_operator_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ),
+            current_coordinates=current_coordinates,
         )
-        results.append(
-            record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
-                ledger, act_occurrence_event_identity=act.identity
-            )
+        current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+        prior_count = len(ledger.list_locality(LOCALITY))
+        result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            act_occurrence_event_identity=act.identity,
+            current_coordinates=current_coordinates,
         )
+        results.append(result)
+        current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     references = tuple(
         reference
         for result in results
@@ -180,58 +218,82 @@ def _record_path(ledger, pair_measurement, source):
     )
     first = next(reference for reference in references if reference.exact_pair == b"ab")
     second = next(reference for reference in references if reference.exact_pair == b"bc")
+    prior_count = len(ledger.list_locality(LOCALITY))
     binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
         first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
         second_assertion_address=second.assertion_address,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
         binding_event_identity=binding.identity,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     applicability = record_shared_position_applicability_result(
         ledger,
         applicability_act_occurrence_event_identity=applicability_act.identity,
+        current_coordinates=current_coordinates,
     )
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
     act = record_shared_position_measurement_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
-        current_coordinates=_current_coordinates(ledger),
+        current_coordinates=current_coordinates,
     )
-    return record_shared_position_measurement_result(
-        ledger, measurement_act_occurrence_event_identity=act.identity
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    prior_count = len(ledger.list_locality(LOCALITY))
+    result = record_shared_position_measurement_result(
+        ledger,
+        measurement_act_occurrence_event_identity=act.identity,
+        current_coordinates=current_coordinates,
     )
+    return result, _advance_since(ledger, current_coordinates, prior_count)
 
 
 def _record_inputs(ledger, *, path_source_is_added=True):
+    current_coordinates = _current_coordinates(ledger)
+    prior_count = len(ledger.list_locality(LOCALITY))
     earlier_source = record_operator_material_occurrence(
         ledger,
         locality_identity=LOCALITY,
         exact=b"abcabc",
         source_boundary="earlier exact occurrence",
     )
-    earlier = _pair_measurement(ledger)
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    earlier, current_coordinates = _pair_measurement(ledger, current_coordinates)
+    prior_count = len(ledger.list_locality(LOCALITY))
     added = record_operator_material_occurrence(
         ledger,
         locality_identity=LOCALITY,
         exact=b"abc",
         source_boundary="added exact occurrence",
     )
-    later = _pair_measurement(ledger)
-    comparison = _record_pair_comparison(ledger, earlier, later)
+    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    later, current_coordinates = _pair_measurement(ledger, current_coordinates)
+    comparison, current_coordinates = _record_pair_comparison(
+        ledger, earlier, later, current_coordinates
+    )
     path_source = added
     if not path_source_is_added:
+        prior_count = len(ledger.list_locality(LOCALITY))
         path_source = record_operator_material_occurrence(
             ledger,
             locality_identity=LOCALITY,
             exact=b"abc",
             source_boundary="unrelated exact occurrence",
         )
-    path = _record_path(ledger, earlier, path_source)
+        current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
+    path, _current = _record_path(
+        ledger, earlier, path_source, current_coordinates
+    )
     return ledger, earlier_source, added, comparison, path
 
 
@@ -252,24 +314,38 @@ def _ledger_at_story_floor(floor):
     if floor not in range(5):
         raise ValueError("the exact story floor is absent")
     ledger, *_inputs_reading = _two_inputs()
+    current_coordinates = _current_coordinates(ledger)
     results = ()
     for story_floor in range(1, floor + 1):
         if story_floor == 1:
-            results = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ).binding_occurrences
+            reading = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
+                ledger,
+                locality_identity=LOCALITY,
+                current_coordinates=current_coordinates,
+            )
+            results = reading.binding_occurrences
         elif story_floor == 2:
-            results = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ).applicability_result_occurrences
+            reading = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
+                ledger,
+                locality_identity=LOCALITY,
+                current_coordinates=current_coordinates,
+            )
+            results = reading.applicability_result_occurrences
         elif story_floor == 3:
-            results = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ).compare_act_occurrence_occurrences
+            reading = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
+                ledger,
+                locality_identity=LOCALITY,
+                current_coordinates=current_coordinates,
+            )
+            results = reading.compare_act_occurrence_occurrences
         else:
-            results = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
-                ledger, locality_identity=LOCALITY
-            ).compare_result_occurrences
+            reading = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
+                ledger,
+                locality_identity=LOCALITY,
+                current_coordinates=current_coordinates,
+            )
+            results = reading.compare_result_occurrences
+        current_coordinates = reading.current_coordinates
     return ledger, tuple(results)
 
 
@@ -892,9 +968,9 @@ def test_higher_input_preserves_the_exact_comparison_binding(monkeypatch):
     binding_reads = []
     original = recorded_pair_comparison_module._binding_reading
 
-    def witnessed(ledger, event_identity):
+    def witnessed(ledger, event_identity, **coordinates):
         binding_reads.append(event_identity)
-        return original(ledger, event_identity)
+        return original(ledger, event_identity, **coordinates)
 
     monkeypatch.setattr(
         recorded_pair_comparison_module, "_binding_reading", witnessed

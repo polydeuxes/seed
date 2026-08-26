@@ -1112,6 +1112,7 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
     ledger: EventLedger,
     *,
     act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     """Record the Yield and result for one exact pair occurrence Measurement."""
 
@@ -1130,7 +1131,9 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
     ):
         raise ValueError("pair occurrence result requires intact Act occurrence")
     binding, finding = _finding_of_measurement_from_act_occurrence(
-        ledger, act_occurrence
+        ledger,
+        act_occurrence,
+        prior_coordinates=current_coordinates,
     )
     expected_act = _material_of_act_occurrence(
         finding, binding=binding

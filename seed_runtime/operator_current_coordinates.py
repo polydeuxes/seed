@@ -42,7 +42,6 @@ from seed_runtime.byte_measurement import (
     _source_assertion_from_reference,
     _source_assertion_reference,
     _findings_of_recorded_byte_position_pair_measurement,
-    _bounded_pair_binding_readings,
     _read_assertion_locality_movement_subject_to_act_binding,
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_binding_and_source,
@@ -104,10 +103,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     _read_applicability_result as _read_shared_position_applicability_result,
     _read_measurement_act as _read_shared_position_measurement_act,
     _read_measurement_result as _read_shared_position_measurement_result,
-    _SharedPositionReplayReading,
-    _shared_position_replay_reading,
-    _add_shared_position_applicability_binding,
-    _advance_shared_position_replay_reading,
+    _measurement_binding_addressed_by_applicability,
 )
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
     DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_BINDING_KIND,
@@ -236,109 +232,6 @@ _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS: ContextVar[
 ] = ContextVar("operator_current_coordinate_exact_accumulators", default=None)
 
 
-def _recorded_pair_comparison_replay_carry(
-    ledger: EventLedger, binding_reading: Any
-) -> dict[str, Any]:
-    if (
-        type(binding_reading) is not tuple
-        or len(binding_reading) not in (2, 3)
-        or type(binding_reading[1]) is not dict
-    ):
-        raise RecordedPairMeasurementComparisonError(
-            "comparison replay requires one exact binding reading"
-        )
-    binding, inputs = binding_reading[:2]
-    earlier = inputs.get("earlier_event")
-    later = inputs.get("later_event")
-    addressed_binding = binding_reading[2][0] if len(binding_reading) == 3 else None
-    occurrences = tuple(
-        event
-        for event in (binding, addressed_binding, earlier, later)
-        if event is not None
-    )
-    if any(
-        event is None
-        or type(event.identity) is not str
-        or type(event.kind) is not str
-        or type(event.material) is not dict
-        for event in occurrences
-    ):
-        raise RecordedPairMeasurementComparisonError(
-            "comparison replay requires exact binding inputs"
-        )
-    carry = {
-        "subject_to_act_binding": binding_reading,
-        "exact_boundary": ledger.append_boundary(),
-        "occurrences": tuple(
-            {
-                "identity": event.identity,
-                "kind": event.kind,
-                "locality_identity": event.locality_identity,
-                "exact_material": deepcopy(event.exact_material),
-                "material": deepcopy(event.material),
-            }
-            for event in occurrences
-        ),
-    }
-    _validate_recorded_pair_comparison_replay_carry(ledger, carry)
-    return carry
-
-
-def _validate_recorded_pair_comparison_replay_carry(
-    ledger: EventLedger, carry: Any
-) -> Any:
-    if (
-        type(carry) is not dict
-        or set(carry) != {
-            "subject_to_act_binding",
-            "exact_boundary",
-            "occurrences",
-        }
-        or type(carry["occurrences"]) is not tuple
-        or len(carry["occurrences"]) not in (3, 4)
-        or ledger.append_boundary() != carry["exact_boundary"]
-    ):
-        raise RecordedPairMeasurementComparisonError(
-            "comparison replay carry differs from its exact boundary"
-        )
-    for snapshot in carry["occurrences"]:
-        if type(snapshot) is not dict:
-            raise RecordedPairMeasurementComparisonError(
-                "comparison replay carry is malformed"
-            )
-        current = ledger.get(snapshot.get("identity"))
-        if (
-            current is None
-            or current.kind != snapshot.get("kind")
-            or current.locality_identity != snapshot.get("locality_identity")
-            or current.exact_material != snapshot.get("exact_material")
-            or current.material != snapshot.get("material")
-            or ledger.integrity_of(current.identity) == CORRUPTED
-        ):
-            raise RecordedPairMeasurementComparisonError(
-                "comparison replay carry changed after validation"
-            )
-    if ledger.append_boundary() != carry["exact_boundary"]:
-        raise RecordedPairMeasurementComparisonError(
-            "comparison replay carry differs from its exact boundary"
-        )
-    return carry["subject_to_act_binding"]
-
-
-def _recorded_pair_comparison_binding_identity(event: Any) -> str | None:
-    reference = (
-        event.material.get("subject_to_act_binding_reference")
-        if type(event.material) is dict
-        else None
-    )
-    identity = (
-        reference.get("recorded_occurrence_identity")
-        if type(reference) is dict
-        else None
-    )
-    return identity if type(identity) is str and identity else None
-
-
 def _operator_current_coordinate_replay_validation(function):
     """Bound exact replay-only current-coordinate context, including nested reads."""
 
@@ -347,8 +240,7 @@ def _operator_current_coordinate_replay_validation(function):
         token = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(None)
         exact_token = _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.set(None)
         try:
-            with _bounded_pair_binding_readings():
-                return function(*args, **kwargs)
+            return function(*args, **kwargs)
         finally:
             _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.reset(exact_token)
             _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.reset(token)
@@ -790,21 +682,6 @@ def _shared_position_binding_reading(
     )
 
 
-def _shared_position_binding_identity(event: Event) -> str | None:
-    if event.kind in {
-        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    }:
-        return event.identity
-    reference = event.material.get("subject_to_act_binding_reference")
-    identity = (
-        reference.get("recorded_occurrence_identity")
-        if type(reference) is dict
-        else None
-    )
-    return identity if type(identity) is str and identity else None
-
-
 def read_operator_current_coordinates(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
@@ -1067,10 +944,6 @@ def advance_operator_current_coordinates(
     ] = {}
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
-    recorded_pair_comparison_replay_carries: dict[str, dict[str, Any]] = {}
-    shared_position_replay_readings: dict[
-        str, _SharedPositionReplayReading
-    ] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -1329,31 +1202,30 @@ def advance_operator_current_coordinates(
             == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND
         ):
             addressed_act_identity = event.material.get("addressed_act_identity")
-            comparison_binding_readings = tuple(
-                reading
-                for carry in recorded_pair_comparison_replay_carries.values()
-                for reading in (
-                    _validate_recorded_pair_comparison_replay_carry(ledger, carry),
-                )
-                if len(reading) == 2
-                and reading[0].material.get("exact_act_identity")
+            comparison_bindings = tuple(
+                candidate
+                for identity in subject_to_act_binding_occurrences
+                for candidate in (ledger.get(identity),)
+                if candidate is not None
+                and candidate.kind
+                == RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND
+                and candidate.material.get("exact_act_identity")
                 == addressed_act_identity
             )
-            if len(comparison_binding_readings) != 1:
+            if len(comparison_bindings) != 1:
                 raise RecordedPairMeasurementComparisonError(
                     "comparison Applicability binding addresses no carried Compare binding"
                 )
-            binding_reading = (
-                _recorded_pair_comparison_applicability_binding_reading(
-                    ledger,
-                    event.identity,
-                    comparison_binding_reading=comparison_binding_readings[0],
-                )
+            comparison_binding_reading = _recorded_pair_comparison_binding_reading(
+                ledger,
+                comparison_bindings[0].identity,
+                prior_coordinates=pair_prior_coordinates,
             )
-            recorded_pair_comparison_replay_carries[event.identity] = (
-                _recorded_pair_comparison_replay_carry(
-                    ledger, binding_reading
-                )
+            _recorded_pair_comparison_applicability_binding_reading(
+                ledger,
+                event.identity,
+                comparison_binding_reading=comparison_binding_reading,
+                prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
@@ -1560,15 +1432,10 @@ def advance_operator_current_coordinates(
             event.kind
             == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            binding_reading = _shared_position_binding_reading(
+            _shared_position_binding_reading(
                 ledger,
                 event,
                 prior_coordinates=addressed_byte_reference_prior_coordinates,
-            )
-            shared_position_replay_readings[event.identity] = (
-                _shared_position_replay_reading(
-                    ledger, binding_reading
-                )
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
@@ -1576,132 +1443,52 @@ def advance_operator_current_coordinates(
             event.kind
             == SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            binding_reading = _shared_position_binding_reading(
+            applicability_binding, inputs = _shared_position_binding_reading(
                 ledger,
                 event,
                 prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            addressed_act_identity = event.material.get(
-                "addressed_act_identity"
+            measurement_binding = _measurement_binding_addressed_by_applicability(
+                ledger,
+                applicability_binding,
+                inputs,
             )
-            answering_readings = tuple(
-                {
-                    id(reading): reading
-                    for reading in shared_position_replay_readings.values()
-                    if reading.binding_reading[0].material.get(
-                        "exact_act_identity"
-                    )
-                    == addressed_act_identity
-                }.values()
-            )
-            if len(answering_readings) != 1:
+            if measurement_binding.identity not in subject_to_act_binding_occurrences:
                 raise ValueError(
                     "shared-position Applicability binding addresses no exact Measurement binding"
                 )
-            replay_reading = _add_shared_position_applicability_binding(
-                ledger,
-                answering_readings[0],
-                binding_reading,
-            )
-            shared_position_replay_readings[event.identity] = replay_reading
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            binding_identity = _shared_position_binding_identity(event)
-            replay_reading = shared_position_replay_readings.get(
-                binding_identity
+            _read_shared_position_applicability_act(
+                ledger,
+                event.identity,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            try:
-                if replay_reading is not None:
-                    _advance_shared_position_replay_reading(
-                        ledger, replay_reading, event
-                    )
-                else:
-                    binding_reading = _shared_position_binding_reading(
-                        ledger,
-                        event,
-                        prior_coordinates=addressed_byte_reference_prior_coordinates,
-                    )
-                    _read_shared_position_applicability_act(
-                        ledger,
-                        event.identity,
-                        binding_reading=binding_reading,
-                    )
-            except Exception:
-                if binding_identity is not None:
-                    shared_position_replay_readings.pop(
-                        binding_identity, None
-                    )
-                raise
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            binding_identity = _shared_position_binding_identity(event)
-            replay_reading = shared_position_replay_readings.get(
-                binding_identity
+            _read_shared_position_applicability_result(
+                ledger,
+                event.identity,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            try:
-                if replay_reading is not None:
-                    _advance_shared_position_replay_reading(
-                        ledger, replay_reading, event
-                    )
-                else:
-                    binding_reading = _shared_position_binding_reading(
-                        ledger,
-                        event,
-                        prior_coordinates=addressed_byte_reference_prior_coordinates,
-                    )
-                    _read_shared_position_applicability_result(
-                        ledger,
-                        event.identity,
-                        binding_reading=binding_reading,
-                    )
-            except Exception:
-                if binding_identity is not None:
-                    shared_position_replay_readings.pop(
-                        binding_identity, None
-                    )
-                raise
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT:
-            binding_identity = _shared_position_binding_identity(event)
-            replay_reading = shared_position_replay_readings.get(
-                binding_identity
+            _read_shared_position_measurement_act(
+                ledger,
+                event.identity,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            try:
-                if replay_reading is not None:
-                    _advance_shared_position_replay_reading(
-                        ledger, replay_reading, event
-                    )
-                else:
-                    binding_reading = _shared_position_binding_reading(
-                        ledger,
-                        event,
-                        prior_coordinates=addressed_byte_reference_prior_coordinates,
-                    )
-                    _read_shared_position_measurement_act(
-                        ledger,
-                        event.identity,
-                        binding_reading=binding_reading,
-                    )
-            except Exception:
-                if binding_identity is not None:
-                    shared_position_replay_readings.pop(
-                        binding_identity, None
-                    )
-                raise
             continue
         if (
             event.kind
             == RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND
         ):
-            binding_reading = _recorded_pair_comparison_binding_reading(
-                ledger, event.identity
-            )
-            recorded_pair_comparison_replay_carries[event.identity] = (
-                _recorded_pair_comparison_replay_carry(
-                    ledger, binding_reading
-                )
+            _recorded_pair_comparison_binding_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
@@ -1709,161 +1496,36 @@ def advance_operator_current_coordinates(
             event.kind
             == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT_OCCURRENCE_EVENT
         ):
-            binding_identity = _recorded_pair_comparison_binding_identity(
-                event
+            _recorded_pair_comparison_applicability_act_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
-            carry = recorded_pair_comparison_replay_carries.get(
-                binding_identity
-            )
-            try:
-                _act, binding_reading = (
-                    _recorded_pair_comparison_applicability_act_reading(
-                        ledger,
-                        event.identity,
-                        applicability_binding_reading=(
-                            _validate_recorded_pair_comparison_replay_carry(
-                                ledger, carry
-                            )
-                            if carry is not None
-                            else None
-                        ),
-                    )
-                )
-                if carry is None:
-                    carry = _recorded_pair_comparison_replay_carry(
-                        ledger, binding_reading
-                    )
-                else:
-                    _validate_recorded_pair_comparison_replay_carry(
-                        ledger, carry
-                    )
-                recorded_pair_comparison_replay_carries[
-                    binding_reading[0].identity
-                ] = carry
-            except Exception:
-                if binding_identity is not None:
-                    recorded_pair_comparison_replay_carries.pop(
-                        binding_identity, None
-                    )
-                raise
             continue
         if (
             event.kind
             == RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_RESULT_KIND
         ):
-            binding_identity = _recorded_pair_comparison_binding_identity(
-                event
+            _recorded_pair_comparison_applicability_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
-            carry = recorded_pair_comparison_replay_carries.get(
-                binding_identity
-            )
-            try:
-                _material, _applicability, _act, binding_reading = (
-                    _recorded_pair_comparison_applicability_reading(
-                        ledger,
-                        event.identity,
-                        applicability_binding_reading=(
-                            _validate_recorded_pair_comparison_replay_carry(
-                                ledger, carry
-                            )
-                            if carry is not None
-                            else None
-                        ),
-                    )
-                )
-                if carry is None:
-                    carry = _recorded_pair_comparison_replay_carry(
-                        ledger, binding_reading
-                    )
-                else:
-                    _validate_recorded_pair_comparison_replay_carry(
-                        ledger, carry
-                    )
-                recorded_pair_comparison_replay_carries[
-                    binding_reading[0].identity
-                ] = carry
-            except Exception:
-                if binding_identity is not None:
-                    recorded_pair_comparison_replay_carries.pop(
-                        binding_identity, None
-                    )
-                raise
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_OCCURRENCE_EVENT:
-            binding_identity = _recorded_pair_comparison_binding_identity(
-                event
+            _recorded_pair_comparison_act_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
-            carry = recorded_pair_comparison_replay_carries.get(
-                binding_identity
-            )
-            try:
-                _act, binding_reading, _applicability = (
-                    _recorded_pair_comparison_act_reading(
-                        ledger,
-                        event.identity,
-                        binding_reading=(
-                            _validate_recorded_pair_comparison_replay_carry(
-                                ledger, carry
-                            )
-                            if carry is not None
-                            else None
-                        ),
-                    )
-                )
-                if carry is None:
-                    carry = _recorded_pair_comparison_replay_carry(
-                        ledger, binding_reading
-                    )
-                else:
-                    _validate_recorded_pair_comparison_replay_carry(
-                        ledger, carry
-                    )
-                recorded_pair_comparison_replay_carries[
-                    binding_reading[0].identity
-                ] = carry
-            except Exception:
-                if binding_identity is not None:
-                    recorded_pair_comparison_replay_carries.pop(
-                        binding_identity, None
-                    )
-                raise
             continue
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
-            binding_identity = _recorded_pair_comparison_binding_identity(
-                event
+            _recorded_pair_measurement_comparison_reading(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
             )
-            carry = recorded_pair_comparison_replay_carries.get(
-                binding_identity
-            )
-            try:
-                _material, _binding_reading = (
-                    _recorded_pair_measurement_comparison_reading(
-                        ledger,
-                        event.identity,
-                        binding_reading=(
-                            _validate_recorded_pair_comparison_replay_carry(
-                                ledger, carry
-                            )
-                            if carry is not None
-                            else None
-                        ),
-                    )
-                )
-                if carry is not None:
-                    _validate_recorded_pair_comparison_replay_carry(
-                        ledger, carry
-                    )
-            except Exception:
-                if binding_identity is not None:
-                    recorded_pair_comparison_replay_carries.pop(
-                        binding_identity, None
-                    )
-                raise
-            if binding_identity is not None:
-                recorded_pair_comparison_replay_carries.pop(
-                    binding_identity, None
-                )
             comparison_result_occurrences[event.identity] = None
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND:
@@ -2003,36 +1665,11 @@ def advance_operator_current_coordinates(
             )
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
-            binding_identity = _shared_position_binding_identity(event)
-            replay_reading = shared_position_replay_readings.get(
-                binding_identity
+            _read_shared_position_measurement_result(
+                ledger,
+                event.identity,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
-            try:
-                if replay_reading is not None:
-                    _advance_shared_position_replay_reading(
-                        ledger, replay_reading, event
-                    )
-                else:
-                    binding_reading = _shared_position_binding_reading(
-                        ledger,
-                        event,
-                        prior_coordinates=addressed_byte_reference_prior_coordinates,
-                    )
-                    _read_shared_position_measurement_result(
-                        ledger,
-                        event.identity,
-                        binding_reading=binding_reading,
-                    )
-            except Exception:
-                if binding_identity is not None:
-                    shared_position_replay_readings.pop(
-                        binding_identity, None
-                    )
-                raise
-            if binding_identity is not None:
-                shared_position_replay_readings.pop(
-                    binding_identity, None
-                )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

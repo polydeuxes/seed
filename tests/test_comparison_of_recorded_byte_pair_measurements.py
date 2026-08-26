@@ -9,7 +9,6 @@ from tests.operator_material_source_test_witness import (
 
 import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
-import seed_runtime.operator_current_coordinates as current_coordinate_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
@@ -123,7 +122,7 @@ def _witness_compare_input_testimony(monkeypatch):
         locality_identity=LOCALITY,
     )
 
-    def measurement_and_findings(_ledger, event_identity):
+    def measurement_and_findings(_ledger, event_identity, **_coordinates):
         if event_identity == earlier.identity:
             return earlier, (), earlier_binding
         if event_identity == later.identity:
@@ -463,9 +462,9 @@ def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
     original = comparison_module._measurement_and_findings
     calls = []
 
-    def counted(ledger, event_identity):
+    def counted(ledger, event_identity, **coordinates):
         calls.append(event_identity)
-        return original(ledger, event_identity)
+        return original(ledger, event_identity, **coordinates)
 
     monkeypatch.setattr(comparison_module, "_measurement_and_findings", counted)
 
@@ -512,75 +511,7 @@ def test_result_reader_preserves_its_exact_binding_and_public_getter_delegates(
     assert calls == [result.identity]
 
 
-def test_current_coordinate_replay_carries_one_validated_binding_across_comparison_stages(
-    monkeypatch,
-):
-    ledger, *_rest, result = _comparison()
-    calls = []
-    original = (
-        current_coordinate_module._recorded_pair_comparison_binding_reading
-    )
-
-    def witnessed(ledger, event_identity):
-        calls.append(event_identity)
-        return original(ledger, event_identity)
-
-    monkeypatch.setattr(
-        current_coordinate_module,
-        "_recorded_pair_comparison_binding_reading",
-        witnessed,
-    )
-    monkeypatch.setattr(comparison_module, "_binding_reading", witnessed)
-
-    current_coordinates = read_operator_current_coordinates(
-        ledger, locality_identity=LOCALITY
-    )
-    binding_identity = result.material[
-        "subject_to_act_binding_reference"
-    ]["recorded_occurrence_identity"]
-    assert result.identity in current_coordinates["comparison_result_occurrences"]
-    assert calls == [binding_identity]
-
-    get_recorded_pair_measurement_comparison(ledger, result.identity)
-    assert calls == [binding_identity, binding_identity]
-
-
-def test_current_coordinate_replay_carry_uses_one_exact_ledger_boundary(monkeypatch):
-    ledger, _source, _added, _earlier, _later, _binding, _applicability, _result = (
-        _comparison()
-    )
-    original = (
-        current_coordinate_module._recorded_pair_comparison_applicability_act_reading
-    )
-    callback_changed = False
-
-    def cross_after_binding(*args, **kwargs):
-        nonlocal callback_changed
-        if not callback_changed:
-            callback_changed = True
-            ledger.append(
-                "test.unrelated_callback",
-                {"unknown": ["append after comparison binding read"]},
-                locality_identity="unrelated-callback",
-            )
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(
-        current_coordinate_module,
-        "_recorded_pair_comparison_applicability_act_reading",
-        cross_after_binding,
-    )
-    with pytest.raises(RecordedPairMeasurementComparisonError):
-        read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
-
-    assert read_operator_current_coordinates(
-        ledger, locality_identity=LOCALITY
-    )["comparison_result_occurrences"]
-
-
-def test_interleaved_comparisons_keep_distinct_ephemeral_binding_readings(
-    monkeypatch,
-):
+def test_interleaved_comparisons_remain_distinct_in_current_coordinates():
     ledger, _source, _added, earlier, later = _inputs()
     first = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
@@ -633,20 +564,6 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_binding_readings(
         )
 
     results = (finish(first), finish(second))
-    calls = []
-    original = (
-        current_coordinate_module._recorded_pair_comparison_binding_reading
-    )
-
-    def witnessed(ledger, event_identity):
-        calls.append(event_identity)
-        return original(ledger, event_identity)
-
-    monkeypatch.setattr(
-        current_coordinate_module,
-        "_recorded_pair_comparison_binding_reading",
-        witnessed,
-    )
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )
@@ -655,7 +572,6 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_binding_readings(
         result.identity in current_coordinates["comparison_result_occurrences"]
         for result in results
     )
-    assert calls == [first.identity, second.identity]
 
 
 def test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers(

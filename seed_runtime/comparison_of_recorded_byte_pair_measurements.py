@@ -171,7 +171,10 @@ def _measurement_reference(event: Event) -> dict[str, str]:
 
 
 def _measurement_and_findings(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, tuple[Any, ...], Event]:
     event_identity = _identity(
         event_identity, "comparison requires one exact recorded Measurement result"
@@ -187,7 +190,10 @@ def _measurement_and_findings(
         )
     try:
         reading = _validated_recorded_byte_position_pair_measurement(
-            ledger, event.identity, findings_only=True
+            ledger,
+            event.identity,
+            findings_only=True,
+            prior_coordinates=prior_coordinates,
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
@@ -350,12 +356,17 @@ def _comparison_inputs(
     *,
     earlier_result_event_identity: str,
     later_result_event_identity: str,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     earlier, earlier_findings, earlier_binding = _measurement_and_findings(
-        ledger, earlier_result_event_identity
+        ledger,
+        earlier_result_event_identity,
+        prior_coordinates=prior_coordinates,
     )
     later, later_findings, later_binding = _measurement_and_findings(
-        ledger, later_result_event_identity
+        ledger,
+        later_result_event_identity,
+        prior_coordinates=prior_coordinates,
     )
     if earlier.identity == later.identity or earlier.locality_identity != later.locality_identity:
         raise RecordedPairMeasurementComparisonError(
@@ -811,6 +822,7 @@ def record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier_result_event_identity,
         later_result_event_identity=later_result_event_identity,
+        prior_coordinates=current_coordinates,
     )
     boundary = _require_measurement_current_coordinates(
         ledger, inputs=inputs, current_coordinates=current_coordinates
@@ -859,7 +871,10 @@ def _record_comparison_subject_to_act_binding(
 
 
 def _binding_reading(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> _BindingReading:
     event = ledger.get(_identity(event_identity, "comparison requires one binding"))
     if (
@@ -885,6 +900,7 @@ def _binding_reading(
             "recorded_occurrence_identity"
         ),
         later_result_event_identity=later_reference.get("recorded_occurrence_identity"),
+        prior_coordinates=prior_coordinates,
     )
     identity_keys = (
         "exact_act_identity",
@@ -950,6 +966,7 @@ def _applicability_binding_reading(
     event_identity: str,
     *,
     comparison_binding_reading: _BindingReading | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, dict[str, Any], _BindingReading]:
     event = ledger.get(
         _identity(event_identity, "comparison requires one Applicability binding")
@@ -980,7 +997,9 @@ def _applicability_binding_reading(
                 "comparison Applicability binding addresses no exact Compare binding"
             )
         comparison_binding_reading = _binding_reading(
-            ledger, comparison_bindings[0].identity
+            ledger,
+            comparison_bindings[0].identity,
+            prior_coordinates=prior_coordinates,
         )
     comparison_binding, inputs = comparison_binding_reading
     identity_keys = (
@@ -1037,7 +1056,9 @@ def record_recorded_pair_measurement_comparison_applicability_subject_to_act_bin
     current_coordinates: dict[str, Any],
 ) -> Event:
     comparison_binding, inputs = _binding_reading(
-        ledger, comparison_binding_event_identity
+        ledger,
+        comparison_binding_event_identity,
+        prior_coordinates=current_coordinates,
     )
     _require_binding_current_coordinates(comparison_binding, current_coordinates)
     through_event_occurrence_identity = current_coordinates.get(
@@ -1139,7 +1160,9 @@ def record_recorded_pair_measurement_comparison_applicability_act_occurrence(
 ) -> Event:
     applicability_binding, _inputs, _comparison_binding_reading = (
         _applicability_binding_reading(
-            ledger, applicability_binding_event_identity
+            ledger,
+            applicability_binding_event_identity,
+            prior_coordinates=current_coordinates,
         )
     )
     _require_binding_current_coordinates(applicability_binding, current_coordinates)
@@ -1156,6 +1179,7 @@ def _applicability_act_reading(
     *,
     applicability_binding_reading: _ApplicabilityBindingReading | None = None,
     comparison_binding_reading: _BindingReading | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, _ApplicabilityBindingReading]:
     event = ledger.get(_identity(event_identity, "comparison requires Applicability Act occurrence"))
     if (
@@ -1180,6 +1204,7 @@ def _applicability_act_reading(
                 ledger,
                 binding_identity,
                 comparison_binding_reading=comparison_binding_reading,
+                prior_coordinates=prior_coordinates,
             )
         )
     binding, _inputs, _comparison_binding_reading = applicability_binding_reading
@@ -1248,11 +1273,16 @@ def _recorded_applicability_result_material(
 
 
 def record_recorded_pair_measurement_comparison_applicability_result(
-    ledger: EventLedger, *, act_occurrence_event_identity: str
+    ledger: EventLedger,
+    *,
+    act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
-    act = get_recorded_pair_measurement_comparison_applicability_act_occurrence(
-        ledger, act_occurrence_event_identity
-    )
+    act = _applicability_act_reading(
+        ledger,
+        act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
+    )[0]
     result = _applicability_result_material(act)
     return _record_applicability_result_from_act(ledger, act=act, result=result)
 
@@ -1286,6 +1316,7 @@ def _applicability_reading(
     *,
     applicability_binding_reading: _ApplicabilityBindingReading | None = None,
     comparison_binding_reading: _BindingReading | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     dict[str, Any],
     Event,
@@ -1308,6 +1339,7 @@ def _applicability_reading(
             event.material.get("act_occurrence_event_identity"),
             applicability_binding_reading=applicability_binding_reading,
             comparison_binding_reading=comparison_binding_reading,
+            prior_coordinates=prior_coordinates,
         )
     )
     expected = _recorded_applicability_result_material(
@@ -1396,7 +1428,9 @@ def record_recorded_pair_measurement_comparison_act_occurrence(
     current_coordinates: dict[str, Any],
 ) -> Event:
     binding_reading = _binding_reading(
-        ledger, subject_to_act_binding_event_identity
+        ledger,
+        subject_to_act_binding_event_identity,
+        prior_coordinates=current_coordinates,
     )
     binding, _inputs = binding_reading
     (
@@ -1444,6 +1478,7 @@ def _comparison_act_reading(
     event_identity: str,
     *,
     binding_reading: _BindingReading | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, _BindingReading, Event]:
     event = ledger.get(_identity(event_identity, "comparison requires Act occurrence"))
     if (
@@ -1462,6 +1497,7 @@ def _comparison_act_reading(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
+            prior_coordinates=prior_coordinates,
         )
     binding, _inputs = binding_reading
     applicability = ledger.get(event.material.get("applicability_result_event_identity"))
@@ -1474,6 +1510,7 @@ def _comparison_act_reading(
             ledger,
             applicability.identity,
             comparison_binding_reading=binding_reading,
+            prior_coordinates=prior_coordinates,
         )
     )
     if (
@@ -1622,11 +1659,16 @@ def _recorded_comparison_result_material(
 
 
 def record_recorded_pair_measurement_comparison_result(
-    ledger: EventLedger, *, act_occurrence_event_identity: str
+    ledger: EventLedger,
+    *,
+    act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     act, binding_reading, _applicability = (
         _comparison_act_reading(
-            ledger, act_occurrence_event_identity
+            ledger,
+            act_occurrence_event_identity,
+            prior_coordinates=current_coordinates,
         )
     )
     result = _comparison_result_material(act, binding_reading)
@@ -1758,6 +1800,7 @@ def _recorded_pair_measurement_comparison_reading(
     event_identity: str,
     *,
     binding_reading: _BindingReading | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], _BindingReading]:
     event = ledger.get(_identity(event_identity, "comparison requires one result"))
     if (
@@ -1774,6 +1817,7 @@ def _recorded_pair_measurement_comparison_reading(
             ledger,
             event.material.get("act_occurrence_event_identity"),
             binding_reading=binding_reading,
+            prior_coordinates=prior_coordinates,
         )
     )
     expected = _recorded_comparison_result_material(
