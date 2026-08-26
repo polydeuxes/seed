@@ -810,7 +810,7 @@ def test_same_boundary_pair_subjects_keep_each_yield_relation_distinct():
         )
 
 
-def test_act_occurrence_has_inputs_and_responsibility_but_no_result_finding():
+def test_act_occurrence_has_exact_inputs_but_no_result_finding():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     assignment = record_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,

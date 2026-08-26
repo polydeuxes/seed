@@ -16,7 +16,6 @@ from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _validated_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.event import Event
@@ -51,10 +50,6 @@ RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "declared Measurement of byte-pair occurrence position"
 )
-RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "Measurement of each exact ordered position for one exact byte pair "
-    "in one exact material result"
-)
 RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "each ordered occurrence of the exact Yield-carried byte pair in one exact "
     "material acquisition result within one completeness boundary and occurrence count boundary"
@@ -75,8 +70,6 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "exact_act",
         "addressed_act_identity",
         "act_occurrence_identity",
-        "responsibility",
-        "responsible_boundary",
         "responsibility_assignment_reference",
         "measurement_rule",
         "source_localities",
@@ -610,10 +603,6 @@ def _responsibility_assignment_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "responsibility": (
-            RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT
-        ),
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
@@ -978,8 +967,6 @@ def _material_of_act_occurrence(
         "addressed_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": _responsibility_assignment_reference(
             assignment
         ),
@@ -1174,8 +1161,6 @@ def _material_of_result_of_measurement(
         "exact_act": ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "addressed_act_identity": assignment.material["measurement_act_identity"],
         "act_occurrence_identity": assignment.material["act_occurrence_identity"],
-        "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": _responsibility_assignment_reference(
             assignment
         ),
@@ -1262,8 +1247,6 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "exact_act": result["exact_act"],
             "addressed_act_identity": result["addressed_act_identity"],
             "act_occurrence_identity": result["act_occurrence_identity"],
-            "responsibility": result["responsibility"],
-            "responsible_boundary": result["responsible_boundary"],
             "responsibility_assignment_reference": result[
                 "responsibility_assignment_reference"
             ],
