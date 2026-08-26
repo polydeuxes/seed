@@ -1370,26 +1370,6 @@ def _require_applicability_current_coordinates(
         )
 
 
-def _participation_of_input_in_compare(binding: Event) -> list[dict[str, Any]]:
-    material = binding.material
-    return [
-        {
-            "subject_reference": deepcopy(material["earlier_measurement_reference"]),
-            "role": "earlier recorded pair Measurement result",
-            "act_occurrence_identity": material[
-                "comparison_act_occurrence_identity"
-            ],
-        },
-        {
-            "subject_reference": deepcopy(material["later_measurement_reference"]),
-            "role": "later recorded pair Measurement result",
-            "act_occurrence_identity": material[
-                "comparison_act_occurrence_identity"
-            ],
-        },
-    ]
-
-
 def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, Any]:
     material = binding.material
     return {
@@ -1404,9 +1384,6 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
-        ),
-        "participation_of_input_in_compare": (
-            _participation_of_input_in_compare(binding)
         ),
     }
 
@@ -1613,9 +1590,6 @@ def _comparison_result_material(
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
-        "participation_of_input_in_compare": deepcopy(
-            act.material["participation_of_input_in_compare"]
-        ),
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
@@ -1639,9 +1613,6 @@ def _recorded_comparison_result_material(
         ],
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
-        ),
-        "participation_of_input_in_compare": deepcopy(
-            material["participation_of_input_in_compare"]
         ),
         "findings": deepcopy(material["findings"]),
         "unknown": list(material["unknown"]),

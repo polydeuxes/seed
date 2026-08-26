@@ -359,7 +359,9 @@ def test_produced_measurements_enter_one_compare():
     assert binding.material["added_occurrence_reference"] == added.identity
     assert binding.material["prior_source_occurrence_references"] == []
     assert applicability.material["applicability"] == "applicable"
-    assert len(recorded["participation_of_input_in_compare"]) == 2
+    assert recorded["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
 
     findings = recorded["findings"]
     count_ab = next(
