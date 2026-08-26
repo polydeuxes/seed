@@ -604,9 +604,7 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relation": input_relation,
-        "unknown": [
-            "Participation or content of each exact byte pair: Unknown"
-        ],
+        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
@@ -1062,18 +1060,6 @@ def get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
     return binding
 
 
-def _participation(
-    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
-    *,
-    act_occurrence_identity: str,
-) -> dict[str, str]:
-    return {
-        "subject_reference": finding.source_material_result_occurrence_identity,
-        "role": "input",
-        "act_occurrence_identity": act_occurrence_identity,
-    }
-
-
 def _act_material(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     binding: Event,
@@ -1084,10 +1070,6 @@ def _act_material(
         "act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "input_relation": binding.material["input_relation"],
-        "participation": _participation(
-            finding,
-            act_occurrence_identity=binding.material["act_occurrence_identity"],
-        ),
     }
 
 
@@ -1312,9 +1294,7 @@ def _assertion(
         "result": "position",
         "assertion_subject": subject,
         "conflicts": "Unknown",
-        "unknown": [
-            "Participation or content of this byte pair: Unknown"
-        ],
+        "unknown": ["content of this byte pair: Unknown"],
     }
 
 
@@ -1342,9 +1322,7 @@ def _assertion_result_coordinates(
                 ),
             },
         },
-        "unknown": [
-            "Participation or content of each exact byte pair: Unknown"
-        ],
+        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
@@ -1367,9 +1345,7 @@ def _result_material(
             "identity": finding.completeness_boundary.identity
         },
         "assertions": _assertion_result_coordinates(finding),
-        "unknown": [
-            "Participation or content of each exact byte pair: Unknown"
-        ],
+        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
