@@ -2125,7 +2125,7 @@ def _carry_byte_measurement_assignment_into_standing(
     return locality_standing
 
 
-def _carry_assertion_locality_movement_assignment_into_standing(
+def _carry_assertion_locality_movement_binding_into_current_coordinates(
     ledger: EventLedger,
     locality_standing: dict[str, Any],
     event,
@@ -2134,7 +2134,7 @@ def _carry_assertion_locality_movement_assignment_into_standing(
     source_event,
     source_standing: dict[str, Any],
 ) -> dict[str, Any]:
-    """Carry one movement assignment produced from exact same-call inputs."""
+    """Carry one movement binding produced from exact same-call coordinates."""
 
     assignments = (
         locality_standing.get("subject_to_act_binding_occurrences")

@@ -53,7 +53,7 @@ from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     _carry_assertion_locality_movement_act_into_standing,
-    _carry_assertion_locality_movement_assignment_into_standing,
+    _carry_assertion_locality_movement_binding_into_current_coordinates,
     _carry_assertion_locality_movement_result_into_standing,
     _carry_byte_measurement_assignment_into_standing,
     advance_operator_locality_standing,
@@ -259,7 +259,7 @@ def _movement_carry_phase(ledger, phase):
     if phase == "assignment":
         return state
     destination_standing = (
-        _carry_assertion_locality_movement_assignment_into_standing(
+        _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
             destination_standing,
             assignment,
@@ -313,7 +313,7 @@ def _carry_movement_phase(
         else responsibility_assignment
     )
     if state["phase"] == "assignment":
-        return _carry_assertion_locality_movement_assignment_into_standing(
+        return _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
             state["destination_standing"],
             state["assignment"],

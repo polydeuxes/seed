@@ -1568,7 +1568,7 @@ def _move_assertion_reference_to_locality(
         raise ByteMeasurementError("same-Locality Assertion requires no movement")
     from seed_runtime.operator_locality_standing import (
         _carry_assertion_locality_movement_act_into_standing,
-        _carry_assertion_locality_movement_assignment_into_standing,
+        _carry_assertion_locality_movement_binding_into_current_coordinates,
         _carry_assertion_locality_movement_result_into_standing,
         read_operator_locality_standing,
     )
@@ -1596,7 +1596,7 @@ def _move_assertion_reference_to_locality(
         destination_coordinates=destination_standing,
     )
     destination_standing = (
-        _carry_assertion_locality_movement_assignment_into_standing(
+        _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
             destination_standing,
             assignment,
@@ -1731,7 +1731,7 @@ def move_recorded_byte_assertions_to_locality(
         )
     from seed_runtime.operator_locality_standing import (
         _carry_assertion_locality_movement_act_into_standing,
-        _carry_assertion_locality_movement_assignment_into_standing,
+        _carry_assertion_locality_movement_binding_into_current_coordinates,
         _carry_assertion_locality_movement_result_into_standing,
         read_operator_locality_standing,
     )
@@ -1761,7 +1761,7 @@ def move_recorded_byte_assertions_to_locality(
             destination_coordinates=destination_standing,
         )
         destination_standing = (
-            _carry_assertion_locality_movement_assignment_into_standing(
+            _carry_assertion_locality_movement_binding_into_current_coordinates(
                 ledger,
                 destination_standing,
                 assignment,
