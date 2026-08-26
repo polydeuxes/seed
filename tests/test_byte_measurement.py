@@ -1125,8 +1125,14 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "occurrences_carrying": 2,
         "count": 2,
     }
-    assert count.material["assertion_scope"] == {
-        "source_localities": ["source"],
+    assert count.source_localities == ("source",)
+    assert set(count.material) == {
+        "dimensions",
+        "result",
+        "assertion_subject",
+        "input_support",
+        "conflicts",
+        "unknown",
     }
     assert count.material["dimensions"]["source_provenance"]
     assert count.material["unknown"]
@@ -1154,7 +1160,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         material=count.material,
     )
     assert type(represented.material) is dict
-    assert type(represented.material["assertion_scope"]["source_localities"]) is list
+    assert type(represented.material["dimensions"]["content"]) is dict
 
 
 def test_a_self_consistent_truncated_source_assertion_is_refused():
@@ -1742,7 +1748,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
 
     ledger = _ledger(b"tata\n")
     source_event = _byte_source(ledger)
-    source, scope, content = byte_measurement._prepare_pair_source(
+    source, source_localities, content = byte_measurement._prepare_pair_source(
         ledger,
         source_measurement_event_identity=source_event.identity,
         measurement_locality_identity="byte-measurement",
@@ -1760,7 +1766,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     applicability_binding = byte_measurement._append_pair_applicability_binding(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity="byte-measurement",
         through_event_occurrence_identity=boundary,
@@ -1776,7 +1782,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     measurement_binding = byte_measurement._append_pair_measurement_binding(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity="byte-measurement",
         through_event_occurrence_identity=applicability_binding.identity,

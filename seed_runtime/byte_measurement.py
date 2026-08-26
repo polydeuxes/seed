@@ -36,7 +36,10 @@ from seed_runtime.material_source import (
 
 
 _PAIR_BINDING_READINGS: ContextVar[
-    dict[str, tuple[Event, "RecordedByteAssertion", dict[str, Any], dict[str, Any]]]
+    dict[
+        str,
+        tuple[Event, "RecordedByteAssertion", tuple[str, ...], dict[str, Any]],
+    ]
     | None
 ] = ContextVar("pair_binding_readings", default=None)
 
@@ -234,6 +237,7 @@ class MeasuredBytePairInputs:
 class RecordedByteAssertion:
     assertion_position: int
     recorded_occurrence_identity: str
+    source_localities: tuple[str, ...]
     content: int | None
     result: str
     _material: dict[str, Any]
@@ -492,7 +496,6 @@ def _pair_input_applicability_from_exact_source(
             ),
         }
     material = source.material
-    scope = material["assertion_scope"]
     content = {
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
@@ -509,7 +512,6 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     applicability = "applicable"
-    applicability_scope = scope
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
     identity = binding.material["applicability_result_identity"]
@@ -536,7 +538,6 @@ def _pair_input_applicability_from_exact_source(
         "addressed_act": "declared byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
-        "scope_locality": applicability_scope,
         "input_coordinates": input_coordinates,
         "input_unknown": input_unknown,
     }
@@ -652,7 +653,7 @@ def _prepare_pair_source(
     *,
     source_measurement_event_identity: str,
     measurement_locality_identity: str,
-) -> tuple[RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
+) -> tuple[RecordedByteAssertion, tuple[str, ...], dict[str, Any]]:
     """Read one source before its act-local Applicability determination."""
 
     if (
@@ -681,9 +682,8 @@ def _prepare_pair_source(
         destination_locality=measurement_locality_identity,
     )
     material = source.material
-    scope = material["assertion_scope"]
     content = material["dimensions"]["content"]
-    return source, scope, content
+    return source, source.source_localities, content
 
 
 def _movement_binding_reference(binding: Event) -> dict[str, str]:
@@ -1754,6 +1754,7 @@ def _assertion_carried_by_locality_movement_result(
         return RecordedByteAssertion(
             assertion_position=source.assertion_position,
             recorded_occurrence_identity=source.recorded_occurrence_identity,
+            source_localities=source.source_localities,
             content=source.content,
             result=source.result,
             _material=source.material,
@@ -1906,9 +1907,6 @@ def _measure_byte_position_pair_counts_through(
 
 
 def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
-    scope = {
-        "source_localities": list(measured.source_localities),
-    }
     source_subject = {
         "source_occurrence_references": [
             dict(reference) for reference in measured.source_material
@@ -1931,7 +1929,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
-            "assertion_scope": scope,
             "input_support": {
                 "occurrence_references": [
                     item["material_result_occurrence_identity"]
@@ -1962,7 +1959,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "assertion_scope": scope,
             "input_support": {
                 "occurrence_references": [],
                 "local_assertion_references": local_support_references,
@@ -3031,6 +3027,7 @@ def _assertions_of_recorded_byte_measurement(
             RecordedByteAssertion(
                 assertion_position=assertion["dimensions"]["position"],
                 recorded_occurrence_identity=event.identity,
+                source_localities=tuple(localities_value),
                 content=assertion["assertion_subject"].get("content"),
                 result=assertion["result"],
                 _material=deepcopy(assertion),
@@ -3133,14 +3130,14 @@ def _pair_subject_to_act_binding_reference(binding: Event) -> dict[str, Any]:
 def _pair_binding_source_coordinates(
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
         "source_movement_event_identity": source.locality_movement_event_identity,
-        "source_localities": list(scope["source_localities"]),
+        "source_localities": list(source_localities),
         "source_occurrence_references": list(content["source_material"]),
         "completeness_boundary_identity": content["completeness_boundary"][
             "identity"
@@ -3153,7 +3150,7 @@ def _pair_binding_source_coordinates(
 def _pair_applicability_binding_material(
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
@@ -3165,7 +3162,7 @@ def _pair_applicability_binding_material(
     return {
         **_pair_binding_source_coordinates(
             source=source,
-            scope=scope,
+            source_localities=source_localities,
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -3198,7 +3195,7 @@ def _pair_applicability_binding_material(
 def _pair_measurement_binding_material(
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
@@ -3209,7 +3206,7 @@ def _pair_measurement_binding_material(
     return {
         **_pair_binding_source_coordinates(
             source=source,
-            scope=scope,
+            source_localities=source_localities,
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -3222,7 +3219,7 @@ def _pair_measurement_binding_material(
         "book_clause_identity": "01.Source.D",
         "scope": {
             "recording_locality_identity": recording_locality_identity,
-            "source_localities": list(scope["source_localities"]),
+            "source_localities": list(source_localities),
             "completeness_boundary_identity": content["completeness_boundary"][
                 "identity"
             ],
@@ -3277,7 +3274,7 @@ def _require_exact_pair_subject_to_act_binding_event(
     boundary = material.get("through_event_occurrence_identity")
     common = dict(
         source=source,
-        scope=source.material["assertion_scope"],
+        source_localities=source.source_localities,
         content=source.material["dimensions"]["content"],
         recording_locality_identity=binding.locality_identity,
         through_event_occurrence_identity=boundary,
@@ -3424,7 +3421,7 @@ def _append_pair_applicability_binding(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
@@ -3434,7 +3431,7 @@ def _append_pair_applicability_binding(
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _pair_applicability_binding_material(
             source=source,
-            scope=scope,
+            source_localities=source_localities,
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -3453,7 +3450,7 @@ def _append_pair_measurement_binding(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
@@ -3463,7 +3460,7 @@ def _append_pair_measurement_binding(
         BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _pair_measurement_binding_material(
             source=source,
-            scope=scope,
+            source_localities=source_localities,
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -3511,7 +3508,7 @@ def _read_pair_subject_to_act_binding(
     *,
     binding_kind: str,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
+) -> tuple[Event, RecordedByteAssertion, tuple[str, ...], dict[str, Any]]:
     binding = ledger.get(binding_event_identity)
     if (
         binding is None
@@ -3566,7 +3563,7 @@ def _read_pair_subject_to_act_binding(
         raise ByteMeasurementError(
             "byte-position-pair subject-to-Act binding carries no exact source"
         )
-    scope = source.material["assertion_scope"]
+    source_localities = source.source_localities
     content = source.material["dimensions"]["content"]
     _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
     if prior_coordinates is None:
@@ -3604,7 +3601,7 @@ def _read_pair_subject_to_act_binding(
         raise ByteMeasurementError(
             "byte-position-pair subject-to-Act binding order is false"
         ) from error
-    reading = (binding, source, scope, content)
+    reading = (binding, source, source_localities, content)
     if bounded_readings is not None:
         bounded_readings[binding.identity] = reading
     return reading
@@ -3615,7 +3612,7 @@ def _read_pair_measurement_subject_to_act_binding(
     binding_event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
+) -> tuple[Event, RecordedByteAssertion, tuple[str, ...], dict[str, Any]]:
     return _read_pair_subject_to_act_binding(
         ledger,
         binding_event_identity,
@@ -3629,7 +3626,7 @@ def _read_pair_applicability_subject_to_act_binding(
     binding_event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
+) -> tuple[Event, RecordedByteAssertion, tuple[str, ...], dict[str, Any]]:
     return _read_pair_subject_to_act_binding(
         ledger,
         binding_event_identity,
@@ -4300,11 +4297,10 @@ def _record_pair_measurement_result_from_carried_act(
         raise ByteMeasurementError(
             "pair Measurement result requires its exact Act at the current append boundary"
         )
-    scope = source.material["assertion_scope"]
     content = source.material["dimensions"]["content"]
     measured = _measure_byte_position_pair_counts_through(
         ledger,
-        localities=tuple(scope["source_localities"]),
+        localities=source.source_localities,
         boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
@@ -4395,11 +4391,10 @@ def _require_exact_pair_measurement_result_event(
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    scope = source.material["assertion_scope"]
     content = source.material["dimensions"]["content"]
     measured = _measure_byte_position_pair_counts_through(
         ledger,
-        localities=tuple(scope["source_localities"]),
+        localities=source.source_localities,
         boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
@@ -4458,7 +4453,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
-    scope: dict[str, Any],
+    source_localities: tuple[str, ...],
     content: dict[str, Any],
     recording_locality_identity: str,
     current_coordinates: dict[str, Any],
@@ -4482,7 +4477,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     applicability_binding = _append_pair_applicability_binding(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity=recording_locality_identity,
         through_event_occurrence_identity=boundary,
@@ -4498,7 +4493,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     measurement_binding = _append_pair_measurement_binding(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity=recording_locality_identity,
         through_event_occurrence_identity=applicability_binding.identity,
@@ -4600,7 +4595,7 @@ def _record_byte_position_pair_count_layer_from_current_coordinates(
     recording_locality_identity: str,
     current_coordinates: dict[str, Any],
 ) -> tuple[Event, dict[str, Any]]:
-    source, scope, content = _prepare_pair_source(
+    source, source_localities, content = _prepare_pair_source(
         ledger,
         source_measurement_event_identity=source_measurement_event_identity,
         measurement_locality_identity=recording_locality_identity,
@@ -4614,7 +4609,7 @@ def _record_byte_position_pair_count_layer_from_current_coordinates(
     return _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity=recording_locality_identity,
         current_coordinates=current_coordinates,
@@ -4633,7 +4628,7 @@ def record_byte_position_pair_count_layer(
         raise ByteMeasurementError(
             "byte-position-pair Measurement recording requires an exact Locality"
         )
-    source, scope, content = _prepare_pair_source(
+    source, source_localities, content = _prepare_pair_source(
         ledger,
         source_measurement_event_identity=source_measurement_event_identity,
         measurement_locality_identity=recording_locality_identity,
@@ -4646,7 +4641,7 @@ def record_byte_position_pair_count_layer(
     result, _current_coordinates = _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         ledger,
         source=source,
-        scope=scope,
+        source_localities=source_localities,
         content=content,
         recording_locality_identity=recording_locality_identity,
         current_coordinates=current_coordinates,
@@ -4807,10 +4802,9 @@ def _validated_recorded_byte_position_pair_measurement(
             f"{event_identity} does not carry its exact input source Assertion"
         )
     source_material = source.material
-    source_scope = source_material["assertion_scope"]
     source_content = source_material["dimensions"]["content"]
     if (
-        localities_value != source_scope["source_localities"]
+        localities_value != list(source.source_localities)
         or boundary_value != source_content["completeness_boundary"]
         or binding.material.get("source_localities") != localities_value
         or binding.material.get("completeness_boundary_identity")
