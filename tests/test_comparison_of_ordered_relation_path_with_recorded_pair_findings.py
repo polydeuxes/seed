@@ -700,11 +700,50 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
         binding.material["addressed_act_identity"]
         for binding in applicability_bindings
     ) == tuple(binding.material["exact_act_identity"] for binding in bindings)
+    assert tuple(
+        binding.material["compare_subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+        for binding in applicability_bindings
+    ) == tuple(binding.identity for binding in bindings)
     assert all(
         result.identity
         in recorded.current_coordinates["applicability_result_occurrences"]
         for result in results
     )
+
+
+def test_applicability_binding_refuses_a_substituted_compare_binding_reference():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    current_coordinates = _current_coordinates(ledger)
+    compare_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_subject_to_act_binding(
+        ledger,
+        path_result_event_identity=path.identity,
+        comparison_result_event_identity=comparison.identity,
+        current_coordinates=current_coordinates,
+    )
+    current_coordinates = _advance_since(
+        ledger,
+        current_coordinates,
+        len(ledger.list_locality(LOCALITY)) - 1,
+    )
+    applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+        ledger,
+        comparison_binding_event_identity=compare_binding.identity,
+        current_coordinates=current_coordinates,
+    )
+    applicability_binding.material[
+        "compare_subject_to_act_binding_reference"
+    ]["recorded_occurrence_identity"] = "substituted-binding"
+
+    with pytest.raises(ValueError):
+        comparison_module._read_applicability_binding(
+            ledger,
+            applicability_binding.identity,
+            prior_coordinates=current_coordinates,
+        )
+
+
 def test_only_applicable_current_compare_results_record_act_occurrence():
     ledger, applicability_results = _ledger_at_story_floor(2)
     bindings = tuple(
