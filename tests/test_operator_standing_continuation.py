@@ -98,7 +98,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert assignment.identity in after_act[
         "subject_to_act_binding_occurrences"
     ]
-    assert assignment.material["source_standing_reference"][
+    assert assignment.material["subject_reference"][
         "source_standing_through_event_occurrence_identity"
     ] == boundary
     assert assignment_reference == {

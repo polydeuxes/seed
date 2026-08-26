@@ -121,7 +121,6 @@ def _assignment_material(
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_standing_reference),
-        "source_standing_reference": deepcopy(source_standing_reference),
         "destination_locality_identity": destination_locality_identity,
         "scope": {
             "source_locality_identity": source_standing_reference[
@@ -343,7 +342,7 @@ def record_standing_locality_continuation_act_occurrence(
                 "Standing Locality continuation Act requires a prior assignment occurrence"
             ) from error
 
-    source_reference = assignment.material["source_standing_reference"]
+    source_reference = assignment.material["subject_reference"]
     destination_locality_identity = assignment.locality_identity
     continuation_act_identity = assignment.material["exact_act_identity"]
     act_occurrence_identity = new_identity(
@@ -439,7 +438,7 @@ def _validated_act_occurrence(
         != 5
         or assignment_reference != _assignment_reference(assignment)
         or assignment.locality_identity != act_occurrence.locality_identity
-        or assignment.material["source_standing_reference"] != expected_reference
+        or assignment.material["subject_reference"] != expected_reference
         or assignment.material["destination_locality_identity"]
         != act_occurrence.locality_identity
         or material.get("destination_locality_identity")
@@ -634,7 +633,7 @@ def get_standing_locality_continuation_responsibility_assignment(
             "the Standing Locality continuation Responsibility assignment is absent or corrupted"
         )
     material = assignment.material
-    source_reference = material.get("source_standing_reference")
+    source_reference = material.get("subject_reference")
     if type(source_reference) is not dict:
         raise StandingLocalityContinuationError(
             "the Responsibility assignment carries no exact source boundary"
