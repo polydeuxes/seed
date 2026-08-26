@@ -47,9 +47,9 @@ from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import (
-    _carry_assertion_locality_movement_act_into_standing,
+    _carry_assertion_locality_movement_act_into_current_coordinates,
     _carry_assertion_locality_movement_binding_into_current_coordinates,
-    _carry_assertion_locality_movement_result_into_standing,
+    _carry_assertion_locality_movement_result_into_current_coordinates,
     _carry_byte_measurement_binding_into_current_coordinates,
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
@@ -197,67 +197,67 @@ def _movement_source(ledger):
 def _movement_carry_phase(ledger, phase):
     source_result, source = _movement_source(ledger)
     source_event = ledger.get(source.recorded_occurrence_identity)
-    source_standing = read_operator_current_coordinates(
+    source_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=source_result.locality_identity
     )
-    destination_standing = read_operator_current_coordinates(
+    destination_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="movement-carry"
     )
-    assignment = _record_movement_binding_from_current_coordinates(
+    binding = _record_movement_binding_from_current_coordinates(
         ledger,
         source=source,
         source_event=source_event,
-        source_coordinates=source_standing,
+        source_coordinates=source_coordinates,
         destination_locality="movement-carry",
-        destination_coordinates=destination_standing,
+        destination_coordinates=destination_coordinates,
     )
     state = {
         "phase": phase,
         "source_result": source_result,
         "source": source,
         "source_event": source_event,
-        "source_standing": source_standing,
-        "destination_standing": destination_standing,
-        "assignment": assignment,
-        "event": assignment,
+        "source_coordinates": source_coordinates,
+        "destination_coordinates": destination_coordinates,
+        "binding": binding,
+        "event": binding,
     }
-    if phase == "assignment":
+    if phase == "binding":
         return state
-    destination_standing = (
+    destination_coordinates = (
         _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
-            destination_standing,
-            assignment,
+            destination_coordinates,
+            binding,
             source=source,
             source_event=source_event,
-            source_standing=source_standing,
+            source_current_coordinates=source_coordinates,
         )
     )
     act = _record_assertion_locality_movement_act_from_current_coordinates(
         ledger,
-        binding=assignment,
-        destination_coordinates=destination_standing,
+        binding=binding,
+        destination_coordinates=destination_coordinates,
     )
     state.update(
-        destination_coordinates=destination_standing,
+        destination_coordinates=destination_coordinates,
         act=act,
         event=act,
     )
     if phase == "act":
         return state
-    destination_standing = _carry_assertion_locality_movement_act_into_standing(
+    destination_coordinates = _carry_assertion_locality_movement_act_into_current_coordinates(
         ledger,
-        destination_standing,
+        destination_coordinates,
         act,
-        responsibility_assignment=assignment,
+        binding=binding,
     )
     movement = _record_assertion_locality_movement_result_from_current_coordinates(
         ledger,
         act=act,
-        binding=assignment,
+        binding=binding,
     )
     state.update(
-        destination_coordinates=destination_standing,
+        destination_coordinates=destination_coordinates,
         movement=movement,
         event=movement,
     )
@@ -269,36 +269,36 @@ def _carry_movement_phase(
     state,
     *,
     source=None,
-    responsibility_assignment=None,
+    binding=None,
 ):
     source = state["source"] if source is None else source
-    responsibility_assignment = (
-        state["assignment"]
-        if responsibility_assignment is None
-        else responsibility_assignment
+    binding = (
+        state["binding"]
+        if binding is None
+        else binding
     )
-    if state["phase"] == "assignment":
+    if state["phase"] == "binding":
         return _carry_assertion_locality_movement_binding_into_current_coordinates(
             ledger,
-            state["destination_standing"],
-            state["assignment"],
+            state["destination_coordinates"],
+            state["binding"],
             source=source,
             source_event=state["source_event"],
-            source_standing=state["source_standing"],
+            source_current_coordinates=state["source_coordinates"],
         )
     if state["phase"] == "act":
-        return _carry_assertion_locality_movement_act_into_standing(
+        return _carry_assertion_locality_movement_act_into_current_coordinates(
             ledger,
-            state["destination_standing"],
+            state["destination_coordinates"],
             state["act"],
-            responsibility_assignment=responsibility_assignment,
+            binding=binding,
         )
-    return _carry_assertion_locality_movement_result_into_standing(
+    return _carry_assertion_locality_movement_result_into_current_coordinates(
         ledger,
-        state["destination_standing"],
+        state["destination_coordinates"],
         state["movement"],
         act_occurrence=state["act"],
-        responsibility_assignment=responsibility_assignment,
+        binding=binding,
         source=source,
     )
 
@@ -2436,13 +2436,13 @@ def test_bounded_movement_batch_carries_each_assignment_before_its_act():
     )
 
 
-@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
+@pytest.mark.parametrize("phase", ("binding", "act", "result"))
 def test_movement_batch_carry_phases_refuse_a_later_append_boundary_without_mutation(
     phase,
 ):
     ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
-    before = deepcopy(state["destination_standing"])
+    before = deepcopy(state["destination_coordinates"])
     _record_operator_material_source(
         ledger,
         locality_identity="movement-carry",
@@ -2450,33 +2450,33 @@ def test_movement_batch_carry_phases_refuse_a_later_append_boundary_without_muta
         source_boundary="after carried movement phase",
     )
 
-    with pytest.raises(ValueError, match="Standing is not exact"):
+    with pytest.raises(ValueError, match="coordinates are not exact"):
         _carry_movement_phase(ledger, state)
 
-    assert state["destination_standing"] == before
+    assert state["destination_coordinates"] == before
 
 
-@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
-def test_movement_batch_carry_phases_refuse_corruption_without_partial_standing(
+@pytest.mark.parametrize("phase", ("binding", "act", "result"))
+def test_movement_batch_carry_phases_refuse_corruption_without_partial_coordinates(
     phase,
 ):
     ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
-    before = deepcopy(state["destination_standing"])
+    before = deepcopy(state["destination_coordinates"])
     state["event"].material["unknown"] = ["changed after append"]
 
-    with pytest.raises(ValueError, match="Standing is not exact"):
+    with pytest.raises(ValueError, match="coordinates are not exact"):
         _carry_movement_phase(ledger, state)
 
-    assert state["destination_standing"] == before
+    assert state["destination_coordinates"] == before
 
 
-@pytest.mark.parametrize("phase", ("assignment", "act", "result"))
+@pytest.mark.parametrize("phase", ("binding", "act", "result"))
 def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
     ledger = _ledger(b"ta\n")
     state = _movement_carry_phase(ledger, phase)
-    before = deepcopy(state["destination_standing"])
-    if phase in ("assignment", "result"):
+    before = deepcopy(state["destination_coordinates"])
+    if phase in ("binding", "result"):
         substitute_source = next(
             assertion
             for assertion in assertions_of_recorded_byte_measurement(
@@ -2488,20 +2488,20 @@ def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
             ledger, state, source=substitute_source
         )
     else:
-        substitute_assignment = deepcopy(state["assignment"])
-        substitute_assignment.material["movement_act_identity"] = (
+        substitute_binding = deepcopy(state["binding"])
+        substitute_binding.material["movement_act_identity"] = (
             "substituted-movement-Act"
         )
         call = lambda: _carry_movement_phase(
             ledger,
             state,
-            responsibility_assignment=substitute_assignment,
+            binding=substitute_binding,
         )
 
-    with pytest.raises(ValueError, match="Standing is not exact"):
+    with pytest.raises(ValueError, match="coordinates are not exact"):
         call()
 
-    assert state["destination_standing"] == before
+    assert state["destination_coordinates"] == before
 
 
 def test_movement_batch_exact_carry_equals_public_replay():

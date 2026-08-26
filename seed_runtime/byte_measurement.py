@@ -1518,9 +1518,9 @@ def _move_assertion_reference_to_locality(
     if source_event.locality_identity == destination_locality:
         raise ByteMeasurementError("same-Locality Assertion requires no movement")
     from seed_runtime.operator_current_coordinates import (
-        _carry_assertion_locality_movement_act_into_standing,
+        _carry_assertion_locality_movement_act_into_current_coordinates,
         _carry_assertion_locality_movement_binding_into_current_coordinates,
-        _carry_assertion_locality_movement_result_into_standing,
+        _carry_assertion_locality_movement_result_into_current_coordinates,
         read_operator_current_coordinates,
     )
 
@@ -1553,7 +1553,7 @@ def _move_assertion_reference_to_locality(
             binding,
             source=source,
             source_event=source_event,
-            source_standing=source_coordinates,
+            source_current_coordinates=source_coordinates,
         )
     )
     act = _record_assertion_locality_movement_act_from_current_coordinates(
@@ -1561,11 +1561,11 @@ def _move_assertion_reference_to_locality(
         binding=binding,
         destination_coordinates=destination_coordinates,
     )
-    destination_coordinates = _carry_assertion_locality_movement_act_into_standing(
+    destination_coordinates = _carry_assertion_locality_movement_act_into_current_coordinates(
         ledger,
         destination_coordinates,
         act,
-        responsibility_assignment=binding,
+        binding=binding,
     )
     movement = _record_assertion_locality_movement_result_from_current_coordinates(
         ledger,
@@ -1574,12 +1574,12 @@ def _move_assertion_reference_to_locality(
         destination_coordinates=destination_coordinates,
     )
     _destination_coordinates, carried = (
-        _carry_assertion_locality_movement_result_into_standing(
+        _carry_assertion_locality_movement_result_into_current_coordinates(
             ledger,
             destination_coordinates,
             movement,
             act_occurrence=act,
-            responsibility_assignment=binding,
+            binding=binding,
             source=source,
         )
     )
@@ -1681,9 +1681,9 @@ def move_recorded_byte_assertions_to_locality(
             "bounded Assertion movement requires each exact source Assertion"
         )
     from seed_runtime.operator_current_coordinates import (
-        _carry_assertion_locality_movement_act_into_standing,
+        _carry_assertion_locality_movement_act_into_current_coordinates,
         _carry_assertion_locality_movement_binding_into_current_coordinates,
-        _carry_assertion_locality_movement_result_into_standing,
+        _carry_assertion_locality_movement_result_into_current_coordinates,
         read_operator_current_coordinates,
     )
 
@@ -1718,7 +1718,7 @@ def move_recorded_byte_assertions_to_locality(
                 binding,
                 source=source,
                 source_event=source_event,
-                source_standing=source_coordinates,
+                source_current_coordinates=source_coordinates,
             )
         )
         act = _record_assertion_locality_movement_act_from_current_coordinates(
@@ -1726,11 +1726,11 @@ def move_recorded_byte_assertions_to_locality(
             binding=binding,
             destination_coordinates=destination_coordinates,
         )
-        destination_coordinates = _carry_assertion_locality_movement_act_into_standing(
+        destination_coordinates = _carry_assertion_locality_movement_act_into_current_coordinates(
             ledger,
             destination_coordinates,
             act,
-            responsibility_assignment=binding,
+            binding=binding,
         )
         movement = _record_assertion_locality_movement_result_from_current_coordinates(
             ledger,
@@ -1739,12 +1739,12 @@ def move_recorded_byte_assertions_to_locality(
             destination_coordinates=destination_coordinates,
         )
         destination_coordinates, exact = (
-            _carry_assertion_locality_movement_result_into_standing(
+            _carry_assertion_locality_movement_result_into_current_coordinates(
                 ledger,
                 destination_coordinates,
                 movement,
                 act_occurrence=act,
-                responsibility_assignment=binding,
+                binding=binding,
                 source=source,
             )
         )
@@ -1755,15 +1755,15 @@ def move_recorded_byte_assertions_to_locality(
 def _assertion_carried_by_locality_movement_result(
     *,
     movement: Event,
-    responsibility_assignment: Event,
+    binding: Event,
     source: _AssertionLocalityMovementSource,
 ) -> RecordedByteAssertion | RecordedAssertionCarriedByLocalityMovement:
-    """Carry the source Assertion with one exact validated movement result."""
+    """Carry the source Assertion with one exact movement result."""
 
     if (
         movement.material.get("subject_to_act_binding_reference")
-        != _movement_binding_reference(responsibility_assignment)
-        or responsibility_assignment.material.get("source_assertion_reference")
+        != _movement_binding_reference(binding)
+        or binding.material.get("source_assertion_reference")
         != _source_assertion_reference(source)
         or movement.material.get("source_assertion_reference")
         != _source_assertion_reference(source)
@@ -1852,7 +1852,7 @@ def _validate_moved_byte_assertion(
         raise ByteMeasurementError("Assertion locality movement is not exact")
     return _assertion_carried_by_locality_movement_result(
         movement=movement,
-        responsibility_assignment=binding,
+        binding=binding,
         source=source,
     )
 
