@@ -129,7 +129,7 @@ def record_witness_material_source(
     exact_bytes: bytes,
     source_boundary: str,
     known_loss: tuple[str, ...] = (),
-    provenance_occurrence_references: tuple[str, ...] = (),
+    source_occurrence_references: tuple[str, ...] = (),
     read_occurrences: tuple[dict[str, object], ...] = (),
 ) -> Event:
     if type(exact_bytes) is not bytes:
@@ -147,19 +147,19 @@ def record_witness_material_source(
     if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
         raise WitnessMaterialSourceError("known loss must be an exact tuple of material")
     if (
-        type(provenance_occurrence_references) is not tuple
-        or len(set(provenance_occurrence_references))
-        != len(provenance_occurrence_references)
+        type(source_occurrence_references) is not tuple
+        or len(set(source_occurrence_references))
+        != len(source_occurrence_references)
         or any(
             type(reference) is not str
             or not reference
             or ledger.get(reference) is None
             or ledger.integrity_of(reference) == CORRUPTED
-            for reference in provenance_occurrence_references
+            for reference in source_occurrence_references
         )
     ):
         raise WitnessMaterialSourceError(
-            "provenance requires exact intact occurrence references"
+            "source requires exact intact occurrence references"
         )
     _require_read_occurrence_coordinates(exact_bytes, read_occurrences)
 
@@ -201,7 +201,7 @@ def record_witness_material_source(
         "known_loss": list(known_loss),
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
         "provenance_occurrence_references": list(
-            provenance_occurrence_references
+            source_occurrence_references
         ),
         "locality_relation": locality_relation,
     }

@@ -205,7 +205,7 @@ def record_supplied_witness_material_source(
         exact_bytes=supplied.exact_bytes,
         source_boundary=supplied.source_boundary,
         known_loss=supplied.known_loss,
-        provenance_occurrence_references=(
+        source_occurrence_references=(
             command_occurrence.identity,
             operator_invocation_locality_result_event_identity,
             *(

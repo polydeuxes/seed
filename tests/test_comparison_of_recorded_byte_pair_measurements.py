@@ -84,7 +84,7 @@ def _witness_compare_input_testimony(monkeypatch):
         locality_identity=LOCALITY,
         exact_bytes=b"abac",
         source_boundary="later supplied occurrence",
-        provenance_occurrence_references=(earlier_source.identity,),
+        source_occurrence_references=(earlier_source.identity,),
     )
     later = ledger.append(
         "operator.measurement.byte_position_pair_counts_recorded",

@@ -74,7 +74,7 @@ def test_material_source_preserves_only_exact_intact_provenance_occurrence_refer
     occurred = _preserve(
         ledger,
         b"result",
-        provenance_occurrence_references=(source.identity,),
+        source_occurrence_references=(source.identity,),
     )
 
     assert occurred.material["provenance_occurrence_references"] == [
@@ -86,7 +86,7 @@ def test_material_source_preserves_only_exact_intact_provenance_occurrence_refer
         _preserve(
             ledger,
             b"missing",
-            provenance_occurrence_references=("missing",),
+            source_occurrence_references=("missing",),
         )
     assert len(ledger.list()) == before
 
@@ -95,7 +95,7 @@ def test_material_source_preserves_only_exact_intact_provenance_occurrence_refer
         _preserve(
             ledger,
             b"corrupted",
-            provenance_occurrence_references=(source.identity,),
+            source_occurrence_references=(source.identity,),
         )
 
 
@@ -207,7 +207,7 @@ def test_witness_material_locality_relation_preserves_invocation_and_provenance(
         b"hello",
         locality_identity="invocation-locality",
         source_boundary="stdout",
-        provenance_occurrence_references=(command.identity,),
+        source_occurrence_references=(command.identity,),
     )
 
     assert occurred.locality_identity == "invocation-locality"
