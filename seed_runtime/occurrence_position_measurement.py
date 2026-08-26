@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
-import json
 from typing import Any
 
 from seed_runtime.event import Event
@@ -198,27 +196,6 @@ def _binding_material(
     }
 
 
-def _exact_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"))
-
-
-def _position_assertion_identity(
-    *,
-    subject: dict[str, Any],
-    scope: dict[str, Any],
-    content: dict[str, Any],
-) -> str:
-    coordinates = {
-        "result": "position",
-        "subject": subject,
-        "scope": scope,
-        "content": content,
-    }
-    return "assertion_" + hashlib.sha256(
-        _exact_json(coordinates).encode("utf-8")
-    ).hexdigest()
-
-
 def _position_assertions(
     finding: OccurrencePositionFinding,
 ) -> list[dict[str, Any]]:
@@ -237,11 +214,7 @@ def _position_assertions(
         assertions.append(
             {
                 "dimensions": {
-                    "identity": _position_assertion_identity(
-                        subject=subject,
-                        scope=scope,
-                        content=content,
-                    ),
+                    "identity": occurrence_identity,
                     "content": content,
                     "source_provenance": (
                         "complete exact Locality through one boundary"

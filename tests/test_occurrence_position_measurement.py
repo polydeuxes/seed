@@ -624,9 +624,9 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         )
         for item in assertions
     ] == [(event.identity, position) for position, event in enumerate(occurrences)]
-    assert len({item["dimensions"]["identity"] for item in assertions}) == len(
-        assertions
-    )
+    assert [item["dimensions"]["identity"] for item in assertions] == [
+        event.identity for event in occurrences
+    ]
     assert _current_coordinates(ledger)["measurement_occurrences"][recorded.identity] == {
         "recorded_occurrence_identity": recorded.identity,
         "result_identity": recorded.material["result_identity"],
