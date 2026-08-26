@@ -1821,7 +1821,6 @@ def _path_assertion(
         "first_position_assertion_reference": inputs.first.assertion_reference,
         "second_position_assertion_reference": inputs.second.assertion_reference,
     }
-    scope = {"source_localities": [inputs.first.locality_identity]}
     content = {
         "shared_position_coordinate_reference": (
             inputs.shared_position_coordinate_reference
@@ -1841,7 +1840,6 @@ def _path_assertion(
         },
         "result": "ordered_relation_path",
         "assertion_subject": subject,
-        "assertion_scope": scope,
         "input_support": {
             "assertion_references": [
                 inputs.first.assertion_reference,

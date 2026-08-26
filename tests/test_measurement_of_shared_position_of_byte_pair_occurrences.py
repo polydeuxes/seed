@@ -432,8 +432,15 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     ]
     assert len(reading["assertions"]) == 1
     assertion = reading["assertions"][0]
+    assert set(assertion) == {
+        "dimensions",
+        "result",
+        "assertion_subject",
+        "input_support",
+        "conflicts",
+        "unknown",
+    }
     assert assertion["result"] == "ordered_relation_path"
-    assert "standing" not in assertion["dimensions"]
     content = assertion["dimensions"]["content"]
     assert content["shared_position_coordinate_reference"] == shared_reference
     assert content["source_material_result_occurrence_identity"] == source.identity
