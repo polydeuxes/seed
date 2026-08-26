@@ -1393,11 +1393,11 @@ def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path)
     reopened.close()
 
 
-def test_one_complete_shared_measurement_requires_one_assignment_read(
+def test_one_complete_shared_measurement_requires_one_binding_read(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
-    assignment, _applicability_act, _applicability, _measurement_act, result = (
+    binding, _applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
     original = operator_standing_module._read_shared_position_binding
@@ -1415,7 +1415,7 @@ def test_one_complete_shared_measurement_requires_one_assignment_read(
 
     standing = _standing(ledger, locality)
 
-    assert calls == [assignment.identity]
+    assert calls == [binding.identity]
     assert result.identity in standing["measurement_occurrences"]
 
 
@@ -1671,7 +1671,7 @@ FIDELITY_DISTINCTIONS = {
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
-        test_one_complete_shared_measurement_requires_one_assignment_read,
+        test_one_complete_shared_measurement_requires_one_binding_read,
         test_carried_standing_requires_each_exact_occurrence_coordinate_intact,
         test_carried_standing_requires_its_shared_assignment_occurrence_intact,
         test_carried_standing_requires_each_later_shared_occurrence_intact,
