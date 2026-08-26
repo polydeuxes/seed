@@ -47,7 +47,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     SharedPairPositionError,
     get_shared_position_subject_to_act_binding,
     get_shared_position_applicability_act_occurrence,
@@ -420,11 +420,9 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert "responsibility_assignment" not in reading
     assert reading["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": assignment.material["subject_reference"],
         "result_boundary_identity": assignment.material[
             "measurement_result_identity"
         ],
@@ -1069,7 +1067,7 @@ def test_d2_shared_assignment_revalidates_after_callback_atomically(
     )
     before_assignments = len(
         tuple(ledger.iter_locality_kind(
-            locality, SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            locality, SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ))
     )
 
@@ -1083,7 +1081,7 @@ def test_d2_shared_assignment_revalidates_after_callback_atomically(
     assert standing == standing_before
     assert len(
         tuple(ledger.iter_locality_kind(
-            locality, SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            locality, SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ))
     ) == before_assignments
 
@@ -1393,11 +1391,11 @@ def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path)
     reopened.close()
 
 
-def test_one_complete_shared_measurement_requires_one_binding_read(
+def test_one_complete_shared_measurement_reads_two_exact_bindings(
     monkeypatch,
 ):
     ledger, locality, _source, first, second = _fixture()
-    binding, _applicability_act, _applicability, _measurement_act, result = (
+    binding, applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
     original = operator_standing_module._read_shared_position_binding
@@ -1415,7 +1413,10 @@ def test_one_complete_shared_measurement_requires_one_binding_read(
 
     standing = _standing(ledger, locality)
 
-    assert calls == [binding.identity]
+    applicability_binding_identity = applicability_act.material[
+        "subject_to_act_binding_reference"
+    ]["recorded_occurrence_identity"]
+    assert calls == [binding.identity, applicability_binding_identity]
     assert result.identity in standing["measurement_occurrences"]
 
 
@@ -1671,7 +1672,7 @@ FIDELITY_DISTINCTIONS = {
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,
-        test_one_complete_shared_measurement_requires_one_binding_read,
+        test_one_complete_shared_measurement_reads_two_exact_bindings,
         test_carried_standing_requires_each_exact_occurrence_coordinate_intact,
         test_carried_standing_requires_its_shared_assignment_occurrence_intact,
         test_carried_standing_requires_each_later_shared_occurrence_intact,

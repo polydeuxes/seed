@@ -24,7 +24,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.operator_locality_standing import (
@@ -65,7 +66,10 @@ def _advance(
             event,
             error_message="source-position continuation Standing is not exact",
         )
-        if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        if event.kind in {
+            SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }:
             standing["subject_to_act_binding_occurrences"][event.identity] = None
         elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
             standing["applicability_result_occurrences"][event.identity] = None
@@ -96,7 +100,7 @@ def _record_shared_path(
 ) -> tuple[dict[str, Any], Event]:
     """Record the existing shared-position lifecycle from carried coordinates."""
 
-    assignment = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
+    measurement_binding = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_result_event_identity=determination.identity,
         locality_standing=standing,
@@ -106,27 +110,47 @@ def _record_shared_path(
         result_event_identity=determination.identity,
         prior_standing=standing,
     )
-    standing = _advance(ledger, standing, assignment)
+    standing = _advance(ledger, standing, measurement_binding)
+    applicability_identities = shared_position._new_applicability_identities()
+    applicability_binding = ledger.append(
+        shared_position.SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        shared_position._applicability_binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=standing[
+                "through_event_occurrence_identity"
+            ],
+            measurement_act_identity=measurement_binding.material[
+                "exact_act_identity"
+            ],
+            identities=applicability_identities,
+            determination_result_reference=measurement_binding.material.get(
+                shared_position.D2_RESULT_REFERENCE_COORDINATE
+            ),
+        ),
+        locality_identity=measurement_binding.locality_identity,
+    )
+    standing = _advance(ledger, standing, applicability_binding)
     applicability_act = ledger.append(
         shared_position.SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         shared_position._applicability_act_material(
-            assignment=assignment,
+            assignment=applicability_binding,
             inputs=inputs,
             standing_boundary_identity=standing[
                 "through_event_occurrence_identity"
             ],
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
     standing = _advance(ledger, standing, applicability_act)
     applicability_material = shared_position._applicability_result_material(
+        ledger=ledger,
         act=applicability_act,
-        assignment=assignment,
+        assignment=applicability_binding,
         inputs=inputs,
     )
     applicability_yield = _record_yield_relation(
         ledger,
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
         exact_act=shared_position.APPLICABILITY_ACT,
         act_occurrence_identity=applicability_act.material[
             "applicability_act_occurrence_identity"
@@ -150,7 +174,7 @@ def _record_shared_path(
             applicability_material,
             yield_relation_identity=applicability_yield.identity,
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
     standing = _advance(
         ledger, standing, applicability_yield, applicability
@@ -158,25 +182,25 @@ def _record_shared_path(
     measurement_act = ledger.append(
         shared_position.SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         shared_position._measurement_act_material(
-            assignment=assignment,
+            assignment=measurement_binding,
             inputs=inputs,
             applicability=applicability,
             standing_boundary_identity=standing[
                 "through_event_occurrence_identity"
             ],
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
     standing = _advance(ledger, standing, measurement_act)
     result_material = shared_position._measurement_result_material(
         act=measurement_act,
-        assignment=assignment,
+        assignment=measurement_binding,
         applicability=applicability,
         inputs=inputs,
     )
     path_yield = _record_yield_relation(
         ledger,
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
         exact_act=shared_position.MEASUREMENT_ACT,
         act_occurrence_identity=measurement_act.material[
             "act_occurrence_identity"
@@ -197,7 +221,7 @@ def _record_shared_path(
             result_material,
             yield_relation_identity=path_yield.identity,
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
     return _advance(ledger, standing, path_yield, path), path
 

@@ -36,8 +36,11 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 
 
-SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.shared_pair_position.subject_to_act_binding_recorded"
+)
+SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.shared_pair_position.applicability_subject_to_act_binding_recorded"
 )
 SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.shared_pair_position.applicability_act_occurrence_recorded"
@@ -71,7 +74,8 @@ D2_RESULT_REFERENCE_COORDINATE = (
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
-    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
+    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     SHARED_POSITION_APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -136,6 +140,10 @@ class _SharedPositionReplayReading:
     yield_relation_occurrences: tuple[
         _SharedPositionReplayOccurrence, ...
     ]
+    applicability_binding_reading: tuple[
+        Event, SharedPairPositionInputs
+    ] | None = None
+    applicability_binding_occurrence: _SharedPositionReplayOccurrence | None = None
     applicability_act_occurrence: _SharedPositionReplayOccurrence | None = None
     applicability_result_occurrence: _SharedPositionReplayOccurrence | None = None
     measurement_act_occurrence: _SharedPositionReplayOccurrence | None = None
@@ -579,14 +587,12 @@ def _require_standing(
 
 def _binding_reference(
     event: Event, *, result_boundary_identity: str
-) -> dict[str, str]:
+) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": event.identity,
-        "assignment_identity": event.material["assignment_identity"],
-        "assignment_subject_identity": event.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": event.material["book_clause_identity"],
+        "exact_act_identity": event.material["exact_act_identity"],
+        "subject_reference": deepcopy(event.material["subject_reference"]),
         "result_boundary_identity": result_boundary_identity,
     }
 
@@ -599,19 +605,11 @@ def _binding_material(
     determination_result_reference: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     material = {
-        "assignment_identity": identities["assignment_identity"],
-        "assignment_subject_identity": identities[
-            "assignment_subject_identity"
-        ],
-        "applicability_act_identity": identities[
-            "applicability_act_identity"
-        ],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
-        "applicability_result_identity": identities[
-            "applicability_result_identity"
-        ],
+        "exact_act_identity": identities["measurement_act_identity"],
+        "subject_reference": {
+            "first_position_assertion": _reference_material(inputs.first),
+            "second_position_assertion": _reference_material(inputs.second),
+        },
         "measurement_act_identity": identities["measurement_act_identity"],
         "measurement_act_occurrence_identity": identities[
             "measurement_act_occurrence_identity"
@@ -620,12 +618,6 @@ def _binding_material(
             "measurement_result_identity"
         ],
         "result_boundary_identity": identities["measurement_result_identity"],
-        "first_input_relation_identity": identities[
-            "first_input_relation_identity"
-        ],
-        "second_input_relation_identity": identities[
-            "second_input_relation_identity"
-        ],
         "first_participation_relation_identity": identities[
             "first_participation_relation_identity"
         ],
@@ -656,37 +648,79 @@ def _binding_material(
     return material
 
 
+def _applicability_binding_material(
+    *,
+    inputs: SharedPairPositionInputs,
+    through_event_occurrence_identity: str,
+    measurement_act_identity: str,
+    identities: dict[str, str],
+    determination_result_reference: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    first_subject = _reference_material(inputs.first)
+    second_subject = _reference_material(inputs.second)
+    material = {
+        "exact_act_identity": identities["applicability_act_identity"],
+        "subject_reference": {
+            "first_input": {
+                "subject": first_subject,
+                "addressed_act_identity": measurement_act_identity,
+            },
+            "second_input": {
+                "subject": second_subject,
+                "addressed_act_identity": measurement_act_identity,
+            },
+        },
+        "applicability_act_identity": identities["applicability_act_identity"],
+        "applicability_act_occurrence_identity": identities[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": identities[
+            "applicability_result_identity"
+        ],
+        "addressed_act_identity": measurement_act_identity,
+        "result_boundary_identity": identities["applicability_result_identity"],
+        "first_input_relation_identity": identities[
+            "first_input_relation_identity"
+        ],
+        "second_input_relation_identity": identities[
+            "second_input_relation_identity"
+        ],
+        "book_clause_identity": "01.Current.E.1",
+        "measurement_rule": MEASUREMENT_RULE,
+        "first_position_assertion": first_subject,
+        "second_position_assertion": second_subject,
+        "standing_boundary_identity": through_event_occurrence_identity,
+        "scope": {
+            "locality_identity": inputs.first.locality_identity,
+            "source_material_result_occurrence_identity": (
+                inputs.first.source_material_result_occurrence_identity
+            ),
+            "completeness_boundary_identity": (
+                inputs.first.completeness_boundary_identity
+            ),
+            "standing_boundary_identity": through_event_occurrence_identity,
+            "addressed_act_identity": measurement_act_identity,
+        },
+        "unknown": [],
+    }
+    if determination_result_reference is not None:
+        material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
+            determination_result_reference
+        )
+    return material
+
+
 _IDENTITY_COORDINATES = (
-    "assignment_identity",
-    "assignment_subject_identity",
-    "applicability_act_identity",
-    "applicability_act_occurrence_identity",
-    "applicability_result_identity",
     "measurement_act_identity",
     "measurement_act_occurrence_identity",
     "measurement_result_identity",
-    "first_input_relation_identity",
-    "second_input_relation_identity",
     "first_participation_relation_identity",
     "second_participation_relation_identity",
 )
 
 
-def _new_assignment_identities() -> dict[str, str]:
+def _new_measurement_identities() -> dict[str, str]:
     return {
-        "assignment_identity": new_identity("shared_pair_position_assignment_identity"),
-        "assignment_subject_identity": new_identity(
-            "shared_pair_position_assignment_subject_identity"
-        ),
-        "applicability_act_identity": new_identity(
-            "shared_pair_position_applicability_act_identity"
-        ),
-        "applicability_act_occurrence_identity": new_identity(
-            "shared_pair_position_applicability_act_occurrence_identity"
-        ),
-        "applicability_result_identity": new_identity(
-            "shared_pair_position_applicability_result_identity"
-        ),
         "measurement_act_identity": new_identity(
             "shared_pair_position_measurement_act_identity"
         ),
@@ -696,17 +730,31 @@ def _new_assignment_identities() -> dict[str, str]:
         "measurement_result_identity": new_identity(
             "shared_pair_position_measurement_result_identity"
         ),
-        "first_input_relation_identity": new_identity(
-            "shared_pair_position_first_input_relation_identity"
-        ),
-        "second_input_relation_identity": new_identity(
-            "shared_pair_position_second_input_relation_identity"
-        ),
         "first_participation_relation_identity": new_identity(
             "shared_pair_position_first_participation_relation_identity"
         ),
         "second_participation_relation_identity": new_identity(
             "shared_pair_position_second_participation_relation_identity"
+        ),
+    }
+
+
+def _new_applicability_identities() -> dict[str, str]:
+    return {
+        "applicability_act_identity": new_identity(
+            "shared_pair_position_applicability_act_identity"
+        ),
+        "applicability_act_occurrence_identity": new_identity(
+            "shared_pair_position_applicability_act_occurrence_identity"
+        ),
+        "applicability_result_identity": new_identity(
+            "shared_pair_position_applicability_result_identity"
+        ),
+        "first_input_relation_identity": new_identity(
+            "shared_pair_position_first_input_relation_identity"
+        ),
+        "second_input_relation_identity": new_identity(
+            "shared_pair_position_second_input_relation_identity"
         ),
     }
 
@@ -725,13 +773,13 @@ def _record_shared_position_binding(
         carried_coordinate="measurement_occurrences",
         required_occurrences=required_occurrences,
     )
-    identities = _new_assignment_identities()
+    identities = _new_measurement_identities()
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError(
             "shared-position Measurement occurrence identities collapsed"
         )
     return ledger.append(
-        SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             inputs=inputs,
             standing_boundary_identity=boundary,
@@ -849,7 +897,7 @@ def record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence
         inputs=inputs,
         locality_standing=current,
     )
-    identities = _new_assignment_identities()
+    identities = _new_measurement_identities()
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError(
             "shared-position Measurement occurrence identities collapsed"
@@ -879,7 +927,7 @@ def record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence
             "D.2 determination result or current Standing changed before assignment"
         )
     return ledger.append(
-        SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             inputs=inputs,
             standing_boundary_identity=boundary,
@@ -945,7 +993,11 @@ def _read_binding(
     event = ledger.get(_identity(event_identity, "shared-position requires one assignment"))
     if (
         event is None
-        or event.kind != SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or event.kind
+        not in {
+            SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
@@ -1006,9 +1058,21 @@ def _read_binding(
             second=second,
             prior_standing=prior_standing,
         )
+    identity_coordinates = (
+        _IDENTITY_COORDINATES
+        if event.kind
+        == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        else (
+            "applicability_act_identity",
+            "applicability_act_occurrence_identity",
+            "applicability_result_identity",
+            "first_input_relation_identity",
+            "second_input_relation_identity",
+        )
+    )
     identities = {
         coordinate: event.material.get(coordinate)
-        for coordinate in _IDENTITY_COORDINATES
+        for coordinate in identity_coordinates
     }
     if (
         any(type(value) is not str or not value for value in identities.values())
@@ -1022,12 +1086,23 @@ def _read_binding(
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position assignment has no Standing boundary")
-    expected = _binding_material(
-        inputs=inputs,
-        standing_boundary_identity=boundary,
-        identities=identities,
-        determination_result_reference=determination_reference,
-    )
+    if event.kind == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        expected = _binding_material(
+            inputs=inputs,
+            standing_boundary_identity=boundary,
+            identities=identities,
+            determination_result_reference=determination_reference,
+        )
+    else:
+        expected = _applicability_binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            measurement_act_identity=event.material.get(
+                "addressed_act_identity"
+            ),
+            identities=identities,
+            determination_result_reference=determination_reference,
+        )
     if event.locality_identity != inputs.first.locality_identity or event.material != expected:
         raise SharedPairPositionError("shared-position assignment coordinates are not exact")
     ordered = tuple(
@@ -1071,7 +1146,7 @@ def _applicability_act_material(
     standing_boundary_identity: str,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": assignment.material["addressed_act_identity"],
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
@@ -1090,7 +1165,7 @@ def _applicability_act_material(
                 "role": "first exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.first),
                 "addressed_act_identity": assignment.material[
-                    "measurement_act_identity"
+                    "addressed_act_identity"
                 ],
             },
             {
@@ -1098,7 +1173,7 @@ def _applicability_act_material(
                 "role": "second exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.second),
                 "addressed_act_identity": assignment.material[
-                    "measurement_act_identity"
+                    "addressed_act_identity"
                 ],
             },
         ],
@@ -1113,26 +1188,53 @@ def record_shared_position_applicability_act_occurrence(
     assignment_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment, inputs = _read_binding(
+    measurement_binding, inputs = _read_binding(
         ledger,
         assignment_event_identity,
         prior_standing=locality_standing,
     )
+    if (
+        measurement_binding.kind
+        != SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability requires the governed Measurement binding"
+        )
     boundary = _require_standing(
         ledger,
         inputs=inputs,
         locality_standing=locality_standing,
         carried_coordinate="subject_to_act_binding_occurrences",
-        required_occurrences=(assignment.identity,),
+        required_occurrences=(measurement_binding.identity,),
+    )
+    identities = _new_applicability_identities()
+    if len(set(identities.values())) != len(identities):
+        raise SharedPairPositionError(
+            "shared-position Applicability occurrence identities collapsed"
+        )
+    applicability_binding = ledger.append(
+        SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _applicability_binding_material(
+            inputs=inputs,
+            through_event_occurrence_identity=boundary,
+            measurement_act_identity=measurement_binding.material[
+                "exact_act_identity"
+            ],
+            identities=identities,
+            determination_result_reference=measurement_binding.material.get(
+                D2_RESULT_REFERENCE_COORDINATE
+            ),
+        ),
+        locality_identity=measurement_binding.locality_identity,
     )
     return ledger.append(
         SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
-            assignment=assignment,
+            assignment=applicability_binding,
             inputs=inputs,
-            standing_boundary_identity=boundary,
+            standing_boundary_identity=applicability_binding.identity,
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
 
 
@@ -1199,12 +1301,116 @@ def get_shared_position_applicability_act_occurrence(
     return deepcopy(event.material)
 
 
+def _measurement_binding_addressed_by_applicability(
+    ledger: EventLedger,
+    applicability_binding: Event,
+    inputs: SharedPairPositionInputs,
+) -> Event:
+    addressed_act_identity = applicability_binding.material.get(
+        "addressed_act_identity"
+    )
+    matches = tuple(
+        event
+        for event in ledger.list_locality(applicability_binding.locality_identity)
+        if event.kind
+        == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        and event.material.get("exact_act_identity") == addressed_act_identity
+    )
+    if len(matches) != 1:
+        raise SharedPairPositionError(
+            "shared-position Applicability addresses no exact Measurement binding"
+        )
+    measurement_binding = matches[0]
+    identities = {
+        coordinate: measurement_binding.material.get(coordinate)
+        for coordinate in _IDENTITY_COORDINATES
+    }
+    boundary = measurement_binding.material.get("standing_boundary_identity")
+    determination_reference = measurement_binding.material.get(
+        D2_RESULT_REFERENCE_COORDINATE
+    )
+    expected = _binding_material(
+        inputs=inputs,
+        standing_boundary_identity=boundary,
+        identities=identities,
+        determination_result_reference=determination_reference,
+    )
+    if (
+        ledger.integrity_of(measurement_binding.identity) == CORRUPTED
+        or measurement_binding.locality_identity
+        != applicability_binding.locality_identity
+        or any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or measurement_binding.material != expected
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability addresses other Measurement subjects"
+        )
+    return measurement_binding
+
+
+def _applicability_binding_for_inputs(
+    ledger: EventLedger,
+    event_identity: str,
+    inputs: SharedPairPositionInputs,
+) -> Event:
+    binding = ledger.get(event_identity)
+    if (
+        binding is None
+        or binding.kind
+        != SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or binding.locality_identity != inputs.first.locality_identity
+        or ledger.integrity_of(binding.identity) == CORRUPTED
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability binding is absent or corrupted"
+        )
+    identities = {
+        coordinate: binding.material.get(coordinate)
+        for coordinate in (
+            "applicability_act_identity",
+            "applicability_act_occurrence_identity",
+            "applicability_result_identity",
+            "first_input_relation_identity",
+            "second_input_relation_identity",
+        )
+    }
+    expected = _applicability_binding_material(
+        inputs=inputs,
+        through_event_occurrence_identity=binding.material.get(
+            "standing_boundary_identity"
+        ),
+        measurement_act_identity=binding.material.get(
+            "addressed_act_identity"
+        ),
+        identities=identities,
+        determination_result_reference=binding.material.get(
+            D2_RESULT_REFERENCE_COORDINATE
+        ),
+    )
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or binding.material != expected
+    ):
+        raise SharedPairPositionError(
+            "shared-position Applicability binding coordinates are not exact"
+        )
+    return binding
+
+
 def _applicability_result_material(
     *,
+    ledger: EventLedger,
     act: Event,
     assignment: Event,
     inputs: SharedPairPositionInputs,
 ) -> dict[str, Any]:
+    measurement_binding = _measurement_binding_addressed_by_applicability(
+        ledger,
+        assignment,
+        inputs,
+    )
     applicable = inputs.carries_one_position_coordinate_reference
     standing = "applicable" if applicable else "inapplicable"
     return {
@@ -1227,9 +1433,11 @@ def _applicability_result_material(
             "scope": assignment.material["scope"],
         },
         "exact_act": APPLICABILITY_ACT,
-        "addressed_act_identity": assignment.material["measurement_act_identity"],
+        "addressed_act_identity": measurement_binding.material[
+            "measurement_act_identity"
+        ],
         "addressed_act_occurrence_identity": (
-            assignment.material["measurement_act_occurrence_identity"]
+            measurement_binding.material["measurement_act_occurrence_identity"]
             if applicable
             else None
         ),
@@ -1309,6 +1517,7 @@ def record_shared_position_applicability_result(
         result_kind=SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     )
     result = _applicability_result_material(
+        ledger=ledger,
         act=act,
         assignment=assignment,
         inputs=inputs,
@@ -1436,6 +1645,7 @@ def _read_applicability_result(
         prior_standing=prior_standing,
     )
     expected = _applicability_result_material(
+        ledger=ledger,
         act=act,
         assignment=assignment,
         inputs=inputs,
@@ -1525,7 +1735,7 @@ def record_shared_position_measurement_act_occurrence(
     applicability_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    applicability, _act, assignment, inputs, applicability_material = (
+    applicability, _act, applicability_binding, inputs, applicability_material = (
         _read_applicability_result(
             ledger,
             applicability_result_event_identity,
@@ -1536,6 +1746,11 @@ def record_shared_position_measurement_act_occurrence(
         raise SharedPairPositionError(
             "inapplicable pair-position inputs cannot participate"
         )
+    measurement_binding = _measurement_binding_addressed_by_applicability(
+        ledger,
+        applicability_binding,
+        inputs,
+    )
     boundary = _require_standing(
         ledger,
         inputs=inputs,
@@ -1546,12 +1761,12 @@ def record_shared_position_measurement_act_occurrence(
     return ledger.append(
         SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         _measurement_act_material(
-            assignment=assignment,
+            assignment=measurement_binding,
             inputs=inputs,
             applicability=applicability,
             standing_boundary_identity=boundary,
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=measurement_binding.locality_identity,
     )
 
 
@@ -1587,6 +1802,24 @@ def _read_measurement_act(
     ):
         raise SharedPairPositionError("Measurement Act carries no exact inputs")
     applicability_identity = applicability_reference.get("recorded_occurrence_identity")
+    applicability_event = ledger.get(applicability_identity)
+    applicability_act_event = (
+        ledger.get(applicability_event.material.get("act_occurrence_event_identity"))
+        if applicability_event is not None
+        else None
+    )
+    applicability_binding_reference = (
+        applicability_act_event.material.get("subject_to_act_binding_reference")
+        if applicability_act_event is not None
+        else None
+    )
+    applicability_binding = _applicability_binding_for_inputs(
+        ledger,
+        applicability_binding_reference.get("recorded_occurrence_identity")
+        if type(applicability_binding_reference) is dict
+        else None,
+        inputs,
+    )
     (
         applicability,
         _act,
@@ -1596,7 +1829,8 @@ def _read_measurement_act(
     ) = _read_applicability_result(
         ledger,
         applicability_identity,
-        assignment_reading=(assignment, inputs),
+        assignment_reading=(applicability_binding, inputs),
+        prior_standing=prior_standing,
     )
     boundary = event.material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
@@ -1607,8 +1841,13 @@ def _read_measurement_act(
         standing_boundary_identity=boundary,
     )
     if (
-        applicability_assignment.identity != assignment.identity
-        or applicability_inputs != inputs
+        applicability_inputs != inputs
+        or _measurement_binding_addressed_by_applicability(
+            ledger,
+            applicability_assignment,
+            applicability_inputs,
+        ).identity
+        != assignment.identity
         or applicability_material["applicability"] != "applicable"
         or event.locality_identity != assignment.locality_identity
         or boundary_event is None
@@ -2087,6 +2326,7 @@ def _require_exact_shared_position_replay_reading(
         )
     for occurrence in (
         reading.assignment_occurrence,
+        reading.applicability_binding_occurrence,
         *reading.input_result_occurrences,
         *reading.source_occurrences,
         *reading.pair_measurement_result_occurrences,
@@ -2101,6 +2341,48 @@ def _require_exact_shared_position_replay_reading(
         if occurrence is not None:
             _require_shared_position_replay_occurrence(ledger, occurrence)
     _validated_inputs(inputs.first, inputs.second)
+    if reading.applicability_binding_reading is not None:
+        applicability_binding, applicability_inputs = (
+            reading.applicability_binding_reading
+        )
+        if (
+            reading.applicability_binding_occurrence is None
+            or reading.applicability_binding_occurrence.event
+            is not applicability_binding
+            or applicability_inputs != inputs
+        ):
+            raise SharedPairPositionError(
+                "shared-position replay Applicability binding was substituted"
+            )
+
+
+def _add_shared_position_applicability_binding(
+    ledger: EventLedger,
+    reading: _SharedPositionReplayReading,
+    binding_reading: tuple[Event, SharedPairPositionInputs],
+) -> _SharedPositionReplayReading:
+    _require_exact_shared_position_replay_reading(ledger, reading)
+    measurement_binding, measurement_inputs = reading.assignment_reading
+    applicability_binding, applicability_inputs = binding_reading
+    if (
+        reading.applicability_binding_reading is not None
+        or applicability_binding.kind
+        != SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        or applicability_inputs != measurement_inputs
+        or applicability_binding.material.get("addressed_act_identity")
+        != measurement_binding.material.get("exact_act_identity")
+    ):
+        raise SharedPairPositionError(
+            "shared-position replay Applicability binding is not exact"
+        )
+    reading.applicability_binding_reading = binding_reading
+    reading.applicability_binding_occurrence = _shared_position_replay_occurrence(
+        ledger,
+        applicability_binding,
+        expected_material=deepcopy(applicability_binding.material),
+    )
+    _require_exact_shared_position_replay_reading(ledger, reading)
+    return reading
 
 
 def _advance_shared_position_replay_reading(
@@ -2122,14 +2404,17 @@ def _advance_shared_position_replay_reading(
         expected_material=deepcopy(event.material),
     )
     if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-        if reading.applicability_act_occurrence is not None:
+        if (
+            reading.applicability_binding_reading is None
+            or reading.applicability_act_occurrence is not None
+        ):
             raise SharedPairPositionError(
                 "shared-position replay duplicated Applicability Act"
             )
         _read_applicability_act(
             ledger,
             event.identity,
-            assignment_reading=reading.assignment_reading,
+            assignment_reading=reading.applicability_binding_reading,
         )
         reading.applicability_act_occurrence = occurrence
     elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
@@ -2143,7 +2428,7 @@ def _advance_shared_position_replay_reading(
         _read_applicability_result(
             ledger,
             event.identity,
-            assignment_reading=reading.assignment_reading,
+            assignment_reading=reading.applicability_binding_reading,
         )
         reading.applicability_result_occurrence = occurrence
     elif event.kind == SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT:

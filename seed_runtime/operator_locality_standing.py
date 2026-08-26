@@ -93,7 +93,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     get_recorded_byte_pair_occurrence_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
-    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
@@ -105,6 +106,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     _read_measurement_result as _read_shared_position_measurement_result,
     _SharedPositionReplayReading,
     _shared_position_replay_reading,
+    _add_shared_position_applicability_binding,
     _advance_shared_position_replay_reading,
 )
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
@@ -472,7 +474,8 @@ _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 }
 _SHARED_POSITION_MEASUREMENT_KINDS = {
-    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
@@ -776,7 +779,10 @@ def _shared_position_binding_reading(
     prior_standing: dict[str, Any],
 ):
     assignment_identity = event.identity
-    if event.kind != SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+    if event.kind not in {
+        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    }:
         reference = event.material.get("subject_to_act_binding_reference")
         assignment_identity = (
             reference.get("recorded_occurrence_identity")
@@ -791,7 +797,10 @@ def _shared_position_binding_reading(
 
 
 def _shared_position_binding_identity(event: Event) -> str | None:
-    if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+    if event.kind in {
+        SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    }:
         return event.identity
     reference = event.material.get("subject_to_act_binding_reference")
     identity = (
@@ -1543,7 +1552,10 @@ def advance_operator_locality_standing(
                 prior_standing=addressed_byte_reference_prior_standing,
             )
             continue
-        if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        if (
+            event.kind
+            == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        ):
             assignment_reading = _shared_position_binding_reading(
                 ledger,
                 event,
@@ -1554,6 +1566,40 @@ def advance_operator_locality_standing(
                     ledger, assignment_reading
                 )
             )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if (
+            event.kind
+            == SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        ):
+            binding_reading = _shared_position_binding_reading(
+                ledger,
+                event,
+                prior_standing=addressed_byte_reference_prior_standing,
+            )
+            addressed_act_identity = event.material.get(
+                "addressed_act_identity"
+            )
+            answering_readings = tuple(
+                {
+                    id(reading): reading
+                    for reading in shared_position_replay_readings.values()
+                    if reading.assignment_reading[0].material.get(
+                        "exact_act_identity"
+                    )
+                    == addressed_act_identity
+                }.values()
+            )
+            if len(answering_readings) != 1:
+                raise ValueError(
+                    "shared-position Applicability binding addresses no exact Measurement binding"
+                )
+            replay_reading = _add_shared_position_applicability_binding(
+                ledger,
+                answering_readings[0],
+                binding_reading,
+            )
+            shared_position_replay_readings[event.identity] = replay_reading
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:

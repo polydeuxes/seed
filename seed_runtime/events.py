@@ -585,8 +585,6 @@ class SQLiteEventLedger(EventLedger):
         "result_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "recurrent_pair_position_measurement_assignment",
         "recurrent_pair_position_measurement_assignment_subject",
-        "shared_pair_position_assignment_identity",
-        "shared_pair_position_assignment_subject_identity",
         "shared_pair_position_applicability_act_identity",
         "shared_pair_position_applicability_act_occurrence_identity",
         "shared_pair_position_applicability_result_identity",
