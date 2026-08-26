@@ -27,7 +27,7 @@ subject
 ```
 
 These coordinates bind each exact subject to the exact Act. Applicability,
-Admission, Participation, Carriage, Act occurrence, Yield, result, and current
+Participation, Carriage, Act occurrence, Yield, result, and current
 coordinates are separately exact.
 
 ## Act and occurrence

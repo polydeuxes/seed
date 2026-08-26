@@ -84,20 +84,12 @@ def test_empty_current_coordinates_are_only_the_first_current_coordinates():
     assert "S0" not in active_book
 
 
-def test_applicability_admission_and_participation_remain_separate():
+def test_applicability_and_participation_remain_separate():
     grammar = _grammar()
     boundary = grammar["book_coordinates"]["01.Current.E.1"]
     assert boundary["Applicability"] == {
         "exact_Act": "Applicability",
         "result": "Applicability_result",
-    }
-    # Admission carries the coordinates that make it exact, so no clause has to
-    # forbid one boundary's Admission from reaching another.
-    assert boundary["Admission"] == {
-        "boundary": "exact_boundary",
-        "exact_Act": "exact_Act",
-        "subject_to_Act_position": "exact_subject_to_Act_position",
-        "occurrence": "exact_occurrence_prior_to_Participation",
     }
     assert boundary["Participation"] == {
         "relation": "participation",
@@ -110,8 +102,6 @@ def test_applicability_admission_and_participation_remain_separate():
             "Applicability_result",
             "participation_relation_occurrence",
         ]
-        assert "Admission" not in compare
-        assert "required_Admission" not in compare
         assert compare["relations"] == ["participation", "yield"]
 
 def test_generic_compare_carries_its_exact_rule():

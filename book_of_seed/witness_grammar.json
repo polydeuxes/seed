@@ -219,12 +219,6 @@
         "exact_Act": "Applicability",
         "result": "Applicability_result"
       },
-      "Admission": {
-        "boundary": "exact_boundary",
-        "exact_Act": "exact_Act",
-        "subject_to_Act_position": "exact_subject_to_Act_position",
-        "occurrence": "exact_occurrence_prior_to_Participation"
-      },
       "Participation": {
         "relation": "participation",
         "occurrence": "exact_participation_relation_occurrence"

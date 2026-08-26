@@ -5,9 +5,6 @@
 Before one Compare Act occurrence, its exact subjects, rule, Scope, Locality,
 conflicts, and Unknown are exact. Each subject requires its exact
 Applicability result and Participation relation to the Compare Act occurrence.
-Each boundary with required Admission requires its exact Admission occurrence prior
-to Participation.
-
 One exact Yield relation carries the Compare Act occurrence as first subject
 and one result as second subject. The result preserves distinctions established
 under the declared rule and completeness boundary.
@@ -17,8 +14,7 @@ under the declared rule and completeness boundary.
 When the current coordinates carry one earlier and one later exact byte-pair
 position Measurement result, both results, one Compare Act, and its exact rule
 are exact together. Each input requires its exact Applicability
-result and Participation relation. Each required Admission requires its exact
-occurrence prior to Participation.
+result and Participation relation.
 
 The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references, the added occurrence, provenance,
@@ -31,7 +27,6 @@ and one exact recorded pair-finding Compare result, both subjects, one Compare
 Act, and its exact rule are exact together.
 
 Each input requires its exact Applicability result and Participation relation.
-Each required Admission requires its exact occurrence prior to Participation.
 
 The result preserves each source reference, ordered path roles, pair subjects,
 complete finding references, Scope, Locality, conflicts, and Unknown.

@@ -40,7 +40,7 @@ One relation Assertion carries first subject, exact relation content, and
 second subject. It requires the exact relation occurrence, Scope, Locality,
 conflicts, and Unknown.
 
-### 01.Current.E.1 — Applicability, Admission, and Participation
+### 01.Current.E.1 — Applicability and Participation
 
 Applicability carries one exact subject-to-Act position. Its exact occurrence
 carries the subject, Act, Scope, Locality, and
@@ -49,9 +49,6 @@ one of `applicable`, `inapplicable`, `conflicting`, or `Unknown`.
 Participation is the exact relation from one subject and role to one Act
 occurrence. Participation requires its own relation occurrence and the
 exact applicable subject-to-Act position.
-
-Required Admission carries its exact boundary, exact Act, exact subject-to-Act
-position, and one exact occurrence prior to Participation.
 
 ## References
 
