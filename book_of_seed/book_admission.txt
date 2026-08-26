@@ -105,7 +105,6 @@ loss
 material
 measurement
 movement
-new
 no
 occurrence
 occurrences

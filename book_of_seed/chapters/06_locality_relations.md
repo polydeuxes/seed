@@ -8,7 +8,7 @@ Unknown.
 
 Each Locality relation requires a separate relation occurrence.
 
-### 06.Locality.B — Through-occurrence boundary at a new Locality
+### 06.Locality.B — Through-occurrence boundary at a destination Locality
 
 Before one preservation Act occurrence, one exact addressed occurrence, its
 prior through-occurrence boundary, that exact Act, destination Locality,
@@ -16,13 +16,13 @@ Scope, and Unknown are exact together.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
-preserves the prior boundary reference and its new Locality relation.
+preserves the prior boundary reference and its destination Locality relation.
 
 ### 06.Locality.C — Recorded boundary relation
 
 Before one Locality Act occurrence, one exact recorded through-occurrence
 boundary reference, the exact Act to establish a direct Locality relation from
-the recorded result, and the new Locality are exact together.
+the recorded result, and the destination Locality are exact together.
 The result preserves the recorded reference, destination Locality, relation
 occurrence, Act occurrence, Yield, Scope, and Unknown.
 

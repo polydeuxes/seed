@@ -417,13 +417,13 @@
       "result": "Locality_relation"
     },
     "06.Locality.B": {
-      "subject": "through_occurrence_boundary_at_new_Locality",
-      "exact_Act": "preserve_through_occurrence_boundary_at_new_Locality",
+      "subject": "through_occurrence_boundary_at_destination_Locality",
+      "exact_Act": "preserve_through_occurrence_boundary_at_destination_Locality",
       "relations": [
         "yield",
         "locality"
       ],
-      "result": "through_occurrence_boundary_at_new_Locality"
+      "result": "through_occurrence_boundary_at_destination_Locality"
     },
     "06.Locality.C": {
       "subject": "recorded_through_occurrence_boundary_reference",
