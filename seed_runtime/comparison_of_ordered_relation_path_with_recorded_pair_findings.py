@@ -23,7 +23,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
     get_recorded_shared_position_measurement,
@@ -838,13 +837,13 @@ _IDENTITY_COORDINATES = (
 )
 
 
-def _new_identities() -> dict[str, str]:
+def _new_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "compare_act_identity": new_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_act"),
-        "compare_act_occurrence_identity": new_identity(
+        "compare_act_identity": ledger.mint_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_act"),
+        "compare_act_occurrence_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_occurrence"
         ),
-        "compare_result_identity": new_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_result"),
+        "compare_result_identity": ledger.mint_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_result"),
     }
 
 
@@ -950,7 +949,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_subje
         prior_coordinates=current_coordinates,
     )
     boundary = _require_input_current_coordinates(ledger, inputs, current_coordinates)
-    identities = _new_identities()
+    identities = _new_identities(ledger)
     if len(set(identities.values())) != len(identities):
         raise ValueError("comparison of ordered relation path with recorded pair findings lifecycle identities collapsed")
     return ledger.append(
@@ -1133,13 +1132,13 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
         "Applicability binding requires one exact through-occurrence boundary",
     )
     identities = {
-        "applicability_act_identity": new_identity(
+        "applicability_act_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act"
         ),
-        "applicability_act_occurrence_identity": new_identity(
+        "applicability_act_occurrence_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_occurrence"
         ),
-        "applicability_result_identity": new_identity(
+        "applicability_result_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result"
         ),
     }
