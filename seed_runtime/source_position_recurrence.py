@@ -388,7 +388,9 @@ def _preserved_responsibility_material(material):
     return {
         "book_clause_identity": material["book_clause_identity"],
         "result_boundary_identity": material["result_boundary_identity"],
-        "standing_boundary_identity": material["standing_boundary_identity"],
+        "through_event_occurrence_identity": material[
+            "through_event_occurrence_identity"
+        ],
         "exact_act_identity": material["act_identity"],
         "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -555,7 +557,7 @@ def _record_responsibility(
     responsibility: str,
     book_reference: str,
     locality_identity: str,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     act_identity: str,
     act_occurrence_identity: str,
     result_identity: str,
@@ -567,7 +569,7 @@ def _record_responsibility(
         {
             "book_clause_identity": book_reference,
             "result_boundary_identity": result_identity,
-            "standing_boundary_identity": standing_boundary_identity,
+            "through_event_occurrence_identity": through_event_occurrence_identity,
             "act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "responsibility": responsibility,
@@ -577,7 +579,6 @@ def _record_responsibility(
             "subject": subject,
             "scope": {
                 "locality_identity": locality_identity,
-                "standing_boundary_identity": standing_boundary_identity,
             },
             "conflicts": [],
             "unknown": [],
@@ -604,7 +605,7 @@ def _record_yielded_result(
     latest_locality_event = ledger.latest_locality_event(locality_identity)
     if latest_locality_event is None:
         raise ValueError("source-position work requires an exact Locality boundary")
-    standing_boundary_occurrence_reference = latest_locality_event.identity
+    through_event_occurrence_identity = latest_locality_event.identity
     act_identity = new_identity(identity_prefix + "_act")
     act_occurrence_identity = new_identity(identity_prefix + "_act_occurrence")
     result_identity = new_identity(identity_prefix + "_result")
@@ -619,7 +620,7 @@ def _record_yielded_result(
         responsibility=responsibility,
         book_reference=book_reference,
         locality_identity=locality_identity,
-        standing_boundary_identity=standing_boundary_occurrence_reference,
+        through_event_occurrence_identity=through_event_occurrence_identity,
         act_identity=act_identity,
         act_occurrence_identity=act_occurrence_identity,
         result_identity=result_identity,
@@ -638,9 +639,7 @@ def _record_yielded_result(
             "responsible_boundary": "this Seed",
             "responsibility_assignment_reference": assignment_reference,
             "coordinates": {
-                "standing_boundary_occurrence_reference": (
-                    standing_boundary_occurrence_reference
-                ),
+                "through_event_occurrence_identity": through_event_occurrence_identity,
                 **deepcopy(act_payload),
             },
         },
@@ -715,10 +714,10 @@ def _require_yield(
 
 def _require_act_boundary(ledger: EventLedger, act: Event) -> None:
     boundary_identity = _coordinates(act.material).get(
-        "standing_boundary_occurrence_reference"
+        "through_event_occurrence_identity"
     )
     if type(boundary_identity) is not str or not boundary_identity:
-        raise ValueError("source-position Act carries no exact Standing boundary")
+        raise ValueError("source-position Act carries no exact through-occurrence boundary")
     occurrences = ledger.occurrences_in_append_order(
         (boundary_identity, act.identity),
         locality_identity=act.locality_identity,
@@ -727,7 +726,7 @@ def _require_act_boundary(ledger: EventLedger, act: Event) -> None:
         boundary_identity,
         act.identity,
     ):
-        raise ValueError("source-position Act carries no exact Standing boundary")
+        raise ValueError("source-position Act carries no exact through-occurrence boundary")
 
 
 def _require_responsibility(
@@ -758,10 +757,8 @@ def _require_responsibility(
         != _EXACT_ACT_RULES.get(act.material.get("act"))
         or assignment.material.get("subject")
         != _coordinates(act.material).get("subject")
-        or assignment.material.get("standing_boundary_identity")
-        != _coordinates(act.material).get(
-            "standing_boundary_occurrence_reference"
-        )
+        or assignment.material.get("through_event_occurrence_identity")
+        != _coordinates(act.material).get("through_event_occurrence_identity")
         or type(assignment.material.get("scope")) is not dict
         or type(assignment.material.get("conflicts")) is not list
         or type(assignment.material.get("unknown")) is not list
@@ -797,8 +794,8 @@ def _require_recorded_responsibility(
         or not material["book_clause_identity"]
         or type(material.get("result_boundary_identity")) is not str
         or not material["result_boundary_identity"]
-        or type(material.get("standing_boundary_identity")) is not str
-        or not material["standing_boundary_identity"]
+        or type(material.get("through_event_occurrence_identity")) is not str
+        or not material["through_event_occurrence_identity"]
         or type(material.get("act_identity")) is not str
         or not material["act_identity"]
         or type(material.get("act_occurrence_identity")) is not str
@@ -814,7 +811,7 @@ def _require_recorded_responsibility(
         or type(material.get("unknown")) is not list
     ):
         raise ValueError("source-position Responsibility is not exact")
-    boundary = ledger.get(material["standing_boundary_identity"])
+    boundary = ledger.get(material["through_event_occurrence_identity"])
     if (
         boundary is None
         or boundary.locality_identity != event.locality_identity
