@@ -24,8 +24,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
-    record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result,
+    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.operator_locality_standing import (
     _exact_standing_additions,
@@ -65,7 +65,7 @@ def _advance(
             event,
             error_message="source-position continuation Standing is not exact",
         )
-        if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+        if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
             standing["subject_to_act_binding_occurrences"][event.identity] = None
         elif event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
             standing["applicability_result_occurrences"][event.identity] = None
@@ -96,7 +96,7 @@ def _record_shared_path(
 ) -> tuple[dict[str, Any], Event]:
     """Record the existing shared-position lifecycle from carried coordinates."""
 
-    assignment = record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result(
+    assignment = record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_result_event_identity=determination.identity,
         locality_standing=standing,

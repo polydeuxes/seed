@@ -17,7 +17,7 @@ from seed_runtime.yield_relation import (
 from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    ordered_source_position_coordinates_beside_ordered_relation_path_assertion,
+    ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion,
 )
 
 
@@ -127,7 +127,7 @@ def _path_input(
         message="source position Compare requires an exact ordered path result",
     )
     path, positions = (
-        ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
+        ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
             ledger, event.identity, prior_standing=prior_standing
         )
     )

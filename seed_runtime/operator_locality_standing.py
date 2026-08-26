@@ -93,7 +93,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     get_recorded_byte_pair_occurrence_position_measurement,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
-    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
@@ -472,7 +472,7 @@ _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 }
 _SHARED_POSITION_MEASUREMENT_KINDS = {
-    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
@@ -769,15 +769,15 @@ def _subject_to_act_binding_of_exact_result(
     return deepcopy(reference)
 
 
-def _shared_position_assignment_reading(
+def _shared_position_binding_reading(
     ledger: EventLedger,
     event,
     *,
     prior_standing: dict[str, Any],
 ):
     assignment_identity = event.identity
-    if event.kind != SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
-        reference = event.material.get("responsibility_assignment_reference")
+    if event.kind != SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        reference = event.material.get("subject_to_act_binding_reference")
         assignment_identity = (
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
@@ -790,10 +790,10 @@ def _shared_position_assignment_reading(
     )
 
 
-def _shared_position_assignment_identity(event: Event) -> str | None:
-    if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+def _shared_position_binding_identity(event: Event) -> str | None:
+    if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
         return event.identity
-    reference = event.material.get("responsibility_assignment_reference")
+    reference = event.material.get("subject_to_act_binding_reference")
     identity = (
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
@@ -1543,8 +1543,8 @@ def advance_operator_locality_standing(
                 prior_standing=addressed_byte_reference_prior_standing,
             )
             continue
-        if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
-            assignment_reading = _shared_position_assignment_reading(
+        if event.kind == SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+            assignment_reading = _shared_position_binding_reading(
                 ledger,
                 event,
                 prior_standing=addressed_byte_reference_prior_standing,
@@ -1557,7 +1557,7 @@ def advance_operator_locality_standing(
             subject_to_act_binding_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT:
-            assignment_identity = _shared_position_assignment_identity(event)
+            assignment_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
             )
@@ -1567,7 +1567,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_assignment_reading(
+                    assignment_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1585,7 +1585,7 @@ def advance_operator_locality_standing(
                 raise
             continue
         if event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
-            assignment_identity = _shared_position_assignment_identity(event)
+            assignment_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
             )
@@ -1595,7 +1595,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_assignment_reading(
+                    assignment_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1614,7 +1614,7 @@ def advance_operator_locality_standing(
             applicability_result_occurrences[event.identity] = None
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT:
-            assignment_identity = _shared_position_assignment_identity(event)
+            assignment_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
             )
@@ -1624,7 +1624,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_assignment_reading(
+                    assignment_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,
@@ -1943,7 +1943,7 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
-            assignment_identity = _shared_position_assignment_identity(event)
+            assignment_identity = _shared_position_binding_identity(event)
             replay_reading = shared_position_replay_readings.get(
                 assignment_identity
             )
@@ -1953,7 +1953,7 @@ def advance_operator_locality_standing(
                         ledger, replay_reading, event
                     )
                 else:
-                    assignment_reading = _shared_position_assignment_reading(
+                    assignment_reading = _shared_position_binding_reading(
                         ledger,
                         event,
                         prior_standing=addressed_byte_reference_prior_standing,

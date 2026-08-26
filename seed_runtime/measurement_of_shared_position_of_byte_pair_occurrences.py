@@ -36,8 +36,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 
 
-SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND = (
-    "operator.shared_pair_position.responsibility_assignment_recorded"
+SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.shared_pair_position.subject_to_act_binding_recorded"
 )
 SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.shared_pair_position.applicability_act_occurrence_recorded"
@@ -71,7 +71,7 @@ D2_RESULT_REFERENCE_COORDINATE = (
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
-    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND: "01.Source.D",
+    SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
     SHARED_POSITION_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     SHARED_POSITION_APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -420,7 +420,7 @@ def _validated_inputs(
     return SharedPairPositionInputs(first=first, second=second)
 
 
-def _direct_coordinates_from_assignment_material(
+def _direct_coordinates_from_binding_material(
     material: dict[str, Any],
 ) -> tuple[bytes, int, int]:
     exact_pair = material.get("exact_pair")
@@ -442,7 +442,7 @@ def _direct_coordinates_from_assignment_material(
     )
 
 
-def _assertion_address_from_assignment_material(
+def _assertion_address_from_binding_material(
     material: dict[str, Any],
 ) -> str | int:
     reference = material.get("assertion_reference")
@@ -470,7 +470,7 @@ def _assertion_address_from_assignment_material(
     )
 
 
-def _inputs_from_assignment_material(
+def _inputs_from_binding_material(
     ledger: EventLedger,
     *,
     first: dict[str, Any],
@@ -491,11 +491,11 @@ def _inputs_from_assignment_material(
     ):
         materials = (first, second)
         coordinates = tuple(
-            _direct_coordinates_from_assignment_material(material)
+            _direct_coordinates_from_binding_material(material)
             for material in materials
         )
         assertion_addresses = tuple(
-            _assertion_address_from_assignment_material(material)
+            _assertion_address_from_binding_material(material)
             for material in materials
         )
         try:
@@ -531,9 +531,9 @@ def _inputs_from_assignment_material(
     return _inputs(
         ledger,
         first_result_occurrence_identity=result_identities[0],
-        first_assertion_address=_assertion_address_from_assignment_material(first),
+        first_assertion_address=_assertion_address_from_binding_material(first),
         second_result_occurrence_identity=result_identities[1],
-        second_assertion_address=_assertion_address_from_assignment_material(second),
+        second_assertion_address=_assertion_address_from_binding_material(second),
         prior_standing=prior_standing,
     )
 
@@ -577,7 +577,7 @@ def _require_standing(
     return boundary
 
 
-def _assignment_reference(
+def _binding_reference(
     event: Event, *, result_boundary_identity: str
 ) -> dict[str, str]:
     return {
@@ -591,7 +591,7 @@ def _assignment_reference(
     }
 
 
-def _assignment_material(
+def _binding_material(
     *,
     inputs: SharedPairPositionInputs,
     standing_boundary_identity: str,
@@ -711,7 +711,7 @@ def _new_assignment_identities() -> dict[str, str]:
     }
 
 
-def _record_shared_position_assignment(
+def _record_shared_position_binding(
     ledger: EventLedger,
     *,
     inputs: SharedPairPositionInputs,
@@ -731,8 +731,8 @@ def _record_shared_position_assignment(
             "shared-position Measurement occurrence identities collapsed"
         )
     return ledger.append(
-        SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(
+        SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
             inputs=inputs,
             standing_boundary_identity=boundary,
             identities=identities,
@@ -801,7 +801,7 @@ def _require_exact_d2_result_standing(
     )
 
 
-def record_shared_position_responsibility_assignment_from_addressed_byte_occurrence_reference_determination_result(
+def record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result(
     ledger: EventLedger,
     *,
     determination_result_event_identity: str,
@@ -879,8 +879,8 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
             "D.2 determination result or current Standing changed before assignment"
         )
     return ledger.append(
-        SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(
+        SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
             inputs=inputs,
             standing_boundary_identity=boundary,
             identities=identities,
@@ -892,7 +892,7 @@ def record_shared_position_responsibility_assignment_from_addressed_byte_occurre
     )
 
 
-def record_shared_position_responsibility_assignment(
+def record_shared_position_subject_to_act_binding(
     ledger: EventLedger,
     *,
     first_result_occurrence_identity: str,
@@ -928,7 +928,7 @@ def record_shared_position_responsibility_assignment(
             )
         )
     )
-    return _record_shared_position_assignment(
+    return _record_shared_position_binding(
         ledger,
         inputs=inputs,
         locality_standing=locality_standing,
@@ -945,7 +945,7 @@ def _read_binding(
     event = ledger.get(_identity(event_identity, "shared-position requires one assignment"))
     if (
         event is None
-        or event.kind != SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND
+        or event.kind != SHARED_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
@@ -1000,7 +1000,7 @@ def _read_binding(
                 "shared-position assignment carries no exact D.2 provenance"
             )
     else:
-        inputs = _inputs_from_assignment_material(
+        inputs = _inputs_from_binding_material(
             ledger,
             first=first,
             second=second,
@@ -1022,7 +1022,7 @@ def _read_binding(
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position assignment has no Standing boundary")
-    expected = _assignment_material(
+    expected = _binding_material(
         inputs=inputs,
         standing_boundary_identity=boundary,
         identities=identities,
@@ -1057,7 +1057,7 @@ def _read_binding(
     return event, inputs
 
 
-def get_shared_position_responsibility_assignment(
+def get_shared_position_subject_to_act_binding(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event, _inputs_reading = _read_binding(ledger, event_identity)
@@ -1076,7 +1076,7 @@ def _applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "responsibility_assignment_reference": _assignment_reference(
+        "subject_to_act_binding_reference": _binding_reference(
             assignment,
             result_boundary_identity=assignment.material[
                 "applicability_result_identity"
@@ -1153,7 +1153,7 @@ def _read_applicability_act(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position Applicability Act is corrupted")
-    assignment_reference = event.material.get("responsibility_assignment_reference")
+    assignment_reference = event.material.get("subject_to_act_binding_reference")
     if type(assignment_reference) is not dict:
         raise SharedPairPositionError("Applicability Act carries no assignment")
     assignment_identity = assignment_reference.get("recorded_occurrence_identity")
@@ -1239,7 +1239,7 @@ def _applicability_result_material(
         "applicability_act_occurrence_identity": assignment.material[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": _assignment_reference(
+        "subject_to_act_binding_reference": _binding_reference(
             assignment,
             result_boundary_identity=assignment.material[
                 "applicability_result_identity"
@@ -1360,8 +1360,8 @@ def _recorded_applicability_result_material(
         "applicability_act_occurrence_identity": result[
             "applicability_act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": deepcopy(
-            result["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            result["subject_to_act_binding_reference"]
         ),
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
@@ -1480,7 +1480,7 @@ def _measurement_act_material(
             "measurement_act_occurrence_identity"
         ],
         "act": MEASUREMENT_ACT,
-        "responsibility_assignment_reference": _assignment_reference(
+        "subject_to_act_binding_reference": _binding_reference(
             assignment,
             result_boundary_identity=assignment.material[
                 "measurement_result_identity"
@@ -1570,7 +1570,7 @@ def _read_measurement_act(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise SharedPairPositionError("shared-position Measurement Act is corrupted")
-    assignment_reference = event.material.get("responsibility_assignment_reference")
+    assignment_reference = event.material.get("subject_to_act_binding_reference")
     applicability_reference = event.material.get("applicability_result_reference")
     if type(assignment_reference) is not dict or type(applicability_reference) is not dict:
         raise SharedPairPositionError("Measurement Act carries no exact inputs")
@@ -1709,7 +1709,7 @@ def _measurement_result_material(
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": _assignment_reference(
+        "subject_to_act_binding_reference": _binding_reference(
             assignment,
             result_boundary_identity=assignment.material[
                 "measurement_result_identity"
@@ -1788,8 +1788,8 @@ def _recorded_measurement_result_material(
         "exact_act": result["exact_act"],
         "addressed_act_identity": result["addressed_act_identity"],
         "act_occurrence_identity": result["act_occurrence_identity"],
-        "responsibility_assignment_reference": deepcopy(
-            result["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            result["subject_to_act_binding_reference"]
         ),
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
@@ -2221,16 +2221,16 @@ def get_recorded_shared_position_measurement(
     return deepcopy(carried)
 
 
-def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+def ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Read one path Assertion beside the two exact input Assertion contents.
+    """Read one path Assertion adjacent to two exact input Assertion contents.
 
     Each input Assertion content has exact pair and position coordinates.
-    Returning them beside the path establishes no material carried by the path.
+    Returning them adjacent to the path establishes no material carried by the path.
     """
 
     reading = get_recorded_shared_position_measurement(
@@ -2253,21 +2253,21 @@ def ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
     return deepcopy(assertions[0]), deepcopy(first), deepcopy(second)
 
 
-def ordered_source_position_coordinates_beside_ordered_relation_path_assertion(
+def ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
-    """Read three exact source-position coordinates beside one path Assertion.
+    """Read three exact source-position coordinates adjacent to one path Assertion.
 
-    The positions retain the order of the two exact input roles. Returning the
-    positions beside the path establishes no position or material carried by
-    the path.
+    The first returned position addresses the first input role; the second
+    returned position addresses the second input role. Returning the positions
+    adjacent to the path establishes no position or material carried by the path.
     """
 
     path, first, second = (
-        ordered_relation_path_assertion_beside_input_position_assertion_coordinates(
+        ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
             ledger, event_identity, prior_standing=prior_standing
         )
     )
