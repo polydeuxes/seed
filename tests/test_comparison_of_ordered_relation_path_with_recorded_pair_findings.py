@@ -21,6 +21,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     recorded_distinction_pins_from_current_standing,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
+    record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
     record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result,
@@ -316,19 +317,24 @@ def _record_comparison(ledger, comparison, path):
         comparison_result_event_identity=comparison.identity,
         locality_standing=_current_coordinates(ledger),
     )
+    applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+        ledger,
+        comparison_binding_event_identity=assignment.identity,
+        current_coordinates=_current_coordinates(ledger),
+    )
     applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        locality_standing=_current_coordinates(ledger),
+        applicability_binding_event_identity=applicability_binding.identity,
+        current_coordinates=_current_coordinates(ledger),
     )
     applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
         ledger, act_occurrence_event_identity=applicability_act.identity
     )
     act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=assignment.identity,
         applicability_result_event_identity=applicability.identity,
-        locality_standing=_current_coordinates(ledger),
+        current_coordinates=_current_coordinates(ledger),
     )
     result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
         ledger, act_occurrence_event_identity=act.identity
@@ -589,12 +595,18 @@ def test_every_current_compare_assignment_records_one_separate_applicability_res
         "inapplicable",
         "applicable",
     )
-    assert tuple(
-        result.material["responsibility_assignment_reference"][
-            "recorded_occurrence_identity"
-        ]
+    applicability_bindings = tuple(
+        ledger.get(
+            result.material["responsibility_assignment_reference"][
+                "recorded_occurrence_identity"
+            ]
+        )
         for result in results
-    ) == tuple(assignment.identity for assignment in assignments)
+    )
+    assert tuple(
+        binding.material["addressed_act_identity"]
+        for binding in applicability_bindings
+    ) == tuple(binding.material["exact_act_identity"] for binding in assignments)
     assert all(
         result.identity
         in recorded.locality_standing["applicability_result_occurrences"]
@@ -814,10 +826,15 @@ def test_another_source_occurrence_is_inapplicable_and_cannot_participate():
         comparison_result_event_identity=comparison.identity,
         locality_standing=_current_coordinates(ledger),
     )
+    applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+        ledger,
+        comparison_binding_event_identity=assignment.identity,
+        current_coordinates=_current_coordinates(ledger),
+    )
     applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        locality_standing=_current_coordinates(ledger),
+        applicability_binding_event_identity=applicability_binding.identity,
+        current_coordinates=_current_coordinates(ledger),
     )
     applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
         ledger, act_occurrence_event_identity=applicability_act.identity
@@ -830,9 +847,9 @@ def test_another_source_occurrence_is_inapplicable_and_cannot_participate():
     with pytest.raises(ValueError, match="not applicable"):
         record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=assignment.identity,
             applicability_result_event_identity=applicability.identity,
-            locality_standing=_current_coordinates(ledger),
+            current_coordinates=_current_coordinates(ledger),
         )
 
 
@@ -940,10 +957,15 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained
         comparison_result_event_identity=comparison.identity,
         locality_standing=_current_coordinates(ledger),
     )
+    applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+        ledger,
+        comparison_binding_event_identity=assignment.identity,
+        current_coordinates=_current_coordinates(ledger),
+    )
     applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        locality_standing=_current_coordinates(ledger),
+        applicability_binding_event_identity=applicability_binding.identity,
+        current_coordinates=_current_coordinates(ledger),
     )
     applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
         ledger, act_occurrence_event_identity=applicability_act.identity
@@ -966,9 +988,9 @@ def test_each_higher_lifecycle_read_validates_large_inputs_once_without_retained
 
     act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=assignment.identity,
         applicability_result_event_identity=applicability.identity,
-        locality_standing=current_coordinates,
+        current_coordinates=current_coordinates,
     )
     assert calls == [call_coordinates]
 

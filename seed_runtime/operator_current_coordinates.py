@@ -179,11 +179,13 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding,
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
     get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence,
@@ -500,6 +502,7 @@ _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS = {
 }
 _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
@@ -1904,6 +1907,12 @@ def advance_operator_current_coordinates(
             continue
         if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND:
             get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+                ledger, event.identity
+            )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None

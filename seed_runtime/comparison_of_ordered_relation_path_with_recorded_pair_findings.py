@@ -33,6 +33,9 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND = (
     "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.responsibility_assignment_recorded"
 )
+COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND = (
+    "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.applicability_subject_to_act_binding_recorded"
+)
 COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.comparison_of_ordered_relation_path_with_recorded_pair_findings.applicability_act_occurrence_recorded"
 )
@@ -70,6 +73,7 @@ COMPARE_RESULT_KIND = (
 
 EVENT_KIND_RESPONSIBILITIES = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND: "04.Compare.B",
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND: "01.Current.E.1",
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -524,46 +528,88 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
     for assignment in assignments:
         _read_binding(ledger, assignment.identity)
 
-    acts_by_assignment: dict[str, Event] = {}
+    applicability_bindings_by_compare_act: dict[str, Event] = {}
+    for occurrence in ledger.iter_locality_kind(
+        locality_identity,
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+    ):
+        applicability_binding, _inputs, comparison_binding_reading = (
+            _read_applicability_binding(ledger, occurrence.identity)
+        )
+        compare_act_identity = comparison_binding_reading[0].material[
+            "exact_act_identity"
+        ]
+        if compare_act_identity in applicability_bindings_by_compare_act:
+            raise ValueError(
+                "ordered-path Compare carries repeated Applicability binding"
+            )
+        applicability_bindings_by_compare_act[compare_act_identity] = (
+            applicability_binding
+        )
+
+    for assignment in assignments:
+        compare_act_identity = assignment.material["exact_act_identity"]
+        if compare_act_identity in applicability_bindings_by_compare_act:
+            continue
+        applicability_binding = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+            ledger,
+            comparison_binding_event_identity=assignment.identity,
+            current_coordinates=standing,
+        )
+        applicability_bindings_by_compare_act[compare_act_identity] = (
+            applicability_binding
+        )
+        standing = _advance_carried_locality_standing(
+            ledger,
+            standing,
+            (applicability_binding.identity,),
+            locality_identity=locality_identity,
+        )
+
+    applicability_bindings = tuple(
+        applicability_bindings_by_compare_act[assignment.material["exact_act_identity"]]
+        for assignment in assignments
+    )
+    acts_by_binding: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     ):
-        act, assignment, _inputs_reading = _read_applicability_act(
+        act, binding, _inputs_reading, _comparison_binding_reading = _read_applicability_act(
             ledger, occurrence.identity
         )
-        if assignment.identity in acts_by_assignment:
+        if binding.identity in acts_by_binding:
             raise ValueError(
-                "ordered-path Compare assignment carries repeated Applicability Act occurrence"
+                "ordered-path Compare binding carries repeated Applicability Act occurrence"
             )
-        acts_by_assignment[assignment.identity] = act
+        acts_by_binding[binding.identity] = act
 
-    results_by_assignment: dict[str, Event] = {}
+    results_by_binding: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
         locality_identity,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
     ):
-        result, _act, assignment, _inputs_reading = _read_applicability_result(
+        result, _act, binding, _inputs_reading, _comparison_binding_reading = _read_applicability_result(
             ledger, occurrence.identity
         )
-        if assignment.identity in results_by_assignment:
+        if binding.identity in results_by_binding:
             raise ValueError(
-                "ordered-path Compare assignment carries repeated Applicability result"
+                "ordered-path Compare binding carries repeated Applicability result"
             )
-        results_by_assignment[assignment.identity] = result
+        results_by_binding[binding.identity] = result
 
     recorded: list[Event] = []
-    for assignment in assignments:
-        if assignment.identity in results_by_assignment:
+    for binding in applicability_bindings:
+        if binding.identity in results_by_binding:
             continue
-        act = acts_by_assignment.get(assignment.identity)
+        act = acts_by_binding.get(binding.identity)
         if act is None:
             act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
                 ledger,
-                responsibility_assignment_event_identity=assignment.identity,
-                locality_standing=standing,
+                applicability_binding_event_identity=binding.identity,
+                current_coordinates=standing,
             )
-            acts_by_assignment[assignment.identity] = act
+            acts_by_binding[binding.identity] = act
             standing = _advance_carried_locality_standing(
                 ledger,
                 standing,
@@ -574,7 +620,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
             ledger,
             act_occurrence_event_identity=act.identity,
         )
-        results_by_assignment[assignment.identity] = result
+        results_by_binding[binding.identity] = result
         recorded.append(result)
         standing = _advance_carried_locality_standing(
             ledger,
@@ -637,7 +683,13 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
         acts_by_applicability[applicability.identity] = act
 
     recorded: list[Event] = []
-    for applicability, _act, assignment, _inputs_reading in applicability_readings:
+    for (
+        applicability,
+        _act,
+        _applicability_binding,
+        _inputs_reading,
+        comparison_binding_reading,
+    ) in applicability_readings:
         if applicability.material["applicability"] != "applicable":
             if applicability.identity in acts_by_applicability:
                 raise ValueError(
@@ -648,9 +700,9 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
             continue
         act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=comparison_binding_reading[0].identity,
             applicability_result_event_identity=applicability.identity,
-            locality_standing=standing,
+            current_coordinates=standing,
         )
         acts_by_applicability[applicability.identity] = act
         recorded.append(act)
@@ -784,9 +836,6 @@ def _assignment_reference(
 
 
 _IDENTITY_COORDINATES = (
-    "applicability_act_identity",
-    "applicability_act_occurrence_identity",
-    "applicability_result_identity",
     "compare_act_identity",
     "compare_act_occurrence_identity",
     "compare_result_identity",
@@ -795,15 +844,6 @@ _IDENTITY_COORDINATES = (
 
 def _new_identities() -> dict[str, str]:
     return {
-        "applicability_act_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act"
-        ),
-        "applicability_act_occurrence_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_occurrence"
-        ),
-        "applicability_result_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result"
-        ),
         "compare_act_identity": new_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_act"),
         "compare_act_occurrence_identity": new_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_occurrence"
@@ -823,13 +863,6 @@ def _assignment_material(
             ),
         },
         "exact_act_identity": identities["compare_act_identity"],
-        "applicability_act_identity": identities["applicability_act_identity"],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
-        "applicability_result_identity": identities[
-            "applicability_result_identity"
-        ],
         "compare_act_identity": identities["compare_act_identity"],
         "compare_act_occurrence_identity": identities[
             "compare_act_occurrence_identity"
@@ -859,6 +892,52 @@ def _assignment_material(
         "scope": {
             "locality_identity": inputs["locality_identity"],
             "standing_boundary_identity": boundary,
+        },
+        "unknown": [],
+    }
+
+
+def _applicability_binding_material(
+    *,
+    comparison_binding: Event,
+    inputs: dict[str, Any],
+    boundary: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    addressed_act_identity = comparison_binding.material["compare_act_identity"]
+    return {
+        "subject_reference": {
+            "path_input": {
+                "subject": deepcopy(inputs["path"]["assertion_reference"]),
+                "addressed_act_identity": addressed_act_identity,
+            },
+            "comparison_input": {
+                "subject": deepcopy(inputs["comparison"]["reference"]),
+                "addressed_act_identity": addressed_act_identity,
+            },
+        },
+        "exact_act_identity": identities["applicability_act_identity"],
+        "applicability_act_identity": identities["applicability_act_identity"],
+        "applicability_act_occurrence_identity": identities[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": identities[
+            "applicability_result_identity"
+        ],
+        "addressed_act_identity": addressed_act_identity,
+        "addressed_act_occurrence_identity": comparison_binding.material[
+            "compare_act_occurrence_identity"
+        ],
+        "result_boundary_identity": identities["applicability_result_identity"],
+        "book_clause_identity": "01.Current.E.1",
+        "comparison_rule": COMPARISON_RULE,
+        "path_result_reference": deepcopy(inputs["path"]["reference"]),
+        "path_assertion_reference": deepcopy(inputs["path"]["assertion_reference"]),
+        "comparison_result_reference": deepcopy(inputs["comparison"]["reference"]),
+        "through_event_occurrence_identity": boundary,
+        "scope": {
+            "locality_identity": inputs["locality_identity"],
+            "addressed_act_identity": addressed_act_identity,
         },
         "unknown": [],
     }
@@ -971,6 +1050,129 @@ def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsi
     return deepcopy(_read_binding(ledger, event_identity)[0].material)
 
 
+def _read_applicability_binding(
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    comparison_binding_reading: tuple[Event, dict[str, Any]] | None = None,
+) -> tuple[Event, dict[str, Any], tuple[Event, dict[str, Any]]]:
+    event = _event(
+        ledger,
+        event_identity,
+        kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+        message="comparison of ordered relation path with recorded pair findings requires one exact Applicability binding",
+    )
+    material = event.material
+    addressed_act_identity = material.get("addressed_act_identity")
+    if comparison_binding_reading is None:
+        comparison_bindings = tuple(
+            candidate
+            for candidate in ledger.iter_locality_kind(
+                event.locality_identity,
+                COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+            )
+            if candidate.material.get("exact_act_identity") == addressed_act_identity
+        )
+        if len(comparison_bindings) != 1:
+            raise ValueError(
+                "comparison of ordered relation path with recorded pair findings "
+                "Applicability binding addresses no exact Compare binding"
+            )
+        comparison_binding_reading = _read_binding(
+            ledger, comparison_bindings[0].identity
+        )
+    comparison_binding, inputs = comparison_binding_reading
+    identity_keys = (
+        "applicability_act_identity",
+        "applicability_act_occurrence_identity",
+        "applicability_result_identity",
+    )
+    identities = {key: material.get(key) for key in identity_keys}
+    boundary = material.get("through_event_occurrence_identity")
+    expected = _applicability_binding_material(
+        comparison_binding=comparison_binding,
+        inputs=inputs,
+        boundary=boundary,
+        identities=identities,
+    )
+    if (
+        any(type(value) is not str or not value for value in identities.values())
+        or len(set(identities.values())) != len(identities)
+        or type(boundary) is not str
+        or event.locality_identity != comparison_binding.locality_identity
+        or addressed_act_identity
+        != comparison_binding.material.get("exact_act_identity")
+        or material != expected
+    ):
+        raise ValueError(
+            "comparison of ordered relation path with recorded pair findings "
+            "Applicability binding coordinates are not exact"
+        )
+    ordered = ledger.occurrences_in_append_order(
+        tuple(dict.fromkeys((comparison_binding.identity, boundary, event.identity))),
+        locality_identity=event.locality_identity,
+    )
+    if tuple(item.identity for item in ordered) != tuple(
+        dict.fromkeys((comparison_binding.identity, boundary, event.identity))
+    ):
+        raise ValueError(
+            "comparison of ordered relation path with recorded pair findings "
+            "Applicability binding does not follow its Compare binding"
+        )
+    return event, inputs, comparison_binding_reading
+
+
+def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+    ledger: EventLedger,
+    *,
+    comparison_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    comparison_binding, inputs = _read_binding(
+        ledger,
+        comparison_binding_event_identity,
+        prior_standing=current_coordinates,
+    )
+    _require_assignment_standing(comparison_binding, current_coordinates)
+    boundary = _identity(
+        current_coordinates.get("through_event_occurrence_identity"),
+        "comparison of ordered relation path with recorded pair findings "
+        "Applicability binding requires one exact through-occurrence boundary",
+    )
+    identities = {
+        "applicability_act_identity": new_identity(
+            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act"
+        ),
+        "applicability_act_occurrence_identity": new_identity(
+            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_occurrence"
+        ),
+        "applicability_result_identity": new_identity(
+            "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result"
+        ),
+    }
+    if len(set(identities.values())) != len(identities):
+        raise ValueError(
+            "comparison of ordered relation path with recorded pair findings "
+            "Applicability lifecycle identities are compressed"
+        )
+    return ledger.append(
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
+        _applicability_binding_material(
+            comparison_binding=comparison_binding,
+            inputs=inputs,
+            boundary=boundary,
+            identities=identities,
+        ),
+        locality_identity=comparison_binding.locality_identity,
+    )
+
+
+def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_subject_to_act_binding(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    return deepcopy(_read_applicability_binding(ledger, event_identity)[0].material)
+
+
 def _require_assignment_standing(assignment: Event, standing: Any) -> None:
     assignments = (
         standing.get("subject_to_act_binding_occurrences")
@@ -986,8 +1188,8 @@ def _require_assignment_standing(assignment: Event, standing: Any) -> None:
         raise ValueError("comparison of ordered relation path with recorded pair findings requires its exact assignment Standing")
 
 
-def _applicability_act_material(assignment: Event) -> dict[str, Any]:
-    material = assignment.material
+def _applicability_act_material(binding: Event) -> dict[str, Any]:
+    material = binding.material
     return {
         "applicability_act_identity": material["applicability_act_identity"],
         "applicability_act_occurrence_identity": material[
@@ -998,21 +1200,21 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
-            assignment,
+            binding,
             result_boundary_identity=material["applicability_result_identity"],
         ),
         "applicability_of_input_to_compare": [
             {
                 "subject_reference": deepcopy(material["path_assertion_reference"]),
                 "role": "ordered relation path input",
-                "addressed_act_identity": material["compare_act_identity"],
+                "addressed_act_identity": material["addressed_act_identity"],
             },
             {
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
                 "role": "recorded pair Compare input",
-                "addressed_act_identity": material["compare_act_identity"],
+                "addressed_act_identity": material["addressed_act_identity"],
             },
         ],
         "comparison_rule": COMPARISON_RULE,
@@ -1023,19 +1225,18 @@ def _applicability_act_material(assignment: Event) -> dict[str, Any]:
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    locality_standing: dict[str, Any],
+    applicability_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment, _inputs_reading = _read_binding(
+    binding, _inputs, _comparison_binding_reading = _read_applicability_binding(
         ledger,
-        responsibility_assignment_event_identity,
-        prior_standing=locality_standing,
+        applicability_binding_event_identity,
     )
-    _require_assignment_standing(assignment, locality_standing)
+    _require_assignment_standing(binding, current_coordinates)
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        _applicability_act_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _applicability_act_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -1043,8 +1244,12 @@ def _read_applicability_act(
     ledger: EventLedger,
     event_identity: Any,
     *,
-    assignment_reading: tuple[Event, dict[str, Any]] | None = None,
-) -> tuple[Event, Event, dict[str, Any]]:
+    applicability_binding_reading: tuple[
+        Event, dict[str, Any], tuple[Event, dict[str, Any]]
+    ]
+    | None = None,
+    comparison_binding_reading: tuple[Event, dict[str, Any]] | None = None,
+) -> tuple[Event, Event, dict[str, Any], tuple[Event, dict[str, Any]]]:
     event = _event(
         ledger,
         event_identity,
@@ -1052,21 +1257,25 @@ def _read_applicability_act(
         message="comparison of ordered relation path with recorded pair findings requires exact Applicability Act occurrence",
     )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment_identity = (
+    binding_identity = (
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None
     )
-    if assignment_reading is None:
-        assignment_reading = _read_binding(ledger, assignment_identity)
-    assignment, inputs = assignment_reading
+    if applicability_binding_reading is None:
+        applicability_binding_reading = _read_applicability_binding(
+            ledger,
+            binding_identity,
+            comparison_binding_reading=comparison_binding_reading,
+        )
+    binding, inputs, comparison_binding_reading = applicability_binding_reading
     if (
-        assignment_identity != assignment.identity
-        or event.locality_identity != assignment.locality_identity
-        or event.material != _applicability_act_material(assignment)
+        binding_identity != binding.identity
+        or event.locality_identity != binding.locality_identity
+        or event.material != _applicability_act_material(binding)
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings Applicability Act occurrence is not exact")
-    return event, assignment, inputs
+    return event, binding, inputs, comparison_binding_reading
 
 
 def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_occurrence(
@@ -1076,13 +1285,13 @@ def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicab
 
 
 def _applicability_result_material(
-    act: Event, assignment: Event, inputs: dict[str, Any]
+    act: Event, binding: Event, inputs: dict[str, Any]
 ) -> dict[str, Any]:
     standing = "applicable" if inputs["applicable"] else "inapplicable"
     return {
-        "result_identity": assignment.material["applicability_result_identity"],
+        "result_identity": binding.material["applicability_result_identity"],
         "dimensions": {
-            "identity": assignment.material["applicability_result_identity"],
+            "identity": binding.material["applicability_result_identity"],
             "content": {
                 "same_source_occurrence": inputs["same_source"],
                 "path_relation_finding_counts": [
@@ -1093,26 +1302,26 @@ def _applicability_result_material(
             "source_provenance": "exact yielded path and comparison results",
             "responsibility": RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "scope": deepcopy(assignment.material["scope"]),
+            "scope": deepcopy(binding.material["scope"]),
         },
         "exact_act": APPLICABILITY_ACT,
-        "addressed_act_identity": assignment.material["compare_act_identity"],
+        "addressed_act_identity": binding.material["addressed_act_identity"],
         "addressed_act_occurrence_identity": (
-            assignment.material["compare_act_occurrence_identity"]
+            binding.material["addressed_act_occurrence_identity"]
             if inputs["applicable"]
             else None
         ),
-        "applicability_act_identity": assignment.material[
+        "applicability_act_identity": binding.material[
             "applicability_act_identity"
         ],
-        "applicability_act_occurrence_identity": assignment.material[
+        "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+            binding,
+            result_boundary_identity=binding.material[
                 "applicability_result_identity"
             ],
         ),
@@ -1122,8 +1331,8 @@ def _applicability_result_material(
         ),
         "comparison_rule": COMPARISON_RULE,
         "applicability": standing,
-        "scope": deepcopy(assignment.material["scope"]),
-        "unknown": list(assignment.material["unknown"]),
+        "scope": deepcopy(binding.material["scope"]),
+        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -1181,10 +1390,10 @@ def _refuse_result(ledger: EventLedger, act: Event, result_kind: str) -> None:
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
     ledger: EventLedger, *, act_occurrence_event_identity: str
 ) -> Event:
-    act, assignment, inputs = _read_applicability_act(
+    act, binding, inputs, _comparison_binding_reading = _read_applicability_act(
         ledger, act_occurrence_event_identity
     )
-    result = _applicability_result_material(act, assignment, inputs)
+    result = _applicability_result_material(act, binding, inputs)
     _refuse_result(
         ledger,
         act,
@@ -1262,28 +1471,41 @@ def _read_applicability_result(
     ledger: EventLedger,
     event_identity: Any,
     *,
-    assignment_reading: tuple[Event, dict[str, Any]] | None = None,
-) -> tuple[Event, Event, Event, dict[str, Any]]:
+    applicability_binding_reading: tuple[
+        Event, dict[str, Any], tuple[Event, dict[str, Any]]
+    ]
+    | None = None,
+    comparison_binding_reading: tuple[Event, dict[str, Any]] | None = None,
+) -> tuple[
+    Event,
+    Event,
+    Event,
+    dict[str, Any],
+    tuple[Event, dict[str, Any]],
+]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
         candidate.material.get("act_occurrence_event_identity")
         if candidate is not None and type(candidate.material) is dict
         else None
     )
-    act, assignment, inputs = _read_applicability_act(
-        ledger, act_identity, assignment_reading=assignment_reading
+    act, binding, inputs, comparison_binding_reading = _read_applicability_act(
+        ledger,
+        act_identity,
+        applicability_binding_reading=applicability_binding_reading,
+        comparison_binding_reading=comparison_binding_reading,
     )
     event = _read_yielded(
         ledger,
         event_identity,
         kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
         act=act,
-        expected=_applicability_result_material(act, assignment, inputs),
+        expected=_applicability_result_material(act, binding, inputs),
         occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         result_name=APPLICABILITY_RESULT_KIND,
         occurrence_coordinate="applicability_act_occurrence_identity",
     )
-    return event, act, assignment, inputs
+    return event, act, binding, inputs, comparison_binding_reading
 
 
 def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability(
@@ -1359,34 +1581,34 @@ def _compare_act_material(assignment: Event, applicability: Event) -> dict[str, 
 def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
+    subject_to_act_binding_event_identity: str,
     applicability_result_event_identity: str,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment_reading = _read_binding(
+    binding_reading = _read_binding(
         ledger,
-        responsibility_assignment_event_identity,
-        prior_standing=locality_standing,
+        subject_to_act_binding_event_identity,
+        prior_standing=current_coordinates,
     )
-    assignment, _inputs_reading = assignment_reading
-    applicability, _act, applicability_assignment, inputs = (
+    binding, _inputs_reading = binding_reading
+    applicability, _act, _applicability_binding, inputs, applicability_compare_binding_reading = (
         _read_applicability_result(
             ledger,
             applicability_result_event_identity,
-            assignment_reading=assignment_reading,
+            comparison_binding_reading=binding_reading,
         )
     )
     if (
-        applicability_assignment.identity != assignment.identity
+        applicability_compare_binding_reading[0].identity != binding.identity
         or not inputs["applicable"]
         or applicability.material["applicability"] != "applicable"
     ):
         raise ValueError("relation-path input is not applicable to Compare")
-    _require_compare_standing(assignment, applicability, locality_standing)
+    _require_compare_standing(binding, applicability, current_coordinates)
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
-        _compare_act_material(assignment, applicability),
-        locality_identity=assignment.locality_identity,
+        _compare_act_material(binding, applicability),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -1400,32 +1622,32 @@ def _read_compare_act(
         message="comparison of ordered relation path with recorded pair findings requires exact Compare Act occurrence",
     )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment_reading = _read_binding(
+    binding_reading = _read_binding(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
     )
-    assignment, inputs = assignment_reading
-    applicability, _act, applicability_assignment, applicability_inputs = (
+    binding, inputs = binding_reading
+    applicability, _act, _applicability_binding, applicability_inputs, applicability_compare_binding_reading = (
         _read_applicability_result(
             ledger,
             event.material.get("applicability_result_event_identity"),
-            assignment_reading=assignment_reading,
+            comparison_binding_reading=binding_reading,
         )
     )
     if (
-        applicability_assignment.identity != assignment.identity
+        applicability_compare_binding_reading[0].identity != binding.identity
         or applicability_inputs["path"]["event"].identity
         != inputs["path"]["event"].identity
         or applicability_inputs["comparison"]["event"].identity
         != inputs["comparison"]["event"].identity
         or not inputs["applicable"]
-        or event.locality_identity != assignment.locality_identity
-        or event.material != _compare_act_material(assignment, applicability)
+        or event.locality_identity != binding.locality_identity
+        or event.material != _compare_act_material(binding, applicability)
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings Compare Act occurrence is not exact")
-    return event, assignment, applicability, inputs
+    return event, binding, applicability, inputs
 
 
 def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occurrence(
