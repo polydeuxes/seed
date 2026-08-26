@@ -3236,7 +3236,7 @@ def _pair_measurement_binding_material(
     content: dict[str, Any],
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
-    measurement_act_identity: str,
+    exact_act_identity: str,
     measurement_act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
@@ -3249,8 +3249,7 @@ def _pair_measurement_binding_material(
             through_event_occurrence_identity=through_event_occurrence_identity,
         ),
         "subject_reference": source.reference,
-        "exact_act_identity": measurement_act_identity,
-        "measurement_act_identity": measurement_act_identity,
+        "exact_act_identity": exact_act_identity,
         "measurement_act_occurrence_identity": measurement_act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
@@ -3304,7 +3303,7 @@ def _require_exact_pair_subject_to_act_binding_event(
         )
         if binding.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         else (
-            "measurement_act_identity",
+            "exact_act_identity",
             "measurement_act_occurrence_identity",
             "measurement_result_identity",
         )
@@ -3333,7 +3332,7 @@ def _require_exact_pair_subject_to_act_binding_event(
     else:
         exact_material = _pair_measurement_binding_material(
             **common,
-            measurement_act_identity=identities["measurement_act_identity"],
+            exact_act_identity=identities["exact_act_identity"],
             measurement_act_occurrence_identity=identities[
                 "measurement_act_occurrence_identity"
             ],
@@ -3503,7 +3502,7 @@ def _append_pair_measurement_binding(
             content=content,
             recording_locality_identity=recording_locality_identity,
             through_event_occurrence_identity=through_event_occurrence_identity,
-            measurement_act_identity=identities["measurement_act_identity"],
+            exact_act_identity=identities["measurement_act_identity"],
             measurement_act_occurrence_identity=identities[
                 "measurement_act_occurrence_identity"
             ],
@@ -4049,7 +4048,7 @@ def _pair_measurement_act_material(
     applicability_event: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4266,7 +4265,7 @@ def _pair_measurement_result_material(
             "source_provenance": "the recorded source-material Assertion",
         },
         "exact_act": "declared byte-position-pair Measurement",
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4346,7 +4345,7 @@ def _record_pair_measurement_result_from_carried_act(
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
         input_applicability=applicability_event.material["applicability"],
-        addressed_act_identity=binding.material["measurement_act_identity"],
+        addressed_act_identity=binding.material["exact_act_identity"],
         act_occurrence_identity=binding.material[
             "measurement_act_occurrence_identity"
         ],
@@ -4441,7 +4440,7 @@ def _require_exact_pair_measurement_result_event(
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
         input_applicability=applicability_event.material["applicability"],
-        addressed_act_identity=binding.material["measurement_act_identity"],
+        addressed_act_identity=binding.material["exact_act_identity"],
         act_occurrence_identity=binding.material[
             "measurement_act_occurrence_identity"
         ],
