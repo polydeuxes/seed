@@ -225,6 +225,11 @@ def _binding_reference(event: Event) -> dict[str, Any]:
     }
 
 
+def _compare_binding_subject(material: dict[str, Any]) -> dict[str, Any]:
+    subject = material.get("subject_reference")
+    return subject if type(subject) is dict else {}
+
+
 def _compare_binding_material(
     inputs: dict[str, Any], boundary: str, identities: dict[str, str]
 ) -> dict[str, Any]:
@@ -247,10 +252,6 @@ def _compare_binding_material(
         "book_clause_identity": BOOK_CLAUSE,
         "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
-        "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
-        "path_position_pair": list(inputs["path_position_pair"]),
-        "first_source_position_coordinate": deepcopy(inputs["first"]),
-        "second_source_position_coordinate": deepcopy(inputs["second"]),
         "through_event_occurrence_identity": boundary,
         "exact_act": COMPARE_ACT,
         "scope": {
@@ -443,14 +444,15 @@ def _read_compare_binding(
             boundary=boundary,
         )
     path_reference = material.get("path_result_reference")
+    subject = _compare_binding_subject(material)
     inputs = _path_input(
         ledger,
         path_reference.get("recorded_occurrence_identity")
         if type(path_reference) is dict
         else None,
         path_position_pair=(
-            tuple(material.get("path_position_pair"))
-            if type(material.get("path_position_pair")) is list
+            tuple(subject.get("path_position_pair"))
+            if type(subject.get("path_position_pair")) is list
             else ()
         ),
         current_coordinates=current_coordinates,
@@ -757,6 +759,7 @@ def _compare_act_material(
     compare_binding: Event, applicability: Event
 ) -> dict[str, Any]:
     material = compare_binding.material
+    subject = _compare_binding_subject(material)
     return {
         "act_identity": material["compare_act_identity"],
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
@@ -765,7 +768,7 @@ def _compare_act_material(
         "subject_to_act_binding_reference": _binding_reference(compare_binding),
         "applicability_result_event_identity": applicability.identity,
         "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_position_pair": list(material["path_position_pair"]),
+        "path_position_pair": list(subject["path_position_pair"]),
         "through_event_occurrence_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
@@ -773,7 +776,7 @@ def _compare_act_material(
         "participation_of_input_in_compare": [
             {
                 "first_subject": deepcopy(
-                    material["first_source_position_coordinate"]
+                    subject["first_source_position_coordinate"]
                 ),
                 "relation": "participation",
                 "second_subject": {
@@ -781,12 +784,12 @@ def _compare_act_material(
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": f"path position {material['path_position_pair'][0]}",
+                    "role": f"path position {subject['path_position_pair'][0]}",
                 },
             },
             {
                 "first_subject": deepcopy(
-                    material["second_source_position_coordinate"]
+                    subject["second_source_position_coordinate"]
                 ),
                 "relation": "participation",
                 "second_subject": {
@@ -794,7 +797,7 @@ def _compare_act_material(
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
-                    "role": f"path position {material['path_position_pair'][1]}",
+                    "role": f"path position {subject['path_position_pair'][1]}",
                 },
             },
         ],
