@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from copy import deepcopy
 from functools import lru_cache
 
@@ -373,7 +371,7 @@ def _position_coordinate_reference(reference, role):
     exact_material = (
         reference.exact_pair[:1] if role == "first" else reference.exact_pair[1:]
     )
-    coordinates = {
+    return {
         "source_material_result_occurrence_identity": (
             reference.source_material_result_occurrence_identity
         ),
@@ -383,15 +381,6 @@ def _position_coordinate_reference(reference, role):
         ),
         "position": position,
         "exact_material": list(exact_material),
-    }
-    return {
-        "identity": "source-byte-position-coordinate:"
-        + hashlib.sha256(
-            json.dumps(
-                coordinates, sort_keys=True, separators=(",", ":")
-            ).encode("utf-8")
-        ).hexdigest(),
-        **coordinates,
     }
 
 

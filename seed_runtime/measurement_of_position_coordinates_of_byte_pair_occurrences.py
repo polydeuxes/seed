@@ -7,8 +7,6 @@ recurrence, represented relation, character, word, or meaning.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
@@ -273,35 +271,51 @@ def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
     """Resolve sources from prior occurrences already validated by replay."""
 
     recorded_sources: set[str] = set()
-    occurrence_groups = (
-        (
-            bounded_locality_replay["subject_to_act_binding_occurrences"],
-            BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        ),
-        (
-            bounded_locality_replay["measurement_occurrences"],
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        ),
-    )
-    for occurrence_identities, expected_kind in occurrence_groups:
-        for occurrence_identity in occurrence_identities:
-            event = ledger.get(occurrence_identity)
-            if event is None or event.kind != expected_kind:
-                continue
-            if ledger.integrity_of(event.identity) == CORRUPTED:
-                raise ValueError(
-                    "bounded Locality replay contains a corrupted position-coordinate "
-                    "Measurement occurrence"
-                )
-            source_identity = event.material.get(
-                "source_material_result_occurrence_identity"
+    for occurrence_identity in bounded_locality_replay[
+        "subject_to_act_binding_occurrences"
+    ]:
+        event = ledger.get(occurrence_identity)
+        if (
+            event is None
+            or event.kind
+            != BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        ):
+            continue
+        if ledger.integrity_of(event.identity) == CORRUPTED:
+            raise ValueError(
+                "bounded Locality replay contains a corrupted position-coordinate "
+                "Measurement occurrence"
             )
-            if type(source_identity) is not str or not source_identity:
-                raise ValueError(
-                    "bounded Locality replay contains a malformed position-coordinate "
-                    "Measurement occurrence"
-                )
-            recorded_sources.add(source_identity)
+        source_identity = event.material.get(
+            "source_material_result_occurrence_identity"
+        )
+        if type(source_identity) is not str or not source_identity:
+            raise ValueError(
+                "bounded Locality replay contains a malformed position-coordinate "
+                "Measurement occurrence"
+            )
+        recorded_sources.add(source_identity)
+    for occurrence_identity in bounded_locality_replay["measurement_occurrences"]:
+        event = ledger.get(occurrence_identity)
+        if (
+            event is None
+            or event.kind != BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
+        ):
+            continue
+        if ledger.integrity_of(event.identity) == CORRUPTED:
+            raise ValueError(
+                "bounded Locality replay contains a corrupted position-coordinate "
+                "Measurement occurrence"
+            )
+        source_identity = event.material.get(
+            "source_material_result_occurrence_identity"
+        )
+        if type(source_identity) is not str or not source_identity:
+            raise ValueError(
+                "bounded Locality replay contains a malformed position-coordinate "
+                "Measurement occurrence"
+            )
+        recorded_sources.add(source_identity)
     return recorded_sources
 
 
@@ -741,21 +755,6 @@ def _require_exact_through_event_occurrence(
             "byte-pair position-coordinate binding requires one exact "
             "through-occurrence boundary"
         )
-    source = read_exact_material_result(
-        ledger, source_material_result_occurrence_identity
-    )
-    if not any(
-        event.identity == source.identity
-        for event in ledger.iter_locality_kind(
-            locality_identity,
-            source.kind,
-            through=boundary,
-        )
-    ):
-        raise ValueError(
-            "byte-pair position-coordinate binding requires one exact "
-            "through-occurrence boundary"
-        )
     return through_event_occurrence_identity
 
 
@@ -873,13 +872,15 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
     if any(
         event.material.get("source_material_result_occurrence_identity")
         == finding.source_material_result_occurrence_identity
-        for kind in (
-            BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        )
-        for event in ledger.iter_locality_kind(
-            finding.source_locality_identity,
-            kind,
+        for event in (
+            *ledger.iter_locality_kind(
+                finding.source_locality_identity,
+                BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            ),
+            *ledger.iter_locality_kind(
+                finding.source_locality_identity,
+                BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+            ),
         )
     ):
         raise ValueError(
@@ -1243,10 +1244,6 @@ def get_byte_pair_occurrence_position_measurement_act_occurrence(
     return act
 
 
-def _exact_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"))
-
-
 def _source_position_coordinate_reference(
     *,
     source_material_result_occurrence_identity: str,
@@ -1255,17 +1252,12 @@ def _source_position_coordinate_reference(
     position: int,
     exact_material: bytes,
 ) -> dict[str, Any]:
-    coordinates = {
+    return {
         "source_material_result_occurrence_identity": source_material_result_occurrence_identity,
         "locality_identity": source_locality_identity,
         "completeness_boundary_identity": completeness_boundary_identity,
         "position": position,
         "exact_material": list(exact_material),
-    }
-    return {
-        "identity": "source-byte-position-coordinate:"
-        + hashlib.sha256(_exact_json(coordinates).encode("utf-8")).hexdigest(),
-        **coordinates,
     }
 
 
@@ -1740,7 +1732,6 @@ def _position_of_exact_source_position_coordinate_reference(
     position_coordinate_reference: dict[str, Any],
 ) -> int:
     coordinate_keys = {
-        "identity",
         "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
@@ -1750,8 +1741,6 @@ def _position_of_exact_source_position_coordinate_reference(
     if (
         type(position_coordinate_reference) is not dict
         or set(position_coordinate_reference) != coordinate_keys
-        or type(position_coordinate_reference.get("identity")) is not str
-        or not position_coordinate_reference["identity"]
         or type(position_coordinate_reference.get("source_material_result_occurrence_identity"))
         is not str
         or not position_coordinate_reference["source_material_result_occurrence_identity"]

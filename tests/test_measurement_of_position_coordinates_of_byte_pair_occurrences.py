@@ -505,10 +505,8 @@ def test_references_preserve_every_exact_pair_occurrence():
         references[0].second_position_coordinate_reference
         == references[1].first_position_coordinate_reference
     )
-    assert (
-        references[0].first_position_coordinate_reference["identity"]
-        != references[0].second_position_coordinate_reference["identity"]
-    )
+    assert references[0].first_position_coordinate_reference["position"] == 0
+    assert references[0].second_position_coordinate_reference["position"] == 1
     assert all(
         reference.source_material_result_occurrence_identity == source.identity
         and reference.recorded_occurrence_identity == result.identity
@@ -743,13 +741,16 @@ def test_addressed_source_position_preserves_exact_boundaries(
 @pytest.mark.parametrize(
     "change",
     (
-        lambda coordinate: coordinate.update(identity="forged"),
         lambda coordinate: coordinate.update(position=True),
         lambda coordinate: coordinate.update(position=-1),
         lambda coordinate: coordinate.update(exact_material=[0]),
         lambda coordinate: coordinate.update(locality_identity="another-locality"),
-        lambda coordinate: coordinate.update(extra="coordinate"),
-        lambda coordinate: coordinate.pop("identity"),
+        lambda coordinate: coordinate.update(
+            completeness_boundary_identity="another-boundary"
+        ),
+        lambda coordinate: coordinate.update(
+            source_material_result_occurrence_identity="another-result"
+        ),
     ),
 )
 def test_addressed_source_position_refuses_a_changed_coordinate(change):
@@ -767,7 +768,7 @@ def test_addressed_source_position_refuses_a_changed_coordinate(change):
         )
 
 
-def test_equal_byte_material_at_another_position_does_not_supply_the_address():
+def test_equal_byte_material_at_distinct_positions_has_distinct_coordinates():
     ledger = EventLedger()
     _source_event, _assignment, _act, result = _record(ledger, b"aaa")
     references = references_to_recorded_position_coordinates_of_byte_pair_occurrences(
@@ -777,7 +778,7 @@ def test_equal_byte_material_at_another_position_does_not_supply_the_address():
     second_a = references[0].second_position_coordinate_reference
 
     assert first_a["exact_material"] == second_a["exact_material"]
-    assert first_a["identity"] != second_a["identity"]
+    assert (first_a["position"], second_a["position"]) == (0, 1)
     assert (
         references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(
             ledger, result.identity, second_a
@@ -1128,7 +1129,7 @@ FIDELITY_DISTINCTIONS = {
         test_exact_addressed_source_position_reads_only_its_carried_pair_references,
         test_addressed_source_position_preserves_exact_boundaries,
         test_addressed_source_position_refuses_a_changed_coordinate,
-        test_equal_byte_material_at_another_position_does_not_supply_the_address,
+        test_equal_byte_material_at_distinct_positions_has_distinct_coordinates,
         test_addressed_source_position_from_another_exact_result_is_refused,
         test_result_carries_only_its_declared_measurement_coordinates,
     ),

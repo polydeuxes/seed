@@ -116,9 +116,10 @@ class SharedPairPositionInputs(NamedTuple):
 
     @property
     def carries_one_position_coordinate_reference(self) -> bool:
-        return self.first_relation_second_position_coordinate_reference[
-            "identity"
-        ] == self.second_relation_first_position_coordinate_reference["identity"]
+        return (
+            self.first_relation_second_position_coordinate_reference
+            == self.second_relation_first_position_coordinate_reference
+        )
 
     @property
     def shared_position_coordinate_reference(self) -> dict[str, Any] | None:
@@ -175,7 +176,7 @@ def _position_coordinate_reference(
         exact_material = reference.exact_pair[1:]
     else:
         raise SharedPairPositionError("one exact pair role is required")
-    coordinates = {
+    return {
         "source_material_result_occurrence_identity": (
             reference.source_material_result_occurrence_identity
         ),
@@ -185,15 +186,6 @@ def _position_coordinate_reference(
         ),
         "position": position,
         "exact_material": list(exact_material),
-    }
-    return {
-        "identity": "source-byte-position-coordinate:"
-        + hashlib.sha256(
-            json.dumps(
-                coordinates, sort_keys=True, separators=(",", ":")
-            ).encode("utf-8")
-        ).hexdigest(),
-        **coordinates,
     }
 
 
