@@ -121,10 +121,6 @@ def _operator_source_current_coordinate_reference(
     earlier_measurement: Event,
     earlier_source_occurrence_references: tuple[str, ...],
 ) -> dict[str, str]:
-    from seed_runtime.operator_current_coordinates import (
-        read_operator_current_coordinates_through,
-    )
-
     reference = source_material.get("current_coordinate_reference")
     if (
         type(reference) is not dict
@@ -135,33 +131,25 @@ def _operator_source_current_coordinate_reference(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact operator source occurrence"
         )
+    required_occurrences = tuple(
+        dict.fromkeys(
+            (
+                *earlier_source_occurrence_references,
+                earlier_measurement.identity,
+                reference["through_event_occurrence_identity"],
+            )
+        )
+    )
     try:
-        coordinates = read_operator_current_coordinates_through(
-            ledger,
+        ordered = ledger.occurrences_in_append_order(
+            required_occurrences,
             locality_identity=earlier_measurement.locality_identity,
-            through_event_occurrence_identity=reference[
-                "through_event_occurrence_identity"
-            ],
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
             "operator source occurrence carries no exact prior coordinates"
         ) from error
-    carried_sources = {
-        occurrence.get("result_occurrence_identity")
-        for occurrence in coordinates.get(
-            "material_result_occurrences", ()
-        )
-        if type(occurrence) is dict
-    }
-    if (
-        earlier_measurement.identity
-        not in coordinates.get("measurement_occurrences", {})
-        or any(
-            occurrence not in carried_sources
-            for occurrence in earlier_source_occurrence_references
-        )
-    ):
+    if tuple(event.identity for event in ordered) != required_occurrences:
         raise RecordedPairMeasurementComparisonError(
             "operator source occurrence carries no exact prior coordinates"
         )
