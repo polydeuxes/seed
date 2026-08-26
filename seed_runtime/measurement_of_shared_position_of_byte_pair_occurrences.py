@@ -600,7 +600,7 @@ def _binding_reference(
 def _binding_material(
     *,
     inputs: SharedPairPositionInputs,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     identities: dict[str, str],
     determination_result_reference: dict[str, str] | None = None,
 ) -> dict[str, Any]:
@@ -622,7 +622,7 @@ def _binding_material(
         "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": {
             "locality_identity": inputs.first.locality_identity,
             "source_material_result_occurrence_identity": (
@@ -631,7 +631,6 @@ def _binding_material(
             "completeness_boundary_identity": (
                 inputs.first.completeness_boundary_identity
             ),
-            "standing_boundary_identity": standing_boundary_identity,
         },
         "unknown": [],
     }
@@ -677,7 +676,7 @@ def _applicability_binding_material(
         "measurement_rule": MEASUREMENT_RULE,
         "first_position_assertion": first_subject,
         "second_position_assertion": second_subject,
-        "standing_boundary_identity": through_event_occurrence_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "scope": {
             "locality_identity": inputs.first.locality_identity,
             "source_material_result_occurrence_identity": (
@@ -686,7 +685,6 @@ def _applicability_binding_material(
             "completeness_boundary_identity": (
                 inputs.first.completeness_boundary_identity
             ),
-            "standing_boundary_identity": through_event_occurrence_identity,
             "addressed_act_identity": measurement_act_identity,
         },
         "unknown": [],
@@ -756,7 +754,7 @@ def _record_shared_position_binding(
         SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             inputs=inputs,
-            standing_boundary_identity=boundary,
+            through_event_occurrence_identity=boundary,
             identities=identities,
         ),
         locality_identity=inputs.first.locality_identity,
@@ -904,7 +902,7 @@ def record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence
         SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             inputs=inputs,
-            standing_boundary_identity=boundary,
+            through_event_occurrence_identity=boundary,
             identities=identities,
             determination_result_reference=(
                 _determination_result_reference(result)
@@ -980,7 +978,7 @@ def _read_binding(
     second = event.material.get("second_position_assertion")
     if type(first) is not dict or type(second) is not dict:
         raise SharedPairPositionError("shared-position assignment carries no exact inputs")
-    boundary = event.material.get("standing_boundary_identity")
+    boundary = event.material.get("through_event_occurrence_identity")
     provenance_present = D2_RESULT_REFERENCE_COORDINATE in event.material
     determination_result = None
     determination_reference = None
@@ -1061,7 +1059,7 @@ def _read_binding(
     if event.kind == SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
         expected = _binding_material(
             inputs=inputs,
-            standing_boundary_identity=boundary,
+            through_event_occurrence_identity=boundary,
             identities=identities,
             determination_result_reference=determination_reference,
         )
@@ -1115,7 +1113,7 @@ def _applicability_act_material(
     *,
     assignment: Event,
     inputs: SharedPairPositionInputs,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
         "addressed_act_identity": assignment.material["addressed_act_identity"],
@@ -1130,7 +1128,7 @@ def _applicability_act_material(
             ],
         ),
         "measurement_rule": MEASUREMENT_RULE,
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relations": [
             {
                 "role": "first exact pair-occurrence position Assertion",
@@ -1202,7 +1200,7 @@ def record_shared_position_applicability_act_occurrence(
         _applicability_act_material(
             assignment=applicability_binding,
             inputs=inputs,
-            standing_boundary_identity=applicability_binding.identity,
+            through_event_occurrence_identity=applicability_binding.identity,
         ),
         locality_identity=measurement_binding.locality_identity,
     )
@@ -1236,12 +1234,12 @@ def _read_applicability_act(
             prior_standing=prior_standing,
         )
     assignment, inputs = assignment_reading
-    boundary = event.material.get("standing_boundary_identity")
+    boundary = event.material.get("through_event_occurrence_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     expected = _applicability_act_material(
         assignment=assignment,
         inputs=inputs,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
     )
     if (
         assignment_identity != assignment.identity
@@ -1295,13 +1293,13 @@ def _measurement_binding_addressed_by_applicability(
         coordinate: measurement_binding.material.get(coordinate)
         for coordinate in _IDENTITY_COORDINATES
     }
-    boundary = measurement_binding.material.get("standing_boundary_identity")
+    boundary = measurement_binding.material.get("through_event_occurrence_identity")
     determination_reference = measurement_binding.material.get(
         D2_RESULT_REFERENCE_COORDINATE
     )
     expected = _binding_material(
         inputs=inputs,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
         identities=identities,
         determination_result_reference=determination_reference,
     )
@@ -1346,7 +1344,7 @@ def _applicability_binding_for_inputs(
     expected = _applicability_binding_material(
         inputs=inputs,
         through_event_occurrence_identity=binding.material.get(
-            "standing_boundary_identity"
+            "through_event_occurrence_identity"
         ),
         measurement_act_identity=binding.material.get(
             "addressed_act_identity"
@@ -1638,7 +1636,7 @@ def _measurement_act_material(
     assignment: Event,
     inputs: SharedPairPositionInputs,
     applicability: Event,
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     return {
         "addressed_act_identity": assignment.material["measurement_act_identity"],
@@ -1657,7 +1655,7 @@ def _measurement_act_material(
             "result_identity": applicability.material["result_identity"],
         },
         "measurement_rule": MEASUREMENT_RULE,
-        "standing_boundary_identity": standing_boundary_identity,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
         "participation": [
             {
                 "role": "first relation of ordered path",
@@ -1714,7 +1712,7 @@ def record_shared_position_measurement_act_occurrence(
             assignment=measurement_binding,
             inputs=inputs,
             applicability=applicability,
-            standing_boundary_identity=boundary,
+            through_event_occurrence_identity=boundary,
         ),
         locality_identity=measurement_binding.locality_identity,
     )
@@ -1782,13 +1780,13 @@ def _read_measurement_act(
         assignment_reading=(applicability_binding, inputs),
         prior_standing=prior_standing,
     )
-    boundary = event.material.get("standing_boundary_identity")
+    boundary = event.material.get("through_event_occurrence_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     expected = _measurement_act_material(
         assignment=assignment,
         inputs=inputs,
         applicability=applicability,
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
     )
     if (
         applicability_inputs != inputs

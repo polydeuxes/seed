@@ -135,7 +135,7 @@ def _record_shared_path(
         shared_position._applicability_act_material(
             assignment=applicability_binding,
             inputs=inputs,
-            standing_boundary_identity=standing[
+            through_event_occurrence_identity=standing[
                 "through_event_occurrence_identity"
             ],
         ),
@@ -185,7 +185,7 @@ def _record_shared_path(
             assignment=measurement_binding,
             inputs=inputs,
             applicability=applicability,
-            standing_boundary_identity=standing[
+            through_event_occurrence_identity=standing[
                 "through_event_occurrence_identity"
             ],
         ),
