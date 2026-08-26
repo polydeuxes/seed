@@ -10,7 +10,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+    BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,

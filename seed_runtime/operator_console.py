@@ -7,7 +7,7 @@ from typing import BinaryIO, Mapping, TextIO
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    _record_byte_position_pair_count_layer_from_carried_locality_standing,
+    _record_byte_position_pair_count_layer_from_current_coordinates,
     assertions_of_recorded_byte_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,
 )
@@ -227,11 +227,11 @@ def _record_pair_measurement(
     """Record the pair Measurement supplied by one exact-byte Measurement."""
 
     pair_measurement, standing = (
-        _record_byte_position_pair_count_layer_from_carried_locality_standing(
+        _record_byte_position_pair_count_layer_from_current_coordinates(
             ledger,
             source_measurement_event_identity=byte_measurement_event_identity,
             recording_locality_identity=locality_identity,
-            locality_standing=standing,
+            current_coordinates=standing,
         )
     )
     return standing, pair_measurement

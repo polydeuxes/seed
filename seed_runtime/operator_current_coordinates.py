@@ -26,7 +26,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+    BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
@@ -439,7 +439,7 @@ _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
-    BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+    BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 }
 _LOCALITY_CONTINUATION_KINDS = {
@@ -1312,7 +1312,7 @@ def advance_operator_current_coordinates(
                     ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
                 applicability_result_occurrences[event.identity] = None
-            elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT:
+            elif event.kind == BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT:
                 _read_pair_measurement_act_occurrence(
                     ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
@@ -2708,12 +2708,12 @@ def _carry_pair_applicability_act_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    assignment,
+    binding,
     source,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_applicability_act_event(
-        ledger, event, assignment=assignment, source=source
+        ledger, event, binding=binding, source=source
     )
     return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         ledger,
@@ -2729,7 +2729,7 @@ def _carry_pair_applicability_result_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    assignment,
+    binding,
     source,
     applicability_act_occurrence,
     prior_through_event_occurrence_identity: str,
@@ -2737,7 +2737,7 @@ def _carry_pair_applicability_result_into_standing(
     _require_exact_pair_applicability_result_event(
         ledger,
         event,
-        assignment=assignment,
+        binding=binding,
         source=source,
         applicability_act_occurrence=applicability_act_occurrence,
     )
@@ -2755,7 +2755,7 @@ def _carry_pair_measurement_act_into_standing(
     locality_standing: dict[str, Any],
     event,
     *,
-    assignment,
+    binding,
     source,
     applicability_event,
     applicability_act_occurrence,
@@ -2764,7 +2764,7 @@ def _carry_pair_measurement_act_into_standing(
     _require_exact_pair_measurement_act_event(
         ledger,
         event,
-        assignment=assignment,
+        binding=binding,
         applicability_binding=_pair_applicability_binding_of_result(
             ledger, applicability_event, source=source
         ),
@@ -2787,7 +2787,7 @@ def _carry_pair_measurement_result_into_standing(
     event,
     *,
     act_occurrence,
-    assignment,
+    binding,
     source,
     applicability_event,
     applicability_act_occurrence,
@@ -2797,7 +2797,7 @@ def _carry_pair_measurement_result_into_standing(
         ledger,
         event,
         act_occurrence=act_occurrence,
-        assignment=assignment,
+        binding=binding,
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,

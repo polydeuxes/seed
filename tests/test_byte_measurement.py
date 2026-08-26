@@ -1616,22 +1616,20 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     second = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, second_result.identity
     )
-    first_assignment = ledger.get(
+    first_binding = ledger.get(
         first["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ],
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
-    assert first["dimensions"]["identity"] == first_assignment.material[
+    assert first["dimensions"]["identity"] == first_binding.material[
         "applicability_result_identity"
     ]
-    assert first_assignment.kind == (
+    assert first_binding.kind == (
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert "assignment_identity" not in first["subject_to_act_binding_reference"]
-    assert "assignment_subject_identity" not in first["subject_to_act_binding_reference"]
-    assert first["addressed_act_identity"] == first_assignment.material[
+    assert first["addressed_act_identity"] == first_binding.material[
         "addressed_act_identity"
     ]
     assert first["addressed_act_occurrence_identity"] is None
@@ -1645,7 +1643,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    assignment = get_byte_position_pair_measurement_subject_to_act_binding(
+    measurement_binding = get_byte_position_pair_measurement_subject_to_act_binding(
         ledger,
         result.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
@@ -1656,14 +1654,14 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
         applicability.material["act_occurrence_event_identity"]
     )
     measurement_act = ledger.get(result.material["act_occurrence_event_identity"])
-    standing = read_operator_current_coordinates_through(
+    current_coordinates = read_operator_current_coordinates_through(
         ledger,
         locality_identity="measurement",
-        through_event_occurrence_identity=assignment.identity,
+        through_event_occurrence_identity=measurement_binding.identity,
     )
 
-    assert standing["subject_to_act_binding_occurrences"].get(
-        assignment.identity, object()
+    assert current_coordinates["subject_to_act_binding_occurrences"].get(
+        measurement_binding.identity, object()
     ) is None
     applicability_binding = ledger.get(
         applicability_act.material["subject_to_act_binding_reference"][
@@ -1673,16 +1671,16 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     assert applicability_binding.kind == (
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
-    assert assignment.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
-    assert applicability_binding.identity != assignment.identity
-    assert assignment.material["subject_reference"] == applicability_binding.material[
+    assert measurement_binding.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    assert applicability_binding.identity != measurement_binding.identity
+    assert measurement_binding.material["subject_reference"] == applicability_binding.material[
         "source_assertion_reference"
     ]
-    assert assignment.material["through_event_occurrence_identity"] == (
+    assert measurement_binding.material["through_event_occurrence_identity"] == (
         applicability_binding.identity
     )
     assert applicability_binding.material["addressed_act_identity"] == (
-        assignment.material["exact_act_identity"]
+        measurement_binding.material["exact_act_identity"]
     )
     assert applicability_act.material["subject_to_act_binding_reference"] != (
         result.material["subject_to_act_binding_reference"]
@@ -1727,7 +1725,7 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
     ) == recorded_before
 
 
-def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts():
+def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     from seed_runtime import byte_measurement
     from seed_runtime.operator_current_coordinates import (
         _carry_pair_applicability_act_into_standing,
@@ -1744,14 +1742,14 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         source_measurement_event_identity=source_event.identity,
         measurement_locality_identity="byte-measurement",
     )
-    standing = read_operator_current_coordinates(
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="byte-measurement"
     )
     boundary = byte_measurement._require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
         recording_locality_identity="byte-measurement",
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
     identities = byte_measurement._new_pair_lifecycle_identities(ledger)
     applicability_binding = byte_measurement._append_pair_applicability_binding(
@@ -1763,9 +1761,9 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         through_event_occurrence_identity=boundary,
         identities=identities,
     )
-    standing = _carry_pair_applicability_binding_into_standing(
+    current_coordinates = _carry_pair_applicability_binding_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         applicability_binding,
         source,
         prior_through_event_occurrence_identity=boundary,
@@ -1779,107 +1777,107 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         through_event_occurrence_identity=applicability_binding.identity,
         identities=identities,
     )
-    standing = _carry_pair_measurement_binding_into_standing(
+    current_coordinates = _carry_pair_measurement_binding_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         measurement_binding,
         source,
         prior_through_event_occurrence_identity=applicability_binding.identity,
     )
-    forged = deepcopy(applicability_binding)
-    forged.material["addressed_act_identity"] = "forged-measurement-act"
+    changed_binding = deepcopy(applicability_binding)
+    changed_binding.material["addressed_act_identity"] = "changed-measurement-act"
     event_count = len(ledger.list())
     with pytest.raises(ByteMeasurementError, match="binding is not exact"):
-        byte_measurement._record_pair_input_applicability_act_from_carried_assignment(
+        byte_measurement._record_pair_input_applicability_act_from_carried_binding(
             ledger,
-            assignment=forged,
+            binding=changed_binding,
             source=source,
-            responsibility_assignment_standing=standing,
+            current_coordinates=current_coordinates,
         )
     assert len(ledger.list()) == event_count
 
     applicability = byte_measurement._pair_input_applicability(
         ledger,
         source,
-        assignment=applicability_binding,
+        binding=applicability_binding,
         measurement_locality_identity="byte-measurement",
     )
     applicability_act = (
-        byte_measurement._record_pair_input_applicability_act_from_carried_assignment(
+        byte_measurement._record_pair_input_applicability_act_from_carried_binding(
             ledger,
-            assignment=applicability_binding,
+            binding=applicability_binding,
             source=source,
-            responsibility_assignment_standing=standing,
+            current_coordinates=current_coordinates,
         )
     )
-    standing = _carry_pair_applicability_act_into_standing(
+    current_coordinates = _carry_pair_applicability_act_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         applicability_act,
-        assignment=applicability_binding,
+        binding=applicability_binding,
         source=source,
         prior_through_event_occurrence_identity=measurement_binding.identity,
     )
-    unchanged = deepcopy(standing)
+    unchanged = deepcopy(current_coordinates)
     with pytest.raises(ValueError, match="order is not exact"):
         _carry_pair_applicability_act_into_standing(
             ledger,
-            standing,
+            current_coordinates,
             applicability_act,
-            assignment=applicability_binding,
+            binding=applicability_binding,
             source=source,
             prior_through_event_occurrence_identity=applicability_act.identity,
         )
-    assert standing == unchanged
+    assert current_coordinates == unchanged
 
     applicability_event = (
         byte_measurement._record_pair_input_applicability_result_from_carried_act(
             ledger,
-            assignment=applicability_binding,
+            binding=applicability_binding,
             source=source,
             applicability_act_occurrence=applicability_act,
             applicability_assertion=applicability,
         )
     )
-    standing = _carry_pair_applicability_result_into_standing(
+    current_coordinates = _carry_pair_applicability_result_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         applicability_event,
-        assignment=applicability_binding,
+        binding=applicability_binding,
         source=source,
         applicability_act_occurrence=applicability_act,
         prior_through_event_occurrence_identity=applicability_act.identity,
     )
     measurement_act = byte_measurement._record_pair_measurement_act_from_carried_applicability(
         ledger,
-        assignment=measurement_binding,
+        binding=measurement_binding,
         source=source,
         applicability_event=applicability_event,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
-    standing = _carry_pair_measurement_act_into_standing(
+    current_coordinates = _carry_pair_measurement_act_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         measurement_act,
-        assignment=measurement_binding,
+        binding=measurement_binding,
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act,
         prior_through_event_occurrence_identity=applicability_event.identity,
     )
-    unchanged = deepcopy(standing)
+    unchanged = deepcopy(current_coordinates)
     with pytest.raises(ValueError, match="order is not exact"):
         _carry_pair_measurement_act_into_standing(
             ledger,
-            standing,
+            current_coordinates,
             measurement_act,
-            assignment=measurement_binding,
+            binding=measurement_binding,
             source=source,
             applicability_event=applicability_event,
             applicability_act_occurrence=applicability_act,
             prior_through_event_occurrence_identity=measurement_act.identity,
         )
-    assert standing == unchanged
+    assert current_coordinates == unchanged
 
 
 def test_pair_result_is_derived_from_source_without_a_measured_carrier_argument():
