@@ -13,7 +13,6 @@ import sqlite3
 import zlib
 from typing import Any, Iterable, Iterator
 
-from seed_runtime.identities import new_identity, reserve_identity_prefix
 from seed_runtime.event import Event, _decode_screened_event_material
 
 
@@ -270,6 +269,7 @@ class EventLedger:
         self._boundary_positions: dict[str, int] = {
             _EMPTY_PREFIX_IDENTITY: 0
         }
+        self._next_identity_numbers: dict[str, int] = {}
 
     def append(
         self,
@@ -281,7 +281,7 @@ class EventLedger:
     ) -> Event:
         """Record an event and return the stored event."""
         event = Event(
-            identity=new_identity("evt"),
+            identity=self._mint_identity("evt"),
             kind=kind,
             material=material or {},
             exact_material=exact_material,
@@ -293,14 +293,19 @@ class EventLedger:
     def allocate_event_identity(self) -> str:
         """Allocate an identity for material built before `append_many`."""
 
-        return new_identity("evt")
+        return self._mint_identity("evt")
 
     def mint_identity(self, prefix: str) -> str:
         """Mint one identity in this ledger's identity domain."""
 
         if type(prefix) is not str or not prefix:
             raise TypeError("one exact identity prefix is required")
-        return new_identity(prefix)
+        return self._mint_identity(prefix)
+
+    def _mint_identity(self, prefix: str) -> str:
+        number = self._next_identity_numbers.get(prefix, 1)
+        self._next_identity_numbers[prefix] = number + 1
+        return f"{prefix}_{number:06d}"
 
     def append_many(
         self,
@@ -663,7 +668,6 @@ class SQLiteEventLedger(EventLedger):
         self._connection.commit()
         max_event_number = self._max_event_identity_number()
         self._next_event_number = max_event_number + 1
-        reserve_identity_prefix("evt", max_event_number)
 
     def append(
         self,
@@ -1293,7 +1297,6 @@ class SQLiteEventLedger(EventLedger):
     def _new_event_identity(self) -> str:
         event_identity = f"evt_{self._next_event_number:06d}"
         self._next_event_number += 1
-        reserve_identity_prefix("evt", self._next_event_number - 1)
         return event_identity
 
     def _advance_event_counter(self, event_identity: str) -> None:
@@ -1301,7 +1304,6 @@ class SQLiteEventLedger(EventLedger):
         if number is None:
             return
         self._next_event_number = max(self._next_event_number, number + 1)
-        reserve_identity_prefix("evt", number)
 
     def _max_event_identity_number(self) -> int:
         row = self._connection.execute("""

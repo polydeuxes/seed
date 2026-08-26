@@ -228,13 +228,7 @@ def _run_console_process(db: str, material: bytes) -> subprocess.CompletedProces
 
 
 def test_a_reopened_console_process_does_not_abort(db):
-    """`new_identity` counts from 1 per process, so durable identities must be reserved.
-
-    Every other test here runs its lifetimes inside one process, where the
-    counters keep climbing and no identity is ever reissued. The second real
-    `seed --db` invocation aborted on `duplicate representation reference` until
-    the console's prefixes were reserved on open.
-    """
+    """A reopened durable Ledger does not reissue an existing identity."""
     for material in (b"a", b"b", b"c"):
         result = _run_console_process(db, material)
         assert result.returncode == 0, result.stderr
