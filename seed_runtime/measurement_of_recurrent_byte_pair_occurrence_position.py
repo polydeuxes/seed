@@ -313,7 +313,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     findings_by_position = {
         finding.assertion_position: finding for finding in findings or ()
     }
-    binding = reading.assignment.material if reading is not None else None
+    binding = reading.binding.material if reading is not None else None
     sources = (
         binding.get("source_occurrence_references")
         if isinstance(binding, dict)

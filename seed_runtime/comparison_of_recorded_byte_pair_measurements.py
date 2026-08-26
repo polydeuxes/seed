@@ -213,7 +213,7 @@ def _measurement_and_findings(
         raise RecordedPairMeasurementComparisonError(
             "comparison requires exact recorded pair findings"
         )
-    return event, findings, reading.assignment
+    return event, findings, reading.binding
 
 
 def _findings_from_carried_measurement(

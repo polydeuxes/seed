@@ -395,7 +395,7 @@ class _RecordedBytePairFinding:
 @dataclass(frozen=True)
 class _RecordedBytePairMeasurementReading:
     results: tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...]
-    assignment: Event
+    binding: Event
     source: RecordedByteAssertion
 
 
@@ -5021,7 +5021,7 @@ def _validated_recorded_byte_position_pair_measurement(
         ))
     return _RecordedBytePairMeasurementReading(
         results=tuple(validated_results),
-        assignment=assignment,
+        binding=assignment,
         source=source,
     )
 
