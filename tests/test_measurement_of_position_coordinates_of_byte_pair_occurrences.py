@@ -11,7 +11,7 @@ from seed_runtime.yield_relation import (
 from seed_runtime.byte_measurement import (
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     ByteMeasurementError,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -1079,7 +1079,7 @@ def _assert_position_assertion_movement_requires_its_exact_source(
 
 def test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment():
     _assert_position_assertion_movement_requires_its_exact_source(
-        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
         0,
     )
 

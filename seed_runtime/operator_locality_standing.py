@@ -27,7 +27,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
@@ -42,7 +42,7 @@ from seed_runtime.byte_measurement import (
     _source_assertion_from_reference,
     _source_assertion_reference,
     _findings_of_recorded_byte_position_pair_measurement,
-    _read_assertion_locality_movement_responsibility_assignment,
+    _read_assertion_locality_movement_subject_to_act_binding,
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_assignment_and_source,
     _read_byte_measurement_responsibility_assignment,
@@ -412,7 +412,7 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
 }
@@ -425,7 +425,7 @@ _MEASUREMENT_RECORDED_KINDS = {
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 }
 _ASSERTION_LOCALITY_MOVEMENT_KINDS = {
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
 }
@@ -1347,9 +1347,9 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+            == ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         ):
-            _read_assertion_locality_movement_responsibility_assignment(
+            _read_assertion_locality_movement_subject_to_act_binding(
                 ledger,
                 event.identity,
                 prior_destination_standing={
@@ -2193,7 +2193,7 @@ def _carry_assertion_locality_movement_assignment_into_standing(
     if (
         type(locality_standing) is not dict
         or event.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
         or source_event is None
@@ -2266,7 +2266,7 @@ def _carry_assertion_locality_movement_act_into_standing(
     if (
         type(locality_standing) is not dict
         or responsibility_assignment.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(responsibility_assignment.identity)
         != responsibility_assignment
         or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED
@@ -2361,7 +2361,7 @@ def _carry_assertion_locality_movement_result_into_standing(
     if (
         type(locality_standing) is not dict
         or responsibility_assignment.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(responsibility_assignment.identity)
         != responsibility_assignment
         or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED

@@ -118,8 +118,8 @@ BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.byte_position_pair_applicability_act_occurrence_recorded"
 )
 ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorded"
-ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND = (
-    "operator.assertion.locality_movement_responsibility_assignment_recorded"
+ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND = (
+    "operator.assertion.locality_movement_subject_to_act_binding_recorded"
 )
 ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT = (
     "operator.assertion.locality_movement_act_occurrence_recorded"
@@ -135,7 +135,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Current.E.1",
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND: "03.Movement.A",
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND: "03.Movement.A",
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
@@ -991,7 +991,7 @@ def _require_exact_movement_assignment_and_source(
     if (
         type(assignment) is not Event
         or assignment.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or assignment.locality_identity is None
         or ledger.get(assignment.identity) != assignment
         or ledger.integrity_of(assignment.identity) == CORRUPTED
@@ -1040,7 +1040,7 @@ def _require_exact_movement_assignment_and_source(
     return source, source_event
 
 
-def record_assertion_locality_movement_responsibility_assignment(
+def record_assertion_locality_movement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
@@ -1081,7 +1081,7 @@ def record_assertion_locality_movement_responsibility_assignment(
     if len(set(identities.values())) != len(identities):
         raise ByteMeasurementError("Assertion movement lifecycle identities collapsed")
     return ledger.append(
-        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
         _movement_assignment_material(
             source=source,
             source_event=source_event,
@@ -1095,7 +1095,7 @@ def record_assertion_locality_movement_responsibility_assignment(
     )
 
 
-def _read_assertion_locality_movement_responsibility_assignment(
+def _read_assertion_locality_movement_subject_to_act_binding(
     ledger: EventLedger,
     assignment_event_identity: str,
     *,
@@ -1105,7 +1105,7 @@ def _read_assertion_locality_movement_responsibility_assignment(
     if (
         assignment is None
         or assignment.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or assignment.locality_identity is None
         or ledger.integrity_of(assignment.identity) == CORRUPTED
     ):
@@ -1213,10 +1213,10 @@ def _read_assertion_locality_movement_responsibility_assignment(
     return assignment, source, source_event
 
 
-def get_assertion_locality_movement_responsibility_assignment(
+def get_assertion_locality_movement_subject_to_act_binding(
     ledger: EventLedger, assignment_event_identity: str
 ) -> Event:
-    return _read_assertion_locality_movement_responsibility_assignment(
+    return _read_assertion_locality_movement_subject_to_act_binding(
         ledger, assignment_event_identity
     )[0]
 
@@ -1253,7 +1253,7 @@ def record_assertion_locality_movement_act_occurrence(
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
     assignment, _source, _source_event = (
-        _read_assertion_locality_movement_responsibility_assignment(
+        _read_assertion_locality_movement_subject_to_act_binding(
             ledger, responsibility_assignment_event_identity
         )
     )
@@ -1294,7 +1294,7 @@ def _record_assertion_locality_movement_act_from_carried_standing(
         ) from error
     if (
         assignment.kind
-        != ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        != ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
         or ledger.get(assignment.identity) != assignment
         or ledger.integrity_of(assignment.identity) == CORRUPTED
         or destination_standing.get("locality_identity")
@@ -1335,7 +1335,7 @@ def _read_assertion_locality_movement_act_occurrence(
     if type(reference) is not dict:
         raise ByteMeasurementError("Assertion movement Act carries no exact assignment")
     assignment, source, _source_event = (
-        _read_assertion_locality_movement_responsibility_assignment(
+        _read_assertion_locality_movement_subject_to_act_binding(
             ledger,
             reference.get("recorded_occurrence_identity"),
             prior_destination_standing=prior_destination_standing,
@@ -1509,7 +1509,7 @@ def _move_byte_assertion_to_locality(
         return source
     from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality=destination_locality,
@@ -1681,7 +1681,7 @@ def _record_movement_assignment_from_carried_standings(
     if len(set(identities.values())) != len(identities):
         raise ByteMeasurementError("Assertion movement lifecycle identities collapsed")
     return ledger.append(
-        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
         _movement_assignment_material(
             source=source,
             source_event=source_event,

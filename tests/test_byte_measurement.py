@@ -16,7 +16,7 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
-    ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND,
+    ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_MEASUREMENT_RULE,
@@ -33,7 +33,7 @@ from seed_runtime.byte_measurement import (
     get_byte_position_pair_measurement_subject_to_act_binding,
     get_recorded_pair_input_applicability,
     get_byte_measurement_responsibility_assignment,
-    get_assertion_locality_movement_responsibility_assignment,
+    get_assertion_locality_movement_subject_to_act_binding,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
     input_applicability_of_recorded_byte_position_pair_measurement,
@@ -41,7 +41,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_responsibility_assignment,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
-    record_assertion_locality_movement_responsibility_assignment,
+    record_assertion_locality_movement_subject_to_act_binding,
     record_assertion_locality_movement_act_occurrence,
     record_assertion_locality_movement_result,
     move_recorded_byte_assertion_to_locality,
@@ -2029,7 +2029,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     )
     movement = ledger.get(pair.material["source_movement_event_identity"])
     reference = movement.material["subject_to_act_binding_reference"]
-    assignment = get_assertion_locality_movement_responsibility_assignment(
+    assignment = get_assertion_locality_movement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     )
     standing = read_operator_locality_standing(
@@ -2037,7 +2037,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     )
 
     assert assignment.kind == (
-        ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY_ASSIGNMENT_KIND
+        ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
     )
     assert reference == {
         "recorded_occurrence_identity": assignment.identity,
@@ -2059,7 +2059,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
 def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_destination_standing():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2116,7 +2116,7 @@ def test_movement_assignment_refuses_stale_or_shaped_source_standing():
 
     for standing in (stale, shaped):
         with pytest.raises(ByteMeasurementError, match="current source Standing"):
-            record_assertion_locality_movement_responsibility_assignment(
+            record_assertion_locality_movement_subject_to_act_binding(
                 ledger,
                 source=source,
                 destination_locality="movement",
@@ -2131,7 +2131,7 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
     stale_destination = read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2161,7 +2161,7 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
 def test_movement_lifecycle_refuses_duplicate_act_and_result():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2201,7 +2201,7 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
 def test_movement_act_refuses_standing_before_a_later_destination_tip():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2250,7 +2250,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
         )
         if assertion.result == "exact_source_material_set"
     )
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2264,7 +2264,7 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    assert get_assertion_locality_movement_responsibility_assignment(
+    assert get_assertion_locality_movement_subject_to_act_binding(
         ledger, assignment.identity
     ) == assignment
     act = record_assertion_locality_movement_act_occurrence(
@@ -2307,7 +2307,7 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
         )
         if assertion.result == "exact_source_material_set"
     )
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2321,7 +2321,7 @@ def test_movement_assignment_reader_refuses_corrupted_source_carrier():
     ledger.corrupted.add(source_result.identity)
 
     with pytest.raises(ByteMeasurementError):
-        get_assertion_locality_movement_responsibility_assignment(
+        get_assertion_locality_movement_subject_to_act_binding(
             ledger, assignment.identity
         )
 
@@ -2357,7 +2357,7 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     prior = read_operator_locality_standing(
         ledger, locality_identity="movement"
     )
-    assignment = record_assertion_locality_movement_responsibility_assignment(
+    assignment = record_assertion_locality_movement_subject_to_act_binding(
         ledger,
         source=source,
         destination_locality="movement",
@@ -2569,7 +2569,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
         raise AssertionError("same-call movement re-entered a public reader")
 
     reader_names = (
-        "_read_assertion_locality_movement_responsibility_assignment",
+        "_read_assertion_locality_movement_subject_to_act_binding",
         "_read_assertion_locality_movement_act_occurrence",
         "_validate_moved_byte_assertion",
     )
