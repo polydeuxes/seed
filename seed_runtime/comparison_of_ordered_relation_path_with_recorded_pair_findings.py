@@ -829,7 +829,7 @@ def _binding_reference(
 
 
 _IDENTITY_COORDINATES = (
-    "compare_act_identity",
+    "exact_act_identity",
     "compare_act_occurrence_identity",
     "compare_result_identity",
 )
@@ -837,7 +837,7 @@ _IDENTITY_COORDINATES = (
 
 def _new_identities(ledger: EventLedger) -> dict[str, str]:
     return {
-        "compare_act_identity": ledger.mint_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_act"),
+        "exact_act_identity": ledger.mint_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_act"),
         "compare_act_occurrence_identity": ledger.mint_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare_occurrence"
         ),
@@ -855,8 +855,7 @@ def _binding_material(
                 inputs["comparison"]["reference"]
             ),
         },
-        "exact_act_identity": identities["compare_act_identity"],
-        "compare_act_identity": identities["compare_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "compare_act_occurrence_identity": identities[
             "compare_act_occurrence_identity"
         ],
@@ -894,7 +893,7 @@ def _applicability_binding_material(
     boundary: str,
     identities: dict[str, str],
 ) -> dict[str, Any]:
-    addressed_act_identity = comparison_binding.material["compare_act_identity"]
+    addressed_act_identity = comparison_binding.material["exact_act_identity"]
     return {
         "subject_reference": {
             "path_input": {
@@ -1522,7 +1521,7 @@ def _require_compare_current_coordinates(
 def _compare_act_material(binding: Event, applicability: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "compare_act_identity": material["compare_act_identity"],
+        "compare_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
         "result_identity": material["compare_result_identity"],
         "act": COMPARE_ACT,
@@ -1682,7 +1681,7 @@ def _compare_result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": binding.material["compare_result_identity"],
-        "compare_act_identity": binding.material["compare_act_identity"],
+        "compare_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "compare_act_occurrence_identity"
         ],
