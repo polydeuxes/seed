@@ -1,4 +1,4 @@
-"""Operator material acquisition, slash commands, and exact Standing work."""
+"""Operator material, slash commands, and exact current-coordinate work."""
 
 from __future__ import annotations
 
@@ -219,22 +219,22 @@ def _record_measurements_from_bounded_locality_replay(
 
 def _record_pair_measurement(
     ledger,
-    standing,
+    current_coordinates,
     *,
     byte_measurement_event_identity,
     locality_identity,
 ):
     """Record the pair Measurement supplied by one exact-byte Measurement."""
 
-    pair_measurement, standing = (
+    pair_measurement, current_coordinates = (
         _record_byte_position_pair_count_layer_from_current_coordinates(
             ledger,
             source_measurement_event_identity=byte_measurement_event_identity,
             recording_locality_identity=locality_identity,
-            current_coordinates=standing,
+            current_coordinates=current_coordinates,
         )
     )
-    return standing, pair_measurement
+    return current_coordinates, pair_measurement
 
 
 def _record_pair_measurements_after_declared_measurements(
@@ -245,19 +245,19 @@ def _record_pair_measurements_after_declared_measurements(
 ):
     """Record each pair Measurement whose exact-byte result was just recorded."""
 
-    standing = recorded.bounded_locality_replay
+    current_coordinates = recorded.bounded_locality_replay
     pair_measurements = []
     for byte_measurement in recorded.result_occurrences:
         if byte_measurement.kind != BYTE_MEASUREMENT_RECORDED_KIND:
             continue
-        standing, pair_measurement = _record_pair_measurement(
+        current_coordinates, pair_measurement = _record_pair_measurement(
             ledger,
-            standing,
+            current_coordinates,
             byte_measurement_event_identity=byte_measurement.identity,
             locality_identity=locality_identity,
         )
         pair_measurements.append(pair_measurement)
-    return standing, tuple(pair_measurements)
+    return current_coordinates, tuple(pair_measurements)
 
 
 def _recorded_byte_measurement_material_references(ledger):
@@ -300,16 +300,16 @@ def _recorded_byte_measurement_material_references(ledger):
     return references
 
 
-def _material_measurement_reference(ledger, acquisition_result):
-    reference = ledger._exact_material_reference(acquisition_result.identity)
+def _material_measurement_reference(ledger, material_result):
+    reference = ledger._exact_material_reference(material_result.identity)
     if reference is None:
-        raise ValueError("material acquisition result has no exact material")
+        raise ValueError("material result has no exact material")
     return reference
 
 
 def _latest_carried_pair_premise(
     ledger,
-    standing,
+    current_coordinates,
     *,
     locality_identity,
 ):
@@ -319,7 +319,9 @@ def _latest_carried_pair_premise(
         read_material_locality_relation_requirements,
     )
 
-    for event_identity in reversed(tuple(standing["measurement_occurrences"])):
+    for event_identity in reversed(
+        tuple(current_coordinates["measurement_occurrences"])
+    ):
         event = ledger.get(event_identity)
         if (
             event is None
@@ -333,17 +335,17 @@ def _latest_carried_pair_premise(
             else None
         )
         try:
-            assignment = get_byte_position_pair_measurement_subject_to_act_binding(
+            binding = get_byte_position_pair_measurement_subject_to_act_binding(
                 ledger,
                 reference.get("recorded_occurrence_identity")
                 if type(reference) is dict
                 else None,
             )
         except (TypeError, ValueError):
-            assignment = None
+            binding = None
         source_occurrence_references = (
-            assignment.material.get("source_occurrence_references")
-            if assignment is not None
+            binding.material.get("source_occurrence_references")
+            if binding is not None
             else None
         )
         if (
@@ -371,19 +373,19 @@ def _latest_carried_pair_premise(
                 for source_reference in source_occurrence_references
             )
         ):
-            return standing, event
-    return standing, None
+            return current_coordinates, event
+    return current_coordinates, None
 
 
 def _record_pair_measurement_comparison(
     ledger,
-    standing,
+    current_coordinates,
     *,
     earlier_pair_measurement,
     later_pair_measurement,
     locality_identity,
 ):
-    """Carry first and second produced pair results into their responsible Compare."""
+    """Carry first and second produced pair results into their Compare."""
 
     if (
         type(earlier_pair_measurement) is not Event
@@ -392,15 +394,15 @@ def _record_pair_measurement_comparison(
         or later_pair_measurement.locality_identity != locality_identity
     ):
         raise ValueError("pair Compare requires first and second carried Measurements")
-    result, standing = (
+    result, current_coordinates = (
         _record_recorded_pair_measurement_comparison_from_carried_measurements(
             ledger,
             earlier_measurement=earlier_pair_measurement,
             later_measurement=later_pair_measurement,
-            locality_standing=standing,
+            locality_standing=current_coordinates,
         )
     )
-    return standing, result
+    return current_coordinates, result
 
 
 def run_persistent_operator_console(
@@ -411,26 +413,26 @@ def run_persistent_operator_console(
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     operator_invocation_provider: OperatorInvocationProvider | None = None,
 ) -> None:
-    """Repeat exact-byte material acquisition and slash-command occurrences."""
+    """Repeat exact-byte material and slash-command occurrences."""
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"checkout"] = request_operator_checkout
     handlers[b"memory"] = request_operator_memory
-    # Each produced result enters the current Locality Standing.  This
-    # Standing is the input of the next interaction.
-    locality_standing = read_operator_current_coordinates(
+    # Each produced result enters the current coordinates used by the next
+    # interaction.
+    current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
     measured_material_references = _recorded_byte_measurement_material_references(
         ledger
     )
-    locality_standing, pair_premise = _latest_carried_pair_premise(
+    current_coordinates, pair_premise = _latest_carried_pair_premise(
         ledger,
-        locality_standing,
+        current_coordinates,
         locality_identity=locality_identity,
     )
     while True:
-        source_prior_boundary = locality_standing[
+        source_prior_boundary = current_coordinates[
             "through_event_occurrence_identity"
         ]
         source_boundary = operator_material_source_boundary(input_stream)
@@ -438,14 +440,14 @@ def run_persistent_operator_console(
             _record_operator_material_source_subject_to_act_binding_from_current_coordinates(
                 ledger,
                 locality_identity=locality_identity,
-                current_coordinates=locality_standing,
+                current_coordinates=current_coordinates,
                 source_boundary=source_boundary,
             )
         )
-        locality_standing = (
+        current_coordinates = (
             _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
-                locality_standing,
+                current_coordinates,
                 source_binding,
                 prior_through_event_occurrence_identity=source_prior_boundary,
             )
@@ -454,13 +456,13 @@ def run_persistent_operator_console(
             _record_operator_material_source_act_occurrence_from_binding(
                 ledger,
                 subject_to_act_binding=source_binding,
-                current_coordinates=locality_standing,
+                current_coordinates=current_coordinates,
             )
         )
-        locality_standing = (
+        current_coordinates = (
             _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
-                locality_standing,
+                current_coordinates,
                 source_act_occurrence,
                 prior_through_event_occurrence_identity=(
                     source_binding.identity
@@ -470,7 +472,7 @@ def run_persistent_operator_console(
         input_boundary = ledger.append_boundary()
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.material_boundary != source_boundary:
-            raise ValueError("operator material crossed its addressed source boundary")
+            raise ValueError("operator material differs from its addressed source boundary")
         if ledger.append_boundary() != input_boundary:
             raise ValueError(
                 "operator boundary invocation appended an occurrence before its result"
@@ -482,10 +484,10 @@ def run_persistent_operator_console(
             act_occurrence_event_identity=source_act_occurrence.identity,
             boundary_material=boundary_material,
         )
-        locality_standing = (
+        current_coordinates = (
             _carry_operator_material_source_occurrence_into_current_coordinates(
                 ledger,
-                locality_standing,
+                current_coordinates,
                 source_material,
                 prior_through_event_occurrence_identity=(
                     source_act_occurrence.identity
@@ -502,10 +504,10 @@ def run_persistent_operator_console(
                     ledger, source_material
                 )
                 if command_material_reference not in measured_material_references:
-                    locality_standing, _byte_measurement = (
+                    current_coordinates, _byte_measurement = (
                         _record_measurements_from_bounded_locality_replay(
                             ledger,
-                            locality_standing,
+                            current_coordinates,
                             locality_identity=locality_identity,
                         )
                     )
@@ -517,13 +519,13 @@ def run_persistent_operator_console(
                         operator_material_occurrence_reference=(
                             command_occurrence_reference
                         ),
-                        current_coordinates=locality_standing,
+                        current_coordinates=current_coordinates,
                     )
                 )
                 invocation_locality_identity = relation_binding.material[
                     "destination_locality_identity"
                 ]
-                witness_standing = read_operator_current_coordinates(
+                witness_current_coordinates = read_operator_current_coordinates(
                     ledger, locality_identity=invocation_locality_identity
                 )
                 relation_act = record_operator_invocation_locality_act_occurrence(
@@ -531,11 +533,11 @@ def run_persistent_operator_console(
                     subject_to_act_binding_event_identity=(
                         relation_binding.identity
                     ),
-                    current_coordinates=witness_standing,
+                    current_coordinates=witness_current_coordinates,
                 )
-                witness_standing = _advance_over(
+                witness_current_coordinates = _advance_over(
                     ledger,
-                    witness_standing,
+                    witness_current_coordinates,
                     (relation_act.identity,),
                     locality_identity=invocation_locality_identity,
                 )
@@ -543,9 +545,9 @@ def run_persistent_operator_console(
                     ledger,
                     act_occurrence_event_identity=relation_act.identity,
                 )
-                witness_standing = _advance_over(
+                witness_current_coordinates = _advance_over(
                     ledger,
-                    witness_standing,
+                    witness_current_coordinates,
                     (
                         relation_result.material[
                             "yield_relation_identity"
@@ -560,7 +562,7 @@ def run_persistent_operator_console(
             provider_boundary = ledger.append_boundary()
 
             def record_witness_material(supplied) -> None:
-                nonlocal witness_standing
+                nonlocal witness_current_coordinates
                 nonlocal supplied_occurrence_count
                 nonlocal provider_boundary
                 if ledger.append_boundary() != provider_boundary:
@@ -585,9 +587,9 @@ def run_persistent_operator_console(
                 )
                 supplied_occurrence_references.append(supplied_occurrence.identity)
                 supplied_occurrence_count += 1
-                witness_standing = _advance_over(
+                witness_current_coordinates = _advance_over(
                     ledger,
-                    witness_standing,
+                    witness_current_coordinates,
                     (supplied_occurrence.identity,),
                     locality_identity=invocation_locality_identity,
                 )
@@ -598,11 +600,11 @@ def run_persistent_operator_console(
                     recorded_witness_measurements = (
                         _record_declared_measurements_from_carried_bounded_locality_replay(
                             ledger,
-                            witness_standing,
+                            witness_current_coordinates,
                             locality_identity=invocation_locality_identity,
                         )
                     )
-                    witness_standing, _witness_pair_measurements = (
+                    witness_current_coordinates, _witness_pair_measurements = (
                         _record_pair_measurements_after_declared_measurements(
                             ledger,
                             recorded_witness_measurements,
@@ -645,19 +647,19 @@ def run_persistent_operator_console(
                 )
                 locality_identity = binding.locality_identity
                 pair_premise = None
-                locality_standing = read_operator_current_coordinates(
+                current_coordinates = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
                 )
                 continuation_act_occurrence = (
                     record_locality_continuation_act_occurrence(
                         ledger,
                         subject_to_act_binding_event_identity=binding.identity,
-                        current_coordinates=locality_standing,
+                        current_coordinates=current_coordinates,
                     )
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (continuation_act_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
@@ -667,9 +669,9 @@ def run_persistent_operator_console(
                         continuation_act_occurrence.identity
                     ),
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (
                         continuation.material["yield_relation_identity"],
                         continuation.identity,
@@ -682,12 +684,12 @@ def run_persistent_operator_console(
                     record_through_occurrence_boundary_reference_subject_to_act_binding(
                         ledger,
                         addressed_command=command_run.addressed,
-                        current_coordinates=locality_standing,
+                        current_coordinates=current_coordinates,
                     )
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (binding.identity,),
                     locality_identity=locality_identity,
                 )
@@ -695,12 +697,12 @@ def run_persistent_operator_console(
                     record_through_occurrence_boundary_reference_act_occurrence(
                         ledger,
                         subject_to_act_binding_event_identity=binding.identity,
-                        current_coordinates=locality_standing,
+                        current_coordinates=current_coordinates,
                     )
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (act_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
@@ -708,9 +710,9 @@ def run_persistent_operator_console(
                     ledger,
                     act_occurrence_event_identity=act_occurrence.identity,
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (
                         checkpoint.material["yield_relation_identity"],
                         checkpoint.identity,
@@ -722,24 +724,24 @@ def run_persistent_operator_console(
                 binding = (
                     record_recorded_boundary_locality_subject_to_act_binding(
                         ledger,
-                        source_current_coordinates=locality_standing,
+                        source_current_coordinates=current_coordinates,
                     )
                 )
                 locality_identity = binding.locality_identity
                 pair_premise = None
-                locality_standing = read_operator_current_coordinates(
+                current_coordinates = read_operator_current_coordinates(
                     ledger, locality_identity=locality_identity
                 )
                 act_occurrence = (
                     record_recorded_boundary_locality_act_occurrence(
                         ledger,
                         subject_to_act_binding_event_identity=binding.identity,
-                        current_coordinates=locality_standing,
+                        current_coordinates=current_coordinates,
                     )
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (act_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
@@ -747,9 +749,9 @@ def run_persistent_operator_console(
                     ledger,
                     act_occurrence_event_identity=act_occurrence.identity,
                 )
-                locality_standing = _advance_over(
+                current_coordinates = _advance_over(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     (
                         relation.material["yield_relation_identity"],
                         relation.identity,
@@ -764,25 +766,25 @@ def run_persistent_operator_console(
                 ledger, source_material
             )
             if source_material_reference not in measured_material_references:
-                locality_standing, byte_measurement = (
+                current_coordinates, byte_measurement = (
                     _record_measurements_from_bounded_locality_replay(
                         ledger,
-                        locality_standing,
+                        current_coordinates,
                         locality_identity=locality_identity,
                     )
                 )
                 measured_material_references.add(source_material_reference)
-                locality_standing, later_pair = _record_pair_measurement(
+                current_coordinates, later_pair = _record_pair_measurement(
                     ledger,
-                    locality_standing,
+                    current_coordinates,
                     byte_measurement_event_identity=byte_measurement.identity,
                     locality_identity=locality_identity,
                 )
                 if pair_premise is not None:
-                    locality_standing, comparison = (
+                    current_coordinates, comparison = (
                         _record_pair_measurement_comparison(
                             ledger,
-                            locality_standing,
+                            current_coordinates,
                             earlier_pair_measurement=pair_premise,
                             later_pair_measurement=later_pair,
                             locality_identity=locality_identity,
