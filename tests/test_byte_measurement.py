@@ -1130,14 +1130,14 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "dimensions",
         "result",
         "assertion_subject",
-        "input_support",
+        "referenced_assertion_positions",
         "conflicts",
         "unknown",
     }
     assert count.material["dimensions"]["source_provenance"]
     assert count.material["unknown"]
     assert count.material["conflicts"] == "Unknown"
-    assert count.support_assertion_references == (
+    assert count.referenced_assertions == (
         {
             "recorded_occurrence_identity": event.identity,
             "assertion_position": event.material["assertions"][0]["dimensions"]["position"],
@@ -1145,15 +1145,14 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     )
 
     detached_material = count.material
-    detached_material["dimensions"]["standing"] = "unsupported"
-    assert "standing" not in count.material["dimensions"]
+    detached_material["dimensions"]["content"]["count"] = 1000
+    assert count.material["dimensions"]["content"]["count"] == 2
 
-    detached_references = count.support_assertion_references
+    detached_references = count.referenced_assertions
     detached_references[0]["assertion_position"] = None
-    assert count.support_assertion_references[0]["assertion_position"] is not None
+    assert count.referenced_assertions[0]["assertion_position"] is not None
 
-    # Read preserves exact durable JSON kinds. It does not protect the
-    # result by transmuting lists to tuples or dicts to proxy objects.
+    # Read returns detached ordinary material rather than proxy objects.
     represented = Event(
         identity="re-represented",
         kind="test.content",

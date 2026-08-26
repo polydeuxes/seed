@@ -241,7 +241,7 @@ class RecordedByteAssertion:
     content: int | None
     result: str
     _material: dict[str, Any]
-    _support_assertion_references: tuple[dict[str, Any], ...]
+    _referenced_assertions: tuple[dict[str, Any], ...]
     locality_movement_event_identity: str | None = None
 
     @property
@@ -251,10 +251,10 @@ class RecordedByteAssertion:
         return deepcopy(self._material)
 
     @property
-    def support_assertion_references(self) -> tuple[dict[str, Any], ...]:
-        """Return detached occurrence-bound local support addresses."""
+    def referenced_assertions(self) -> tuple[dict[str, Any], ...]:
+        """Return detached occurrence-bound local Assertion addresses."""
 
-        return deepcopy(self._support_assertion_references)
+        return deepcopy(self._referenced_assertions)
 
     @property
     def reference(self) -> dict[str, Any]:
@@ -1758,7 +1758,7 @@ def _assertion_carried_by_locality_movement_result(
             content=source.content,
             result=source.result,
             _material=source.material,
-            _support_assertion_references=source.support_assertion_references,
+            _referenced_assertions=source.referenced_assertions,
             locality_movement_event_identity=movement.identity,
         )
     return RecordedAssertionCarriedByLocalityMovement(
@@ -1929,13 +1929,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
-            "input_support": {
-                "occurrence_references": [
-                    item["material_result_occurrence_identity"]
-                    for item in measured.source_material
-                ],
-                "local_assertion_references": [],
-            },
             "conflicts": "Unknown",
             "unknown": [],
         }
@@ -1959,10 +1952,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": result,
             "assertion_subject": subject,
-            "input_support": {
-                "occurrence_references": [],
-                "local_assertion_references": local_support_references,
-            },
+            "referenced_assertion_positions": local_support_references,
             "conflicts": "Unknown",
             "unknown": ["Participation: Unknown"],
         }
@@ -3022,7 +3012,9 @@ def _assertions_of_recorded_byte_measurement(
         )
     read = []
     for assertion in expected:
-        local_identities = assertion["input_support"]["local_assertion_references"]
+        referenced_positions = assertion.get(
+            "referenced_assertion_positions", []
+        )
         read.append(
             RecordedByteAssertion(
                 assertion_position=assertion["dimensions"]["position"],
@@ -3031,12 +3023,12 @@ def _assertions_of_recorded_byte_measurement(
                 content=assertion["assertion_subject"].get("content"),
                 result=assertion["result"],
                 _material=deepcopy(assertion),
-                _support_assertion_references=tuple(
+                _referenced_assertions=tuple(
                     {
                         "recorded_occurrence_identity": event.identity,
                         "assertion_position": local_position,
                     }
-                    for local_position in local_identities
+                    for local_position in referenced_positions
                 ),
             )
         )
