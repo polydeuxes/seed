@@ -200,7 +200,7 @@ def record_witness_material_source(
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": list(known_loss),
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
-        "provenance_occurrence_references": list(
+        "source_occurrence_references": list(
             source_occurrence_references
         ),
         "locality_relation": locality_relation,
@@ -257,7 +257,7 @@ def _read_witness_material_source_result(
     ledger: EventLedger, event: Event
 ) -> Event:
     material = event.material
-    provenance = material.get("provenance_occurrence_references")
+    source_references = material.get("source_occurrence_references")
     read_occurrences = material.get("read_occurrences", [])
     known_loss = material.get("known_loss")
     unknown = material.get("unknown")
@@ -304,14 +304,14 @@ def _read_witness_material_source_result(
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
         or unknown != list(MATERIAL_RESULT_UNKNOWN)
-        or type(provenance) is not list
-        or len(set(provenance)) != len(provenance)
+        or type(source_references) is not list
+        or len(set(source_references)) != len(source_references)
         or any(
             type(reference) is not str
             or not reference
             or ledger.get(reference) is None
             or ledger.integrity_of(reference) == CORRUPTED
-            for reference in provenance
+            for reference in source_references
         )
         or type(read_occurrences) is not list
         or act_occurrence is None
@@ -352,7 +352,7 @@ def _read_witness_material_source_result(
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": known_loss,
         "unknown": unknown,
-        "provenance_occurrence_references": provenance,
+        "source_occurrence_references": source_references,
         "locality_relation": locality_relation,
     }
     if read_occurrences:

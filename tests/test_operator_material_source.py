@@ -351,7 +351,7 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
     assert source_results == []
     assert read_exact_material_result(ledger, sources[0].identity) == sources[0]
     assert sources[0].exact_material == b"H"
-    assert sources[0].material["provenance_occurrence_references"] == []
+    assert sources[0].material["source_occurrence_references"] == []
     position_results = [
         event
         for event in ledger.list()

@@ -60,7 +60,7 @@ def test_source_result_preserves_each_exact_byte_value_without_interpretation():
     }
 
 
-def test_material_source_preserves_only_exact_intact_provenance_occurrence_references():
+def test_material_source_preserves_only_exact_intact_source_occurrence_references():
     class CorruptedReferenceLedger(EventLedger):
         corrupted = None
 
@@ -77,7 +77,7 @@ def test_material_source_preserves_only_exact_intact_provenance_occurrence_refer
         source_occurrence_references=(source.identity,),
     )
 
-    assert occurred.material["provenance_occurrence_references"] == [
+    assert occurred.material["source_occurrence_references"] == [
         source.identity
     ]
 
@@ -214,7 +214,7 @@ def test_witness_material_locality_relation_preserves_invocation_and_provenance(
     assert occurred.exact_material == b"hello"
     assert occurred.material["source_role"] == "this Witness"
     assert occurred.material["source_boundary"] == "stdout"
-    assert occurred.material["provenance_occurrence_references"] == [
+    assert occurred.material["source_occurrence_references"] == [
         command.identity
     ]
     assert all(
@@ -353,7 +353,7 @@ def test_equal_material_has_distinct_material_source_result_occurrences_results_
 def test_witness_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 
-    assert occurred.material["provenance_occurrence_references"] == []
+    assert occurred.material["source_occurrence_references"] == []
     assert occurred.material["result_identity"] == (
         occurred.material["subject_to_act_binding_reference"][
             "result_boundary_identity"

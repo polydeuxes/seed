@@ -125,7 +125,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
 
     assert supplied.locality_identity == relation.locality_identity
     assert exact_material_result_bytes(supplied) == b"one selected log line\n"
-    assert supplied.material["provenance_occurrence_references"] == [
+    assert supplied.material["source_occurrence_references"] == [
         command.identity,
         relation.identity,
     ]

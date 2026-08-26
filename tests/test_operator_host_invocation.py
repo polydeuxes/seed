@@ -241,7 +241,7 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
         prior_supplied_occurrence_references=(source.identity,),
     )
 
-    assert result.material["provenance_occurrence_references"] == [
+    assert result.material["source_occurrence_references"] == [
         command.identity,
         relation.identity,
         source.identity,
@@ -281,7 +281,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
         prior_supplied_occurrence_references=(function.identity, source.identity),
     )
 
-    assert result.material["provenance_occurrence_references"] == [
+    assert result.material["source_occurrence_references"] == [
         command.identity,
         relation.identity,
         function.identity,
@@ -416,7 +416,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
     assert [
-        event.material["provenance_occurrence_references"]
+        event.material["source_occurrence_references"]
         for event in acquisition_results[1:]
     ] == [[acquisition_results[0].identity, relation.identity]] * 3
     assert {event.locality_identity for event in acquisition_results[1:]} == {
@@ -635,7 +635,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
         if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
     preserved_provenance = [
-        event.material["provenance_occurrence_references"]
+        event.material["source_occurrence_references"]
         for event in supplied_acquisition_results
     ]
     expected_base = [acquisition_results[0].identity, relation.identity]
@@ -786,7 +786,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     assert not all(substituted.values())
 
     another_command = _command(ledger, exact=b"!cat other\n")
-    output.material["provenance_occurrence_references"] = [
+    output.material["source_occurrence_references"] = [
         another_command.identity
     ]
     different_command = read_requirements_of_yield_relation(

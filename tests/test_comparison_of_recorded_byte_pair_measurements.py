@@ -292,18 +292,18 @@ def test_carried_measurements_record_one_complete_comparison():
     assert result.identity in current_coordinates["comparison_result_occurrences"]
 
 
-def test_witness_provenance_does_not_establish_a_compare_input_relation(monkeypatch):
+def test_witness_source_references_do_not_establish_a_compare_input_relation(monkeypatch):
     ledger, earlier_source, added, earlier, later, current_coordinates = (
         _witness_compare_input_testimony(monkeypatch)
     )
 
-    assert added.material["provenance_occurrence_references"] == [
+    assert added.material["source_occurrence_references"] == [
         earlier_source.identity
     ]
 
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="Witness provenance establishes no comparison input relation",
+        match="Witness source references establish no comparison input relation",
     ):
         record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
@@ -357,7 +357,7 @@ def test_produced_measurements_enter_one_compare():
         "recorded_occurrence_identity"
     ] == later.identity
     assert binding.material["added_occurrence_reference"] == added.identity
-    assert binding.material["prior_provenance_occurrence_references"] == []
+    assert binding.material["prior_source_occurrence_references"] == []
     assert applicability.material["applicability"] == "applicable"
     assert len(recorded["participation_of_input_in_compare"]) == 2
 
@@ -403,19 +403,19 @@ def test_same_content_finding_labels_do_not_hide_changed_content():
     assert ("count", (97, 98)) in conflicting_subjects
 
 
-def test_witness_provenance_does_not_supply_the_carried_compare_rung(monkeypatch):
+def test_witness_source_references_do_not_supply_the_carried_compare_rung(monkeypatch):
     ledger, earlier_source, added, earlier, later, current_coordinates = (
         _witness_compare_input_testimony(monkeypatch)
     )
     coordinates_before = deepcopy(current_coordinates)
     event_count_before = len(ledger.list())
 
-    assert added.material["provenance_occurrence_references"] == [
+    assert added.material["source_occurrence_references"] == [
         earlier_source.identity
     ]
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="Witness provenance establishes no comparison input relation",
+        match="Witness source references establish no comparison input relation",
     ):
         _record_recorded_pair_measurement_comparison_from_carried_measurements(
             ledger,

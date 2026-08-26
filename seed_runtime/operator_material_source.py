@@ -231,7 +231,7 @@ def _recorded_result_material(
         ],
         "known_loss": result_material["known_loss"],
         "unknown": result_material["unknown"],
-        "provenance_occurrence_references": [],
+        "source_occurrence_references": [],
     }
     if act_occurrence_event_identity is not None:
         recorded["act_occurrence_event_identity"] = (

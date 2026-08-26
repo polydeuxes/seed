@@ -99,7 +99,7 @@ def test_each_material_acquisition_binds_its_exact_act_and_yield_relation(ledger
 def test_material_acquisition_does_not_assert_a_source_relation(ledger):
     for acquisition_result in _acquisition_results(ledger):
         assert acquisition_result.material["unknown"] == ["source_relation"]
-        assert acquisition_result.material["provenance_occurrence_references"] == []
+        assert acquisition_result.material["source_occurrence_references"] == []
 
 
 def test_material_acquisition_occurrences_are_exactly_addressable(ledger):

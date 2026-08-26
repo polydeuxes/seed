@@ -80,19 +80,19 @@ def _identity(value: Any, message: str) -> str:
 def _operator_source_for_material_result(
     ledger: EventLedger, added: Event
 ) -> tuple[Event, dict[str, Any]]:
-    """Read direct O1 or an earlier result carrying O1 provenance."""
+    """Read direct O1 or an earlier result carrying an O1 source reference."""
 
     from seed_runtime.operator_material_source import (
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
         get_recorded_operator_material_source,
     )
 
-    provenance = added.material.get("provenance_occurrence_references")
+    source_references = added.material.get("source_occurrence_references")
     reference = (
         added.identity
         if added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-        else provenance[0]
-        if type(provenance) is list and len(provenance) == 1
+        else source_references[0]
+        if type(source_references) is list and len(source_references) == 1
         else None
     )
     source_event = ledger.get(reference) if type(reference) is str else None
@@ -386,8 +386,8 @@ def _comparison_inputs(
         )
     added_reference = later_sources[-1]
     added = ledger.get(added_reference)
-    provenance = (
-        added.material.get("provenance_occurrence_references")
+    source_references = (
+        added.material.get("source_occurrence_references")
         if added is not None
         else None
     )
@@ -401,13 +401,13 @@ def _comparison_inputs(
     cited_prior = tuple(
         reference
         for reference in earlier_sources
-        if type(provenance) is list and reference in provenance
+        if type(source_references) is list and reference in source_references
     )
     if (
         added is None
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
-        or type(provenance) is not list
+        or type(source_references) is not list
     ):
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one added occurrence with exact source coordinates"
@@ -417,7 +417,7 @@ def _comparison_inputs(
     operator_material_source_current_coordinate_reference = None
     if source_role == "this Witness":
         raise RecordedPairMeasurementComparisonError(
-            "Witness provenance establishes no comparison input relation"
+            "Witness source references establish no comparison input relation"
         )
     elif source_role == "this operator":
         source_event, source_material = _operator_source_for_material_result(
@@ -442,7 +442,7 @@ def _comparison_inputs(
         )
     invocation_relations = tuple(
         event
-        for reference in provenance
+        for reference in source_references
         for event in (ledger.get(reference),)
         if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
@@ -473,8 +473,8 @@ def _comparison_inputs(
         "earlier_source": earlier_sources,
         "later_source": later_sources,
         "added_reference": added_reference,
-        "prior_provenance": cited_prior,
-        "added_provenance": tuple(provenance),
+        "prior_source_references": cited_prior,
+        "added_source_references": tuple(source_references),
         "input_relation": input_relation,
         "operator_material_source_result_event_identity": (
             operator_material_source_result_event_identity
@@ -552,8 +552,8 @@ def _comparison_inputs_from_carried_measurements(
         )
     added_reference = later_sources[-1]
     added = ledger.get(added_reference)
-    provenance = (
-        added.material.get("provenance_occurrence_references")
+    source_references = (
+        added.material.get("source_occurrence_references")
         if added is not None
         else None
     )
@@ -567,13 +567,13 @@ def _comparison_inputs_from_carried_measurements(
     cited_prior = tuple(
         reference
         for reference in earlier_sources
-        if type(provenance) is list and reference in provenance
+        if type(source_references) is list and reference in source_references
     )
     if (
         added is None
         or added.locality_identity != earlier.locality_identity
         or ledger.integrity_of(added.identity) == CORRUPTED
-        or type(provenance) is not list
+        or type(source_references) is not list
     ):
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one added occurrence with exact source coordinates"
@@ -608,7 +608,7 @@ def _comparison_inputs_from_carried_measurements(
         operator_locality_identity = earlier.locality_identity
     elif source_role == "this Witness":
         raise RecordedPairMeasurementComparisonError(
-            "Witness provenance establishes no comparison input relation"
+            "Witness source references establish no comparison input relation"
         )
     else:
         raise RecordedPairMeasurementComparisonError(
@@ -616,7 +616,7 @@ def _comparison_inputs_from_carried_measurements(
         )
     invocation_relations = tuple(
         event
-        for reference in provenance
+        for reference in source_references
         for event in (ledger.get(reference),)
         if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
     )
@@ -644,8 +644,8 @@ def _comparison_inputs_from_carried_measurements(
         "earlier_source": earlier_sources,
         "later_source": later_sources,
         "added_reference": added_reference,
-        "prior_provenance": cited_prior,
-        "added_provenance": tuple(provenance),
+        "prior_source_references": cited_prior,
+        "added_source_references": tuple(source_references),
         "input_relation": input_relation,
         "operator_material_source_result_event_identity": operator_source_identity,
         "operator_material_source_current_coordinate_reference": deepcopy(
@@ -741,9 +741,9 @@ def _binding_material(
         "earlier_source_occurrence_references": list(inputs["earlier_source"]),
         "later_source_occurrence_references": list(inputs["later_source"]),
         "added_occurrence_reference": inputs["added_reference"],
-        "prior_provenance_occurrence_references": list(inputs["prior_provenance"]),
-        "added_occurrence_provenance_references": list(
-            inputs["added_provenance"]
+        "prior_source_occurrence_references": list(inputs["prior_source_references"]),
+        "added_occurrence_source_references": list(
+            inputs["added_source_references"]
         ),
         "operator_invocation_locality_relation_event_identity": inputs[
             "operator_invocation_locality_relation_event_identity"

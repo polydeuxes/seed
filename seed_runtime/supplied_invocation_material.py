@@ -176,7 +176,7 @@ def record_supplied_witness_material_source(
         or occurrence.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         or occurrence.locality_identity != relation["destination_locality_identity"]
         or occurrence.material.get("source_role") != "this Witness"
-        or occurrence.material.get("provenance_occurrence_references")[:2]
+        or occurrence.material.get("source_occurrence_references")[:2]
         != [
             command_occurrence.identity,
             operator_invocation_locality_result_event_identity,

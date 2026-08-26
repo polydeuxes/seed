@@ -125,7 +125,7 @@ class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
     exact_material: bytes
     known_loss: tuple[str, ...]
     unknown: tuple[str, ...]
-    provenance_occurrence_references: tuple[str, ...]
+    source_occurrence_references: tuple[str, ...]
 
 
 class ReferenceToRecordedPositionOfBytePairOccurrence(
@@ -438,9 +438,9 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
                 unknown=_exact_string_list(
                     material.get("unknown"), coordinate="unknown"
                 ),
-                provenance_occurrence_references=_exact_string_list(
-                    material.get("provenance_occurrence_references"),
-                    coordinate="provenance_occurrence_references",
+                source_occurrence_references=_exact_string_list(
+                    material.get("source_occurrence_references"),
+                    coordinate="source_occurrence_references",
                 ),
             )
         )
