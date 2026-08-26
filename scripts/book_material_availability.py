@@ -15,7 +15,7 @@ from seed_runtime.witness_material_source import (
 )
 
 
-def acquired_book_material():
+def recorded_book_material():
     """Record exact Book files as Witness material without Measurement pressure."""
 
     ledger = EventLedger()
@@ -24,7 +24,7 @@ def acquired_book_material():
         for path in (SCRIPT_DIRECTORY.parent / "book_of_seed").rglob("*")
         if path.is_file()
     )
-    acquisition_results = tuple(
+    material_results = tuple(
         record_witness_material_source(
             ledger,
             locality_identity="book-material",
@@ -33,4 +33,4 @@ def acquired_book_material():
         )
         for path in paths
     )
-    return ledger, paths, acquisition_results
+    return ledger, paths, material_results

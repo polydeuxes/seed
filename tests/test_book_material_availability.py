@@ -16,21 +16,21 @@ from seed_runtime.declared_measurements import (
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from book_material_availability import acquired_book_material  # noqa: E402
+from book_material_availability import recorded_book_material  # noqa: E402
 
 
-def test_book_material_acquisition_locality_exposes_declared_measurements():
-    ledger, paths, acquisition_results = acquired_book_material()
-    assert tuple(exact_material_result_bytes(acquisition_result) for acquisition_result in acquisition_results) == tuple(
+def test_book_material_locality_exposes_declared_measurements():
+    ledger, paths, material_results = recorded_book_material()
+    assert tuple(exact_material_result_bytes(result) for result in material_results) == tuple(
         path.read_bytes() for path in paths
     )
-    assert tuple(acquisition_result.material["source_boundary"] for acquisition_result in acquisition_results) == tuple(
+    assert tuple(result.material["source_boundary"] for result in material_results) == tuple(
         str(path.relative_to(ROOT)) for path in paths
     )
-    assert {acquisition_result.locality_identity for acquisition_result in acquisition_results} == {"book-material"}
+    assert {result.locality_identity for result in material_results} == {"book-material"}
     assert all(
         result.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-        for result in acquisition_results
+        for result in material_results
     )
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="book-material"
@@ -41,7 +41,7 @@ def test_book_material_acquisition_locality_exposes_declared_measurements():
         ledger, locality_identity="book-material"
     )
     assert recorded.result_occurrences
-    assert len(recorded.result_occurrences) == len(acquisition_results) + 1
+    assert len(recorded.result_occurrences) == len(material_results) + 1
     assert set(recorded.current_coordinates["measurement_occurrences"]) == {
         result.identity for result in recorded.result_occurrences
     }
