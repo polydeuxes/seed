@@ -108,9 +108,8 @@ def _exact_material_result_availability_coordinates(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
     event = read_exact_material_result(ledger, event_identity)
-    dimensions = event.material["dimensions"]
     occurrence = {
-        "subject_reference": dimensions["identity"],
+        "subject_reference": event.material["result_identity"],
         "result_occurrence_identity": event.identity,
         "source_role": event.material["source_role"],
     }
