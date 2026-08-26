@@ -12,8 +12,7 @@ Standing
     exact coordinates current through that boundary
 
 Responsibility
-    exact subject + exact Act + exact rule where required
-    + Scope + Locality + required relations
+    exact subject + exact Act + Locality + required relations
     all exact before the Act occurrence
 
     ↓ Act occurrence
@@ -39,11 +38,10 @@ exact subject and role ── Participation → exact Act occurrence
 exact content ── Carriage → exact Act occurrence
 exact Act occurrence ── Yield → exact result
 exact subject ── Locality → exact subject
-exact subject ── Support → exact input to Act position
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact relation occurrence, Scope, Locality, and Unknown. These are not
+its exact relation occurrence, Locality, and Unknown. These are not
 every relation about which Seed may carry an Assertion.
 
 ## Live implementation references
@@ -90,14 +88,14 @@ about Seed:
 ```text
 Book           this constitutional language + ordered clause coordinates + this Book's admitted lexicon; Book != lexicon by identity
 Standing       exact subject + Locality + exact through-occurrence boundary + bounded current-coordinate read; no additional identity, occurrence, relation, Act, or result
-Responsibility exact subject + exact Act + exact rule where required + Scope + Locality + required relations, all exact before occurrence; no duty, ownership, inevitability, or additional object
+Responsibility exact subject + exact Act + Locality + required relations, all exact before occurrence; no duty, ownership, inevitability, or additional object
 Assignment     runtime witness word for recorded pre-Act coordinates; generated assignment identities add no established distinction on the audited byte-pair road
 Responsible boundary runtime scalar equality thread only; no exact boundary physiology established
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or currentness
 Composite      one communicative address for multiple exact coordinates; each coordinate still requires its own exact physiology
 Name / label / kind / shape ordinary ways to address material or a grouping; none supplies the subject, relation, Act, occurrence, or current coordinates it suggests
-Evidence       communicative shorthand that exact material, source and occurrence references, Scope, and an exact support relation support an Assertion; no separate Evidence coordinate
-Authority      retired compression of subject, exact Act and rule, Scope, Locality, source, provenance, occurrence, Yield, result, and bounded current coordinates; no separate Authority coordinate
+Evidence       communicative shorthand that exact material and exact source and occurrence references address an Assertion; no separate Evidence coordinate
+Authority      retired compression of subject, exact Act, Locality, source, provenance, occurrence, Yield, result, and bounded current coordinates; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
@@ -122,12 +120,12 @@ Claim          asserted content
 Fact           Assertion described through its bounded current coordinates
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
-Warrant        exact support relation with source and occurrence references and Scope for one Assertion or assignment; composite only, no new relation by identity
+Warrant        exact source and occurrence references for one Assertion or result; composite only, no new relation by identity
 Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
 Siren          declared distinction + exact pressure against this distinction + bounded refusal or conflict + operator has exact result; establishes no truth by identity
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
-Capability     exact Act + exact subject and rule + Scope + Locality + source and occurrence references
+Capability     exact Act + exact subject + Locality + source and occurrence references
 Modality       exact Representation rule + exact destination boundary rule + Admission relation + boundary result; no effect beyond boundary by identity
 Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
@@ -169,23 +167,23 @@ exact coordinates doing the work:
 ### May / sufficient / possible / allowed / capable
 
 These words are ordinary compression. Expand each into its exact subject,
-relation, Act and rule, Applicability, Participation, Act occurrence, source
-and occurrence references, Scope, Locality, Unknown, result, and bounded
+relation, Act, Applicability, Participation, Act occurrence, source
+and occurrence references, Locality, Unknown, result, and bounded
 current coordinates.
 The word alone establishes none of them.
 
 ### Fail / fails / failed
 
 These forms compress one exact Act occurrence plus a bounded failure Assertion
-or result, source and occurrence references, and Scope. They do not mean
+or result and exact source and occurrence references. They do not mean
 absence of an Act occurrence, Stop, or completion by identity.
 
 ### Shared
 
 `Shared` is an auxiliary composite only. For exact named subjects and one
 exact named coordinate, occurrence, boundary, or label, each subject carries
-one exact reference of that subject through its own exact relation, source and
-occurrence references and Scope. The word alone establishes no identity,
+one exact reference of that subject through its own exact relation and exact
+source and occurrence references. The word alone establishes no identity,
 equality, sameness, Locality, Participation, Applicability, currentness,
 represented relation, or Act.
 
@@ -194,7 +192,7 @@ represented relation, or Act.
 These forms compress one exact address or reference, or material asserting one
 exact relation from X to Y. An address or reference carries coordinates and
 establishes no constitutional relation. Material asserting the relation
-requires one exact relation occurrence, source coordinates, Scope, provenance,
+requires one exact relation occurrence, source coordinates, provenance,
 and Unknown. The forms alone establish no identity,
 equality, sameness, subject, occurrence, represented relation, or truth.
 
@@ -209,7 +207,7 @@ the word alone establishes neither the occurrence nor the relation.
 ```text
 exact subject or material
     ↓
-exact subject + exact Act + exact rule where required + Scope + Locality
+exact subject + exact Act + Locality
     ↓
 Act occurrence + source and occurrence references + Participation
     ↓
@@ -247,20 +245,20 @@ exact removal result reference
 addition Act occurrence
 ```
 
-A connective composite receives no Act, relation, support relation, or
+A connective composite receives no Act, relation, or
 currentness by identity.
 
 ### Increment
 
 `Increment` is a composite relation only: one exact earlier count, one exact
 later count, and exact Evidence that the later count carries one additional
-exact counted occurrence within the same Scope and boundary. The word alone
+exact counted occurrence within the same boundary. The word alone
 establishes no later count relation or count by identity.
 
 ### Counted
 
 `Counted` is an auxiliary composite only: one exact occurrence reference in
-one exact count finding with Evidence and Scope. The word alone
+one exact count finding with Evidence and an exact boundary. The word alone
 establishes no change of occurrence or identity.
 
 `Grammar distinctions` are bounded discriminators:

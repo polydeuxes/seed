@@ -3,7 +3,7 @@
 ### 01.Source.A — Source preservation
 
 One exact Act occurrence preserves the supplied material, source role,
-source occurrence, provenance, Scope, Locality, known loss, conflicts, and
+source occurrence, provenance, Locality, known loss, conflicts, and
 Unknown carried at its boundary.
 
 ### 01.Source.B — Cross-boundary participation
@@ -16,7 +16,7 @@ carried by that exact material.
 Fidelity is one declared Compare Act with this Seed exact occurrence and
 this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
 one exact declared distinction and preserves its source, provenance,
-Scope, Locality, conflicts, loss, and Unknown.
+Locality, conflicts, loss, and Unknown.
 
 This Book material witness carries this Book as material and is one
 exact subject of that Compare Act occurrence.
@@ -29,7 +29,7 @@ relation. Carriage preserves the Assertion and its source coordinates.
 ### 01.Source.G — Operator source boundary
 
 Before one operator-boundary Act occurrence, the exact operator boundary,
-exact Act to preserve supplied material, boundary coordinates, Scope, Locality,
+exact Act to preserve supplied material, boundary coordinates, Locality,
 and Unknown are exact together.
 
 The same occurrence establishes this Locality relation under its exact
@@ -41,7 +41,7 @@ exact material --Locality--> this Seed
 
 The Locality relation is separate from the source-boundary Act occurrence,
 material, and result. It requires its exact relation occurrence,
-Scope, Locality, and Unknown.
+Locality and Unknown.
 
 Supplied material is required for one material result. Another operator boundary
 occurrence requires another exact subject and exact Act coordinates before its
@@ -53,7 +53,7 @@ One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
 Yield relation carries the Act occurrence as
 first subject and one exact material result as second subject. The result
-preserves its source role, source boundary, provenance, Scope, Locality,
+preserves its source role, source boundary, provenance, Locality,
 known loss, and Unknown.
 
 ### 01.Source.I — Separate source coordinates

@@ -3,8 +3,8 @@
 ### 07.Emission.A — Emission subject-to-Act binding
 
 One exact source material result and one exact destination boundary within its
-invocation Locality are bound to one exact emission Act under its Scope,
-Locality, conflicts, known loss, and Unknown.
+invocation Locality are bound to one exact emission Act with its Locality,
+conflicts, known loss, and Unknown.
 
 ### 07.Emission.C — Exact-material boundary write
 

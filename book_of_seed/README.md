@@ -20,9 +20,8 @@ Current coordinates are this bounded reading.
 ```
 subject
 ├── exact Act
-├── Scope
 ├── Locality
-└── required support relations
+└── required relations
 ```
 
 These coordinates bind each exact subject to the exact Act. Applicability,
@@ -31,7 +30,7 @@ coordinates are separately exact.
 
 ## Act and occurrence
 
-An exact Act occurrence carries its exact Act, subjects, Scope, and Locality.
+An exact Act occurrence carries its exact Act, subjects, and Locality.
 
 Participation and Carriage are exact relations:
 
@@ -42,14 +41,13 @@ Act occurrence ── Yield ─────────> result
 ```
 
 Participation, Carriage, and Yield each requires exact subjects, relation
-occurrence, Scope, Locality, and Unknown.
+occurrence, Locality, and Unknown.
 
 The result carries the exact coordinates established by its Act occurrence.
 
 ## References
 
 - [Current coordinates](chapters/01_current_coordinates.md)
-- [Scope and Support](chapters/02_scope_and_support.md)
 - [Acts and occurrences](chapters/03_acts_and_occurrences.md)
 - [Source coordinates](chapters/04_source_coordinates.md)
 - [Provenance](chapters/05_provenance.md)

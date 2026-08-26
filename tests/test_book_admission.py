@@ -105,7 +105,7 @@ def test_book_and_rosetta_admission_material_are_distinct():
     )
 
 
-def test_rosetta_admits_the_support_relation_translation_it_carries():
+def test_rosetta_translates_warrant_to_exact_references():
     rosetta_warrant = {
         word
         for word in _admission_entries(ROSETTA_ADMISSION)
@@ -116,9 +116,8 @@ def test_rosetta_admits_the_support_relation_translation_it_carries():
         ROOT / "rosetta" / "standing_and_responsibility.md"
     ).read_text(encoding="utf-8")
     assert (
-        "Warrant        exact support relation with source and occurrence references and "
-        "Scope for one Assertion or assignment; composite only, no "
-        "new relation by identity"
+        "Warrant        exact source and occurrence references for one Assertion "
+        "or result; composite only, no new relation by identity"
     ) in translations
 
 
@@ -138,7 +137,7 @@ def test_failure_is_book_material_and_performative_forms_are_rosetta_composites(
     ).read_text(encoding="utf-8")
     assert (
         "These forms compress one exact Act occurrence plus a bounded failure "
-        "Assertion\nor result, source and occurrence references, and Scope."
+        "Assertion\nor result and exact source and occurrence references."
     ) in translations
 
 

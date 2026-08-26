@@ -3,7 +3,7 @@
 ### 06.Locality.A — Exact Locality relation
 
 Locality is one exact relation with first and second exact subjects. It requires its
-relation occurrence, exact Act, Scope, and
+relation occurrence, exact Act, and
 Unknown.
 
 Each Locality relation requires a separate relation occurrence.
@@ -12,7 +12,7 @@ Each Locality relation requires a separate relation occurrence.
 
 Before one preservation Act occurrence, one exact addressed occurrence, its
 prior through-occurrence boundary, that exact Act, destination Locality,
-Scope, and Unknown are exact together.
+and Unknown are exact together.
 
 One exact Yield relation carries the Act occurrence as first subject and one
 result as second subject. The result
@@ -24,7 +24,7 @@ Before one Locality Act occurrence, one exact recorded through-occurrence
 boundary reference, the exact Act to establish a direct Locality relation from
 the recorded result, and the destination Locality are exact together.
 The result preserves the recorded reference, destination Locality, relation
-occurrence, Act occurrence, Yield, Scope, and Unknown.
+occurrence, Act occurrence, Yield, and Unknown.
 
 ### 06.Locality.D — Operator invocation Locality
 
@@ -33,7 +33,7 @@ occurrence, exact Act, invocation Locality, and Locality relation from the
 operator Locality are exact together.
 
 The result preserves the operator occurrence, source Locality, invocation
-Locality, relation occurrence, Act occurrence, Yield, Scope, and Unknown.
+Locality, relation occurrence, Act occurrence, Yield, and Unknown.
 
 Material later supplied at the invocation Locality preserves exact provenance
 to the operator occurrence and relation result.

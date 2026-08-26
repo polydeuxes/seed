@@ -10,7 +10,6 @@ act
 acts
 added
 addressed
-addresses
 after
 an
 and
@@ -34,7 +33,6 @@ both
 bound
 boundary
 bounded
-bounds
 by
 byte
 c
@@ -95,7 +93,6 @@ its
 known
 later
 local
-localities
 locality
 loss
 material
@@ -139,7 +136,6 @@ returns
 role
 roles
 same
-scope
 second
 seed
 separate
@@ -148,7 +144,6 @@ source
 subject
 subjects
 supplied
-support
 that
 the
 these

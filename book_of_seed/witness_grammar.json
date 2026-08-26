@@ -7,7 +7,6 @@
       "second_subject": "exact_Act_occurrence",
       "requires": [
         "relation_occurrence",
-        "Scope",
         "Locality",
         "Unknown"
       ]
@@ -19,7 +18,6 @@
       "second_subject": "exact_Act_occurrence",
       "requires": [
         "relation_occurrence",
-        "Scope",
         "Locality",
         "Unknown"
       ]
@@ -31,7 +29,6 @@
       "second_subject": "exact_result",
       "requires": [
         "relation_occurrence",
-        "Scope",
         "Locality",
         "Unknown"
       ]
@@ -44,20 +41,6 @@
       "requires": [
         "relation_occurrence",
         "exact_Act",
-        "Scope",
-        "Unknown"
-      ]
-    },
-    "support": {
-      "book_reference": "08.Support.A",
-      "first_subject": "exact_subject",
-      "relation": "support",
-      "second_subject": "exact_input_to_Act_position",
-      "requires": [
-        "relation_occurrence",
-        "exact_Act",
-        "Scope",
-        "Locality",
         "Unknown"
       ]
     }
@@ -90,7 +73,6 @@
         "exact_declared_distinction",
         "source",
         "provenance",
-        "Scope",
         "Locality",
         "conflicts",
         "loss",
@@ -144,7 +126,6 @@
         "source_role",
         "source_boundary",
         "provenance",
-        "Scope",
         "Locality",
         "known_loss",
         "Unknown"
@@ -187,7 +168,6 @@
       "carried_coordinates": [
         "source",
         "provenance",
-        "Scope",
         "Locality",
         "conflicts",
         "Unknown"
@@ -207,7 +187,6 @@
       ],
       "requires": [
         "exact_relation_occurrence",
-        "Scope",
         "Locality",
         "conflicts",
         "Unknown"
@@ -228,7 +207,6 @@
       "subject": "exact_subject",
       "exact_Act": "exact_Act",
       "requires": [
-        "Scope",
         "Locality",
         "required_relations"
       ],
@@ -246,7 +224,6 @@
         "exact_subject",
         "source_coordinates",
         "destination_coordinates",
-        "Scope",
         "Locality",
         "Unknown"
       ],
@@ -332,7 +309,6 @@
         "addressed_occurrence",
         "through_occurrence_boundary_reference",
         "Act_occurrence",
-        "Scope",
         "Locality",
         "Unknown"
       ]
@@ -346,7 +322,6 @@
       "carried_coordinates": [
         "material",
         "source_coordinates",
-        "Scope",
         "Locality",
         "Unknown"
       ]
@@ -391,7 +366,6 @@
       "exact_Act": "emission",
       "carried_coordinates": [
         "exact_destination_boundary_within_the_invocation_Locality",
-        "Scope",
         "Locality",
         "conflicts",
         "known_loss",
@@ -420,31 +394,6 @@
       "requires": [
         "exact_subject_and_source_boundary_Act_coordinates_before_occurrence",
         "exact_Act_occurrence"
-      ]
-    },
-    "08.Support.A": {
-      "subject": "exact_input_to_Act_position",
-      "requires": [
-        "subject",
-        "relation",
-        "Act",
-        "Scope",
-        "Locality",
-        "exact_relation_occurrence"
-      ],
-      "relations": [
-        "support"
-      ]
-    },
-    "08.Scope.A": {
-      "subject": "Scope",
-      "bounds": [
-        "subjects",
-        "relations",
-        "Acts",
-        "occurrences",
-        "results",
-        "Localities"
       ]
     }
   }

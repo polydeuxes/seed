@@ -109,7 +109,7 @@ def test_compare_clause_carries_its_exact_subjects_and_act():
 
     assert compare["subject"] == "exact_Compare_subjects"
     assert compare["exact_Act"] == "Compare"
-    assert "its exact subjects, Scope, Locality" in (
+    assert "its exact subjects, Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")
 
@@ -136,7 +136,6 @@ def test_subject_to_act_binding_is_direct_clause_coordinates():
         "subject": "exact_subject",
         "exact_Act": "exact_Act",
         "requires": [
-            "Scope",
             "Locality",
             "required_relations",
         ],
@@ -152,7 +151,6 @@ def test_exact_relations_are_direct():
         "carriage",
         "yield",
         "locality",
-        "support",
     }
     expected = {
         "participation": (
@@ -174,11 +172,6 @@ def test_exact_relations_are_direct():
             "exact_subject",
             "exact_subject",
             "06.Locality.A",
-        ),
-        "support": (
-            "exact_subject",
-            "exact_input_to_Act_position",
-            "08.Support.A",
         ),
     }
     for relation, (first, second, book_reference) in expected.items():
@@ -225,8 +218,6 @@ def test_only_clauses_naming_an_Act_project_one():
         "05.Recording.A",
         "05.Recording.C",
         "05.Provenance.A",
-        "08.Support.A",
-        "08.Scope.A",
         "07.Emission.C",
         "07.Emission.D",
         "01.Current.G",
@@ -288,7 +279,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "exact_declared_distinction",
             "source",
             "provenance",
-            "Scope",
             "Locality",
             "conflicts",
             "loss",

@@ -4,13 +4,13 @@
 
 One exact Yield relation carries a recording Act occurrence as first subject
 and one exact record as second subject. The result preserves the material,
-source coordinates, Scope, Locality, and Unknown established
+source coordinates, Locality, and Unknown established
 at that recording boundary.
 
 ### 05.Recording.A — Recorded Assertion
 
 One recording occurrence preserves one exact Assertion and its source
-coordinates within its Scope.
+coordinates.
 
 ### 05.Recording.C — Recorded Measurement
 
@@ -25,8 +25,8 @@ together.
 
 One exact Yield relation carries the recording Act occurrence as first subject
 and one result as second subject. The result preserves the addressed
-occurrence, through-occurrence boundary reference, Act occurrence, Scope,
-Locality, and Unknown.
+occurrence, through-occurrence boundary reference, Act occurrence, Locality,
+and Unknown.
 
 ## References
 
