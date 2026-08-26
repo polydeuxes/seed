@@ -33,7 +33,7 @@ def _direct_result(ledger, *, locality, exact):
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    assignment = (
+    binding = (
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
@@ -42,7 +42,7 @@ def _direct_result(ledger, *, locality, exact):
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        binding_event_identity=assignment.identity,
+        binding_event_identity=binding.identity,
         binding_current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=locality
         ),
@@ -192,14 +192,14 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert produced_results
     for result in produced_results:
         act = ledger.get(result.material["act_occurrence_event_identity"])
-        reference = act.material["responsibility_assignment_reference"]
-        assignment = ledger.get(reference["recorded_occurrence_identity"])
+        reference = act.material["subject_to_act_binding_reference"]
+        binding = ledger.get(reference["recorded_occurrence_identity"])
         assert recording.current_coordinates["exact_result_occurrences"][result.identity] == (
             reference
         )
         assert (
             recording.current_coordinates["subject_to_act_binding_occurrences"].get(
-                assignment.identity, object()
+                binding.identity, object()
             )
             is None
         )
@@ -221,11 +221,11 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             assert result.identity in recording.current_coordinates[
                 "measurement_occurrences"
             ]
-        assert assignment.material["subject"] == act.material["coordinates"]["subject"]
-        assert assignment.material["rule"] == source_position_recurrence._EXACT_ACT_RULES[
-            assignment.material["exact_act"]
+        assert binding.material["subject"] == act.material["coordinates"]["subject"]
+        assert binding.material["rule"] == source_position_recurrence._EXACT_ACT_RULES[
+            binding.material["exact_act"]
         ]
-        assert assignment.material["result_boundary_identity"] == result.material[
+        assert binding.material["result_boundary_identity"] == result.material[
             "result_identity"
         ]
 
@@ -278,7 +278,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
             measurement.result_occurrence.material[
                 "act_occurrence_event_identity"
             ]
-        ).material["responsibility_assignment_reference"]
+        ).material["subject_to_act_binding_reference"]
         for measurement in measurements
     )
     assert all(
@@ -287,7 +287,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
                 measurement.result_occurrence.material[
                     "act_occurrence_event_identity"
                 ]
-            ).material["responsibility_assignment_reference"][
+            ).material["subject_to_act_binding_reference"][
                 "recorded_occurrence_identity"
             ]
         ).identity
@@ -370,20 +370,20 @@ def test_changed_source_position_coordinate_is_refused():
     )
     result = ledger.get(recording.steps[0].source_position_result_occurrences[0].identity)
     act = ledger.get(result.material["act_occurrence_event_identity"])
-    assignment = ledger.get(
-        act.material["responsibility_assignment_reference"][
+    binding = ledger.get(
+        act.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    exact_result_boundary = assignment.material["result_boundary_identity"]
-    assignment.material["result_boundary_identity"] = "changed-result-boundary"
+    exact_result_boundary = binding.material["result_boundary_identity"]
+    binding.material["result_boundary_identity"] = "changed-result-boundary"
     try:
         get_recorded_source_position_measurement(ledger, result.identity)
     except ValueError:
         pass
     else:
-        raise AssertionError("changed Responsibility ownership was accepted")
-    assignment.material["result_boundary_identity"] = exact_result_boundary
+        raise AssertionError("changed subject-to-Act binding ownership was accepted")
+    binding.material["result_boundary_identity"] = exact_result_boundary
 
     yielded = ledger.get(result.material["yield_relation_identity"])
     exact_yield_occurrence = yielded.material["dimensions"][
@@ -585,16 +585,16 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     )
 
     act = ledger.get(event.material["act_occurrence_event_identity"])
-    ownership = act.material["responsibility_assignment_reference"]
-    assignment = ledger.get(ownership["recorded_occurrence_identity"])
+    ownership = act.material["subject_to_act_binding_reference"]
+    binding = ledger.get(ownership["recorded_occurrence_identity"])
     assert current_coordinates["measurement_occurrences"][event.identity][
         "result_identity"
     ] == event.material["result_identity"]
     assert current_coordinates["exact_result_occurrences"][event.identity] == (
         ownership
     )
-    assert assignment.material["subject"] == reading["subject"]
-    assert assignment.material["result_boundary_identity"] == reading[
+    assert binding.material["subject"] == reading["subject"]
+    assert binding.material["result_boundary_identity"] == reading[
         "result_identity"
     ]
 
@@ -696,39 +696,39 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
     event.material["coordinates"]["coordinate_material_findings"] = findings
 
     act = ledger.get(event.material["act_occurrence_event_identity"])
-    assignment = ledger.get(
-        act.material["responsibility_assignment_reference"][
+    binding = ledger.get(
+        act.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    result_boundary = assignment.material["result_boundary_identity"]
-    assignment.material["result_boundary_identity"] = "changed-result-boundary"
+    result_boundary = binding.material["result_boundary_identity"]
+    binding.material["result_boundary_identity"] = "changed-result-boundary"
     try:
         get_recorded_recurrent_result_material_measurement(ledger, event.identity)
     except ValueError:
         pass
     else:
-        raise AssertionError("changed Responsibility ownership was accepted")
-    assignment.material["result_boundary_identity"] = result_boundary
+        raise AssertionError("changed subject-to-Act binding ownership was accepted")
+    binding.material["result_boundary_identity"] = result_boundary
 
-    rule = assignment.material["rule"]
-    assignment.material["rule"] = "changed exact rule"
+    rule = binding.material["rule"]
+    binding.material["rule"] = "changed exact rule"
     try:
         get_recorded_recurrent_result_material_measurement(ledger, event.identity)
     except ValueError:
         pass
     else:
-        raise AssertionError("changed Responsibility rule was accepted")
-    assignment.material["rule"] = rule
+        raise AssertionError("changed subject-to-Act binding rule was accepted")
+    binding.material["rule"] = rule
 
-    del assignment.material["rule"]
+    del binding.material["rule"]
     try:
         get_recorded_recurrent_result_material_measurement(ledger, event.identity)
     except ValueError:
         pass
     else:
-        raise AssertionError("missing Responsibility rule was accepted")
-    assignment.material["rule"] = rule
+        raise AssertionError("missing subject-to-Act binding rule was accepted")
+    binding.material["rule"] = rule
 
     yielded = ledger.get(event.material["yield_relation_identity"])
     act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
@@ -772,17 +772,17 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         event = ledger.get(event_identity)
         assert event.exact_material == b"a+a"
         act = ledger.get(event.material["act_occurrence_event_identity"])
-        assert act.material["responsibility_assignment_reference"] == (
+        assert act.material["subject_to_act_binding_reference"] == (
             expected_ownership
         )
-        assignment = ledger.get(
+        binding = ledger.get(
             expected_ownership["recorded_occurrence_identity"]
         )
-        assert assignment.material["rule"] == (
+        assert binding.material["rule"] == (
             source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
         )
-        assert assignment.material["subject"] == recorded["subject"]
-        assert assignment.material["result_boundary_identity"] == (
+        assert binding.material["subject"] == recorded["subject"]
+        assert binding.material["result_boundary_identity"] == (
             recorded["result_identity"]
         )
     finally:
