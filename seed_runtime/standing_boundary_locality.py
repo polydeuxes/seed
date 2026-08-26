@@ -1,4 +1,4 @@
-"""Preserve one exact recorded Standing-boundary result at one new Locality."""
+"""Preserve one exact recorded boundary result at one destination Locality."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ RECORDED_STANDING_BOUNDARY_LOCALITY_RESULT_KIND = (
     "recorded Standing boundary Locality relation result"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_ACT = (
-    "Preserve one exact recorded Standing boundary result at one new Locality"
+    "Preserve one exact recorded boundary result at one destination Locality"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
 EVENT_KIND_RESPONSIBILITIES = {
