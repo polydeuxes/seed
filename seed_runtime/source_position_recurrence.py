@@ -2012,7 +2012,6 @@ def _recurrent_result_material_payload(
             "locality_identity": recurrence_event.locality_identity,
             "recurrence_result_reference": recurrence_result_reference,
             "recurrence_finding_position": recurrence_finding["finding_position"],
-            "support_result_references": deepcopy(support_references),
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
             ],
