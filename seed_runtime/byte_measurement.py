@@ -3575,20 +3575,22 @@ def _require_carried_pair_measurement_standing_at_tip(
     return boundary
 
 
-def _new_pair_lifecycle_identities() -> dict[str, str]:
+def _new_pair_lifecycle_identities(ledger: EventLedger) -> dict[str, str]:
     identities = {
-        "applicability_act_identity": new_identity("byte_pair_applicability_act"),
-        "applicability_act_occurrence_identity": new_identity(
+        "applicability_act_identity": ledger.mint_identity("byte_pair_applicability_act"),
+        "applicability_act_occurrence_identity": ledger.mint_identity(
             "byte_pair_applicability_occurrence"
         ),
-        "applicability_result_identity": new_identity(
+        "applicability_result_identity": ledger.mint_identity(
             "byte_pair_applicability_result"
         ),
-        "measurement_act_identity": new_identity("byte_position_pair_measurement_act"),
-        "measurement_act_occurrence_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
+            "byte_position_pair_measurement_act"
+        ),
+        "measurement_act_occurrence_identity": ledger.mint_identity(
             "byte_position_pair_measurement_occurrence"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "byte_position_pair_measurement_result"
         ),
     }
@@ -4644,7 +4646,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         recording_locality_identity=recording_locality_identity,
         locality_standing=standing,
     )
-    lifecycle_identities = _new_pair_lifecycle_identities()
+    lifecycle_identities = _new_pair_lifecycle_identities(ledger)
     applicability_binding = _append_pair_applicability_binding(
         ledger,
         source=source,

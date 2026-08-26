@@ -1776,7 +1776,7 @@ def test_pair_call_local_lifecycle_refuses_forged_assignment_and_repeated_acts()
         recording_locality_identity="byte-measurement",
         locality_standing=standing,
     )
-    identities = byte_measurement._new_pair_lifecycle_identities()
+    identities = byte_measurement._new_pair_lifecycle_identities(ledger)
     applicability_binding = byte_measurement._append_pair_applicability_binding(
         ledger,
         source=source,
