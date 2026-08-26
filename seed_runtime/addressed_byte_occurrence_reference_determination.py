@@ -2134,6 +2134,20 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             ),
         )
     }
+    require_prior_at_current_append_boundary(determination_binding)
+    applicability_binding = ledger.append(
+        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _applicability_binding_material(
+            source_result=source_result,
+            coordinate_reference=addressed_source_byte_position_coordinate_reference,
+            through_event_occurrence_identity=determination_binding.identity,
+            determination_act_identity=determination_binding.material[
+                "determination_act_identity"
+            ],
+            identities=applicability_identities,
+        ),
+        locality_identity=locality_identity,
+    )
     applicability_binding_material = _applicability_binding_material(
         source_result=source_result,
         coordinate_reference=addressed_source_byte_position_coordinate_reference,
@@ -2142,12 +2156,6 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             "determination_act_identity"
         ],
         identities=applicability_identities,
-    )
-    require_prior_at_current_append_boundary(determination_binding)
-    applicability_binding = ledger.append(
-        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        applicability_binding_material,
-        locality_identity=locality_identity,
     )
     exact_stage_material.append(
         (
