@@ -302,7 +302,7 @@ def _references_to_recorded_recurrent_byte_pairs(
             ledger,
             event.identity,
             findings_only=True,
-            prior_standing=prior_coordinates,
+            prior_coordinates=prior_coordinates,
         )
         if prior_coordinates is not None
         else _validated_recorded_byte_position_pair_measurement(
@@ -769,10 +769,10 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
     ]
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_standing_validation_context,
+            _operator_current_coordinate_validation_context,
         )
 
-        prior_coordinates = _operator_standing_validation_context(
+        prior_coordinates = _operator_current_coordinate_validation_context(
             ledger, locality_identity=binding.locality_identity
         )
         if prior_coordinates is None:

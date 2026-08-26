@@ -506,7 +506,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
 def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
     from seed_runtime.operator_current_coordinates import (
         _operator_standing_replay_validation,
-        _set_operator_standing_validation_context,
+        _set_operator_current_coordinate_validation_context,
     )
 
     ledger = IntegrityCountingLedger()
@@ -546,7 +546,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
     @_operator_standing_replay_validation
     def read_from_forged_accumulators():
         with pytest.raises(ValueError, match="exact accumulators"):
-            _set_operator_standing_validation_context(
+            _set_operator_current_coordinate_validation_context(
                 ledger,
                 locality_identity="measurement",
                 through_event_occurrence_identity=exact[

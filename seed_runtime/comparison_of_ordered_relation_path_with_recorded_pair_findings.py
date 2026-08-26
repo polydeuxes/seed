@@ -940,11 +940,11 @@ def _read_binding(
     boundary = material.get("standing_boundary_identity")
     if prior_standing is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_standing_validation_context,
+            _operator_current_coordinate_validation_context,
             read_operator_current_coordinates_through,
         )
 
-        prior_standing = _operator_standing_validation_context(
+        prior_standing = _operator_current_coordinate_validation_context(
             ledger,
             locality_identity=event.locality_identity,
         )

@@ -345,7 +345,7 @@ def _operator_standing_replay_validation(function):
     return bounded
 
 
-def _set_operator_standing_validation_context(
+def _set_operator_current_coordinate_validation_context(
     ledger: EventLedger,
     *,
     locality_identity: str,
@@ -387,7 +387,7 @@ def _set_operator_standing_validation_context(
     )
 
 
-def _operator_standing_validation_context(
+def _operator_current_coordinate_validation_context(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any] | None:
     context = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
@@ -1224,7 +1224,7 @@ def advance_operator_current_coordinates(
     for event in events:
         if event.locality_identity != locality_identity:
             continue
-        _set_operator_standing_validation_context(
+        _set_operator_current_coordinate_validation_context(
             ledger,
             locality_identity=locality_identity,
             through_event_occurrence_identity=(
@@ -1275,7 +1275,7 @@ def advance_operator_current_coordinates(
                 exact_result_occurrences[event.identity] = result_coordinate
         if event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS:
             continue
-        pair_prior_standing = {
+        pair_prior_coordinates = {
             "locality_identity": locality_identity,
             "through_event_occurrence_identity": (
                 prior_through_event_occurrence_identity
@@ -1295,30 +1295,30 @@ def advance_operator_current_coordinates(
         if pair_lifecycle_event:
             if event.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
                 _read_pair_applicability_subject_to_act_binding(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
                 subject_to_act_binding_occurrences[event.identity] = None
             elif event.kind == BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
                 _read_pair_measurement_subject_to_act_binding(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
                 subject_to_act_binding_occurrences[event.identity] = None
             elif event.kind == BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT:
                 _read_pair_applicability_act_occurrence(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
             elif event.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
                 _read_recorded_pair_input_applicability(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
                 applicability_result_occurrences[event.identity] = None
             elif event.kind == BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT:
                 _read_pair_measurement_act_occurrence(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
             else:
                 _findings_of_recorded_byte_position_pair_measurement(
-                    ledger, event.identity, prior_standing=pair_prior_standing
+                    ledger, event.identity, prior_coordinates=pair_prior_coordinates
                 )
                 measurement_occurrences[event.identity] = (
                     _measurement_occurrence_coordinates(event)

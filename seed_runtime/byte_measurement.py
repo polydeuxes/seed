@@ -2510,11 +2510,11 @@ def _read_byte_measurement_subject_to_act_binding(
         )
     if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
-            _operator_standing_validation_context,
+            _operator_current_coordinate_validation_context,
             read_operator_current_coordinates_through,
         )
 
-        prior_coordinates = _operator_standing_validation_context(
+        prior_coordinates = _operator_current_coordinate_validation_context(
             ledger, locality_identity=binding.locality_identity
         )
         if prior_coordinates is None:
@@ -3363,25 +3363,25 @@ def _require_exact_pair_subject_to_act_binding_event(
 
 def _pair_source_is_carried(
     source: RecordedByteAssertion,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     *,
-    assignment_identity: str | None = None,
+    binding_identity: str | None = None,
 ) -> bool:
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    if assignment_identity is not None:
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    if binding_identity is not None:
         return (
-            type(assignments) is dict
-            and assignments.get(assignment_identity, object()) is None
+            type(bindings) is dict
+            and bindings.get(binding_identity, object()) is None
         )
     if source.locality_movement_event_identity is not None:
-        movements = locality_standing.get(
+        movements = current_coordinates.get(
             "assertion_locality_movement_occurrences"
         )
         return (
             type(movements) is dict
             and source.locality_movement_event_identity in movements
         )
-    carried = locality_standing.get("measurement_occurrences")
+    carried = current_coordinates.get("measurement_occurrences")
     return (
         type(carried) is dict
         and source.recorded_occurrence_identity in carried
@@ -3393,16 +3393,16 @@ def _require_carried_pair_measurement_at_current_append_boundary(
     *,
     source: RecordedByteAssertion,
     recording_locality_identity: str,
-    locality_standing: dict[str, Any],
-    required_assignment_identity: str | None = None,
+    current_coordinates: dict[str, Any],
+    required_binding_identity: str | None = None,
     required_applicability_identity: str | None = None,
 ) -> str:
-    boundary = locality_standing.get("through_event_occurrence_identity")
-    assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    applicability = locality_standing.get("applicability_result_occurrences")
+    boundary = current_coordinates.get("through_event_occurrence_identity")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    applicability = current_coordinates.get("applicability_result_occurrences")
     event = ledger.get(boundary) if type(boundary) is str else None
     if (
-        locality_standing.get("locality_identity") != recording_locality_identity
+        current_coordinates.get("locality_identity") != recording_locality_identity
         or type(boundary) is not str
         or not boundary
         or event is None
@@ -3412,14 +3412,14 @@ def _require_carried_pair_measurement_at_current_append_boundary(
         != ledger.append_boundary()
         or not _pair_source_is_carried(
             source,
-            locality_standing,
-            assignment_identity=required_assignment_identity,
+            current_coordinates,
+            binding_identity=required_binding_identity,
         )
         or (
-            required_assignment_identity is not None
+            required_binding_identity is not None
             and (
-                type(assignments) is not dict
-                or assignments.get(required_assignment_identity, object()) is not None
+                type(bindings) is not dict
+                or bindings.get(required_binding_identity, object()) is not None
             )
         )
         or (
@@ -3520,22 +3520,22 @@ def _append_pair_measurement_binding(
     )
 
 
-def _prior_standing_for_pair_subject_to_act_binding(
+def _prior_coordinates_for_pair_subject_to_act_binding(
     ledger: EventLedger,
     *,
     binding: Event,
     boundary: str,
 ) -> dict[str, Any]:
     from seed_runtime.operator_current_coordinates import (
-        _operator_standing_validation_context,
+        _operator_current_coordinate_validation_context,
         read_operator_current_coordinates_through,
     )
 
-    prior_standing = _operator_standing_validation_context(
+    prior_coordinates = _operator_current_coordinate_validation_context(
         ledger, locality_identity=binding.locality_identity
     )
-    if prior_standing is not None:
-        return prior_standing
+    if prior_coordinates is not None:
+        return prior_coordinates
     try:
         return read_operator_current_coordinates_through(
             ledger,
@@ -3553,7 +3553,7 @@ def _read_pair_subject_to_act_binding(
     binding_event_identity: str,
     *,
     binding_kind: str,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
     binding = ledger.get(binding_event_identity)
     if (
@@ -3577,8 +3577,8 @@ def _read_pair_subject_to_act_binding(
             "byte-position-pair Measurement binding carries no through-occurrence boundary"
         )
     if movement_identity is None:
-        if prior_standing is None:
-            prior_standing = _prior_standing_for_pair_subject_to_act_binding(
+        if prior_coordinates is None:
+            prior_coordinates = _prior_coordinates_for_pair_subject_to_act_binding(
                 ledger, binding=binding, boundary=boundary
             )
         readings = _assertions_of_recorded_byte_measurement(
@@ -3586,7 +3586,7 @@ def _read_pair_subject_to_act_binding(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
-            prior_coordinates=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
         source = next(
             (
@@ -3612,32 +3612,32 @@ def _read_pair_subject_to_act_binding(
     scope = source.material["assertion_scope"]
     content = source.material["dimensions"]["content"]
     _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
-    if prior_standing is None:
-        prior_standing = _prior_standing_for_pair_subject_to_act_binding(
+    if prior_coordinates is None:
+        prior_coordinates = _prior_coordinates_for_pair_subject_to_act_binding(
             ledger, binding=binding, boundary=boundary
         )
-    standing_boundary = prior_standing.get("through_event_occurrence_identity")
-    assignments = prior_standing.get("subject_to_act_binding_occurrences")
-    boundary_is_exact = standing_boundary == boundary
-    assignment_is_carried = bool(
-        type(assignments) is dict
-        and assignments.get(binding.identity, object()) is None
+    through_occurrence = prior_coordinates.get("through_event_occurrence_identity")
+    bindings = prior_coordinates.get("subject_to_act_binding_occurrences")
+    boundary_is_exact = through_occurrence == boundary
+    binding_is_carried = bool(
+        type(bindings) is dict
+        and bindings.get(binding.identity, object()) is None
     )
     if (
-        prior_standing.get("locality_identity") != binding.locality_identity
+        prior_coordinates.get("locality_identity") != binding.locality_identity
         or not _pair_source_is_carried(
             source,
-            prior_standing,
-            assignment_identity=(binding.identity if assignment_is_carried else None),
+            prior_coordinates,
+            binding_identity=(binding.identity if binding_is_carried else None),
         )
-        or not (boundary_is_exact or assignment_is_carried)
+        or not (boundary_is_exact or binding_is_carried)
     ):
         raise ByteMeasurementError(
             "byte-position-pair subject-to-Act binding has no exact prior coordinates"
         )
     order = (boundary, binding.identity)
-    if assignment_is_carried and standing_boundary != binding.identity:
-        order = (*order, standing_boundary)
+    if binding_is_carried and through_occurrence != binding.identity:
+        order = (*order, through_occurrence)
     try:
         ledger.occurrences_in_append_order(
             tuple(dict.fromkeys(order)),
@@ -3657,13 +3657,13 @@ def _read_pair_measurement_subject_to_act_binding(
     ledger: EventLedger,
     binding_event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
     return _read_pair_subject_to_act_binding(
         ledger,
         binding_event_identity,
         binding_kind=BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_coordinates,
     )
 
 
@@ -3671,13 +3671,13 @@ def _read_pair_applicability_subject_to_act_binding(
     ledger: EventLedger,
     binding_event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, RecordedByteAssertion, dict[str, Any], dict[str, Any]]:
     return _read_pair_subject_to_act_binding(
         ledger,
         binding_event_identity,
         binding_kind=BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_coordinates,
     )
 
 
@@ -3743,8 +3743,8 @@ def _record_pair_input_applicability_act_from_carried_assignment(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
-        locality_standing=responsibility_assignment_standing,
-        required_assignment_identity=assignment.identity,
+        current_coordinates=responsibility_assignment_standing,
+        required_binding_identity=assignment.identity,
     )
     return ledger.append(
         BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
@@ -3923,7 +3923,7 @@ def _read_pair_applicability_act_occurrence(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, RecordedByteAssertion]:
     event = ledger.get(event_identity)
     if (
@@ -3941,7 +3941,7 @@ def _read_pair_applicability_act_occurrence(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     if (
@@ -3966,7 +3966,7 @@ def _read_recorded_pair_input_applicability(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Read one historical input Applicability result without redetermining it."""
 
@@ -3992,7 +3992,7 @@ def _read_recorded_pair_input_applicability(
             assignment_reference.get("recorded_occurrence_identity")
             if type(assignment_reference) is dict
             else None,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     act_occurrence = ledger.get(material.get("act_occurrence_event_identity"))
@@ -4028,7 +4028,7 @@ def _pair_applicability_binding_of_result(
     applicability_event: Event,
     *,
     source: RecordedByteAssertion,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     reference = applicability_event.material.get("subject_to_act_binding_reference")
     binding, applicability_source, _scope, _content = (
@@ -4037,7 +4037,7 @@ def _pair_applicability_binding_of_result(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     if (
@@ -4148,8 +4148,8 @@ def _record_pair_measurement_act_from_carried_applicability(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
-        locality_standing=locality_standing,
-        required_assignment_identity=assignment.identity,
+        current_coordinates=locality_standing,
+        required_binding_identity=assignment.identity,
         required_applicability_identity=applicability_event.identity,
     )
     if (
@@ -4171,7 +4171,7 @@ def _read_pair_measurement_act_occurrence(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, RecordedByteAssertion, Event]:
     event = ledger.get(event_identity)
     if (
@@ -4189,7 +4189,7 @@ def _read_pair_measurement_act_occurrence(
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     applicability = ledger.get(
@@ -4212,7 +4212,7 @@ def _read_pair_measurement_act_occurrence(
             _read_pair_applicability_subject_to_act_binding(
                 ledger,
                 applicability_reference.get("recorded_occurrence_identity"),
-                prior_standing=prior_standing,
+                prior_coordinates=prior_coordinates,
             )
         )
     applicability_material = None
@@ -4319,8 +4319,8 @@ def _record_pair_measurement_result_from_carried_act(
         ledger,
         source=source,
         recording_locality_identity=assignment.locality_identity,
-        locality_standing=locality_standing,
-        required_assignment_identity=assignment.identity,
+        current_coordinates=locality_standing,
+        required_binding_identity=assignment.identity,
         required_applicability_identity=applicability_event.identity,
     )
     if (
@@ -4512,7 +4512,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         ledger,
         source=source,
         recording_locality_identity=recording_locality_identity,
-        locality_standing=standing,
+        current_coordinates=standing,
     )
     lifecycle_identities = _new_pair_lifecycle_identities(ledger)
     applicability_binding = _append_pair_applicability_binding(
@@ -4645,7 +4645,7 @@ def _record_byte_position_pair_count_layer_from_carried_locality_standing(
         ledger,
         source=source,
         recording_locality_identity=recording_locality_identity,
-        locality_standing=locality_standing,
+        current_coordinates=locality_standing,
     )
     return _record_byte_position_pair_count_layer_from_carried_standing(
         ledger,
@@ -4695,7 +4695,7 @@ def _validated_recorded_byte_position_pair_measurement(
     event_identity: str,
     *,
     findings_only: bool,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> _RecordedBytePairMeasurementReading | None:
     """Validate one exact pair result and return its requested reading surface."""
 
@@ -4726,7 +4726,7 @@ def _validated_recorded_byte_position_pair_measurement(
         _read_pair_measurement_act_occurrence(
             ledger,
             act_occurrence_event_identity,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     if (
@@ -5025,13 +5025,13 @@ def _read_recorded_byte_position_pair_measurement(
     event_identity: str,
     *,
     findings_only: bool,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...] | None:
     reading = _validated_recorded_byte_position_pair_measurement(
         ledger,
         event_identity,
         findings_only=findings_only,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_coordinates,
     )
     return reading.results if reading is not None else None
 
@@ -5051,7 +5051,7 @@ def _findings_of_recorded_byte_position_pair_measurement(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[_RecordedBytePairFinding, ...] | None:
     """Read only exact finding coordinates after the same full validation."""
 
@@ -5059,7 +5059,7 @@ def _findings_of_recorded_byte_position_pair_measurement(
         ledger,
         event_identity,
         findings_only=True,
-        prior_standing=prior_standing,
+        prior_coordinates=prior_coordinates,
     )
     return reading
 

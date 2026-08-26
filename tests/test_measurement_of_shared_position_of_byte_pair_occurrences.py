@@ -608,7 +608,7 @@ def test_shared_binding_threads_explicit_prior_without_replay_or_ambient_overrid
     )
     monkeypatch.setattr(
         operator_current_coordinates_module,
-        "_operator_standing_validation_context",
+        "_operator_current_coordinate_validation_context",
         ambient_must_not_override,
     )
 

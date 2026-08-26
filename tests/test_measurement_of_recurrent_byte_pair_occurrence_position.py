@@ -33,8 +33,8 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
 )
 from seed_runtime.operator_current_coordinates import (
     _operator_standing_replay_validation,
-    _operator_standing_validation_context,
-    _set_operator_standing_validation_context,
+    _operator_current_coordinate_validation_context,
+    _set_operator_current_coordinate_validation_context,
     read_operator_current_coordinates,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -329,7 +329,7 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
     @_operator_standing_replay_validation
     def outer():
         with pytest.raises(ValueError, match="exact accumulators"):
-            _set_operator_standing_validation_context(
+            _set_operator_current_coordinate_validation_context(
                 ledger,
                 locality_identity=locality,
                 through_event_occurrence_identity=current_coordinates[
@@ -341,14 +341,14 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
                     "subject_to_act_binding_occurrences"
                 ],
             )
-        assert _operator_standing_validation_context(
+        assert _operator_current_coordinate_validation_context(
             ledger, locality_identity=locality
         ) is None
         raise RuntimeError("exercise replay-context cleanup")
 
     with pytest.raises(RuntimeError, match="cleanup"):
         outer()
-    assert _operator_standing_validation_context(
+    assert _operator_current_coordinate_validation_context(
         ledger, locality_identity=locality
     ) is None
 
@@ -366,7 +366,7 @@ def test_replay_context_before_the_recorded_binding_through_occurrence_is_refuse
 
     @_operator_standing_replay_validation
     def read_from_false_earlier_context():
-        _set_operator_standing_validation_context(
+        _set_operator_current_coordinate_validation_context(
             ledger,
             locality_identity=locality,
             through_event_occurrence_identity=pair.identity,
@@ -402,7 +402,7 @@ def test_replay_context_refuses_changed_boundary_input_coordinates(
 
     @_operator_standing_replay_validation
     def read_from_context(measurements, material_results):
-        _set_operator_standing_validation_context(
+        _set_operator_current_coordinate_validation_context(
             ledger,
             locality_identity=locality,
             through_event_occurrence_identity=binding.material[
@@ -560,14 +560,14 @@ def test_binding_read_threads_one_exact_coordinate_read_to_pair_validation(monke
         event_identity,
         *,
         findings_only,
-        prior_standing=None,
+        prior_coordinates=None,
     ):
-        pair_reads.append((event_identity, prior_standing))
+        pair_reads.append((event_identity, prior_coordinates))
         return original(
             ledger,
             event_identity,
             findings_only=findings_only,
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
 
     monkeypatch.setattr(
@@ -583,7 +583,7 @@ def test_binding_read_threads_one_exact_coordinate_read_to_pair_validation(monke
 
     monkeypatch.setattr(
         operator_standing,
-        "_operator_standing_validation_context",
+        "_operator_current_coordinate_validation_context",
         ambient_must_not_override_explicit_coordinates,
     )
     read_binding, read_finding = pair_occurrence_measurement._read_recurrent_byte_pair_occurrence_position_measurement_binding(
@@ -595,7 +595,7 @@ def test_binding_read_threads_one_exact_coordinate_read_to_pair_validation(monke
     assert read_binding == binding
     assert read_finding == finding
     assert pair_reads == [(pair.identity, prior_coordinates)]
-    assert _operator_standing_validation_context(
+    assert _operator_current_coordinate_validation_context(
         ledger, locality_identity=locality
     ) is None
 
