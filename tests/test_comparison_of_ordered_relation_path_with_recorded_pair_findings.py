@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from functools import lru_cache
 
 import pytest
@@ -235,54 +236,33 @@ def _record_inputs(ledger, *, path_source_is_added=True):
     return ledger, earlier_source, added, comparison, path
 
 
-@lru_cache(maxsize=2)
-def _input_occurrences(path_source_is_added):
-    ledger, earlier_source, added, comparison, path = _record_inputs(
-        EventLedger(), path_source_is_added=path_source_is_added
-    )
-    return (
-        tuple(ledger.list()),
-        earlier_source.identity,
-        added.identity,
-        comparison.identity,
-        path.identity,
-    )
-
-
 def _inputs(*, ledger=None, path_source_is_added=True):
-    if ledger is not None:
-        return _record_inputs(ledger, path_source_is_added=path_source_is_added)
-    occurrences, *identities = _input_occurrences(path_source_is_added)
-    ledger = EventLedger()
-    ledger.append_many(occurrences)
-    return ledger, *(ledger.get(identity) for identity in identities)
+    return _record_inputs(
+        ledger if ledger is not None else EventLedger(),
+        path_source_is_added=path_source_is_added,
+    )
 
 
 @lru_cache(maxsize=1)
-def _two_input_occurrences():
+def _two_input_template():
     ledger, *first = _inputs()
     ledger, *second = _record_inputs(ledger)
-    return (
-        tuple(ledger.list()),
-        *(event.identity for event in (*first, *second)),
-    )
+    return ledger, *(event.identity for event in (*first, *second))
 
 
 def _two_inputs():
-    occurrences, *identities = _two_input_occurrences()
-    ledger = EventLedger()
-    ledger.append_many(occurrences)
+    template, *identities = _two_input_template()
+    ledger = deepcopy(template)
     return ledger, *(ledger.get(identity) for identity in identities)
 
 
 @lru_cache(maxsize=5)
-def _story_floor(floor):
+def _story_floor_template(floor):
     if floor == 0:
-        occurrences, *_identities = _two_input_occurrences()
-        return occurrences, ()
-    prior_occurrences, _prior_results = _story_floor(floor - 1)
-    ledger = EventLedger()
-    ledger.append_many(prior_occurrences)
+        ledger, *_inputs_reading = _two_inputs()
+        return ledger, ()
+    prior, _prior_results = _story_floor_template(floor - 1)
+    ledger = deepcopy(prior)
     if floor == 1:
         results = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
             ledger, locality_identity=LOCALITY
@@ -301,13 +281,12 @@ def _story_floor(floor):
         ).compare_result_occurrences
     else:
         raise ValueError("the exact story floor is absent")
-    return tuple(ledger.list()), tuple(result.identity for result in results)
+    return ledger, tuple(result.identity for result in results)
 
 
 def _ledger_at_story_floor(floor):
-    occurrences, result_identities = _story_floor(floor)
-    ledger = EventLedger()
-    ledger.append_many(occurrences)
+    template, result_identities = _story_floor_template(floor)
+    ledger = deepcopy(template)
     return ledger, tuple(ledger.get(identity) for identity in result_identities)
 
 
@@ -529,18 +508,17 @@ def test_unassigned_exact_compare_subject_read_returns_every_path_and_comparison
 
 
 def test_every_current_compare_subject_records_one_serial_binding():
-    ledger, _floor_results = _ledger_at_story_floor(0)
     (
-        _occurrences,
-        _first_source_identity,
-        _first_added_identity,
-        first_comparison_identity,
-        first_path_identity,
-        _second_source_identity,
-        _second_added_identity,
-        second_comparison_identity,
-        second_path_identity,
-    ) = _two_input_occurrences()
+        ledger,
+        _first_source,
+        _first_added,
+        first_comparison,
+        first_path,
+        _second_source,
+        _second_added,
+        second_comparison,
+        second_path,
+    ) = _two_inputs()
     coordinates_before = _current_coordinates(ledger)
     boundary_before = ledger.append_boundary()
     assert boundary_before.identity != coordinates_before[
@@ -551,10 +529,10 @@ def test_every_current_compare_subject_records_one_serial_binding():
             path_result_event_identity=path_identity,
             comparison_result_event_identity=comparison_identity,
         )
-        for path_identity in (first_path_identity, second_path_identity)
+        for path_identity in (first_path.identity, second_path.identity)
         for comparison_identity in (
-            first_comparison_identity,
-            second_comparison_identity,
+            first_comparison.identity,
+            second_comparison.identity,
         )
     )
 
@@ -640,8 +618,10 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
 def test_only_applicable_current_compare_results_record_participation_and_act_occurrence():
     ledger, applicability_results = _ledger_at_story_floor(2)
     bindings = tuple(
-        ledger.get(identity)
-        for identity in _story_floor(1)[1]
+        ledger.iter_locality_kind(
+            LOCALITY,
+            comparison_module.COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_SUBJECT_TO_ACT_BINDING_KIND,
+        )
     )
     recorded = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
         ledger, locality_identity=LOCALITY
