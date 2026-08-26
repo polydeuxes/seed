@@ -321,8 +321,8 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         for finding in iter_recurrent_coordinate_material_findings(
             ledger, measurements
         )
-        if finding["finding_reference"] in {
-            recurrent[(1, 4), b"+"]["finding_reference"],
+        if finding["finding_position"] in {
+            recurrent[(1, 4), b"+"]["finding_position"],
         }
     ) == (((1, 4), 2),)
 

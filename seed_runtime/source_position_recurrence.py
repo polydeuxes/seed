@@ -20,8 +20,6 @@ dispatcher.
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-import json
 from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
@@ -202,19 +200,6 @@ class RecurrentResultMaterialMeasurement(NamedTuple):
 class RecurrentResultMaterialMeasurements(NamedTuple):
     measurements: tuple[RecurrentResultMaterialMeasurement, ...]
     current_coordinates: dict[str, Any]
-
-
-def _exact_json(value: Any) -> str:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-
-
-def _digest(prefix: str, value: Any) -> str:
-    return prefix + ":" + hashlib.sha256(_exact_json(value).encode("utf-8")).hexdigest()
 
 
 def _identity(value: Any, message: str) -> str:
@@ -1650,24 +1635,16 @@ def _coordinate_findings(
                     grouped[value], coordinates[value], strict=True
                 )
             ]
-            identity = _digest(
-                "recurrence-corresponding-source-position-material",
-                {"subject": subject, "support": support},
-            )
+            finding_position = len(findings)
             finding = {
-                "finding_position": len(findings),
-                "finding_reference": identity,
+                "finding_position": finding_position,
                 "subject": subject,
                 "support": support,
                 "count": len(support),
             }
             if len(support) > 1:
                 finding["recurrence"] = {
-                    "finding_reference": _digest(
-                        "recurrence-corresponding-source-position-material-recurrence",
-                        {"count_finding_reference": identity, "count": len(support)},
-                    ),
-                    "count_finding_reference": identity,
+                    "count_finding_position": finding_position,
                 }
             findings.append(finding)
     return findings
