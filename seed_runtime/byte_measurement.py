@@ -3863,7 +3863,7 @@ def _read_pair_applicability_act_occurrence(
             "pair Applicability Act occurrence is absent or corrupted"
         )
     reference = event.material.get("subject_to_act_binding_reference")
-    binding, source, _scope, _content = (
+    binding, source, _source_localities, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
             reference.get("recorded_occurrence_identity")
@@ -3914,7 +3914,7 @@ def _read_recorded_pair_input_applicability(
             f"{event_identity} does not carry the exact Applicability result surface"
         )
     binding_reference = material.get("subject_to_act_binding_reference")
-    binding, source, _scope, _content = (
+    binding, source, _source_localities, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
             binding_reference.get("recorded_occurrence_identity")
@@ -3959,7 +3959,7 @@ def _pair_applicability_binding_of_result(
     prior_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     reference = applicability_event.material.get("subject_to_act_binding_reference")
-    binding, applicability_source, _scope, _content = (
+    binding, applicability_source, _source_localities, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
             reference.get("recorded_occurrence_identity")
@@ -4053,7 +4053,7 @@ def _record_pair_measurement_act_from_carried_applicability(
     applicability_reference = applicability_event.material.get(
         "subject_to_act_binding_reference"
     )
-    applicability_binding, applicability_source, _scope, _content = (
+    applicability_binding, applicability_source, _source_localities, _content = (
         _read_pair_applicability_subject_to_act_binding(
             ledger,
             applicability_reference.get("recorded_occurrence_identity")
@@ -4112,7 +4112,7 @@ def _read_pair_measurement_act_occurrence(
             "pair Measurement Act occurrence is absent or corrupted"
         )
     reference = event.material.get("subject_to_act_binding_reference")
-    binding, source, _scope, _content = (
+    binding, source, _source_localities, _content = (
         _read_pair_measurement_subject_to_act_binding(
             ledger,
             reference.get("recorded_occurrence_identity")
@@ -4137,7 +4137,7 @@ def _read_pair_measurement_act_occurrence(
     applicability_binding = None
     applicability_source = None
     if type(applicability_reference) is dict:
-        applicability_binding, applicability_source, _scope, _content = (
+        applicability_binding, applicability_source, _source_localities, _content = (
             _read_pair_applicability_subject_to_act_binding(
                 ledger,
                 applicability_reference.get("recorded_occurrence_identity"),
