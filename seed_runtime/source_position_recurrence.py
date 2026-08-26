@@ -356,8 +356,6 @@ def _preserved_act_material(material):
         "result_identity": material["result_identity"],
         "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "responsibility_assignment_reference": deepcopy(
             material["responsibility_assignment_reference"]
         ),
@@ -375,8 +373,6 @@ def _preserved_result_material(material):
         "act_occurrence_event_identity": material[
             "act_occurrence_event_identity"
         ],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "coordinates": deepcopy(material["coordinates"]),
         "yield_relation_identity": material[
             "yield_relation_identity"
@@ -394,8 +390,6 @@ def _preserved_responsibility_material(material):
         "exact_act_identity": material["act_identity"],
         "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "exact_act": material["exact_act"],
         "rule": material["rule"],
         "subject": deepcopy(material["subject"]),
@@ -572,8 +566,6 @@ def _record_responsibility(
             "through_event_occurrence_identity": through_event_occurrence_identity,
             "act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
-            "responsibility": responsibility,
-            "responsible_boundary": "this Seed",
             "exact_act": exact_act,
             "rule": rule,
             "subject": subject,
@@ -635,8 +627,6 @@ def _record_yielded_result(
             "act_occurrence_identity": act_occurrence_identity,
             "result_identity": result_identity,
             "act": exact_act,
-            "responsibility": responsibility,
-            "responsible_boundary": "this Seed",
             "responsibility_assignment_reference": assignment_reference,
             "coordinates": {
                 "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -651,8 +641,6 @@ def _record_yielded_result(
         "act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "act_occurrence_event_identity": act.identity,
-        "responsibility": responsibility,
-        "responsible_boundary": "this Seed",
         "coordinates": deepcopy(result_payload),
     }
     yielded = _record_yield_relation(
@@ -700,8 +688,6 @@ def _require_yield(
     if (
         result.locality_identity != act.locality_identity
         or act.material.get("act") != exact_act
-        or act.material.get("responsibility") != responsibility
-        or result.material.get("responsibility") != responsibility
         or yielded is None
         or yielded.material.get("occurrence_boundary") != occurrence_boundary
         or not all(requirements.values())
@@ -750,8 +736,6 @@ def _require_responsibility(
         or assignment.material.get("act_identity") != act.material.get("act_identity")
         or assignment.material.get("act_occurrence_identity")
         != act.material.get("act_occurrence_identity")
-        or assignment.material.get("responsibility")
-        != act.material.get("responsibility")
         or assignment.material.get("exact_act") != act.material.get("act")
         or assignment.material.get("rule")
         != _EXACT_ACT_RULES.get(act.material.get("act"))
@@ -800,8 +784,6 @@ def _require_recorded_responsibility(
         or not material["act_identity"]
         or type(material.get("act_occurrence_identity")) is not str
         or not material["act_occurrence_identity"]
-        or type(material.get("responsibility")) is not str
-        or not material["responsibility"]
         or type(material.get("exact_act")) is not str
         or not material["exact_act"]
         or material.get("rule") != _EXACT_ACT_RULES.get(material.get("exact_act"))
@@ -1283,8 +1265,6 @@ def get_recorded_source_position_measurement(
                 "act_identity",
                 "act_occurrence_identity",
                 "act_occurrence_identity",
-                "responsibility",
-                "responsible_boundary",
                 "yield_relation_identity",
             }
         }
@@ -1466,8 +1446,6 @@ def get_recorded_source_position_recurrence(
             "act_identity",
             "act_occurrence_identity",
             "act_occurrence_identity",
-            "responsibility",
-            "responsible_boundary",
             "yield_relation_identity",
         }
     }
@@ -1872,8 +1850,6 @@ def get_recorded_corresponding_coordinate_material_measurement(
             "act_identity",
             "act_occurrence_identity",
             "act_occurrence_identity",
-            "responsibility",
-            "responsible_boundary",
             "yield_relation_identity",
         }
     }
@@ -2394,37 +2370,23 @@ def validate_source_position_recurrence_event(
     if "act" not in material:
         raise ValueError("source-position occurrence is not exact")
     act_readings = {
-        COMPARE_APPLICABILITY_ACT: (
-            COMPARE_APPLICABILITY_ACT,
-            COMPARE_RESPONSIBILITY,
-            "subject",
-        ),
-        COMPARE_ACT: (COMPARE_ACT, COMPARE_RESPONSIBILITY, "subject"),
+        COMPARE_APPLICABILITY_ACT: (COMPARE_APPLICABILITY_ACT, "subject"),
+        COMPARE_ACT: (COMPARE_ACT, "subject"),
         SOURCE_POSITION_MEASUREMENT_ACT: (
             SOURCE_POSITION_MEASUREMENT_ACT,
-            SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY,
             "subject",
         ),
-        RECURRENCE_MEASUREMENT_ACT: (
-            RECURRENCE_MEASUREMENT_ACT,
-            RECURRENCE_MEASUREMENT_RESPONSIBILITY,
-            "subject",
-        ),
-        COORDINATE_MEASUREMENT_ACT: (
-            COORDINATE_MEASUREMENT_ACT,
-            COORDINATE_MEASUREMENT_RESPONSIBILITY,
-            "subject",
-        ),
+        RECURRENCE_MEASUREMENT_ACT: (RECURRENCE_MEASUREMENT_ACT, "subject"),
+        COORDINATE_MEASUREMENT_ACT: (COORDINATE_MEASUREMENT_ACT, "subject"),
         RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT: (
             RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT,
-            RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY,
             "subject",
         ),
     }
     reading = act_readings.get(material.get("act"))
     if reading is None:
         raise ValueError("source-position Act occurrence is not exact")
-    exact_act, responsibility, required_coordinate = reading
+    exact_act, required_coordinate = reading
     exact = _recorded_occurrence(
         ledger,
         event.identity,
@@ -2433,7 +2395,6 @@ def validate_source_position_recurrence_event(
     _require_act_boundary(ledger, exact)
     if (
         exact.material.get("act") != exact_act
-        or exact.material.get("responsibility") != responsibility
         or type(_coordinates(exact.material).get(required_coordinate)) is not dict
     ):
         raise ValueError("source-position Act occurrence is not exact")
