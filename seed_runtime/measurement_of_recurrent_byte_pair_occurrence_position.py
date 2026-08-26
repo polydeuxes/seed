@@ -19,7 +19,6 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.identities import new_identity
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
@@ -694,13 +693,13 @@ def record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_bi
         ledger, finding=finding, current_coordinates=current_coordinates
     )
     identities = {
-        "measurement_act_identity": new_identity(
+        "measurement_act_identity": ledger.mint_identity(
             "act_of_measurement_of_recurrent_byte_pair_occurrence_position"
         ),
-        "act_occurrence_identity": new_identity(
+        "act_occurrence_identity": ledger.mint_identity(
             "act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position"
         ),
-        "measurement_result_identity": new_identity(
+        "measurement_result_identity": ledger.mint_identity(
             "result_of_measurement_of_recurrent_byte_pair_occurrence_position"
         ),
     }
