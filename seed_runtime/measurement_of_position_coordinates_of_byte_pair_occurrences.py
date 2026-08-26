@@ -1251,19 +1251,12 @@ def _assertion_coordinates(
     exact_pair: bytes,
     first_position: int,
     second_position: int,
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, int]]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     subject = {
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
         ),
         "exact_pair": list(exact_pair),
-    }
-    scope = {
-        "source_locality_identity": finding.source_locality_identity,
-        "source_material_result_occurrence_identity": (
-            finding.source_material_result_occurrence_identity
-        ),
-        "completeness_boundary_identity": finding.completeness_boundary.identity,
     }
     content = {
         "first_position": first_position,
@@ -1295,7 +1288,7 @@ def _assertion_coordinates(
             )
         ),
     }
-    return subject, scope, content
+    return subject, content
 
 
 def _assertion(
@@ -1305,7 +1298,7 @@ def _assertion(
     first_position: int,
     second_position: int,
 ) -> dict[str, Any]:
-    subject, scope, content = _assertion_coordinates(
+    subject, content = _assertion_coordinates(
         finding,
         exact_pair=exact_pair,
         first_position=first_position,
@@ -1319,7 +1312,6 @@ def _assertion(
         },
         "result": "position",
         "assertion_subject": subject,
-        "assertion_scope": scope,
         "input_support": {
             "occurrence_references": [finding.source_material_result_occurrence_identity],
             "local_assertion_references": [],

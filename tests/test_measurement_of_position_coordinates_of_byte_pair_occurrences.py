@@ -555,6 +555,18 @@ def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed
     assert tuple(
         assertion["dimensions"]["position"] for assertion in assertions
     ) == tuple(reference.assertion_position for reference in references)
+    assert all(
+        set(assertion)
+        == {
+            "dimensions",
+            "result",
+            "assertion_subject",
+            "input_support",
+            "conflicts",
+            "unknown",
+        }
+        for assertion in assertions
+    )
 
 
 def test_bounded_position_assertion_result_coordinates_reads_once_in_source_order(
