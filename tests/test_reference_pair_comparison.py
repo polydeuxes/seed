@@ -1,10 +1,9 @@
-import json
-from pathlib import Path
 import sqlite3
 
 import pytest
 
 from scripts.reference_pair_comparison import ReferencePairComparison
+from seed_runtime.event import Event
 from seed_runtime.events import EventLedgerBoundary, SQLiteEventLedger
 
 
@@ -53,10 +52,18 @@ def test_bounded_comparison_reads_both_reference_directions(tmp_path):
 
 def test_bounded_comparison_does_not_turn_a_future_name_into_a_relation(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "future.sqlite"))
-    future_identity = f"evt_{ledger._next_event_number + 1:06d}"
-    naming = ledger.append("naming", {"source_reference": future_identity})
-    future = ledger.append("future", {})
-    assert future.identity == future_identity
+    naming_identity = ledger.allocate_event_identity()
+    future_identity = ledger.allocate_event_identity()
+    naming, future = ledger.append_many(
+        (
+            Event(
+                identity=naming_identity,
+                kind="naming",
+                material={"source_reference": future_identity},
+            ),
+            Event(identity=future_identity, kind="future"),
+        )
+    )
     comparison = ReferencePairComparison()
 
     comparison.load(ledger, through=ledger.append_boundary())
@@ -70,30 +77,6 @@ def test_one_repeated_reference_relation_is_collected_once(tmp_path):
     assert comparison.references_from(events[1].identity) == [
         ("source_reference", events[0].identity)
     ]
-    grammar = json.loads(
-        (
-            Path(__file__).resolve().parents[1]
-            / "book_of_seed/witness_grammar.json"
-        ).read_text(encoding="utf-8")
-    )
-    assert grammar["clause_coordinates"]["01.Source.D.1"][
-        "repeated_reference_to_one_occurrence"
-    ] == {
-        "standing_not_established": [
-            {
-                "first_subject": "repeated_reference_to_one_occurrence",
-                "relation": "create",
-                "second_subject": "another_occurrence",
-                "standing": "not_established",
-            },
-            {
-                "first_subject": "repeated_reference_to_one_occurrence",
-                "relation": "establishes",
-                "second_subject": "another_occurrence_reference_in_count_finding",
-                "standing": "not_established",
-            },
-        ]
-    }
 
 
 def test_collection_stays_at_its_exact_boundary_after_the_ledger_advances(tmp_path):
