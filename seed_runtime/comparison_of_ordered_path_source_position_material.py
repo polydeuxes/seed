@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-import json
 from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
@@ -859,14 +857,7 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         "first_source_position_coordinate": deepcopy(first),
         "second_source_position_coordinate": deepcopy(second),
     }
-    exact = json.dumps(
-        {"subject": subject, "result": result},
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
     return {
-        "identity": "ordered-path-source-position-material:"
-        + hashlib.sha256(exact).hexdigest(),
         "subject": subject,
         "result": result,
         "source_provenance": "exact ordered relation path source coordinates",
