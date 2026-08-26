@@ -412,7 +412,7 @@ def test_replay_context_refuses_forged_exact_boundary_input_coordinates(
             ledger,
             locality_identity=locality,
             through_event_occurrence_identity=assignment.material[
-                "standing_boundary_identity"
+                "through_event_occurrence_identity"
             ],
             measurement_occurrences=measurements,
             material_result_occurrences=acquisition_results,
@@ -697,7 +697,7 @@ def test_public_assignment_read_still_reconstructs_prior_standing(monkeypatch):
     ) == assignment
     assert (
         locality,
-        assignment.material["standing_boundary_identity"],
+        assignment.material["through_event_occurrence_identity"],
     ) in standing_reads
     assert all(
         (

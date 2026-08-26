@@ -563,7 +563,10 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
     assert inputs.first == first
     assert inputs.second == second
     assert standing_reads == [
-        (locality, second_assignment.material["standing_boundary_identity"])
+        (
+            locality,
+            second_assignment.material["through_event_occurrence_identity"],
+        )
     ]
 
     standing_reads.clear()
@@ -800,10 +803,10 @@ def test_recurrent_result_batch_requires_an_addressed_position_and_one_locality(
         )
 
 
-def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
+def test_recurrent_result_batch_refuses_a_crossed_through_occurrence():
     ledger, _locality, _source, first, second = _fixture()
     assignment = _recurrent_result_coordinates(ledger, first)["assignment"]
-    assignment.material["standing_boundary_identity"] = (
+    assignment.material["through_event_occurrence_identity"] = (
         second.recorded_occurrence_identity
     )
 
