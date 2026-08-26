@@ -939,18 +939,6 @@ def _record_compare(
         act_payload={
             "subject": compare_subject,
             "applicability_result_reference": applicability_result_reference,
-            "participation_relations": [
-                {
-                    "first_subject": subject["first_source_position_coordinate"],
-                    "relation": "participation",
-                    "second_subject": {"role": "first subject"},
-                },
-                {
-                    "first_subject": subject["second_source_position_coordinate"],
-                    "relation": "participation",
-                    "second_subject": {"role": "second subject"},
-                },
-            ],
         },
         result_payload={
             "subject": compare_subject,
@@ -1051,20 +1039,6 @@ def get_recorded_source_position_compare(
         )
     else:
         exact_prior = False
-    participation = _coordinates(act.material).get("participation_relations")
-    exact_participation = (
-        type(participation) is list
-        and len(participation) == 2
-        and tuple(item.get("relation") for item in participation)
-        == ("participation", "participation")
-        and tuple(item.get("first_subject") for item in participation)
-        == (
-            expected_pair_subject["first_source_position_coordinate"],
-            expected_pair_subject["second_source_position_coordinate"],
-        )
-        and tuple(item.get("second_subject") for item in participation)
-        == ({"role": "first subject"}, {"role": "second subject"})
-    )
     if (
         coordinate_tuple != expected_source
         or not exact_prior
@@ -1078,7 +1052,6 @@ def get_recorded_source_position_compare(
         or _coordinates(act.material).get("subject") != subject
         or _coordinates(act.material).get("applicability_result_reference")
         != applicability_result_reference
-        or not exact_participation
         or type(finding) is not dict
         or finding.get("subject") != expected_pair_subject
         or finding.get("result") != expected_result
