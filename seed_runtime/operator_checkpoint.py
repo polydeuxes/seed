@@ -150,7 +150,6 @@ def _act_material(binding: Event) -> dict[str, Any]:
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
-        "source_reference": deepcopy(binding.material["subject_reference"]),
         "scope": deepcopy(binding.material["scope"]),
         "result_identity": binding.material["result_identity"],
     }
@@ -165,7 +164,11 @@ def _result_material(act_occurrence: Event) -> dict[str, Any]:
         "subject_to_act_binding_reference": deepcopy(
             act_occurrence.material["subject_to_act_binding_reference"]
         ),
-        "source_reference": deepcopy(act_occurrence.material["source_reference"]),
+        "source_reference": deepcopy(
+            act_occurrence.material["subject_to_act_binding_reference"][
+                "subject_reference"
+            ]
+        ),
         "scope": deepcopy(act_occurrence.material["scope"]),
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
