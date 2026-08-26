@@ -63,20 +63,20 @@ def _anchor_reference(ledger: EventLedger, anchor_event_identity: str) -> dict[s
 def _resolve_one_carried_anchor(
     ledger: EventLedger,
     *,
-    source_locality_standing: dict[str, Any],
+    source_current_coordinates: dict[str, Any],
 ) -> dict[str, str]:
-    if type(source_locality_standing) is not dict:
+    if type(source_current_coordinates) is not dict:
         raise RecordedStandingBoundaryLocalityError(
             "recorded Standing boundary Locality requires exact source Standing"
         )
     source_locality = _require_identity(
-        source_locality_standing.get("locality_identity"),
+        source_current_coordinates.get("locality_identity"),
         "recorded Standing boundary Locality requires one source Locality",
     )
-    anchors = source_locality_standing.get(
+    anchors = source_current_coordinates.get(
         "recorded_standing_boundary_references"
     )
-    relations = source_locality_standing.get(
+    relations = source_current_coordinates.get(
         "recorded_standing_boundary_locality_relations"
     )
     if type(anchors) is not dict or type(relations) is not dict:
@@ -249,14 +249,14 @@ def _recorded_result_material(
 def record_recorded_standing_boundary_locality_subject_to_act_binding(
     ledger: EventLedger,
     *,
-    source_locality_standing: dict[str, Any],
+    source_current_coordinates: dict[str, Any],
 ) -> Event:
     """Bind one direct Locality relation from one carried recorded result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recorded Standing boundary Locality requires one EventLedger")
     anchor = _resolve_one_carried_anchor(
-        ledger, source_locality_standing=source_locality_standing
+        ledger, source_current_coordinates=source_current_coordinates
     )
     destination = ledger.mint_identity("recorded_standing_boundary_locality")
     if ledger.has_locality(destination):

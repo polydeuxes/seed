@@ -77,7 +77,7 @@ def _standing_with_recorded_boundary_reference(ledger, *, locality="source"):
 
 def _binding(ledger, current_coordinates):
     return record_recorded_standing_boundary_locality_subject_to_act_binding(
-        ledger, source_locality_standing=current_coordinates
+        ledger, source_current_coordinates=current_coordinates
     )
 
 
