@@ -35,8 +35,8 @@ operator Locality are exact together.
 The result preserves the operator occurrence, source Locality, invocation
 Locality, relation occurrence, Act occurrence, Yield, and Unknown.
 
-Material later supplied at the invocation Locality preserves exact provenance
-to the operator occurrence and relation result.
+Material later supplied at the invocation Locality preserves exact source
+occurrence references to the operator occurrence and relation result.
 
 ## References
 

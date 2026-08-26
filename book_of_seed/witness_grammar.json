@@ -42,7 +42,7 @@
     "01.Source.A": {
       "subject": "supplied_material_source_coordinates",
       "exact_Act": "preserve_exact_source_coordinates",
-      "result": "preserved_source_coordinates"
+      "result": "exact_source_coordinates"
     },
     "01.Source.B": {
       "subject": "cross_boundary_participation",
@@ -61,7 +61,7 @@
       "carried_coordinates": [
         "exact_declared_distinction",
         "source",
-        "provenance",
+        "source_occurrence_references",
         "Locality",
         "conflicts",
         "loss",
@@ -93,7 +93,7 @@
     "01.Source.F": {
       "subject": "material_carrying_relation_Assertion",
       "exact_Act": "preserve_relation_Assertion",
-      "result": "preserved_relation_Assertion"
+      "result": "exact_relation_Assertion"
     },
     "01.Source.G": {
       "subject": "operator_material_boundary",
@@ -114,7 +114,7 @@
       "carried_coordinates": [
         "source_role",
         "source_boundary",
-        "provenance",
+        "source_occurrence_references",
         "Locality",
         "known_loss",
         "Unknown"
@@ -156,7 +156,7 @@
       "subject": "Assertion",
       "carried_coordinates": [
         "source",
-        "provenance",
+        "source_occurrence_references",
         "Locality",
         "conflicts",
         "Unknown"
@@ -264,12 +264,6 @@
       "requires": [
         "Applicability_result",
         "participation_relation_occurrence"
-      ]
-    },
-    "05.Provenance.A": {
-      "subject": "provenance",
-      "carried_coordinates": [
-        "exact_occurrence_references"
       ]
     },
     "05.Recording.A": {

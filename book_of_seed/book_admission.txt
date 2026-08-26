@@ -113,10 +113,8 @@ path
 position
 preservation
 preserve
-preserved
 preserves
 prior
-provenance
 reading
 record
 recorded

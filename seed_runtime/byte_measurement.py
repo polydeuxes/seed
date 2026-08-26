@@ -915,7 +915,7 @@ def _movement_binding_material(
             destination_through_event_occurrence_identity
         ),
         "determination": (
-            "the exact preserved Assertion in another Locality"
+            "the exact Assertion at another Locality"
         ),
         "unknown": [],
     }

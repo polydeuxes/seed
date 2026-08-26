@@ -17,7 +17,7 @@ together. Each input requires its exact Applicability result and Participation
 relation.
 
 The result preserves each Measurement result reference, every exact finding,
-ordered source occurrence references, the added occurrence, provenance,
+ordered source occurrence references and the added occurrence,
 Locality, conflicts, and Unknown.
 
 ### 04.Compare.B — Ordered relation path and pair findings

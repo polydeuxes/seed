@@ -3,7 +3,7 @@
 ### 01.Source.A — Source preservation
 
 One exact Act occurrence preserves the supplied material, source role,
-source occurrence, provenance, Locality, known loss, conflicts, and
+source occurrence, exact source occurrence references, Locality, known loss, conflicts, and
 Unknown carried at its boundary.
 
 ### 01.Source.B — Cross-boundary participation
@@ -15,7 +15,7 @@ carried by that exact material.
 
 Fidelity is one declared Compare Act with this Seed exact occurrence and
 this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
-one exact declared distinction and preserves its source, provenance,
+one exact declared distinction and preserves its source and occurrence references,
 Locality, conflicts, loss, and Unknown.
 
 This Book material witness carries this Book as material and is one
@@ -53,7 +53,7 @@ One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
 Yield relation carries the Act occurrence as
 first subject and one exact material result as second subject. The result
-preserves its source role, source boundary, provenance, Locality,
+preserves its source role, source boundary, source occurrence references, Locality,
 known loss, and Unknown.
 
 ### 01.Source.I — Separate source coordinates
@@ -63,5 +63,4 @@ separate source-to-Act coordinates and occurrences.
 
 ## References
 
-- [Provenance](05_provenance.md)
 - [Locality](06_locality_relations.md)

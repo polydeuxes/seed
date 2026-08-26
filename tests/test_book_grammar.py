@@ -210,7 +210,6 @@ def test_only_clauses_naming_an_Act_project_one():
         "01.Source.I",
         "05.Recording.A",
         "05.Recording.C",
-        "05.Provenance.A",
         "07.Emission.C",
         "07.Emission.D",
         "01.Current.G",
@@ -271,7 +270,7 @@ def test_fidelity_preserves_the_book_material_witness_subject():
         "carried_coordinates": [
             "exact_declared_distinction",
             "source",
-            "provenance",
+            "source_occurrence_references",
             "Locality",
             "conflicts",
             "loss",

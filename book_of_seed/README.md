@@ -48,7 +48,6 @@ The result carries the exact coordinates established by its Act occurrence.
 - [Current coordinates](chapters/01_current_coordinates.md)
 - [Acts and occurrences](chapters/03_acts_and_occurrences.md)
 - [Source coordinates](chapters/04_source_coordinates.md)
-- [Provenance](chapters/05_provenance.md)
 - [Locality](chapters/06_locality_relations.md)
 - [Measurement](chapters/07_measurement.md)
 - [Compare](chapters/08_compare.md)

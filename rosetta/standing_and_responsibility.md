@@ -95,7 +95,7 @@ Lexicon        admitted words only; admission of a word establishes no clause, c
 Composite      one communicative address for multiple exact coordinates; each coordinate still requires its own exact physiology
 Name / label / kind / shape ordinary ways to address material or a grouping; none supplies the subject, relation, Act, occurrence, or current coordinates it suggests
 Evidence       communicative shorthand that exact material and exact source and occurrence references address an Assertion; no separate Evidence coordinate
-Authority      retired compression of subject, exact Act, Locality, source, provenance, occurrence, Yield, result, and bounded current coordinates; no separate Authority coordinate
+Authority      retired compression of subject, exact Act, Locality, source and occurrence references, Yield, result, and bounded current coordinates; no separate Authority coordinate
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
@@ -106,7 +106,8 @@ Memory         addressed prior Locality through-occurrence boundary + exact pre-
 Remain / remains / remaining earlier exact coordinate + later exact boundary + exact preservation relation; word alone establishes no preservation, persistence, identity, currentness, temporal relation, or result
 Checkout       exact recorded through-occurrence boundary reference + destination Locality + direct Locality relation; no history copy; no persistent Memory
 Pointers       one preserved thing + many exact references to it + no identity collapse; pointer equality establishes no occurrence or current-coordinate equality
-Lineage        ordered source and occurrence references beneath Provenance
+Provenance     ordered source occurrence references; no additional identity, relation, occurrence, Act, or result
+Lineage        ordered source and occurrence references
 Artifact       exact representation, record, Assertion, or result
 Projection     exact Act occurrence + representation + its carried coordinates
 Comparison of material-result references exact selected material-result references + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
@@ -148,7 +149,7 @@ Addressability of preserved coordinates
 subject / identity
 assertion / content
 current coordinates
-source / provenance
+source / occurrence references
 pre-Act subject / Act / rule
 support
 scope / locality
@@ -192,7 +193,7 @@ represented relation, or Act.
 These forms compress one exact address or reference, or material asserting one
 exact relation from X to Y. An address or reference carries coordinates and
 establishes no constitutional relation. Material asserting the relation
-requires one exact relation occurrence, source coordinates, provenance,
+requires one exact relation occurrence, source and occurrence coordinates,
 and Unknown. The forms alone establish no identity,
 equality, sameness, subject, occurrence, represented relation, or truth.
 

@@ -31,5 +31,4 @@ and Unknown.
 ## References
 
 - [Source coordinates](04_source_coordinates.md)
-- [Provenance](05_provenance.md)
 - [Locality](06_locality_relations.md)
