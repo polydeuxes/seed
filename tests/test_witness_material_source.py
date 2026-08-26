@@ -160,11 +160,15 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "source_role": "this Witness",
         "source_boundary": "source boundary",
     }
-    assert binding.material["scope"] == {
-        "source_boundary": "source boundary",
-        "locality_identity": "locality_000001",
-        "result_identity": occurred.material["result_identity"],
-    }
+    assert tuple(sorted(binding.material)) == (
+        "act",
+        "act_occurrence_identity",
+        "book_clause_identity",
+        "exact_act_identity",
+        "result_boundary_identity",
+        "subject_reference",
+        "unknown",
+    )
     assert reference["result_boundary_identity"] == occurred.material[
         "result_identity"
     ]

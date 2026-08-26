@@ -50,7 +50,6 @@ def _subject_to_act_binding_reference(binding: Event) -> dict[str, object]:
 
 def _subject_to_act_binding_material(
     *,
-    locality_identity: str,
     source_boundary: str,
     exact_act_identity: str,
     act_occurrence_identity: str,
@@ -66,11 +65,6 @@ def _subject_to_act_binding_material(
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_boundary_identity": result_identity,
-        "scope": {
-            "source_boundary": source_boundary,
-            "locality_identity": locality_identity,
-            "result_identity": result_identity,
-        },
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
@@ -177,7 +171,6 @@ def record_witness_material_source(
     subject_to_act_binding = ledger.append(
         WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _subject_to_act_binding_material(
-            locality_identity=locality_identity,
             source_boundary=source_boundary,
             exact_act_identity=source_act_identity,
             act_occurrence_identity=act_occurrence_identity,
@@ -188,7 +181,6 @@ def record_witness_material_source(
     binding_reference = _subject_to_act_binding_reference(
         subject_to_act_binding
     )
-    scope = deepcopy(subject_to_act_binding.material["scope"])
     recorded_result_event_identity = ledger.allocate_event_identity()
     locality_relation = {
         "first_subject": {
@@ -206,7 +198,6 @@ def record_witness_material_source(
         "source_role": "this Witness",
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
-        "scope": scope,
         "known_loss": list(known_loss),
         "unknown": list(MATERIAL_RESULT_UNKNOWN),
         "provenance_occurrence_references": list(
@@ -225,7 +216,6 @@ def record_witness_material_source(
             "act_occurrence_identity": act_occurrence_identity,
             "act": WITNESS_MATERIAL_SOURCE_ACT,
             "subject_to_act_binding_reference": binding_reference,
-            "scope": scope,
         },
         locality_identity=locality_identity,
     )
@@ -288,7 +278,6 @@ def _read_witness_material_source_result(
     source_role = material.get("source_role")
     source_boundary = material.get("source_boundary")
     binding_reference = material.get("subject_to_act_binding_reference")
-    scope = material.get("scope")
     yield_identity = material.get("yield_relation_identity")
     locality_relation = material.get("locality_relation")
     act_occurrence = (
@@ -322,8 +311,6 @@ def _read_witness_material_source_result(
         or binding.exact_material is not None
         or ledger.integrity_of(binding.identity) == CORRUPTED
         or binding_reference != _subject_to_act_binding_reference(binding)
-        or scope != binding.material.get("scope")
-        or type(scope) is not dict
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
         or unknown != list(MATERIAL_RESULT_UNKNOWN)
@@ -357,7 +344,6 @@ def _read_witness_material_source_result(
             "Witness material result is absent or corrupted"
         )
     expected_binding = _subject_to_act_binding_material(
-        locality_identity=event.locality_identity,
         source_boundary=source_boundary,
         exact_act_identity=source_act_identity,
         act_occurrence_identity=act_occurrence_identity,
@@ -374,7 +360,6 @@ def _read_witness_material_source_result(
         "source_role": source_role,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
-        "scope": scope,
         "known_loss": known_loss,
         "unknown": unknown,
         "provenance_occurrence_references": provenance,
@@ -387,7 +372,6 @@ def _read_witness_material_source_result(
         "act_occurrence_identity": act_occurrence_identity,
         "act": WITNESS_MATERIAL_SOURCE_ACT,
         "subject_to_act_binding_reference": binding_reference,
-        "scope": scope,
     }
     expected_material = {
         **result,
