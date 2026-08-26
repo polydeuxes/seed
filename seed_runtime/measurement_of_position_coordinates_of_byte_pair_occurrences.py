@@ -1308,7 +1308,6 @@ def _assertion(
         "dimensions": {
             "position": first_position,
             "content": content,
-            "source_provenance": "one exact material-result occurrence and source boundary",
         },
         "result": "position",
         "assertion_subject": subject,
