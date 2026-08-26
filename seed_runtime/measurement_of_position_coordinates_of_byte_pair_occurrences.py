@@ -604,15 +604,6 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relation": input_relation,
-        "scope": {
-            "source_material_result_occurrence_identity": (
-                finding.source_material_result_occurrence_identity
-            ),
-            "source_locality_identity": finding.source_locality_identity,
-            "completeness_boundary_identity": (
-                finding.completeness_boundary.identity
-            ),
-        },
         "unknown": [
             "Participation or content of each exact byte pair: Unknown"
         ],

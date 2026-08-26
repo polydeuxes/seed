@@ -401,6 +401,20 @@ def test_act_requires_current_coordinates_that_carry_exact_binding():
         source_material_result_occurrence_identity=source.identity,
         current_coordinates=before_binding,
     )
+    assert set(binding.material) == {
+        "subject_reference",
+        "exact_act_identity",
+        "act_occurrence_identity",
+        "measurement_result_identity",
+        "result_boundary_identity",
+        "book_clause_identity",
+        "source_material_result_occurrence_identity",
+        "source_locality_identity",
+        "completeness_boundary_identity",
+        "through_event_occurrence_identity",
+        "input_relation",
+        "unknown",
+    }
 
     with pytest.raises(ValueError, match="exact current coordinates"):
         record_byte_pair_occurrence_position_measurement_act_occurrence(
