@@ -739,7 +739,7 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
     standing = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
-    original = byte_measurement._acquired_bytes
+    original = byte_measurement._material_result_bytes
     callback_recorded = False
 
     def record_public_result_during_source_read(ledger, acquisition_result):
@@ -753,7 +753,7 @@ def test_call_local_result_rechecks_act_tip_after_source_callback(monkeypatch):
 
     monkeypatch.setattr(
         byte_measurement,
-        "_acquired_bytes",
+        "_material_result_bytes",
         record_public_result_during_source_read,
     )
     with pytest.raises(ByteMeasurementError, match="Act at the append tip"):
@@ -1907,7 +1907,7 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
     )
-    original = byte_measurement._acquired_bytes
+    original = byte_measurement._material_result_bytes
     callback_recorded = False
 
     def append_during_pair_measurement(ledger, acquisition_result):
@@ -1929,7 +1929,7 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
         return original(ledger, acquisition_result)
 
     monkeypatch.setattr(
-        byte_measurement, "_acquired_bytes", append_during_pair_measurement
+        byte_measurement, "_material_result_bytes", append_during_pair_measurement
     )
     with pytest.raises((ByteMeasurementError, ValueError)):
         record_byte_position_pair_count_layer(

@@ -1,8 +1,8 @@
-"""Measure exact bytes across complete bounded acquisition_result occurrences.
+"""Measure exact bytes across complete bounded material result occurrences.
 
-This is the first acquisition boundary that does not receive its measured
+This is the first source boundary that does not receive its measured
 subjects from a caller.  The subjects are the literal byte values carried by
-the exact material linked from every acquisition_result occurrence in the declared
+the exact material linked from every material result occurrence in the declared
 Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
@@ -33,10 +33,6 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
 )
-from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-
-
-ACQUISITION_OCCURRED_KIND = WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
@@ -135,12 +131,12 @@ EVENT_KIND_RESPONSIBILITIES = {
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
 BYTE_MEASUREMENT_RULE = (
-    "each exact byte in exact recorded material acquisition material with the same exact byte "
+    "each exact byte in exact recorded material result with the same exact byte "
     "material"
 )
 BYTE_PAIR_MEASUREMENT_RULE = (
-    "each exact byte-pair occurrence in source order within one exact recorded material acquisition "
-    "material occurrence with the same exact pair material and source order"
+    "each exact byte-pair occurrence in source order within one exact recorded material "
+    "result with the same exact pair material and source order"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact count of byte-pair occurrences in source order within the exact "
@@ -601,10 +597,10 @@ def _pair_input_applicability_from_exact_source(
     }
 
 
-def _acquired_bytes(ledger: EventLedger, occurrence) -> bytes:
+def _material_result_bytes(ledger: EventLedger, occurrence) -> bytes:
     if ledger.integrity_of(occurrence.identity) == CORRUPTED:
         raise ByteMeasurementError(
-            f"{occurrence.identity} is not an intact material acquisition occurrence"
+            f"{occurrence.identity} is not an intact material result occurrence"
         )
     try:
         return exact_material_result_bytes(occurrence)
@@ -612,7 +608,7 @@ def _acquired_bytes(ledger: EventLedger, occurrence) -> bytes:
         raise ByteMeasurementError(str(exc)) from exc
 
 
-def _exact_material_acquisition_results(
+def _exact_material_results(
     ledger: EventLedger,
     locality_identity: str,
     *,
@@ -626,7 +622,7 @@ def _exact_material_acquisition_results(
         )
     except MaterialSourceError as exc:
         raise ByteMeasurementError(
-            "source carries a material-acquisition result without intact physiology"
+            "source carries a material result without intact physiology"
         ) from exc
 
 
@@ -672,22 +668,22 @@ def _measure_byte_counts_through(
     carrying = [0] * 256
     totals = [0] * 256
     for locality in localities:
-        for acquisition_result in _exact_material_acquisition_results(
+        for material_result in _exact_material_results(
             ledger, locality, through=boundary
         ):
-            exact = _acquired_bytes(ledger, acquisition_result)
-            if acquisition_result.identity in seen_material:
+            exact = _material_result_bytes(ledger, material_result)
+            if material_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one material acquisition occurrence cannot enter a byte Measurement twice"
+                    "one material result occurrence cannot enter a byte Measurement twice"
                 )
-            seen_material.add(acquisition_result.identity)
-            source_material.append({"material_acquisition_occurrence_identity": acquisition_result.identity})
+            seen_material.add(material_result.identity)
+            source_material.append({"material_acquisition_occurrence_identity": material_result.identity})
             for value, count in Counter(exact).items():
                 carrying[value] += 1
                 totals[value] += count
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no acquisition_result through the Measurement boundary"
+            "declared source Localities contain no material_result through the Measurement boundary"
         )
     counts = tuple(
         MeasuredByteCount(
@@ -1920,20 +1916,20 @@ def _measure_byte_position_pair_counts_through(
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
     for locality in localities:
-        for acquisition_result in _exact_material_acquisition_results(
+        for material_result in _exact_material_results(
             ledger, locality, through=boundary
         ):
-            if ledger.integrity_of(acquisition_result.identity) == CORRUPTED:
+            if ledger.integrity_of(material_result.identity) == CORRUPTED:
                 raise ByteMeasurementError(
-                    "corrupted acquisition_result cannot participate in byte-position-pair Measurement"
+                    "corrupted material_result cannot participate in byte-position-pair Measurement"
                 )
-            exact = _acquired_bytes(ledger, acquisition_result)
-            if acquisition_result.identity in seen_material:
+            exact = _material_result_bytes(ledger, material_result)
+            if material_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one material acquisition occurrence cannot enter a pair Measurement twice"
+                    "one material result occurrence cannot enter a pair Measurement twice"
                 )
-            seen_material.add(acquisition_result.identity)
-            source_material.append({"material_acquisition_occurrence_identity": acquisition_result.identity})
+            seen_material.add(material_result.identity)
+            source_material.append({"material_acquisition_occurrence_identity": material_result.identity})
             seen: set[bytes] = set()
             for index in range(len(exact) - 1):
                 pair = exact[index : index + 2]
@@ -1943,7 +1939,7 @@ def _measure_byte_position_pair_counts_through(
                 carrying[pair] = carrying.get(pair, 0) + 1
     if not source_material:
         raise ByteMeasurementError(
-            "declared source Localities contain no acquisition_result through the Measurement boundary"
+            "declared source Localities contain no material_result through the Measurement boundary"
         )
     counts = tuple(
         MeasuredBytePairCount(
@@ -1989,7 +1985,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "identity": source_identity,
                 "content": source_content,
                 "source_provenance": (
-                    "complete declared material acquisition within one boundary"
+                    "complete declared material result within one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
             },
@@ -2093,26 +2089,26 @@ def _byte_measurement_source_material(
     )
 
     for locality in localities:
-        for acquisition_result in _exact_material_acquisition_results(
+        for material_result in _exact_material_results(
             ledger, locality, through=boundary
         ):
-            _acquired_bytes(ledger, acquisition_result)
+            _material_result_bytes(ledger, material_result)
             if not all(
                 read_material_locality_relation_requirements(
                     ledger,
-                    recorded_result_event_identity=acquisition_result.identity,
+                    recorded_result_event_identity=material_result.identity,
                 ).values()
             ):
-                # Exact acquisition availability does not supply the Locality
-                # exact Locality relation required by 01.Source.D.
+                # An exact material result does not supply the Locality relation
+                # required by 01.Source.D.
                 continue
-            if acquisition_result.identity in seen_material:
+            if material_result.identity in seen_material:
                 raise ByteMeasurementError(
-                    "one material acquisition occurrence cannot enter a byte Measurement twice"
+                    "one material result occurrence cannot enter a byte Measurement twice"
                 )
-            seen_material.add(acquisition_result.identity)
+            seen_material.add(material_result.identity)
             source_material.append(
-                {"material_acquisition_occurrence_identity": acquisition_result.identity}
+                {"material_acquisition_occurrence_identity": material_result.identity}
             )
     if not source_material:
         raise ByteMeasurementError(
@@ -2841,7 +2837,7 @@ def _record_byte_measurement_result_from_exact_inputs(
                 "content": (
                     "exact source material, byte count, and same-content Assertions"
                 ),
-                "source_provenance": "complete declared material acquisition within one boundary",
+                "source_provenance": "complete declared material result within one boundary",
         },
         "exact_act": "declared exact-byte Measurement",
         "addressed_act_identity": act_occurrence.material[
@@ -3011,7 +3007,7 @@ def _assertions_of_recorded_byte_measurement(
                     "exact source material, byte count, and same-content Assertions"
                 ),
             "source_provenance": (
-                "complete declared material acquisition within one boundary"
+                "complete declared material result within one boundary"
             ),
         }
     ):
