@@ -426,8 +426,7 @@ def unbound_ordered_path_pair_finding_compare_subjects_in_current_coordinates(
 ) -> tuple[OrderedPathPairFindingCompareSubject, ...]:
     """Read every unassigned exact 04.Compare.B subject in current coordinates.
 
-    The read records no binding, Applicability, Participation, Compare, or
-    result occurrence.
+    The read records no binding, Applicability, Compare, or result occurrence.
     """
 
     if not isinstance(ledger, EventLedger):
@@ -630,7 +629,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_coordina
 def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
     ledger: EventLedger, *, locality_identity: str
 ) -> RecordedOrderedPathPairFindingCompareActOccurrence:
-    """Record Compare Act occurrence and Participation for each applicable result."""
+    """Record one Compare Act occurrence for each applicable result."""
 
     from seed_runtime.operator_current_coordinates import (
         read_operator_current_coordinates,
@@ -642,7 +641,7 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
     current_results = current_coordinates.get("applicability_result_occurrences")
     if type(current_results) is not dict:
         raise ValueError(
-            "ordered-path Compare Participation requires exact current coordinates"
+            "ordered-path Compare requires exact current coordinates"
         )
     applicability_readings = []
     for identity in current_results:
@@ -682,7 +681,7 @@ def record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_curr
         if applicability.material["applicability"] != "applicable":
             if applicability.identity in acts_by_applicability:
                 raise ValueError(
-                    "inapplicable ordered-path Compare input carries Participation"
+                    "inapplicable ordered-path Compare input carries a Compare occurrence"
                 )
             continue
         if applicability.identity in acts_by_applicability:
