@@ -162,7 +162,6 @@ BYTE_PAIR_RESULT_BOUNDARY = (
     "bounded source material"
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
-SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_PAIR_UNKNOWN = (
     "Participation: Unknown",
 )
@@ -1344,11 +1343,6 @@ def _movement_result_material(
                 "movement_act_occurrence_identity"
             ],
         },
-        "preserved_coordinates": [
-            "Scope",
-            "Unknown",
-            "Standing",
-        ],
         "movement_scope": "Locality movement for this exact Assertion",
     }
 
