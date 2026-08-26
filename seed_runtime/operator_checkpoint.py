@@ -125,7 +125,6 @@ def _binding_material(
         "act_occurrence_identity": act_occurrence_identity,
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
-        "source_reference": deepcopy(source_reference),
         "scope": deepcopy(source_reference),
         "unknown": [
             "Applicability of the recorded boundary to another Act: Unknown"
@@ -151,7 +150,7 @@ def _act_material(binding: Event) -> dict[str, Any]:
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
-        "source_reference": deepcopy(binding.material["source_reference"]),
+        "source_reference": deepcopy(binding.material["subject_reference"]),
         "scope": deepcopy(binding.material["scope"]),
         "result_identity": binding.material["result_identity"],
     }
@@ -244,7 +243,7 @@ def get_through_occurrence_boundary_reference_subject_to_act_binding(
     ):
         raise OperatorCheckpointError("checkpoint binding is absent or corrupted")
     material = event.material
-    source_reference = material.get("source_reference")
+    source_reference = material.get("subject_reference")
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),

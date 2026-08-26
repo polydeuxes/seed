@@ -236,7 +236,6 @@ def test_one_recording_act_cannot_yield_twice():
         "exact_act_identity",
         "act_occurrence_identity",
         "result_identity",
-        "source_reference",
         "scope",
         "unknown",
     ),
