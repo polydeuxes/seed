@@ -356,7 +356,6 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     assert occurred.material["provenance_occurrence_references"] == []
     assert tuple(sorted(occurred.material["dimensions"])) == (
         "identity",
-        "occurrence_preservation",
         "source_provenance",
     )
     assert "invocation" not in str(occurred.material)
