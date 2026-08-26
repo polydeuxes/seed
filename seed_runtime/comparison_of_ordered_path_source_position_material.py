@@ -39,7 +39,6 @@ COMPARE_RESULT_KIND = (
 )
 
 BOOK_CLAUSE = "04.Compare"
-RESPONSIBILITY = "compare ordered path source position material"
 APPLICABILITY_ACT = (
     "Applicability of ordered path source position material to Compare"
 )
@@ -224,8 +223,6 @@ def _applicability_act_material(
         ],
         "compare_result_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
@@ -350,8 +347,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             "identity": material["applicability_result_identity"],
             "content": "ordered path source position material",
             "source_provenance": "exact ordered relation path source coordinates",
-            "responsibility": RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
             "scope": deepcopy(material["scope"]),
         },
         "act": APPLICABILITY_ACT,
@@ -376,8 +371,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "second_source_position_coordinate": deepcopy(
             material["second_source_position_coordinate"]
         ),
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "act_occurrence_event_identity": act.identity,
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
@@ -427,8 +420,6 @@ def _recorded_applicability_result_material(
         "second_source_position_coordinate": deepcopy(
             material["second_source_position_coordinate"]
         ),
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "act_occurrence_event_identity": material[
             "act_occurrence_event_identity"
         ],
@@ -457,8 +448,6 @@ def _recorded_compare_result_material(
         "compare_act_identity": material["compare_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": material["act"],
-        "responsibility": material["responsibility"],
-        "responsible_boundary": material["responsible_boundary"],
         "applicability_result_event_identity": material[
             "applicability_result_event_identity"
         ],
@@ -553,8 +542,6 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
         "compare_result_identity": material["compare_result_identity"],
         "act": COMPARE_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "applicability_result_event_identity": applicability.identity,
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -662,8 +649,6 @@ def _compare_result_material(
         "compare_act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": COMPARE_ACT,
-        "responsibility": RESPONSIBILITY,
-        "responsible_boundary": "this Seed",
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
