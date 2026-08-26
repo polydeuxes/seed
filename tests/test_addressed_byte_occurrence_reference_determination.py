@@ -118,7 +118,14 @@ def _through_applicability(
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
     )
-    standing = _advance(ledger, standing, applicability_act)
+    applicability_binding = ledger.get(
+        applicability_act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    standing = _advance(
+        ledger, standing, applicability_binding, applicability_act
+    )
     applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
         ledger,
         applicability_act_occurrence_event_identity=applicability_act.identity,
@@ -129,6 +136,7 @@ def _through_applicability(
         "direct_result": direct_result,
         "coordinate": coordinate,
         "assignment": assignment,
+        "applicability_binding": applicability_binding,
         "applicability_act": applicability_act,
         "applicability": applicability,
         "standing": standing,
@@ -183,14 +191,24 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "source_material_result_occurrence_identity",
         "locality_identity",
         "completeness_boundary_identity",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
     }
     assert len(
         {
-            recorded["assignment"].material[coordinate]
-            for coordinate in determination_module._IDENTITY_COORDINATES
+            binding.material[coordinate]
+            for binding, coordinates in (
+                (
+                    recorded["assignment"],
+                    determination_module._DETERMINATION_IDENTITY_COORDINATES,
+                ),
+                (
+                    recorded["applicability_binding"],
+                    determination_module._APPLICABILITY_IDENTITY_COORDINATES,
+                ),
+            )
+            for coordinate in coordinates
         }
-    ) == len(determination_module._IDENTITY_COORDINATES)
+    ) == 6
     assert material["determination_rule"] == determination_module.DETERMINATION_RULE
     assert material["completeness_boundary"] == {
         "identity": recorded["coordinate"]["completeness_boundary_identity"]
@@ -202,7 +220,7 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "determination_act_occurrence_identity",
         "responsibility",
         "responsible_boundary",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "applicability_result_reference",
         "direct_pair_position_result_reference",
         "addressed_source_byte_position_coordinate_reference",
@@ -430,30 +448,25 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     result_identity = recorded["result"].identity
     locality = recorded["source"].locality_identity
     expected = deepcopy(recorded["result"].material)
-    assignment_material = recorded["assignment"].material
+    determination_binding_material = recorded["assignment"].material
+    applicability_binding_material = recorded["applicability_binding"].material
     carried_identities = {
-        "addressed_byte_occurrence_reference_assignment": assignment_material[
-            "assignment_identity"
-        ],
-        "addressed_byte_occurrence_reference_assignment_subject": assignment_material[
-            "assignment_subject_identity"
-        ],
-        "addressed_byte_occurrence_reference_applicability_act": assignment_material[
+        "addressed_byte_occurrence_reference_applicability_act": applicability_binding_material[
             "applicability_act_identity"
         ],
-        "addressed_byte_occurrence_reference_applicability_act_occurrence": assignment_material[
+        "addressed_byte_occurrence_reference_applicability_act_occurrence": applicability_binding_material[
             "applicability_act_occurrence_identity"
         ],
-        "addressed_byte_occurrence_reference_applicability_result": assignment_material[
+        "addressed_byte_occurrence_reference_applicability_result": applicability_binding_material[
             "applicability_result_identity"
         ],
-        "addressed_byte_occurrence_reference_determination_measurement_act": assignment_material[
+        "addressed_byte_occurrence_reference_determination_measurement_act": determination_binding_material[
             "determination_act_identity"
         ],
-        "addressed_byte_occurrence_reference_determination_measurement_act_occurrence": assignment_material[
+        "addressed_byte_occurrence_reference_determination_measurement_act_occurrence": determination_binding_material[
             "determination_act_occurrence_identity"
         ],
-        "addressed_byte_occurrence_reference_determination_measurement_result": assignment_material[
+        "addressed_byte_occurrence_reference_determination_measurement_result": determination_binding_material[
             "determination_result_identity"
         ],
     }
@@ -624,7 +637,8 @@ def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypa
             locality_standing=standing,
         )
     assert not any(
-        event.kind == determination_module.RESPONSIBILITY_ASSIGNMENT_KIND
+        event.kind
+        == determination_module.DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         for event in ledger.list()
     )
     assert standing == prior
@@ -678,7 +692,12 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         responsibility_assignment_event_identity=assignment.identity,
         responsibility_assignment_standing=standing,
     )
-    standing = _advance(ledger, standing, act)
+    applicability_binding = ledger.get(
+        act.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    standing = _advance(ledger, standing, applicability_binding, act)
     prior = deepcopy(standing)
     before_yields = tuple(
         event.identity

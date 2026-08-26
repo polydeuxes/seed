@@ -27,9 +27,13 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 )
 
 
-RESPONSIBILITY_ASSIGNMENT_KIND = (
+DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.addressed_byte_occurrence_reference_determination."
-    "responsibility_assignment_recorded"
+    "determination_subject_to_act_binding_recorded"
+)
+APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.addressed_byte_occurrence_reference_determination."
+    "applicability_subject_to_act_binding_recorded"
 )
 APPLICABILITY_ACT_OCCURRENCE_EVENT = (
     "operator.addressed_byte_occurrence_reference_determination."
@@ -77,7 +81,8 @@ DETERMINATION_RULE = (
 UNKNOWN = []
 
 EVENT_KIND_RESPONSIBILITIES = {
-    RESPONSIBILITY_ASSIGNMENT_KIND: "01.Source.D.2",
+    DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D.2",
+    APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
     APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     APPLICABILITY_RESULT_KIND: "01.Current.E.1",
     DETERMINATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -127,16 +132,14 @@ def _determination_result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _assignment_reference(
+def _binding_reference(
     event: Event, *, result_boundary_identity: str
-) -> dict[str, str]:
+) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": event.identity,
-        "assignment_identity": event.material["assignment_identity"],
-        "assignment_subject_identity": event.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": event.material["book_clause_identity"],
+        "exact_act_identity": event.material["exact_act_identity"],
+        "subject_reference": deepcopy(event.material["subject_reference"]),
         "result_boundary_identity": result_boundary_identity,
     }
 
@@ -328,35 +331,38 @@ def _require_stage_at_append_tip(
         raise AddressedByteOccurrenceReferenceDeterminationError(message)
 
 
-_IDENTITY_COORDINATES = (
-    "assignment_identity",
-    "assignment_subject_identity",
-    "applicability_act_identity",
-    "applicability_act_occurrence_identity",
-    "applicability_result_identity",
+_DETERMINATION_IDENTITY_COORDINATES = (
     "determination_act_identity",
     "determination_act_occurrence_identity",
     "determination_result_identity",
 )
 
 
-def _assignment_material(
+_APPLICABILITY_IDENTITY_COORDINATES = (
+    "applicability_act_identity",
+    "applicability_act_occurrence_identity",
+    "applicability_result_identity",
+)
+
+
+def _determination_binding_material(
     *,
     source_result: Event,
     coordinate_reference: dict[str, Any],
-    standing_boundary_identity: str,
+    through_event_occurrence_identity: str,
     identities: dict[str, str],
 ) -> dict[str, Any]:
+    subject_reference = {
+        "direct_pair_position_result_reference": _direct_result_reference(
+            source_result
+        ),
+        "addressed_source_byte_position_coordinate_reference": deepcopy(
+            coordinate_reference
+        ),
+    }
     return {
-        "assignment_identity": identities["assignment_identity"],
-        "assignment_subject_identity": identities["assignment_subject_identity"],
-        "applicability_act_identity": identities["applicability_act_identity"],
-        "applicability_act_occurrence_identity": identities[
-            "applicability_act_occurrence_identity"
-        ],
-        "applicability_result_identity": identities[
-            "applicability_result_identity"
-        ],
+        "exact_act_identity": identities["determination_act_identity"],
+        "subject_reference": subject_reference,
         "determination_act_identity": identities["determination_act_identity"],
         "determination_act_occurrence_identity": identities[
             "determination_act_occurrence_identity"
@@ -368,19 +374,73 @@ def _assignment_material(
         "book_clause_identity": BOOK_CLAUSE,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
+        "direct_pair_position_result_reference": deepcopy(
+            subject_reference["direct_pair_position_result_reference"]
+        ),
+        "addressed_source_byte_position_coordinate_reference": deepcopy(
+            coordinate_reference
+        ),
+        "determination_rule": DETERMINATION_RULE,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+        "scope": _scope(
+            source_result=source_result,
+            coordinate_reference=coordinate_reference,
+            standing_boundary_identity=through_event_occurrence_identity,
+        ),
+        "unknown": list(UNKNOWN),
+    }
+
+
+def _applicability_binding_material(
+    *,
+    source_result: Event,
+    coordinate_reference: dict[str, Any],
+    through_event_occurrence_identity: str,
+    determination_act_identity: str,
+    identities: dict[str, str],
+) -> dict[str, Any]:
+    subject = {
         "direct_pair_position_result_reference": _direct_result_reference(
             source_result
         ),
         "addressed_source_byte_position_coordinate_reference": deepcopy(
             coordinate_reference
         ),
-        "determination_rule": DETERMINATION_RULE,
-        "standing_boundary_identity": standing_boundary_identity,
-        "scope": _scope(
-            source_result=source_result,
-            coordinate_reference=coordinate_reference,
-            standing_boundary_identity=standing_boundary_identity,
+    }
+    return {
+        "exact_act_identity": identities["applicability_act_identity"],
+        "subject_reference": {
+            "subject": subject,
+            "addressed_act_identity": determination_act_identity,
+        },
+        "applicability_act_identity": identities["applicability_act_identity"],
+        "applicability_act_occurrence_identity": identities[
+            "applicability_act_occurrence_identity"
+        ],
+        "applicability_result_identity": identities[
+            "applicability_result_identity"
+        ],
+        "addressed_act_identity": determination_act_identity,
+        "result_boundary_identity": identities["applicability_result_identity"],
+        "book_clause_identity": "01.Current.E.1",
+        "responsibility": RESPONSIBILITY,
+        "responsible_boundary": "this Seed",
+        "direct_pair_position_result_reference": deepcopy(
+            subject["direct_pair_position_result_reference"]
         ),
+        "addressed_source_byte_position_coordinate_reference": deepcopy(
+            coordinate_reference
+        ),
+        "determination_rule": DETERMINATION_RULE,
+        "through_event_occurrence_identity": through_event_occurrence_identity,
+        "scope": {
+            **_scope(
+                source_result=source_result,
+                coordinate_reference=coordinate_reference,
+                standing_boundary_identity=through_event_occurrence_identity,
+            ),
+            "addressed_act_identity": determination_act_identity,
+        },
         "unknown": list(UNKNOWN),
     }
 
@@ -408,21 +468,6 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         ledger, source_result=source_result, locality_standing=locality_standing
     )
     identities = {
-        "assignment_identity": new_identity(
-            "addressed_byte_occurrence_reference_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "addressed_byte_occurrence_reference_assignment_subject"
-        ),
-        "applicability_act_identity": new_identity(
-            "addressed_byte_occurrence_reference_applicability_act"
-        ),
-        "applicability_act_occurrence_identity": new_identity(
-            "addressed_byte_occurrence_reference_applicability_act_occurrence"
-        ),
-        "applicability_result_identity": new_identity(
-            "addressed_byte_occurrence_reference_applicability_result"
-        ),
         "determination_act_identity": new_identity(
             "addressed_byte_occurrence_reference_determination_measurement_act"
         ),
@@ -460,13 +505,13 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         message="determination assignment Standing left the append tip",
     )
     return ledger.append(
-        RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(
+        DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _determination_binding_material(
             source_result=source_result,
             coordinate_reference=(
                 addressed_source_byte_position_coordinate_reference
             ),
-            standing_boundary_identity=current[
+            through_event_occurrence_identity=current[
                 "through_event_occurrence_identity"
             ],
             identities=identities,
@@ -488,12 +533,16 @@ def _read_binding(
     event = ledger.get(event_identity)
     if (
         event is None
-        or event.kind != RESPONSIBILITY_ASSIGNMENT_KIND
+        or event.kind
+        not in {
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment is absent or corrupted"
+            "determination binding is absent or corrupted"
         )
     material = event.material
     source_reference = material.get("direct_pair_position_result_reference")
@@ -510,24 +559,38 @@ def _read_binding(
         result_event_identity=source_identity,
         coordinate_reference=coordinate_reference,
     )
-    identities = {key: material.get(key) for key in _IDENTITY_COORDINATES}
-    standing_boundary = material.get("standing_boundary_identity")
+    identity_coordinates = (
+        _DETERMINATION_IDENTITY_COORDINATES
+        if event.kind == DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        else _APPLICABILITY_IDENTITY_COORDINATES
+    )
+    identities = {key: material.get(key) for key in identity_coordinates}
+    through_occurrence = material.get("through_event_occurrence_identity")
+    if event.kind == DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+        expected = _determination_binding_material(
+            source_result=source_result,
+            coordinate_reference=coordinate_reference,
+            through_event_occurrence_identity=through_occurrence,
+            identities=identities,
+        )
+    else:
+        expected = _applicability_binding_material(
+            source_result=source_result,
+            coordinate_reference=coordinate_reference,
+            through_event_occurrence_identity=through_occurrence,
+            determination_act_identity=material.get("addressed_act_identity"),
+            identities=identities,
+        )
     if (
         event.locality_identity != source_result.locality_identity
         or any(type(value) is not str or not value for value in identities.values())
         or len(set(identities.values())) != len(identities)
-        or type(standing_boundary) is not str
-        or not standing_boundary
-        or material
-        != _assignment_material(
-            source_result=source_result,
-            coordinate_reference=coordinate_reference,
-            standing_boundary_identity=standing_boundary,
-            identities=identities,
-        )
+        or type(through_occurrence) is not str
+        or not through_occurrence
+        or material != expected
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment coordinates are not exact"
+            "determination binding coordinates are not exact"
         )
     if prior_standing is None:
         from seed_runtime.operator_current_coordinates import (
@@ -537,22 +600,22 @@ def _read_binding(
         prior_standing = read_operator_current_coordinates_through(
             ledger,
             locality_identity=source_result.locality_identity,
-            through_event_occurrence_identity=standing_boundary,
+            through_event_occurrence_identity=through_occurrence,
         )
     _standing_carries_source(
         ledger,
         standing=prior_standing,
         source_result=source_result,
-        required_boundary_identity=standing_boundary,
+        required_boundary_identity=through_occurrence,
     )
     try:
         ledger.occurrences_in_append_order(
-            (standing_boundary, event.identity),
+            (through_occurrence, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment has false Standing boundary order"
+            "determination binding has false through-occurrence order"
         ) from error
     return event, source_result, references
 
@@ -561,6 +624,37 @@ def get_addressed_byte_occurrence_reference_determination_responsibility_assignm
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _read_binding(ledger, event_identity)[0]
+
+
+def _determination_binding_addressed_by_applicability(
+    ledger: EventLedger,
+    applicability_binding: Event,
+    source_result: Event,
+    references: tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
+) -> Event:
+    addressed_act_identity = applicability_binding.material.get(
+        "addressed_act_identity"
+    )
+    matches = tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            applicability_binding.locality_identity,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        )
+        if event.material.get("exact_act_identity") == addressed_act_identity
+    )
+    if len(matches) != 1:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "Applicability addresses no exact determination binding"
+        )
+    determination_binding, read_source, read_references = _read_binding(
+        ledger, matches[0].identity
+    )
+    if read_source != source_result or read_references != references:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "Applicability addresses other determination subjects"
+        )
+    return determination_binding
 
 
 def _require_stage_standing(
@@ -600,44 +694,44 @@ def _require_stage_standing(
 def _refuse_existing_act(
     ledger: EventLedger,
     *,
-    assignment: Event,
+    binding: Event,
     kind: str,
     occurrence_coordinate: str,
 ) -> None:
-    occurrence_identity = assignment.material[occurrence_coordinate]
-    for event in ledger.iter_locality_kind(assignment.locality_identity, kind):
+    occurrence_identity = binding.material[occurrence_coordinate]
+    for event in ledger.iter_locality_kind(binding.locality_identity, kind):
         if (
             event.material.get(occurrence_coordinate) == occurrence_identity
             or (
-                type(event.material.get("responsibility_assignment_reference"))
+                type(event.material.get("subject_to_act_binding_reference"))
                 is dict
-                and event.material["responsibility_assignment_reference"].get(
+                and event.material["subject_to_act_binding_reference"].get(
                     "recorded_occurrence_identity"
                 )
-                == assignment.identity
+                == binding.identity
             )
         ):
             raise AddressedByteOccurrenceReferenceDeterminationError(
-                "determination assignment already carries this Act"
+                "determination binding already carries this Act"
             )
 
 
 def _applicability_act_material(
-    *, assignment: Event, source_result: Event
+    *, binding: Event, source_result: Event
 ) -> dict[str, Any]:
     return {
-        "applicability_act_identity": assignment.material[
+        "applicability_act_identity": binding.material[
             "applicability_act_identity"
         ],
-        "applicability_act_occurrence_identity": assignment.material[
+        "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        "subject_to_act_binding_reference": _binding_reference(
+            binding,
+            result_boundary_identity=binding.material[
                 "applicability_result_identity"
             ],
         ),
@@ -645,16 +739,14 @@ def _applicability_act_material(
             source_result
         ),
         "addressed_source_byte_position_coordinate_reference": deepcopy(
-            assignment.material[
+            binding.material[
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
         "determination_rule": DETERMINATION_RULE,
-        "addressed_act_identity": assignment.material[
-            "determination_act_identity"
-        ],
-        "scope": deepcopy(assignment.material["scope"]),
-        "unknown": list(assignment.material["unknown"]),
+        "addressed_act_identity": binding.material["addressed_act_identity"],
+        "scope": deepcopy(binding.material["scope"]),
+        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -664,27 +756,34 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
-    assignment, source_result, _references = _read_binding(
+    determination_binding, source_result, references = _read_binding(
         ledger, responsibility_assignment_event_identity
     )
+    if (
+        determination_binding.kind
+        != DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    ):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "Applicability requires the governed determination binding"
+        )
     _require_stage_standing(
         ledger,
         standing=responsibility_assignment_standing,
         source_result=source_result,
-        assignment=assignment,
+        assignment=determination_binding,
     )
-    assignment_material = deepcopy(assignment.material)
+    determination_binding_material = deepcopy(determination_binding.material)
     source_material = deepcopy(source_result.material)
     _refuse_existing_act(
         ledger,
-        assignment=assignment,
-        kind=APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="applicability_act_occurrence_identity",
+        binding=determination_binding,
+        kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
+        occurrence_coordinate="determination_act_occurrence_identity",
     )
     source_read, _references_read = _source(
         ledger,
         result_event_identity=source_result.identity,
-        coordinate_reference=assignment.material[
+        coordinate_reference=determination_binding.material[
             "addressed_source_byte_position_coordinate_reference"
         ],
     )
@@ -697,10 +796,10 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
     )
     _require_intact_recorded_occurrence(
         ledger,
-        event=assignment,
-        kind=RESPONSIBILITY_ASSIGNMENT_KIND,
-        material=assignment_material,
-        message="Applicability Act requires an intact exact assignment",
+        event=determination_binding,
+        kind=DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        material=determination_binding_material,
+        message="Applicability Act requires an intact exact determination binding",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -708,15 +807,41 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
         )
     _require_stage_at_append_tip(
         ledger,
-        event=assignment,
-        message="Applicability Act assignment left the append tip",
+        event=determination_binding,
+        message="determination binding left the append tip",
+    )
+    identities = {
+        "applicability_act_identity": new_identity(
+            "addressed_byte_occurrence_reference_applicability_act"
+        ),
+        "applicability_act_occurrence_identity": new_identity(
+            "addressed_byte_occurrence_reference_applicability_act_occurrence"
+        ),
+        "applicability_result_identity": new_identity(
+            "addressed_byte_occurrence_reference_applicability_result"
+        ),
+    }
+    applicability_binding = ledger.append(
+        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _applicability_binding_material(
+            source_result=source_result,
+            coordinate_reference=determination_binding.material[
+                "addressed_source_byte_position_coordinate_reference"
+            ],
+            through_event_occurrence_identity=determination_binding.identity,
+            determination_act_identity=determination_binding.material[
+                "determination_act_identity"
+            ],
+            identities=identities,
+        ),
+        locality_identity=determination_binding.locality_identity,
     )
     return ledger.append(
         APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
-            assignment=assignment, source_result=source_result
+            binding=applicability_binding, source_result=source_result
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=determination_binding.locality_identity,
     )
 
 
@@ -726,6 +851,8 @@ def _read_applicability_act(
     *,
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[
+    Event,
+    Event,
     Event,
     Event,
     Event,
@@ -741,26 +868,36 @@ def _read_applicability_act(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Applicability Act occurrence is absent or corrupted"
         )
-    reference = event.material.get("responsibility_assignment_reference")
-    assignment_identity = (
+    reference = event.material.get("subject_to_act_binding_reference")
+    binding_identity = (
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None
     )
-    assignment, source_result, references = _read_binding(
-        ledger, assignment_identity, prior_standing=prior_standing
+    applicability_binding, source_result, references = _read_binding(
+        ledger, binding_identity, prior_standing=prior_standing
     )
     if (
-        reference != _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        applicability_binding.kind
+        != APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+    ):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "Applicability Act carries no exact Applicability binding"
+        )
+    determination_binding = _determination_binding_addressed_by_applicability(
+        ledger, applicability_binding, source_result, references
+    )
+    if (
+        reference != _binding_reference(
+            applicability_binding,
+            result_boundary_identity=applicability_binding.material[
                 "applicability_result_identity"
             ],
         )
-        or event.locality_identity != assignment.locality_identity
+        or event.locality_identity != applicability_binding.locality_identity
         or event.material
         != _applicability_act_material(
-            assignment=assignment, source_result=source_result
+            binding=applicability_binding, source_result=source_result
         )
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -768,14 +905,14 @@ def _read_applicability_act(
         )
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, event.identity),
+            (applicability_binding.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Applicability Act order is false"
         ) from error
-    return event, assignment, source_result, references
+    return event, applicability_binding, determination_binding, source_result, references
 
 
 def get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
@@ -785,9 +922,12 @@ def get_addressed_byte_occurrence_reference_determination_applicability_act_occu
 
 
 def _applicability_finding(
-    *, assignment: Event, source_result: Event
+    *,
+    applicability_binding: Event,
+    determination_binding: Event,
+    source_result: Event,
 ) -> dict[str, Any]:
-    coordinate = assignment.material[
+    coordinate = applicability_binding.material[
         "addressed_source_byte_position_coordinate_reference"
     ]
     return {
@@ -802,11 +942,11 @@ def _applicability_finding(
         "relation": "applicable_to",
         "second_subject": {
             "exact_act": DETERMINATION_ACT,
-            "act_identity": assignment.material["determination_act_identity"],
-            "act_occurrence_identity": assignment.material[
+            "act_identity": determination_binding.material["determination_act_identity"],
+            "act_occurrence_identity": determination_binding.material[
                 "determination_act_occurrence_identity"
             ],
-            "result_identity": assignment.material[
+            "result_identity": determination_binding.material[
                 "determination_result_identity"
             ],
         },
@@ -817,9 +957,9 @@ def _applicability_finding(
         "completeness_boundary_identity": coordinate[
             "completeness_boundary_identity"
         ],
-        "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        "subject_to_act_binding_reference": _binding_reference(
+            applicability_binding,
+            result_boundary_identity=applicability_binding.material[
                 "applicability_result_identity"
             ],
         ),
@@ -827,28 +967,32 @@ def _applicability_finding(
 
 
 def _applicability_result_material(
-    *, act: Event, assignment: Event, source_result: Event
+    *,
+    act: Event,
+    applicability_binding: Event,
+    determination_binding: Event,
+    source_result: Event,
 ) -> dict[str, Any]:
     return {
-        "result_identity": assignment.material["applicability_result_identity"],
+        "result_identity": applicability_binding.material["applicability_result_identity"],
         "exact_act": APPLICABILITY_ACT,
-        "applicability_act_identity": assignment.material[
+        "applicability_act_identity": applicability_binding.material[
             "applicability_act_identity"
         ],
-        "applicability_act_occurrence_identity": assignment.material[
+        "applicability_act_occurrence_identity": applicability_binding.material[
             "applicability_act_occurrence_identity"
         ],
-        "addressed_act_identity": assignment.material[
+        "addressed_act_identity": determination_binding.material[
             "determination_act_identity"
         ],
-        "addressed_act_occurrence_identity": assignment.material[
+        "addressed_act_occurrence_identity": determination_binding.material[
             "determination_act_occurrence_identity"
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        "subject_to_act_binding_reference": _binding_reference(
+            applicability_binding,
+            result_boundary_identity=applicability_binding.material[
                 "applicability_result_identity"
             ],
         ),
@@ -856,16 +1000,18 @@ def _applicability_result_material(
             source_result
         ),
         "addressed_source_byte_position_coordinate_reference": deepcopy(
-            assignment.material[
+            applicability_binding.material[
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
         "determination_rule": DETERMINATION_RULE,
         "applicability_finding": _applicability_finding(
-            assignment=assignment, source_result=source_result
+            applicability_binding=applicability_binding,
+            determination_binding=determination_binding,
+            source_result=source_result,
         ),
-        "scope": deepcopy(assignment.material["scope"]),
-        "unknown": list(assignment.material["unknown"]),
+        "scope": deepcopy(applicability_binding.material["scope"]),
+        "unknown": list(applicability_binding.material["unknown"]),
     }
 
 
@@ -996,8 +1142,8 @@ def _recorded_applicability_result_material(
         ],
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
-        "responsibility_assignment_reference": deepcopy(
-            material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
         ),
         "direct_pair_position_result_reference": deepcopy(
             material["direct_pair_position_result_reference"]
@@ -1019,14 +1165,24 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     *,
     applicability_act_occurrence_event_identity: str,
 ) -> Event:
-    act, assignment, source_result, _references = _read_applicability_act(
+    (
+        act,
+        applicability_binding,
+        determination_binding,
+        source_result,
+        _references,
+    ) = _read_applicability_act(
         ledger, applicability_act_occurrence_event_identity
     )
     material = _applicability_result_material(
-        act=act, assignment=assignment, source_result=source_result
+        act=act,
+        applicability_binding=applicability_binding,
+        determination_binding=determination_binding,
+        source_result=source_result,
     )
     act_material = deepcopy(act.material)
-    assignment_material = deepcopy(assignment.material)
+    applicability_binding_material = deepcopy(applicability_binding.material)
+    determination_binding_material = deepcopy(determination_binding.material)
     source_material = deepcopy(source_result.material)
     _prepare_result_yield(
         ledger,
@@ -1034,7 +1190,13 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         occurrence_coordinate="applicability_act_occurrence_identity",
         result_event_kind=APPLICABILITY_RESULT_KIND,
     )
-    act_read, assignment_read, source_read, _references_read = (
+    (
+        act_read,
+        applicability_binding_read,
+        determination_binding_read,
+        source_read,
+        _references_read,
+    ) = (
         _read_applicability_act(ledger, act.identity)
     )
     for recorded, read, kind, material_read, message in (
@@ -1046,11 +1208,18 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             "Applicability Yield requires an intact exact Act",
         ),
         (
-            assignment,
-            assignment_read,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
-            "Applicability Yield requires an intact exact assignment",
+            applicability_binding,
+            applicability_binding_read,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            applicability_binding_material,
+            "Applicability Yield requires an intact exact Applicability binding",
+        ),
+        (
+            determination_binding,
+            determination_binding_read,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            determination_binding_material,
+            "Applicability Yield requires an intact exact determination binding",
         ),
         (
             source_result,
@@ -1077,12 +1246,24 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
         act=act,
         material=material,
     )
-    act_read, assignment_read, source_read, _references_read = (
+    (
+        act_read,
+        applicability_binding_read,
+        determination_binding_read,
+        source_read,
+        _references_read,
+    ) = (
         _read_applicability_act(ledger, act.identity)
     )
-    if (act_read, assignment_read, source_read) != (
+    if (
+        act_read,
+        applicability_binding_read,
+        determination_binding_read,
+        source_read,
+    ) != (
         act,
-        assignment,
+        applicability_binding,
+        determination_binding,
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -1096,10 +1277,16 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             "Applicability result requires an intact exact Act",
         ),
         (
-            assignment,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
-            "Applicability result requires an intact exact assignment",
+            applicability_binding,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            applicability_binding_material,
+            "Applicability result requires an intact exact Applicability binding",
+        ),
+        (
+            determination_binding,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            determination_binding_material,
+            "Applicability result requires an intact exact determination binding",
         ),
         (
             source_result,
@@ -1188,6 +1375,7 @@ def _read_applicability_result(
     Event,
     Event,
     Event,
+    Event,
     tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ]:
     event = ledger.get(event_identity)
@@ -1200,14 +1388,23 @@ def _read_applicability_result(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Applicability result is absent or corrupted"
         )
-    act, assignment, source_result, references = _read_applicability_act(
-        ledger,
-        event.material.get("act_occurrence_event_identity"),
-        prior_standing=prior_standing,
-    )
+    (
+        act,
+        applicability_binding,
+        determination_binding,
+        source_result,
+        references,
+    ) = _read_applicability_act(
+            ledger,
+            event.material.get("act_occurrence_event_identity"),
+            prior_standing=prior_standing,
+        )
     expected = {
         **_applicability_result_material(
-            act=act, assignment=assignment, source_result=source_result
+            act=act,
+            applicability_binding=applicability_binding,
+            determination_binding=determination_binding,
+            source_result=source_result,
         ),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": event.material.get(
@@ -1226,7 +1423,14 @@ def _read_applicability_result(
         occurrence_boundary=APPLICABILITY_BOUNDARY,
         result_kind=APPLICABILITY_YIELD_RESULT_KIND,
     )
-    return event, act, assignment, source_result, references
+    return (
+        event,
+        act,
+        applicability_binding,
+        determination_binding,
+        source_result,
+        references,
+    )
 
 
 def get_recorded_addressed_byte_occurrence_reference_determination_applicability(
@@ -1236,21 +1440,21 @@ def get_recorded_addressed_byte_occurrence_reference_determination_applicability
 
 
 def _determination_act_material(
-    *, assignment: Event, source_result: Event, applicability_result: Event
+    *, binding: Event, source_result: Event, applicability_result: Event
 ) -> dict[str, Any]:
     return {
-        "determination_act_identity": assignment.material[
+        "determination_act_identity": binding.material[
             "determination_act_identity"
         ],
-        "determination_act_occurrence_identity": assignment.material[
+        "determination_act_occurrence_identity": binding.material[
             "determination_act_occurrence_identity"
         ],
         "act": DETERMINATION_ACT,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        "subject_to_act_binding_reference": _binding_reference(
+            binding,
+            result_boundary_identity=binding.material[
                 "determination_result_identity"
             ],
         ),
@@ -1261,14 +1465,14 @@ def _determination_act_material(
             source_result
         ),
         "addressed_source_byte_position_coordinate_reference": deepcopy(
-            assignment.material[
+            binding.material[
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
         "determination_rule": DETERMINATION_RULE,
-        "result_identity": assignment.material["determination_result_identity"],
-        "scope": deepcopy(assignment.material["scope"]),
-        "unknown": list(assignment.material["unknown"]),
+        "result_identity": binding.material["determination_result_identity"],
+        "scope": deepcopy(binding.material["scope"]),
+        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -1278,30 +1482,38 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     applicability_result_event_identity: str,
     applicability_standing: dict[str, Any],
 ) -> Event:
-    applicability, app_act, assignment, source_result, _references = (
+    (
+        applicability,
+        app_act,
+        applicability_binding,
+        determination_binding,
+        source_result,
+        _references,
+    ) = (
         _read_applicability_result(ledger, applicability_result_event_identity)
     )
     _require_stage_standing(
         ledger,
         standing=applicability_standing,
         source_result=source_result,
-        assignment=assignment,
+        assignment=determination_binding,
         applicability_result=applicability,
     )
     applicability_material = deepcopy(applicability.material)
     app_act_material = deepcopy(app_act.material)
-    assignment_material = deepcopy(assignment.material)
+    determination_binding_material = deepcopy(determination_binding.material)
     source_material = deepcopy(source_result.material)
     _refuse_existing_act(
         ledger,
-        assignment=assignment,
+        binding=determination_binding,
         kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="determination_act_occurrence_identity",
     )
     (
         applicability_read,
         app_act_read,
-        assignment_read,
+        applicability_binding_read,
+        determination_binding_read,
         source_read,
         _references_read,
     ) = _read_applicability_result(ledger, applicability.identity)
@@ -1321,11 +1533,18 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
             "determination Measurement Act requires an intact exact Applicability Act",
         ),
         (
-            assignment,
-            assignment_read,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
-            "determination Measurement Act requires an intact exact assignment",
+            applicability_binding,
+            applicability_binding_read,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            deepcopy(applicability_binding.material),
+            "determination Measurement Act requires an intact exact Applicability binding",
+        ),
+        (
+            determination_binding,
+            determination_binding_read,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            determination_binding_material,
+            "determination Measurement Act requires an intact exact binding",
         ),
         (
             source_result,
@@ -1352,11 +1571,11 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     return ledger.append(
         DETERMINATION_ACT_OCCURRENCE_EVENT,
         _determination_act_material(
-            assignment=assignment,
+            binding=determination_binding,
             source_result=source_result,
             applicability_result=applicability,
         ),
-        locality_identity=assignment.locality_identity,
+        locality_identity=determination_binding.locality_identity,
     )
 
 
@@ -1388,17 +1607,24 @@ def _read_determination_act(
         if type(applicability_reference) is dict
         else None
     )
-    applicability, _app_act, assignment, source_result, references = (
+    (
+        applicability,
+        _app_act,
+        _applicability_binding,
+        determination_binding,
+        source_result,
+        references,
+    ) = (
         _read_applicability_result(
             ledger, applicability_identity, prior_standing=prior_standing
         )
     )
     if (
         applicability_reference != _applicability_result_reference(applicability)
-        or event.locality_identity != assignment.locality_identity
+        or event.locality_identity != determination_binding.locality_identity
         or event.material
         != _determination_act_material(
-            assignment=assignment,
+            binding=determination_binding,
             source_result=source_result,
             applicability_result=applicability,
         )
@@ -1415,7 +1641,7 @@ def _read_determination_act(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Act order is false"
         ) from error
-    return event, applicability, assignment, source_result, references
+    return event, applicability, determination_binding, source_result, references
 
 
 def get_addressed_byte_occurrence_reference_determination_act_occurrence(
@@ -1428,24 +1654,24 @@ def _determination_result_material(
     *,
     act: Event,
     applicability: Event,
-    assignment: Event,
+    binding: Event,
     source_result: Event,
     references: tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
 ) -> dict[str, Any]:
     return {
-        "result_identity": assignment.material["determination_result_identity"],
+        "result_identity": binding.material["determination_result_identity"],
         "exact_act": DETERMINATION_ACT,
-        "determination_act_identity": assignment.material[
+        "determination_act_identity": binding.material[
             "determination_act_identity"
         ],
-        "determination_act_occurrence_identity": assignment.material[
+        "determination_act_occurrence_identity": binding.material[
             "determination_act_occurrence_identity"
         ],
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
-        "responsibility_assignment_reference": _assignment_reference(
-            assignment,
-            result_boundary_identity=assignment.material[
+        "subject_to_act_binding_reference": _binding_reference(
+            binding,
+            result_boundary_identity=binding.material[
                 "determination_result_identity"
             ],
         ),
@@ -1456,20 +1682,20 @@ def _determination_result_material(
             source_result
         ),
         "addressed_source_byte_position_coordinate_reference": deepcopy(
-            assignment.material[
+            binding.material[
                 "addressed_source_byte_position_coordinate_reference"
             ]
         ),
         "determination_rule": DETERMINATION_RULE,
         "completeness_boundary": {
-            "identity": assignment.material["scope"][
+            "identity": binding.material["scope"][
                 "completeness_boundary_identity"
             ]
         },
         "ordered_assertion_references": [
             reference.assertion_reference for reference in references
         ],
-        "unknown": list(assignment.material["unknown"]),
+        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -1485,8 +1711,8 @@ def _recorded_determination_result_material(
         ],
         "responsibility": material["responsibility"],
         "responsible_boundary": material["responsible_boundary"],
-        "responsibility_assignment_reference": deepcopy(
-            material["responsibility_assignment_reference"]
+        "subject_to_act_binding_reference": deepcopy(
+            material["subject_to_act_binding_reference"]
         ),
         "applicability_result_reference": deepcopy(
             material["applicability_result_reference"]
@@ -1513,7 +1739,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
     *,
     determination_act_occurrence_event_identity: str,
 ) -> Event:
-    act, applicability, assignment, source_result, references = (
+    act, applicability, binding, source_result, references = (
         _read_determination_act(
             ledger, determination_act_occurrence_event_identity
         )
@@ -1521,13 +1747,13 @@ def record_addressed_byte_occurrence_reference_determination_result(
     material = _determination_result_material(
         act=act,
         applicability=applicability,
-        assignment=assignment,
+        binding=binding,
         source_result=source_result,
         references=references,
     )
     act_material = deepcopy(act.material)
     applicability_material = deepcopy(applicability.material)
-    assignment_material = deepcopy(assignment.material)
+    binding_material = deepcopy(binding.material)
     source_material = deepcopy(source_result.material)
     _prepare_result_yield(
         ledger,
@@ -1538,7 +1764,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
     (
         act_read,
         applicability_read,
-        assignment_read,
+        binding_read,
         source_read,
         _references_read,
     ) = _read_determination_act(ledger, act.identity)
@@ -1558,11 +1784,11 @@ def record_addressed_byte_occurrence_reference_determination_result(
             "determination Measurement Yield requires an intact exact Applicability",
         ),
         (
-            assignment,
-            assignment_read,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
-            "determination Measurement Yield requires an intact exact assignment",
+            binding,
+            binding_read,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            binding_material,
+            "determination Measurement Yield requires an intact exact binding",
         ),
         (
             source_result,
@@ -1594,14 +1820,14 @@ def record_addressed_byte_occurrence_reference_determination_result(
     (
         act_read,
         applicability_read,
-        assignment_read,
+        binding_read,
         source_read,
         _references_read,
     ) = _read_determination_act(ledger, act.identity)
-    if (act_read, applicability_read, assignment_read, source_read) != (
+    if (act_read, applicability_read, binding_read, source_read) != (
         act,
         applicability,
-        assignment,
+        binding,
         source_result,
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -1621,10 +1847,10 @@ def record_addressed_byte_occurrence_reference_determination_result(
             "determination Measurement result requires an intact exact Applicability",
         ),
         (
-            assignment,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
-            "determination Measurement result requires an intact exact assignment",
+            binding,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            binding_material,
+            "determination Measurement result requires an intact exact binding",
         ),
         (
             source_result,
@@ -1673,7 +1899,7 @@ def _read_determination_result(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination result is absent or corrupted"
         )
-    act, applicability, assignment, source_result, references = (
+    act, applicability, binding, source_result, references = (
         _read_determination_act(
             ledger,
             event.material.get("act_occurrence_event_identity"),
@@ -1684,7 +1910,7 @@ def _read_determination_result(
         **_determination_result_material(
             act=act,
             applicability=applicability,
-            assignment=assignment,
+            binding=binding,
             source_result=source_result,
             references=references,
         ),
@@ -1705,7 +1931,7 @@ def _read_determination_result(
         occurrence_boundary=DETERMINATION_BOUNDARY,
         result_kind=DETERMINATION_YIELD_RESULT_KIND,
     )
-    return event, act, applicability, assignment, source_result, references
+    return event, act, applicability, binding, source_result, references
 
 
 def get_recorded_addressed_byte_occurrence_reference_determination(
@@ -1763,26 +1989,6 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     identities = {
         name: new_identity(prefix)
         for name, prefix in (
-            (
-                "assignment_identity",
-                "addressed_byte_occurrence_reference_assignment",
-            ),
-            (
-                "assignment_subject_identity",
-                "addressed_byte_occurrence_reference_assignment_subject",
-            ),
-            (
-                "applicability_act_identity",
-                "addressed_byte_occurrence_reference_applicability_act",
-            ),
-            (
-                "applicability_act_occurrence_identity",
-                "addressed_byte_occurrence_reference_applicability_act_occurrence",
-            ),
-            (
-                "applicability_result_identity",
-                "addressed_byte_occurrence_reference_applicability_result",
-            ),
             (
                 "determination_act_identity",
                 "addressed_byte_occurrence_reference_determination_measurement_act",
@@ -1848,14 +2054,17 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             raise AddressedByteOccurrenceReferenceDeterminationError(
                 "produced determination occurrence is not exact"
             )
-        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
+        if event.kind in {
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }:
             lawful = (
-                event.material.get("standing_boundary_identity") == prior
+                event.material.get("through_event_occurrence_identity") == prior
                 and event.identity not in assignments
             )
         elif event.kind == APPLICABILITY_ACT_OCCURRENCE_EVENT:
             lawful = (
-                event.material["responsibility_assignment_reference"][
+                event.material["subject_to_act_binding_reference"][
                     "recorded_occurrence_identity"
                 ]
                 == prior
@@ -1864,7 +2073,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         elif event.kind == APPLICABILITY_RESULT_KIND:
             lawful = (
                 event.material.get("act_occurrence_event_identity") == prior
-                and event.material["responsibility_assignment_reference"][
+                and event.material["subject_to_act_binding_reference"][
                     "recorded_occurrence_identity"
                 ]
                 in assignments
@@ -1894,7 +2103,10 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             event,
             error_message="produced determination Standing is not exact",
         )
-        if event.kind == RESPONSIBILITY_ASSIGNMENT_KIND:
+        if event.kind in {
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        }:
             assignments[event.identity] = None
         elif event.kind == APPLICABILITY_RESULT_KIND:
             applicability_results[event.identity] = None
@@ -1906,51 +2118,93 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         standing["through_event_occurrence_identity"] = event.identity
         standing["event_count"] = count + 1
 
-    assignment_material = _assignment_material(
+    determination_binding_material = _determination_binding_material(
         source_result=source_result,
         coordinate_reference=(
             addressed_source_byte_position_coordinate_reference
         ),
-        standing_boundary_identity=boundary,
+        through_event_occurrence_identity=boundary,
         identities=identities,
     )
     require_prior_at_tip(ledger.get(boundary))
-    assignment = ledger.append(
-        RESPONSIBILITY_ASSIGNMENT_KIND,
-        _assignment_material(
+    determination_binding = ledger.append(
+        DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _determination_binding_material(
             source_result=source_result,
             coordinate_reference=(
                 addressed_source_byte_position_coordinate_reference
             ),
-            standing_boundary_identity=boundary,
+            through_event_occurrence_identity=boundary,
             identities=identities,
         ),
         locality_identity=locality_identity,
     )
     exact_stage_material.append(
         (
-            assignment,
-            RESPONSIBILITY_ASSIGNMENT_KIND,
-            assignment_material,
+            determination_binding,
+            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            determination_binding_material,
         )
     )
     require_intact()
-    carry(assignment, prior=boundary)
+    carry(determination_binding, prior=boundary)
+
+    applicability_identities = {
+        name: new_identity(prefix)
+        for name, prefix in (
+            (
+                "applicability_act_identity",
+                "addressed_byte_occurrence_reference_applicability_act",
+            ),
+            (
+                "applicability_act_occurrence_identity",
+                "addressed_byte_occurrence_reference_applicability_act_occurrence",
+            ),
+            (
+                "applicability_result_identity",
+                "addressed_byte_occurrence_reference_applicability_result",
+            ),
+        )
+    }
+    applicability_binding_material = _applicability_binding_material(
+        source_result=source_result,
+        coordinate_reference=addressed_source_byte_position_coordinate_reference,
+        through_event_occurrence_identity=determination_binding.identity,
+        determination_act_identity=determination_binding.material[
+            "determination_act_identity"
+        ],
+        identities=applicability_identities,
+    )
+    require_prior_at_tip(determination_binding)
+    applicability_binding = ledger.append(
+        APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        applicability_binding_material,
+        locality_identity=locality_identity,
+    )
+    exact_stage_material.append(
+        (
+            applicability_binding,
+            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+            applicability_binding_material,
+        )
+    )
+    require_intact()
+    carry(applicability_binding, prior=determination_binding.identity)
 
     _refuse_existing_act(
         ledger,
-        assignment=assignment,
+        binding=determination_binding,
         kind=APPLICABILITY_ACT_OCCURRENCE_EVENT,
-        occurrence_coordinate="applicability_act_occurrence_identity",
+        occurrence_coordinate="determination_act_occurrence_identity",
     )
     applicability_act_material = _applicability_act_material(
-        assignment=assignment, source_result=source_result
+        binding=applicability_binding, source_result=source_result
     )
-    require_prior_at_tip(assignment)
+    require_prior_at_tip(applicability_binding)
     applicability_act = ledger.append(
         APPLICABILITY_ACT_OCCURRENCE_EVENT,
         _applicability_act_material(
-            assignment=assignment,
+            binding=applicability_binding,
             source_result=source_result,
         ),
         locality_identity=locality_identity,
@@ -1963,11 +2217,12 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         )
     )
     require_intact()
-    carry(applicability_act, prior=assignment.identity)
+    carry(applicability_act, prior=applicability_binding.identity)
 
     applicability_material = _applicability_result_material(
         act=applicability_act,
-        assignment=assignment,
+        applicability_binding=applicability_binding,
+        determination_binding=determination_binding,
         source_result=source_result,
     )
     _prepare_result_yield(
@@ -2013,12 +2268,12 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
 
     _refuse_existing_act(
         ledger,
-        assignment=assignment,
+        binding=determination_binding,
         kind=DETERMINATION_ACT_OCCURRENCE_EVENT,
         occurrence_coordinate="determination_act_occurrence_identity",
     )
     act_material = _determination_act_material(
-        assignment=assignment,
+        binding=determination_binding,
         source_result=source_result,
         applicability_result=applicability,
     )
@@ -2026,7 +2281,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     act = ledger.append(
         DETERMINATION_ACT_OCCURRENCE_EVENT,
         _determination_act_material(
-            assignment=assignment,
+            binding=determination_binding,
             source_result=source_result,
             applicability_result=applicability,
         ),
@@ -2041,7 +2296,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     result_material = _determination_result_material(
         act=act,
         applicability=applicability,
-        assignment=assignment,
+        binding=determination_binding,
         source_result=source_result,
         references=references,
     )
