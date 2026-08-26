@@ -561,7 +561,6 @@ def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed
             "dimensions",
             "result",
             "assertion_subject",
-            "input_support",
             "conflicts",
             "unknown",
         }

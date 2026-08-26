@@ -1312,10 +1312,6 @@ def _assertion(
         },
         "result": "position",
         "assertion_subject": subject,
-        "input_support": {
-            "occurrence_references": [finding.source_material_result_occurrence_identity],
-            "local_assertion_references": [],
-        },
         "conflicts": "Unknown",
         "unknown": [
             "Participation or content of this byte pair: Unknown"
