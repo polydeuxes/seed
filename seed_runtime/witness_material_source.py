@@ -224,7 +224,6 @@ def record_witness_material_source(
         "dimensions": {
             "identity": result_identity,
             "source_provenance": source_boundary,
-            "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material source occurrence recorded"
             ),
@@ -378,7 +377,6 @@ def _read_witness_material_source_result(
         "dimensions": {
             "identity": result_identity,
             "source_provenance": source_boundary,
-            "scope_locality": f"locality:{event.locality_identity}",
             "occurrence_preservation": (
                 "exact Witness material source occurrence recorded"
             ),

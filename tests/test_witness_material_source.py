@@ -354,7 +354,11 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 
     assert occurred.material["provenance_occurrence_references"] == []
-    assert occurred.material["dimensions"]["scope_locality"] == "locality:locality_000001"
+    assert tuple(sorted(occurred.material["dimensions"])) == (
+        "identity",
+        "occurrence_preservation",
+        "source_provenance",
+    )
     assert "invocation" not in str(occurred.material)
 
 
