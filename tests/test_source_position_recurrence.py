@@ -659,13 +659,14 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     assert reading["subject"]["support_result_references"] == finding[
         "support_result_references"
     ]
-    assert all(
-        tuple(
-            coordinate["position"]
-            for coordinate in support["source_position_coordinates"]
-        )
-        in {(0, 1, 2), (3, 4, 5)}
-        for support in reading["support_occurrences"]
+    assert tuple(sorted(event.material["coordinates"])) == (
+        "completeness_boundary_reference",
+        "conflicts",
+        "coordinate_material_findings",
+        "exact_material",
+        "locality",
+        "subject",
+        "unknown",
     )
 
     act = ledger.get(event.material["act_occurrence_event_identity"])
@@ -873,6 +874,8 @@ def test_source_coordinate_not_in_support_does_not_choose_material():
     ) == (b"a", b"+", b"a")
     assert tuple(
         coordinate["position"]
-        for support in reading["support_occurrences"]
-        for coordinate in support["source_position_coordinates"]
+        for reference in reading["subject"]["support_result_references"]
+        for coordinate in get_recorded_source_position_measurement(
+            ledger, reference["recorded_occurrence_reference"]
+        )["source_position_coordinates"]
     ) == (1, 2, 3, 4, 5, 6)
