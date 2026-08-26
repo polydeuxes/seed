@@ -7,7 +7,7 @@ import pytest
 import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as recorded_pair_comparison_module
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -72,7 +72,7 @@ def _standing(ledger):
 
 
 def _pair_measurement(ledger):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,

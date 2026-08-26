@@ -14,7 +14,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
-    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
@@ -31,13 +31,13 @@ from seed_runtime.byte_measurement import (
     _pair_assertion_identity,
     get_byte_position_pair_measurement_subject_to_act_binding,
     get_recorded_pair_input_applicability,
-    get_byte_measurement_responsibility_assignment,
+    get_byte_measurement_subject_to_act_binding,
     get_assertion_locality_movement_subject_to_act_binding,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
     input_applicability_of_recorded_byte_position_pair_measurement,
     measure_byte_counts,
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_assertion_locality_movement_subject_to_act_binding,
@@ -86,7 +86,7 @@ def _record_operator_material_source(
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
@@ -110,7 +110,7 @@ def _record_byte_measurement(
 def _record_byte_measurement_assignment_and_act(
     ledger, *, source_localities, recording_locality_identity
 ):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,
@@ -359,7 +359,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
     )
     events = ledger.list_locality("measurement")
     assert [event.kind for event in events] == [
-        BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
         RECORDED_YIELD_RELATION_EVENT,
         BYTE_MEASUREMENT_RECORDED_KIND,
@@ -374,7 +374,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
 
 def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_identities():
     ledger = _ledger(b"a\n")
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -386,7 +386,7 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
         ledger, locality_identity="measurement"
     )
 
-    assert assignment.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    assert assignment.kind == BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     assert standing["subject_to_act_binding_occurrences"].get(
         assignment.identity, object()
     ) is None
@@ -428,7 +428,7 @@ def test_stale_and_shaped_standing_cannot_authorize_exact_byte_act():
     stale = read_operator_locality_standing(
         ledger, locality_identity="measurement"
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -465,7 +465,7 @@ def test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier():
         source_localities=("measurement",),
         recording_locality_identity="measurement",
     )
-    second = record_byte_measurement_responsibility_assignment(
+    second = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
@@ -476,7 +476,7 @@ def test_assignment_read_refuses_corrupted_unrelated_prior_standing_carrier():
     ledger.corrupted.add(first.identity)
 
     with pytest.raises(ByteMeasurementError):
-        get_byte_measurement_responsibility_assignment(ledger, second.identity)
+        get_byte_measurement_subject_to_act_binding(ledger, second.identity)
 
 
 def test_operator_replay_uses_exact_context_while_public_assignment_reads_reconstruct(
@@ -496,7 +496,7 @@ def test_operator_replay_uses_exact_context_while_public_assignment_reads_recons
         source_localities=("measurement",),
         recording_locality_identity="measurement",
     )
-    second = record_byte_measurement_responsibility_assignment(
+    second = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
@@ -522,19 +522,19 @@ def test_operator_replay_uses_exact_context_while_public_assignment_reads_recons
     assert standing["measurement_occurrences"][first.identity]
     assert standing["subject_to_act_binding_occurrences"][second.identity] is None
     with pytest.raises(AssertionError, match="nested operator Standing replay"):
-        get_byte_measurement_responsibility_assignment(ledger, second.identity)
+        get_byte_measurement_subject_to_act_binding(ledger, second.identity)
 
     monkeypatch.setattr(
         standing_module,
         "read_operator_locality_standing_through",
         original_read_through,
     )
-    assert get_byte_measurement_responsibility_assignment(
+    assert get_byte_measurement_subject_to_act_binding(
         ledger, second.identity
     ) == second
     ledger.corrupted.add(first.identity)
     with pytest.raises(ByteMeasurementError):
-        get_byte_measurement_responsibility_assignment(ledger, second.identity)
+        get_byte_measurement_subject_to_act_binding(ledger, second.identity)
 
 
 def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read():
@@ -555,7 +555,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
         source_localities=("measurement",),
         recording_locality_identity="measurement",
     )
-    second = record_byte_measurement_responsibility_assignment(
+    second = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("measurement",),
         recording_locality_identity="measurement",
@@ -590,7 +590,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_assignment_read(
                 material_acquisition_result_occurrences=copied_acquisition_results,
                 subject_to_act_binding_occurrences=copied_assignments,
             )
-        return get_byte_measurement_responsibility_assignment(
+        return get_byte_measurement_subject_to_act_binding(
             ledger, second.identity
         )
 
@@ -607,7 +607,7 @@ def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
         exact_bytes=b"durable",
         source_boundary="durable boundary",
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -618,7 +618,7 @@ def test_assignment_act_and_result_survive_distinct_sqlite_restarts(tmp_path):
     ledger.close()
 
     ledger = SQLiteEventLedger(path)
-    assert get_byte_measurement_responsibility_assignment(
+    assert get_byte_measurement_subject_to_act_binding(
         ledger, assignment.identity
     ).identity == assignment.identity
     act = record_byte_measurement_act_occurrence(
@@ -677,7 +677,7 @@ def test_call_local_assignment_carry_requires_the_exact_assignment_at_tip():
         ledger, locality_identity="measurement"
     )
     prior_boundary = standing["through_event_occurrence_identity"]
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -1975,7 +1975,7 @@ def test_pair_applicability_reads_exact_input_coordinates():
 def test_byte_measurement_binding_carries_its_exact_source_occurrences():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
-    assignment = get_byte_measurement_responsibility_assignment(
+    assignment = get_byte_measurement_subject_to_act_binding(
         ledger,
         source.material["responsibility_assignment_reference"][
             "recorded_occurrence_identity"

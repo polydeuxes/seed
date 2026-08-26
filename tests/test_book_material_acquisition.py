@@ -11,7 +11,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -22,7 +22,7 @@ from seed_runtime.operator_locality_standing import read_operator_locality_stand
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,

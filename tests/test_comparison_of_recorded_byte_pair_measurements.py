@@ -11,7 +11,7 @@ import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
 import seed_runtime.operator_locality_standing as operator_standing_module
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -40,7 +40,7 @@ from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOcc
 
 LOCALITY = "recorded-pair-comparison-locality"
 def _pair_measurement(ledger):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,

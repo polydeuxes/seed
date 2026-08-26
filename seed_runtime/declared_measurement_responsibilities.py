@@ -15,8 +15,8 @@ from typing import Any, Callable, NamedTuple
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
-    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-    _record_byte_measurement_responsibility_assignment_from_responsibility_boundary,
+    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence,
     _record_byte_measurement_act_occurrence_from_carried_standing,
     _record_byte_measurement_result_from_carried_act_occurrence,
 )
@@ -255,7 +255,7 @@ def _byte_assignment_source_sets(
 ) -> set[tuple[str, ...]]:
     source_sets: set[tuple[str, ...]] = set()
     for assignment in ledger.iter_locality_kind(
-        locality_identity, BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        locality_identity, BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     ):
         references = assignment.material.get("source_occurrence_references")
         if (
@@ -362,7 +362,7 @@ def _record_byte_measurement(
     responsibility_boundary_identity = responsibility_boundary_replay.get(
         "through_event_occurrence_identity"
     )
-    assignment = _record_byte_measurement_responsibility_assignment_from_responsibility_boundary(
+    assignment = _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
@@ -389,7 +389,7 @@ DECLARED_MEASUREMENT_RESPONSIBILITIES = (
     DeclaredMeasurementResponsibility(
         "01.Source.D",
         "measurement_of_exact_byte_occurrences",
-        BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_MEASUREMENT_RECORDED_KIND,
         _discover_byte_measurements,
         _record_byte_measurement,

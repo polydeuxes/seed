@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
 )
@@ -29,7 +29,7 @@ def measured_material(exact: bytes):
         exact=exact,
         source_boundary="one-byte material test boundary",
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",

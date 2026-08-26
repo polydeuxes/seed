@@ -19,7 +19,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -156,7 +156,7 @@ def _build_fixture(
         exact=b"abxxabbcxxbc",
         source_boundary="exact premise boundary",
     )
-    byte_assignment = record_byte_measurement_responsibility_assignment(
+    byte_assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,

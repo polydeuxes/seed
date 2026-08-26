@@ -18,7 +18,7 @@ from seed_runtime.material_source import (
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
-    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RESULT_KIND,
@@ -45,7 +45,7 @@ from seed_runtime.byte_measurement import (
     _read_assertion_locality_movement_subject_to_act_binding,
     _read_assertion_locality_movement_act_occurrence,
     _require_exact_movement_binding_and_source,
-    _read_byte_measurement_responsibility_assignment,
+    _read_byte_measurement_subject_to_act_binding,
     _read_pair_applicability_subject_to_act_binding,
     _read_pair_measurement_subject_to_act_binding,
     _read_pair_applicability_act_occurrence,
@@ -408,7 +408,7 @@ _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
     BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
 }
 _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
-    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
@@ -1329,8 +1329,8 @@ def advance_operator_locality_standing(
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
             continue
-        if event.kind == BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND:
-            _read_byte_measurement_responsibility_assignment(
+        if event.kind == BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+            _read_byte_measurement_subject_to_act_binding(
                 ledger,
                 event.identity,
                 prior_standing={
@@ -2093,7 +2093,7 @@ def _carry_byte_measurement_assignment_into_standing(
         != ledger.append_boundary()
     ):
         raise ValueError("byte Measurement assignment must follow carried Standing")
-    _read_byte_measurement_responsibility_assignment(
+    _read_byte_measurement_subject_to_act_binding(
         ledger,
         event.identity,
         prior_standing=(

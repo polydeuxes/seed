@@ -14,7 +14,7 @@ from seed_runtime.byte_measurement import (
     ByteMeasurementError,
     assertions_of_recorded_byte_position_pair_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
@@ -46,7 +46,7 @@ class DictSubclass(dict):
 def _record_byte_measurement(
     ledger, *, source_localities, recording_locality_identity
 ):
-    assignment = record_byte_measurement_responsibility_assignment(
+    assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=source_localities,
         recording_locality_identity=recording_locality_identity,

@@ -8,7 +8,7 @@ import pytest
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
 import seed_runtime.operator_locality_standing as operator_standing
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
@@ -58,7 +58,7 @@ def _fixture(
         exact=premise,
         source_boundary="exact premise boundary",
     )
-    byte_assignment = record_byte_measurement_responsibility_assignment(
+    byte_assignment = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,

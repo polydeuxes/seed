@@ -73,8 +73,8 @@ BYTE_RESULT_COORDINATES = frozenset(
 BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.byte_act_occurrenced"
 )
-BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.measurement.byte_responsibility_assignment_recorded"
+BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.measurement.byte_subject_to_act_binding_recorded"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "responsibility_assignment_reference",
@@ -122,7 +122,7 @@ ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT = (
 )
 ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND = "Assertion Locality movement result"
 EVENT_KIND_RESPONSIBILITIES = {
-    BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: "01.Source.D",
+    BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
     BYTE_MEASUREMENT_RECORDED_KIND: "01.Source.D",
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND: "01.Source.D",
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
@@ -2128,7 +2128,7 @@ def _byte_measurement_source_material(
     return tuple(source_material)
 
 
-def _byte_measurement_assignment_reference(assignment: Event) -> dict[str, Any]:
+def _byte_measurement_binding_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
         "book_clause_identity": assignment.material["book_clause_identity"],
@@ -2140,7 +2140,7 @@ def _byte_measurement_assignment_reference(assignment: Event) -> dict[str, Any]:
     }
 
 
-def _byte_measurement_assignment_material(
+def _byte_measurement_binding_material(
     *,
     source_localities: tuple[str, ...],
     source_material: tuple[dict[str, str], ...],
@@ -2308,7 +2308,7 @@ def _require_exact_byte_measurement_responsibility_boundary(
     return responsibility_boundary_identity, source_material
 
 
-def _prepare_byte_measurement_responsibility_assignment(
+def _prepare_byte_measurement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_localities: Iterable[str],
@@ -2336,7 +2336,7 @@ def _prepare_byte_measurement_responsibility_assignment(
     return localities, boundary, source_material
 
 
-def _append_byte_measurement_responsibility_assignment(
+def _append_byte_measurement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_localities: tuple[str, ...],
@@ -2355,8 +2355,8 @@ def _append_byte_measurement_responsibility_assignment(
             "byte Measurement lifecycle identities collapsed"
         )
     return ledger.append(
-        BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _byte_measurement_assignment_material(
+        BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _byte_measurement_binding_material(
             source_localities=source_localities,
             source_material=source_material,
             completeness_boundary_identity=completeness_boundary_identity,
@@ -2367,17 +2367,17 @@ def _append_byte_measurement_responsibility_assignment(
     )
 
 
-def record_byte_measurement_responsibility_assignment(
+def record_byte_measurement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_localities: Iterable[str],
     recording_locality_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Record one exact-byte Measurement Responsibility assignment."""
+    """Record one exact-byte Measurement subject-to-Act binding."""
 
     localities, boundary, source_material = (
-        _prepare_byte_measurement_responsibility_assignment(
+        _prepare_byte_measurement_subject_to_act_binding(
             ledger,
             source_localities=source_localities,
             recording_locality_identity=recording_locality_identity,
@@ -2392,7 +2392,7 @@ def record_byte_measurement_responsibility_assignment(
         raise ByteMeasurementError(
             "byte Measurement global recording boundary changed before assignment"
         )
-    return _append_byte_measurement_responsibility_assignment(
+    return _append_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=localities,
         source_material=source_material,
@@ -2402,7 +2402,7 @@ def record_byte_measurement_responsibility_assignment(
     )
 
 
-def _record_byte_measurement_responsibility_assignment_from_carried_standing(
+def _record_byte_measurement_subject_to_act_binding_from_current_coordinates(
     ledger: EventLedger,
     *,
     source_localities: Iterable[str],
@@ -2410,7 +2410,7 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
     locality_standing: dict[str, Any],
 ) -> Event:
     localities, boundary, source_material = (
-        _prepare_byte_measurement_responsibility_assignment(
+        _prepare_byte_measurement_subject_to_act_binding(
             ledger,
             source_localities=source_localities,
             recording_locality_identity=recording_locality_identity,
@@ -2427,7 +2427,7 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
         raise ByteMeasurementError(
             "byte Measurement global recording boundary changed before assignment"
         )
-    return _append_byte_measurement_responsibility_assignment(
+    return _append_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=localities,
         source_material=source_material,
@@ -2437,7 +2437,7 @@ def _record_byte_measurement_responsibility_assignment_from_carried_standing(
     )
 
 
-def _record_byte_measurement_responsibility_assignment_from_responsibility_boundary(
+def _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
     ledger: EventLedger,
     *,
     source_localities: Iterable[str],
@@ -2456,7 +2456,7 @@ def _record_byte_measurement_responsibility_assignment_from_responsibility_bound
         )
     )
     current_localities, boundary, current_source_material = (
-        _prepare_byte_measurement_responsibility_assignment(
+        _prepare_byte_measurement_subject_to_act_binding(
             ledger,
             source_localities=localities,
             recording_locality_identity=recording_locality_identity,
@@ -2476,7 +2476,7 @@ def _record_byte_measurement_responsibility_assignment_from_responsibility_bound
     responsibility_completeness_boundary = (
         ledger.append_boundary_through_occurrence(standing_boundary_identity)
     )
-    return _append_byte_measurement_responsibility_assignment(
+    return _append_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=localities,
         source_material=current_source_material,
@@ -2486,7 +2486,7 @@ def _record_byte_measurement_responsibility_assignment_from_responsibility_bound
     )
 
 
-def _read_byte_measurement_responsibility_assignment(
+def _read_byte_measurement_subject_to_act_binding(
     ledger: EventLedger,
     assignment_event_identity: str,
     *,
@@ -2500,13 +2500,13 @@ def _read_byte_measurement_responsibility_assignment(
     if (
         assignment is None
         or assignment.kind
-        != BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or type(assignment.locality_identity) is not str
         or not assignment.locality_identity
         or ledger.integrity_of(assignment.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
-            "byte Measurement Responsibility assignment is absent or corrupted"
+            "byte Measurement subject-to-Act binding is absent or corrupted"
         )
     material = assignment.material
     identities = {
@@ -2540,14 +2540,14 @@ def _read_byte_measurement_responsibility_assignment(
         )
     ):
         raise ByteMeasurementError(
-            "byte Measurement Responsibility assignment carries malformed coordinates"
+            "byte Measurement subject-to-Act binding carries malformed coordinates"
         )
     localities = tuple(localities_value)
     boundary = EventLedgerBoundary(completeness_boundary_identity)
     source_material = _byte_measurement_source_material(
         ledger, localities=localities, boundary=boundary
     )
-    expected = _byte_measurement_assignment_material(
+    expected = _byte_measurement_binding_material(
         source_localities=localities,
         source_material=source_material,
         completeness_boundary_identity=completeness_boundary_identity,
@@ -2556,7 +2556,7 @@ def _read_byte_measurement_responsibility_assignment(
     )
     if material != expected:
         raise ByteMeasurementError(
-            "byte Measurement Responsibility assignment coordinates are not exact"
+            "byte Measurement subject-to-Act binding coordinates are not exact"
         )
     if prior_standing is None:
         from seed_runtime.operator_locality_standing import (
@@ -2576,7 +2576,7 @@ def _read_byte_measurement_responsibility_assignment(
                 )
             except (TypeError, ValueError) as error:
                 raise ByteMeasurementError(
-                    "byte Measurement Responsibility assignment has no exact prior Standing"
+                    "byte Measurement binding has no exact prior coordinates"
                 ) from error
     carried_assignments = prior_standing.get(
         "subject_to_act_binding_occurrences"
@@ -2606,7 +2606,7 @@ def _read_byte_measurement_responsibility_assignment(
         )
     ):
         raise ByteMeasurementError(
-            "byte Measurement Responsibility assignment has no exact prior Standing"
+            "byte Measurement binding has no exact prior coordinates"
         )
     if boundary_is_exact:
         order = (assignment.identity,)
@@ -2634,15 +2634,15 @@ def _read_byte_measurement_responsibility_assignment(
         )
     except ValueError as error:
         raise ByteMeasurementError(
-            "byte Measurement Responsibility assignment order is false"
+            "byte Measurement binding order is false"
         ) from error
     return assignment, localities, boundary, source_material
 
 
-def get_byte_measurement_responsibility_assignment(
+def get_byte_measurement_subject_to_act_binding(
     ledger: EventLedger, assignment_event_identity: str
 ) -> Event:
-    return _read_byte_measurement_responsibility_assignment(
+    return _read_byte_measurement_subject_to_act_binding(
         ledger, assignment_event_identity
     )[0]
 
@@ -2659,7 +2659,7 @@ def _byte_measurement_act_occurrence_material(
         ],
         "act": "declared exact-byte Measurement",
         "responsibility_assignment_reference": (
-            _byte_measurement_assignment_reference(assignment)
+            _byte_measurement_binding_reference(assignment)
         ),
         "source_localities": list(assignment.material["source_localities"]),
     }
@@ -2676,12 +2676,12 @@ def _append_byte_measurement_act_occurrence(
     ):
         if (
             prior_act.material.get("responsibility_assignment_reference")
-            == _byte_measurement_assignment_reference(assignment)
+            == _byte_measurement_binding_reference(assignment)
             or prior_act.material.get("act_occurrence_identity")
             == assignment.material["act_occurrence_identity"]
         ):
             raise ByteMeasurementError(
-                "byte Measurement Responsibility assignment already carries an Act"
+                "byte Measurement binding already carries an Act"
             )
     return ledger.append(
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
@@ -2699,7 +2699,7 @@ def record_byte_measurement_act_occurrence(
     """Record one exact assigned byte Measurement Act occurrence."""
 
     assignment, _localities, _boundary, _source_material = (
-        _read_byte_measurement_responsibility_assignment(
+        _read_byte_measurement_subject_to_act_binding(
             ledger, responsibility_assignment_event_identity
         )
     )
@@ -2724,14 +2724,14 @@ def _record_byte_measurement_act_occurrence_from_carried_standing(
     if (
         type(responsibility_assignment) is not Event
         or responsibility_assignment.kind
-        != BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or ledger.integrity_of(responsibility_assignment.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
             "byte Measurement requires its exact carried assignment"
         )
     exact_assignment, _localities, _boundary, _source_material = (
-        _read_byte_measurement_responsibility_assignment(
+        _read_byte_measurement_subject_to_act_binding(
             ledger,
             responsibility_assignment.identity,
             prior_standing=responsibility_assignment_standing,
@@ -2787,7 +2787,7 @@ def _measurement_of_act_occurrence(
             "byte Measurement responsible Act occurrence carries malformed coordinates"
         )
     assignment, localities, boundary, _source_material = (
-        _read_byte_measurement_responsibility_assignment(
+        _read_byte_measurement_subject_to_act_binding(
             ledger,
             assignment_reference.get("recorded_occurrence_identity"),
             prior_standing=prior_standing,
@@ -2801,7 +2801,7 @@ def _measurement_of_act_occurrence(
     expected = _byte_measurement_act_occurrence_material(assignment)
     if (
         assignment_reference
-        != _byte_measurement_assignment_reference(assignment)
+        != _byte_measurement_binding_reference(assignment)
         or event.locality_identity != assignment.locality_identity
         or material != expected
     ):
@@ -2853,7 +2853,7 @@ def _record_byte_measurement_result_from_exact_inputs(
             "act_occurrence_identity"
         ],
         "responsibility_assignment_reference": (
-            _byte_measurement_assignment_reference(assignment)
+            _byte_measurement_binding_reference(assignment)
         ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_localities": list(measured.source_localities),
@@ -3089,7 +3089,7 @@ def _assertions_of_recorded_byte_measurement(
         )
     if (
         material.get("responsibility_assignment_reference")
-        != _byte_measurement_assignment_reference(assignment)
+        != _byte_measurement_binding_reference(assignment)
         or measured.completeness_boundary.identity != boundary_value["identity"]
         or list(measured.source_localities) != localities_value
     ):
