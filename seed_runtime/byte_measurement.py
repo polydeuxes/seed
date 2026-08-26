@@ -945,7 +945,7 @@ def _require_current_movement_destination_standing(
     return boundary
 
 
-def _movement_assignment_material(
+def _movement_binding_material(
     *,
     source: _AssertionLocalityMovementSource,
     source_event: Event,
@@ -985,7 +985,7 @@ def _movement_assignment_material(
     }
 
 
-def _require_exact_movement_assignment_and_source(
+def _require_exact_movement_binding_and_source(
     ledger: EventLedger, assignment: Event
 ) -> tuple[_AssertionLocalityMovementSource, Event]:
     if (
@@ -1024,7 +1024,7 @@ def _require_exact_movement_assignment_and_source(
         )
         or len(set(identities.values())) != len(identities)
         or assignment.material
-        != _movement_assignment_material(
+        != _movement_binding_material(
             source=source,
             source_event=source_event,
             source_locality=source_event.locality_identity,
@@ -1082,7 +1082,7 @@ def record_assertion_locality_movement_subject_to_act_binding(
         raise ByteMeasurementError("Assertion movement lifecycle identities collapsed")
     return ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
-        _movement_assignment_material(
+        _movement_binding_material(
             source=source,
             source_event=source_event,
             source_locality=source_event.locality_identity,
@@ -1139,7 +1139,7 @@ def _read_assertion_locality_movement_subject_to_act_binding(
         raise ByteMeasurementError(
             "Assertion movement Responsibility assignment carries malformed coordinates"
         )
-    expected = _movement_assignment_material(
+    expected = _movement_binding_material(
         source=source,
         source_event=source_event,
         source_locality=source_event.locality_identity,
@@ -1287,7 +1287,7 @@ def _record_assertion_locality_movement_act_from_carried_standing(
     destination_standing: dict[str, Any],
 ) -> Event:
     try:
-        _require_exact_movement_assignment_and_source(ledger, assignment)
+        _require_exact_movement_binding_and_source(ledger, assignment)
     except (ByteMeasurementError, TypeError, ValueError) as error:
         raise ByteMeasurementError(
             "Assertion movement Act requires an exact source and assignment"
@@ -1435,7 +1435,7 @@ def _append_assertion_locality_movement_result(
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
-    _require_exact_movement_assignment_and_source(ledger, assignment)
+    _require_exact_movement_binding_and_source(ledger, assignment)
     if (
         ledger.get(act.identity) != act
         or ledger.integrity_of(act.identity) == CORRUPTED
@@ -1468,7 +1468,7 @@ def _record_assertion_locality_movement_result_from_carried_act(
 ) -> Event:
     if destination_standing is not None:
         try:
-            _require_exact_movement_assignment_and_source(ledger, assignment)
+            _require_exact_movement_binding_and_source(ledger, assignment)
         except (ByteMeasurementError, TypeError, ValueError) as error:
             raise ByteMeasurementError(
                 "Assertion movement result requires an exact source and Act"
@@ -1682,7 +1682,7 @@ def _record_movement_assignment_from_carried_standings(
         raise ByteMeasurementError("Assertion movement lifecycle identities collapsed")
     return ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
-        _movement_assignment_material(
+        _movement_binding_material(
             source=source,
             source_event=source_event,
             source_locality=source_event.locality_identity,

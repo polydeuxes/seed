@@ -36,7 +36,7 @@ from seed_runtime.byte_measurement import (
     _AssertionLocalityMovementSource,
     _assertion_carried_by_locality_movement_result,
     _movement_act_material,
-    _movement_assignment_material,
+    _movement_binding_material,
     _movement_result_material,
     _source_assertion_is_carried,
     _source_assertion_from_reference,
@@ -44,7 +44,7 @@ from seed_runtime.byte_measurement import (
     _findings_of_recorded_byte_position_pair_measurement,
     _read_assertion_locality_movement_subject_to_act_binding,
     _read_assertion_locality_movement_act_occurrence,
-    _require_exact_movement_assignment_and_source,
+    _require_exact_movement_binding_and_source,
     _read_byte_measurement_responsibility_assignment,
     _read_pair_applicability_subject_to_act_binding,
     _read_pair_measurement_subject_to_act_binding,
@@ -2177,7 +2177,7 @@ def _carry_assertion_locality_movement_assignment_into_standing(
         )
         and len(set(identities.values())) == len(identities)
     ):
-        expected = _movement_assignment_material(
+        expected = _movement_binding_material(
             source=source,
             source_event=source_event,
             source_locality=source_event.locality_identity,
@@ -2253,7 +2253,7 @@ def _carry_assertion_locality_movement_act_into_standing(
         else None
     )
     try:
-        _require_exact_movement_assignment_and_source(
+        _require_exact_movement_binding_and_source(
             ledger, responsibility_assignment
         )
         expected = _movement_act_material(responsibility_assignment)
