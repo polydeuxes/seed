@@ -23,8 +23,8 @@ from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
     _record_d2_shared_path,
     _current_coordinates,
 )
-from seed_runtime.ordered_path_source_position_continuation import (
-    yield_ordered_path_source_position_continuations,
+from seed_runtime.source_position_determination_path_and_comparison import (
+    yield_source_position_determinations_paths_and_comparisons,
 )
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -209,15 +209,15 @@ def test_path_pair_comparisons_survive_sqlite_restart(tmp_path):
         reopened.close()
 
 
-def test_each_exact_source_position_continues_without_a_chosen_subject():
+def test_each_exact_source_position_is_determined_without_a_chosen_subject():
     ledger = EventLedger()
-    locality = "ordered-path-source-position-continuation"
+    locality = "ordered-path-source-position-determination"
     direct = _direct_position_result(
         ledger, locality=locality, exact=b"aba"
     )
 
-    continuations = tuple(
-        yield_ordered_path_source_position_continuations(
+    results = tuple(
+        yield_source_position_determinations_paths_and_comparisons(
             ledger,
             direct_result_event_identity=direct.identity,
             current_coordinates=_current_coordinates(ledger, locality),
@@ -226,23 +226,23 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
 
     assert tuple(
         dict.fromkeys(
-            continuation.source_position_coordinate["position"]
-            for continuation in continuations
+            result.source_position_coordinate["position"]
+            for result in results
         )
     ) == tuple(range(3))
-    assert len(continuations) == 5
+    assert len(results) == 5
     assert sum(
-        continuation.ordered_path_result is not None
-        for continuation in continuations
+        result.ordered_path_result is not None
+        for result in results
     ) == 3
     assert sum(
-        continuation.comparison_result is not None
-        for continuation in continuations
+        result.comparison_result is not None
+        for result in results
     ) == 3
     centered_on_plus = tuple(
-        continuation.comparison_result.material
-        for continuation in continuations
-        if continuation.source_position_coordinate["position"] == 1
+        result.comparison_result.material
+        for result in results
+        if result.source_position_coordinate["position"] == 1
     )
     assert tuple(
         material["path_position_pair"] for material in centered_on_plus
@@ -252,7 +252,7 @@ def test_each_exact_source_position_continues_without_a_chosen_subject():
     ) == ("difference", "same-content", "difference")
 
 
-def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
+def test_a_changed_prefix_is_refused_before_another_result_is_exposed():
     ledger = EventLedger()
     locality = "changed-ordered-path-source-prefix"
     direct = _direct_position_result(ledger, locality=locality, exact=b"aba")
@@ -260,19 +260,19 @@ def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
         through=ledger.append_boundary_through_occurrence(direct.identity)
     )[0]
     original_material = deepcopy(source.material)
-    continuations = yield_ordered_path_source_position_continuations(
+    results = yield_source_position_determinations_paths_and_comparisons(
         ledger,
         direct_result_event_identity=direct.identity,
         current_coordinates=_current_coordinates(ledger, locality),
     )
 
-    first = next(continuations)
-    source.material["unknown"] = ["changed after first continuation"]
+    first = next(results)
+    source.material["unknown"] = ["changed after first result"]
     with pytest.raises(
         ValueError,
-        match="source changed during its bounded continuation",
+        match="source changed while its result coordinates were carried",
     ):
-        next(continuations)
+        next(results)
 
     assert first.source_position_coordinate["position"] == 0
     source.material.clear()
@@ -281,7 +281,7 @@ def test_a_changed_prefix_is_refused_before_another_continuation_is_exposed():
 
 def test_one_path_pair_yields_before_its_sibling_pairs():
     ledger = EventLedger()
-    locality = "ordered-path-pair-independent-continuations"
+    locality = "ordered-path-pair-independent-recording"
     path = _path(ledger, locality=locality, exact=b"abc")
     comparisons = yield_ordered_path_source_position_material_comparisons(
         ledger,

@@ -63,7 +63,7 @@ _POSITION_RESULT_READING_CONTEXT: ContextVar[
 
 
 def _require_carried_position_measurement_source_unchanged() -> None:
-    """Refuse a changed exact prefix before one continuation becomes visible."""
+    """Refuse changed source coordinates while one result reading is carried."""
 
     context = _POSITION_RESULT_READING_CONTEXT.get()
     if context is None:
@@ -74,7 +74,8 @@ def _require_carried_position_measurement_source_unchanged() -> None:
         for expected in context.prefix_snapshot
     ):
         raise ValueError(
-            "byte-pair position-coordinate source changed during its bounded continuation"
+            "byte-pair position-coordinate source changed while its result "
+            "coordinates were carried"
         )
 
 
@@ -1558,7 +1559,8 @@ def _read_result(
             or ledger.integrity_of(context.result_snapshot.identity) == CORRUPTED
         ):
             raise ValueError(
-                "byte-pair position-coordinate source changed during its bounded continuation"
+                "byte-pair position-coordinate source changed while its result "
+                "coordinates were carried"
             )
         event, finding, assertions = context.reading
         return event, finding, assertions
@@ -1626,10 +1628,10 @@ def _read_result(
 def carried_position_measurement_result_reading(
     ledger: EventLedger, result_event_identity: str
 ) -> Iterator[None]:
-    """Keep one validated direct-result reading through its bounded continuation."""
+    """Keep one exact result reading while later occurrences are recorded."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("position result continuation requires one EventLedger")
+        raise TypeError("carried position-result reading requires one EventLedger")
     reading = _read_result(ledger, result_event_identity)
     boundary = ledger.append_boundary_through_occurrence(result_event_identity)
     snapshot = tuple(deepcopy(event) for event in ledger.list(through=boundary))

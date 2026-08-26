@@ -76,8 +76,8 @@ from seed_runtime.occurrence_position_measurement import (
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
-from seed_runtime.ordered_path_source_position_continuation import (
-    yield_ordered_path_source_position_continuations,
+from seed_runtime.source_position_determination_path_and_comparison import (
+    yield_source_position_determinations_paths_and_comparisons,
 )
 from seed_runtime.declared_measurement_responsibilities import (
     _record_declared_measurements_from_carried_bounded_locality_replay,
@@ -183,12 +183,12 @@ def _record_occurrence_position_after_declared_measurements(
         if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND
     )
     for direct_measurement in direct_measurements:
-        for continuation in yield_ordered_path_source_position_continuations(
+        for result in yield_source_position_determinations_paths_and_comparisons(
             ledger,
             direct_result_event_identity=direct_measurement.identity,
             current_coordinates=current_coordinates,
         ):
-            current_coordinates = continuation.current_coordinates
+            current_coordinates = result.current_coordinates
     current_coordinates = _record_occurrence_position_measurement(
         ledger,
         current_coordinates,

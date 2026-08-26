@@ -1,4 +1,4 @@
-"""Continue each addressed source position through path-ordered Compare."""
+"""Determine each source position, then record available path Comparisons."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from seed_runtime.operator_current_coordinates import (
 )
 
 
-class OrderedPathSourcePositionContinuation(NamedTuple):
+class SourcePositionDeterminationPathAndComparison(NamedTuple):
     source_position_coordinate: dict[str, Any]
     determination_result: Event
     ordered_path_result: Event | None
@@ -59,13 +59,16 @@ def _advance(
         or ledger.append_boundary_through_occurrence(events[-1].identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("source-position continuation left its exact boundary")
+        raise ValueError(
+            "source-position determination and comparison left its exact boundary"
+        )
     for event in events:
         additions = _exact_current_coordinate_additions(
             current_coordinates,
             event,
             error_message=(
-                "source-position continuation current coordinates are not exact"
+                "source-position determination and comparison current coordinates "
+                "are not exact"
             ),
         )
         if event.kind in {
@@ -236,16 +239,18 @@ def _record_shared_path(
     return _advance(ledger, current_coordinates, path_yield, path), path
 
 
-def _yield_ordered_path_source_position_continuations(
+def _yield_source_position_determinations_paths_and_comparisons(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     current_coordinates: dict[str, Any],
-) -> Iterator[OrderedPathSourcePositionContinuation]:
-    """Yield each bounded source-position continuation before its siblings."""
+) -> Iterator[SourcePositionDeterminationPathAndComparison]:
+    """Yield each source-position result before results for later positions."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("source-position continuation requires one EventLedger")
+        raise TypeError(
+            "source-position determination and comparison requires one EventLedger"
+        )
     for coordinate in source_position_coordinate_references_of_recorded_position_measurement(
         ledger, direct_result_event_identity
     ):
@@ -266,7 +271,7 @@ def _yield_ordered_path_source_position_continuations(
                     ledger, current_coordinates, determination
                 )
         if path is None:
-            yield OrderedPathSourcePositionContinuation(
+            yield SourcePositionDeterminationPathAndComparison(
                 coordinate,
                 determination,
                 None,
@@ -286,7 +291,7 @@ def _yield_ordered_path_source_position_continuations(
                 except StopIteration:
                     break
             current_coordinates = comparison.locality_standing
-            yield OrderedPathSourcePositionContinuation(
+            yield SourcePositionDeterminationPathAndComparison(
                 coordinate,
                 determination,
                 path,
@@ -295,21 +300,21 @@ def _yield_ordered_path_source_position_continuations(
             )
 
 
-def yield_ordered_path_source_position_continuations(
+def yield_source_position_determinations_paths_and_comparisons(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     current_coordinates: dict[str, Any],
-) -> Iterator[OrderedPathSourcePositionContinuation]:
-    """Yield bounded continuations from one validated direct-result reading."""
+) -> Iterator[SourcePositionDeterminationPathAndComparison]:
+    """Yield determinations and available path Comparisons for every position."""
 
     with carried_position_measurement_result_reading(
         ledger, direct_result_event_identity
     ):
-        for continuation in _yield_ordered_path_source_position_continuations(
+        for result in _yield_source_position_determinations_paths_and_comparisons(
             ledger,
             direct_result_event_identity=direct_result_event_identity,
             current_coordinates=current_coordinates,
         ):
             _require_carried_position_measurement_source_unchanged()
-            yield continuation
+            yield result

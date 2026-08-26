@@ -109,14 +109,14 @@ def _record(ledger, exact=b"2+2=5\n", locality="position-occurrence-position"):
     return source, assignment, act, result
 
 
-def test_carried_result_reading_refuses_a_source_changed_during_its_continuation():
+def test_carried_result_reading_refuses_changed_source_coordinates():
     ledger = EventLedger()
-    _source_event, _assignment, _act, result = _record(ledger)
+    _source_event, _binding, _act, result = _record(ledger)
     original_material = deepcopy(result.material)
 
     with pytest.raises(
         ValueError,
-        match="source changed during its bounded continuation",
+        match="source changed while its result coordinates were carried",
     ):
         with carried_position_measurement_result_reading(ledger, result.identity):
             assert (
@@ -125,7 +125,7 @@ def test_carried_result_reading_refuses_a_source_changed_during_its_continuation
                 ).exact_material
                 == b"2+2=5\n"
             )
-            result.material["unknown"] = ["changed during continuation"]
+            result.material["unknown"] = ["changed while coordinates were carried"]
             get_recorded_byte_pair_occurrence_position_measurement(
                 ledger, result.identity
             )
