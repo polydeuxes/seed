@@ -2153,8 +2153,8 @@ def test_movement_act_requires_current_destination_standing_carrying_assignment(
         ):
             record_assertion_locality_movement_act_occurrence(
                 ledger,
-                responsibility_assignment_event_identity=assignment.identity,
-                responsibility_assignment_standing=standing,
+                subject_to_act_binding_event_identity=assignment.identity,
+                current_coordinates=standing,
             )
 
 
@@ -2177,14 +2177,14 @@ def test_movement_lifecycle_refuses_duplicate_act_and_result():
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=standing,
     )
     with pytest.raises(ByteMeasurementError, match="already carries an Act"):
         record_assertion_locality_movement_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=read_operator_locality_standing(
+            subject_to_act_binding_event_identity=assignment.identity,
+            current_coordinates=read_operator_locality_standing(
                 ledger, locality_identity="movement"
             ),
         )
@@ -2224,8 +2224,8 @@ def test_movement_act_refuses_standing_before_a_later_destination_tip():
     with pytest.raises(ByteMeasurementError, match="current destination Standing"):
         record_assertion_locality_movement_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=stale,
+            subject_to_act_binding_event_identity=assignment.identity,
+            current_coordinates=stale,
         )
 
 
@@ -2269,8 +2269,8 @@ def test_movement_assignment_and_lifecycle_survive_sqlite_restarts(tmp_path):
     ) == assignment
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity="movement"
         ),
     )
@@ -2377,8 +2377,8 @@ def test_movement_carried_standing_equals_replay_and_same_locality_is_noop():
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=carried,
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=carried,
     )
     movement = record_assertion_locality_movement_result(
         ledger, act_occurrence_event_identity=act.identity

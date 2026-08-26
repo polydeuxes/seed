@@ -1249,34 +1249,34 @@ def _movement_act_material(assignment: Event) -> dict[str, Any]:
 def record_assertion_locality_movement_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment, _source, _source_event = (
+    binding, _source, _source_event = (
         _read_assertion_locality_movement_subject_to_act_binding(
-            ledger, responsibility_assignment_event_identity
+            ledger, subject_to_act_binding_event_identity
         )
     )
     _require_current_movement_destination_standing(
         ledger,
-        destination_locality=assignment.locality_identity,
-        locality_standing=responsibility_assignment_standing,
-        assignment_identity=assignment.identity,
+        destination_locality=binding.locality_identity,
+        locality_standing=current_coordinates,
+        assignment_identity=binding.identity,
     )
     for prior in ledger.iter_locality_kind(
-        assignment.locality_identity,
+        binding.locality_identity,
         ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ):
         if prior.material.get("subject_to_act_binding_reference") == (
-            _movement_binding_reference(assignment)
+            _movement_binding_reference(binding)
         ):
             raise ByteMeasurementError(
-                "Assertion movement Responsibility assignment already carries an Act"
+                "Assertion movement binding already carries an Act"
             )
     return ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
-        _movement_act_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _movement_act_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -1522,8 +1522,8 @@ def _move_byte_assertion_to_locality(
     )
     act = record_assertion_locality_movement_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=read_operator_locality_standing(
+        subject_to_act_binding_event_identity=assignment.identity,
+        current_coordinates=read_operator_locality_standing(
             ledger, locality_identity=destination_locality
         ),
     )
