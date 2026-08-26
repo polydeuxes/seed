@@ -822,12 +822,9 @@ def test_act_occurrence_has_exact_inputs_but_no_result_finding():
         ),
     )
 
-    assert {
-        item["role"] for item in act.material["participation"]
-    } == {
-        "Yield-carried recurrent byte-pair subject",
-        "exact material result input",
-    }
+    assert act.material["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
     assert not {
         "assertions",
         "available_occurrence_count",

@@ -912,31 +912,6 @@ def get_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_bindi
     )[0]
 
 
-def _participation_in_measurement(
-    finding: FindingOfRecurrentBytePairOccurrencePositions,
-    *,
-    act_occurrence_identity: str,
-) -> list[dict[str, Any]]:
-    return [
-        {
-            "subject_reference": finding.pair_reference.assertion_reference,
-            "role": "Yield-carried recurrent byte-pair subject",
-            "act_occurrence_identity": act_occurrence_identity,
-            "applicability": "applicable",
-        },
-        {
-            "subject_reference": {
-                "recorded_occurrence_identity": (
-                    finding.source_material_result_occurrence_identity
-                )
-            },
-            "role": "exact material result input",
-            "act_occurrence_identity": act_occurrence_identity,
-            "applicability": "applicable",
-        },
-    ]
-
-
 def _material_of_act_occurrence(
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     *,
@@ -960,10 +935,6 @@ def _material_of_act_occurrence(
             finding.source_material_result_occurrence_identity
         ),
         "occurrence_count_boundary": finding.occurrence_count_boundary,
-        "participation": _participation_in_measurement(
-            finding,
-            act_occurrence_identity=act_occurrence_identity,
-        ),
     }
 
 
