@@ -10,7 +10,7 @@ sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
 from seed_runtime.byte_measurement import (
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_act_occurrence,
     record_byte_measurement_result,
 )
@@ -49,17 +49,17 @@ def measured_material():
         exact_bytes=bytes(range(256)),
         source_boundary="one-byte material test boundary",
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    binding = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=("compiled-material-source",),
         recording_locality_identity="compiled-material-measurement",
-        locality_standing=read_operator_current_coordinates(
+        current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="compiled-material-measurement"
         ),
     )
     act_occurrence = record_byte_measurement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity="compiled-material-measurement"
         ),

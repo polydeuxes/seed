@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Measure the live coordinates preceding cross-surface aperture work.
 
-This operation records the four raw sources through their exact acquisition
+This operation records the four raw sources through their exact source-boundary
 physiology, performs the already-live exact-byte Measurement separately for
 each source, and compares its count findings with the first aperture inventory
 of the frozen cross-surface observer.
 
-It does not perform the aperture operation or add a Responsibility for it.
+It does not perform the aperture operation or add a subject-to-Act binding.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_measurement_act_occurrence,
-    record_byte_measurement_responsibility_assignment,
+    record_byte_measurement_subject_to_act_binding,
     record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
@@ -58,18 +58,18 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     coordinates_before = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
-    assignment = record_byte_measurement_responsibility_assignment(
+    binding = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(locality,),
         recording_locality_identity=locality,
-        locality_standing=coordinates_before,
+        current_coordinates=coordinates_before,
     )
     coordinates_with_binding = read_operator_current_coordinates(
         ledger, locality_identity=locality
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=coordinates_with_binding,
     )
     result = record_byte_measurement_result(
@@ -107,7 +107,7 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
     if yielded is None:
         raise ValueError("exact-byte Measurement result carries no Yield")
     order = ledger.occurrences_in_append_order(
-        (assignment.identity, act.identity, yielded.identity, result.identity),
+        (binding.identity, act.identity, yielded.identity, result.identity),
         locality_identity=locality,
     )
     return {
@@ -131,14 +131,14 @@ def _record_source(ledger: EventLedger, source_number: int, exact: bytes) -> dic
         "projection_observer_ledger_occurrence_count": (
             projection_observer_ledger_occurrence_count
         ),
-        "Responsibility_precedes_Act_Yield_and_result": tuple(
+        "binding_precedes_Act_Yield_and_result": tuple(
             event.identity for event in order
         )
-        == (assignment.identity, act.identity, yielded.identity, result.identity),
-        "result_carried_as_Measurement_in_current_Standing": result.identity
-        in standing_after["measurement_occurrences"],
-        "result_carried_with_exact_Responsibility_in_current_Standing": result.identity
-        in standing_after["exact_result_occurrences"],
+        == (binding.identity, act.identity, yielded.identity, result.identity),
+        "result_carried_as_Measurement_in_current_coordinates": result.identity
+        in coordinates_after["measurement_occurrences"],
+        "result_carried_with_exact_binding_in_current_coordinates": result.identity
+        in coordinates_after["exact_result_occurrences"],
     }
 
 
@@ -150,7 +150,7 @@ def observe() -> dict:
     ]
     return {
         "operation": (
-            "exact acquisition and exact-byte Measurement for each raw source; "
+            "exact source recording and exact-byte Measurement for each raw source; "
             "comparison with every first-aperture material in the frozen "
             "cross-surface operation"
         ),
@@ -165,10 +165,10 @@ def observe() -> dict:
             and source["all_projection_item_apertures_have_count_findings"]
             for source in sources
         ),
-        "all_results_have_exact_Standing_ownership": all(
-            source["result_carried_as_Measurement_in_current_Standing"]
+        "all_results_have_exact_current_coordinates": all(
+            source["result_carried_as_Measurement_in_current_coordinates"]
             and source[
-                "result_carried_with_exact_Responsibility_in_current_Standing"
+                "result_carried_with_exact_binding_in_current_coordinates"
             ]
             for source in sources
         ),
