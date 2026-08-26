@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from functools import lru_cache
 
 import pytest
 
@@ -246,11 +245,6 @@ def _build_fixture(
     return ledger, locality, source, first, second
 
 
-@lru_cache(maxsize=None)
-def _in_memory_fixture_template(current: bytes, locality: str):
-    return _build_fixture(current=current, locality=locality)
-
-
 def _fixture(
     *,
     current: bytes = b"abc",
@@ -259,7 +253,7 @@ def _fixture(
 ):
     if ledger is not None:
         return _build_fixture(current=current, ledger=ledger, locality=locality)
-    return deepcopy(_in_memory_fixture_template(current, locality))
+    return _build_fixture(current=current, locality=locality)
 
 
 def _shared_binding(ledger, locality, first, second):

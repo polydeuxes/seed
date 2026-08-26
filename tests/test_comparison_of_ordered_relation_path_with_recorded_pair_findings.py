@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from functools import lru_cache
 
 import pytest
 
@@ -243,51 +242,35 @@ def _inputs(*, ledger=None, path_source_is_added=True):
     )
 
 
-@lru_cache(maxsize=1)
-def _two_input_template():
+def _two_inputs():
     ledger, *first = _inputs()
     ledger, *second = _record_inputs(ledger)
-    return ledger, *(event.identity for event in (*first, *second))
-
-
-def _two_inputs():
-    template, *identities = _two_input_template()
-    ledger = deepcopy(template)
-    return ledger, *(ledger.get(identity) for identity in identities)
-
-
-@lru_cache(maxsize=5)
-def _story_floor_template(floor):
-    if floor == 0:
-        ledger, *_inputs_reading = _two_inputs()
-        return ledger, ()
-    prior, _prior_results = _story_floor_template(floor - 1)
-    ledger = deepcopy(prior)
-    if floor == 1:
-        results = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        ).binding_occurrences
-    elif floor == 2:
-        results = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        ).applicability_result_occurrences
-    elif floor == 3:
-        results = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        ).compare_act_occurrence_occurrences
-    elif floor == 4:
-        results = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
-            ledger, locality_identity=LOCALITY
-        ).compare_result_occurrences
-    else:
-        raise ValueError("the exact story floor is absent")
-    return ledger, tuple(result.identity for result in results)
+    return ledger, *first, *second
 
 
 def _ledger_at_story_floor(floor):
-    template, result_identities = _story_floor_template(floor)
-    ledger = deepcopy(template)
-    return ledger, tuple(ledger.get(identity) for identity in result_identities)
+    if floor not in range(5):
+        raise ValueError("the exact story floor is absent")
+    ledger, *_inputs_reading = _two_inputs()
+    results = ()
+    for story_floor in range(1, floor + 1):
+        if story_floor == 1:
+            results = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ).binding_occurrences
+        elif story_floor == 2:
+            results = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ).applicability_result_occurrences
+        elif story_floor == 3:
+            results = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ).compare_act_occurrence_occurrences
+        else:
+            results = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
+                ledger, locality_identity=LOCALITY
+            ).compare_result_occurrences
+    return ledger, tuple(results)
 
 
 def _record_comparison(ledger, comparison, path):
