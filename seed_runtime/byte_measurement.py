@@ -587,16 +587,7 @@ def _pair_input_applicability_from_exact_source(
     applicability_scope = scope
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
-    identity = "byte-pair-applicability:" + hashlib.sha256(
-        _exact_json(
-            {
-                "content": content,
-                "scope": applicability_scope,
-                "measurement_locality": measurement_locality_identity,
-                "standing": standing,
-            }
-        ).encode("utf-8")
-    ).hexdigest()
+    identity = assignment.material["applicability_result_identity"]
     return {
         "dimensions": {
             "identity": identity,

@@ -1645,6 +1645,9 @@ def test_applicability_identity_is_bound_to_one_exact_addressed_act():
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
+    assert first["dimensions"]["identity"] == first_assignment.material[
+        "applicability_result_identity"
+    ]
     assert first_assignment.kind == (
         BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
