@@ -600,15 +600,6 @@ def _binding_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "locality_identity": inputs.first.locality_identity,
-            "source_material_result_occurrence_identity": (
-                inputs.first.source_material_result_occurrence_identity
-            ),
-            "completeness_boundary_identity": (
-                inputs.first.completeness_boundary_identity
-            ),
-        },
         "unknown": [],
     }
     if determination_result_reference is not None:
@@ -652,16 +643,6 @@ def _applicability_binding_material(
         "first_position_assertion": first_subject,
         "second_position_assertion": second_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "scope": {
-            "locality_identity": inputs.first.locality_identity,
-            "source_material_result_occurrence_identity": (
-                inputs.first.source_material_result_occurrence_identity
-            ),
-            "completeness_boundary_identity": (
-                inputs.first.completeness_boundary_identity
-            ),
-            "addressed_act_identity": measurement_act_identity,
-        },
         "unknown": [],
     }
     if determination_result_reference is not None:
@@ -1121,7 +1102,6 @@ def _applicability_act_material(
                 ],
             },
         ],
-        "scope": binding.material["scope"],
         "unknown": binding.material["unknown"],
     }
 
@@ -1371,7 +1351,6 @@ def _applicability_result_material(
                 ),
             },
             "source_provenance": "exact recorded position Assertions",
-            "scope": binding.material["scope"],
         },
         "exact_act": APPLICABILITY_ACT,
         "addressed_act_identity": measurement_binding.material[
@@ -1398,7 +1377,6 @@ def _applicability_result_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "applicability": applicability,
-        "scope": binding.material["scope"],
         "unknown": binding.material["unknown"],
     }
 
@@ -1512,7 +1490,6 @@ def _recorded_applicability_result_material(
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "applicability": result["applicability"],
-        "scope": deepcopy(result["scope"]),
         "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1644,7 +1621,6 @@ def _measurement_act_material(
                 ],
             },
         ],
-        "scope": binding.material["scope"],
         "unknown": binding.material["unknown"],
     }
 
@@ -1845,7 +1821,6 @@ def _measurement_result_material(
             "identity": binding.material["measurement_result_identity"],
             "content": "one exact ordered relation-path Assertion",
             "source_provenance": "exact recorded pair position Assertions",
-            "scope": binding.material["scope"],
         },
         "exact_act": MEASUREMENT_ACT,
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -1870,7 +1845,6 @@ def _measurement_result_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "assertions": [assertion],
-        "scope": binding.material["scope"],
         "unknown": binding.material["unknown"],
     }
 
@@ -1944,7 +1918,6 @@ def _recorded_measurement_result_material(
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "assertions": deepcopy(result["assertions"]),
-        "scope": deepcopy(result["scope"]),
         "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
