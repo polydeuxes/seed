@@ -562,8 +562,6 @@ class SQLiteEventLedger(EventLedger):
         "recurrence_corresponding_source_position_material_measurement_act",
         "recurrence_corresponding_source_position_material_measurement_act_occurrence",
         "recurrence_corresponding_source_position_material_measurement_result",
-        "source_position_responsibility",
-        "source_position_responsibility_subject",
         "recurrent_result_exact_material_measurement_act",
         "recurrent_result_exact_material_measurement_act_occurrence",
         "recurrent_result_exact_material_measurement_result",

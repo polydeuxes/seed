@@ -386,11 +386,10 @@ def _preserved_result_material(material):
 
 def _preserved_responsibility_material(material):
     return {
-        "assignment_identity": material["assignment_identity"],
-        "assignment_subject_identity": material["assignment_subject_identity"],
         "book_clause_identity": material["book_clause_identity"],
         "result_boundary_identity": material["result_boundary_identity"],
         "standing_boundary_identity": material["standing_boundary_identity"],
+        "exact_act_identity": material["act_identity"],
         "act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "responsibility": material["responsibility"],
@@ -398,6 +397,7 @@ def _preserved_responsibility_material(material):
         "exact_act": material["exact_act"],
         "rule": material["rule"],
         "subject": deepcopy(material["subject"]),
+        "subject_reference": deepcopy(material["subject"]),
         "scope": deepcopy(material["scope"]),
         "conflicts": deepcopy(material["conflicts"]),
         "unknown": deepcopy(material["unknown"]),
@@ -536,14 +536,12 @@ _EVENT_APPENDERS = {
     ),
 }
 
-def _responsibility_reference(assignment: Event) -> dict[str, str]:
+def _responsibility_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["act_identity"],
+        "subject_reference": deepcopy(assignment.material["subject"]),
         "result_boundary_identity": assignment.material["result_boundary_identity"],
     }
 
@@ -567,10 +565,6 @@ def _record_responsibility(
         ledger,
         _ACT_RESPONSIBILITY_KINDS[act_kind],
         {
-            "assignment_identity": new_identity("source_position_responsibility"),
-            "assignment_subject_identity": new_identity(
-                "source_position_responsibility_subject"
-            ),
             "book_clause_identity": book_reference,
             "result_boundary_identity": result_identity,
             "standing_boundary_identity": standing_boundary_identity,
@@ -742,9 +736,9 @@ def _require_responsibility(
     reference = act.material.get("responsibility_assignment_reference")
     if type(reference) is not dict or set(reference) != {
         "recorded_occurrence_identity",
-        "assignment_identity",
-        "assignment_subject_identity",
         "book_clause_identity",
+        "exact_act_identity",
+        "subject_reference",
         "result_boundary_identity",
     }:
         raise ValueError("source-position Act carries no exact Responsibility")
@@ -799,10 +793,6 @@ def _require_recorded_responsibility(
         event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
         or type(material) is not dict
-        or type(material.get("assignment_identity")) is not str
-        or not material["assignment_identity"]
-        or type(material.get("assignment_subject_identity")) is not str
-        or not material["assignment_subject_identity"]
         or type(material.get("book_clause_identity")) is not str
         or not material["book_clause_identity"]
         or type(material.get("result_boundary_identity")) is not str
@@ -2343,7 +2333,7 @@ def validate_source_position_recurrence_event(
     material = event.material
     if type(material) is not dict:
         raise ValueError("source-position occurrence is not exact")
-    if "assignment_identity" in material:
+    if event.kind in set(_ACT_RESPONSIBILITY_KINDS.values()):
         return _require_recorded_responsibility(ledger, event)
     if "yield_relation_identity" in material:
         act = ledger.get(material.get("act_occurrence_event_identity"))
