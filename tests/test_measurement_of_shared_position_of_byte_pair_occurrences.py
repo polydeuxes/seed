@@ -436,7 +436,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         "dimensions",
         "result",
         "assertion_subject",
-        "input_support",
         "conflicts",
         "unknown",
     }
@@ -450,10 +449,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert assertion["assertion_subject"][
         "second_position_assertion_reference"
     ] == second.assertion_reference
-    assert assertion["input_support"]["assertion_references"] == [
-        first.assertion_reference,
-        second.assertion_reference,
-    ]
     assert result.exact_material is None
     assert result.identity in _current_coordinates(ledger, locality)["measurement_occurrences"]
 

@@ -1840,17 +1840,6 @@ def _path_assertion(
         },
         "result": "ordered_relation_path",
         "assertion_subject": subject,
-        "input_support": {
-            "assertion_references": [
-                inputs.first.assertion_reference,
-                inputs.second.assertion_reference,
-            ],
-            "occurrence_references": [
-                inputs.first.source_material_result_occurrence_identity,
-                applicability.identity,
-            ],
-            "local_assertion_references": [],
-        },
         "conflicts": "Unknown",
         "unknown": [],
     }
