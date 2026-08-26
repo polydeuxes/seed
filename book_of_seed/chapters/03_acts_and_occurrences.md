@@ -2,8 +2,8 @@
 
 ### 02.Acts.A — Exact subject-to-Act binding and occurrence
 
-Each exact subject of one exact Act is bound to that Act under its exact rule
-where required, Scope, Locality, and required relations.
+Each exact subject of one exact Act is bound to that Act with its exact Scope,
+Locality, and required relations.
 
 An Act occurrence is one occurrence of that exact Act. It carries the exact
 subject-to-Act binding and its carried coordinates.

@@ -227,7 +227,6 @@
     "02.Acts.A": {
       "subject": "exact_subject",
       "exact_Act": "exact_Act",
-      "rule": "exact_rule_where_required",
       "requires": [
         "Scope",
         "Locality",
@@ -259,7 +258,6 @@
     "04.Compare": {
       "subject": "exact_Compare_subjects",
       "exact_Act": "Compare",
-      "rule": "exact_Compare_rule",
       "relations": [
         "participation",
         "yield"

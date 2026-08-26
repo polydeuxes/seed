@@ -138,7 +138,6 @@ results
 returns
 role
 roles
-rule
 same
 scope
 second
@@ -161,7 +160,6 @@ together
 under
 unknown
 when
-where
 whose
 with
 within

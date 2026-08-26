@@ -14,17 +14,17 @@ exact material --Locality--> this Seed
 ```
 
 One exact Yield relation carries the Measurement Act occurrence as first
-subject and one result as second subject. The result preserves its exact rule, subjects, source occurrences,
-completeness boundary, findings,
-Scope, Locality, conflicts, and Unknown.
+subject and one result as second subject. The result preserves its exact
+subjects, source occurrences, completeness boundary, findings, Scope,
+Locality, conflicts, and Unknown.
 
 Each exact Measurement subject-to-Act position carries one exact
 through-occurrence boundary.
 
 ### 01.Source.D.1 — Count findings
 
-One count finding preserves each exact occurrence reference carried by its
-declared rule and completeness boundary.
+One count finding preserves each exact occurrence reference carried within
+its completeness boundary.
 
 ### 01.Source.D.2 — Addressed byte occurrence reference
 

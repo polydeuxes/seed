@@ -2,19 +2,19 @@
 
 ### 04.Compare — Exact subjects
 
-Before one Compare Act occurrence, its exact subjects, rule, Scope, Locality,
+Before one Compare Act occurrence, its exact subjects, Scope, Locality,
 conflicts, and Unknown are exact. Each subject requires its exact
 Applicability result and Participation relation to the Compare Act occurrence.
 One exact Yield relation carries the Compare Act occurrence as first subject
 and one result as second subject. The result preserves distinctions established
-under the declared rule and completeness boundary.
+by the exact Compare Act within its completeness boundary.
 
 ### 04.Compare.A — Recorded pair findings
 
 When the current coordinates carry one earlier and one later exact byte-pair
-position Measurement result, both results, one Compare Act, and its exact rule
-are exact together. Each input requires its exact Applicability
-result and Participation relation.
+position Measurement result, both results and one Compare Act are exact
+together. Each input requires its exact Applicability result and Participation
+relation.
 
 The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references, the added occurrence, provenance,
@@ -24,7 +24,7 @@ Scope, Locality, conflicts, and Unknown.
 
 When the current coordinates carry one exact ordered relation-path Assertion
 and one exact recorded pair-finding Compare result, both subjects, one Compare
-Act, and its exact rule are exact together.
+Act, Scope, and Locality are exact together.
 
 Each input requires its exact Applicability result and Participation relation.
 

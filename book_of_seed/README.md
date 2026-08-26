@@ -20,7 +20,6 @@ Current coordinates are this bounded reading.
 ```
 subject
 ├── exact Act
-├── exact rule where required
 ├── Scope
 ├── Locality
 └── required support relations
@@ -32,8 +31,7 @@ coordinates are separately exact.
 
 ## Act and occurrence
 
-An exact Act occurrence carries its exact Act, subjects, rule where required,
-Scope, and Locality.
+An exact Act occurrence carries its exact Act, subjects, Scope, and Locality.
 
 Participation and Carriage are exact relations:
 
