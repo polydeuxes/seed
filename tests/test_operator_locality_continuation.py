@@ -5,7 +5,7 @@ from copy import deepcopy
 import pytest
 
 
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
@@ -316,6 +316,35 @@ def test_later_source_occurrences_do_not_move_the_exact_source_cut():
     assert reference["source_through_event_occurrence_identity"] != later.identity
 
 
+def test_source_occurrence_from_another_locality_is_refused():
+    ledger = EventLedger()
+    _source, boundary = _source_boundary(ledger)
+
+    with pytest.raises(LocalityContinuationError):
+        _binding(ledger, boundary, source_locality_identity="other")
+
+
+def test_missing_source_occurrence_is_refused():
+    ledger = EventLedger()
+
+    with pytest.raises(LocalityContinuationError):
+        _binding(ledger, "missing")
+
+
+def test_corrupted_source_occurrence_is_refused(monkeypatch):
+    ledger = EventLedger()
+    _source, boundary = _source_boundary(ledger)
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: CORRUPTED if identity == boundary else integrity_of(identity),
+    )
+
+    with pytest.raises(LocalityContinuationError):
+        _binding(ledger, boundary)
+
+
 def test_continuation_carries_only_its_direct_source_coordinates():
     ledger = EventLedger()
     _source, first_boundary = _source_boundary(ledger, "a")
@@ -377,7 +406,7 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
         "act_occurrence_identity",
         "locality_relation_occurrence_identity",
         "subject_to_act_binding_reference",
-        "act_occurrence_identity",
+        "result_identity",
         "yield_relation_identity",
     ),
 )
