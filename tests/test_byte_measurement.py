@@ -403,8 +403,6 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
     yield_relation = ledger.get(result.material["yield_relation_identity"])
     identities = {
         assignment.identity,
-        assignment.material["assignment_identity"],
-        assignment.material["assignment_subject_identity"],
         assignment.material["measurement_act_identity"],
         assignment.material["act_occurrence_identity"],
         assignment.material["measurement_result_identity"],
@@ -412,14 +410,12 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
         yield_relation.identity,
         result.identity,
     }
-    assert len(identities) == 9
+    assert len(identities) == 7
     assert result.material["responsibility_assignment_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": assignment.material["subject_reference"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],

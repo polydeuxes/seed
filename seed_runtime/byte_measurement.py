@@ -2136,14 +2136,12 @@ def _byte_measurement_source_material(
     return tuple(source_material)
 
 
-def _byte_measurement_assignment_reference(assignment: Event) -> dict[str, str]:
+def _byte_measurement_assignment_reference(assignment: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": deepcopy(assignment.material["subject_reference"]),
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
         ],
@@ -2156,15 +2154,17 @@ def _byte_measurement_assignment_material(
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
     standing_boundary_identity: str | None,
-    assignment_identity: str,
-    assignment_subject_identity: str,
     measurement_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
+        "subject_reference": {
+            "source_occurrence_references": [
+                dict(reference) for reference in source_material
+            ],
+        },
+        "exact_act_identity": measurement_act_identity,
         "measurement_act_identity": measurement_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
@@ -2356,10 +2356,6 @@ def _append_byte_measurement_responsibility_assignment(
     recording_locality_identity: str,
 ) -> Event:
     identities = {
-        "assignment_identity": new_identity("byte_measurement_assignment"),
-        "assignment_subject_identity": new_identity(
-            "byte_measurement_assignment_subject"
-        ),
         "measurement_act_identity": new_identity("byte_measurement_act"),
         "act_occurrence_identity": new_identity("byte_measurement_occurrence"),
         "measurement_result_identity": new_identity("byte_measurement_result"),
@@ -2526,8 +2522,6 @@ def _read_byte_measurement_responsibility_assignment(
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "measurement_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
@@ -2791,13 +2785,13 @@ def _measurement_of_act_occurrence(
     if (
         type(assignment_reference) is not dict
         or set(assignment_reference)
-        != {
-            "recorded_occurrence_identity",
-            "assignment_identity",
-            "assignment_subject_identity",
-            "book_clause_identity",
-            "result_boundary_identity",
-        }
+            != {
+                "recorded_occurrence_identity",
+                "book_clause_identity",
+                "exact_act_identity",
+                "subject_reference",
+                "result_boundary_identity",
+            }
         or type(event.locality_identity) is not str
         or not event.locality_identity
     ):

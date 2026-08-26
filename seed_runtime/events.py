@@ -548,7 +548,6 @@ class SQLiteEventLedger(EventLedger):
     _RESERVABLE_PREFIXES = frozenset({
         "operator_material", "checkpoint_locality", "locality",
         "byte_measurement_act",
-        "byte_measurement_assignment", "byte_measurement_assignment_subject",
         "byte_measurement_occurrence", "byte_measurement_result",
         "candidate_responsibility_subject",
         "candidate_responsibility_scope",
