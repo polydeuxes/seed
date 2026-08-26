@@ -1078,6 +1078,28 @@ def test_the_rule_is_mechanics_not_an_unchecked_callable():
     assert "zebra" not in str(event.material)
 
 
+def test_source_assertion_subject_is_the_exact_material_results():
+    event = _record_byte_measurement(
+        _ledger(b"the cat\n"),
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    source = next(
+        assertion
+        for assertion in event.material["assertions"]
+        if assertion["result"] == "exact_source_material_set"
+    )
+
+    assert source["assertion_subject"] == {
+        "source_occurrence_references": source["dimensions"]["content"][
+            "source_material"
+        ],
+    }
+    assert source["dimensions"]["content"]["completeness_boundary"] == event.material[
+        "completeness_boundary"
+    ]
+
+
 def test_recorded_results_replay_the_complete_bounded_source_read():
     ledger = _ledger(b"a\na\n")
     event = _record_byte_measurement(

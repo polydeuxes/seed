@@ -1926,7 +1926,11 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     scope = {
         "source_localities": list(measured.source_localities),
     }
-    source_subject = {"measurement_rule": BYTE_MEASUREMENT_RULE}
+    source_subject = {
+        "source_occurrence_references": [
+            dict(reference) for reference in measured.source_material
+        ],
+    }
     source_content = {
         "source_material": list(measured.source_material),
         "completeness_boundary": {
