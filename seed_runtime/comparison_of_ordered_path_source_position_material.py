@@ -551,7 +551,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "dimensions": {
             "identity": material["applicability_result_identity"],
             "content": "ordered path source position material",
-            "source_provenance": "exact ordered relation path source coordinates",
         },
         "act": APPLICABILITY_ACT,
         "addressed_act_identity": material["compare_act_identity"],
@@ -842,7 +841,6 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "subject": subject,
         "result": result,
-        "source_provenance": "exact ordered relation path source coordinates",
         "unknown": [],
         "conflicts": [],
     }
