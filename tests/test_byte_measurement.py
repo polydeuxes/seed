@@ -1406,23 +1406,18 @@ def test_pair_count_and_recurrence_are_separate_results():
     applicability = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
-    assert applicability["dimensions"]["standing"] == "applicable"
+    assert applicability["dimensions"]["applicability"] == "applicable"
     assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
     assert applicability["result_boundary"]
     assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknown"] == []
-    assert applicability["conflicts"] == []
-    assert applicability["input_standing"] == {
+    assert applicability["input_coordinates"] == {
         "recorded_measurement_result_occurrence_identity": source.identity,
         "assertion_identity": original.assertion_identity,
         "locality_movement_result_occurrence_identity": event.material[
             "source_movement_event_identity"
         ],
-    }
-    assert applicability["coordinate_treatment"]["support_relation_standing"] == {
-        "carried": False,
-        "treatment": "not established by Applicability",
     }
 
 
@@ -1969,7 +1964,7 @@ def test_pair_result_rechecks_measurement_act_tip_after_source_callback(monkeypa
     ) == recorded_before
 
 
-def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
+def test_pair_applicability_reads_exact_input_coordinates():
     ledger = _ledger(b"ta\n")
     source_event = _byte_source(ledger)
     source = next(
@@ -1986,9 +1981,8 @@ def test_pair_applicability_reads_exact_result_standing_instead_of_scalar():
         ledger, result.identity
     )
 
-    assert applicable["dimensions"]["standing"] == "applicable"
-    assert applicable["conflicts"] == []
-    assert applicable["input_standing"] == {
+    assert applicable["dimensions"]["applicability"] == "applicable"
+    assert applicable["input_coordinates"] == {
         "recorded_measurement_result_occurrence_identity": source.recorded_occurrence_identity,
         "assertion_identity": source.assertion_identity,
         "locality_movement_result_occurrence_identity": None,
@@ -2718,7 +2712,7 @@ def test_pair_applicability_reader_refuses_changed_yield_result_identity():
         get_recorded_pair_input_applicability(ledger, applicability.identity)
 
 
-def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch):
+def test_pair_applicability_reader_revalidates_exact_input_coordinates(monkeypatch):
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2727,14 +2721,14 @@ def test_pair_applicability_reader_revalidates_exact_input_standing(monkeypatch)
         recording_locality_identity="measurement",
     )
 
-    def refuse_detached_standing(*_args, **_kwargs):
-        raise ByteMeasurementError("detached input Standing")
+    def refuse_detached_coordinates(*_args, **_kwargs):
+        raise ByteMeasurementError("detached input coordinates")
 
     monkeypatch.setattr(
         "seed_runtime.byte_measurement.assertions_of_recorded_byte_measurement",
-        refuse_detached_standing,
+        refuse_detached_coordinates,
     )
-    with pytest.raises(ByteMeasurementError, match="detached input Standing"):
+    with pytest.raises(ByteMeasurementError, match="detached input coordinates"):
         get_recorded_pair_input_applicability(
             ledger, pair.material["input_applicability_event_identity"]
         )
@@ -2797,9 +2791,9 @@ FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_addressed_act,
-        test_pair_applicability_reads_exact_result_standing_instead_of_scalar,
+        test_pair_applicability_reads_exact_input_coordinates,
         test_pair_applicability_reader_refuses_changed_yield_result_identity,
-        test_pair_applicability_reader_revalidates_exact_input_standing,
+        test_pair_applicability_reader_revalidates_exact_input_coordinates,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (
         test_pair_validation_requires_one_exact_ordered_content,

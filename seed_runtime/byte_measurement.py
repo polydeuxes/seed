@@ -456,18 +456,13 @@ def _pair_assertion_identity(
     return "byte-measurement:" + hashlib.sha256(carried.encode("utf-8")).hexdigest()
 
 
-def _recorded_input_assertion_standing(
+def _recorded_input_assertion_coordinates(
     ledger: EventLedger,
     source: RecordedByteAssertion,
     *,
     measurement_locality_identity: str,
 ) -> tuple[RecordedByteAssertion, dict[str, str | None]]:
-    """Resolve the exact result occurrence carrying one proposed input.
-
-    The Assertion's detached material is not Standing.  Its intact Measurement
-    result occurrence is the Standing carrier; an exact movement occurrence
-    preserves that Standing when the addressed Act has another Locality.
-    """
+    """Resolve the exact occurrences carrying one proposed input."""
 
     if type(source) is not RecordedByteAssertion:
         raise ByteMeasurementError(
@@ -531,7 +526,7 @@ def _pair_input_applicability(
 ) -> dict[str, Any]:
     """Determine this source Assertion's use by this exact pair Measurement."""
 
-    source, input_standing = _recorded_input_assertion_standing(
+    source, input_coordinates = _recorded_input_assertion_coordinates(
         ledger,
         source,
         measurement_locality_identity=measurement_locality_identity,
@@ -540,7 +535,7 @@ def _pair_input_applicability(
         source,
         assignment=assignment,
         measurement_locality_identity=measurement_locality_identity,
-        input_standing=input_standing,
+        input_coordinates=input_coordinates,
     )
 
 
@@ -549,12 +544,12 @@ def _pair_input_applicability_from_exact_source(
     *,
     assignment: Event,
     measurement_locality_identity: str,
-    input_standing: dict[str, str | None] | None = None,
+    input_coordinates: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
     """Build Applicability from an already validated exact source carrier."""
 
-    if input_standing is None:
-        input_standing = {
+    if input_coordinates is None:
+        input_coordinates = {
             "recorded_measurement_result_occurrence_identity": (
                 source.recorded_occurrence_identity
             ),
@@ -582,8 +577,7 @@ def _pair_input_applicability_from_exact_source(
         ],
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
-    standing = "applicable"
-    basis = "exact bounded source material matches this Act and result boundary"
+    applicability = "applicable"
     applicability_scope = scope
     source_provenance = material["dimensions"]["source_provenance"]
     input_unknown = material["unknown"]
@@ -592,7 +586,7 @@ def _pair_input_applicability_from_exact_source(
         "dimensions": {
             "identity": identity,
             "content": content,
-            "standing": standing,
+            "applicability": applicability,
             "source_provenance": source_provenance,
         },
         "result": "input_applicability",
@@ -614,21 +608,8 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "scope_locality": applicability_scope,
-        "input_standing": input_standing,
+        "input_coordinates": input_coordinates,
         "input_unknown": input_unknown,
-        "conflicts": [basis] if standing == "conflicting" else [],
-        "coordinate_treatment": {
-            "support_relation_standing": {
-                "carried": False,
-                "treatment": "not established by Applicability",
-            },
-            "known_loss": {"carried": False, "treatment": "not represented by input"},
-            "current_Standing": {
-                "carried": False,
-                "treatment": "not required for this historical bounded source material",
-            },
-        },
-        "unknown": [basis] if standing == "Unknown" else [],
     }
 
 
@@ -3873,7 +3854,7 @@ def _pair_applicability_result_material(
         "dimensions": {
             "identity": applicability_assertion["dimensions"]["identity"],
             "content": "exact source-Assertion to addressed-Act Applicability",
-            "standing": applicability_assertion["dimensions"]["standing"],
+            "applicability": applicability_assertion["dimensions"]["applicability"],
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
         },
         "exact_act": "input Applicability",
@@ -4265,7 +4246,7 @@ def _record_pair_measurement_act_from_carried_applicability(
     if (
         locality_standing["through_event_occurrence_identity"]
         != applicability_event.identity
-        or applicability_event.material["dimensions"]["standing"] != "applicable"
+        or applicability_event.material["dimensions"]["applicability"] != "applicable"
     ):
         raise ByteMeasurementError(
             "pair Measurement Act requires exact applicable Standing at the append tip"
@@ -4344,7 +4325,7 @@ def _read_pair_measurement_act_occurrence(
         or applicability is None
         or applicability_material != applicability.material.get("applicability")
         or applicability_source.reference != source.reference
-        or applicability.material.get("dimensions", {}).get("standing")
+        or applicability.material.get("dimensions", {}).get("applicability")
         != "applicable"
         or event.locality_identity != assignment.locality_identity
         or event.material
@@ -4695,7 +4676,7 @@ def _record_byte_position_pair_count_layer_from_carried_standing(
         applicability_act_occurrence=applicability_act,
         prior_through_event_occurrence_identity=applicability_act.identity,
     )
-    if applicability["dimensions"]["standing"] != "applicable":
+    if applicability["dimensions"]["applicability"] != "applicable":
         return applicability_event, standing
     act_occurrence = (
         _record_pair_measurement_act_from_carried_applicability(
