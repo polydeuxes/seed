@@ -70,10 +70,6 @@ _IDENTITY_COORDINATES = (
     "compare_act_identity",
     "compare_act_occurrence_identity",
     "compare_result_identity",
-    "first_input_relation_identity",
-    "second_input_relation_identity",
-    "first_participation_relation_identity",
-    "second_participation_relation_identity",
 )
 
 _PATH_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
@@ -227,18 +223,6 @@ def _applicability_act_material(
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": identities["compare_result_identity"],
-        "first_input_relation_identity": identities[
-            "first_input_relation_identity"
-        ],
-        "second_input_relation_identity": identities[
-            "second_input_relation_identity"
-        ],
-        "first_participation_relation_identity": identities[
-            "first_participation_relation_identity"
-        ],
-        "second_participation_relation_identity": identities[
-            "second_participation_relation_identity"
-        ],
         "book_clause_identity": BOOK_CLAUSE,
         "responsibility": RESPONSIBILITY,
         "responsible_boundary": "this Seed",
@@ -266,9 +250,6 @@ def _applicability_act_material(
                     ],
                     "role": f"path position {inputs['first_path_position']}",
                 },
-                "relation_occurrence_identity": identities[
-                    "first_input_relation_identity"
-                ],
             },
             {
                 "first_subject": deepcopy(inputs["second"]),
@@ -280,9 +261,6 @@ def _applicability_act_material(
                     ],
                     "role": f"path position {inputs['second_path_position']}",
                 },
-                "relation_occurrence_identity": identities[
-                    "second_input_relation_identity"
-                ],
             },
         ],
         "scope": {
@@ -394,12 +372,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": material["compare_result_identity"],
-        "first_participation_relation_identity": material[
-            "first_participation_relation_identity"
-        ],
-        "second_participation_relation_identity": material[
-            "second_participation_relation_identity"
-        ],
         "first_source_position_coordinate": deepcopy(
             material["first_source_position_coordinate"]
         ),
@@ -449,12 +421,6 @@ def _recorded_applicability_result_material(
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": material["compare_result_identity"],
-        "first_participation_relation_identity": material[
-            "first_participation_relation_identity"
-        ],
-        "second_participation_relation_identity": material[
-            "second_participation_relation_identity"
-        ],
         "first_source_position_coordinate": deepcopy(
             material["first_source_position_coordinate"]
         ),
@@ -607,9 +573,6 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
                     ],
                     "role": f"path position {material['path_position_pair'][0]}",
                 },
-                "relation_occurrence_identity": material[
-                    "first_participation_relation_identity"
-                ],
             },
             {
                 "first_subject": deepcopy(
@@ -623,9 +586,6 @@ def _compare_act_material(applicability: Event) -> dict[str, Any]:
                     ],
                     "role": f"path position {material['path_position_pair'][1]}",
                 },
-                "relation_occurrence_identity": material[
-                    "second_participation_relation_identity"
-                ],
             },
         ],
         "comparison_rule": RULE,
