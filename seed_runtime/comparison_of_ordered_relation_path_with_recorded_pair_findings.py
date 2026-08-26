@@ -285,27 +285,30 @@ def _comparison_input(ledger: EventLedger, event_identity: Any) -> dict[str, Any
         kind=RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
         message="comparison of ordered relation path with recorded pair findings requires one exact recorded comparison result",
     )
-    material, assignment_reading = (
+    material, binding_reading = (
         _recorded_pair_measurement_comparison_reading(ledger, event.identity)
     )
-    assignment = assignment_reading[0]
-    assignment_reference = material.get("responsibility_assignment_reference")
-    assignment_identity = (
-        assignment_reference.get("recorded_occurrence_identity")
-        if type(assignment_reference) is dict
+    binding = binding_reading[0]
+    binding_reference = material.get("subject_to_act_binding_reference")
+    binding_identity = (
+        binding_reference.get("recorded_occurrence_identity")
+        if type(binding_reference) is dict
         else None
     )
     if (
-        assignment.identity != assignment_identity
-        or assignment.material.get("comparison_result_identity")
+        binding.identity != binding_identity
+        or binding.material.get("comparison_result_identity")
         != material.get("result_identity")
     ):
-        raise ValueError("comparison of ordered relation path with recorded pair findings comparison assignment is crossed")
+        raise ValueError(
+            "comparison of ordered relation path with recorded pair findings "
+            "carries another Compare binding"
+        )
     return {
         "event": event,
         "reference": _result_reference(event),
-        "assignment_event_identity": assignment.identity,
-        "added_occurrence_identity": assignment.material[
+        "binding_event_identity": binding.identity,
+        "added_occurrence_identity": binding.material[
             "added_occurrence_reference"
         ],
         "finding_references": _comparison_finding_references(event, material),
@@ -773,18 +776,14 @@ def _assignment_reference(
 ) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": event.identity,
-        "assignment_identity": event.material["assignment_identity"],
-        "assignment_subject_identity": event.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": event.material["book_clause_identity"],
+        "exact_act_identity": event.material["exact_act_identity"],
+        "subject_reference": deepcopy(event.material["subject_reference"]),
         "result_boundary_identity": result_boundary_identity,
     }
 
 
 _IDENTITY_COORDINATES = (
-    "assignment_identity",
-    "assignment_subject_identity",
     "applicability_act_identity",
     "applicability_act_occurrence_identity",
     "applicability_result_identity",
@@ -800,10 +799,6 @@ _IDENTITY_COORDINATES = (
 
 def _new_identities() -> dict[str, str]:
     return {
-        "assignment_identity": new_identity("comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment"),
-        "assignment_subject_identity": new_identity(
-            "comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment_subject"
-        ),
         "applicability_act_identity": new_identity(
             "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act"
         ),
@@ -837,8 +832,13 @@ def _assignment_material(
     inputs: dict[str, Any], boundary: str, identities: dict[str, str]
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": identities["assignment_identity"],
-        "assignment_subject_identity": identities["assignment_subject_identity"],
+        "subject_reference": {
+            "path_result_reference": deepcopy(inputs["path"]["reference"]),
+            "comparison_result_reference": deepcopy(
+                inputs["comparison"]["reference"]
+            ),
+        },
+        "exact_act_identity": identities["compare_act_identity"],
         "applicability_act_identity": identities["applicability_act_identity"],
         "applicability_act_occurrence_identity": identities[
             "applicability_act_occurrence_identity"
@@ -875,8 +875,8 @@ def _assignment_material(
         "comparison_result_reference": deepcopy(
             inputs["comparison"]["reference"]
         ),
-        "comparison_assignment_event_identity": inputs["comparison"][
-            "assignment_event_identity"
+        "comparison_binding_event_identity": inputs["comparison"][
+            "binding_event_identity"
         ],
         "path_source_occurrence_identity": inputs["path"]
         ["source_occurrence_identity"],

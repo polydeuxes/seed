@@ -547,8 +547,6 @@ class SQLiteEventLedger(EventLedger):
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
         "operator_material", "checkpoint_locality", "locality",
-        "comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment",
-        "comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment_subject",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_occurrence",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result",

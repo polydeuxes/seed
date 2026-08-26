@@ -33,9 +33,10 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison,
     record_recorded_pair_measurement_comparison_act_occurrence,
+    record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_applicability_act_occurrence,
     record_recorded_pair_measurement_comparison_applicability_result,
-    record_recorded_pair_measurement_comparison_responsibility_assignment,
+    record_recorded_pair_measurement_comparison_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -94,17 +95,24 @@ def _pair_measurement(ledger):
 
 
 def _record_pair_comparison(ledger, earlier, later):
-    assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
+    binding = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
-        locality_standing=_current_coordinates(ledger),
+        current_coordinates=_current_coordinates(ledger),
+    )
+    applicability_binding = (
+        record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding(
+            ledger,
+            comparison_binding_event_identity=binding.identity,
+            current_coordinates=_current_coordinates(ledger),
+        )
     )
     applicability_act = (
         record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            locality_standing=_current_coordinates(ledger),
+            applicability_binding_event_identity=applicability_binding.identity,
+            current_coordinates=_current_coordinates(ledger),
         )
     )
     applicability = record_recorded_pair_measurement_comparison_applicability_result(
@@ -113,9 +121,9 @@ def _record_pair_comparison(ledger, earlier, later):
     )
     act = record_recorded_pair_measurement_comparison_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         applicability_result_event_identity=applicability.identity,
-        locality_standing=_current_coordinates(ledger),
+        current_coordinates=_current_coordinates(ledger),
     )
     return record_recorded_pair_measurement_comparison_result(
         ledger, act_occurrence_event_identity=act.identity
@@ -873,35 +881,35 @@ def test_changed_input_compare_is_refused_on_later_read():
         )
 
 
-def test_higher_input_preserves_the_validated_comparison_assignment(monkeypatch):
+def test_higher_input_preserves_the_exact_comparison_binding(monkeypatch):
     ledger, _earlier_source, _added, comparison, _path = _inputs()
-    assignment_reads = []
-    original = recorded_pair_comparison_module._assignment_reading
+    binding_reads = []
+    original = recorded_pair_comparison_module._binding_reading
 
     def witnessed(ledger, event_identity):
-        assignment_reads.append(event_identity)
+        binding_reads.append(event_identity)
         return original(ledger, event_identity)
 
     monkeypatch.setattr(
-        recorded_pair_comparison_module, "_assignment_reading", witnessed
+        recorded_pair_comparison_module, "_binding_reading", witnessed
     )
     reading = comparison_module._comparison_input(ledger, comparison.identity)
 
-    assignment_identity = comparison.material[
-        "responsibility_assignment_reference"
+    binding_identity = comparison.material[
+        "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
-    assert reading["assignment_event_identity"] == assignment_identity
-    assert assignment_reads == [assignment_identity]
+    assert reading["binding_event_identity"] == binding_identity
+    assert binding_reads == [binding_identity]
 
 
-def test_higher_input_handoff_still_refuses_comparison_assignment_corruption():
+def test_higher_input_handoff_refuses_changed_comparison_binding():
     ledger, _earlier_source, _added, comparison, _path = _inputs()
-    assignment = ledger.get(
-        comparison.material["responsibility_assignment_reference"][
+    binding = ledger.get(
+        comparison.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    assignment.material["comparison_result_identity"] = "crossed-result"
+    binding.material["comparison_result_identity"] = "changed-result"
 
     with pytest.raises(ValueError):
         comparison_module._comparison_input(ledger, comparison.identity)
