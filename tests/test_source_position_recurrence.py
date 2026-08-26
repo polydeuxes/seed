@@ -223,9 +223,6 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
                 "measurement_occurrences"
             ]
         assert binding.material["subject_reference"] == act.material["coordinates"]["subject"]
-        assert binding.material["rule"] == source_position_recurrence._EXACT_ACT_RULES[
-            binding.material["exact_act"]
-        ]
         assert binding.material["result_boundary_identity"] == result.material[
             "result_identity"
         ]
@@ -798,25 +795,6 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
         raise AssertionError("changed subject-to-Act binding ownership was accepted")
     binding.material["result_boundary_identity"] = result_boundary
 
-    rule = binding.material["rule"]
-    binding.material["rule"] = "changed exact rule"
-    try:
-        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("changed subject-to-Act binding rule was accepted")
-    binding.material["rule"] = rule
-
-    del binding.material["rule"]
-    try:
-        get_recorded_recurrent_result_material_measurement(ledger, event.identity)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("missing subject-to-Act binding rule was accepted")
-    binding.material["rule"] = rule
-
     yielded = ledger.get(event.material["yield_relation_identity"])
     act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
     yielded.material["dimensions"]["act_occurrence_identity"] = "changed-yield"
@@ -864,9 +842,6 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         )
         binding = ledger.get(
             expected_ownership["recorded_occurrence_identity"]
-        )
-        assert binding.material["rule"] == (
-            source_position_recurrence.RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
         )
         assert binding.material["subject_reference"] == recorded["subject"]
         assert binding.material["result_boundary_identity"] == (

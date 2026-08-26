@@ -110,51 +110,17 @@ _ACT_SUBJECT_TO_ACT_BINDING_EVENTS = {
 COMPARE_APPLICABILITY_ACT = (
     "Applicability of exact source-position coordinates to Compare"
 )
-COMPARE_APPLICABILITY_RULE = (
-    "the exact carried source-position coordinates address this exact Compare Act"
-)
 COMPARE_ACT = "Compare exact material at two exact source positions"
-COMPARE_RULE = (
-    "same-content exactly when the two exact source-position materials are equal; "
-    "difference otherwise"
-)
 SOURCE_POSITION_MEASUREMENT_ACT = "Measure the complete Compare result"
-SOURCE_POSITION_MEASUREMENT_RULE = (
-    "preserve one Compare result for every distinct pair of exact consecutive "
-    "source positions carried by the subject"
-)
 RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
-)
-RECURRENCE_MEASUREMENT_RULE = (
-    "one recurrence finding carries exact source-position results whose complete "
-    "Compare findings are equal; recurrence requires more than one exact result"
 )
 COORDINATE_MEASUREMENT_ACT = (
     "Measure corresponding carried material across exact recurrence support results"
 )
-COORDINATE_MEASUREMENT_RULE = (
-    "measure the exact material at each corresponding source position carried by "
-    "every exact result of one recurrence finding"
-)
 RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT = (
     "Measure exact material shared by every exact recurrent result"
 )
-RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE = (
-    "one exact material at every corresponding source position across exactly the same "
-    "results, each carrying consecutive source positions"
-)
-
-_EXACT_ACT_RULES = {
-    COMPARE_APPLICABILITY_ACT: COMPARE_APPLICABILITY_RULE,
-    COMPARE_ACT: COMPARE_RULE,
-    SOURCE_POSITION_MEASUREMENT_ACT: SOURCE_POSITION_MEASUREMENT_RULE,
-    RECURRENCE_MEASUREMENT_ACT: RECURRENCE_MEASUREMENT_RULE,
-    COORDINATE_MEASUREMENT_ACT: COORDINATE_MEASUREMENT_RULE,
-    RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT: (
-        RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE
-    ),
-}
 
 COMPARE_APPLICABILITY_BOUNDARY = "source_position_compare_applicability"
 COMPARE_BOUNDARY = "source_position_compare"
@@ -358,7 +324,6 @@ def _preserved_binding_material(material):
         "exact_act_identity": material["act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
-        "rule": material["rule"],
         "subject_reference": deepcopy(material["subject"]),
         "scope": deepcopy(material["scope"]),
         "conflicts": deepcopy(material["conflicts"]),
@@ -513,7 +478,6 @@ def _record_subject_to_act_binding(
     *,
     act_kind: str,
     exact_act: str,
-    rule: str,
     book_reference: str,
     locality_identity: str,
     through_event_occurrence_identity: str,
@@ -532,7 +496,6 @@ def _record_subject_to_act_binding(
             "act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "exact_act": exact_act,
-            "rule": rule,
             "subject": subject,
             "scope": {
                 "locality_identity": locality_identity,
@@ -574,7 +537,6 @@ def _record_yielded_result(
         ledger,
         act_kind=act_kind,
         exact_act=exact_act,
-        rule=_EXACT_ACT_RULES[exact_act],
         book_reference=book_reference,
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
@@ -746,8 +708,6 @@ def _require_binding(
         or binding.material.get("act_occurrence_identity")
         != act.material.get("act_occurrence_identity")
         or binding.material.get("exact_act") != act.material.get("act")
-        or binding.material.get("rule")
-        != _EXACT_ACT_RULES.get(act.material.get("act"))
         or binding.material.get("subject_reference")
         != _coordinates(act.material).get("subject")
         or binding.material.get("through_event_occurrence_identity")
@@ -795,7 +755,6 @@ def _require_recorded_binding(
         or not material["act_occurrence_identity"]
         or type(material.get("exact_act")) is not str
         or not material["exact_act"]
-        or material.get("rule") != _EXACT_ACT_RULES.get(material.get("exact_act"))
         or type(material.get("subject_reference")) is not dict
         or type(material.get("scope")) is not dict
         or type(material.get("conflicts")) is not list
@@ -937,7 +896,6 @@ def _record_compare(
         ledger,
         act_kind=COMPARE_ACT_KIND,
         exact_act=COMPARE_ACT,
-        rule=COMPARE_RULE,
         book_reference="04.Compare",
         locality_identity=locality_identity,
         through_event_occurrence_identity=latest_locality_event.identity,
@@ -2043,7 +2001,6 @@ def _recurrent_result_material_payload(
     }
     return {
         "subject": subject,
-        "measurement_rule": RECURRENT_RESULT_MATERIAL_MEASUREMENT_RULE,
         "exact_material": exact_material,
         "coordinate_material_findings": consumed_findings,
         "support_result_references": deepcopy(support_references),
