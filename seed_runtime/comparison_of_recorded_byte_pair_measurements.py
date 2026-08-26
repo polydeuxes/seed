@@ -18,7 +18,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
@@ -855,11 +854,13 @@ def _record_comparison_subject_to_act_binding(
     through_event_occurrence_identity: str,
 ) -> Event:
     identities = {
-        "comparison_act_identity": new_identity("recorded_pair_comparison_act"),
-        "comparison_act_occurrence_identity": new_identity(
+        "comparison_act_identity": ledger.mint_identity(
+            "recorded_pair_comparison_act"
+        ),
+        "comparison_act_occurrence_identity": ledger.mint_identity(
             "recorded_pair_comparison_occurrence"
         ),
-        "comparison_result_identity": new_identity(
+        "comparison_result_identity": ledger.mint_identity(
             "recorded_pair_comparison_result"
         ),
     }
@@ -1070,13 +1071,13 @@ def record_recorded_pair_measurement_comparison_applicability_subject_to_act_bin
         "through_event_occurrence_identity"
     )
     identities = {
-        "applicability_act_identity": new_identity(
+        "applicability_act_identity": ledger.mint_identity(
             "recorded_pair_comparison_applicability_act"
         ),
-        "applicability_act_occurrence_identity": new_identity(
+        "applicability_act_occurrence_identity": ledger.mint_identity(
             "recorded_pair_comparison_applicability_occurrence"
         ),
-        "applicability_result_identity": new_identity(
+        "applicability_result_identity": ledger.mint_identity(
             "recorded_pair_comparison_applicability_result"
         ),
     }
