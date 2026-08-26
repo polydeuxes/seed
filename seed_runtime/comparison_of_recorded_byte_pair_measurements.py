@@ -801,7 +801,7 @@ def _applicability_binding_material(
     inputs: dict[str, Any],
     through_event_occurrence_identity: str,
     addressed_act_identity: str,
-    applicability_act_identity: str,
+    exact_act_identity: str,
     applicability_act_occurrence_identity: str,
     applicability_result_identity: str,
 ) -> dict[str, Any]:
@@ -818,8 +818,7 @@ def _applicability_binding_material(
                 "addressed_act_identity": addressed_act_identity,
             },
         },
-        "exact_act_identity": applicability_act_identity,
-        "applicability_act_identity": applicability_act_identity,
+        "exact_act_identity": exact_act_identity,
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
         "applicability_result_identity": applicability_result_identity,
         "addressed_act_identity": addressed_act_identity,
@@ -1023,7 +1022,7 @@ def _applicability_binding_reading(
         )
     comparison_binding, inputs = comparison_binding_reading
     identity_keys = (
-        "applicability_act_identity",
+        "exact_act_identity",
         "applicability_act_occurrence_identity",
         "applicability_result_identity",
     )
@@ -1083,7 +1082,7 @@ def record_recorded_pair_measurement_comparison_applicability_subject_to_act_bin
         "through_event_occurrence_identity"
     )
     identities = {
-        "applicability_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "recorded_pair_comparison_applicability_act"
         ),
         "applicability_act_occurrence_identity": ledger.mint_identity(
@@ -1154,7 +1153,7 @@ def _applicability_of_input_to_compare(binding: Event) -> list[dict[str, Any]]:
 def _applicability_act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "applicability_act_identity": material["applicability_act_identity"],
+        "applicability_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material[
             "applicability_act_occurrence_identity"
         ],

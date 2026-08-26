@@ -346,9 +346,7 @@ def test_produced_measurements_enter_one_compare():
     assert applicability_binding is not None
     assert applicability_binding.identity != binding.identity
     assert "comparison_act_identity" not in binding.material
-    assert applicability_binding.material["exact_act_identity"] == (
-        applicability_binding.material["applicability_act_identity"]
-    )
+    assert "applicability_act_identity" not in applicability_binding.material
     assert applicability_binding.material["addressed_act_identity"] == (
         binding.material["exact_act_identity"]
     )
