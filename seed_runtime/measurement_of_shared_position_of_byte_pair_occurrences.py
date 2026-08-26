@@ -769,11 +769,11 @@ def _d2_result_inputs(
     prior_coordinates: dict[str, Any],
 ) -> tuple[Event, SharedPairPositionInputs]:
     try:
-        result, _act, _applicability, _assignment, _source, references = (
+        result, _act, _applicability, _binding, _source, references = (
             _read_determination_result(
                 ledger,
                 result_event_identity,
-                prior_standing=prior_coordinates,
+                prior_coordinates=prior_coordinates,
             )
         )
     except (TypeError, ValueError) as error:

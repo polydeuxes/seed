@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing,
+    _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates,
 )
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
     yield_ordered_path_source_position_material_comparisons,
@@ -29,7 +29,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.operator_current_coordinates import (
-    _exact_standing_additions,
+    _exact_current_coordinate_additions,
     _record_distinct,
 )
 
@@ -61,7 +61,7 @@ def _advance(
     ):
         raise ValueError("source-position continuation left its exact boundary")
     for event in events:
-        additions = _exact_standing_additions(
+        additions = _exact_current_coordinate_additions(
             current_coordinates,
             event,
             error_message=(
@@ -251,12 +251,12 @@ def _yield_ordered_path_source_position_continuations(
     ):
         with ledger.batched():
             current_coordinates, determination = (
-                _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+                _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
                     ledger,
                     direct_result_event_identity=direct_result_event_identity,
                     addressed_source_byte_position_coordinate_reference=coordinate,
-                    locality_standing=current_coordinates,
-                    mutate_locality_standing=True,
+                    current_coordinates=current_coordinates,
+                    mutate_current_coordinates=True,
                 )
             )
             if len(determination.material["ordered_assertion_references"]) != 2:

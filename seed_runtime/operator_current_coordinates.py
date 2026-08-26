@@ -557,14 +557,14 @@ def _record_distinct(collected: list[str], value: str) -> None:
         collected.insert(index, value)
 
 
-def _exact_standing_additions(
-    locality_standing: dict[str, Any], event, *, error_message: str
+def _exact_current_coordinate_additions(
+    current_coordinates: dict[str, Any], event, *, error_message: str
 ) -> dict[str, list[str]]:
-    """Validate every added Standing coordinate before changing Standing."""
+    """Validate every addition before changing the current coordinates."""
 
     additions = {}
     for key in ("known_loss", "unknown", "conflicts"):
-        collected = locality_standing.get(key)
+        collected = current_coordinates.get(key)
         added = event.material.get(key, [])
         if (
             type(collected) is not list
@@ -1504,7 +1504,7 @@ def advance_operator_current_coordinates(
             get_recorded_operator_invocation_locality(ledger, event.identity)
             operator_invocation_locality_relations[event.identity] = None
             continue
-        addressed_byte_reference_prior_standing = {
+        addressed_byte_reference_prior_coordinates = {
             "locality_identity": locality_identity,
             "through_event_occurrence_identity": (
                 prior_through_event_occurrence_identity
@@ -1525,7 +1525,7 @@ def advance_operator_current_coordinates(
             _read_addressed_byte_reference_binding(
                 ledger,
                 event.identity,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
@@ -1533,14 +1533,14 @@ def advance_operator_current_coordinates(
             _read_addressed_byte_reference_applicability_act(
                 ledger,
                 event.identity,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             continue
         if event.kind == ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND:
             _read_addressed_byte_reference_applicability_result(
                 ledger,
                 event.identity,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             applicability_result_occurrences[event.identity] = None
             continue
@@ -1548,7 +1548,7 @@ def advance_operator_current_coordinates(
             _read_addressed_byte_reference_determination_act(
                 ledger,
                 event.identity,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             continue
         if (
@@ -1558,7 +1558,7 @@ def advance_operator_current_coordinates(
             binding_reading = _shared_position_binding_reading(
                 ledger,
                 event,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_standing=addressed_byte_reference_prior_coordinates,
             )
             shared_position_replay_readings[event.identity] = (
                 _shared_position_replay_reading(
@@ -1574,7 +1574,7 @@ def advance_operator_current_coordinates(
             binding_reading = _shared_position_binding_reading(
                 ledger,
                 event,
-                prior_standing=addressed_byte_reference_prior_standing,
+                prior_standing=addressed_byte_reference_prior_coordinates,
             )
             addressed_act_identity = event.material.get(
                 "addressed_act_identity"
@@ -1615,7 +1615,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_standing,
+                        prior_standing=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_applicability_act(
                         ledger,
@@ -1643,7 +1643,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_standing,
+                        prior_standing=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_applicability_result(
                         ledger,
@@ -1672,7 +1672,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_standing,
+                        prior_standing=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_measurement_act(
                         ledger,
@@ -2001,7 +2001,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_standing,
+                        prior_standing=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_measurement_result(
                         ledger,
@@ -2032,7 +2032,7 @@ def advance_operator_current_coordinates(
             _read_addressed_byte_reference_determination_result(
                 ledger,
                 event.identity,
-                prior_standing={
+                prior_coordinates={
                     "locality_identity": locality_identity,
                     "through_event_occurrence_identity": (
                         prior_through_event_occurrence_identity
@@ -2160,7 +2160,7 @@ def _carry_byte_measurement_binding_into_current_coordinates(
         or event_count < 0
     ):
         raise ValueError("byte Measurement binding coordinates are not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         current_coordinates,
         event,
         error_message="byte Measurement binding coordinates are not exact",
@@ -2268,7 +2268,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
         != ledger.append_boundary()
     ):
         raise ValueError("Assertion movement assignment Standing is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="Assertion movement assignment Standing is not exact",
@@ -2335,7 +2335,7 @@ def _carry_assertion_locality_movement_act_into_standing(
         != ledger.append_boundary()
     ):
         raise ValueError("Assertion movement Act Standing is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="Assertion movement Act Standing is not exact",
@@ -2458,7 +2458,7 @@ def _carry_assertion_locality_movement_result_into_standing(
         responsibility_assignment=responsibility_assignment,
         source=source,
     )
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="Assertion movement result Standing is not exact",
@@ -2507,7 +2507,7 @@ def _carry_occurrence_position_measurement_assignment_into_standing(
         or event_count < 0
     ):
         raise ValueError("occurrence position assignment Standing is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="occurrence position assignment Standing is not exact",
@@ -2596,7 +2596,7 @@ def _carry_occurrence_position_measurement_result_into_standing(
         or event_count < 0
     ):
         raise ValueError("occurrence position Measurement Standing is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="occurrence position Measurement Standing is not exact",
@@ -2650,7 +2650,7 @@ def _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         or (destination is not None and event.identity in destination)
     ):
         raise ValueError("pair Measurement lifecycle Standing is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="pair Measurement lifecycle Standing is not exact",
@@ -2844,7 +2844,7 @@ def _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordi
         or event_count < 0
     ):
         raise ValueError("byte-pair position binding coordinates are not exact")
-    coordinate_additions = _exact_standing_additions(
+    coordinate_additions = _exact_current_coordinate_additions(
         current_coordinates,
         event,
         error_message="byte-pair position binding coordinates are not exact",
@@ -2903,7 +2903,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         or event_count < 0
     ):
         raise ValueError("position-coordinate Measurement coordinates are not exact")
-    coordinate_additions = _exact_standing_additions(
+    coordinate_additions = _exact_current_coordinate_additions(
         current_coordinates,
         event,
         error_message="position-coordinate Measurement coordinates are not exact",
@@ -2983,7 +2983,7 @@ def _carry_operator_material_source_occurrence_into_standing(
             or event.identity in locality_relations
         ):
             raise ValueError("operator material source result is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="operator material source coordinates are not exact",
@@ -3102,7 +3102,7 @@ def _carry_recorded_pair_comparison_occurrence_into_standing(
             or event.identity in comparisons
         ):
             raise ValueError("recorded pair comparison result is not exact")
-    standing_additions = _exact_standing_additions(
+    standing_additions = _exact_current_coordinate_additions(
         locality_standing,
         event,
         error_message="recorded pair comparison Standing is not exact",

@@ -213,18 +213,18 @@ def _scope(
     }
 
 
-def _standing_carries_source(
+def _current_coordinates_carry_source(
     ledger: EventLedger,
     *,
-    standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     source_result: Event,
     required_boundary_identity: str,
 ) -> None:
-    measurements = standing.get("measurement_occurrences") if type(standing) is dict else None
-    through = standing.get("through_event_occurrence_identity") if type(standing) is dict else None
+    measurements = current_coordinates.get("measurement_occurrences") if type(current_coordinates) is dict else None
+    through = current_coordinates.get("through_event_occurrence_identity") if type(current_coordinates) is dict else None
     if (
-        type(standing) is not dict
-        or standing.get("locality_identity") != source_result.locality_identity
+        type(current_coordinates) is not dict
+        or current_coordinates.get("locality_identity") != source_result.locality_identity
         or type(measurements) is not dict
         or measurements.get(source_result.identity) != _direct_result_reference(source_result)
         or type(through) is not str
@@ -233,7 +233,7 @@ def _standing_carries_source(
         or not required_boundary_identity
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "current Standing carries no exact addressed direct result"
+            "current coordinates carry no exact addressed direct result"
         )
     ordered = tuple(
         dict.fromkeys((source_result.identity, required_boundary_identity, through))
@@ -244,37 +244,30 @@ def _standing_carries_source(
         )
     except (TypeError, ValueError) as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "current Standing boundary carries no addressed direct result"
+            "through-occurrence boundary carries no addressed direct result"
         ) from error
     if tuple(event.identity for event in read) != ordered:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "current Standing boundary carries no addressed direct result"
+            "through-occurrence boundary carries no addressed direct result"
         )
 
 
-def _current_standing(
+def _require_exact_current_coordinates(
     ledger: EventLedger,
     *,
     source_result: Event,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
-    """Validate the exact current-Standing coordinates this Responsibility reads.
+    """Validate the exact current coordinates read by this determination."""
 
-    This Responsibility consumes the exact source Measurement result, the
-    Locality it is carried in, the Standing boundary, and the through
-    occurrence.  Each of those is validated against the ledger itself, so a
-    changed or stale coordinate is refused without authenticating every sibling
-    branch of Standing that this Responsibility never reads.
-    """
-
-    if type(locality_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires exact current Standing"
+            "determination requires exact current coordinates"
         )
-    boundary = locality_standing.get("through_event_occurrence_identity")
-    _standing_carries_source(
+    boundary = current_coordinates.get("through_event_occurrence_identity")
+    _current_coordinates_carry_source(
         ledger,
-        standing=locality_standing,
+        current_coordinates=current_coordinates,
         source_result=source_result,
         required_boundary_identity=boundary,
     )
@@ -287,9 +280,9 @@ def _current_standing(
         != ledger.append_boundary()
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination requires current Standing at the append tip"
+            "determination requires current coordinates at the append tip"
         )
-    return locality_standing
+    return current_coordinates
 
 
 def _require_intact_recorded_occurrence(
@@ -432,27 +425,27 @@ def _applicability_binding_material(
     }
 
 
-def record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+def record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     addressed_source_byte_position_coordinate_reference: dict[str, Any],
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    """Assign one exact addressed source coordinate carried by current Standing."""
+    """Bind one exact addressed source coordinate carried by current coordinates."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("determination assignment requires one EventLedger")
+        raise TypeError("determination binding requires one EventLedger")
     source_result, _references = _source(
         ledger,
         result_event_identity=_identity(
             direct_result_event_identity,
-            "determination assignment requires one direct result",
+            "determination binding requires one direct result",
         ),
         coordinate_reference=addressed_source_byte_position_coordinate_reference,
     )
-    current = _current_standing(
-        ledger, source_result=source_result, locality_standing=locality_standing
+    current = _require_exact_current_coordinates(
+        ledger, source_result=source_result, current_coordinates=current_coordinates
     )
     identities = {
         "determination_act_identity": ledger.mint_identity(
@@ -480,16 +473,16 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
         event=source_result,
         kind=BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         material=source_material,
-        message="determination assignment requires an intact exact source",
+        message="determination binding requires an intact exact source",
     )
     if source_read != source_result:
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination assignment requires an intact exact source"
+            "determination binding requires an intact exact source"
         )
     _require_stage_at_append_tip(
         ledger,
         event=ledger.get(current["through_event_occurrence_identity"]),
-        message="determination assignment Standing left the append tip",
+        message="determination binding coordinates left the append tip",
     )
     return ledger.append(
         DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -511,7 +504,7 @@ def _read_binding(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -579,19 +572,19 @@ def _read_binding(
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination binding coordinates are not exact"
         )
-    if prior_standing is None:
+    if prior_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
             read_operator_current_coordinates_through,
         )
 
-        prior_standing = read_operator_current_coordinates_through(
+        prior_coordinates = read_operator_current_coordinates_through(
             ledger,
             locality_identity=source_result.locality_identity,
             through_event_occurrence_identity=through_occurrence,
         )
-    _standing_carries_source(
+    _current_coordinates_carry_source(
         ledger,
-        standing=prior_standing,
+        current_coordinates=prior_coordinates,
         source_result=source_result,
         required_boundary_identity=through_occurrence,
     )
@@ -607,7 +600,7 @@ def _read_binding(
     return event, source_result, references
 
 
-def get_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+def get_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
     ledger: EventLedger, event_identity: str
 ) -> Event:
     return _read_binding(ledger, event_identity)[0]
@@ -644,25 +637,25 @@ def _determination_binding_addressed_by_applicability(
     return determination_binding
 
 
-def _require_stage_standing(
+def _require_stage_current_coordinates(
     ledger: EventLedger,
     *,
-    standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     source_result: Event,
-    assignment: Event,
+    binding: Event,
     applicability_result: Event | None = None,
 ) -> None:
-    current = _current_standing(
-        ledger, source_result=source_result, locality_standing=standing
+    current = _require_exact_current_coordinates(
+        ledger, source_result=source_result, current_coordinates=current_coordinates
     )
-    assignments = current.get("subject_to_act_binding_occurrences")
+    bindings = current.get("subject_to_act_binding_occurrences")
     applicability = current.get("applicability_result_occurrences")
-    required_tip = assignment.identity
+    required_tip = binding.identity
     if applicability_result is not None:
         required_tip = applicability_result.identity
     if (
-        type(assignments) is not dict
-        or assignments.get(assignment.identity, object()) is not None
+        type(bindings) is not dict
+        or bindings.get(binding.identity, object()) is not None
         or current.get("through_event_occurrence_identity") != required_tip
         or (
             applicability_result is not None
@@ -674,7 +667,7 @@ def _require_stage_standing(
         )
     ):
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "current Standing carries no exact determination stage"
+            "current coordinates carry no exact determination stage"
         )
 
 
@@ -738,11 +731,11 @@ def _applicability_act_material(
 def record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
     ledger: EventLedger,
     *,
-    responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    binding_event_identity: str,
+    binding_current_coordinates: dict[str, Any],
 ) -> Event:
     determination_binding, source_result, references = _read_binding(
-        ledger, responsibility_assignment_event_identity
+        ledger, binding_event_identity
     )
     if (
         determination_binding.kind
@@ -751,11 +744,11 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "Applicability requires the governed determination binding"
         )
-    _require_stage_standing(
+    _require_stage_current_coordinates(
         ledger,
-        standing=responsibility_assignment_standing,
+        current_coordinates=binding_current_coordinates,
         source_result=source_result,
-        assignment=determination_binding,
+        binding=determination_binding,
     )
     determination_binding_material = deepcopy(determination_binding.material)
     source_material = deepcopy(source_result.material)
@@ -834,7 +827,7 @@ def _read_applicability_act(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -860,7 +853,7 @@ def _read_applicability_act(
         else None
     )
     applicability_binding, source_result, references = _read_binding(
-        ledger, binding_identity, prior_standing=prior_standing
+        ledger, binding_identity, prior_coordinates=prior_coordinates
     )
     if (
         applicability_binding.kind
@@ -1350,7 +1343,7 @@ def _read_applicability_result(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -1378,7 +1371,7 @@ def _read_applicability_result(
     ) = _read_applicability_act(
             ledger,
             event.material.get("act_occurrence_event_identity"),
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     expected = {
         **_applicability_result_material(
@@ -1459,7 +1452,7 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     ledger: EventLedger,
     *,
     applicability_result_event_identity: str,
-    applicability_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     (
         applicability,
@@ -1471,11 +1464,11 @@ def record_addressed_byte_occurrence_reference_determination_act_occurrence(
     ) = (
         _read_applicability_result(ledger, applicability_result_event_identity)
     )
-    _require_stage_standing(
+    _require_stage_current_coordinates(
         ledger,
-        standing=applicability_standing,
+        current_coordinates=current_coordinates,
         source_result=source_result,
-        assignment=determination_binding,
+        binding=determination_binding,
         applicability_result=applicability,
     )
     applicability_material = deepcopy(applicability.material)
@@ -1562,7 +1555,7 @@ def _read_determination_act(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -1595,7 +1588,7 @@ def _read_determination_act(
         references,
     ) = (
         _read_applicability_result(
-            ledger, applicability_identity, prior_standing=prior_standing
+            ledger, applicability_identity, prior_coordinates=prior_coordinates
         )
     )
     if (
@@ -1855,7 +1848,7 @@ def _read_determination_result(
     ledger: EventLedger,
     event_identity: str,
     *,
-    prior_standing: dict[str, Any] | None = None,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[
     Event,
     Event,
@@ -1878,7 +1871,7 @@ def _read_determination_result(
         _read_determination_act(
             ledger,
             event.material.get("act_occurrence_event_identity"),
-            prior_standing=prior_standing,
+            prior_coordinates=prior_coordinates,
         )
     )
     expected = {
@@ -1915,30 +1908,30 @@ def get_recorded_addressed_byte_occurrence_reference_determination(
     return deepcopy(_read_determination_result(ledger, event_identity)[0].material)
 
 
-def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
     ledger: EventLedger,
     *,
     direct_result_event_identity: str,
     addressed_source_byte_position_coordinate_reference: dict[str, Any],
-    locality_standing: dict[str, Any],
-    mutate_locality_standing: bool = False,
+    current_coordinates: dict[str, Any],
+    mutate_current_coordinates: bool = False,
 ) -> tuple[dict[str, Any], Event]:
     """Record one D.2 lifecycle while carrying its exact stage readings."""
 
     from seed_runtime.operator_current_coordinates import (
-        _exact_standing_additions,
+        _exact_current_coordinate_additions,
         _record_distinct,
     )
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("determination lifecycle requires one EventLedger")
-    standing = (
-        locality_standing
-        if mutate_locality_standing
-        else deepcopy(locality_standing)
+    current = (
+        current_coordinates
+        if mutate_current_coordinates
+        else deepcopy(current_coordinates)
     )
-    locality_identity = standing.get("locality_identity")
-    boundary = standing.get("through_event_occurrence_identity")
+    locality_identity = current.get("locality_identity")
+    boundary = current.get("through_event_occurrence_identity")
     source_result, references = _source(
         ledger,
         result_event_identity=_identity(
@@ -1949,16 +1942,16 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             addressed_source_byte_position_coordinate_reference
         ),
     )
-    _standing_carries_source(
+    _current_coordinates_carry_source(
         ledger,
-        standing=standing,
+        current_coordinates=current,
         source_result=source_result,
         required_boundary_identity=boundary,
     )
     _require_stage_at_append_tip(
         ledger,
         event=ledger.get(boundary),
-        message="determination assignment Standing left the append tip",
+        message="determination binding coordinates left the append tip",
     )
     source_material = deepcopy(source_result.material)
     identities = {
@@ -2010,16 +2003,16 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         )
 
     def carry(event: Event, *, prior: str) -> None:
-        assignments = standing.get("subject_to_act_binding_occurrences")
-        applicability_results = standing.get("applicability_result_occurrences")
-        measurements = standing.get("measurement_occurrences")
-        count = standing.get("event_count")
+        bindings = current.get("subject_to_act_binding_occurrences")
+        applicability_results = current.get("applicability_result_occurrences")
+        measurements = current.get("measurement_occurrences")
+        count = current.get("event_count")
         if (
-            type(assignments) is not dict
+            type(bindings) is not dict
             or type(applicability_results) is not dict
             or type(measurements) is not dict
             or type(count) is not int
-            or standing.get("through_event_occurrence_identity") != prior
+            or current.get("through_event_occurrence_identity") != prior
             or event.locality_identity != locality_identity
             or ledger.get(event.identity) != event
             or ledger.integrity_of(event.identity) == CORRUPTED
@@ -2035,7 +2028,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         }:
             lawful = (
                 event.material.get("through_event_occurrence_identity") == prior
-                and event.identity not in assignments
+                and event.identity not in bindings
             )
         elif event.kind == APPLICABILITY_ACT_OCCURRENCE_EVENT:
             lawful = (
@@ -2043,7 +2036,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
                     "recorded_occurrence_identity"
                 ]
                 == prior
-                and prior in assignments
+                and prior in bindings
             )
         elif event.kind == APPLICABILITY_RESULT_KIND:
             lawful = (
@@ -2051,7 +2044,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
                 and event.material["subject_to_act_binding_reference"][
                     "recorded_occurrence_identity"
                 ]
-                in assignments
+                in bindings
                 and event.identity not in applicability_results
             )
         elif event.kind == DETERMINATION_ACT_OCCURRENCE_EVENT:
@@ -2071,27 +2064,27 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             lawful = False
         if not lawful:
             raise AddressedByteOccurrenceReferenceDeterminationError(
-                "produced determination occurrence has false Standing"
+                "produced determination occurrence has false current coordinates"
             )
-        additions = _exact_standing_additions(
-            standing,
+        additions = _exact_current_coordinate_additions(
+            current,
             event,
-            error_message="produced determination Standing is not exact",
+            error_message="produced determination coordinates are not exact",
         )
         if event.kind in {
             DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         }:
-            assignments[event.identity] = None
+            bindings[event.identity] = None
         elif event.kind == APPLICABILITY_RESULT_KIND:
             applicability_results[event.identity] = None
         elif event.kind == DETERMINATION_RESULT_KIND:
             measurements[event.identity] = _determination_result_reference(event)
         for key, values in additions.items():
             for value in values:
-                _record_distinct(standing[key], value)
-        standing["through_event_occurrence_identity"] = event.identity
-        standing["event_count"] = count + 1
+                _record_distinct(current[key], value)
+        current["through_event_occurrence_identity"] = event.identity
+        current["event_count"] = count + 1
 
     determination_binding_material = _determination_binding_material(
         source_result=source_result,
@@ -2315,4 +2308,4 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
     )
     require_intact()
     carry(result, prior=act.identity)
-    return standing, result
+    return current, result

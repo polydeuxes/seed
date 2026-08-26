@@ -832,7 +832,7 @@ def _record_ordered_path_source_position_material_comparison(
     )
     identities = _new_identities()
     from seed_runtime.operator_current_coordinates import (
-        _exact_standing_additions,
+        _exact_current_coordinate_additions,
         _record_distinct,
     )
 
@@ -850,7 +850,7 @@ def _record_ordered_path_source_position_material_comparison(
         ):
             raise ValueError("source position Compare left its exact boundary")
         for carried in events:
-            additions = _exact_standing_additions(
+            additions = _exact_current_coordinate_additions(
                 standing,
                 carried,
                 error_message="source position Compare Standing is not exact",

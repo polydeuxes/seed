@@ -13,7 +13,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     record_addressed_byte_occurrence_reference_determination_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_result,
-    record_addressed_byte_occurrence_reference_determination_responsibility_assignment,
+    record_addressed_byte_occurrence_reference_determination_subject_to_act_binding,
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.byte_measurement import (
@@ -113,16 +113,16 @@ def _direct_d2(
         position=position,
         exact_material=exact[position : position + 1],
     )
-    determination_assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=_current_coordinates(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=determination_assignment.identity,
-        responsibility_assignment_standing=_current_coordinates(ledger, locality),
+        binding_event_identity=determination_binding.identity,
+        binding_current_coordinates=_current_coordinates(ledger, locality),
     )
     applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
         ledger,
@@ -131,7 +131,7 @@ def _direct_d2(
     determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=applicability.identity,
-        applicability_standing=_current_coordinates(ledger, locality),
+        current_coordinates=_current_coordinates(ledger, locality),
     )
     determination_result = record_addressed_byte_occurrence_reference_determination_result(
         ledger,

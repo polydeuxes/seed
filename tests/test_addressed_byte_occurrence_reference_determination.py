@@ -14,13 +14,13 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     AddressedByteOccurrenceReferenceDeterminationError,
     get_addressed_byte_occurrence_reference_determination_act_occurrence,
     get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
-    get_addressed_byte_occurrence_reference_determination_responsibility_assignment,
+    get_addressed_byte_occurrence_reference_determination_subject_to_act_binding,
     get_recorded_addressed_byte_occurrence_reference_determination,
     get_recorded_addressed_byte_occurrence_reference_determination_applicability,
     record_addressed_byte_occurrence_reference_determination_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence,
     record_addressed_byte_occurrence_reference_determination_applicability_result,
-    record_addressed_byte_occurrence_reference_determination_responsibility_assignment,
+    record_addressed_byte_occurrence_reference_determination_subject_to_act_binding,
     record_addressed_byte_occurrence_reference_determination_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
@@ -53,12 +53,12 @@ class CallbackEventLedger(EventLedger):
         return events
 
 
-def _advance(ledger, standing, *events):
+def _advance(ledger, current_coordinates, *events):
     return advance_operator_current_coordinates(
         ledger,
         (event.identity for event in events),
-        locality_identity=standing["locality_identity"],
-        prior=standing,
+        locality_identity=current_coordinates["locality_identity"],
+        prior=current_coordinates,
     )
 
 
@@ -69,24 +69,24 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
         exact=exact,
         source_boundary="exact supplied material boundary",
     )
-    standing = read_operator_current_coordinates(ledger, locality_identity=locality)
-    assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    current_coordinates = read_operator_current_coordinates(ledger, locality_identity=locality)
+    determination_binding = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
-        current_coordinates=standing,
+        current_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, assignment)
+    current_coordinates = _advance(ledger, current_coordinates, determination_binding)
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        binding_event_identity=assignment.identity,
-        binding_current_coordinates=standing,
+        binding_event_identity=determination_binding.identity,
+        binding_current_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, act)
+    current_coordinates = _advance(ledger, current_coordinates, act)
     result = record_byte_pair_occurrence_position_measurement_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    standing = _advance(ledger, standing, result)
-    return source, result, standing
+    current_coordinates = _advance(ledger, current_coordinates, result)
+    return source, result, current_coordinates
 
 
 def _coordinate(ledger, source, exact, position):
@@ -104,42 +104,42 @@ def _coordinate(ledger, source, exact, position):
 def _through_applicability(
     ledger, exact=b"2+2=5\n", position=3, locality="addressed-byte"
 ):
-    source, direct_result, standing = _direct(ledger, exact, locality)
+    source, direct_result, current_coordinates = _direct(ledger, exact, locality)
     coordinate = _coordinate(ledger, source, exact, position)
-    assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, assignment)
+    current_coordinates = _advance(ledger, current_coordinates, determination_binding)
     applicability_act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        binding_event_identity=determination_binding.identity,
+        binding_current_coordinates=current_coordinates,
     )
     applicability_binding = ledger.get(
         applicability_act.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    standing = _advance(
-        ledger, standing, applicability_binding, applicability_act
+    current_coordinates = _advance(
+        ledger, current_coordinates, applicability_binding, applicability_act
     )
     applicability = record_addressed_byte_occurrence_reference_determination_applicability_result(
         ledger,
         applicability_act_occurrence_event_identity=applicability_act.identity,
     )
-    standing = _advance(ledger, standing, applicability)
+    current_coordinates = _advance(ledger, current_coordinates, applicability)
     return {
         "source": source,
         "direct_result": direct_result,
         "coordinate": coordinate,
-        "assignment": assignment,
+        "determination_binding": determination_binding,
         "applicability_binding": applicability_binding,
         "applicability_act": applicability_act,
         "applicability": applicability,
-        "standing": standing,
+        "current_coordinates": current_coordinates,
     }
 
 
@@ -148,19 +148,19 @@ def _record(ledger, exact=b"2+2=5\n", position=3, locality="addressed-byte"):
     determination_act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=recorded["applicability"].identity,
-        applicability_standing=recorded["standing"],
+        current_coordinates=recorded["current_coordinates"],
     )
-    standing = _advance(ledger, recorded["standing"], determination_act)
+    current_coordinates = _advance(ledger, recorded["current_coordinates"], determination_act)
     result = record_addressed_byte_occurrence_reference_determination_result(
         ledger,
         determination_act_occurrence_event_identity=determination_act.identity,
     )
-    standing = _advance(ledger, standing, result)
+    current_coordinates = _advance(ledger, current_coordinates, result)
     return {
         **recorded,
         "determination_act": determination_act,
         "result": result,
-        "standing": standing,
+        "current_coordinates": current_coordinates,
     }
 
 
@@ -198,7 +198,7 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
             binding.material[coordinate]
             for binding, coordinates in (
                 (
-                    recorded["assignment"],
+                    recorded["determination_binding"],
                     determination_module._DETERMINATION_IDENTITY_COORDINATES,
                 ),
                 (
@@ -255,13 +255,13 @@ def test_repeated_byte_occurrences_remain_distinct_by_position_assertion():
     assert tuple(reference["assertion_position"] for reference in references) == (0, 1)
 
 
-def test_assignment_refuses_stale_changed_and_other_result_coordinates_atomically():
+def test_binding_refuses_stale_changed_and_other_result_coordinates_atomically():
     ledger = EventLedger()
-    first_source, first_result, first_standing = _direct(
+    first_source, first_result, first_coordinates = _direct(
         ledger, b"ab", "addressed-byte"
     )
     coordinate = _coordinate(ledger, first_source, b"ab", 0)
-    stale = deepcopy(first_standing)
+    stale = deepcopy(first_coordinates)
     extra = record_witness_material_source(
         ledger,
         locality_identity="addressed-byte",
@@ -274,38 +274,38 @@ def test_assignment_refuses_stale_changed_and_other_result_coordinates_atomicall
     before = len(ledger.list())
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="current Standing",
+        match="current coordinates",
     ):
-        record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+        record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
             ledger,
             direct_result_event_identity=first_result.identity,
             addressed_source_byte_position_coordinate_reference=coordinate,
-            locality_standing=stale,
+            current_coordinates=stale,
         )
     assert len(ledger.list()) == before
 
     changed = deepcopy(coordinate)
     changed["exact_material"] = [ord("z")]
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+        record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
             ledger,
             direct_result_event_identity=first_result.identity,
             addressed_source_byte_position_coordinate_reference=changed,
-            locality_standing=current,
+            current_coordinates=current,
         )
     assert len(ledger.list()) == before
 
-    second_source, second_result, second_standing = _direct(
+    second_source, second_result, second_coordinates = _direct(
         ledger, b"ab", "another-addressed-byte"
     )
     del second_source
     cross_before = len(ledger.list())
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+        record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
             ledger,
             direct_result_event_identity=second_result.identity,
             addressed_source_byte_position_coordinate_reference=coordinate,
-            locality_standing=second_standing,
+            current_coordinates=second_coordinates,
         )
     assert len(ledger.list()) == cross_before
     assert extra is not None
@@ -315,7 +315,7 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
     ledger = EventLedger()
     recorded = _record(ledger)
 
-    recorded["assignment"].material["scope"]["locality_identity"] = "changed"
+    recorded["determination_binding"].material["scope"]["locality_identity"] = "changed"
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         get_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
             ledger, recorded["applicability_act"].identity
@@ -326,8 +326,8 @@ def test_each_stage_reader_refuses_corrupted_prior_stage():
     ("occurrence_coordinate", "reader"),
     (
         (
-            "assignment",
-            get_addressed_byte_occurrence_reference_determination_responsibility_assignment,
+            "determination_binding",
+            get_addressed_byte_occurrence_reference_determination_subject_to_act_binding,
         ),
         (
             "applicability_act",
@@ -421,14 +421,14 @@ def test_one_act_cannot_append_a_second_yield_or_result():
     assert len(ledger.list()) == before
 
 
-def test_call_local_standing_equals_full_replay():
+def test_call_local_coordinates_equals_full_replay():
     ledger = EventLedger()
     recorded = _record(ledger)
     replayed = read_operator_current_coordinates(
         ledger, locality_identity=recorded["source"].locality_identity
     )
-    assert recorded["standing"] == replayed
-    assert recorded["assignment"].identity in replayed[
+    assert recorded["current_coordinates"] == replayed
+    assert recorded["determination_binding"].identity in replayed[
         "subject_to_act_binding_occurrences"
     ]
     assert recorded["applicability"].identity in replayed[
@@ -446,7 +446,7 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     result_identity = recorded["result"].identity
     locality = recorded["source"].locality_identity
     expected = deepcopy(recorded["result"].material)
-    determination_binding_material = recorded["assignment"].material
+    determination_binding_material = recorded["determination_binding"].material
     applicability_binding_material = recorded["applicability_binding"].material
     carried_identities = {
         "addressed_byte_occurrence_reference_applicability_act": applicability_binding_material[
@@ -487,13 +487,13 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
 def test_carried_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     path = tmp_path / "addressed-byte-carried.sqlite"
     ledger = SQLiteEventLedger(path)
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
-    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
     expected = deepcopy(result.material)
     result_identity = result.identity
@@ -512,7 +512,7 @@ def test_carried_lifecycle_is_exact_after_sqlite_restart(tmp_path):
 
 def test_determination_uses_addressed_kernel_without_full_reference_scan(monkeypatch):
     ledger = EventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
     calls = []
     original = determination_module.references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate
@@ -526,23 +526,23 @@ def test_determination_uses_addressed_kernel_without_full_reference_scan(monkeyp
         "references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate",
         counted,
     )
-    assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
     assert calls == [direct_result.identity, direct_result.identity]
-    assert "ordered_assertion_references" not in assignment.material
+    assert "ordered_assertion_references" not in determination_binding.material
 
 
 def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
     monkeypatch,
 ):
     ledger = EventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
-    supplied_standing = deepcopy(standing)
+    supplied_coordinates = deepcopy(current_coordinates)
     source_calls = []
     result_calls = []
     original_source = determination_module._source
@@ -559,49 +559,49 @@ def test_carried_lifecycle_reads_its_direct_source_once_and_matches_replay(
     monkeypatch.setattr(determination_module, "_source", counted_source)
     monkeypatch.setattr(direct_position_module, "_read_result", counted_result)
 
-    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+    carried, result = determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
 
     assert source_calls == [direct_result.identity]
     assert result_calls == [direct_result.identity]
-    assert standing == supplied_standing
+    assert current_coordinates == supplied_coordinates
     assert result.identity in carried["measurement_occurrences"]
     assert carried == read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     )
 
 
-def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_standing():
+def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplied_coordinates():
     ledger = CallbackEventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
-    supplied_standing = deepcopy(standing)
+    supplied_coordinates = deepcopy(current_coordinates)
     source_material = deepcopy(direct_result.material)
 
     def replace_source_material_after_reading():
-        direct_result.material["unknown"] = ["later material after assignment"]
+        direct_result.material["unknown"] = ["later material after determination_binding"]
 
     ledger.callback = replace_source_material_after_reading
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
-        determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_standing(
+        determination_module._record_addressed_byte_occurrence_reference_determination_lifecycle_from_carried_current_coordinates(
             ledger,
             direct_result_event_identity=direct_result.identity,
             addressed_source_byte_position_coordinate_reference=coordinate,
-            locality_standing=standing,
+            current_coordinates=current_coordinates,
         )
 
-    assert standing == supplied_standing
+    assert current_coordinates == supplied_coordinates
     direct_result.material.clear()
     direct_result.material.update(source_material)
 
 
-def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypatch):
+def test_binding_refuses_unrelated_append_during_source_revalidation(monkeypatch):
     ledger = EventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
     original = determination_module.references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate
     calls = 0
@@ -623,80 +623,80 @@ def test_assignment_refuses_unrelated_append_during_source_revalidation(monkeypa
         "references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate",
         append_after_source_validation,
     )
-    prior = deepcopy(standing)
+    prior = deepcopy(current_coordinates)
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
         match="append tip",
     ):
-        record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+        record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
             ledger,
             direct_result_event_identity=direct_result.identity,
             addressed_source_byte_position_coordinate_reference=coordinate,
-            locality_standing=standing,
+            current_coordinates=current_coordinates,
         )
     assert not any(
         event.kind
         == determination_module.DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         for event in ledger.list()
     )
-    assert standing == prior
+    assert current_coordinates == prior
     assert read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     ) == prior
 
 
-def test_act_requires_intact_retained_assignment_during_duplicate_iterator():
+def test_act_requires_intact_retained_binding_during_duplicate_iterator():
     ledger = CallbackEventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
-    assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, assignment)
-    prior = deepcopy(standing)
-    ledger.callback = lambda: assignment.material.__setitem__(
+    current_coordinates = _advance(ledger, current_coordinates, determination_binding)
+    prior = deepcopy(current_coordinates)
+    ledger.callback = lambda: determination_binding.material.__setitem__(
         "unknown", ["changed coordinate"]
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
-            responsibility_assignment_standing=standing,
+            binding_event_identity=determination_binding.identity,
+            binding_current_coordinates=current_coordinates,
         )
     assert not any(
         event.kind == determination_module.APPLICABILITY_ACT_OCCURRENCE_EVENT
         for event in ledger.list()
     )
-    assert standing == prior
+    assert current_coordinates == prior
 
 
 def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield():
     ledger = CallbackEventLedger()
-    source, direct_result, standing = _direct(ledger, b"abcdef")
+    source, direct_result, current_coordinates = _direct(ledger, b"abcdef")
     coordinate = _coordinate(ledger, source, b"abcdef", 3)
-    assignment = record_addressed_byte_occurrence_reference_determination_responsibility_assignment(
+    determination_binding = record_addressed_byte_occurrence_reference_determination_subject_to_act_binding(
         ledger,
         direct_result_event_identity=direct_result.identity,
         addressed_source_byte_position_coordinate_reference=coordinate,
-        locality_standing=standing,
+        current_coordinates=current_coordinates,
     )
-    standing = _advance(ledger, standing, assignment)
+    current_coordinates = _advance(ledger, current_coordinates, determination_binding)
     act = record_addressed_byte_occurrence_reference_determination_applicability_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        binding_event_identity=determination_binding.identity,
+        binding_current_coordinates=current_coordinates,
     )
     applicability_binding = ledger.get(
         act.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
-    standing = _advance(ledger, standing, applicability_binding, act)
-    prior = deepcopy(standing)
+    current_coordinates = _advance(ledger, current_coordinates, applicability_binding, act)
+    prior = deepcopy(current_coordinates)
     before_yields = tuple(
         event.identity
         for event in ledger.list()
@@ -724,7 +724,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
         for event in ledger.list()
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
-    assert standing == prior
+    assert current_coordinates == prior
     assert read_operator_current_coordinates(
         ledger, locality_identity=source.locality_identity
     ) == prior
@@ -733,7 +733,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
 def test_determination_act_requires_intact_applicability_during_iterator():
     ledger = CallbackEventLedger()
     recorded = _through_applicability(ledger, b"abcdef", 3)
-    prior = deepcopy(recorded["standing"])
+    prior = deepcopy(recorded["current_coordinates"])
     ledger.callback = lambda: recorded["applicability"].material.__setitem__(
         "unknown", ["changed coordinate"]
     )
@@ -744,13 +744,13 @@ def test_determination_act_requires_intact_applicability_during_iterator():
             applicability_result_event_identity=recorded[
                 "applicability"
             ].identity,
-            applicability_standing=recorded["standing"],
+            current_coordinates=recorded["current_coordinates"],
         )
     assert not any(
         event.kind == determination_module.DETERMINATION_ACT_OCCURRENCE_EVENT
         for event in ledger.list()
     )
-    assert recorded["standing"] == prior
+    assert recorded["current_coordinates"] == prior
 
 
 def test_determination_result_refuses_iterator_append_without_yield():
@@ -759,10 +759,10 @@ def test_determination_result_refuses_iterator_append_without_yield():
     act = record_addressed_byte_occurrence_reference_determination_act_occurrence(
         ledger,
         applicability_result_event_identity=recorded["applicability"].identity,
-        applicability_standing=recorded["standing"],
+        current_coordinates=recorded["current_coordinates"],
     )
-    standing = _advance(ledger, recorded["standing"], act)
-    prior = deepcopy(standing)
+    current_coordinates = _advance(ledger, recorded["current_coordinates"], act)
+    prior = deepcopy(current_coordinates)
     before_yields = tuple(
         event.identity
         for event in ledger.list()
@@ -790,7 +790,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
         for event in ledger.list()
         if event.kind == determination_module.RECORDED_YIELD_RELATION_EVENT
     ) == before_yields
-    assert standing == prior
+    assert current_coordinates == prior
     assert read_operator_current_coordinates(
         ledger, locality_identity=recorded["source"].locality_identity
     ) == prior
