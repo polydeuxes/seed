@@ -2089,7 +2089,7 @@ def _byte_measurement_binding_material(
     source_material: tuple[dict[str, str], ...],
     completeness_boundary_identity: str,
     through_event_occurrence_identity: str | None,
-    measurement_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
@@ -2099,8 +2099,7 @@ def _byte_measurement_binding_material(
                 dict(reference) for reference in source_material
             ],
         },
-        "exact_act_identity": measurement_act_identity,
-        "measurement_act_identity": measurement_act_identity,
+        "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
@@ -2288,7 +2287,7 @@ def _append_byte_measurement_subject_to_act_binding(
     recording_locality_identity: str,
 ) -> Event:
     identities = {
-        "measurement_act_identity": ledger.mint_identity("byte_measurement_act"),
+        "exact_act_identity": ledger.mint_identity("byte_measurement_act"),
         "act_occurrence_identity": ledger.mint_identity(
             "byte_measurement_occurrence"
         ),
@@ -2458,7 +2457,7 @@ def _read_byte_measurement_subject_to_act_binding(
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "measurement_act_identity",
+            "exact_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
@@ -2597,9 +2596,7 @@ def _byte_measurement_act_occurrence_material(
     binding: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material[
-            "measurement_act_identity"
-        ],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material[
             "act_occurrence_identity"
         ],

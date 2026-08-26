@@ -4,7 +4,6 @@ from copy import deepcopy
 
 import pytest
 
-import seed_runtime.operator_current_coordinates as operator_standing_module
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -368,7 +367,7 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
     yield_relation = ledger.get(result.material["yield_relation_identity"])
     identities = {
         assignment.identity,
-        assignment.material["measurement_act_identity"],
+        assignment.material["exact_act_identity"],
         assignment.material["act_occurrence_identity"],
         assignment.material["measurement_result_identity"],
         act.identity,
@@ -446,7 +445,7 @@ def test_binding_read_refuses_corrupted_unrelated_prior_coordinate_carrier():
 def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstruct(
     monkeypatch,
 ):
-    from seed_runtime import operator_locality_standing as coordinates_module
+    import seed_runtime.operator_current_coordinates as coordinates_module
 
     ledger = IntegrityCountingLedger()
     _record_operator_material_source(
@@ -2518,7 +2517,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
     tmp_path, monkeypatch
 ):
     import seed_runtime.byte_measurement as byte_measurement_module
-    import seed_runtime.operator_current_coordinates as standing_module
+    import seed_runtime.operator_current_coordinates as coordinates_module
 
     path = tmp_path / "movement-batch-carry.sqlite"
     ledger = SQLiteEventLedger(path)
@@ -2549,7 +2548,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
         "_read_assertion_locality_movement_act_occurrence",
         "_validate_moved_byte_assertion",
     )
-    for module in (byte_measurement_module, standing_module):
+    for module in (byte_measurement_module, coordinates_module):
         for name in reader_names:
             monkeypatch.setattr(module, name, refuse_public_movement_read)
 
