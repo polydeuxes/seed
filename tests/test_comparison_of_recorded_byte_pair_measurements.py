@@ -20,7 +20,7 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
-    record_recorded_pair_measurement_comparison_responsibility_assignment,
+    record_recorded_pair_measurement_comparison_subject_to_act_binding,
     record_recorded_pair_measurement_comparison_applicability_act_occurrence,
     record_recorded_pair_measurement_comparison_applicability_result,
     record_recorded_pair_measurement_comparison_act_occurrence,
@@ -40,7 +40,7 @@ from seed_runtime.supplied_invocation_material import SuppliedWitnessMaterialOcc
 
 LOCALITY = "recorded-pair-comparison-locality"
 def _pair_measurement(ledger):
-    assignment = record_byte_measurement_subject_to_act_binding(
+    binding = record_byte_measurement_subject_to_act_binding(
         ledger,
         source_localities=(LOCALITY,),
         recording_locality_identity=LOCALITY,
@@ -50,7 +50,7 @@ def _pair_measurement(ledger):
     )
     act = record_byte_measurement_act_occurrence(
         ledger,
-        subject_to_act_binding_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=LOCALITY
         ),
@@ -90,9 +90,9 @@ def _witness_compare_input_testimony(monkeypatch):
         {"test_subject": "later recorded pair Measurement"},
         locality_identity=LOCALITY,
     )
-    earlier_assignment = Event(
-        identity="earlier-assignment",
-        kind="test.recorded_pair_measurement_assignment",
+    earlier_binding = Event(
+        identity="earlier-binding",
+        kind="test.recorded_pair_measurement_binding",
         material={
             "source_occurrence_references": [
                 {
@@ -105,9 +105,9 @@ def _witness_compare_input_testimony(monkeypatch):
         exact_material=None,
         locality_identity=LOCALITY,
     )
-    later_assignment = Event(
-        identity="later-assignment",
-        kind="test.recorded_pair_measurement_assignment",
+    later_binding = Event(
+        identity="later-binding",
+        kind="test.recorded_pair_measurement_binding",
         material={
             "source_occurrence_references": [
                 {
@@ -124,9 +124,9 @@ def _witness_compare_input_testimony(monkeypatch):
 
     def measurement_and_findings(_ledger, event_identity):
         if event_identity == earlier.identity:
-            return earlier, (), earlier_assignment
+            return earlier, (), earlier_binding
         if event_identity == later.identity:
-            return later, (), later_assignment
+            return later, (), later_binding
         raise AssertionError("unexpected recorded pair Measurement")
 
     monkeypatch.setattr(
@@ -160,7 +160,7 @@ def _inputs():
 def _comparison():
     ledger, earlier_source, added, earlier, later = _inputs()
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
-    assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
+    binding = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
@@ -170,7 +170,7 @@ def _comparison():
     applicability_act = (
         record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=current_coordinates,
         )
     )
@@ -181,14 +181,14 @@ def _comparison():
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     compare_act = record_recorded_pair_measurement_comparison_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
+        subject_to_act_binding_event_identity=binding.identity,
         applicability_result_event_identity=applicability.identity,
         current_coordinates=current_coordinates,
     )
     result = record_recorded_pair_measurement_comparison_result(
         ledger, act_occurrence_event_identity=compare_act.identity
     )
-    return ledger, earlier_source, added, earlier, later, assignment, applicability, result
+    return ledger, earlier_source, added, earlier, later, binding, applicability, result
 
 
 def test_changed_pair_crossing_a_callback_cannot_enter_compare_current_coordinates():
@@ -245,24 +245,24 @@ def test_operator_source_carries_the_prior_pair_measurement_into_compare():
     ledger, _source, source_event, added, earlier, later = _operator_inputs()
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
-    assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
+    binding = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
         current_coordinates=current_coordinates,
     )
 
-    assert assignment.material["added_occurrence_reference"] == added.identity
-    assert assignment.material["input_relation"] == (
+    assert binding.material["added_occurrence_reference"] == added.identity
+    assert binding.material["input_relation"] == (
         "operator material source occurrence after prior coordinates"
     )
-    assert assignment.material[
+    assert binding.material[
         "operator_material_source_result_event_identity"
     ] == source_event.identity
-    assert assignment.material[
+    assert binding.material[
         "operator_material_source_current_coordinate_reference"
     ] == source_event.material["current_coordinate_reference"]
-    assert assignment.material["destination_operator_locality_identity"] == LOCALITY
+    assert binding.material["destination_operator_locality_identity"] == LOCALITY
 
 
 def test_witness_provenance_does_not_establish_a_compare_input_relation(monkeypatch):
@@ -278,7 +278,7 @@ def test_witness_provenance_does_not_establish_a_compare_input_relation(monkeypa
         RecordedPairMeasurementComparisonError,
         match="Witness provenance establishes no comparison input relation",
     ):
-        record_recorded_pair_measurement_comparison_responsibility_assignment(
+        record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
             earlier_result_event_identity=earlier.identity,
             later_result_event_identity=later.identity,
@@ -295,7 +295,7 @@ def test_operator_source_before_the_premise_cannot_supply_compare():
         RecordedPairMeasurementComparisonError,
         match="later Measurement must extend the earlier exact source sequence once",
     ):
-        record_recorded_pair_measurement_comparison_responsibility_assignment(
+        record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
             earlier_result_event_identity=earlier.identity,
             later_result_event_identity=later.identity,
@@ -305,20 +305,20 @@ def test_operator_source_before_the_premise_cannot_supply_compare():
         )
 
 
-def test_produced_measurements_enter_one_responsible_compare():
-    ledger, earlier_source, added, earlier, later, assignment, applicability, result = (
+def test_produced_measurements_enter_one_compare():
+    ledger, earlier_source, added, earlier, later, binding, applicability, result = (
         _comparison()
     )
     recorded = get_recorded_pair_measurement_comparison(ledger, result.identity)
 
-    assert assignment.material["earlier_measurement_reference"][
+    assert binding.material["earlier_measurement_reference"][
         "recorded_occurrence_identity"
     ] == earlier.identity
-    assert assignment.material["later_measurement_reference"][
+    assert binding.material["later_measurement_reference"][
         "recorded_occurrence_identity"
     ] == later.identity
-    assert assignment.material["added_occurrence_reference"] == added.identity
-    assert assignment.material["prior_provenance_occurrence_references"] == []
+    assert binding.material["added_occurrence_reference"] == added.identity
+    assert binding.material["prior_provenance_occurrence_references"] == []
     assert applicability.material["applicability"] == "applicable"
     assert len(recorded["participation_of_input_in_compare"]) == 2
 
@@ -397,7 +397,7 @@ def test_measurement_availability_without_current_coordinates_cannot_supply_comp
         RecordedPairMeasurementComparisonError,
         match="each exact Measurement result in current coordinates",
     ):
-        record_recorded_pair_measurement_comparison_responsibility_assignment(
+        record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
             earlier_result_event_identity=earlier.identity,
             later_result_event_identity=later.identity,
@@ -440,18 +440,18 @@ def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
     ]
 
 
-def test_result_reader_preserves_its_exact_assignment_and_public_getter_delegates(
+def test_result_reader_preserves_its_exact_binding_and_public_getter_delegates(
     monkeypatch,
 ):
-    ledger, *_inputs, assignment, _applicability, result = _comparison()
-    material, assignment_reading = (
+    ledger, *_inputs, binding, _applicability, result = _comparison()
+    material, binding_reading = (
         comparison_module._recorded_pair_measurement_comparison_reading(
             ledger, result.identity
         )
     )
 
     assert material == result.material
-    assert assignment_reading[0] == assignment
+    assert binding_reading[0] == binding
 
     calls = []
     original = comparison_module._recorded_pair_measurement_comparison_reading
@@ -471,13 +471,13 @@ def test_result_reader_preserves_its_exact_assignment_and_public_getter_delegate
     assert calls == [result.identity]
 
 
-def test_current_coordinate_replay_carries_one_validated_assignment_across_comparison_stages(
+def test_current_coordinate_replay_carries_one_validated_binding_across_comparison_stages(
     monkeypatch,
 ):
     ledger, *_rest, result = _comparison()
     calls = []
     original = (
-        current_coordinate_module._recorded_pair_comparison_assignment_reading
+        current_coordinate_module._recorded_pair_comparison_binding_reading
     )
 
     def witnessed(ledger, event_identity):
@@ -486,50 +486,50 @@ def test_current_coordinate_replay_carries_one_validated_assignment_across_compa
 
     monkeypatch.setattr(
         current_coordinate_module,
-        "_recorded_pair_comparison_assignment_reading",
+        "_recorded_pair_comparison_binding_reading",
         witnessed,
     )
-    monkeypatch.setattr(comparison_module, "_assignment_reading", witnessed)
+    monkeypatch.setattr(comparison_module, "_binding_reading", witnessed)
 
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )
-    assignment_identity = result.material[
-        "responsibility_assignment_reference"
+    binding_identity = result.material[
+        "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
     assert result.identity in current_coordinates["comparison_result_occurrences"]
-    assert calls == [assignment_identity]
+    assert calls == [binding_identity]
 
     get_recorded_pair_measurement_comparison(ledger, result.identity)
-    assert calls == [assignment_identity, assignment_identity]
+    assert calls == [binding_identity, binding_identity]
 
 
-@pytest.mark.parametrize("callback", ("assignment", "input", "append"))
+@pytest.mark.parametrize("callback", ("binding", "input", "append"))
 def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_state(
     monkeypatch, callback
 ):
-    ledger, _source, _added, earlier, _later, assignment, _applicability, _result = (
+    ledger, _source, _added, earlier, _later, binding, _applicability, _result = (
         _comparison()
     )
-    assignment_material = deepcopy(assignment.material)
+    binding_material = deepcopy(binding.material)
     earlier_material = deepcopy(earlier.material)
     original = (
         current_coordinate_module._recorded_pair_comparison_applicability_act_reading
     )
     callback_changed = False
 
-    def cross_after_assignment(*args, **kwargs):
+    def cross_after_binding(*args, **kwargs):
         nonlocal callback_changed
         if not callback_changed:
             callback_changed = True
-            if callback == "assignment":
-                assignment.material["responsibility"] = "changed after validation"
+            if callback == "binding":
+                binding.material["comparison_rule"] = "changed after validation"
             elif callback == "input":
                 earlier.material["measurement_rule"] = "changed after validation"
             else:
                 ledger.append(
                     "test.unrelated_callback",
-                    {"unknown": ["append after comparison assignment validation"]},
+                    {"unknown": ["append after comparison binding validation"]},
                     locality_identity="unrelated-callback",
                 )
         return original(*args, **kwargs)
@@ -537,13 +537,13 @@ def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_st
     monkeypatch.setattr(
         current_coordinate_module,
         "_recorded_pair_comparison_applicability_act_reading",
-        cross_after_assignment,
+        cross_after_binding,
     )
     with pytest.raises(RecordedPairMeasurementComparisonError):
         read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
-    assignment.material.clear()
-    assignment.material.update(assignment_material)
+    binding.material.clear()
+    binding.material.update(binding_material)
     earlier.material.clear()
     earlier.material.update(earlier_material)
     assert read_operator_current_coordinates(
@@ -551,11 +551,11 @@ def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_st
     )["comparison_result_occurrences"]
 
 
-def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
+def test_interleaved_comparisons_keep_distinct_ephemeral_binding_readings(
     monkeypatch,
 ):
     ledger, _source, _added, earlier, later = _inputs()
-    first = record_recorded_pair_measurement_comparison_responsibility_assignment(
+    first = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
@@ -563,7 +563,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
             ledger, locality_identity=LOCALITY
         ),
     )
-    second = record_recorded_pair_measurement_comparison_responsibility_assignment(
+    second = record_recorded_pair_measurement_comparison_subject_to_act_binding(
         ledger,
         earlier_result_event_identity=earlier.identity,
         later_result_event_identity=later.identity,
@@ -572,10 +572,10 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         ),
     )
 
-    def finish(assignment):
+    def finish(binding):
         applicability_act = record_recorded_pair_measurement_comparison_applicability_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=binding.identity,
             current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
             ),
@@ -586,7 +586,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
         )
         act = record_recorded_pair_measurement_comparison_act_occurrence(
             ledger,
-            responsibility_assignment_event_identity=assignment.identity,
+            subject_to_act_binding_event_identity=binding.identity,
             applicability_result_event_identity=applicability.identity,
             current_coordinates=read_operator_current_coordinates(
                 ledger, locality_identity=LOCALITY
@@ -599,7 +599,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
     results = (finish(first), finish(second))
     calls = []
     original = (
-        current_coordinate_module._recorded_pair_comparison_assignment_reading
+        current_coordinate_module._recorded_pair_comparison_binding_reading
     )
 
     def witnessed(ledger, event_identity):
@@ -608,7 +608,7 @@ def test_interleaved_comparisons_keep_distinct_ephemeral_assignment_readings(
 
     monkeypatch.setattr(
         current_coordinate_module,
-        "_recorded_pair_comparison_assignment_reading",
+        "_recorded_pair_comparison_binding_reading",
         witnessed,
     )
     current_coordinates = read_operator_current_coordinates(
@@ -692,7 +692,7 @@ def test_pair_premise_remains_carried_across_the_prior_compare_result():
     third = _pair_measurement(ledger)
 
     second_binding = (
-        record_recorded_pair_measurement_comparison_responsibility_assignment(
+        record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
             earlier_result_event_identity=second.identity,
             later_result_event_identity=third.identity,
