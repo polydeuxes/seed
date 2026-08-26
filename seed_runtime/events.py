@@ -583,8 +583,6 @@ class SQLiteEventLedger(EventLedger):
         "act_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "act_occurrence_of_measurement_of_recurrent_byte_pair_occurrence_position",
         "result_of_measurement_of_recurrent_byte_pair_occurrence_position",
-        "recurrent_pair_position_measurement_assignment",
-        "recurrent_pair_position_measurement_assignment_subject",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_assignment_subject",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act",
