@@ -39,7 +39,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
-    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
@@ -91,7 +91,7 @@ def _direct_d2(
         source_boundary="exact material boundary",
     )
     direct_assignment = (
-        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
             locality_standing=_standing(ledger, locality),
@@ -622,7 +622,7 @@ def test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_over
         ambient_must_not_override,
     )
 
-    read_assignment, inputs = shared_position_module._read_assignment(
+    read_assignment, inputs = shared_position_module._read_binding(
         ledger,
         assignment.identity,
         prior_standing=prior_standing,
@@ -670,7 +670,7 @@ def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior
         ] = None
 
     with pytest.raises((SharedPairPositionError, ValueError)):
-        shared_position_module._read_assignment(
+        shared_position_module._read_binding(
             ledger,
             assignment.identity,
             prior_standing=forged,
@@ -692,7 +692,7 @@ def test_shared_assignment_explicit_prior_revalidates_later_input_mutation():
     changed_result.material["known_loss"] = not changed_result.material["known_loss"]
 
     with pytest.raises((SharedPairPositionError, ValueError)):
-        shared_position_module._read_assignment(
+        shared_position_module._read_binding(
             ledger,
             assignment.identity,
             prior_standing=exact_prior,

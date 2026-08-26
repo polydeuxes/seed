@@ -23,10 +23,10 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment,
-    _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_responsibility_boundary,
+    _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
     _material_acquisition_identities_with_exact_locality_from_bounded_replay,
     _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay,
@@ -240,7 +240,7 @@ def _record_direct_measurement(
     responsibility_boundary_identity = responsibility_boundary_replay.get(
         "through_event_occurrence_identity"
     )
-    assignment = _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_responsibility_boundary(
+    assignment = _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary(
         ledger,
         finding=finding,
         responsibility_boundary_identity=responsibility_boundary_identity,
@@ -381,7 +381,7 @@ DECLARED_MEASUREMENT_RESPONSIBILITIES = (
     DeclaredMeasurementResponsibility(
         "01.Source.D",
         "measurement_of_position_coordinates_of_byte_pair_occurrences",
-        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         _discover_direct_measurements,
         _record_direct_measurement,

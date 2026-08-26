@@ -83,11 +83,11 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-    _require_carried_byte_pair_occurrence_position_assignment,
-    get_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    _require_carried_byte_pair_occurrence_position_subject_to_act_binding,
+    get_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     get_byte_pair_occurrence_position_measurement_act_occurrence,
     get_recorded_byte_pair_occurrence_position_measurement,
 )
@@ -97,7 +97,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    _read_assignment as _read_shared_position_assignment,
+    _read_binding as _read_shared_position_assignment,
     _read_applicability_act as _read_shared_position_applicability_act,
     _read_applicability_result as _read_shared_position_applicability_result,
     _read_measurement_act as _read_shared_position_measurement_act,
@@ -112,7 +112,7 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     APPLICABILITY_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_APPLICABILITY_RESULT_KIND,
     DETERMINATION_ACT_OCCURRENCE_EVENT as ADDRESSED_BYTE_REFERENCE_DETERMINATION_ACT_OCCURRENCE_EVENT,
     DETERMINATION_RESULT_KIND as ADDRESSED_BYTE_REFERENCE_DETERMINATION_RESULT_KIND,
-    _read_assignment as _read_addressed_byte_reference_assignment,
+    _read_binding as _read_addressed_byte_reference_assignment,
     _read_applicability_act as _read_addressed_byte_reference_applicability_act,
     _read_applicability_result as _read_addressed_byte_reference_applicability_result,
     _read_determination_act as _read_addressed_byte_reference_determination_act,
@@ -411,7 +411,7 @@ _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
-    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+    BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -1403,8 +1403,8 @@ def advance_operator_locality_standing(
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND:
-            get_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        if event.kind == BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
+            get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
@@ -2783,7 +2783,7 @@ def _carry_byte_pair_occurrence_position_measurement_assignment_into_standing(
         raise ValueError(
             "byte-pair position assignment must follow its carried finding"
         )
-    _require_carried_byte_pair_occurrence_position_assignment(
+    _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
         ledger,
         responsibility_assignment=event,
         finding=finding,

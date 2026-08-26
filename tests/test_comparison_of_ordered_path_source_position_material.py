@@ -12,7 +12,7 @@ from seed_runtime.comparison_of_ordered_path_source_position_material import (
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     record_byte_pair_occurrence_position_measurement_act_occurrence,
-    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
@@ -61,7 +61,7 @@ def _direct_position_result(ledger, *, locality, exact):
         source_boundary="exact material boundary",
     )
     assignment = (
-        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
             locality_standing=_standing(ledger, locality),

@@ -391,7 +391,7 @@ def _unassigned_ordered_path_pair_finding_compare_subjects_from_standing(
         locality_identity,
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
     ):
-        assignment, inputs = _read_assignment(ledger, occurrence.identity)
+        assignment, inputs = _read_binding(ledger, occurrence.identity)
         assigned.add(
             (
                 inputs["path"]["event"].identity,
@@ -516,7 +516,7 @@ def record_ordered_path_pair_finding_compare_applicability_from_current_standing
         )
     )
     for assignment in assignments:
-        _read_assignment(ledger, assignment.identity)
+        _read_binding(ledger, assignment.identity)
 
     acts_by_assignment: dict[str, Event] = {}
     for occurrence in ledger.iter_locality_kind(
@@ -913,7 +913,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_respo
     )
 
 
-def _read_assignment(
+def _read_binding(
     ledger: EventLedger,
     event_identity: Any,
     *,
@@ -993,7 +993,7 @@ def _read_assignment(
 def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    return deepcopy(_read_assignment(ledger, event_identity)[0].material)
+    return deepcopy(_read_binding(ledger, event_identity)[0].material)
 
 
 def _require_assignment_standing(assignment: Event, standing: Any) -> None:
@@ -1055,7 +1055,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
     responsibility_assignment_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment, _inputs_reading = _read_assignment(
+    assignment, _inputs_reading = _read_binding(
         ledger,
         responsibility_assignment_event_identity,
         prior_standing=locality_standing,
@@ -1087,7 +1087,7 @@ def _read_applicability_act(
         else None
     )
     if assignment_reading is None:
-        assignment_reading = _read_assignment(ledger, assignment_identity)
+        assignment_reading = _read_binding(ledger, assignment_identity)
     assignment, inputs = assignment_reading
     if (
         assignment_identity != assignment.identity
@@ -1398,7 +1398,7 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_o
     applicability_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment_reading = _read_assignment(
+    assignment_reading = _read_binding(
         ledger,
         responsibility_assignment_event_identity,
         prior_standing=locality_standing,
@@ -1435,7 +1435,7 @@ def _read_compare_act(
         message="comparison of ordered relation path with recorded pair findings requires exact Compare Act occurrence",
     )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment_reading = _read_assignment(
+    assignment_reading = _read_binding(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict

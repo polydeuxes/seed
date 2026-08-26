@@ -31,7 +31,7 @@ from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     _source_position_coordinate_reference,
     record_byte_pair_occurrence_position_measurement_act_occurrence,
-    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
 )
@@ -70,7 +70,7 @@ def _direct(ledger, exact=b"2+2=5\n", locality="addressed-byte"):
         source_boundary="exact supplied material boundary",
     )
     standing = read_operator_locality_standing(ledger, locality_identity=locality)
-    assignment = record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+    assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
         locality_standing=standing,

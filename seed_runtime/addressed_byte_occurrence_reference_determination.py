@@ -475,7 +475,7 @@ def record_addressed_byte_occurrence_reference_determination_responsibility_assi
     )
 
 
-def _read_assignment(
+def _read_binding(
     ledger: EventLedger,
     event_identity: str,
     *,
@@ -560,7 +560,7 @@ def _read_assignment(
 def get_addressed_byte_occurrence_reference_determination_responsibility_assignment(
     ledger: EventLedger, event_identity: str
 ) -> Event:
-    return _read_assignment(ledger, event_identity)[0]
+    return _read_binding(ledger, event_identity)[0]
 
 
 def _require_stage_standing(
@@ -664,7 +664,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_act_o
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
-    assignment, source_result, _references = _read_assignment(
+    assignment, source_result, _references = _read_binding(
         ledger, responsibility_assignment_event_identity
     )
     _require_stage_standing(
@@ -747,7 +747,7 @@ def _read_applicability_act(
         if type(reference) is dict
         else None
     )
-    assignment, source_result, references = _read_assignment(
+    assignment, source_result, references = _read_binding(
         ledger, assignment_identity, prior_standing=prior_standing
     )
     if (

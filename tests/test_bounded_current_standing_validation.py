@@ -189,7 +189,7 @@ def test_the_position_assignment_refuses_a_forged_standing_boundary():
     forged["through_event_occurrence_identity"] = "evt_absent"
 
     with pytest.raises(ValueError):
-        position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
             locality_standing=forged,
@@ -207,7 +207,7 @@ def test_the_position_assignment_authenticates_no_unread_branch():
     unread = deepcopy(standing)
     unread["representations"] = {"an unread sibling branch": None}
 
-    assignment = position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+    assignment = position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
         locality_standing=unread,

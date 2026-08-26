@@ -961,7 +961,7 @@ def record_shared_position_responsibility_assignment(
     )
 
 
-def _read_assignment(
+def _read_binding(
     ledger: EventLedger,
     event_identity: str,
     *,
@@ -1085,7 +1085,7 @@ def _read_assignment(
 def get_shared_position_responsibility_assignment(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any]:
-    event, _inputs_reading = _read_assignment(ledger, event_identity)
+    event, _inputs_reading = _read_binding(ledger, event_identity)
     return json.loads(json.dumps(event.material))
 
 
@@ -1140,7 +1140,7 @@ def record_shared_position_applicability_act_occurrence(
     assignment_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment, inputs = _read_assignment(
+    assignment, inputs = _read_binding(
         ledger,
         assignment_event_identity,
         prior_standing=locality_standing,
@@ -1185,7 +1185,7 @@ def _read_applicability_act(
         raise SharedPairPositionError("Applicability Act carries no assignment")
     assignment_identity = assignment_reference.get("recorded_occurrence_identity")
     if assignment_reading is None:
-        assignment_reading = _read_assignment(
+        assignment_reading = _read_binding(
             ledger,
             assignment_identity,
             prior_standing=prior_standing,
@@ -1612,7 +1612,7 @@ def _read_measurement_act(
     if type(assignment_reference) is not dict or type(applicability_reference) is not dict:
         raise SharedPairPositionError("Measurement Act carries no exact inputs")
     if assignment_reading is None:
-        assignment_reading = _read_assignment(
+        assignment_reading = _read_binding(
             ledger,
             assignment_reference.get("recorded_occurrence_identity"),
             prior_standing=prior_standing,

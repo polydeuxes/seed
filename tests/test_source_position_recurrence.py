@@ -3,7 +3,7 @@ from __future__ import annotations
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     record_byte_pair_occurrence_position_measurement_act_occurrence,
-    record_byte_pair_occurrence_position_measurement_responsibility_assignment,
+    record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
@@ -34,7 +34,7 @@ def _direct_result(ledger, *, locality, exact):
         ledger, locality_identity=locality
     )
     assignment = (
-        record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+        record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
             locality_standing=standing,
@@ -161,7 +161,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     assert direct.identity in recording.locality_standing["measurement_occurrences"]
     direct_act = ledger.get(direct.material["act_occurrence_event_identity"])
     assert recording.locality_standing["exact_result_occurrences"][direct.identity] == (
-        direct_act.material["responsibility_assignment_reference"]
+        direct_act.material["subject_to_act_binding_reference"]
     )
 
     final_recurrence = get_recorded_source_position_recurrence(

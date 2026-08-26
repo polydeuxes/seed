@@ -33,9 +33,9 @@ from seed_runtime.material_source import (
 )
 
 
-BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND = (
+BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.measurement_of_position_coordinates_of_byte_pair_occurrences."
-    "responsibility_assignment_recorded"
+    "subject_to_act_binding_recorded"
 )
 BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT = (
     "operator.measurement_of_position_coordinates_of_byte_pair_occurrences."
@@ -95,7 +95,7 @@ ASSERTION_RESPONSIBILITY = (
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
-    BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND: "01.Source.D",
+    BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
     BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: "01.Source.D",
 }
@@ -278,7 +278,7 @@ def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
     occurrence_populations = (
         (
             bounded_locality_replay["subject_to_act_binding_occurrences"],
-            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         ),
         (
             bounded_locality_replay["measurement_occurrences"],
@@ -763,7 +763,7 @@ def _require_exact_responsibility_boundary(
     return responsibility_boundary_identity
 
 
-def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_material_result_occurrence_identity: str,
@@ -773,14 +773,14 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
         ledger,
         source_material_result_occurrence_identity=source_material_result_occurrence_identity,
     )
-    return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
+    return _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_finding(
         ledger,
         finding=finding,
         locality_standing=locality_standing,
     )
 
 
-def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
+def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_finding(
     ledger: EventLedger,
     *,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
@@ -831,7 +831,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             "byte-pair position-coordinate global recording boundary changed before assignment"
         )
     return ledger.append(
-        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             finding,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -841,7 +841,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     )
 
 
-def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_finding(
+def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_carried_finding(
     ledger: EventLedger,
     *,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
@@ -849,14 +849,14 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
 ) -> Event:
     """Assign one finding already produced at the current Standing boundary."""
 
-    return _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_finding(
+    return _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_finding(
         ledger,
         finding=finding,
         locality_standing=locality_standing,
     )
 
 
-def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_responsibility_boundary(
+def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary(
     ledger: EventLedger,
     *,
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
@@ -878,7 +878,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
         event.material.get("source_material_result_occurrence_identity")
         == finding.source_material_result_occurrence_identity
         for kind in (
-            BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+            BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         )
         for event in ledger.iter_locality_kind(
@@ -911,7 +911,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
             "before assignment"
         )
     return ledger.append(
-        BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND,
+        BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             finding,
             through_event_occurrence_identity=through_event_occurrence_identity,
@@ -921,7 +921,7 @@ def _record_byte_pair_occurrence_position_measurement_responsibility_assignment_
     )
 
 
-def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+def record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_material_result_occurrence_identity: str,
@@ -929,20 +929,20 @@ def record_byte_pair_occurrence_position_measurement_responsibility_assignment(
 ) -> Event:
     """Assign the exact source result to this declared Measurement."""
 
-    return _record_byte_pair_occurrence_position_measurement_responsibility_assignment(
+    return _record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source_material_result_occurrence_identity,
         locality_standing=locality_standing,
     )
 
 
-def _read_assignment(
+def _read_binding(
     ledger: EventLedger, assignment_event_identity: str
 ) -> tuple[Event, FindingOfPositionCoordinatesOfBytePairOccurrences]:
     assignment = ledger.get(assignment_event_identity)
     if (
         assignment is None
-        or assignment.kind != BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
+        or assignment.kind != BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or type(assignment.locality_identity) is not str
         or not assignment.locality_identity
         or assignment.exact_material is not None
@@ -1025,7 +1025,7 @@ def _read_assignment(
     return assignment, finding
 
 
-def _require_carried_byte_pair_occurrence_position_assignment(
+def _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
     ledger: EventLedger,
     *,
     responsibility_assignment: Event,
@@ -1035,7 +1035,7 @@ def _require_carried_byte_pair_occurrence_position_assignment(
         type(responsibility_assignment) is not Event
         or type(finding) is not FindingOfPositionCoordinatesOfBytePairOccurrences
         or responsibility_assignment.kind
-        != BYTE_PAIR_OCCURRENCE_POSITION_ASSIGNMENT_KIND
+        != BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or responsibility_assignment.exact_material is not None
         or responsibility_assignment.locality_identity
         != finding.source_locality_identity
@@ -1074,10 +1074,10 @@ def _require_carried_byte_pair_occurrence_position_assignment(
         )
 
 
-def get_byte_pair_occurrence_position_measurement_responsibility_assignment(
+def get_byte_pair_occurrence_position_measurement_subject_to_act_binding(
     ledger: EventLedger, assignment_event_identity: str
 ) -> Event:
-    assignment, _finding = _read_assignment(ledger, assignment_event_identity)
+    assignment, _finding = _read_binding(ledger, assignment_event_identity)
     return assignment
 
 
@@ -1116,7 +1116,7 @@ def _record_byte_pair_occurrence_position_measurement_act_occurrence(
     responsibility_assignment_event_identity: str,
     responsibility_assignment_standing: dict[str, Any],
 ) -> Event:
-    assignment, finding = _read_assignment(
+    assignment, finding = _read_binding(
         ledger, responsibility_assignment_event_identity
     )
     _require_current_standing(
@@ -1166,7 +1166,7 @@ def _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carrie
 ) -> Event:
     """Record the Act beside its just-carried exact assignment and finding."""
 
-    _require_carried_byte_pair_occurrence_position_assignment(
+    _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
         ledger,
         responsibility_assignment=responsibility_assignment,
         finding=finding,
@@ -1212,7 +1212,7 @@ def _read_act(
         raise ValueError("byte-pair position-coordinate result requires intact Act occurrence")
     reference = act.material.get("subject_to_act_binding_reference")
     try:
-        assignment, finding = _read_assignment(
+        assignment, finding = _read_binding(
             ledger,
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
@@ -1562,7 +1562,7 @@ def _record_byte_pair_occurrence_position_measurement_result_from_carried_act_oc
 ) -> Event:
     """Record the result beside its just-produced exact Act occurrence."""
 
-    _require_carried_byte_pair_occurrence_position_assignment(
+    _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
         ledger,
         responsibility_assignment=responsibility_assignment,
         finding=finding,

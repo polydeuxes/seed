@@ -130,8 +130,8 @@ def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
 
     entrances = {
-        "first": position_module.record_byte_pair_occurrence_position_measurement_responsibility_assignment,
-        "second": position_module._record_byte_pair_occurrence_position_measurement_responsibility_assignment_from_carried_standing,
+        "first": position_module.record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
+        "second": position_module._record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_carried_standing,
     }
 
     before: dict[str, Any] = {}
