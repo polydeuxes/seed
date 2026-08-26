@@ -119,12 +119,12 @@ from seed_runtime.addressed_byte_occurrence_reference_determination import (
     _read_determination_result as _read_addressed_byte_reference_determination_result,
     _determination_result_reference as _addressed_byte_reference_determination_coordinates,
 )
-from seed_runtime.operator_standing_continuation import (
-    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
-    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
-    STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    get_recorded_standing_locality_continuation,
-    get_standing_locality_continuation_subject_to_act_binding,
+from seed_runtime.operator_locality_continuation import (
+    LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
+    LOCALITY_CONTINUATION_RECORDED_KIND,
+    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    get_recorded_locality_continuation,
+    get_locality_continuation_subject_to_act_binding,
 )
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_ACT_OCCURRENCE_EVENT,
@@ -437,10 +437,10 @@ _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS = {
     BYTE_PAIR_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
 }
-_STANDING_LOCALITY_CONTINUATION_KINDS = {
-    STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
-    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+_LOCALITY_CONTINUATION_KINDS = {
+    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
+    LOCALITY_CONTINUATION_RECORDED_KIND,
 }
 _STANDING_BOUNDARY_REFERENCE_KINDS = {
     STANDING_BOUNDARY_REFERENCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -523,7 +523,7 @@ _SUPPORTED_KINDS = {
     *_MEASUREMENT_RECORDED_KINDS,
     *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
     *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
-    *_STANDING_LOCALITY_CONTINUATION_KINDS,
+    *_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_SOURCE_KINDS,
@@ -978,7 +978,7 @@ def read_carried_recorded_standing(
             ledger, recorded_occurrence_identity
         )
     elif matches[0] == "continuation":
-        continuation = get_recorded_standing_locality_continuation(
+        continuation = get_recorded_locality_continuation(
             ledger, recorded_occurrence_identity
         )
         source_reference = deepcopy(continuation["source_coordinate_reference"])
@@ -1236,7 +1236,7 @@ def advance_operator_locality_standing(
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
-            or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
+            or event.kind in _LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_SOURCE_KINDS
@@ -1895,17 +1895,17 @@ def advance_operator_locality_standing(
             continue
         if (
             event.kind
-            == STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            == LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_standing_locality_continuation_subject_to_act_binding(
+            get_locality_continuation_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT:
+        if event.kind == LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT:
             continue
-        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND:
-            get_recorded_standing_locality_continuation(ledger, event.identity)
+        if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND:
+            get_recorded_locality_continuation(ledger, event.identity)
             recorded_relation_Standing[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:

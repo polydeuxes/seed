@@ -23,8 +23,8 @@ from seed_runtime.operator_locality_standing import (
     read_carried_recorded_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_standing_continuation import (
-    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+from seed_runtime.operator_locality_continuation import (
+    LOCALITY_CONTINUATION_RECORDED_KIND,
 )
 from seed_runtime.standing_boundary_locality import (
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
@@ -95,7 +95,7 @@ def test_memory_makes_one_prior_boundary_available_without_copying_its_standing(
     continuation = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+        if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND
     )
     destination = continuation.locality_identity
 

@@ -1,4 +1,4 @@
-"""Exact console control for one Standing Locality continuation request.
+"""Exact console control for one Locality continuation request.
 
 ``memory`` is operator shorthand only.  The resulting request carries no
 priority, importance, represented content, or Seed-native relation name.

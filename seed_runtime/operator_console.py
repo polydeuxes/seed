@@ -45,10 +45,10 @@ from seed_runtime.operator_memory_command import (
     OperatorMemoryRequest,
     request_operator_memory,
 )
-from seed_runtime.operator_standing_continuation import (
-    record_standing_locality_continuation_subject_to_act_binding,
-    record_standing_locality_continuation_act_occurrence,
-    record_standing_locality_continuation_result,
+from seed_runtime.operator_locality_continuation import (
+    record_locality_continuation_subject_to_act_binding,
+    record_locality_continuation_act_occurrence,
+    record_locality_continuation_result,
 )
 from seed_runtime.operator_invocation_locality import (
     record_operator_invocation_locality_subject_to_act_binding,
@@ -635,7 +635,7 @@ def run_persistent_operator_console(
             request = command_run.handler_result
             if isinstance(request, OperatorMemoryRequest):
                 binding = (
-                    record_standing_locality_continuation_subject_to_act_binding(
+                    record_locality_continuation_subject_to_act_binding(
                         ledger,
                         source_locality_identity=locality_identity,
                         source_through_event_occurrence_identity=(
@@ -649,7 +649,7 @@ def run_persistent_operator_console(
                     ledger, locality_identity=locality_identity
                 )
                 continuation_act_occurrence = (
-                    record_standing_locality_continuation_act_occurrence(
+                    record_locality_continuation_act_occurrence(
                         ledger,
                         subject_to_act_binding_event_identity=binding.identity,
                         current_coordinates=locality_standing,
@@ -661,7 +661,7 @@ def run_persistent_operator_console(
                     (continuation_act_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
-                continuation = record_standing_locality_continuation_result(
+                continuation = record_locality_continuation_result(
                     ledger,
                     act_occurrence_event_identity=(
                         continuation_act_occurrence.identity

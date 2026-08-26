@@ -16,10 +16,10 @@ from seed_runtime.operator_memory_command import (
     OperatorMemoryRequest,
     request_operator_memory,
 )
-from seed_runtime.operator_standing_continuation import (
-    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
-    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
-    get_recorded_standing_locality_continuation,
+from seed_runtime.operator_locality_continuation import (
+    LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
+    LOCALITY_CONTINUATION_RECORDED_KIND,
+    get_recorded_locality_continuation,
 )
 
 
@@ -77,12 +77,12 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     acts = [
         event
         for event in ledger.list()
-        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
+        if event.kind == LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
     ]
     results = [
         event
         for event in ledger.list()
-        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+        if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND
     ]
 
     assert len(acts) == len(results) == 1
@@ -90,7 +90,7 @@ def test_console_memory_creates_and_switches_to_one_fresh_destination():
     result = results[0]
     assert act.locality_identity == result.locality_identity != "source"
     assert act.exact_material is None
-    recorded = get_recorded_standing_locality_continuation(
+    recorded = get_recorded_locality_continuation(
         ledger, result.identity
     )
     addressed = ledger.get(
@@ -129,13 +129,13 @@ def test_memory_does_not_change_checkpoint_species_or_copy_source_occurrences():
     result = next(
         event
         for event in ledger.list()
-        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+        if event.kind == LOCALITY_CONTINUATION_RECORDED_KIND
     )
     destination = ledger.list_locality(result.locality_identity)
     source_identities = {
         event.identity for event in ledger.list_locality("source")
     }
-    recorded = get_recorded_standing_locality_continuation(
+    recorded = get_recorded_locality_continuation(
         ledger, result.identity
     )
 

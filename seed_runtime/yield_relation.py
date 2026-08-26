@@ -43,7 +43,7 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "recurrence_corresponding_source_position_material_measurement",
         "recurrent_result_exact_material_measurement",
         "standing_boundary_reference",
-        "standing_locality_continuation",
+        "locality_continuation",
     }
 )
 def read_requirements_of_yield_carried_by_result_occurrence(

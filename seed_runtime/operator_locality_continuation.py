@@ -1,8 +1,8 @@
-"""Continue one exact prior Locality Standing boundary at another Locality.
+"""Carry one exact source through-occurrence boundary to another Locality.
 
 This boundary establishes one direct Locality relation and bounded
-availability only.  It does not copy the prior Locality's occurrences or
-Standing accumulators, make any carried subject applicable to another Act,
+availability only.  It does not copy the source Locality's occurrences or
+current coordinates, make any carried subject applicable to another Act,
 establish priority, or follow another continuation transitively.
 """
 
@@ -21,39 +21,39 @@ from seed_runtime.yield_relation import (
 )
 
 
-STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT = (
-    "operator.standing.locality_continuation_act_occurrence_recorded"
+LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT = (
+    "operator.locality_continuation_act_occurrence_recorded"
 )
-STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
-    "operator.standing.locality_continuation_subject_to_act_binding_recorded"
+LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.locality_continuation_subject_to_act_binding_recorded"
 )
-STANDING_LOCALITY_CONTINUATION_RECORDED_KIND = (
-    "operator.standing.locality_continuation_recorded"
+LOCALITY_CONTINUATION_RECORDED_KIND = (
+    "operator.locality_continuation_recorded"
 )
-STANDING_LOCALITY_CONTINUATION_RESULT_KIND = (
-    "Standing Locality relation result"
+LOCALITY_CONTINUATION_RESULT_KIND = (
+    "source-boundary Locality relation result"
 )
-STANDING_LOCALITY_CONTINUATION_ACT = "Standing Locality relation"
-STANDING_LOCALITY_CONTINUATION_INPUT_ROLE = (
-    "exact prior Locality Standing boundary"
+LOCALITY_CONTINUATION_ACT = "source-boundary Locality relation"
+LOCALITY_CONTINUATION_INPUT_ROLE = (
+    "exact source through-occurrence boundary"
 )
 EVENT_KIND_RESPONSIBILITIES = {
-    STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
+    LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.B"
     ),
-    STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
-    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND: "06.Locality.A",
+    LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT: "02.Acts.A",
+    LOCALITY_CONTINUATION_RECORDED_KIND: "06.Locality.A",
 }
-STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE = "06.Locality.B"
+LOCALITY_CONTINUATION_BINDING_BOOK_CLAUSE = "06.Locality.B"
 
 
-class StandingLocalityContinuationError(ValueError):
-    """One exact Standing Locality continuation could not be established."""
+class LocalityContinuationError(ValueError):
+    """One exact source-boundary Locality relation could not be established."""
 
 
 def _require_identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
-        raise StandingLocalityContinuationError(message)
+        raise LocalityContinuationError(message)
     return value
 
 
@@ -67,11 +67,11 @@ def _source_coordinate_reference(
 
     _require_identity(
         source_locality_identity,
-        "Standing Locality continuation requires one exact source Locality",
+        "Locality continuation requires one exact source Locality",
     )
     _require_identity(
         source_through_event_occurrence_identity,
-        "Standing Locality continuation requires one exact source occurrence boundary",
+        "Locality continuation requires one exact source occurrence boundary",
     )
     source_boundary = ledger.get(source_through_event_occurrence_identity)
     if (
@@ -79,13 +79,13 @@ def _source_coordinate_reference(
         or source_boundary.locality_identity != source_locality_identity
         or ledger.integrity_of(source_boundary.identity) == CORRUPTED
     ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation requires one intact source boundary"
+        raise LocalityContinuationError(
+            "Locality continuation requires one intact source boundary"
         )
     occurrences = ledger.list_locality(source_locality_identity)
     positions = {event.identity: position for position, event in enumerate(occurrences)}
     if positions.get(source_through_event_occurrence_identity) is None:
-        raise StandingLocalityContinuationError(
+        raise LocalityContinuationError(
             "the source occurrence boundary is absent from its source Locality"
         )
     return {
@@ -103,7 +103,7 @@ def _participation(
 ) -> dict[str, Any]:
     return {
         "subject_reference": deepcopy(source_coordinate_reference),
-        "role": STANDING_LOCALITY_CONTINUATION_INPUT_ROLE,
+        "role": LOCALITY_CONTINUATION_INPUT_ROLE,
         "act_occurrence_identity": act_occurrence_identity,
     }
 
@@ -117,7 +117,7 @@ def _binding_material(
 ) -> dict[str, Any]:
     return {
         "book_clause_identity": (
-            STANDING_LOCALITY_CONTINUATION_ASSIGNMENT_BOOK_CLAUSE
+            LOCALITY_CONTINUATION_BINDING_BOOK_CLAUSE
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_coordinate_reference),
@@ -164,7 +164,7 @@ def _act_occurrence_material(
         "locality_relation_occurrence_identity": (
             locality_relation_occurrence_identity
         ),
-        "act": STANDING_LOCALITY_CONTINUATION_ACT,
+        "act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
         ),
@@ -198,7 +198,7 @@ def _result_material(
         "locality_relation_occurrence_identity": (
             locality_relation_occurrence_identity
         ),
-        "exact_act": STANDING_LOCALITY_CONTINUATION_ACT,
+        "exact_act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
         ),
@@ -251,7 +251,7 @@ def _recorded_result_material(
     }
 
 
-def record_standing_locality_continuation_subject_to_act_binding(
+def record_locality_continuation_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_locality_identity: str,
@@ -260,7 +260,7 @@ def record_standing_locality_continuation_subject_to_act_binding(
     """Bind one source-boundary Locality relation to its exact Act."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("Standing Locality continuation requires one EventLedger")
+        raise TypeError("Locality continuation requires one EventLedger")
     source_reference = _source_coordinate_reference(
         ledger,
         source_locality_identity=source_locality_identity,
@@ -270,15 +270,15 @@ def record_standing_locality_continuation_subject_to_act_binding(
     )
     destination_locality_identity = new_identity("standing_locality")
     if ledger.has_locality(destination_locality_identity):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation requires one fresh destination Locality"
+        raise LocalityContinuationError(
+            "Locality continuation requires one fresh destination Locality"
         )
     exact_act_identity = new_identity("standing_locality_continuation_act")
     result_boundary_identity = new_identity(
         "standing_locality_continuation_result_boundary"
     )
     return ledger.append(
-        STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             exact_act_identity=exact_act_identity,
             result_boundary_identity=result_boundary_identity,
@@ -289,7 +289,7 @@ def record_standing_locality_continuation_subject_to_act_binding(
     )
 
 
-def record_standing_locality_continuation_act_occurrence(
+def record_locality_continuation_act_occurrence(
     ledger: EventLedger,
     *,
     subject_to_act_binding_event_identity: str,
@@ -298,13 +298,13 @@ def record_standing_locality_continuation_act_occurrence(
     """Record one Act from one exact carried subject-to-Act binding."""
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("Standing Locality continuation requires one EventLedger")
-    binding = get_standing_locality_continuation_subject_to_act_binding(
+        raise TypeError("Locality continuation requires one EventLedger")
+    binding = get_locality_continuation_subject_to_act_binding(
         ledger, subject_to_act_binding_event_identity
     )
     if type(current_coordinates) is not dict:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires current coordinates"
+        raise LocalityContinuationError(
+            "Locality continuation Act requires current coordinates"
         )
     binding_occurrences = current_coordinates.get(
         "subject_to_act_binding_occurrences"
@@ -315,31 +315,31 @@ def record_standing_locality_continuation_act_occurrence(
         or binding.identity not in binding_occurrences
         or binding_occurrences[binding.identity] is not None
     ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires its exact carried binding"
+        raise LocalityContinuationError(
+            "Locality continuation Act requires its exact carried binding"
         )
-    standing_boundary = current_coordinates.get(
+    current_boundary = current_coordinates.get(
         "through_event_occurrence_identity"
     )
-    standing_boundary_event = ledger.get(standing_boundary)
+    current_boundary_event = ledger.get(current_boundary)
     if (
-        type(standing_boundary) is not str
-        or not standing_boundary
-        or standing_boundary_event is None
-        or standing_boundary_event.locality_identity != binding.locality_identity
+        type(current_boundary) is not str
+        or not current_boundary
+        or current_boundary_event is None
+        or current_boundary_event.locality_identity != binding.locality_identity
     ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act requires one exact current-coordinate boundary"
+        raise LocalityContinuationError(
+            "Locality continuation Act requires one exact current-coordinate boundary"
         )
-    if standing_boundary != binding.identity:
+    if current_boundary != binding.identity:
         try:
             ledger.occurrences_in_append_order(
-                (binding.identity, standing_boundary),
+                (binding.identity, current_boundary),
                 locality_identity=binding.locality_identity,
             )
         except ValueError as error:
-            raise StandingLocalityContinuationError(
-                "Standing Locality continuation Act requires its prior binding occurrence"
+            raise LocalityContinuationError(
+                "Locality continuation Act requires its prior binding occurrence"
             ) from error
 
     source_reference = binding.material["subject_reference"]
@@ -352,7 +352,7 @@ def record_standing_locality_continuation_act_occurrence(
         "standing_locality_continuation_relation_occurrence"
     )
     return ledger.append(
-        STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
+        LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
             act_occurrence_identity=act_occurrence_identity,
@@ -372,25 +372,25 @@ def _validated_act_occurrence(
 ) -> Event:
     _require_identity(
         act_occurrence_event_identity,
-        "Standing Locality continuation result requires one exact Act occurrence identity",
+        "Locality continuation result requires one exact Act occurrence identity",
     )
     act_occurrence = ledger.get(act_occurrence_event_identity)
     if (
         act_occurrence is None
-        or act_occurrence.kind != STANDING_LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
+        or act_occurrence.kind != LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT
         or type(act_occurrence.locality_identity) is not str
         or not act_occurrence.locality_identity
         or act_occurrence.exact_material is not None
         or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
     ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation result requires intact Act occurrence"
+        raise LocalityContinuationError(
+            "Locality continuation result requires intact Act occurrence"
         )
     material = act_occurrence.material
     source_reference = material.get("source_coordinate_reference")
     if type(source_reference) is not dict:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act occurrence carries no exact source boundary"
+        raise LocalityContinuationError(
+            "Locality continuation Act occurrence carries no exact source boundary"
         )
     expected_reference = _source_coordinate_reference(
         ledger,
@@ -400,8 +400,8 @@ def _validated_act_occurrence(
         ),
     )
     if source_reference != expected_reference:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act occurrence carries another source boundary"
+        raise LocalityContinuationError(
+            "Locality continuation Act occurrence carries another source boundary"
         )
     continuation_act_identity = material.get("continuation_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
@@ -410,10 +410,10 @@ def _validated_act_occurrence(
     )
     binding_reference = material.get("subject_to_act_binding_reference")
     if type(binding_reference) is not dict:
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act occurrence carries no exact subject-to-Act binding"
+        raise LocalityContinuationError(
+            "Locality continuation Act occurrence carries no exact subject-to-Act binding"
         )
-    binding = get_standing_locality_continuation_subject_to_act_binding(
+    binding = get_locality_continuation_subject_to_act_binding(
         ledger, binding_reference.get("recorded_occurrence_identity")
     )
     if (
@@ -453,13 +453,13 @@ def _validated_act_occurrence(
             destination_locality_identity=act_occurrence.locality_identity,
         )
     ):
-        raise StandingLocalityContinuationError(
-            "Standing Locality continuation Act occurrence is not exact"
+        raise LocalityContinuationError(
+            "Locality continuation Act occurrence is not exact"
         )
     return act_occurrence
 
 
-def record_standing_locality_continuation_result(
+def record_locality_continuation_result(
     ledger: EventLedger,
     *,
     act_occurrence_event_identity: str,
@@ -485,11 +485,11 @@ def record_standing_locality_continuation_result(
                 == act_occurrence_identity
             )
         ):
-            raise StandingLocalityContinuationError(
-                "the Standing Locality continuation Act already carries a Yield"
+            raise LocalityContinuationError(
+                "the Locality continuation Act already carries a Yield"
             )
     for prior_result in ledger.iter_locality_kind(
-        locality_identity, STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+        locality_identity, LOCALITY_CONTINUATION_RECORDED_KIND
     ):
         if (
             prior_result.material.get("act_occurrence_event_identity")
@@ -497,8 +497,8 @@ def record_standing_locality_continuation_result(
             or prior_result.material.get("act_occurrence_identity")
             == act_occurrence_identity
         ):
-            raise StandingLocalityContinuationError(
-                "the Standing Locality continuation Act already carries a result"
+            raise LocalityContinuationError(
+                "the Locality continuation Act already carries a result"
             )
 
     result_identity = material["subject_to_act_binding_reference"][
@@ -520,16 +520,16 @@ def record_standing_locality_continuation_result(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
-        exact_act=STANDING_LOCALITY_CONTINUATION_ACT,
+        exact_act=LOCALITY_CONTINUATION_ACT,
         act_occurrence_identity=act_occurrence_identity,
         act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=STANDING_LOCALITY_CONTINUATION_RESULT_KIND,
+        result_kind=LOCALITY_CONTINUATION_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_material,
-        occurrence_boundary="standing_locality_continuation",
+        occurrence_boundary="locality_continuation",
     )
     return ledger.append(
-        STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+        LOCALITY_CONTINUATION_RECORDED_KIND,
         _recorded_result_material(
             result_material,
             act_occurrence_event_identity=act_occurrence.identity,
@@ -539,26 +539,26 @@ def record_standing_locality_continuation_result(
     )
 
 
-def get_recorded_standing_locality_continuation(
+def get_recorded_locality_continuation(
     ledger: EventLedger, recorded_result_event_identity: str
 ) -> dict[str, Any]:
     """Read one direct continuation relation through its exact relation."""
 
     _require_identity(
         recorded_result_event_identity,
-        "Standing Locality continuation read requires one exact result occurrence",
+        "Locality continuation read requires one exact result occurrence",
     )
     event = ledger.get(recorded_result_event_identity)
     if (
         event is None
-        or event.kind != STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+        or event.kind != LOCALITY_CONTINUATION_RECORDED_KIND
         or type(event.locality_identity) is not str
         or not event.locality_identity
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise StandingLocalityContinuationError(
-            "the Standing Locality continuation result is absent or corrupted"
+        raise LocalityContinuationError(
+            "the Locality continuation result is absent or corrupted"
         )
     act_occurrence = _validated_act_occurrence(
         ledger, event.material.get("act_occurrence_event_identity")
@@ -592,8 +592,8 @@ def get_recorded_standing_locality_continuation(
         or act_occurrence.locality_identity != event.locality_identity
         or event.material != expected_event_material
     ):
-        raise StandingLocalityContinuationError(
-            "the Standing Locality continuation result coordinates are not exact"
+        raise LocalityContinuationError(
+            "the Locality continuation result coordinates are not exact"
         )
     requirements = read_requirements_of_yield_relation(
         ledger,
@@ -602,38 +602,38 @@ def get_recorded_standing_locality_continuation(
         act_occurrence_event_identity=act_occurrence.identity,
     )
     if not all(requirements.values()):
-        raise StandingLocalityContinuationError(
-            "the Standing Locality continuation carries no exact Yield relation"
+        raise LocalityContinuationError(
+            "the Locality continuation carries no exact Yield relation"
         )
     return deepcopy(event.material)
 
 
-def get_standing_locality_continuation_subject_to_act_binding(
+def get_locality_continuation_subject_to_act_binding(
     ledger: EventLedger, recorded_binding_event_identity: str
 ) -> Event:
     """Read one exact subject-to-Act binding occurrence."""
 
     _require_identity(
         recorded_binding_event_identity,
-        "Standing Locality continuation requires one exact binding occurrence",
+        "Locality continuation requires one exact binding occurrence",
     )
     binding = ledger.get(recorded_binding_event_identity)
     if (
         binding is None
         or binding.kind
-        != STANDING_LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+        != LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or type(binding.locality_identity) is not str
         or not binding.locality_identity
         or binding.exact_material is not None
         or ledger.integrity_of(binding.identity) == CORRUPTED
     ):
-        raise StandingLocalityContinuationError(
-            "the Standing Locality continuation binding is absent or corrupted"
+        raise LocalityContinuationError(
+            "the Locality continuation binding is absent or corrupted"
         )
     material = binding.material
     source_reference = material.get("subject_reference")
     if type(source_reference) is not dict:
-        raise StandingLocalityContinuationError(
+        raise LocalityContinuationError(
             "the binding carries no exact source boundary"
         )
     expected_reference = _source_coordinate_reference(
@@ -660,7 +660,7 @@ def get_standing_locality_continuation_subject_to_act_binding(
             destination_locality_identity=binding.locality_identity,
         )
     ):
-        raise StandingLocalityContinuationError(
-            "the Standing Locality continuation binding is not exact"
+        raise LocalityContinuationError(
+            "the Locality continuation binding is not exact"
         )
     return binding
