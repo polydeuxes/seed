@@ -146,17 +146,6 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
     }
 
 
-def _participation(
-    through_occurrence_boundary_reference: dict[str, str],
-    act_occurrence_identity: str,
-) -> dict[str, Any]:
-    return {
-        "subject_reference": deepcopy(through_occurrence_boundary_reference),
-        "role": "exact recorded through-occurrence boundary result",
-        "act_occurrence_identity": act_occurrence_identity,
-    }
-
-
 def _act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
@@ -172,10 +161,6 @@ def _act_material(binding: Event) -> dict[str, Any]:
         ),
         "destination_locality_identity": binding.locality_identity,
         "result_identity": material["result_identity"],
-        "participation": _participation(
-            material["subject_reference"],
-            material["act_occurrence_identity"],
-        ),
     }
 
 
@@ -196,7 +181,6 @@ def _result_material(act: Event) -> dict[str, Any]:
             material["through_occurrence_boundary_reference"]
         ),
         "destination_locality_identity": act.locality_identity,
-        "participation": deepcopy(material["participation"]),
         "locality_relation": {
             "first_subject": deepcopy(
                 material["through_occurrence_boundary_reference"]
@@ -234,7 +218,6 @@ def _recorded_result_material(
         "destination_locality_identity": result_material[
             "destination_locality_identity"
         ],
-        "participation": deepcopy(result_material["participation"]),
         "locality_relation": deepcopy(result_material["locality_relation"]),
         "unknown": list(result_material["unknown"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
