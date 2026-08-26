@@ -98,7 +98,7 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_RESULT_KIND,
     SHARED_POSITION_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    _read_binding as _read_shared_position_assignment,
+    _read_binding as _read_shared_position_binding,
     _read_applicability_act as _read_shared_position_applicability_act,
     _read_applicability_result as _read_shared_position_applicability_result,
     _read_measurement_act as _read_shared_position_measurement_act,
@@ -783,7 +783,7 @@ def _shared_position_binding_reading(
             if type(reference) is dict
             else None
         )
-    return _read_shared_position_assignment(
+    return _read_shared_position_binding(
         ledger,
         assignment_identity,
         prior_standing=prior_standing,

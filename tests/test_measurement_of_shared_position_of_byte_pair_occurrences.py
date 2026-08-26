@@ -1400,7 +1400,7 @@ def test_one_complete_shared_measurement_requires_one_assignment_read(
     assignment, _applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
-    original = operator_standing_module._read_shared_position_assignment
+    original = operator_standing_module._read_shared_position_binding
     calls = []
 
     def counted(*args, **kwargs):
@@ -1409,7 +1409,7 @@ def test_one_complete_shared_measurement_requires_one_assignment_read(
 
     monkeypatch.setattr(
         operator_standing_module,
-        "_read_shared_position_assignment",
+        "_read_shared_position_binding",
         counted,
     )
 
@@ -1616,12 +1616,12 @@ def test_operator_replay_passes_prior_standing_to_d2_derived_shared_readers(
     )
     _record_d2_shared_path(ledger, locality, determination_result)
     import seed_runtime.operator_locality_standing as standing_module
-    original = standing_module._read_shared_position_assignment
+    original = standing_module._read_shared_position_binding
     calls = []
 
     monkeypatch.setattr(
         standing_module,
-        "_read_shared_position_assignment",
+        "_read_shared_position_binding",
         lambda *args, **kwargs: (
             calls.append(kwargs.get("prior_standing")),
             original(*args, **kwargs),
