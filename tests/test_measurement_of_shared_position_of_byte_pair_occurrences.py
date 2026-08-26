@@ -885,12 +885,6 @@ def test_direct_position_coordinate_assertions_compose_without_recurrence_suppor
     assert reading["assertions"][0]["dimensions"]["content"][
         "shared_position_coordinate_reference"
     ] == _position_coordinate_reference(first, "second")
-    assert binding.material["first_position_assertion"][
-        "support_assertion_references"
-    ] == []
-    assert binding.material["second_position_assertion"][
-        "support_assertion_references"
-    ] == []
     assert binding.material[
         shared_position_module.D2_RESULT_REFERENCE_COORDINATE
     ] == _current_coordinates(ledger, locality)["measurement_occurrences"][

@@ -205,27 +205,10 @@ def _reference_material(
             reference, role="second"
         ),
     }
-    if type(reference) is ReferenceToRecordedRecurrentBytePairOccurrencePosition:
-        material["support_assertion_references"] = [
-            {
-                "recorded_occurrence_identity": (
-                    reference.pair_measurement_occurrence_identity
-                ),
-                "assertion_position": reference.recurrence_assertion_position,
-            },
-            {
-                "recorded_occurrence_identity": (
-                    reference.pair_measurement_occurrence_identity
-                ),
-                "assertion_position": reference.count_assertion_position,
-            },
-        ]
-    elif (
-        type(reference)
-        is ReferenceToRecordedPositionOfBytePairOccurrence
-    ):
-        material["support_assertion_references"] = []
-    else:
+    if type(reference) not in {
+        ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+        ReferenceToRecordedPositionOfBytePairOccurrence,
+    }:
         raise SharedPairPositionError(
             "shared-position Measurement requires one exact position Assertion reference"
         )
