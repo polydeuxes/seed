@@ -28,8 +28,8 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_assignment,
     _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_responsibility_boundary,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
-    _material_acquisition_identities_with_exact_locality_from_bounded_replay,
-    _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay,
+    _material_result_identities_with_exact_locality_from_bounded_replay,
+    _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
 )
 from seed_runtime.operator_locality_standing import (
@@ -149,10 +149,10 @@ def _require_current_replay_boundary(
         )
 
 
-def _material_acquisition_identities(
+def _material_result_identities(
     bounded_locality_replay: dict[str, Any],
 ) -> tuple[str, ...]:
-    return _material_acquisition_identities_with_exact_locality_from_bounded_replay(
+    return _material_result_identities_with_exact_locality_from_bounded_replay(
         bounded_locality_replay
     )
 
@@ -162,7 +162,7 @@ def _discover_direct_measurements(
     bounded_locality_replay: dict[str, Any],
     locality_identity: str,
 ) -> tuple[PositionCoordinateMeasurementSubject, ...]:
-    sources = _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
+    sources = _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
         ledger,
         bounded_locality_replay,
         locality_identity=locality_identity,
@@ -282,7 +282,7 @@ def _discover_byte_measurements(
     bounded_locality_replay: dict[str, Any],
     locality_identity: str,
 ) -> tuple[ExactByteOccurrenceMeasurementSubject, ...]:
-    current_sources = _material_acquisition_identities(bounded_locality_replay)
+    current_sources = _material_result_identities(bounded_locality_replay)
     if not current_sources:
         return ()
     if current_sources in _byte_assignment_source_sets(ledger, locality_identity):
@@ -297,10 +297,10 @@ def _require_exact_byte_occurrence_measurement_subject(
 ) -> tuple[str, ...]:
     if type(subject) is not ExactByteOccurrenceMeasurementSubject:
         raise ValueError("exact-byte Measurement requires its exact subject")
-    current_sources = _material_acquisition_identities(bounded_locality_replay)
+    current_sources = _material_result_identities(bounded_locality_replay)
     if subject.source_material_result_occurrence_identities != current_sources:
         raise ValueError(
-            "exact-byte Measurement subject differs from the current acquisition-result set"
+            "exact-byte Measurement subject differs from the current material-result set"
         )
     return current_sources
 

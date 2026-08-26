@@ -34,7 +34,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_act_occurrence,
     record_byte_pair_occurrence_position_measurement_subject_to_act_binding,
     record_byte_pair_occurrence_position_measurement_result,
-    read_unassigned_position_coordinate_measurement_acquisition_results_through,
+    read_unbound_position_coordinate_measurement_material_results_through,
     references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences,
     references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate,
     references_to_recorded_position_coordinates_of_byte_pair_occurrences,
@@ -156,19 +156,19 @@ def test_each_input_pair_has_first_and_second_exact_position_coordinates():
     )
 
 
-def test_exact_unassigned_material_acquisition_results_are_read_through_frozen_b():
+def test_exact_unbound_material_results_are_read_through_frozen_b():
     ledger = EventLedger()
     first = _source(ledger, b"ab", locality="s")
     first_boundary = ledger.append_boundary_through_occurrence(first.identity)
     second = _source(ledger, b"cd", locality="s")
     tip_before_read = ledger.append_boundary()
 
-    through_first = read_unassigned_position_coordinate_measurement_acquisition_results_through(
+    through_first = read_unbound_position_coordinate_measurement_material_results_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=first.identity,
     )
-    through_second = read_unassigned_position_coordinate_measurement_acquisition_results_through(
+    through_second = read_unbound_position_coordinate_measurement_material_results_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -215,7 +215,7 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     ledger = EventLedger()
     first = _source(ledger, b"ab", locality="s")
     second = _source(ledger, b"cd", locality="s")
-    through_sources = read_unassigned_position_coordinate_measurement_acquisition_results_through(
+    through_sources = read_unbound_position_coordinate_measurement_material_results_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -228,14 +228,14 @@ def test_later_assignment_does_not_change_an_earlier_subject_read():
     tip_after_assignment = ledger.append_boundary()
 
     same_earlier_read = (
-        read_unassigned_position_coordinate_measurement_acquisition_results_through(
+        read_unbound_position_coordinate_measurement_material_results_through(
             ledger,
             locality_identity="s",
             through_event_occurrence_identity=second.identity,
         )
     )
     through_assignment = (
-        read_unassigned_position_coordinate_measurement_acquisition_results_through(
+        read_unbound_position_coordinate_measurement_material_results_through(
             ledger,
             locality_identity="s",
             through_event_occurrence_identity=assignment.identity,
@@ -259,7 +259,7 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     )
     boundary = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="one exact current unassigned material acquisition result"):
+    with pytest.raises(ValueError, match="one exact current unbound material result"):
         record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
             ledger,
             source_material_result_occurrence_identity=source.identity,
@@ -269,12 +269,12 @@ def test_direct_recorder_refuses_a_subject_with_an_assignment_already_recorded()
     assert ledger.append_boundary() == boundary
 
 
-def test_unassigned_material_acquisition_read_survives_sqlite_restart(tmp_path):
+def test_unbound_material_result_read_survives_sqlite_restart(tmp_path):
     path = tmp_path / "position-coordinate-assignment-subjects.sqlite"
     ledger = SQLiteEventLedger(path)
     first = _source(ledger, b"ab", locality="s")
     second = _source(ledger, b"cd", locality="s")
-    before = read_unassigned_position_coordinate_measurement_acquisition_results_through(
+    before = read_unbound_position_coordinate_measurement_material_results_through(
         ledger,
         locality_identity="s",
         through_event_occurrence_identity=second.identity,
@@ -285,7 +285,7 @@ def test_unassigned_material_acquisition_read_survives_sqlite_restart(tmp_path):
 
     reopened = SQLiteEventLedger(path)
     try:
-        after = read_unassigned_position_coordinate_measurement_acquisition_results_through(
+        after = read_unbound_position_coordinate_measurement_material_results_through(
             reopened,
             locality_identity="s",
             through_event_occurrence_identity=second_identity,

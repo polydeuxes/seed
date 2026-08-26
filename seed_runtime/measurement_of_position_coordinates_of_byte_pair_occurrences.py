@@ -1,6 +1,6 @@
 """Measure first and second position coordinates of each byte-pair occurrence.
 
-The exact source material acquisition result bounds the population.  The Measurement records
+The exact source material result bounds the addressed occurrences. The Measurement records
 first and second byte values with their position coordinates; it establishes no
 recurrence, represented relation, character, word, or meaning.
 """
@@ -84,11 +84,11 @@ def _require_carried_position_measurement_source_unchanged() -> None:
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
 RESPONSIBILITY = (
     "Measurement of the position coordinates of each exact byte-pair occurrence "
-    "within one exact material acquisition result"
+    "within one exact material result"
 )
 MEASUREMENT_RULE = (
     "each exact byte-pair occurrence with its first position and second position "
-    "in source occurrence order within one exact material acquisition result"
+    "in source occurrence order within one exact material result"
 )
 ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -117,13 +117,12 @@ class FindingOfPositionCoordinatesOfBytePairOccurrences(NamedTuple):
         )
 
 
-class UnassignedPositionCoordinateMeasurementAcquisitionReading(NamedTuple):
-    """Exact material acquisition coordinates read before this Measurement assignment.
+class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
+    """Exact material-result coordinates read before this Measurement binding.
 
     This bounded runtime read preserves exact source coordinates beside the
-    absence of this Measurement Responsibility's assignment or result through B. It
-    establishes no Locality relation, required assignment subject or
-    coordinates, Responsibility assignment, Applicability, Act, or Standing.
+    absence of this Measurement's binding or result through B. It establishes
+    no Locality relation, subject-to-Act binding, Applicability, or Act.
     """
 
     source_material_result_occurrence_identity: str
@@ -196,14 +195,14 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
 
 def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     if type(value) is not list or any(type(item) is not str for item in value):
-        raise ValueError(f"exact material acquisition assignment subject has malformed {coordinate}")
+        raise ValueError(f"exact material-result subject has malformed {coordinate}")
     return tuple(value)
 
 
 def _has_exact_material_locality_to_this_seed(
     ledger: EventLedger, source_identity: str
 ) -> bool:
-    """Whether exact source acquisition supplies the Locality prerequisite."""
+    """Whether the exact material result carries the Locality prerequisite."""
 
     from seed_runtime.material_source import (
         read_material_locality_relation_requirements,
@@ -217,31 +216,31 @@ def _has_exact_material_locality_to_this_seed(
     )
 
 
-def _material_acquisition_identities_with_exact_locality_from_bounded_replay(
+def _material_result_identities_with_exact_locality_from_bounded_replay(
     bounded_locality_replay: dict[str, Any],
 ) -> tuple[str, ...]:
-    """Resolve exact acquisition sources already validated into bounded replay."""
+    """Resolve exact material results already validated into bounded replay."""
 
-    acquisitions = bounded_locality_replay.get(
+    material_results = bounded_locality_replay.get(
         "material_result_occurrences"
     )
     locality_occurrences = bounded_locality_replay.get(
         "material_locality_relation_occurrences"
     )
-    if type(acquisitions) is not list or type(locality_occurrences) is not dict:
+    if type(material_results) is not list or type(locality_occurrences) is not dict:
         raise ValueError(
             "declared Measurement source resolution requires exact bounded "
             "Locality replay"
         )
     identities: list[str] = []
-    for occurrence in acquisitions:
+    for occurrence in material_results:
         if (
             type(occurrence) is not dict
             or type(occurrence.get("result_occurrence_identity")) is not str
             or not occurrence["result_occurrence_identity"]
         ):
             raise ValueError(
-                "bounded Locality replay contains a malformed material acquisition result"
+                "bounded Locality replay contains a malformed material result"
             )
         source_identity = occurrence["result_occurrence_identity"]
         locality_coordinates = locality_occurrences.get(source_identity)
@@ -307,12 +306,12 @@ def _recorded_position_coordinate_measurement_sources_from_bounded_replay(
     return recorded_sources
 
 
-def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
+def _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
     ledger: EventLedger,
     bounded_locality_replay: dict[str, Any],
     *,
     locality_identity: str,
-) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
+) -> tuple[UnboundPositionCoordinateMeasurementMaterialResultReading, ...]:
     if (
         not isinstance(ledger, EventLedger)
         or type(locality_identity) is not str
@@ -353,12 +352,12 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         )
     )
     exact_operator_locality_sources = set(
-        _material_acquisition_identities_with_exact_locality_from_bounded_replay(
+        _material_result_identities_with_exact_locality_from_bounded_replay(
             bounded_locality_replay
         )
     )
 
-    sources: list[UnassignedPositionCoordinateMeasurementAcquisitionReading] = []
+    sources: list[UnboundPositionCoordinateMeasurementMaterialResultReading] = []
     for occurrence in bounded_locality_replay["material_result_occurrences"]:
         if (
             type(occurrence) is not dict
@@ -366,7 +365,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             or not occurrence["result_occurrence_identity"]
         ):
             raise ValueError(
-                "bounded Locality replay contains a malformed material acquisition result"
+                "bounded Locality replay contains a malformed material result"
             )
         source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
@@ -378,7 +377,7 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
         source = ledger.get(source_identity)
         if source is None or source.locality_identity != locality_identity:
             raise ValueError(
-                "bounded Locality replay contains an absent material acquisition result"
+                "bounded Locality replay contains an absent material result"
             )
         if not all(
             type(source.material.get(key)) is str and source.material[key]
@@ -387,8 +386,8 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
                 "yield_relation_identity",
             )
         ):
-            # Preserved legacy material is not an exact result of the material acquisition
-            # Act/Yield physiology required by this assignment subject.
+            # Preserved legacy material lacks the exact source Act/Yield
+            # coordinates required by this binding subject.
             continue
         source = read_exact_material_result(ledger, source_identity)
         material = source.material
@@ -406,9 +405,9 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
             type(value) is not str or not value
             for value in exact_coordinates.values()
         ):
-            raise ValueError("exact material acquisition assignment subject coordinates are malformed")
+            raise ValueError("exact material-result subject coordinates are malformed")
         sources.append(
-            UnassignedPositionCoordinateMeasurementAcquisitionReading(
+            UnboundPositionCoordinateMeasurementMaterialResultReading(
                 source_material_result_occurrence_identity=source.identity,
                 source_result_identity=exact_coordinates["result_identity"],
                 source_locality_identity=source.locality_identity,
@@ -445,17 +444,16 @@ def _unassigned_position_coordinate_measurement_acquisition_results_from_bounded
     return tuple(sources)
 
 
-def read_unassigned_position_coordinate_measurement_acquisition_results_through(
+def read_unbound_position_coordinate_measurement_material_results_through(
     ledger: EventLedger,
     *,
     locality_identity: str,
     through_event_occurrence_identity: str,
-) -> tuple[UnassignedPositionCoordinateMeasurementAcquisitionReading, ...]:
-    """Read exact unassigned material acquisition results for this Measurement through B.
+) -> tuple[UnboundPositionCoordinateMeasurementMaterialResultReading, ...]:
+    """Read exact unbound material results for this Measurement through B.
 
     The non-recording read establishes neither an exact Locality
-    relation nor that any returned source is a subject of this Measurement's
-    Responsibility assignment.
+    relation nor a subject-to-Act binding for any returned result.
     """
 
     from seed_runtime.operator_locality_standing import (
@@ -467,7 +465,7 @@ def read_unassigned_position_coordinate_measurement_acquisition_results_through(
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
-    return _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
+    return _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
         ledger,
         bounded_locality_replay,
         locality_identity=locality_identity,
@@ -517,7 +515,7 @@ def measure_position_coordinates_of_byte_pair_occurrences(
     *,
     source_material_result_occurrence_identity: str,
 ) -> FindingOfPositionCoordinatesOfBytePairOccurrences:
-    """Measure each exact byte-pair window in one material acquisition result."""
+    """Measure each exact byte-pair window in one material result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("byte-pair position-coordinate Measurement requires one EventLedger")
@@ -525,7 +523,7 @@ def measure_position_coordinates_of_byte_pair_occurrences(
         type(source_material_result_occurrence_identity) is not str
         or not source_material_result_occurrence_identity
     ):
-        raise ValueError("byte-pair position-coordinate Measurement requires one material acquisition result")
+        raise ValueError("byte-pair position-coordinate Measurement requires one material result")
     return _measure_through(
         ledger,
         source_material_result_occurrence_identity=source_material_result_occurrence_identity,
@@ -566,7 +564,7 @@ def _input_relation(
             "act_occurrence_identity": act_occurrence_identity,
         },
         "through": (
-            "one intact exact operator material acquisition result with its exact "
+            "one intact exact operator material result with its exact "
             "material-to-this-Seed Locality relation"
         ),
     }
@@ -641,11 +639,11 @@ def _require_current_standing(
             "byte-pair position-coordinate Measurement requires current Locality Standing"
         )
     boundary = locality_standing.get("through_event_occurrence_identity")
-    acquisition_results = locality_standing.get("material_result_occurrences")
+    material_results = locality_standing.get("material_result_occurrences")
     assignments = locality_standing.get("subject_to_act_binding_occurrences")
-    standing_acquisition_results = {
+    carried_material_results = {
         occurrence.get("result_occurrence_identity")
-        for occurrence in acquisition_results or ()
+        for occurrence in material_results or ()
         if type(occurrence) is dict
     }
     source_has_exact_locality = bool(
@@ -662,7 +660,7 @@ def _require_current_standing(
             source_material_result_occurrence_identity is not None
             and (
                 source_material_result_occurrence_identity
-                not in standing_acquisition_results
+                not in carried_material_results
                 or not source_has_exact_locality
             )
         )
@@ -800,7 +798,7 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
     # missing exact Locality relation nor the required assignment subject and
     # coordinates.
     current_sources = (
-        _unassigned_position_coordinate_measurement_acquisition_results_from_bounded_locality_replay(
+        _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay(
             ledger,
             locality_standing,
             locality_identity=finding.source_locality_identity,
@@ -810,7 +808,7 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
         source.source_material_result_occurrence_identity for source in current_sources
     }:
         raise ValueError(
-            "byte-pair position-coordinate assignment requires one exact current unassigned material acquisition result"
+            "byte-pair position-coordinate binding requires one exact current unbound material result"
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
@@ -1350,7 +1348,7 @@ def _assertion(
         "dimensions": {
             "identity": assertion_identity,
             "content": content,
-            "source_provenance": "one exact material acquisition occurrence and source boundary",
+            "source_provenance": "one exact material-result occurrence and source boundary",
             "responsibility": ASSERTION_RESPONSIBILITY,
         },
         "subject_kind": "assertion",
@@ -1819,7 +1817,7 @@ def _position_of_exact_source_position_coordinate_reference(
     position = position_coordinate_reference["position"]
     if position < 0 or position >= len(finding.exact_material):
         raise ValueError(
-            "addressed source position is outside the exact material acquisition result"
+            "addressed source position is outside the exact material result"
         )
     expected = _source_position_coordinate_reference(
         source_material_result_occurrence_identity=(
