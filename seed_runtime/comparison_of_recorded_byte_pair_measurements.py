@@ -46,10 +46,6 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND = (
 )
 
 RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE = "04.Compare.A"
-RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE = (
-    "compare complete exact findings of earlier and later recorded byte-position-pair "
-    "Measurement results"
-)
 RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT = (
     "Compare earlier and later exact carried byte-position-pair Measurement results"
 )
@@ -748,7 +744,6 @@ def _binding_material(
         "comparison_result_identity": comparison_result_identity,
         "result_boundary_identity": comparison_result_identity,
         "book_clause_identity": RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE,
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "earlier_measurement_reference": _measurement_reference(
             inputs["earlier_event"]
         ),
@@ -824,7 +819,6 @@ def _applicability_binding_material(
         "addressed_act_identity": addressed_act_identity,
         "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "earlier_measurement_reference": earlier_subject,
         "later_measurement_reference": later_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
@@ -1166,7 +1160,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": (
             _applicability_of_input_to_compare(binding)
         ),
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
     }
 
@@ -1261,7 +1254,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(act.material["scope"]),
         "applicability": "applicable",
         "unknown": [],
@@ -1282,7 +1274,6 @@ def _recorded_applicability_result_material(
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
         ),
-        "comparison_rule": material["comparison_rule"],
         "scope": deepcopy(material["scope"]),
         "applicability": material["applicability"],
         "unknown": list(material["unknown"]),
@@ -1452,7 +1443,6 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
         "participation_of_input_in_compare": (
             _participation_of_input_in_compare(binding)
         ),
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "scope": deepcopy(material["scope"]),
     }
 
@@ -1662,7 +1652,6 @@ def _comparison_result_material(
         "participation_of_input_in_compare": deepcopy(
             act.material["participation_of_input_in_compare"]
         ),
-        "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
@@ -1691,7 +1680,6 @@ def _recorded_comparison_result_material(
         "participation_of_input_in_compare": deepcopy(
             material["participation_of_input_in_compare"]
         ),
-        "comparison_rule": material["comparison_rule"],
         "findings": deepcopy(material["findings"]),
         "scope": deepcopy(material["scope"]),
         "unknown": list(material["unknown"]),

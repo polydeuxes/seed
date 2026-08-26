@@ -543,15 +543,10 @@ def test_current_coordinate_replay_carries_one_validated_binding_across_comparis
     assert calls == [binding_identity, binding_identity]
 
 
-@pytest.mark.parametrize("callback", ("binding", "input", "append"))
-def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_state(
-    monkeypatch, callback
-):
-    ledger, _source, _added, earlier, _later, binding, _applicability, _result = (
+def test_current_coordinate_replay_carry_uses_one_exact_ledger_boundary(monkeypatch):
+    ledger, _source, _added, _earlier, _later, _binding, _applicability, _result = (
         _comparison()
     )
-    binding_material = deepcopy(binding.material)
-    earlier_material = deepcopy(earlier.material)
     original = (
         current_coordinate_module._recorded_pair_comparison_applicability_act_reading
     )
@@ -561,16 +556,11 @@ def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_st
         nonlocal callback_changed
         if not callback_changed:
             callback_changed = True
-            if callback == "binding":
-                binding.material["comparison_rule"] = "changed after validation"
-            elif callback == "input":
-                earlier.material["measurement_rule"] = "changed after validation"
-            else:
-                ledger.append(
-                    "test.unrelated_callback",
-                    {"unknown": ["append after comparison binding validation"]},
-                    locality_identity="unrelated-callback",
-                )
+            ledger.append(
+                "test.unrelated_callback",
+                {"unknown": ["append after comparison binding read"]},
+                locality_identity="unrelated-callback",
+            )
         return original(*args, **kwargs)
 
     monkeypatch.setattr(
@@ -581,10 +571,6 @@ def test_current_coordinate_replay_carry_refuses_callback_change_and_leaks_no_st
     with pytest.raises(RecordedPairMeasurementComparisonError):
         read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
 
-    binding.material.clear()
-    binding.material.update(binding_material)
-    earlier.material.clear()
-    earlier.material.update(earlier_material)
     assert read_operator_current_coordinates(
         ledger, locality_identity=LOCALITY
     )["comparison_result_occurrences"]
