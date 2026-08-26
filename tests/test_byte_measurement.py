@@ -2039,6 +2039,21 @@ def test_locality_movement_binding_carries_the_exact_source():
     assert binding.kind == (
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND
     )
+    assert set(binding.material) == {
+        "movement_act_identity",
+        "movement_act_occurrence_identity",
+        "movement_result_identity",
+        "result_boundary_identity",
+        "book_clause_identity",
+        "source_assertion_reference",
+        "source_assertion_coordinates",
+        "source_locality",
+        "destination_locality",
+        "source_through_event_occurrence_identity",
+        "destination_through_event_occurrence_identity",
+        "determination",
+        "unknown",
+    }
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],

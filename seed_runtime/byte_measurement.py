@@ -920,13 +920,6 @@ def _movement_binding_material(
         "determination": (
             "the exact preserved Assertion in another Locality"
         ),
-        "scope": {
-            "source_assertion_reference": _source_assertion_reference(source),
-            "source_through_event_occurrence_identity": source_through_event_occurrence_identity,
-            "destination_through_event_occurrence_identity": (
-                destination_through_event_occurrence_identity
-            ),
-        },
         "unknown": [],
     }
 
