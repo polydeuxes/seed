@@ -107,9 +107,16 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
     assert binding.exact_material is act_occurrence.exact_material is None
     assert result.exact_material == b"\x00\xffraw\n"
-    assert binding.material["book_clause_identity"] == "01.Source.G"
-    assert "locality_relation" not in binding.material
-    assert binding.material["unknown"] == ["operator boundary material: Unknown"]
+    assert tuple(sorted(binding.material)) == (
+        "act",
+        "act_occurrence_identity",
+        "book_clause_identity",
+        "current_coordinate_reference",
+        "exact_act_identity",
+        "result_boundary_identity",
+        "subject_reference",
+        "unknown",
+    )
     assert binding.identity in after_binding[
         "subject_to_act_binding_occurrences"
     ]
@@ -120,7 +127,6 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         "locality_identity": "source",
         "through_event_occurrence_identity": standing_boundary,
     }
-    assert recorded["scope"] == binding.material["scope"]
     assert OPERATOR_MATERIAL_SOURCE_LOCALITY_RELATION_OCCURRENCE_KIND == (
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
     )
@@ -409,7 +415,7 @@ def test_exact_source_families_merge_only_their_append_order():
     ] == [first.identity, operator.identity, last.identity]
 
 
-def test_equal_raw_results_keep_distinct_occurrences_and_scopes():
+def test_equal_raw_results_keep_distinct_occurrences_and_boundaries():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     results = []
@@ -531,9 +537,7 @@ def test_act_refuses_binding_absent_from_current_coordinates():
         "act",
         "exact_act_identity",
         "act_occurrence_identity",
-        "result_boundary_identity",
         "current_coordinate_reference",
-        "scope",
         "unknown",
     ),
 )
@@ -553,6 +557,23 @@ def test_changed_binding_coordinates_are_refused(coordinate):
         )
 
 
+def test_result_refuses_a_changed_binding_result_boundary():
+    ledger = EventLedger()
+    current_coordinates, _through_occurrence = _context(ledger)
+    binding = _binding(ledger, current_coordinates)
+    act = _act(ledger, binding)
+    result = record_operator_material_source_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+        boundary_material=_boundary(),
+    )
+
+    binding.material["result_boundary_identity"] = "different"
+
+    with pytest.raises((OperatorMaterialSourceError, TypeError, ValueError)):
+        get_recorded_operator_material_source(ledger, result.identity)
+
+
 @pytest.mark.parametrize(
     "coordinate",
     (
@@ -563,7 +584,6 @@ def test_changed_binding_coordinates_are_refused(coordinate):
         "exact_act",
         "subject_to_act_binding_reference",
         "current_coordinate_reference",
-        "scope",
         "source_boundary",
         "locality_relation",
         "locality_relation_occurrence_identity",

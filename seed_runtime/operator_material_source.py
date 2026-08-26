@@ -110,17 +110,6 @@ def _current_coordinate_reference(
     }
 
 
-def _scope(
-    *,
-    current_coordinate_reference: dict[str, str | None],
-    result_boundary_identity: str,
-) -> dict[str, str | None]:
-    return {
-        **deepcopy(current_coordinate_reference),
-        "result_boundary_identity": result_boundary_identity,
-    }
-
-
 def _subject_to_act_binding_material(
     *,
     exact_act_identity: str,
@@ -142,10 +131,6 @@ def _subject_to_act_binding_material(
         "result_boundary_identity": result_boundary_identity,
         "current_coordinate_reference": deepcopy(
             current_coordinate_reference
-        ),
-        "scope": _scope(
-            current_coordinate_reference=current_coordinate_reference,
-            result_boundary_identity=result_boundary_identity,
         ),
         "unknown": ["operator boundary material: Unknown"],
     }
@@ -177,7 +162,6 @@ def _act_occurrence_material(binding: Event) -> dict[str, Any]:
         "current_coordinate_reference": deepcopy(
             material["current_coordinate_reference"]
         ),
-        "scope": deepcopy(material["scope"]),
         "result_boundary_identity": material["result_boundary_identity"],
     }
 
@@ -209,7 +193,6 @@ def _result_material(
         "current_coordinate_reference": deepcopy(
             material["current_coordinate_reference"]
         ),
-        "scope": deepcopy(material["scope"]),
         "source_boundary": boundary_material.material_boundary,
         "locality_relation": {
             "first_subject": exact_material_subject,
@@ -241,7 +224,6 @@ def _recorded_result_material(
         "current_coordinate_reference": result_material[
             "current_coordinate_reference"
         ],
-        "scope": result_material["scope"],
         "source_boundary": result_material["source_boundary"],
         "locality_relation": result_material["locality_relation"],
         "locality_relation_occurrence_identity": result_material[
@@ -379,7 +361,6 @@ def get_operator_material_source_subject_to_act_binding(
     material = binding.material
     current_reference = material.get("current_coordinate_reference")
     subject_reference = material.get("subject_reference")
-    scope = material.get("scope")
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
