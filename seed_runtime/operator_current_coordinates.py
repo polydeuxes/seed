@@ -2610,25 +2610,25 @@ def _carry_occurrence_position_measurement_result_into_standing(
     return locality_standing
 
 
-def _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+def _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
     destination_coordinate: str | None,
 ) -> dict[str, Any]:
     if (
-        type(locality_standing) is not dict
+        type(current_coordinates) is not dict
         or ledger.get(event.identity) != event
         or ledger.integrity_of(event.identity) == CORRUPTED
-        or event.locality_identity != locality_standing.get("locality_identity")
-        or locality_standing.get("through_event_occurrence_identity")
+        or event.locality_identity != current_coordinates.get("locality_identity")
+        or current_coordinates.get("through_event_occurrence_identity")
         != prior_through_event_occurrence_identity
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
     ):
-        raise ValueError("pair Measurement lifecycle Standing is not exact")
+        raise ValueError("pair Measurement lifecycle coordinates are not exact")
     try:
         ledger.occurrences_in_append_order(
             (prior_through_event_occurrence_identity, event.identity),
@@ -2636,76 +2636,76 @@ def _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
         )
     except ValueError as error:
         raise ValueError(
-            "pair Measurement lifecycle Standing order is not exact"
+            "pair Measurement lifecycle coordinate order is not exact"
         ) from error
     destination = (
-        locality_standing[destination_coordinate]
+        current_coordinates[destination_coordinate]
         if destination_coordinate is not None
         else None
     )
-    event_count = locality_standing.get("event_count")
+    event_count = current_coordinates.get("event_count")
     if (
         type(event_count) is not int
         or event_count < 0
         or (destination is not None and event.identity in destination)
     ):
-        raise ValueError("pair Measurement lifecycle Standing is not exact")
-    standing_additions = _exact_current_coordinate_additions(
-        locality_standing,
+        raise ValueError("pair Measurement lifecycle coordinates are not exact")
+    coordinate_additions = _exact_current_coordinate_additions(
+        current_coordinates,
         event,
-        error_message="pair Measurement lifecycle Standing is not exact",
+        error_message="pair Measurement lifecycle coordinates are not exact",
     )
-    if destination is locality_standing["measurement_occurrences"]:
+    if destination is current_coordinates["measurement_occurrences"]:
         destination[event.identity] = _measurement_occurrence_coordinates(event)
     elif destination is not None:
         destination[event.identity] = None
-    for key, added in standing_additions.items():
+    for key, added in coordinate_additions.items():
         for value in added:
-            _record_distinct(locality_standing[key], value)
-    locality_standing["through_event_occurrence_identity"] = event.identity
-    locality_standing["event_count"] = event_count + 1
-    return locality_standing
+            _record_distinct(current_coordinates[key], value)
+    current_coordinates["through_event_occurrence_identity"] = event.identity
+    current_coordinates["event_count"] = event_count + 1
+    return current_coordinates
 
 
-def _carry_pair_applicability_binding_into_standing(
+def _carry_pair_applicability_binding_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     binding,
     source,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         binding,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="subject_to_act_binding_occurrences",
     )
 
 
-def _carry_pair_measurement_binding_into_standing(
+def _carry_pair_measurement_binding_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     binding,
     source,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
     _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         binding,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="subject_to_act_binding_occurrences",
     )
 
 
-def _carry_pair_applicability_act_into_standing(
+def _carry_pair_applicability_act_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     binding,
@@ -2715,18 +2715,18 @@ def _carry_pair_applicability_act_into_standing(
     _require_exact_pair_applicability_act_event(
         ledger, event, binding=binding, source=source
     )
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate=None,
     )
 
 
-def _carry_pair_applicability_result_into_standing(
+def _carry_pair_applicability_result_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     binding,
@@ -2741,18 +2741,18 @@ def _carry_pair_applicability_result_into_standing(
         source=source,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="applicability_result_occurrences",
     )
 
 
-def _carry_pair_measurement_act_into_standing(
+def _carry_pair_measurement_act_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     binding,
@@ -2772,18 +2772,18 @@ def _carry_pair_measurement_act_into_standing(
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate=None,
     )
 
 
-def _carry_pair_measurement_result_into_standing(
+def _carry_pair_measurement_result_into_current_coordinates(
     ledger: EventLedger,
-    locality_standing: dict[str, Any],
+    current_coordinates: dict[str, Any],
     event,
     *,
     act_occurrence,
@@ -2802,9 +2802,9 @@ def _carry_pair_measurement_result_into_standing(
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
     )
-    return _carry_validated_pair_measurement_lifecycle_occurrence_into_standing(
+    return _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordinates(
         ledger,
-        locality_standing,
+        current_coordinates,
         event,
         prior_through_event_occurrence_identity=prior_through_event_occurrence_identity,
         destination_coordinate="measurement_occurrences",

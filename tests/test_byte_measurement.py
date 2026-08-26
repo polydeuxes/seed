@@ -1728,11 +1728,11 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
 def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     from seed_runtime import byte_measurement
     from seed_runtime.operator_current_coordinates import (
-        _carry_pair_applicability_act_into_standing,
-        _carry_pair_applicability_binding_into_standing,
-        _carry_pair_applicability_result_into_standing,
-        _carry_pair_measurement_act_into_standing,
-        _carry_pair_measurement_binding_into_standing,
+        _carry_pair_applicability_act_into_current_coordinates,
+        _carry_pair_applicability_binding_into_current_coordinates,
+        _carry_pair_applicability_result_into_current_coordinates,
+        _carry_pair_measurement_act_into_current_coordinates,
+        _carry_pair_measurement_binding_into_current_coordinates,
     )
 
     ledger = _ledger(b"tata\n")
@@ -1761,7 +1761,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
         through_event_occurrence_identity=boundary,
         identities=identities,
     )
-    current_coordinates = _carry_pair_applicability_binding_into_standing(
+    current_coordinates = _carry_pair_applicability_binding_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_binding,
@@ -1777,7 +1777,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
         through_event_occurrence_identity=applicability_binding.identity,
         identities=identities,
     )
-    current_coordinates = _carry_pair_measurement_binding_into_standing(
+    current_coordinates = _carry_pair_measurement_binding_into_current_coordinates(
         ledger,
         current_coordinates,
         measurement_binding,
@@ -1810,7 +1810,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
             current_coordinates=current_coordinates,
         )
     )
-    current_coordinates = _carry_pair_applicability_act_into_standing(
+    current_coordinates = _carry_pair_applicability_act_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_act,
@@ -1820,7 +1820,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     )
     unchanged = deepcopy(current_coordinates)
     with pytest.raises(ValueError, match="order is not exact"):
-        _carry_pair_applicability_act_into_standing(
+        _carry_pair_applicability_act_into_current_coordinates(
             ledger,
             current_coordinates,
             applicability_act,
@@ -1839,7 +1839,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
             applicability_assertion=applicability,
         )
     )
-    current_coordinates = _carry_pair_applicability_result_into_standing(
+    current_coordinates = _carry_pair_applicability_result_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_event,
@@ -1855,7 +1855,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
         applicability_event=applicability_event,
         current_coordinates=current_coordinates,
     )
-    current_coordinates = _carry_pair_measurement_act_into_standing(
+    current_coordinates = _carry_pair_measurement_act_into_current_coordinates(
         ledger,
         current_coordinates,
         measurement_act,
@@ -1867,7 +1867,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
     )
     unchanged = deepcopy(current_coordinates)
     with pytest.raises(ValueError, match="order is not exact"):
-        _carry_pair_measurement_act_into_standing(
+        _carry_pair_measurement_act_into_current_coordinates(
             ledger,
             current_coordinates,
             measurement_act,

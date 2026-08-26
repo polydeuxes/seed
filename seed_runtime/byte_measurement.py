@@ -4500,12 +4500,12 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
     current_coordinates: dict[str, Any],
 ) -> tuple[Event, dict[str, Any]]:
     from seed_runtime.operator_current_coordinates import (
-        _carry_pair_applicability_act_into_standing,
-        _carry_pair_applicability_result_into_standing,
-        _carry_pair_measurement_act_into_standing,
-        _carry_pair_applicability_binding_into_standing,
-        _carry_pair_measurement_binding_into_standing,
-        _carry_pair_measurement_result_into_standing,
+        _carry_pair_applicability_act_into_current_coordinates,
+        _carry_pair_applicability_result_into_current_coordinates,
+        _carry_pair_measurement_act_into_current_coordinates,
+        _carry_pair_applicability_binding_into_current_coordinates,
+        _carry_pair_measurement_binding_into_current_coordinates,
+        _carry_pair_measurement_result_into_current_coordinates,
     )
 
     boundary = _require_carried_pair_measurement_at_current_append_boundary(
@@ -4524,7 +4524,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         through_event_occurrence_identity=boundary,
         identities=lifecycle_identities,
     )
-    current_coordinates = _carry_pair_applicability_binding_into_standing(
+    current_coordinates = _carry_pair_applicability_binding_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_binding,
@@ -4540,7 +4540,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         through_event_occurrence_identity=applicability_binding.identity,
         identities=lifecycle_identities,
     )
-    current_coordinates = _carry_pair_measurement_binding_into_standing(
+    current_coordinates = _carry_pair_measurement_binding_into_current_coordinates(
         ledger,
         current_coordinates,
         measurement_binding,
@@ -4561,7 +4561,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
             current_coordinates=current_coordinates,
         )
     )
-    current_coordinates = _carry_pair_applicability_act_into_standing(
+    current_coordinates = _carry_pair_applicability_act_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_act,
@@ -4576,7 +4576,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         applicability_act_occurrence=applicability_act,
         applicability_assertion=applicability,
     )
-    current_coordinates = _carry_pair_applicability_result_into_standing(
+    current_coordinates = _carry_pair_applicability_result_into_current_coordinates(
         ledger,
         current_coordinates,
         applicability_event,
@@ -4596,7 +4596,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
             current_coordinates=current_coordinates,
         )
     )
-    current_coordinates = _carry_pair_measurement_act_into_standing(
+    current_coordinates = _carry_pair_measurement_act_into_current_coordinates(
         ledger,
         current_coordinates,
         act_occurrence,
@@ -4615,7 +4615,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         applicability_act_occurrence=applicability_act,
         current_coordinates=current_coordinates,
     )
-    current_coordinates = _carry_pair_measurement_result_into_standing(
+    current_coordinates = _carry_pair_measurement_result_into_current_coordinates(
         ledger,
         current_coordinates,
         result,
