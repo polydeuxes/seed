@@ -1375,9 +1375,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
             "count": len(productions),
         }
         if len(productions) > 1:
-            finding["recurrence"] = {
-                "count_finding_position": finding_position,
-            }
+            finding["recurrence"] = {}
         findings.append(finding)
     return findings
 
@@ -1724,9 +1722,7 @@ def _coordinate_findings(
                 "count": len(support),
             }
             if len(support) > 1:
-                finding["recurrence"] = {
-                    "count_finding_position": finding_position,
-                }
+                finding["recurrence"] = {}
             findings.append(finding)
     return findings
 

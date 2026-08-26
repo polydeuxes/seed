@@ -253,7 +253,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
         for finding in target_recurrence_reading["findings"]
     ) == tuple(range(len(target_recurrence_reading["findings"])))
     finding = _target_finding(ledger, target_recurrence)
-    assert "recurrence" in finding
+    assert finding["recurrence"] == {}
     assert finding["count"] == 2
     assert tuple(
         get_recorded_source_position_measurement(
@@ -317,6 +317,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     }
 
     assert recurrent[(1, 4), b"+"]["count"] == 2
+    assert recurrent[(1, 4), b"+"]["recurrence"] == {}
     assert tuple(
         (_finding_source_positions(finding), finding["count"])
         for finding in iter_recurrent_coordinate_material_findings(
