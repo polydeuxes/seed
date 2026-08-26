@@ -4194,7 +4194,6 @@ def _pair_measurement_result_material(
         "dimensions": {
             "identity": "byte-position-pair-count-measurement-occurrence",
             "content": "byte-position-pair count and same-content Assertions",
-            "source_provenance": "the recorded source-material Assertion",
         },
         "exact_act": "declared byte-position-pair Measurement",
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -4678,7 +4677,6 @@ def _validated_recorded_byte_position_pair_measurement(
         "content": (
             "byte-position-pair count and same-content Assertions"
         ),
-        "source_provenance": "the recorded source-material Assertion",
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
