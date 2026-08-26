@@ -656,9 +656,6 @@ def _recorded_compare_result_material(
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
         ),
-        "participation_of_input_in_compare": deepcopy(
-            material["participation_of_input_in_compare"]
-        ),
         "finding": deepcopy(material["finding"]),
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -753,34 +750,6 @@ def _compare_act_material(
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
         ),
-        "participation_of_input_in_compare": [
-            {
-                "first_subject": deepcopy(
-                    subject["first_source_position_coordinate"]
-                ),
-                "relation": "participation",
-                "second_subject": {
-                    "act_identity": material["exact_act_identity"],
-                    "act_occurrence_identity": material[
-                        "compare_act_occurrence_identity"
-                    ],
-                    "role": f"path position {subject['path_position_pair'][0]}",
-                },
-            },
-            {
-                "first_subject": deepcopy(
-                    subject["second_source_position_coordinate"]
-                ),
-                "relation": "participation",
-                "second_subject": {
-                    "act_identity": material["exact_act_identity"],
-                    "act_occurrence_identity": material[
-                        "compare_act_occurrence_identity"
-                    ],
-                    "role": f"path position {subject['path_position_pair'][1]}",
-                },
-            },
-        ],
         "unknown": [],
         "conflicts": [],
     }
@@ -863,9 +832,6 @@ def _compare_result_material(
         "applicability_result_event_identity": applicability.identity,
         "applicability_of_input_to_compare": deepcopy(
             applicability.material["applicability_of_input_to_compare"]
-        ),
-        "participation_of_input_in_compare": deepcopy(
-            act.material["participation_of_input_in_compare"]
         ),
         "finding": _finding(inputs),
         "path_result_reference": deepcopy(inputs["reference"]),
