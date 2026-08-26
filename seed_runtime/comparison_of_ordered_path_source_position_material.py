@@ -48,7 +48,6 @@ APPLICABILITY_ACT = (
     "Applicability of ordered path source position material to Compare"
 )
 COMPARE_ACT = "Compare ordered path source position material"
-RULE = "compare exact material of ordered path source position coordinates"
 APPLICABILITY_BOUNDARY = (
     "comparison_of_ordered_path_source_position_material_applicability"
 )
@@ -266,7 +265,6 @@ def _compare_binding_material(
         "compare_result_identity": identities["compare_result_identity"],
         "result_boundary_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
-        "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
         "through_event_occurrence_identity": boundary,
         "exact_act": COMPARE_ACT,
@@ -326,7 +324,6 @@ def _applicability_binding_material(
             compare_binding
         ),
         "book_clause_identity": "01.Current.E.1",
-        "comparison_rule": RULE,
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
@@ -387,7 +384,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": material["compare_result_identity"],
-        "comparison_rule": RULE,
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_assertion_reference": deepcopy(material["path_assertion_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -598,7 +594,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": deepcopy(
             act.material["applicability_of_input_to_compare"]
         ),
-        "comparison_rule": RULE,
         "applicability": "applicable",
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -649,7 +644,6 @@ def _recorded_applicability_result_material(
         "applicability_of_input_to_compare": deepcopy(
             material["applicability_of_input_to_compare"]
         ),
-        "comparison_rule": material["comparison_rule"],
         "applicability": material["applicability"],
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -683,7 +677,6 @@ def _recorded_compare_result_material(
         "participation_of_input_in_compare": deepcopy(
             material["participation_of_input_in_compare"]
         ),
-        "comparison_rule": material["comparison_rule"],
         "finding": deepcopy(material["finding"]),
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -807,7 +800,6 @@ def _compare_act_material(
                 },
             },
         ],
-        "comparison_rule": RULE,
         "scope": deepcopy(material["scope"]),
         "unknown": [],
         "conflicts": [],
@@ -897,7 +889,6 @@ def _compare_result_material(
         "participation_of_input_in_compare": deepcopy(
             act.material["participation_of_input_in_compare"]
         ),
-        "comparison_rule": RULE,
         "finding": _finding(inputs),
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
