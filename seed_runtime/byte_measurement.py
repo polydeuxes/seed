@@ -3217,7 +3217,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "content": content,
                 "source_provenance": provenance,
             },
-            "subject_kind": "assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -4963,7 +4962,6 @@ def _validated_recorded_byte_position_pair_measurement(
     by_pair: dict[tuple[int, int], dict[str, dict[str, Any]]] = {}
     exact_keys = {
         "dimensions",
-        "subject_kind",
         "result",
         "assertion_subject",
         "assertion_scope",
@@ -4995,7 +4993,6 @@ def _validated_recorded_byte_position_pair_measurement(
             }
             or result not in {"count", "recurrence"}
             or assertion.get("assertion_scope") != expected_scope
-            or assertion.get("subject_kind") != "assertion"
             or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
