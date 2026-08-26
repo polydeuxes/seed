@@ -48,10 +48,6 @@ RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "declared Measurement of byte-pair occurrence position"
 )
-RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "each ordered occurrence of the exact Yield-carried byte pair in one exact "
-    "material result within one completeness boundary and occurrence count boundary"
-)
 SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "exact Yield-carried pair Assertion and exact later material result only"
 )
@@ -66,7 +62,6 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "addressed_act_identity",
         "act_occurrence_identity",
         "subject_to_act_binding_reference",
-        "measurement_rule",
         "source_localities",
         "completeness_boundary",
         "pair_assertion_reference",
@@ -964,7 +959,6 @@ def _material_of_act_occurrence(
         "subject_to_act_binding_reference": _binding_reference(
             binding
         ),
-        "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
@@ -1088,7 +1082,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
         ),
-        "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     }
     assertions = []
     for assertion_position, (first_position, second_position) in enumerate(
@@ -1155,7 +1148,6 @@ def _material_of_result_of_measurement(
         "subject_to_act_binding_reference": _binding_reference(
             binding
         ),
-        "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
@@ -1241,7 +1233,6 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "subject_to_act_binding_reference": result[
                 "subject_to_act_binding_reference"
             ],
-            "measurement_rule": result["measurement_rule"],
             "source_localities": result["source_localities"],
             "completeness_boundary": result["completeness_boundary"],
             "pair_assertion_reference": result["pair_assertion_reference"],
