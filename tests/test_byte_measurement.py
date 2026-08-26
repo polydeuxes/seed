@@ -1,8 +1,6 @@
 from tests.binary_input import binary_input
 from collections import Counter as ExactCounter
 from copy import deepcopy
-import hashlib
-import json
 
 import pytest
 
@@ -27,8 +25,6 @@ from seed_runtime.byte_measurement import (
     _record_byte_measurement_result_from_carried_act_occurrence,
     _record_movement_binding_from_current_coordinates,
     _validate_moved_byte_assertion,
-    _identity,
-    _pair_assertion_identity,
     get_byte_position_pair_measurement_subject_to_act_binding,
     get_recorded_pair_input_applicability,
     get_byte_measurement_subject_to_act_binding,
@@ -126,36 +122,6 @@ def _record_byte_measurement_assignment_and_act(
         ),
     )
     return assignment, act
-
-
-@pytest.mark.parametrize(
-    ("result", "content"),
-    (
-        (
-            "count",
-            {"input_count": 17, "occurrences_carrying": 3, "count": 8},
-        ),
-        ("recurrence", {"recurrence_established": True}),
-    ),
-)
-def test_fixed_pair_identity_shape_equals_the_general_exact_identity(
-    result, content
-):
-    exact_pair = (0, 255)
-    scope = {"source_localities": ["source-λ", "source-2"]}
-    subject = {
-        "content": list(exact_pair),
-        "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
-    }
-
-    assert _pair_assertion_identity(
-        result=result,
-        exact_pair=exact_pair,
-        exact_scope_json=json.dumps(
-            scope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-        ),
-        content=content,
-    ) == _identity(result=result, subject=subject, scope=scope, content=content)
 
 
 class IntegrityCountingLedger(EventLedger):
@@ -1519,12 +1485,6 @@ def test_pair_validation_requires_one_exact_ordered_content(content):
     )
     assertion = event.material["assertions"][0]
     assertion["assertion_subject"]["content"] = content
-    assertion["dimensions"]["identity"] = _identity(
-        result=assertion["result"],
-        subject=assertion["assertion_subject"],
-        scope=assertion["assertion_scope"],
-        content=assertion["dimensions"]["content"],
-    )
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
         name: event.material[name]
@@ -2609,12 +2569,6 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         "occurrences_carrying": 2,
         "count": 1,
     }
-    count["dimensions"]["identity"] = _identity(
-        result="count",
-        subject=count["assertion_subject"],
-        scope=count["assertion_scope"],
-        content=count["dimensions"]["content"],
-    )
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
         name: event.material[name]
@@ -2639,12 +2593,6 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
         if assertion["result"] == "count"
     )
     count["dimensions"]["content"].pop("occurrences_carrying")
-    count["dimensions"]["identity"] = _identity(
-        result="count",
-        subject=count["assertion_subject"],
-        scope=count["assertion_scope"],
-        content=count["dimensions"]["content"],
-    )
     yield_relation = ledger.get(event.material["yield_relation_identity"])
     yield_relation.material["result"] = {
         name: event.material[name]
@@ -2732,7 +2680,6 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
 
 FIDELITY_DISTINCTIONS = {
     ("book_coordinates", "01.Source.D", "result"): (
-        test_fixed_pair_identity_shape_equals_the_general_exact_identity,
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,
         test_each_replay_validates_each_exact_material_acquisition_and_reads_independently,

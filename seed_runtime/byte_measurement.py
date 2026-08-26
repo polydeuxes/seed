@@ -17,8 +17,6 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 from dataclasses import dataclass
-import hashlib
-import json
 from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -381,63 +379,6 @@ class _RecordedBytePairMeasurementReading:
     results: tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...]
     assignment: Event
     source: RecordedByteAssertion
-
-
-def _exact_json(value: Any) -> str:
-    return json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    )
-
-
-_BYTE_PAIR_MEASUREMENT_RULE_JSON = _exact_json(BYTE_PAIR_MEASUREMENT_RULE)
-
-
-def _identity(
-    *, result: str, subject: dict[str, Any], scope: dict[str, Any], content: Any
-) -> str:
-    carried = {"result": result, "subject": subject, "scope": scope, "content": content}
-    return "byte-measurement:" + hashlib.sha256(
-        _exact_json(carried).encode("utf-8")
-    ).hexdigest()
-
-
-def _pair_assertion_identity(
-    *,
-    result: str,
-    exact_pair: tuple[int, int],
-    exact_scope_json: str,
-    content: dict[str, Any],
-) -> str:
-    """Hash the fixed pair-Assertion JSON shape without rebuilding that shape."""
-
-    first, second = exact_pair
-    exact_subject_json = (
-        f'{{"content":[{first},{second}],"measurement_rule":'
-        + _BYTE_PAIR_MEASUREMENT_RULE_JSON
-        + "}"
-    )
-    if result == "recurrence":
-        exact_content_json = '{"recurrence_established":true}'
-        exact_result_json = '"recurrence"'
-    else:
-        exact_content_json = (
-            f'{{"count":{content["count"]},'
-            f'"input_count":{content["input_count"]},'
-            f'"occurrences_carrying":{content["occurrences_carrying"]}}}'
-        )
-        exact_result_json = '"count"'
-    carried = (
-        '{"content":'
-        + exact_content_json
-        + ',"result":'
-        + exact_result_json
-        + ',"scope":'
-        + exact_scope_json
-        + ',"subject":'
-        + exact_subject_json
-        + "}"
-    )
-    return "byte-measurement:" + hashlib.sha256(carried.encode("utf-8")).hexdigest()
 
 
 def _recorded_input_assertion_coordinates(
@@ -3162,7 +3103,24 @@ def assertions_of_recorded_byte_measurement(
     )
 
 
-def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
+def _pair_assertion_count(measured: MeasuredBytePairInputs) -> int:
+    return len(measured.counts) + sum(item.count > 1 for item in measured.counts)
+
+
+def _pair_assertions(
+    measured: MeasuredBytePairInputs,
+    *,
+    assertion_identities: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    if (
+        len(assertion_identities) != _pair_assertion_count(measured)
+        or any(type(identity) is not str or not identity for identity in assertion_identities)
+        or len(set(assertion_identities)) != len(assertion_identities)
+    ):
+        raise ByteMeasurementError(
+            "pair Measurement requires one exact address for each Assertion"
+        )
+    identities = iter(assertion_identities)
     scope = {
         "source_localities": list(measured.source_localities),
     }
@@ -3181,7 +3139,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "content": list(item.content),
             "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         }
-        identity = _identity(result=result, subject=subject, scope=scope, content=content)
+        identity = next(identities)
         return {
             "dimensions": {
                 "identity": identity,
@@ -4326,6 +4284,7 @@ def _pair_measurement_result_material(
     *,
     assignment: Event,
     applicability_event: Event,
+    assertion_identities: tuple[str, ...],
 ) -> dict[str, Any]:
     return {
         "result_identity": assignment.material["measurement_result_identity"],
@@ -4352,7 +4311,10 @@ def _pair_measurement_result_material(
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
-        "assertions": _pair_assertions(measured),
+        "assertions": _pair_assertions(
+            measured,
+            assertion_identities=assertion_identities,
+        ),
     }
 
 
@@ -4428,10 +4390,15 @@ def _record_pair_measurement_result_from_carried_act(
         raise ByteMeasurementError(
             "pair Measurement result requires its exact Act at the append tip"
         )
+    assertion_identities = tuple(
+        ledger.mint_identity("byte_pair_assertion")
+        for _ in range(_pair_assertion_count(measured))
+    )
     result_material = _pair_measurement_result_material(
         measured,
         assignment=assignment,
         applicability_event=applicability_event,
+        assertion_identities=assertion_identities,
     )
     yield_relation = _record_yield_relation(
         ledger,
@@ -4460,6 +4427,7 @@ def _record_pair_measurement_result_from_carried_act(
             measured,
             assignment=assignment,
             applicability_event=applicability_event,
+            assertion_identities=assertion_identities,
         ),
         "yield_relation_identity": yield_relation.identity,
         "act_occurrence_event_identity": act_occurrence.identity,
@@ -4509,11 +4477,21 @@ def _require_exact_pair_measurement_result_event(
         ],
     )
     yield_relation = ledger.get(event.material.get("yield_relation_identity"))
+    assertions = event.material.get("assertions")
+    try:
+        assertion_identities = tuple(
+            assertion["dimensions"]["identity"] for assertion in assertions
+        )
+    except (KeyError, TypeError) as error:
+        raise ByteMeasurementError(
+            "pair Measurement result carries no exact Assertion addresses"
+        ) from error
     expected = {
         **_pair_measurement_result_material(
             measured,
             assignment=assignment,
             applicability_event=applicability_event,
+            assertion_identities=assertion_identities,
         ),
         "yield_relation_identity": (
             event.material.get("yield_relation_identity")
@@ -4940,7 +4918,7 @@ def _validated_recorded_byte_position_pair_measurement(
         "conflicts",
         "unknown",
     }
-    exact_scope_json = _exact_json(expected_scope)
+    assertion_addresses: set[str] = set()
     for assertion in assertions:
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
             raise ByteMeasurementError(f"{event_identity} carries a malformed pair Assertion")
@@ -4972,11 +4950,15 @@ def _validated_recorded_byte_position_pair_measurement(
                     "content",
                     "source_provenance",
                 }
+            or type(dimensions.get("identity")) is not str
+            or not dimensions["identity"]
+            or dimensions["identity"] in assertion_addresses
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
+        assertion_addresses.add(dimensions["identity"])
         content = dimensions.get("content")
-        fixed_content_shape = (
+        content_shape_is_exact = (
             result == "recurrence"
             and content == {"recurrence_established": True}
         ) or (
@@ -4985,23 +4967,10 @@ def _validated_recorded_byte_position_pair_measurement(
             and set(content) == {"input_count", "occurrences_carrying", "count"}
             and all(type(value) is int for value in content.values())
         )
-        expected_identity = (
-            _pair_assertion_identity(
-                result=result,
-                exact_pair=tuple(exact_pair),
-                exact_scope_json=exact_scope_json,
-                content=content,
+        if not content_shape_is_exact:
+            raise ByteMeasurementError(
+                f"{event_identity} carries unlawful pair {result}"
             )
-            if fixed_content_shape
-            else _identity(
-                result=result,
-                subject=subject,
-                scope=expected_scope,
-                content=content,
-            )
-        )
-        if dimensions.get("identity") != expected_identity:
-            raise ByteMeasurementError(f"{event_identity} carries a false pair Assertion identity")
         group = by_pair.setdefault(tuple(exact_pair), {})
         if result in group:
             raise ByteMeasurementError(f"{event_identity} duplicates one pair result")

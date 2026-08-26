@@ -75,14 +75,15 @@ addresses across durable reopen without JSON, UTF-8, or SHA.
 This proves that the hash was not the Assertion distinction on the plain-byte
 road.
 
-## Remaining cleanup frontier
+## Pair build
 
-Do not merely delete `assertion_identity` from the remaining pair road: local
-support and movement still need to name one exact Assertion.
+The adjacent pair road now uses the same Ledger-owned result-local Assertion
+address. Its reader validates that each address is exact and distinct, then
+validates the complete pair Assertion coordinates and local count-to-recurrence
+support. The optimized hand-built JSON/SHA path and its UTF-8 conversion are
+gone.
 
-The pair road must replace the proxy with an address owned by the recorded
-result physiology. Two shapes remain possible there and are not yet
-distinguished:
+Two exact address shapes had remained possible:
 
 ```text
 recorded result occurrence
@@ -96,20 +97,19 @@ recorded result occurrence
 + exact carried Assertion coordinates
 ```
 
-The first is now proven by the plain-byte road: the Ledger can mint and preserve
+The first is now proven by both roads: the Ledger can mint and preserve
 the local Assertion address before Yield/result recording, then replay the
 stored address while validating all independently reconstructed coordinates.
-The second carries a larger exact reference and may remove the extra identity
-entirely.
+The second would carry a larger exact reference and may still be investigated
+later; it is not required to remove the internal encoders.
 
 No encoder, decoder, hash, schema-family label, or compatibility field is
 warranted by the recovered distinction.
 
 ## Disposition
 
-The hash identities are not constitutional grammar and must not remain as an
-internal address mechanism. The plain-byte hash has been removed. The pair hash
-remains until its own bounded build preserves:
+The hash identities are not constitutional grammar. Both byte Measurement hash
+paths have been removed while preserving:
 
 ```text
 count Assertion → recurrence support
