@@ -232,19 +232,6 @@ def _recorded_result_material(
         "known_loss": result_material["known_loss"],
         "unknown": result_material["unknown"],
         "provenance_occurrence_references": [],
-        "dimensions": {
-            "identity": result_material["result_identity"],
-            "source_provenance": result_material["source_boundary"],
-            "scope_locality": (
-                "locality:"
-                + result_material["current_coordinate_reference"][
-                    "locality_identity"
-                ]
-            ),
-            "occurrence_preservation": (
-                "exact operator material material source occurrence recorded"
-            ),
-        },
     }
     if act_occurrence_event_identity is not None:
         recorded["act_occurrence_event_identity"] = (
