@@ -168,7 +168,7 @@ def _pair_lifecycle(ledger):
         applicability.material["act_occurrence_event_identity"]
     )
     assignment = ledger.get(
-        result.material["responsibility_assignment_reference"][
+        result.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ]
     )
@@ -181,7 +181,7 @@ def test_pair_standing_replay_carries_both_subject_to_act_bindings_and_result():
         _pair_lifecycle(ledger)
     )
     applicability_binding_identity = applicability_act.material[
-        "responsibility_assignment_reference"
+        "subject_to_act_binding_reference"
     ]["recorded_occurrence_identity"]
 
     standing = _standing(ledger)
@@ -352,7 +352,7 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
     assert standing["exact_result_occurrences"] == {
         source.identity: source_act.material["subject_to_act_binding_reference"],
         measurement.identity: measurement_act.material[
-            "responsibility_assignment_reference"
+            "subject_to_act_binding_reference"
         ],
     }
     assert all(

@@ -349,7 +349,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
     assert act_occurrence.kind == BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
     assert ledger.list_locality("measurement") == [assignment, act_occurrence]
     assert act_occurrence.material["source_localities"] == ["source"]
-    assert act_occurrence.material["responsibility_assignment_reference"][
+    assert act_occurrence.material["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"
     ] == assignment.identity
 
@@ -410,7 +410,7 @@ def test_exact_byte_assignment_enters_standing_and_owns_distinct_lifecycle_ident
         result.identity,
     }
     assert len(identities) == 7
-    assert result.material["responsibility_assignment_reference"] == {
+    assert result.material["subject_to_act_binding_reference"] == {
         "recorded_occurrence_identity": assignment.identity,
         "book_clause_identity": assignment.material["book_clause_identity"],
         "exact_act_identity": assignment.material["exact_act_identity"],
@@ -957,7 +957,7 @@ def test_yield_resolves_the_exact_act_occurrence_after_reopen(tmp_path):
         assert result.material["act_occurrence_event_identity"] == (
             act_occurrence_identity
         )
-        assert result.material["responsibility_assignment_reference"][
+        assert result.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ] == assignment_identity
         assert assertions_of_recorded_byte_measurement(ledger, result.identity)
@@ -1136,7 +1136,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "exact_act",
         "addressed_act_identity",
         "act_occurrence_identity",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "measurement_rule",
         "source_localities",
         "completeness_boundary",
@@ -1977,7 +1977,7 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
     source = _byte_source(ledger)
     assignment = get_byte_measurement_subject_to_act_binding(
         ledger,
-        source.material["responsibility_assignment_reference"][
+        source.material["subject_to_act_binding_reference"][
             "recorded_occurrence_identity"
         ],
     ).material

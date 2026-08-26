@@ -63,7 +63,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "exact_act",
         "addressed_act_identity",
         "act_occurrence_identity",
-        "responsibility_assignment_reference",
+        "subject_to_act_binding_reference",
         "measurement_rule",
         "source_localities",
         "completeness_boundary",
@@ -77,7 +77,7 @@ BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.measurement.byte_subject_to_act_binding_recorded"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
-    "responsibility_assignment_reference",
+    "subject_to_act_binding_reference",
 } | {
     "addressed_act_identity",
     "act_occurrence_identity",
@@ -2658,7 +2658,7 @@ def _byte_measurement_act_occurrence_material(
             "act_occurrence_identity"
         ],
         "act": "declared exact-byte Measurement",
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(assignment)
         ),
         "source_localities": list(assignment.material["source_localities"]),
@@ -2675,7 +2675,7 @@ def _append_byte_measurement_act_occurrence(
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
     ):
         if (
-            prior_act.material.get("responsibility_assignment_reference")
+            prior_act.material.get("subject_to_act_binding_reference")
             == _byte_measurement_binding_reference(assignment)
             or prior_act.material.get("act_occurrence_identity")
             == assignment.material["act_occurrence_identity"]
@@ -2769,7 +2769,7 @@ def _measurement_of_act_occurrence(
             "byte Measurement Yield requires one exact responsible Act occurrence occurrence"
         )
     material = event.material
-    assignment_reference = material.get("responsibility_assignment_reference")
+    assignment_reference = material.get("subject_to_act_binding_reference")
     if (
         type(assignment_reference) is not dict
         or set(assignment_reference)
@@ -2852,7 +2852,7 @@ def _record_byte_measurement_result_from_exact_inputs(
         "act_occurrence_identity": act_occurrence.material[
             "act_occurrence_identity"
         ],
-        "responsibility_assignment_reference": (
+        "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(assignment)
         ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
@@ -3043,8 +3043,8 @@ def _assertions_of_recorded_byte_measurement(
         "addressed_act_identity": material["addressed_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "act": "declared exact-byte Measurement",
-        "responsibility_assignment_reference": material[
-            "responsibility_assignment_reference"
+        "subject_to_act_binding_reference": material[
+            "subject_to_act_binding_reference"
         ],
         "source_localities": material["source_localities"],
     }
@@ -3088,7 +3088,7 @@ def _assertions_of_recorded_byte_measurement(
             f"{event_identity} does not carry the exact byte Measurement boundary"
         )
     if (
-        material.get("responsibility_assignment_reference")
+        material.get("subject_to_act_binding_reference")
         != _byte_measurement_binding_reference(assignment)
         or measured.completeness_boundary.identity != boundary_value["identity"]
         or list(measured.source_localities) != localities_value
