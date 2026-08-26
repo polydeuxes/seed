@@ -70,6 +70,20 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     assert binding.kind == (
         OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
+    assert set(binding.material) == {
+        "book_clause_identity",
+        "exact_act",
+        "operator_invocation_locality_act_identity",
+        "act_occurrence_identity",
+        "relation_occurrence_identity",
+        "result_boundary_identity",
+        "operator_material_occurrence_reference",
+        "operator_material_result_identity",
+        "operator_locality_identity",
+        "operator_through_event_occurrence_identity",
+        "destination_locality_identity",
+        "unknown",
+    }
     assert binding.locality_identity == recorded[
         "destination_locality_identity"
     ]
