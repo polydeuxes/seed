@@ -189,7 +189,7 @@ def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_id
             ledger, locality_identity=locality
         ),
     )
-    standing = read_operator_locality_standing(
+    current_coordinates = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
 
@@ -197,13 +197,15 @@ def test_exact_assignment_enters_current_standing_and_owns_distinct_lifecycle_id
     assert get_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger, assignment.identity
     ) == assignment
-    assert standing["subject_to_act_binding_occurrences"][assignment.identity] is None
+    assert current_coordinates["subject_to_act_binding_occurrences"][
+        assignment.identity
+    ] is None
     assert "standing" not in assignment.material
 
     act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
         responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        responsibility_assignment_standing=current_coordinates,
     )
     result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         ledger,
@@ -330,7 +332,7 @@ def test_assignment_read_refuses_a_corrupted_unrelated_prior_standing_carrier():
 
 def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
     ledger, locality, _pair, _recurrence, _source, _finding = _fixture()
-    standing = read_operator_locality_standing(
+    current_coordinates = read_operator_locality_standing(
         ledger, locality_identity=locality
     )
 
@@ -340,12 +342,12 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
             _set_operator_standing_validation_context(
                 ledger,
                 locality_identity=locality,
-                through_event_occurrence_identity=standing[
+                through_event_occurrence_identity=current_coordinates[
                     "through_event_occurrence_identity"
                 ],
-                measurement_occurrences=standing["measurement_occurrences"],
-                material_result_occurrences=standing["material_result_occurrences"],
-                subject_to_act_binding_occurrences=standing[
+                measurement_occurrences=current_coordinates["measurement_occurrences"],
+                material_result_occurrences=current_coordinates["material_result_occurrences"],
+                subject_to_act_binding_occurrences=current_coordinates[
                     "subject_to_act_binding_occurrences"
                 ],
             )

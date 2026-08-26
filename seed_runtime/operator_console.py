@@ -89,8 +89,8 @@ from seed_runtime.supplied_invocation_material import (
 )
 
 
-def _advance_over(ledger, standing, event_identities, *, locality_identity):
-    """Advance carried Standing over occurrences a responsible act just recorded.
+def _advance_over(ledger, current_coordinates, event_identities, *, locality_identity):
+    """Advance current coordinates through exact recorded occurrences.
 
     The identities come from the act that recorded them, so nothing here
     searches the ledger for what happened; the events are retrieved by exact
@@ -101,12 +101,12 @@ def _advance_over(ledger, standing, event_identities, *, locality_identity):
         ledger,
         event_identities,
         locality_identity=locality_identity,
-        prior=standing,
+        prior=current_coordinates,
     )
 
 
 def _record_occurrence_position_measurement(
-    ledger, standing, *, locality_identity
+    ledger, current_coordinates, *, locality_identity
 ):
     """Record the explicitly triggered position population of this Locality."""
 
@@ -119,15 +119,15 @@ def _record_occurrence_position_measurement(
             ledger,
             recording_locality_identity=locality_identity,
             finding=position_finding,
-            locality_standing=standing,
+            locality_standing=current_coordinates,
         )
     )
-    standing = _carry_occurrence_position_measurement_assignment_into_standing(
+    current_coordinates = _carry_occurrence_position_measurement_assignment_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         position_measurement_assignment,
         position_finding,
-        prior_through_event_occurrence_identity=standing[
+        prior_through_event_occurrence_identity=current_coordinates[
             "through_event_occurrence_identity"
         ],
     )
@@ -136,12 +136,12 @@ def _record_occurrence_position_measurement(
             ledger,
             responsibility_assignment=position_measurement_assignment,
             finding=position_finding,
-            responsibility_assignment_standing=standing,
+            responsibility_assignment_standing=current_coordinates,
         )
     )
-    standing = _advance_over(
+    current_coordinates = _advance_over(
         ledger,
-        standing,
+        current_coordinates,
         (position_measurement_act_occurrence.identity,),
         locality_identity=locality_identity,
     )
@@ -153,15 +153,15 @@ def _record_occurrence_position_measurement(
             finding=position_finding,
         )
     )
-    standing = _carry_occurrence_position_measurement_result_into_standing(
+    current_coordinates = _carry_occurrence_position_measurement_result_into_standing(
         ledger,
-        standing,
+        current_coordinates,
         position_measurement,
         act_occurrence=position_measurement_act_occurrence,
         responsibility_assignment=position_measurement_assignment,
         finding=position_finding,
     )
-    return standing
+    return current_coordinates
 
 
 def _record_occurrence_position_after_declared_measurements(
