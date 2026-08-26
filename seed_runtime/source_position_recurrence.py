@@ -116,7 +116,7 @@ RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
 )
 COORDINATE_MEASUREMENT_ACT = (
-    "Measure corresponding carried material across exact recurrence support results"
+    "Measure corresponding carried material across exact recurrence source results"
 )
 RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT = (
     "Measure exact material shared by every exact recurrent result"
@@ -1315,7 +1315,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
             findings_by_surface.append((deepcopy(surface), [event]))
     findings = []
     for finding_position, (surface, productions) in enumerate(findings_by_surface):
-        support = [_result_reference(event) for event in productions]
+        source_results = [_result_reference(event) for event in productions]
         subject = {
             "coordinate_count": _coordinates(productions[0].material)["coordinate_count"],
             "complete_compare_findings": deepcopy(surface),
@@ -1323,7 +1323,7 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
         finding = {
             "finding_position": finding_position,
             "subject": subject,
-            "source_result_references": support,
+            "source_result_references": source_results,
             "count": len(productions),
         }
         if len(productions) > 1:
@@ -1642,38 +1642,40 @@ def _coordinate_findings(
         ),
         strict=True,
     ):
-        support_by_material: dict[int, list[dict[str, Any]]] = {}
+        source_results_by_material: dict[int, list[dict[str, Any]]] = {}
         coordinates: dict[int, list[dict[str, Any]]] = {}
         for (reference, _production), coordinate in zip(
             productions, corresponding_coordinates, strict=True
         ):
             value = coordinate["exact_material"][0]
-            support_by_material.setdefault(value, []).append(deepcopy(reference))
+            source_results_by_material.setdefault(value, []).append(
+                deepcopy(reference)
+            )
             coordinates.setdefault(value, []).append(deepcopy(coordinate))
-        for value in sorted(support_by_material):
+        for value in sorted(source_results_by_material):
             subject = {
                 "recurrence_finding_position": recurrence_finding[
                     "finding_position"
                 ],
                 "exact_material": [value],
             }
-            support = [
+            source_coordinate_references = [
                 {
-                    "support_result_reference": reference,
+                    "source_result_reference": reference,
                     "source_position_coordinate": coordinate,
                 }
                 for reference, coordinate in zip(
-                    support_by_material[value], coordinates[value], strict=True
+                    source_results_by_material[value], coordinates[value], strict=True
                 )
             ]
             finding_position = len(findings)
             finding = {
                 "finding_position": finding_position,
                 "subject": subject,
-                "support": support,
-                "count": len(support),
+                "source_coordinate_references": source_coordinate_references,
+                "count": len(source_coordinate_references),
             }
-            if len(support) > 1:
+            if len(source_coordinate_references) > 1:
                 finding["recurrence"] = {}
             findings.append(finding)
     return findings
@@ -1835,19 +1837,19 @@ def get_recorded_corresponding_coordinate_material_measurement(
     return reading
 
 
-def _support_references(
+def _source_result_references(
     finding: dict[str, Any],
 ) -> tuple[dict[str, str], ...]:
-    support = finding.get("support")
-    if type(support) is not list:
-        raise ValueError("exact-material Measurement carries no exact support")
+    coordinate_references = finding.get("source_coordinate_references")
+    if type(coordinate_references) is not list:
+        raise ValueError("exact-material Measurement carries no exact source coordinates")
     references = []
-    for occurrence in support:
+    for occurrence in coordinate_references:
         if type(occurrence) is not dict or type(
-            occurrence.get("support_result_reference")
+            occurrence.get("source_result_reference")
         ) is not dict:
-            raise ValueError("exact-material Measurement carries no exact support")
-        references.append(deepcopy(occurrence["support_result_reference"]))
+            raise ValueError("exact-material Measurement carries no exact source result")
+        references.append(deepcopy(occurrence["source_result_reference"]))
     return tuple(references)
 
 
@@ -1862,14 +1864,14 @@ def _recurrent_result_material_payload(
 ) -> dict[str, Any] | None:
     """Return exact material common to every recurrent result, or no result."""
 
-    support_references = recurrence_finding.get("source_result_references")
+    source_result_references = recurrence_finding.get("source_result_references")
     coordinate_count = recurrence_finding.get("subject", {}).get("coordinate_count")
     coordinate_source = coordinate_measurement.get(
         "source_recurrence_result_reference"
     )
     if (
-        type(support_references) is not list
-        or len(support_references) < 2
+        type(source_result_references) is not list
+        or len(source_result_references) < 2
         or type(coordinate_count) is not int
         or coordinate_count < 2
         or type(coordinate_source) is not dict
@@ -1880,19 +1882,19 @@ def _recurrent_result_material_payload(
         or coordinate_measurement.get("source_recurrence_finding_position")
         != recurrence_finding.get("finding_position")
         or coordinate_measurement.get("source_result_references")
-        != support_references
+        != source_result_references
         or coordinate_measurement.get("completeness_boundary_reference")
         != recurrence.get("completeness_boundary_reference")
     ):
-        raise ValueError("exact-material Measurement carries no exact recurrence support")
+        raise ValueError("exact-material Measurement carries no exact recurrence sources")
 
-    support_occurrences = []
-    for support_reference in support_references:
-        if type(support_reference) is not dict:
+    source_results = []
+    for source_result_reference in source_result_references:
+        if type(source_result_reference) is not dict:
             raise ValueError("exact-material Measurement carries no exact result")
         production_event = _recorded_occurrence(
             ledger,
-            support_reference.get("recorded_occurrence_reference"),
+            source_result_reference.get("recorded_occurrence_reference"),
             message="exact-material Measurement carries no exact result",
         )
         _production_act, production = _require_preserved_result(
@@ -1903,7 +1905,7 @@ def _recurrent_result_material_payload(
         )
         coordinates = production.get("source_position_coordinates")
         if (
-            support_reference.get("result_reference")
+            source_result_reference.get("result_reference")
             != production.get("result_identity")
             or production.get("coordinate_count") != coordinate_count
             or type(coordinates) is not list
@@ -1919,9 +1921,9 @@ def _recurrent_result_material_payload(
             raise ValueError(
                 "exact-material Measurement cannot recover consecutive source positions"
             )
-        support_occurrences.append(
+        source_results.append(
             {
-                "support_result_reference": deepcopy(support_reference),
+                "source_result_reference": deepcopy(source_result_reference),
                 "source_position_coordinates": deepcopy(coordinates),
             }
         )
@@ -1929,7 +1931,7 @@ def _recurrent_result_material_payload(
     findings = coordinate_measurement.get("findings")
     if type(findings) is not list:
         raise ValueError("exact-material Measurement carries no exact findings")
-    exact_support = tuple(support_references)
+    exact_source_results = tuple(source_result_references)
     complete_findings = []
     for finding in findings:
         if type(finding) is not dict or type(finding.get("subject")) is not dict:
@@ -1942,12 +1944,12 @@ def _recurrent_result_material_payload(
             or not 0 <= material[0] <= 255
         ):
             raise ValueError("exact-material Measurement carries no exact material")
-        finding_support = _support_references(finding)
-        if any(reference not in exact_support for reference in finding_support):
-            raise ValueError("exact-material Measurement carries different support")
+        finding_sources = _source_result_references(finding)
+        if any(reference not in exact_source_results for reference in finding_sources):
+            raise ValueError("exact-material Measurement carries different source results")
         if (
-            finding_support == exact_support
-            and finding.get("count") == len(exact_support)
+            finding_sources == exact_source_results
+            and finding.get("count") == len(exact_source_results)
             and type(finding.get("recurrence")) is dict
         ):
             complete_findings.append(finding)
@@ -1956,8 +1958,8 @@ def _recurrent_result_material_payload(
     consumed_findings = []
     for corresponding_coordinates in zip(
         *(
-            support["source_position_coordinates"]
-            for support in support_occurrences
+            source_result["source_position_coordinates"]
+            for source_result in source_results
         ),
         strict=True,
     ):
@@ -1965,7 +1967,7 @@ def _recurrent_result_material_payload(
         for finding in complete_findings:
             carried_coordinates = tuple(
                 occurrence["source_position_coordinate"]
-                for occurrence in finding["support"]
+                for occurrence in finding["source_coordinate_references"]
             )
             if carried_coordinates == corresponding_coordinates:
                 complete.append(finding)
@@ -1977,12 +1979,12 @@ def _recurrent_result_material_payload(
         consumed_findings.append(deepcopy(complete[0]))
 
     measured_material = bytes(exact_material)
-    for support in support_occurrences:
+    for source_result in source_results:
         if bytes(
             coordinate["exact_material"][0]
-            for coordinate in support["source_position_coordinates"]
+            for coordinate in source_result["source_position_coordinates"]
         ) != measured_material:
-            raise ValueError("exact-material Measurement support carries different material")
+            raise ValueError("exact-material Measurement source carries different material")
 
     coordinate_result_reference = _result_reference(coordinate_event)
     recurrence_result_reference = _result_reference(recurrence_event)
@@ -1990,7 +1992,7 @@ def _recurrent_result_material_payload(
         "coordinate_measurement_result_reference": coordinate_result_reference,
         "recurrence_result_reference": recurrence_result_reference,
         "recurrence_finding_position": recurrence_finding["finding_position"],
-        "source_result_references": deepcopy(support_references),
+        "source_result_references": deepcopy(source_result_references),
         "coordinate_count": coordinate_count,
     }
     return {

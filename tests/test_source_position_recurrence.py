@@ -94,7 +94,7 @@ def _step_at(recording, coordinate_count):
 def _finding_source_positions(finding):
     return tuple(
         carried["source_position_coordinate"]["position"]
-        for carried in finding["support"]
+        for carried in finding["source_coordinate_references"]
     )
 
 
@@ -727,7 +727,7 @@ def test_varying_coordinate_material_yields_no_common_exact_material():
     )
 
 
-def test_recurrent_result_material_refuses_changed_support_material_order_owner_and_yield():
+def test_recurrent_result_material_refuses_changed_source_material_order_owner_and_yield():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
@@ -740,17 +740,21 @@ def test_recurrent_result_material_refuses_changed_support_material_order_owner_
     finding = _target_finding(ledger, recurrence)
     event, _reading = _material_for_finding(ledger, material_measurements, finding)
 
-    support = event.material["coordinates"]["subject"]["source_result_references"]
+    source_results = event.material["coordinates"]["subject"][
+        "source_result_references"
+    ]
     event.material["coordinates"]["subject"]["source_result_references"] = list(
-        reversed(support)
+        reversed(source_results)
     )
     try:
         get_recorded_recurrent_result_material_measurement(ledger, event.identity)
     except ValueError:
         pass
     else:
-        raise AssertionError("changed support references were accepted")
-    event.material["coordinates"]["subject"]["source_result_references"] = support
+        raise AssertionError("changed source result references were accepted")
+    event.material["coordinates"]["subject"]["source_result_references"] = (
+        source_results
+    )
 
     material = event.material["coordinates"]["coordinate_material_findings"][1][
         "subject"
@@ -852,12 +856,12 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
         ledger.close()
 
 
-def test_source_coordinate_not_in_support_does_not_choose_material():
+def test_unreferenced_source_coordinate_does_not_choose_material():
     ledger = EventLedger()
     source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
             ledger,
-            locality="recurrent-result-material-coordinate-not-in-support",
+            locality="recurrent-result-material-unreferenced-coordinate",
             exact=b"xa+aa+a",
         )
     )
