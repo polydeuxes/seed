@@ -505,7 +505,7 @@ def test_operator_replay_uses_exact_context_while_public_binding_reads_reconstru
 
 def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
     from seed_runtime.operator_current_coordinates import (
-        _operator_standing_replay_validation,
+        _operator_current_coordinate_replay_validation,
         _set_operator_current_coordinate_validation_context,
     )
 
@@ -543,7 +543,7 @@ def test_equal_copied_replay_accumulators_cannot_satisfy_public_binding_read():
     assert copied_assignments is not exact["subject_to_act_binding_occurrences"]
     ledger.corrupted.add(first.identity)
 
-    @_operator_standing_replay_validation
+    @_operator_current_coordinate_replay_validation
     def read_from_forged_accumulators():
         with pytest.raises(ValueError, match="exact accumulators"):
             _set_operator_current_coordinate_validation_context(

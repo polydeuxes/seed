@@ -32,7 +32,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
 from seed_runtime.operator_current_coordinates import (
-    _operator_standing_replay_validation,
+    _operator_current_coordinate_replay_validation,
     _operator_current_coordinate_validation_context,
     _set_operator_current_coordinate_validation_context,
     read_operator_current_coordinates,
@@ -326,7 +326,7 @@ def test_replay_validation_context_refuses_unbound_accumulators_and_clears():
         ledger, locality_identity=locality
     )
 
-    @_operator_standing_replay_validation
+    @_operator_current_coordinate_replay_validation
     def outer():
         with pytest.raises(ValueError, match="exact accumulators"):
             _set_operator_current_coordinate_validation_context(
@@ -364,7 +364,7 @@ def test_replay_context_before_the_recorded_binding_through_occurrence_is_refuse
         current_coordinates=current_coordinates,
     )
 
-    @_operator_standing_replay_validation
+    @_operator_current_coordinate_replay_validation
     def read_from_false_earlier_context():
         _set_operator_current_coordinate_validation_context(
             ledger,
@@ -400,7 +400,7 @@ def test_replay_context_refuses_changed_boundary_input_coordinates(
         current_coordinates=current_coordinates,
     )
 
-    @_operator_standing_replay_validation
+    @_operator_current_coordinate_replay_validation
     def read_from_context(measurements, material_results):
         _set_operator_current_coordinate_validation_context(
             ledger,

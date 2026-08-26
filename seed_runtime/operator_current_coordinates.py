@@ -1,4 +1,4 @@
-"""Deterministic Locality Standing read over preserved acquisition_result events."""
+"""Deterministic Locality current-coordinate read over exact material results."""
 
 from __future__ import annotations
 
@@ -219,15 +219,15 @@ from seed_runtime.source_position_recurrence import (
 # copy would create a second contract free to drift from the first.
 
 
-_OPERATOR_STANDING_VALIDATION_CONTEXT: ContextVar[
+_OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT: ContextVar[
     dict[str, Any] | None
 ] = ContextVar(
-    "operator_standing_replay_validation_context",
+    "operator_current_coordinate_replay_validation_context",
     default=None,
 )
-_OPERATOR_STANDING_EXACT_ACCUMULATORS: ContextVar[
+_OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS: ContextVar[
     tuple[Any, Any, Any, Any, Any] | None
-] = ContextVar("operator_standing_exact_accumulators", default=None)
+] = ContextVar("operator_current_coordinate_exact_accumulators", default=None)
 
 
 def _recorded_pair_comparison_replay_carry(
@@ -328,19 +328,19 @@ def _recorded_pair_comparison_assignment_identity(event: Any) -> str | None:
     return identity if type(identity) is str and identity else None
 
 
-def _operator_standing_replay_validation(function):
-    """Bound exact replay-only Standing context, including nested reads."""
+def _operator_current_coordinate_replay_validation(function):
+    """Bound exact replay-only current-coordinate context, including nested reads."""
 
     @wraps(function)
     def bounded(*args, **kwargs):
-        token = _OPERATOR_STANDING_VALIDATION_CONTEXT.set(None)
-        exact_token = _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(None)
+        token = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(None)
+        exact_token = _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.set(None)
         try:
             with _bounded_pair_binding_readings():
                 return function(*args, **kwargs)
         finally:
-            _OPERATOR_STANDING_EXACT_ACCUMULATORS.reset(exact_token)
-            _OPERATOR_STANDING_VALIDATION_CONTEXT.reset(token)
+            _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.reset(exact_token)
+            _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.reset(token)
 
     return bounded
 
@@ -354,8 +354,8 @@ def _set_operator_current_coordinate_validation_context(
     material_result_occurrences: list[dict[str, Any]],
     subject_to_act_binding_occurrences: dict[str, None],
 ) -> None:
-    bound = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
-    exact = _OPERATOR_STANDING_EXACT_ACCUMULATORS.get()
+    bound = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.get()
+    exact = _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.get()
     if (
         type(bound) is not dict
         or bound.get("ledger") is not ledger
@@ -369,9 +369,9 @@ def _set_operator_current_coordinate_validation_context(
         or exact[4] is not subject_to_act_binding_occurrences
     ):
         raise ValueError(
-            "operator Standing replay context requires its exact accumulators"
+            "operator current-coordinate replay context requires exact accumulators"
         )
-    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+    _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(
         {
             "ledger": ledger,
             "locality_identity": locality_identity,
@@ -390,7 +390,7 @@ def _set_operator_current_coordinate_validation_context(
 def _operator_current_coordinate_validation_context(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any] | None:
-    context = _OPERATOR_STANDING_VALIDATION_CONTEXT.get()
+    context = _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.get()
     if (
         type(context) is not dict
         or context.get("ledger") is not ledger
@@ -778,23 +778,23 @@ def _shared_position_binding_reading(
     ledger: EventLedger,
     event,
     *,
-    prior_standing: dict[str, Any],
+    prior_coordinates: dict[str, Any],
 ):
-    assignment_identity = event.identity
+    binding_identity = event.identity
     if event.kind not in {
         SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     }:
         reference = event.material.get("subject_to_act_binding_reference")
-        assignment_identity = (
+        binding_identity = (
             reference.get("recorded_occurrence_identity")
             if type(reference) is dict
             else None
         )
     return _read_shared_position_binding(
         ledger,
-        assignment_identity,
-        prior_coordinates=prior_standing,
+        binding_identity,
+        prior_coordinates=prior_coordinates,
     )
 
 
@@ -816,12 +816,12 @@ def _shared_position_binding_identity(event: Event) -> str | None:
 def read_operator_current_coordinates(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
-    """Read bounded Locality-local Standing by replaying the whole Locality.
+    """Read current Locality coordinates by replaying the whole Locality.
 
-    Equivalent to advancing from no prior Standing over every recorded event.
-    `#2376` established that advancing from a prior Standing over only the
-    occurrences after its boundary yields the same result, so a caller that
-    already holds its Standing and knows what it just recorded should use
+    Equivalent to advancing from empty prior coordinates over every recorded
+    occurrence. `#2376` established that advancing prior coordinates over only
+    the occurrences after the through-occurrence boundary yields the same
+    result, so a caller that already holds those coordinates should use
     :func:`advance_operator_current_coordinates` instead of replaying.
     """
 
@@ -843,19 +843,19 @@ def read_operator_current_coordinates_through(
 ) -> dict[str, Any]:
     """Read one Locality through one exact recorded occurrence.
 
-    ``None`` is the exact empty Standing boundary.  Otherwise the ledger first
+    ``None`` addresses coordinates before any occurrence. Otherwise the Ledger
     resolves the occurrence to its existing append boundary and then reads only
     that prefix.  Later occurrences in the same or another Locality are neither
-    selected nor copied into the returned Standing.
+    selected nor copied into the returned coordinates.
     """
 
     if type(locality_identity) is not str or not locality_identity:
-        raise ValueError("Standing read requires one exact Locality identity")
+        raise ValueError("current-coordinate read requires one exact Locality identity")
     if through_event_occurrence_identity is None:
         event_identities: Iterable[str] = ()
     else:
         if type(through_event_occurrence_identity) is not str or not through_event_occurrence_identity:
-            raise ValueError("Standing read requires one exact through occurrence")
+            raise ValueError("current-coordinate read requires one exact through occurrence")
         event = ledger.get(through_event_occurrence_identity)
         if (
             event is None
@@ -863,7 +863,7 @@ def read_operator_current_coordinates_through(
             or ledger.integrity_of(through_event_occurrence_identity) == CORRUPTED
         ):
             raise ValueError(
-                "Standing through occurrence is absent, corrupted, or in another Locality"
+                "current-coordinate through occurrence is absent, corrupted, or in another Locality"
             )
         boundary = ledger.append_boundary_through_occurrence(
             through_event_occurrence_identity
@@ -874,14 +874,14 @@ def read_operator_current_coordinates_through(
                 locality_identity, through=boundary
             )
         )
-    standing = advance_operator_current_coordinates(
+    current_coordinates = advance_operator_current_coordinates(
         ledger,
         event_identities,
         locality_identity=locality_identity,
     )
-    if standing["through_event_occurrence_identity"] != through_event_occurrence_identity:
-        raise ValueError("Standing read did not reach its exact through occurrence")
-    return standing
+    if current_coordinates["through_event_occurrence_identity"] != through_event_occurrence_identity:
+        raise ValueError("current-coordinate read did not reach its exact through occurrence")
+    return current_coordinates
 
 
 class CarriedCoordinateReferenceError(ValueError):
@@ -1017,7 +1017,7 @@ def read_current_coordinates_through_carried_reference(
     }
 
 
-@_operator_standing_replay_validation
+@_operator_current_coordinate_replay_validation
 def advance_operator_current_coordinates(
     ledger: EventLedger,
     event_identities: Iterable[str],
@@ -1025,38 +1025,36 @@ def advance_operator_current_coordinates(
     locality_identity: str,
     prior: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Advance bounded Locality-local Standing over exact ledger occurrences.
+    """Advance current Locality coordinates over exact Ledger occurrences.
 
-    With no `prior`, this reads the supplied identities from an empty Standing.
+    With no `prior`, this reads the supplied identities from empty coordinates.
     With a `prior`, it begins from the accumulators already established there.
-    The ledger verifies each supplied identity's Locality and their append order.
-    The caller supplies the bounded identities; this function does not infer an
-    omitted occurrence.
+    The Ledger verifies each identity's Locality and append order. The caller
+    supplies the bounded identities; this function does not infer an omitted
+    occurrence.
 
-    The caller supplies exact identities from the responsible Act that recorded
-    them. The ledger resolves those identities rather than accepting supplied
-    occurrence copies.
+    The caller supplies exact identities recorded by Act occurrences. The
+    Ledger resolves those identities rather than accepting occurrence copies.
 
-    Every accumulator the live event kinds read is seeded from `prior`, and the
-    per-event paths and refusals below are the same ones replay uses. Those
-    refusals consult accumulated Standing rather than the ledger, which is why
-    seeding preserves them (`#2376`).
+    Every accumulator read by the live occurrence forms is seeded from `prior`,
+    and the per-occurrence paths and refusals below are the same ones replay
+    uses. Those refusals consult accumulated coordinates rather than the Ledger,
+    which is why seeding preserves them (`#2376`).
 
     **The advance has as input `prior`.** Its accumulators are taken over rather
-    than copied, and the returned Standing shares them. A caller that needs the
-    earlier Standing to stay as it was must read it again; there is no
+    than copied, and the returned coordinates share them. A caller that needs
+    the earlier coordinates unchanged must read them again; there is no
     snapshot here.
 
-    That is not defensive weakness. Standing grows with the
-    Locality, so copying it per advance would cost the Locality event count every
-    time and reinstate the quadratic this replaced. The console holds one
-    Standing, hands it forward, and keeps no earlier one.
+    Coordinates grow with the Locality, so copying them per advance would cost
+    the Locality occurrence count every time and reinstate the quadratic this
+    replaced. The console carries one mapping forward.
 
-    The result is fully recomputable
-    from the ledger and is not itself recorded: it returns only standings,
-    and Unknown the Locality's events already carry.  An empty
-    coordinate is absence of record, not negative standing and not Unknown.
-    No Yield is established for relation Candidates here.
+    The result is fully recomputable from the Ledger and is not itself recorded:
+    it returns only current coordinates and Unknown the Locality's occurrences
+    already carry. An empty coordinate is absence of record, not a negative
+    finding and not Unknown. No Yield is established for relation Candidates
+    here.
     """
     events = ledger.occurrences_in_append_order(
         event_identities,
@@ -1190,7 +1188,7 @@ def advance_operator_current_coordinates(
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
-    _OPERATOR_STANDING_EXACT_ACCUMULATORS.set(
+    _OPERATOR_CURRENT_COORDINATE_EXACT_ACCUMULATORS.set(
         (
             ledger,
             locality_identity,
@@ -1199,7 +1197,7 @@ def advance_operator_current_coordinates(
             subject_to_act_binding_occurrences,
         )
     )
-    _OPERATOR_STANDING_VALIDATION_CONTEXT.set(
+    _OPERATOR_CURRENT_COORDINATE_VALIDATION_CONTEXT.set(
         {
             "ledger": ledger,
             "locality_identity": locality_identity,
@@ -1558,7 +1556,7 @@ def advance_operator_current_coordinates(
             binding_reading = _shared_position_binding_reading(
                 ledger,
                 event,
-                prior_standing=addressed_byte_reference_prior_coordinates,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             shared_position_replay_readings[event.identity] = (
                 _shared_position_replay_reading(
@@ -1574,7 +1572,7 @@ def advance_operator_current_coordinates(
             binding_reading = _shared_position_binding_reading(
                 ledger,
                 event,
-                prior_standing=addressed_byte_reference_prior_coordinates,
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             addressed_act_identity = event.material.get(
                 "addressed_act_identity"
@@ -1615,7 +1613,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_coordinates,
+                        prior_coordinates=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_applicability_act(
                         ledger,
@@ -1643,7 +1641,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_coordinates,
+                        prior_coordinates=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_applicability_result(
                         ledger,
@@ -1672,7 +1670,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_coordinates,
+                        prior_coordinates=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_measurement_act(
                         ledger,
@@ -2001,7 +1999,7 @@ def advance_operator_current_coordinates(
                     binding_reading = _shared_position_binding_reading(
                         ledger,
                         event,
-                        prior_standing=addressed_byte_reference_prior_coordinates,
+                        prior_coordinates=addressed_byte_reference_prior_coordinates,
                     )
                     _read_shared_position_measurement_result(
                         ledger,
