@@ -60,9 +60,6 @@ SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
 MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY = (
     "measurement_of_recurrent_byte_pair_occurrence_position"
 )
-RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_ASSERTION = (
-    "preserve this measured Assertion's carried Standing coordinates"
-)
 RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = frozenset(
     {
         "result_identity",
@@ -1115,10 +1112,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                     "source_provenance": (
                         "the exact Yield-carried pair Assertion and later material acquisition result"
                     ),
-                    "responsibility": RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_ASSERTION,
                 },
-                "subject_kind": "assertion",
-                "responsible_boundary": "this recorded assertion",
                 "result": "position",
                 "assertion_subject": subject,
                 "assertion_scope": scope,
