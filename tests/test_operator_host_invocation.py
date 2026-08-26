@@ -462,8 +462,6 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         occurrence["result_occurrence_identity"]
         for occurrence in witness_standing["material_result_occurrences"]
     ] == [event.identity for event in acquisition_results[1:]]
-    assert operator_standing["admission_result_occurrences"] == {}
-    assert witness_standing["admission_result_occurrences"] == {}
     witness_pair_measurements = tuple(
         event
         for event in ledger.list()

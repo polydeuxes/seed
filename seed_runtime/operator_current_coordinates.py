@@ -1066,7 +1066,6 @@ def advance_operator_current_coordinates(
     material_locality_relation_occurrences: dict[
         str, dict[str, Any]
     ] = {}
-    admission_result_occurrences: dict[str, None] = {}
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
     recorded_pair_comparison_replay_carries: dict[str, dict[str, Any]] = {}
@@ -1152,11 +1151,6 @@ def advance_operator_current_coordinates(
         if type(material_locality_relation_occurrences) is not dict:
             raise ValueError(
                 "prior coordinates require exact material Locality relation occurrences"
-            )
-        admission_result_occurrences = prior["admission_result_occurrences"]
-        if type(admission_result_occurrences) is not dict:
-            raise ValueError(
-                "prior coordinates require exact Admission result occurrences"
             )
         applicability_result_occurrences = prior[
             "applicability_result_occurrences"
@@ -2139,7 +2133,6 @@ def advance_operator_current_coordinates(
         "material_locality_relation_occurrences": (
             material_locality_relation_occurrences
         ),
-        "admission_result_occurrences": admission_result_occurrences,
         "applicability_result_occurrences": applicability_result_occurrences,
         "comparison_result_occurrences": comparison_result_occurrences,
         "known_loss": known_loss,
