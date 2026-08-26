@@ -22,7 +22,6 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
-    BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
     _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding,
     _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence,
@@ -63,9 +62,6 @@ DeclaredMeasurementSubject = (
 
 
 class DeclaredMeasurementResponsibility(NamedTuple):
-    book_clause_identity: str
-    measurement_identity: str
-    assignment_kind: str
     result_kind: str
     discover: Callable[
         [EventLedger, dict[str, Any], str], tuple[DeclaredMeasurementSubject, ...]
@@ -378,17 +374,11 @@ def _record_byte_measurement(
 
 DECLARED_MEASUREMENT_RESPONSIBILITIES = (
     DeclaredMeasurementResponsibility(
-        "01.Source.D",
-        "measurement_of_position_coordinates_of_byte_pair_occurrences",
-        BYTE_PAIR_OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         _discover_direct_measurements,
         _record_direct_measurement,
     ),
     DeclaredMeasurementResponsibility(
-        "01.Source.D",
-        "measurement_of_exact_byte_occurrences",
-        BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         BYTE_MEASUREMENT_RECORDED_KIND,
         _discover_byte_measurements,
         _record_byte_measurement,
