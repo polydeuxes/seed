@@ -84,7 +84,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "assertions",
     }
 )
-BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT = (
+BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT = (
     "operator.measurement.byte_act_occurrenced"
 )
 BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
@@ -141,7 +141,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND: "01.Source.D",
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Current.E.1",
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
-    BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT: "02.Acts.A",
+    BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     BYTE_PAIR_MEASUREMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Current.E.1",
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -2622,7 +2622,7 @@ def _append_byte_measurement_act_occurrence(
 ) -> Event:
     for prior_act in ledger.iter_locality_kind(
         binding.locality_identity,
-        BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+        BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ):
         if (
             prior_act.material.get("subject_to_act_binding_reference")
@@ -2634,7 +2634,7 @@ def _append_byte_measurement_act_occurrence(
                 "byte Measurement binding already carries an Act"
             )
     return ledger.append(
-        BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+        BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         _byte_measurement_act_occurrence_material(binding),
         locality_identity=binding.locality_identity,
     )
@@ -2712,7 +2712,7 @@ def _measurement_of_act_occurrence(
     event = ledger.get(act_occurrence_event_identity)
     if (
         event is None
-        or event.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
+        or event.kind != BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
@@ -2847,7 +2847,7 @@ def record_byte_measurement_result(
     supplied = ledger.get(act_occurrence_event_identity)
     if (
         supplied is None
-        or supplied.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
+        or supplied.kind != BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
         or ledger.integrity_of(supplied.identity) == CORRUPTED
     ):
         raise ByteMeasurementError(
@@ -2882,7 +2882,7 @@ def _record_byte_measurement_result_from_carried_act_occurrence(
         or ledger.get(act_occurrence.identity)
         != act_occurrence
         or act_occurrence.kind
-        != BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
+        != BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
         or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
         or ledger.append_boundary_through_occurrence(
             act_occurrence.identity
@@ -3000,7 +3000,7 @@ def _assertions_of_recorded_byte_measurement(
     }
     if (
         act_occurrence is None
-        or act_occurrence.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
+        or act_occurrence.kind != BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
         or act_occurrence.locality_identity != event.locality_identity
         or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
         or act_occurrence.material != expected_act_occurrence

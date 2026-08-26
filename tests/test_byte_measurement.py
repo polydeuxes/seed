@@ -13,7 +13,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+    BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
@@ -312,7 +312,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
         recording_locality_identity="measurement",
     )
 
-    assert act_occurrence.kind == BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT
+    assert act_occurrence.kind == BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT
     assert ledger.list_locality("measurement") == [assignment, act_occurrence]
     assert act_occurrence.material["source_localities"] == ["source"]
     assert act_occurrence.material["subject_to_act_binding_reference"][
@@ -326,7 +326,7 @@ def test_act_occurrence_is_observable_before_yield_and_result():
     events = ledger.list_locality("measurement")
     assert [event.kind for event in events] == [
         BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-        BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT,
+        BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
         RECORDED_YIELD_RELATION_EVENT,
         BYTE_MEASUREMENT_RECORDED_KIND,
     ]
