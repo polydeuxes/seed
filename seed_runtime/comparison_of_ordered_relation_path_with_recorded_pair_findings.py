@@ -1269,7 +1269,6 @@ def _applicability_result_material(
                     len(matches) for matches in inputs["path_relation_findings"]
                 ],
             },
-            "source_provenance": "exact yielded path and comparison results",
         },
         "exact_act": APPLICABILITY_ACT,
         "addressed_act_identity": binding.material["addressed_act_identity"],
@@ -1645,9 +1644,6 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "subject": subject,
         "relation_findings": roles,
-        "source_provenance": (
-            "exact yielded ordered path and recorded comparison findings"
-        ),
         "unknown": [],
     }
 
