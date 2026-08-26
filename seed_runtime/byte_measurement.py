@@ -760,10 +760,6 @@ def _prepare_pair_source(
 def _movement_assignment_reference(assignment: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
@@ -960,15 +956,11 @@ def _movement_assignment_material(
     destination_locality: str,
     source_standing_boundary_identity: str,
     destination_standing_boundary_identity: str | None,
-    assignment_identity: str,
-    assignment_subject_identity: str,
     movement_act_identity: str,
     movement_act_occurrence_identity: str,
     movement_result_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
         "movement_act_identity": movement_act_identity,
         "movement_act_occurrence_identity": movement_act_occurrence_identity,
         "movement_result_identity": movement_result_identity,
@@ -1016,8 +1008,6 @@ def _require_exact_movement_assignment_and_source(
         ledger, assignment.material.get("source_assertion_reference")
     )
     identity_coordinates = (
-        "assignment_identity",
-        "assignment_subject_identity",
         "movement_act_identity",
         "movement_act_occurrence_identity",
         "movement_result_identity",
@@ -1085,10 +1075,6 @@ def record_assertion_locality_movement_responsibility_assignment(
         locality_standing=destination_locality_standing,
     )
     identities = {
-        "assignment_identity": new_identity("assertion_locality_movement_assignment"),
-        "assignment_subject_identity": new_identity(
-            "assertion_locality_movement_assignment_subject"
-        ),
         "movement_act_identity": new_identity("assertion_locality_movement_act"),
         "movement_act_occurrence_identity": new_identity(
             "assertion_locality_movement_occurrence"
@@ -1138,8 +1124,6 @@ def _read_assertion_locality_movement_responsibility_assignment(
     identities = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "movement_act_identity",
             "movement_act_occurrence_identity",
             "movement_result_identity",
@@ -1695,12 +1679,6 @@ def _record_movement_assignment_from_carried_standings(
             "Assertion movement assignment requires exact carried source and destination Standing"
         )
     identities = {
-        "assignment_identity": new_identity(
-            "assertion_locality_movement_assignment"
-        ),
-        "assignment_subject_identity": new_identity(
-            "assertion_locality_movement_assignment_subject"
-        ),
         "movement_act_identity": new_identity("assertion_locality_movement_act"),
         "movement_act_occurrence_identity": new_identity(
             "assertion_locality_movement_occurrence"

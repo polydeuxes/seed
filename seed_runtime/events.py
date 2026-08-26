@@ -571,8 +571,6 @@ class SQLiteEventLedger(EventLedger):
         "recorded_pair_comparison_earlier_participation",
         "recorded_pair_comparison_later_participation",
         "assertion_locality_movement",
-        "assertion_locality_movement_assignment",
-        "assertion_locality_movement_assignment_subject",
         "assertion_locality_movement_act",
         "assertion_locality_movement_occurrence",
         "assertion_locality_movement_result",

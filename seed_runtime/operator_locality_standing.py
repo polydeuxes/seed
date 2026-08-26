@@ -2154,8 +2154,6 @@ def _carry_assertion_locality_movement_assignment_into_standing(
     identities = {
         coordinate: event.material.get(coordinate)
         for coordinate in (
-            "assignment_identity",
-            "assignment_subject_identity",
             "movement_act_identity",
             "movement_act_occurrence_identity",
             "movement_result_identity",

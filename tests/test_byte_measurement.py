@@ -2041,10 +2041,6 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     )
     assert reference == {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
         "result_boundary_identity": assignment.material[
             "result_boundary_identity"
@@ -2079,8 +2075,6 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
         *(
             assignment.material[coordinate]
             for coordinate in (
-                "assignment_identity",
-                "assignment_subject_identity",
                 "movement_act_identity",
                 "movement_act_occurrence_identity",
                 "movement_result_identity",
@@ -2091,7 +2085,7 @@ def test_movement_assignment_owns_distinct_lifecycle_identities_and_enters_desti
         ledger, locality_identity="movement"
     )
 
-    assert len(identities) == 6
+    assert len(identities) == 4
     assert standing["subject_to_act_binding_occurrences"] == {
         assignment.identity: None
     }
@@ -2515,8 +2509,8 @@ def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
         )
     else:
         substitute_assignment = deepcopy(state["assignment"])
-        substitute_assignment.material["assignment_identity"] = (
-            "substituted-assignment"
+        substitute_assignment.material["movement_act_identity"] = (
+            "substituted-movement-Act"
         )
         call = lambda: _carry_movement_phase(
             ledger,
