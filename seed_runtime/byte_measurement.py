@@ -4899,12 +4899,18 @@ def _read_recorded_byte_position_pair_measurement(
 
 
 def assertions_of_recorded_byte_position_pair_measurement(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[RecordedBytePairAssertion, ...] | None:
     """Read the exact pair result without performing Measurement again."""
 
     reading = _read_recorded_byte_position_pair_measurement(
-        ledger, event_identity, findings_only=False
+        ledger,
+        event_identity,
+        findings_only=False,
+        prior_coordinates=prior_coordinates,
     )
     return reading
 

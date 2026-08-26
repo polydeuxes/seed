@@ -43,9 +43,9 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    _record_recurrent_pair_position_measurement_act_from_current_coordinates,
+    _record_recurrent_pair_position_measurement_binding_from_current_coordinates,
     measure_positions_for_recurrent_byte_pair_assertions,
-    record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding,
-    record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
@@ -62,6 +62,7 @@ from seed_runtime.operator_current_coordinates import (
 )
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
+    record_operator_material_occurrence_from_current_coordinates,
 )
 
 
@@ -172,7 +173,9 @@ def _record_pair_comparison(ledger, earlier, later, current_coordinates):
 
 def _record_path(ledger, pair_measurement, source, current_coordinates):
     assertions = assertions_of_recorded_byte_position_pair_measurement(
-        ledger, pair_measurement.identity
+        ledger,
+        pair_measurement.identity,
+        prior_coordinates=current_coordinates,
     )
     recurrence = {
         assertion.content: assertion.assertion_position
@@ -187,20 +190,21 @@ def _record_path(ledger, pair_measurement, source, current_coordinates):
         source_material_result_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
         through=ledger.append_boundary(),
+        prior_coordinates=current_coordinates,
     )
     results = []
     for finding in findings:
         prior_count = len(ledger.list_locality(LOCALITY))
-        binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+        binding = _record_recurrent_pair_position_measurement_binding_from_current_coordinates(
             ledger,
             finding=finding,
             current_coordinates=current_coordinates,
         )
         current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
         prior_count = len(ledger.list_locality(LOCALITY))
-        act = record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        act = _record_recurrent_pair_position_measurement_act_from_current_coordinates(
             ledger,
-            subject_to_act_binding_event_identity=binding.identity,
+            binding=binding,
             current_coordinates=current_coordinates,
         )
         current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
@@ -271,37 +275,40 @@ def _record_inputs_with_coordinates(
 ):
     if current_coordinates is None:
         current_coordinates = _current_coordinates(ledger)
-    prior_count = len(ledger.list_locality(LOCALITY))
-    earlier_source = record_operator_material_occurrence(
-        ledger,
-        locality_identity=LOCALITY,
-        exact=b"abcabc",
-        source_boundary="earlier exact occurrence",
+    earlier_source, current_coordinates = (
+        record_operator_material_occurrence_from_current_coordinates(
+            ledger,
+            locality_identity=LOCALITY,
+            exact=b"abcabc",
+            source_boundary="earlier exact occurrence",
+            current_coordinates=current_coordinates,
+        )
     )
-    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     earlier, current_coordinates = _pair_measurement(ledger, current_coordinates)
-    prior_count = len(ledger.list_locality(LOCALITY))
-    added = record_operator_material_occurrence(
-        ledger,
-        locality_identity=LOCALITY,
-        exact=b"abc",
-        source_boundary="added exact occurrence",
+    added, current_coordinates = (
+        record_operator_material_occurrence_from_current_coordinates(
+            ledger,
+            locality_identity=LOCALITY,
+            exact=b"abc",
+            source_boundary="added exact occurrence",
+            current_coordinates=current_coordinates,
+        )
     )
-    current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     later, current_coordinates = _pair_measurement(ledger, current_coordinates)
     comparison, current_coordinates = _record_pair_comparison(
         ledger, earlier, later, current_coordinates
     )
     path_source = added
     if not path_source_is_added:
-        prior_count = len(ledger.list_locality(LOCALITY))
-        path_source = record_operator_material_occurrence(
-            ledger,
-            locality_identity=LOCALITY,
-            exact=b"abc",
-            source_boundary="unrelated exact occurrence",
+        path_source, current_coordinates = (
+            record_operator_material_occurrence_from_current_coordinates(
+                ledger,
+                locality_identity=LOCALITY,
+                exact=b"abc",
+                source_boundary="unrelated exact occurrence",
+                current_coordinates=current_coordinates,
+            )
         )
-        current_coordinates = _advance_since(ledger, current_coordinates, prior_count)
     path, current_coordinates = _record_path(
         ledger, earlier, path_source, current_coordinates
     )

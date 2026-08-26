@@ -414,7 +414,11 @@ def _unassigned_ordered_path_pair_finding_compare_subjects_from_current_coordina
         for path_identity in path_identities
     )
     comparison_inputs = tuple(
-        _comparison_input(ledger, comparison_identity)
+        _comparison_input(
+            ledger,
+            comparison_identity,
+            prior_coordinates=current_coordinates,
+        )
         for comparison_identity in comparison_identities
     )
 

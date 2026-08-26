@@ -246,6 +246,7 @@ def reference_to_recorded_recurrent_byte_pair(
     *,
     measurement_occurrence_identity: str,
     recurrence_assertion_position: int,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> ReferenceToRecordedRecurrentBytePair:
     """Resolve one recurrence Assertion through its exact Measurement Yield."""
 
@@ -253,6 +254,7 @@ def reference_to_recorded_recurrent_byte_pair(
         ledger,
         measurement_occurrence_identity=measurement_occurrence_identity,
         recurrence_assertion_positions=(recurrence_assertion_position,),
+        prior_coordinates=prior_coordinates,
     )[0]
 
 
@@ -526,6 +528,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     source_material_result_occurrence_identity: str,
     occurrence_count_boundary: int,
     through: EventLedgerBoundary,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
     """Measure pair subjects through one exact boundary after one pair-result read."""
 
@@ -539,6 +542,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
         recurrence_assertion_positions=recurrence_assertion_positions,
+        prior_coordinates=prior_coordinates,
     )
     source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
@@ -603,7 +607,7 @@ def _binding_material(
     }
 
 
-def _require_current_binding_coordinates(
+def _require_binding_coordinate_values(
     ledger: EventLedger,
     *,
     finding: FindingOfRecurrentBytePairOccurrencePositions,
@@ -614,16 +618,10 @@ def _require_current_binding_coordinates(
         raise ValueError(
             "pair occurrence Measurement requires exact current coordinates"
         )
-    from seed_runtime.operator_current_coordinates import (
-        read_operator_current_coordinates,
-    )
     from seed_runtime.material_source import (
         read_material_locality_relation_requirements,
     )
 
-    current = read_operator_current_coordinates(
-        ledger, locality_identity=finding.source_locality_identity
-    )
     measurements = current_coordinates.get("measurement_occurrences")
     material_results = current_coordinates.get("material_result_occurrences")
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
@@ -637,8 +635,7 @@ def _require_current_binding_coordinates(
         ).values()
     )
     if (
-        current_coordinates != current
-        or current_coordinates.get("locality_identity")
+        current_coordinates.get("locality_identity")
         != finding.source_locality_identity
         or type(boundary) is not str
         or not boundary
@@ -666,18 +663,61 @@ def _require_current_binding_coordinates(
     return boundary
 
 
-def record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+def _require_current_binding_coordinates(
     ledger: EventLedger,
     *,
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     current_coordinates: dict[str, Any],
-) -> Event:
-    """Record one exact subject-to-Act binding."""
-
-    _validate_exact_finding_of_measurement(ledger, finding)
-    through_event_occurrence_identity = _require_current_binding_coordinates(
-        ledger, finding=finding, current_coordinates=current_coordinates
+    required_binding_identity: str | None = None,
+) -> str:
+    from seed_runtime.operator_current_coordinates import (
+        read_operator_current_coordinates,
     )
+
+    current = read_operator_current_coordinates(
+        ledger, locality_identity=finding.source_locality_identity
+    )
+    if current_coordinates != current:
+        raise ValueError(
+            "pair occurrence Measurement requires exact current coordinates"
+        )
+    return _require_binding_coordinate_values(
+        ledger,
+        finding=finding,
+        current_coordinates=current_coordinates,
+        required_binding_identity=required_binding_identity,
+    )
+
+
+def _require_binding_coordinates_at_current_boundary(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    current_coordinates: dict[str, Any],
+    required_binding_identity: str | None = None,
+) -> str:
+    boundary = _require_binding_coordinate_values(
+        ledger,
+        finding=finding,
+        current_coordinates=current_coordinates,
+        required_binding_identity=required_binding_identity,
+    )
+    if (
+        ledger.append_boundary_through_occurrence(boundary)
+        != ledger.append_boundary()
+    ):
+        raise ValueError(
+            "pair occurrence Measurement requires exact current coordinates"
+        )
+    return boundary
+
+
+def _append_recurrent_pair_position_measurement_binding(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    through_event_occurrence_identity: str,
+) -> Event:
     identities = {
         "exact_act_identity": ledger.mint_identity(
             "act_of_measurement_of_recurrent_byte_pair_occurrence_position"
@@ -699,6 +739,52 @@ def record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_bi
             **identities,
         ),
         locality_identity=finding.source_locality_identity,
+    )
+
+
+def record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    """Record one exact subject-to-Act binding."""
+
+    _validate_exact_finding_of_measurement(
+        ledger,
+        finding,
+        prior_coordinates=current_coordinates,
+    )
+    through_event_occurrence_identity = _require_current_binding_coordinates(
+        ledger, finding=finding, current_coordinates=current_coordinates
+    )
+    return _append_recurrent_pair_position_measurement_binding(
+        ledger,
+        finding=finding,
+        through_event_occurrence_identity=through_event_occurrence_identity,
+    )
+
+
+def _record_recurrent_pair_position_measurement_binding_from_current_coordinates(
+    ledger: EventLedger,
+    *,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    _validate_exact_finding_of_measurement(
+        ledger,
+        finding,
+        prior_coordinates=current_coordinates,
+    )
+    boundary = _require_binding_coordinates_at_current_boundary(
+        ledger,
+        finding=finding,
+        current_coordinates=current_coordinates,
+    )
+    return _append_recurrent_pair_position_measurement_binding(
+        ledger,
+        finding=finding,
+        through_event_occurrence_identity=boundary,
     )
 
 
@@ -933,6 +1019,8 @@ def _material_of_act_occurrence(
 def _validate_exact_finding_of_measurement(
     ledger: EventLedger,
     finding: FindingOfRecurrentBytePairOccurrencePositions,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> None:
     _validate_finding(finding)
     pair_reference = reference_to_recorded_recurrent_byte_pair(
@@ -943,6 +1031,7 @@ def _validate_exact_finding_of_measurement(
         recurrence_assertion_position=(
             finding.pair_reference.recurrence_assertion_position
         ),
+        prior_coordinates=prior_coordinates,
     )
     exact = _measure_through(
         ledger,
@@ -961,7 +1050,7 @@ def record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_posi
     subject_to_act_binding_event_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record the responsible Measurement Act before its Yield and result."""
+    """Record the Measurement Act before its Yield and result."""
 
     binding, finding = _read_recurrent_byte_pair_occurrence_position_measurement_binding(
         ledger, subject_to_act_binding_event_identity
@@ -972,6 +1061,47 @@ def record_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_posi
         current_coordinates=current_coordinates,
         required_binding_identity=binding.identity,
     )
+    return _append_recurrent_pair_position_measurement_act(
+        ledger,
+        binding=binding,
+        finding=finding,
+    )
+
+
+def _record_recurrent_pair_position_measurement_act_from_current_coordinates(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    exact_binding, finding = (
+        _read_recurrent_byte_pair_occurrence_position_measurement_binding(
+            ledger,
+            binding.identity,
+            prior_coordinates=current_coordinates,
+        )
+    )
+    if exact_binding != binding:
+        raise ValueError("pair occurrence Measurement requires its exact binding")
+    _require_binding_coordinates_at_current_boundary(
+        ledger,
+        finding=finding,
+        current_coordinates=current_coordinates,
+        required_binding_identity=binding.identity,
+    )
+    return _append_recurrent_pair_position_measurement_act(
+        ledger,
+        binding=binding,
+        finding=finding,
+    )
+
+
+def _append_recurrent_pair_position_measurement_act(
+    ledger: EventLedger,
+    *,
+    binding: Event,
+    finding: FindingOfRecurrentBytePairOccurrencePositions,
+) -> Event:
     for event in ledger.iter_locality_kind(
         binding.locality_identity,
         RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
