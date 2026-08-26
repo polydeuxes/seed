@@ -78,11 +78,12 @@ BYTE_MEASUREMENT_RESPONSIBLE_ACT_OCCURRENCE_EVENT = (
 BYTE_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
     "operator.measurement.byte_responsibility_assignment_recorded"
 )
-BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
-    "addressed_act_identity",
-    "act_occurrence_identity",
+BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "responsibility",
     "responsible_boundary",
+} | {
+    "addressed_act_identity",
+    "act_occurrence_identity",
     "source_assertion_reference",
     "source_movement_event_identity",
     "input_applicability",
@@ -101,8 +102,6 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "result_identity",
         "dimensions",
         "exact_act",
-        "responsibility",
-        "responsible_boundary",
         "responsibility_assignment_reference",
         "applicability_act_identity",
         "applicability_act_occurrence_identity",
@@ -3829,8 +3828,6 @@ def _pair_applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": "input Applicability",
-        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _pair_subject_to_act_binding_reference(applicability_binding)
         ),
@@ -3898,8 +3895,6 @@ def _pair_applicability_result_material(
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
         },
         "exact_act": "input Applicability",
-        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
@@ -4194,8 +4189,6 @@ def _pair_measurement_act_material(
             "measurement_act_occurrence_identity"
         ],
         "act": "declared byte-position-pair Measurement",
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
@@ -4411,8 +4404,6 @@ def _pair_measurement_result_material(
         "act_occurrence_identity": assignment.material[
             "measurement_act_occurrence_identity"
         ],
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_reference": (
             _pair_subject_to_act_binding_reference(assignment)
         ),
@@ -4891,7 +4882,6 @@ def _validated_recorded_byte_position_pair_measurement(
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
         or material.get("exact_act") != "declared byte-position-pair Measurement"
-        or material.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or not isinstance(material.get("addressed_act_identity"), str)
         or not material["addressed_act_identity"]
         or not isinstance(material.get("act_occurrence_identity"), str)
