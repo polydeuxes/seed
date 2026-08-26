@@ -170,7 +170,7 @@ def _record_path(ledger, pair_measurement, source):
     )
     first = next(reference for reference in references if reference.exact_pair == b"ab")
     second = next(reference for reference in references if reference.exact_pair == b"bc")
-    assignment = record_shared_position_subject_to_act_binding(
+    binding = record_shared_position_subject_to_act_binding(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
         first_assertion_address=first.assertion_address,
@@ -180,7 +180,7 @@ def _record_path(ledger, pair_measurement, source):
     )
     applicability_act = record_shared_position_applicability_act_occurrence(
         ledger,
-        binding_event_identity=assignment.identity,
+        binding_event_identity=binding.identity,
         current_coordinates=_current_coordinates(ledger),
     )
     applicability = record_shared_position_applicability_result(
