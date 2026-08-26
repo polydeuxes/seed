@@ -127,8 +127,8 @@ RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
 )
 RECURRENCE_MEASUREMENT_RULE = (
-    "group exact source-position results only when their complete Compare findings "
-    "are equal; recurrence requires more than one exact result"
+    "one recurrence finding carries exact source-position results whose complete "
+    "Compare findings are equal; recurrence requires more than one exact result"
 )
 COORDINATE_MEASUREMENT_ACT = (
     "Measure corresponding carried material across exact recurrence support results"
@@ -1265,13 +1265,13 @@ def _source_position_results_at_boundary(
 
 
 def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dict[str, Any]]:
-    grouped: list[tuple[list[dict[str, Any]], list[Event]]] = []
+    findings_by_surface: list[tuple[list[dict[str, Any]], list[Event]]] = []
     for event in source_position_results:
         event_coordinates = _coordinates(event.material)
         surface = event_coordinates["complete_compare_findings"]
         matching = tuple(
             productions
-            for exact_surface, productions in grouped
+            for exact_surface, productions in findings_by_surface
             if exact_surface == surface
         )
         if len(matching) > 1:
@@ -1279,26 +1279,26 @@ def _recurrence_findings(source_position_results: tuple[Event, ...]) -> list[dic
         if matching:
             matching[0].append(event)
         else:
-            grouped.append((deepcopy(surface), [event]))
-    groups = []
-    for finding_position, (surface, productions) in enumerate(grouped):
+            findings_by_surface.append((deepcopy(surface), [event]))
+    findings = []
+    for finding_position, (surface, productions) in enumerate(findings_by_surface):
         support = [_result_reference(event) for event in productions]
         subject = {
             "coordinate_count": _coordinates(productions[0].material)["coordinate_count"],
             "complete_compare_findings": deepcopy(surface),
         }
-        group = {
+        finding = {
             "finding_position": finding_position,
             "subject": subject,
             "support_result_references": support,
             "count": len(productions),
         }
         if len(productions) > 1:
-            group["recurrence"] = {
+            finding["recurrence"] = {
                 "count_finding_position": finding_position,
             }
-        groups.append(group)
-    return groups
+        findings.append(finding)
+    return findings
 
 
 def _record_recurrence_measurement(
@@ -1320,7 +1320,7 @@ def _record_recurrence_measurement(
     )
     if not source_position_results:
         raise ValueError("recurrence Measurement requires exact source-position results")
-    groups = _recurrence_findings(source_position_results)
+    findings = _recurrence_findings(source_position_results)
     payload = {
         "direct_position_result_occurrence": direct_result_event_identity,
         "coordinate_count": coordinate_count,
@@ -1328,7 +1328,7 @@ def _record_recurrence_measurement(
         "source_position_result_references": [
             _result_reference(event) for event in source_position_results
         ],
-        "findings": groups,
+        "findings": findings,
     }
     _act, result = _record_yielded_result(
         ledger,
@@ -1586,12 +1586,12 @@ def record_source_position_measurements(
 
 def _coordinate_findings(
     ledger: EventLedger,
-    recurrence_group: dict[str, Any],
+    recurrence_finding: dict[str, Any],
     *,
     _validated: dict[tuple[str, str], Any] | None = None,
 ) -> list[dict[str, Any]]:
     productions = []
-    for reference in recurrence_group["support_result_references"]:
+    for reference in recurrence_finding["support_result_references"]:
         material = get_recorded_source_position_measurement(
             ledger,
             reference["recorded_occurrence_reference"],
@@ -1600,7 +1600,7 @@ def _coordinate_findings(
         if reference["result_reference"] != material["result_identity"]:
             raise ValueError("coordinate Measurement carries no exact production")
         productions.append((reference, material))
-    coordinate_count = recurrence_group["subject"]["coordinate_count"]
+    coordinate_count = recurrence_finding["subject"]["coordinate_count"]
     if any(production[1]["coordinate_count"] != coordinate_count for production in productions):
         raise ValueError("coordinate Measurement results carry different source positions")
     findings = []
@@ -1611,17 +1611,17 @@ def _coordinate_findings(
         ),
         strict=True,
     ):
-        grouped: dict[int, list[dict[str, Any]]] = {}
+        support_by_material: dict[int, list[dict[str, Any]]] = {}
         coordinates: dict[int, list[dict[str, Any]]] = {}
         for (reference, _production), coordinate in zip(
             productions, corresponding_coordinates, strict=True
         ):
             value = coordinate["exact_material"][0]
-            grouped.setdefault(value, []).append(deepcopy(reference))
+            support_by_material.setdefault(value, []).append(deepcopy(reference))
             coordinates.setdefault(value, []).append(deepcopy(coordinate))
-        for value in sorted(grouped):
+        for value in sorted(support_by_material):
             subject = {
-                "recurrence_finding_position": recurrence_group[
+                "recurrence_finding_position": recurrence_finding[
                     "finding_position"
                 ],
                 "exact_material": [value],
@@ -1632,7 +1632,7 @@ def _coordinate_findings(
                     "source_position_coordinate": coordinate,
                 }
                 for reference, coordinate in zip(
-                    grouped[value], coordinates[value], strict=True
+                    support_by_material[value], coordinates[value], strict=True
                 )
             ]
             finding_position = len(findings)
@@ -1676,21 +1676,21 @@ def _record_corresponding_coordinate_material_measurements(
         ledger, recurrence_result_event_identity, _validated=validated
     )
     recorded = []
-    for group in recurrence["findings"]:
-        if "recurrence" not in group:
+    for finding in recurrence["findings"]:
+        if "recurrence" not in finding:
             continue
         payload = {
             "source_recurrence_result_reference": {
                 "recorded_occurrence_reference": recurrence_result_event_identity,
                 "result_reference": recurrence["result_identity"],
             },
-            "source_recurrence_finding_position": group["finding_position"],
-            "support_result_references": group["support_result_references"],
+            "source_recurrence_finding_position": finding["finding_position"],
+            "support_result_references": finding["support_result_references"],
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
             ],
             "findings": _coordinate_findings(
-                ledger, group, _validated=validated
+                ledger, finding, _validated=validated
             ),
         }
         _act, result = _record_yielded_result(
@@ -1706,7 +1706,7 @@ def _record_corresponding_coordinate_material_measurements(
             identity_prefix="recurrence_corresponding_source_position_material_measurement",
         )
         recorded.append(
-            CorrespondingCoordinateMeasurement(group["finding_position"], result)
+            CorrespondingCoordinateMeasurement(finding["finding_position"], result)
         )
     new_events = tuple(ledger.list_locality(locality_identity)[locality_event_count:])
     return CorrespondingCoordinateMeasurements(
@@ -1763,26 +1763,26 @@ def get_recorded_corresponding_coordinate_material_measurement(
     if source_reference.get("result_reference") != recurrence["result_identity"]:
         raise ValueError("coordinate Measurement carries no exact recurrence result")
     matching = tuple(
-        group
-        for group in recurrence["findings"]
-        if group["finding_position"]
+        finding
+        for finding in recurrence["findings"]
+        if finding["finding_position"]
         == material.get("source_recurrence_finding_position")
-        and "recurrence" in group
+        and "recurrence" in finding
     )
     if len(matching) != 1:
-        raise ValueError("coordinate Measurement carries no exact recurrence group")
-    group = matching[0]
+        raise ValueError("coordinate Measurement carries no exact recurrence finding")
+    finding = matching[0]
     payload = {
         "source_recurrence_result_reference": deepcopy(source_reference),
-        "source_recurrence_finding_position": group["finding_position"],
+        "source_recurrence_finding_position": finding["finding_position"],
         "support_result_references": deepcopy(
-            group["support_result_references"]
+            finding["support_result_references"]
         ),
         "completeness_boundary_reference": recurrence[
             "completeness_boundary_reference"
         ],
         "findings": _coordinate_findings(
-            ledger, group, _validated=_validated
+            ledger, finding, _validated=_validated
         ),
     }
     carried_payload = {
@@ -1827,14 +1827,14 @@ def _recurrent_result_material_payload(
     *,
     recurrence_event: Event,
     recurrence: dict[str, Any],
-    recurrence_group: dict[str, Any],
+    recurrence_finding: dict[str, Any],
     coordinate_event: Event,
     coordinate_measurement: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Return exact material common to every recurrent result, or no result."""
 
-    support_references = recurrence_group.get("support_result_references")
-    coordinate_count = recurrence_group.get("subject", {}).get("coordinate_count")
+    support_references = recurrence_finding.get("support_result_references")
+    coordinate_count = recurrence_finding.get("subject", {}).get("coordinate_count")
     coordinate_source = coordinate_measurement.get(
         "source_recurrence_result_reference"
     )
@@ -1849,7 +1849,7 @@ def _recurrent_result_material_payload(
         or coordinate_source.get("result_reference")
         != recurrence.get("result_identity")
         or coordinate_measurement.get("source_recurrence_finding_position")
-        != recurrence_group.get("finding_position")
+        != recurrence_finding.get("finding_position")
         or coordinate_measurement.get("support_result_references")
         != support_references
         or coordinate_measurement.get("completeness_boundary_reference")
@@ -1960,7 +1960,7 @@ def _recurrent_result_material_payload(
     subject = {
         "coordinate_measurement_result_reference": coordinate_result_reference,
         "recurrence_result_reference": recurrence_result_reference,
-        "recurrence_finding_position": recurrence_group["finding_position"],
+        "recurrence_finding_position": recurrence_finding["finding_position"],
         "support_result_references": deepcopy(support_references),
         "coordinate_count": coordinate_count,
     }
@@ -1977,7 +1977,7 @@ def _recurrent_result_material_payload(
         "scope": {
             "locality_identity": recurrence_event.locality_identity,
             "recurrence_result_reference": recurrence_result_reference,
-            "recurrence_finding_position": recurrence_group["finding_position"],
+            "recurrence_finding_position": recurrence_finding["finding_position"],
             "support_result_references": deepcopy(support_references),
             "completeness_boundary_reference": recurrence[
                 "completeness_boundary_reference"
@@ -2083,17 +2083,17 @@ def _record_recurrent_result_material_measurements(
 
     locality_event_count = len(ledger.list_locality(recurrence_event.locality_identity))
     recorded = []
-    for group in recurrence["findings"]:
-        if "recurrence" not in group:
+    for finding in recurrence["findings"]:
+        if "recurrence" not in finding:
             continue
         coordinate_event, coordinate_measurement = coordinate_measurements[
-            group["finding_position"]
+            finding["finding_position"]
         ]
         payload = _recurrent_result_material_payload(
             ledger,
             recurrence_event=recurrence_event,
             recurrence=recurrence,
-            recurrence_group=group,
+            recurrence_finding=finding,
             coordinate_event=coordinate_event,
             coordinate_measurement=coordinate_measurement,
         )
@@ -2113,7 +2113,7 @@ def _record_recurrent_result_material_measurements(
             result_exact_material=bytes(payload["exact_material"]),
         )
         recorded.append(
-            RecurrentResultMaterialMeasurement(group["finding_position"], result)
+            RecurrentResultMaterialMeasurement(finding["finding_position"], result)
         )
     new_events = tuple(
         ledger.list_locality(recurrence_event.locality_identity)[
@@ -2188,11 +2188,11 @@ def get_recorded_recurrent_result_material_measurement(
     if recurrence_reference.get("result_reference") != recurrence["result_identity"]:
         raise ValueError("exact-material Measurement carries no exact recurrence result")
     matching = tuple(
-        group
-        for group in recurrence["findings"]
-        if group.get("finding_position")
+        finding
+        for finding in recurrence["findings"]
+        if finding.get("finding_position")
         == subject.get("recurrence_finding_position")
-        and "recurrence" in group
+        and "recurrence" in finding
     )
     if len(matching) != 1:
         raise ValueError("exact-material Measurement carries no exact recurrence finding")
@@ -2215,7 +2215,7 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         recurrence_event=recurrence_event,
         recurrence=recurrence,
-        recurrence_group=matching[0],
+        recurrence_finding=matching[0],
         coordinate_event=coordinate_event,
         coordinate_measurement=coordinate_measurement,
     )
