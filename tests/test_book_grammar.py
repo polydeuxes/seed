@@ -104,11 +104,11 @@ def test_applicability_and_participation_remain_separate():
         ]
         assert compare["relations"] == ["participation", "yield"]
 
-def test_generic_compare_carries_its_exact_subjects_and_act():
-    generic_compare = _grammar()["book_coordinates"]["04.Compare"]
+def test_compare_clause_carries_its_exact_subjects_and_act():
+    compare = _grammar()["book_coordinates"]["04.Compare"]
 
-    assert generic_compare["subject"] == "exact_Compare_subjects"
-    assert generic_compare["exact_Act"] == "Compare"
+    assert compare["subject"] == "exact_Compare_subjects"
+    assert compare["exact_Act"] == "Compare"
     assert "its exact subjects, Scope, Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")

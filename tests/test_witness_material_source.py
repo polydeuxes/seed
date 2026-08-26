@@ -360,7 +360,7 @@ def test_empty_witness_material_is_exact_material():
     assert exact_material_result_bytes(occurred) == b""
 
 
-def test_generic_material_result_read_refuses_a_changed_source_coordinate():
+def test_material_result_read_refuses_a_changed_source_coordinate():
     ledger = EventLedger()
     occurred = _preserve(ledger, b"exact")
     occurred.material["source_boundary"] = "different boundary"

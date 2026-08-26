@@ -80,7 +80,7 @@ def _identity(value: Any, message: str) -> str:
 def _operator_source_for_material_result(
     ledger: EventLedger, added: Event
 ) -> tuple[Event, dict[str, Any]]:
-    """Read direct O1 or the older generic result carrying O1 provenance."""
+    """Read direct O1 or an earlier result carrying O1 provenance."""
 
     from seed_runtime.operator_material_source import (
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,

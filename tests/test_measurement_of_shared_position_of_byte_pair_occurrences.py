@@ -896,7 +896,7 @@ def test_direct_position_coordinate_assertions_compose_without_recurrence_suppor
     ]
 
 
-def test_generic_binding_refuses_raw_direct_result_inputs_atomically():
+def test_shared_position_binding_refuses_raw_direct_result_inputs_atomically():
     ledger = EventLedger()
     locality = "raw-direct-pair-position"
     _source, direct_result, _determination_result = _direct_d2(
