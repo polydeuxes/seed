@@ -6,7 +6,7 @@ import sys
 from seed_runtime.material_source import exact_material_result_bytes
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
-from seed_runtime.declared_measurement_responsibilities import (
+from seed_runtime.declared_measurements import (
     record_declared_measurements_from_current_bounded_locality_replay,
 )
 

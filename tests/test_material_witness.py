@@ -19,7 +19,7 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.witness_material_source import record_witness_material_source
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
-from seed_runtime.declared_measurement_responsibilities import (
+from seed_runtime.declared_measurements import (
     record_declared_measurements_from_current_bounded_locality_replay,
 )
 

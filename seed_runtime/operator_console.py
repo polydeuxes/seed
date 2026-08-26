@@ -79,7 +79,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
 from seed_runtime.source_position_determination_path_and_comparison import (
     yield_source_position_determinations_paths_and_comparisons,
 )
-from seed_runtime.declared_measurement_responsibilities import (
+from seed_runtime.declared_measurements import (
     _record_declared_measurements_from_carried_bounded_locality_replay,
 )
 from seed_runtime.supplied_invocation_material import (

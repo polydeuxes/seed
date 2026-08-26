@@ -1,6 +1,5 @@
-"""Record all declared Measurement subjects through B.
+"""Record all Measurement subjects declared through B.
 
-Each declaration names one existing Book-assigned Measurement Responsibility.
 All subjects are read once from one exact bounded Locality replay. Each binding
 preserves that same through-occurrence boundary; durable writes remain serial
 without making an earlier Measurement lifecycle an input to a later binding.
@@ -10,7 +9,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -59,23 +58,6 @@ class ExactByteOccurrenceMeasurementSubject:
 DeclaredMeasurementSubject = (
     PositionCoordinateMeasurementSubject | ExactByteOccurrenceMeasurementSubject
 )
-
-
-class DeclaredMeasurementResponsibility(NamedTuple):
-    result_kind: str
-    discover: Callable[
-        [EventLedger, dict[str, Any], str], tuple[DeclaredMeasurementSubject, ...]
-    ]
-    record: Callable[
-        [
-            EventLedger,
-            dict[str, Any],
-            dict[str, Any],
-            str,
-            DeclaredMeasurementSubject,
-        ],
-        tuple[dict[str, Any], Event],
-    ]
 
 
 class RecordedDeclaredMeasurements(NamedTuple):
@@ -174,7 +156,7 @@ def _complete_direct_measurement(
     ledger: EventLedger,
     recording_replay: dict[str, Any],
     locality_identity: str,
-    assignment: Event,
+    binding: Event,
     finding,
 ) -> tuple[dict[str, Any], Event]:
     prior_boundary = recording_replay["through_event_occurrence_identity"]
@@ -182,14 +164,14 @@ def _complete_direct_measurement(
         _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates(
             ledger,
             recording_replay,
-            assignment,
+            binding,
             finding,
             prior_through_event_occurrence_identity=prior_boundary,
         )
     )
     act = _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding(
         ledger,
-        binding=assignment,
+        binding=binding,
         finding=finding,
         binding_current_coordinates=recording_replay,
     )
@@ -202,7 +184,7 @@ def _complete_direct_measurement(
     result = _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence(
         ledger,
         act_occurrence=act,
-        binding=assignment,
+        binding=binding,
         finding=finding,
     )
     recording_replay = (
@@ -235,29 +217,29 @@ def _record_direct_measurement(
     through_event_occurrence_identity = through_occurrence_coordinates.get(
         "through_event_occurrence_identity"
     )
-    assignment = _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence(
+    binding = _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence(
         ledger,
         finding=finding,
         through_event_occurrence_identity=through_event_occurrence_identity,
     )
     return _complete_direct_measurement(
-        ledger, recording_replay, locality_identity, assignment, finding
+        ledger, recording_replay, locality_identity, binding, finding
     )
 
 
-def _byte_assignment_source_sets(
+def _byte_binding_source_sets(
     ledger: EventLedger, locality_identity: str
 ) -> set[tuple[str, ...]]:
     source_sets: set[tuple[str, ...]] = set()
-    for assignment in ledger.iter_locality_kind(
+    for binding in ledger.iter_locality_kind(
         locality_identity, BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     ):
-        references = assignment.material.get("source_occurrence_references")
+        references = binding.material.get("source_occurrence_references")
         if (
-            ledger.integrity_of(assignment.identity) == CORRUPTED
+            ledger.integrity_of(binding.identity) == CORRUPTED
             or type(references) is not list
         ):
-            raise ValueError("recorded byte Measurement assignment is malformed")
+            raise ValueError("recorded byte Measurement binding is malformed")
         identities = []
         for reference in references:
             if (
@@ -280,7 +262,7 @@ def _discover_byte_measurements(
     current_sources = _material_result_identities(bounded_locality_replay)
     if not current_sources:
         return ()
-    if current_sources in _byte_assignment_source_sets(ledger, locality_identity):
+    if current_sources in _byte_binding_source_sets(ledger, locality_identity):
         return ()
     return (ExactByteOccurrenceMeasurementSubject(current_sources),)
 
@@ -357,7 +339,7 @@ def _record_byte_measurement(
     through_event_occurrence_identity = through_occurrence_coordinates.get(
         "through_event_occurrence_identity"
     )
-    assignment = _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
+    binding = _record_byte_measurement_subject_to_act_binding_from_through_event_occurrence(
         ledger,
         source_localities=(locality_identity,),
         recording_locality_identity=locality_identity,
@@ -367,18 +349,18 @@ def _record_byte_measurement(
         ledger,
         recording_replay,
         locality_identity,
-        assignment,
+        binding,
         through_occurrence_coordinates,
     )
 
 
-DECLARED_MEASUREMENT_RESPONSIBILITIES = (
-    DeclaredMeasurementResponsibility(
+_DECLARED_MEASUREMENTS = (
+    (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         _discover_direct_measurements,
         _record_direct_measurement,
     ),
-    DeclaredMeasurementResponsibility(
+    (
         BYTE_MEASUREMENT_RECORDED_KIND,
         _discover_byte_measurements,
         _record_byte_measurement,
@@ -403,28 +385,28 @@ def _record_declared_measurements_from_carried_bounded_locality_replay(
         locality_identity=locality_identity,
     )
     complete_subjects = tuple(
-        (declaration, subject)
-        for declaration in DECLARED_MEASUREMENT_RESPONSIBILITIES
-        for subject in declaration.discover(
+        (result_kind, record, subject)
+        for result_kind, discover, record in _DECLARED_MEASUREMENTS
+        for subject in discover(
             ledger,
             through_occurrence_coordinates,
             locality_identity,
         )
     )
-    for declaration, subject in complete_subjects:
+    for result_kind, record, subject in complete_subjects:
         _require_current_replay_boundary(
             ledger,
             recording_replay,
             locality_identity=locality_identity,
         )
-        recording_replay, result = declaration.record(
+        recording_replay, result = record(
             ledger,
             recording_replay,
             through_occurrence_coordinates,
             locality_identity,
             subject,
         )
-        if result.kind != declaration.result_kind:
+        if result.kind != result_kind:
             raise ValueError("declared Measurement recorded another result kind")
         results.append(result)
     return RecordedDeclaredMeasurements(recording_replay, tuple(results))
