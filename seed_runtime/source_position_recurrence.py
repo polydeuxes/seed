@@ -110,7 +110,6 @@ _ACT_RESPONSIBILITY_KINDS = {
         RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY_KIND
     ),
 }
-COMPARE_RESPONSIBILITY = "compare exact material at two exact source positions"
 COMPARE_APPLICABILITY_ACT = (
     "Applicability of exact source-position coordinates to Compare"
 )
@@ -122,16 +121,10 @@ COMPARE_RULE = (
     "same-content exactly when the two exact source-position materials are equal; "
     "difference otherwise"
 )
-SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY = (
-    "preserve all Compare results for exact consecutive source positions"
-)
 SOURCE_POSITION_MEASUREMENT_ACT = "Measure the complete Compare result"
 SOURCE_POSITION_MEASUREMENT_RULE = (
     "preserve one Compare result for every distinct pair of exact consecutive "
     "source positions carried by the subject"
-)
-RECURRENCE_MEASUREMENT_RESPONSIBILITY = (
-    "measure exact recurrence of complete internal Compare results"
 )
 RECURRENCE_MEASUREMENT_ACT = (
     "Measure recurrence of complete internal Compare results"
@@ -140,18 +133,12 @@ RECURRENCE_MEASUREMENT_RULE = (
     "group exact source-position results only when their complete Compare findings "
     "are equal; recurrence requires more than one exact result"
 )
-COORDINATE_MEASUREMENT_RESPONSIBILITY = (
-    "measure corresponding carried material across exact recurrence support results"
-)
 COORDINATE_MEASUREMENT_ACT = (
     "Measure corresponding carried material across exact recurrence support results"
 )
 COORDINATE_MEASUREMENT_RULE = (
     "measure the exact material at each corresponding source position carried by "
     "every exact result of one recurrence finding"
-)
-RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY = (
-    "measure exact material shared by every exact recurrent result"
 )
 RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT = (
     "Measure exact material shared by every exact recurrent result"
@@ -267,7 +254,6 @@ def _require_preserved_result(
     result: Event,
     *,
     exact_act: str,
-    responsibility: str,
     occurrence_boundary: str,
 ) -> tuple[Event, dict[str, Any]]:
     """Read one exact produced result without replaying its input history."""
@@ -276,7 +262,6 @@ def _require_preserved_result(
         ledger,
         result,
         exact_act=exact_act,
-        responsibility=responsibility,
         occurrence_boundary=occurrence_boundary,
     )
     coordinates = deepcopy(_coordinates(result.material))
@@ -547,7 +532,6 @@ def _record_responsibility(
     act_kind: str,
     exact_act: str,
     rule: str,
-    responsibility: str,
     book_reference: str,
     locality_identity: str,
     through_event_occurrence_identity: str,
@@ -584,7 +568,6 @@ def _record_yielded_result(
     act_kind: str,
     result_kind: str,
     exact_act: str,
-    responsibility: str,
     book_reference: str,
     occurrence_boundary: str,
     locality_identity: str,
@@ -608,7 +591,6 @@ def _record_yielded_result(
         act_kind=act_kind,
         exact_act=exact_act,
         rule=_EXACT_ACT_RULES[exact_act],
-        responsibility=responsibility,
         book_reference=book_reference,
         locality_identity=locality_identity,
         through_event_occurrence_identity=through_event_occurrence_identity,
@@ -667,7 +649,6 @@ def _require_yield(
     result: Event,
     *,
     exact_act: str,
-    responsibility: str,
     occurrence_boundary: str,
 ) -> Event:
     act = _recorded_occurrence(
@@ -920,7 +901,6 @@ def _record_compare(
         act_kind=COMPARE_APPLICABILITY_ACT_KIND,
         result_kind=COMPARE_APPLICABILITY_RESULT_KIND,
         exact_act=COMPARE_APPLICABILITY_ACT,
-        responsibility=COMPARE_RESPONSIBILITY,
         book_reference="01.Current.E.1",
         occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         locality_identity=locality_identity,
@@ -946,7 +926,6 @@ def _record_compare(
         act_kind=COMPARE_ACT_KIND,
         result_kind=COMPARE_RESULT_KIND,
         exact_act=COMPARE_ACT,
-        responsibility=COMPARE_RESPONSIBILITY,
         book_reference="04.Compare",
         occurrence_boundary=COMPARE_BOUNDARY,
         locality_identity=locality_identity,
@@ -995,7 +974,6 @@ def get_recorded_source_position_compare(
         ledger,
         result,
         exact_act=COMPARE_ACT,
-        responsibility=COMPARE_RESPONSIBILITY,
         occurrence_boundary=COMPARE_BOUNDARY,
     )
     result_coordinates = _coordinates(result.material)
@@ -1027,7 +1005,6 @@ def get_recorded_source_position_compare(
         ledger,
         applicability,
         exact_act=COMPARE_APPLICABILITY_ACT,
-        responsibility=COMPARE_RESPONSIBILITY,
         occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
     )
     finding = result_coordinates.get("finding")
@@ -1152,7 +1129,6 @@ def _record_source_position_result(
         act_kind=SOURCE_POSITION_MEASUREMENT_ACT_KIND,
         result_kind=SOURCE_POSITION_MEASUREMENT_RESULT_KIND,
         exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
-        responsibility=SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY,
         book_reference="01.Source.D",
         occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
         locality_identity=coordinates[0]["locality_identity"],
@@ -1181,7 +1157,6 @@ def get_recorded_source_position_measurement(
         ledger,
         result,
         exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
-        responsibility=SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
@@ -1378,7 +1353,6 @@ def _record_recurrence_measurement(
         act_kind=RECURRENCE_MEASUREMENT_ACT_KIND,
         result_kind=RECURRENCE_MEASUREMENT_RESULT_KIND,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
-        responsibility=RECURRENCE_MEASUREMENT_RESPONSIBILITY,
         book_reference="01.Source.D",
         occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
         locality_identity=locality_identity,
@@ -1407,7 +1381,6 @@ def get_recorded_source_position_recurrence(
         ledger,
         result,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
-        responsibility=RECURRENCE_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
@@ -1750,7 +1723,6 @@ def _record_corresponding_coordinate_material_measurements(
             act_kind=COORDINATE_MEASUREMENT_ACT_KIND,
             result_kind=COORDINATE_MEASUREMENT_RESULT_KIND,
             exact_act=COORDINATE_MEASUREMENT_ACT,
-            responsibility=COORDINATE_MEASUREMENT_RESPONSIBILITY,
             book_reference="01.Source.D.1",
             occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
             locality_identity=locality_identity,
@@ -1802,7 +1774,6 @@ def get_recorded_corresponding_coordinate_material_measurement(
         ledger,
         result,
         exact_act=COORDINATE_MEASUREMENT_ACT,
-        responsibility=COORDINATE_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
@@ -1924,7 +1895,6 @@ def _recurrent_result_material_payload(
             ledger,
             production_event,
             exact_act=SOURCE_POSITION_MEASUREMENT_ACT,
-            responsibility=SOURCE_POSITION_MEASUREMENT_RESPONSIBILITY,
             occurrence_boundary=SOURCE_POSITION_MEASUREMENT_BOUNDARY,
         )
         coordinates = production.get("source_position_coordinates")
@@ -2159,7 +2129,6 @@ def _record_recurrent_result_material_measurements(
             act_kind=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT_KIND,
             result_kind=RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESULT_KIND,
             exact_act=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT,
-            responsibility=RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY,
             book_reference="01.Source.D",
             occurrence_boundary=RECURRENT_RESULT_MATERIAL_MEASUREMENT_BOUNDARY,
             locality_identity=recurrence_event.locality_identity,
@@ -2220,7 +2189,6 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         result,
         exact_act=RECURRENT_RESULT_MATERIAL_MEASUREMENT_ACT,
-        responsibility=RECURRENT_RESULT_MATERIAL_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=RECURRENT_RESULT_MATERIAL_MEASUREMENT_BOUNDARY,
     )
     material = _coordinates(result.material)
@@ -2240,7 +2208,6 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         recurrence_event,
         exact_act=RECURRENCE_MEASUREMENT_ACT,
-        responsibility=RECURRENCE_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=RECURRENCE_MEASUREMENT_BOUNDARY,
     )
     if recurrence_reference.get("result_reference") != recurrence["result_identity"]:
@@ -2263,7 +2230,6 @@ def get_recorded_recurrent_result_material_measurement(
         ledger,
         coordinate_event,
         exact_act=COORDINATE_MEASUREMENT_ACT,
-        responsibility=COORDINATE_MEASUREMENT_RESPONSIBILITY,
         occurrence_boundary=COORDINATE_MEASUREMENT_BOUNDARY,
     )
     if coordinate_reference.get("result_reference") != coordinate_measurement[
@@ -2336,7 +2302,6 @@ def validate_source_position_recurrence_event(
             ledger,
             event,
             exact_act=COMPARE_APPLICABILITY_ACT,
-            responsibility=COMPARE_RESPONSIBILITY,
             occurrence_boundary=COMPARE_APPLICABILITY_BOUNDARY,
         )
         coordinates = _coordinates(event.material)
