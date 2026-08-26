@@ -611,6 +611,8 @@ def _determination_binding_addressed_by_applicability(
     applicability_binding: Event,
     source_result: Event,
     references: tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...],
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     addressed_act_identity = applicability_binding.material.get(
         "addressed_act_identity"
@@ -628,7 +630,9 @@ def _determination_binding_addressed_by_applicability(
             "Applicability addresses no exact determination binding"
         )
     determination_binding, read_source, read_references = _read_binding(
-        ledger, matches[0].identity
+        ledger,
+        matches[0].identity,
+        prior_coordinates=prior_coordinates,
     )
     if read_source != source_result or read_references != references:
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -863,7 +867,11 @@ def _read_applicability_act(
             "Applicability Act carries no exact Applicability binding"
         )
     determination_binding = _determination_binding_addressed_by_applicability(
-        ledger, applicability_binding, source_result, references
+        ledger,
+        applicability_binding,
+        source_result,
+        references,
+        prior_coordinates=prior_coordinates,
     )
     if (
         reference != _binding_reference(
