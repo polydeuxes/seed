@@ -412,7 +412,7 @@ _MEASUREMENT_ACT_OCCURRENCE_EVENTS = {
     RECORDED_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_EVENT,
     BYTE_PAIR_OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
 }
-_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
+_MEASUREMENT_BINDING_KINDS = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     RECORDED_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
@@ -526,7 +526,7 @@ _SOURCE_POSITION_RECURRENCE_KINDS = {
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_OCCURRENCE_EVENTS,
-    *_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS,
+    *_MEASUREMENT_BINDING_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
     *_ASSERTION_LOCALITY_MOVEMENT_KINDS,
     *_BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS,
@@ -1102,14 +1102,14 @@ def advance_operator_current_coordinates(
         measurement_occurrences = prior["measurement_occurrences"]
         if type(measurement_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Measurement occurrences"
+                "prior coordinates require exact Measurement occurrences"
             )
         assertion_locality_movement_occurrences = prior[
             "assertion_locality_movement_occurrences"
         ]
         if type(assertion_locality_movement_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Assertion Locality movement occurrences"
+                "prior coordinates require exact Assertion Locality movement occurrences"
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
         locality_continuation_relation_occurrences = prior[
@@ -1117,7 +1117,7 @@ def advance_operator_current_coordinates(
         ]
         if type(locality_continuation_relation_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact recorded relation occurrences"
+                "prior coordinates require exact Locality continuation relations"
             )
         recorded_through_occurrence_boundary_references = prior[
             "recorded_through_occurrence_boundary_references"
@@ -1132,57 +1132,57 @@ def advance_operator_current_coordinates(
         ]
         if type(recorded_boundary_locality_relations) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact recorded boundary Locality relations"
+                "prior coordinates require exact recorded boundary Locality relations"
             )
         operator_invocation_locality_relations = prior[
             "operator_invocation_locality_relations"
         ]
         if type(operator_invocation_locality_relations) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact operator invocation Locality relations"
+                "prior coordinates require exact operator invocation Locality relations"
             )
         subject_to_act_binding_occurrences = prior[
             "subject_to_act_binding_occurrences"
         ]
         if type(subject_to_act_binding_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Responsibility assignment occurrences"
+                "prior coordinates require exact subject-to-Act binding occurrences"
             )
         operator_material_source_act_occurrences = prior[
             "operator_material_source_act_occurrences"
         ]
         if type(operator_material_source_act_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact operator material source Act occurrences"
+                "prior coordinates require exact operator material source Act occurrences"
             )
         material_locality_relation_occurrences = prior[
             "material_locality_relation_occurrences"
         ]
         if type(material_locality_relation_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact material Locality relation occurrences"
+                "prior coordinates require exact material Locality relation occurrences"
             )
         candidate_result_occurrences = prior["candidate_result_occurrences"]
         if type(candidate_result_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Candidate result occurrences"
+                "prior coordinates require exact Candidate result occurrences"
             )
         admission_result_occurrences = prior["admission_result_occurrences"]
         if type(admission_result_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Admission result occurrences"
+                "prior coordinates require exact Admission result occurrences"
             )
         applicability_result_occurrences = prior[
             "applicability_result_occurrences"
         ]
         if type(applicability_result_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Applicability result occurrences"
+                "prior coordinates require exact Applicability result occurrences"
             )
         comparison_result_occurrences = prior["comparison_result_occurrences"]
         if type(comparison_result_occurrences) is not dict:
             raise ValueError(
-                "prior Locality Standing requires exact Compare result occurrences"
+                "prior coordinates require exact Compare result occurrences"
             )
         known_loss = prior["known_loss"]
         unknown = prior["unknown"]
@@ -1239,7 +1239,7 @@ def advance_operator_current_coordinates(
         if not (
             event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
             or event.kind in _MEASUREMENT_ACT_OCCURRENCE_EVENTS
-            or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
+            or event.kind in _MEASUREMENT_BINDING_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _ASSERTION_LOCALITY_MOVEMENT_KINDS
             or event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS

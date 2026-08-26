@@ -484,7 +484,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
     broken["locality_continuation_relation_occurrences"] = [result.identity]
 
     with pytest.raises(
-        ValueError, match="exact recorded relation occurrences"
+        ValueError, match="exact Locality continuation relations"
     ):
         advance_operator_current_coordinates(
             ledger,
