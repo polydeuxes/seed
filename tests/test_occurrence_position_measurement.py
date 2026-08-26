@@ -739,8 +739,6 @@ def test_durable_locality_positions_read_through_their_exact_yield(tmp_path):
 
 
 def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
-    from seed_runtime.identities import _next_values, new_identity
-
     path = tmp_path / "occurrence-position.sqlite"
     ledger = SQLiteEventLedger(path)
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
@@ -766,12 +764,11 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
     }
     ledger.close()
 
-    _next_values.clear()
     reopened = SQLiteEventLedger(path)
     try:
         for prefix, identity in carried.items():
             prior_number = int(identity.rsplit("_", 1)[1])
-            assert new_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
+            assert reopened.mint_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
     finally:
         reopened.close()
 

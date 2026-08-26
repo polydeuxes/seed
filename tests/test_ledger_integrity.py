@@ -434,10 +434,7 @@ def test_a_store_with_the_withdrawn_runtime_reference_index_is_refused(path):
 def test_ledger_mints_a_requested_identity_across_reopen(path):
     """One requested prefix remains exact without occurrence-vocabulary lookup."""
 
-    from seed_runtime.identities import _next_values
-
     prefix = "fixture_coordinate"
-    _next_values.clear()
     ledger = SQLiteEventLedger(path)
     try:
         first = ledger.mint_identity(prefix)
@@ -445,7 +442,6 @@ def test_ledger_mints_a_requested_identity_across_reopen(path):
     finally:
         ledger.close()
 
-    _next_values.clear()
     reopened = SQLiteEventLedger(path)
     try:
         second = reopened.mint_identity(prefix)

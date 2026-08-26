@@ -664,10 +664,6 @@ class SQLiteEventLedger(EventLedger):
         max_event_number = self._max_event_identity_number()
         self._next_event_number = max_event_number + 1
         reserve_identity_prefix("evt", max_event_number)
-        for prefix, max_number in self._connection.execute(
-            "SELECT prefix, max_number FROM identity_reservations"
-        ):
-            reserve_identity_prefix(prefix, max_number)
 
     def append(
         self,
@@ -703,23 +699,15 @@ class SQLiteEventLedger(EventLedger):
             return self._mint_identity_without_commit(prefix)
 
     def _mint_identity_without_commit(self, prefix: str) -> str:
-        self._connection.execute(
-            "INSERT INTO identity_reservations (prefix, max_number) "
-            "VALUES (?, 0) ON CONFLICT(prefix) DO NOTHING",
-            (prefix,),
-        )
         row = self._connection.execute(
-            "SELECT max_number FROM identity_reservations WHERE prefix = ?",
+            "INSERT INTO identity_reservations (prefix, max_number) "
+            "VALUES (?, 1) "
+            "ON CONFLICT(prefix) DO UPDATE "
+            "SET max_number = max_number + 1 "
+            "RETURNING max_number",
             (prefix,),
         ).fetchone()
-        max_number = int(row["max_number"])
-        reserve_identity_prefix(prefix, max_number)
-        identity = new_identity(prefix)
-        number = _numeric_number(identity, prefix)
-        if number is None:
-            raise LedgerIntegrityError("minted identity has no exact number")
-        self._persist_reservations({prefix: number})
-        return identity
+        return f"{prefix}_{int(row['max_number']):06d}"
 
     def append_many(
         self,
@@ -1324,15 +1312,6 @@ class SQLiteEventLedger(EventLedger):
               AND SUBSTR(identity, 5) NOT GLOB '*[^0-9]*'
             """).fetchone()
         return int(row["max_number"] or 0)
-
-    def _persist_reservations(self, reservations: dict[str, int]) -> None:
-        for prefix, max_number in reservations.items():
-            self._connection.execute(
-                "INSERT INTO identity_reservations (prefix, max_number) VALUES (?, ?) "
-                "ON CONFLICT(prefix) DO UPDATE SET max_number = MAX(max_number, ?)",
-                (prefix, max_number, max_number),
-            )
-            reserve_identity_prefix(prefix, max_number)
 
 def _numeric_number(value: str, prefix: str) -> int | None:
     marker = f"{prefix}_"

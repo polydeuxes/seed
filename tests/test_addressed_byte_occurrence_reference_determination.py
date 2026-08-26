@@ -438,8 +438,6 @@ def test_call_local_coordinates_equals_full_replay():
 
 
 def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
-    from seed_runtime.identities import _next_values
-
     path = tmp_path / "addressed-byte.sqlite"
     ledger = SQLiteEventLedger(path)
     recorded = _record(ledger)
@@ -470,7 +468,6 @@ def test_lifecycle_is_exact_after_sqlite_restart(tmp_path):
     }
     ledger.close()
 
-    _next_values.clear()
     reopened = SQLiteEventLedger(path)
     assert get_recorded_addressed_byte_occurrence_reference_determination(
         reopened, result_identity
