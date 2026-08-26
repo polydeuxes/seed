@@ -141,8 +141,8 @@ def test_moved_byte_references_keep_identity_in_one_new_locality(
         for event in ledger.list_locality("one-byte-pairs")
         if event.kind == "operator.assertion.locality_movement_recorded"
     }
-    assert tuple(reference.assertion_identity for reference in moved) == tuple(
-        reference.assertion_identity for reference in references
+    assert tuple(reference.assertion_address for reference in moved) == tuple(
+        reference.assertion_address for reference in references
     )
 
 

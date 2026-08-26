@@ -155,6 +155,10 @@ class ReferenceToRecordedPositionOfBytePairOccurrence(
     second_position: int
 
     @property
+    def assertion_address(self) -> str:
+        return self.assertion_identity
+
+    @property
     def assertion_reference(self) -> dict[str, str]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
@@ -1893,7 +1897,7 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
 def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
     ledger: EventLedger,
     result_event_identity: str,
-    assertion_identities: tuple[str, ...],
+    assertion_addresses: tuple[str, ...],
     *,
     exact_coordinates: tuple[tuple[bytes, int, int], ...] | None = None,
 ) -> tuple[
@@ -1906,17 +1910,17 @@ def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrenc
     if type(result_event_identity) is not str or not result_event_identity:
         raise ValueError("position references require one result occurrence")
     if (
-        type(assertion_identities) is not tuple
-        or not assertion_identities
-        or any(type(identity) is not str or not identity for identity in assertion_identities)
-        or len(set(assertion_identities)) != len(assertion_identities)
+        type(assertion_addresses) is not tuple
+        or not assertion_addresses
+        or any(type(identity) is not str or not identity for identity in assertion_addresses)
+        or len(set(assertion_addresses)) != len(assertion_addresses)
     ):
         raise ValueError("position references require distinct Assertion identities")
     if (
         exact_coordinates is not None
         and (
             type(exact_coordinates) is not tuple
-            or len(exact_coordinates) != len(assertion_identities)
+            or len(exact_coordinates) != len(assertion_addresses)
             or any(
                 type(coordinates) is not tuple or len(coordinates) != 3
                 for coordinates in exact_coordinates
@@ -1938,10 +1942,10 @@ def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrenc
                 second_position=coordinates[2],
             )
             for assertion_identity, coordinates in zip(
-                assertion_identities, exact_coordinates, strict=True
+                assertion_addresses, exact_coordinates, strict=True
             )
         )
-    requested = set(assertion_identities)
+    requested = set(assertion_addresses)
     resolved = {}
     for first_position in range(len(finding.exact_material) - 1):
         second_position = first_position + 1
@@ -1964,7 +1968,7 @@ def references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrenc
                 break
     if set(resolved) != requested:
         raise ValueError("position result carries no addressed Assertion")
-    return tuple(resolved[identity] for identity in assertion_identities)
+    return tuple(resolved[identity] for identity in assertion_addresses)
 
 
 def references_to_recorded_position_coordinates_of_byte_pair_occurrences(

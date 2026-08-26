@@ -221,12 +221,12 @@ class MeasuredBytePairInputs:
 
 @dataclass(frozen=True)
 class RecordedByteAssertion:
-    assertion_identity: str
+    assertion_position: int
     recorded_occurrence_identity: str
     content: int | None
     result: str
     _material: dict[str, Any]
-    _support_assertion_references: tuple[dict[str, str], ...]
+    _support_assertion_references: tuple[dict[str, Any], ...]
     locality_movement_event_identity: str | None = None
 
     @property
@@ -236,16 +236,16 @@ class RecordedByteAssertion:
         return deepcopy(self._material)
 
     @property
-    def support_assertion_references(self) -> tuple[dict[str, str], ...]:
+    def support_assertion_references(self) -> tuple[dict[str, Any], ...]:
         """Return detached occurrence-bound local support addresses."""
 
         return deepcopy(self._support_assertion_references)
 
     @property
-    def reference(self) -> dict[str, str]:
+    def reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
 
@@ -315,37 +315,37 @@ _AssertionLocalityMovementSource = (
 
 @dataclass(frozen=True)
 class RecordedBytePairAssertion:
-    assertion_identity: str
+    assertion_position: int
     recorded_occurrence_identity: str
     content: tuple[int, int] | None
     result: str
     _material: dict[str, Any]
-    _support_assertion_references: tuple[dict[str, str], ...]
+    _support_assertion_references: tuple[dict[str, Any], ...]
 
     @property
     def material(self) -> dict[str, Any]:
         return deepcopy(self._material)
 
     @property
-    def support_assertion_references(self) -> tuple[dict[str, str], ...]:
+    def support_assertion_references(self) -> tuple[dict[str, Any], ...]:
         return deepcopy(self._support_assertion_references)
 
     @property
-    def reference(self) -> dict[str, str]:
+    def reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
 
 @dataclass(frozen=True)
 class _RecordedBytePairFinding:
-    assertion_identity: str
+    assertion_position: int
     recorded_occurrence_identity: str
     exact_pair: tuple[int, int]
     result: str
     _content_coordinates: tuple[int, int, int] | bool
-    _local_support_assertion_identities: tuple[str, ...]
+    _local_support_assertion_positions: tuple[int, ...]
 
     @property
     def content(self) -> dict[str, int | bool]:
@@ -359,10 +359,10 @@ class _RecordedBytePairFinding:
         }
 
     @property
-    def reference(self) -> dict[str, str]:
+    def reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
 
@@ -394,7 +394,7 @@ def _recorded_input_assertion_coordinates(
             (
                 reading
                 for reading in readings or ()
-                if reading.assertion_identity == source.assertion_identity
+                if reading.assertion_position == source.assertion_position
             ),
             None,
         )
@@ -427,7 +427,7 @@ def _recorded_input_assertion_coordinates(
         "recorded_measurement_result_occurrence_identity": (
             exact.recorded_occurrence_identity
         ),
-        "assertion_identity": exact.assertion_identity,
+        "assertion_position": exact.assertion_position,
         "locality_movement_result_occurrence_identity": (
             exact.locality_movement_event_identity
         ),
@@ -470,7 +470,7 @@ def _pair_input_applicability_from_exact_source(
             "recorded_measurement_result_occurrence_identity": (
                 source.recorded_occurrence_identity
             ),
-            "assertion_identity": source.assertion_identity,
+            "assertion_position": source.assertion_position,
             "locality_movement_result_occurrence_identity": (
                 source.locality_movement_event_identity
             ),
@@ -686,7 +686,7 @@ def _movement_binding_reference(binding: Event) -> dict[str, str]:
 
 def _source_assertion_reference(
     source: _AssertionLocalityMovementSource,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     if type(source) is RecordedByteAssertion:
         return source.reference
     return source.assertion_reference
@@ -703,15 +703,19 @@ def _source_assertion_coordinates(
 def _source_assertion_from_reference(
     ledger: EventLedger, reference: Any
 ) -> tuple[_AssertionLocalityMovementSource, Event]:
-    if type(reference) is not dict or set(reference) != {
-        "recorded_occurrence_identity",
-        "assertion_identity",
-    }:
+    if type(reference) is not dict or "recorded_occurrence_identity" not in reference:
         raise ByteMeasurementError("Assertion movement carries no exact source")
     source_event = ledger.get(reference["recorded_occurrence_identity"])
     if source_event is None or source_event.locality_identity is None:
         raise ByteMeasurementError("Assertion movement source cannot be read")
     if source_event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
+        if (
+            set(reference)
+            != {"recorded_occurrence_identity", "assertion_position"}
+            or type(reference["assertion_position"]) is not int
+            or reference["assertion_position"] < 0
+        ):
+            raise ByteMeasurementError("Assertion movement carries no exact source")
         source_results = assertions_of_recorded_byte_measurement(
             ledger, source_event.identity
         )
@@ -719,7 +723,7 @@ def _source_assertion_from_reference(
             (
                 item
                 for item in source_results or ()
-                if item.assertion_identity == reference["assertion_identity"]
+                if item.assertion_position == reference["assertion_position"]
             ),
             None,
         )
@@ -732,6 +736,11 @@ def _source_assertion_from_reference(
     )
 
     if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        if set(reference) != {
+            "recorded_occurrence_identity",
+            "assertion_identity",
+        }:
+            raise ByteMeasurementError("Assertion movement carries no exact source")
         try:
             coordinates = _recorded_position_assertion_coordinates_for_locality_movement(
                 ledger,
@@ -756,6 +765,11 @@ def _source_assertion_from_reference(
         source_event.kind
         == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
     ):
+        if set(reference) != {
+            "recorded_occurrence_identity",
+            "assertion_identity",
+        }:
+            raise ByteMeasurementError("Assertion movement carries no exact source")
         try:
             coordinates = _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
                 ledger,
@@ -1295,9 +1309,6 @@ def _movement_result_material(
         "source_assertion_coordinates": binding.material[
             "source_assertion_coordinates"
         ],
-        "assertion_identity": binding.material["source_assertion_reference"][
-            "assertion_identity"
-        ],
         "source_locality": binding.material["source_locality"],
         "destination_locality": binding.locality_identity,
         "locality_relation": {
@@ -1639,13 +1650,13 @@ def move_recorded_byte_assertions_to_locality(
     if source_event.locality_identity == destination_locality:
         return sources
     exact_sources = {
-        source.assertion_identity: source
+        source.assertion_position: source
         for source in assertions_of_recorded_byte_measurement(
             ledger, source_event_identity
         )
         or ()
     }
-    if any(exact_sources.get(source.assertion_identity) != source for source in sources):
+    if any(exact_sources.get(source.assertion_position) != source for source in sources):
         raise ByteMeasurementError(
             "bounded Assertion movement requires each exact source Assertion"
         )
@@ -1742,7 +1753,7 @@ def _assertion_carried_by_locality_movement_result(
         )
     if type(source) is RecordedByteAssertion:
         return RecordedByteAssertion(
-            assertion_identity=source.assertion_identity,
+            assertion_position=source.assertion_position,
             recorded_occurrence_identity=source.recorded_occurrence_identity,
             content=source.content,
             result=source.result,
@@ -1895,24 +1906,7 @@ def _measure_byte_position_pair_counts_through(
     )
 
 
-def _byte_assertion_count(measured: MeasuredByteInputs) -> int:
-    return 1 + len(measured.counts) + sum(item.count > 1 for item in measured.counts)
-
-
-def _assertions(
-    measured: MeasuredByteInputs,
-    *,
-    assertion_identities: tuple[str, ...],
-) -> list[dict[str, Any]]:
-    if (
-        len(assertion_identities) != _byte_assertion_count(measured)
-        or any(type(identity) is not str or not identity for identity in assertion_identities)
-        or len(set(assertion_identities)) != len(assertion_identities)
-    ):
-        raise ByteMeasurementError(
-            "byte Measurement requires one exact address for each Assertion"
-        )
-    identities = iter(assertion_identities)
+def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     scope = {
         "source_localities": list(measured.source_localities),
     }
@@ -1923,11 +1917,10 @@ def _assertions(
             "identity": measured.completeness_boundary.identity
         },
     }
-    source_identity = next(identities)
     results: list[dict[str, Any]] = [
         {
             "dimensions": {
-                "identity": source_identity,
+                "position": 0,
                 "content": source_content,
                 "source_provenance": (
                     "complete declared material result within one boundary"
@@ -1954,16 +1947,16 @@ def _assertions(
         item: MeasuredByteCount,
         content: dict[str, Any],
         provenance: str,
-        local_support_references: list[str],
+        local_support_references: list[int],
     ):
         subject = {
             "content": item.content,
             "measurement_rule": BYTE_MEASUREMENT_RULE,
         }
-        identity = next(identities)
+        position = len(results)
         return {
             "dimensions": {
-                "identity": identity,
+                "position": position,
                 "content": content,
                 "source_provenance": provenance,
             },
@@ -1989,7 +1982,7 @@ def _assertions(
             item=item,
             content=count_content,
             provenance="the exact source-material Assertion carried here",
-            local_support_references=[source_identity],
+            local_support_references=[0],
         )
         results.append(count)
         if item.count > 1:
@@ -1999,7 +1992,7 @@ def _assertions(
                     item=item,
                     content={"recurrence_established": True},
                     provenance="the exact count Assertion carried here",
-                    local_support_references=[count["dimensions"]["identity"]],
+                    local_support_references=[count["dimensions"]["position"]],
                 )
             )
     return results
@@ -2769,10 +2762,6 @@ def _record_byte_measurement_result_from_exact_inputs(
     measured: MeasuredByteInputs,
 ) -> Event:
     result_identity = assignment.material["measurement_result_identity"]
-    assertion_identities = tuple(
-        ledger.mint_identity("byte_assertion")
-        for _ in range(_byte_assertion_count(measured))
-    )
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
@@ -2797,10 +2786,7 @@ def _record_byte_measurement_result_from_exact_inputs(
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
-        "assertions": _assertions(
-            measured,
-            assertion_identities=assertion_identities,
-        ),
+        "assertions": _assertions(measured),
     }
     yield_relation = _record_yield_relation(
         ledger,
@@ -3042,13 +3028,7 @@ def _assertions_of_recorded_byte_measurement(
             f"{event_identity} does not carry the results of its complete bounded source read"
         )
     try:
-        assertion_identities = tuple(
-            assertion["dimensions"]["identity"] for assertion in recorded_assertions
-        )
-        expected = _assertions(
-            measured,
-            assertion_identities=assertion_identities,
-        )
+        expected = _assertions(measured)
     except (KeyError, TypeError, ByteMeasurementError) as error:
         raise ByteMeasurementError(
             f"{event_identity} does not carry the results of its complete bounded source read"
@@ -3062,7 +3042,7 @@ def _assertions_of_recorded_byte_measurement(
         local_identities = assertion["input_support"]["local_assertion_references"]
         read.append(
             RecordedByteAssertion(
-                assertion_identity=assertion["dimensions"]["identity"],
+                assertion_position=assertion["dimensions"]["position"],
                 recorded_occurrence_identity=event.identity,
                 content=assertion["assertion_subject"].get("content"),
                 result=assertion["result"],
@@ -3070,9 +3050,9 @@ def _assertions_of_recorded_byte_measurement(
                 _support_assertion_references=tuple(
                     {
                         "recorded_occurrence_identity": event.identity,
-                        "assertion_identity": local_identity,
+                        "assertion_position": local_position,
                     }
-                    for local_identity in local_identities
+                    for local_position in local_identities
                 ),
             )
         )
@@ -3089,24 +3069,7 @@ def assertions_of_recorded_byte_measurement(
     )
 
 
-def _pair_assertion_count(measured: MeasuredBytePairInputs) -> int:
-    return len(measured.counts) + sum(item.count > 1 for item in measured.counts)
-
-
-def _pair_assertions(
-    measured: MeasuredBytePairInputs,
-    *,
-    assertion_identities: tuple[str, ...],
-) -> list[dict[str, Any]]:
-    if (
-        len(assertion_identities) != _pair_assertion_count(measured)
-        or any(type(identity) is not str or not identity for identity in assertion_identities)
-        or len(set(assertion_identities)) != len(assertion_identities)
-    ):
-        raise ByteMeasurementError(
-            "pair Measurement requires one exact address for each Assertion"
-        )
-    identities = iter(assertion_identities)
+def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
     scope = {
         "source_localities": list(measured.source_localities),
     }
@@ -3118,17 +3081,17 @@ def _pair_assertions(
         item: MeasuredBytePairCount,
         content: dict[str, Any],
         provenance: str,
-        local_support_references: list[str],
-        source_support_references: list[dict[str, str]],
+        local_support_references: list[int],
+        source_support_references: list[dict[str, Any]],
     ) -> dict[str, Any]:
         subject = {
             "content": list(item.content),
             "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         }
-        identity = next(identities)
+        position = len(results)
         return {
             "dimensions": {
-                "identity": identity,
+                "position": position,
                 "content": content,
                 "source_provenance": provenance,
             },
@@ -3164,7 +3127,7 @@ def _pair_assertions(
                     item=item,
                     content={"recurrence_established": True},
                     provenance="the exact count Assertion carried here",
-                    local_support_references=[count["dimensions"]["identity"]],
+                    local_support_references=[count["dimensions"]["position"]],
                     source_support_references=[],
                 )
             )
@@ -3602,8 +3565,8 @@ def _read_pair_subject_to_act_binding(
             (
                 reading
                 for reading in readings or ()
-                if reading.assertion_identity
-                == reference.get("assertion_identity")
+                if reading.assertion_position
+                == reference.get("assertion_position")
             ),
             None,
         ) if type(reference) is dict else None
@@ -4270,7 +4233,6 @@ def _pair_measurement_result_material(
     *,
     assignment: Event,
     applicability_event: Event,
-    assertion_identities: tuple[str, ...],
 ) -> dict[str, Any]:
     return {
         "result_identity": assignment.material["measurement_result_identity"],
@@ -4297,10 +4259,7 @@ def _pair_measurement_result_material(
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
-        "assertions": _pair_assertions(
-            measured,
-            assertion_identities=assertion_identities,
-        ),
+        "assertions": _pair_assertions(measured),
     }
 
 
@@ -4376,15 +4335,10 @@ def _record_pair_measurement_result_from_carried_act(
         raise ByteMeasurementError(
             "pair Measurement result requires its exact Act at the append tip"
         )
-    assertion_identities = tuple(
-        ledger.mint_identity("byte_pair_assertion")
-        for _ in range(_pair_assertion_count(measured))
-    )
     result_material = _pair_measurement_result_material(
         measured,
         assignment=assignment,
         applicability_event=applicability_event,
-        assertion_identities=assertion_identities,
     )
     yield_relation = _record_yield_relation(
         ledger,
@@ -4413,7 +4367,6 @@ def _record_pair_measurement_result_from_carried_act(
             measured,
             assignment=assignment,
             applicability_event=applicability_event,
-            assertion_identities=assertion_identities,
         ),
         "yield_relation_identity": yield_relation.identity,
         "act_occurrence_event_identity": act_occurrence.identity,
@@ -4463,21 +4416,11 @@ def _require_exact_pair_measurement_result_event(
         ],
     )
     yield_relation = ledger.get(event.material.get("yield_relation_identity"))
-    assertions = event.material.get("assertions")
-    try:
-        assertion_identities = tuple(
-            assertion["dimensions"]["identity"] for assertion in assertions
-        )
-    except (KeyError, TypeError) as error:
-        raise ByteMeasurementError(
-            "pair Measurement result carries no exact Assertion addresses"
-        ) from error
     expected = {
         **_pair_measurement_result_material(
             measured,
             assignment=assignment,
             applicability_event=applicability_event,
-            assertion_identities=assertion_identities,
         ),
         "yield_relation_identity": (
             event.material.get("yield_relation_identity")
@@ -4858,8 +4801,12 @@ def _validated_recorded_byte_position_pair_measurement(
     source_reference = material.get("source_assertion_reference")
     if (
         not isinstance(source_reference, dict)
-        or set(source_reference) != {"recorded_occurrence_identity", "assertion_identity"}
-        or not all(isinstance(value, str) and value for value in source_reference.values())
+        or set(source_reference)
+        != {"recorded_occurrence_identity", "assertion_position"}
+        or not isinstance(source_reference["recorded_occurrence_identity"], str)
+        or not source_reference["recorded_occurrence_identity"]
+        or type(source_reference["assertion_position"]) is not int
+        or source_reference["assertion_position"] < 0
     ):
         raise ByteMeasurementError(f"{event_identity} carries no exact source Assertion")
     if source.reference != source_reference or event.locality_identity is None:
@@ -4904,8 +4851,7 @@ def _validated_recorded_byte_position_pair_measurement(
         "conflicts",
         "unknown",
     }
-    assertion_addresses: set[str] = set()
-    for assertion in assertions:
+    for assertion_position, assertion in enumerate(assertions):
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
             raise ByteMeasurementError(f"{event_identity} carries a malformed pair Assertion")
         subject = assertion.get("assertion_subject")
@@ -4932,17 +4878,14 @@ def _validated_recorded_byte_position_pair_measurement(
             or not isinstance(dimensions, dict)
             or set(dimensions)
                 != {
-                    "identity",
+                    "position",
                     "content",
                     "source_provenance",
                 }
-            or type(dimensions.get("identity")) is not str
-            or not dimensions["identity"]
-            or dimensions["identity"] in assertion_addresses
+            or dimensions.get("position") != assertion_position
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
-        assertion_addresses.add(dimensions["identity"])
         content = dimensions.get("content")
         content_shape_is_exact = (
             result == "recurrence"
@@ -4989,7 +4932,7 @@ def _validated_recorded_byte_position_pair_measurement(
             or recurrence["input_support"]
             != {
                 "assertion_references": [],
-                "local_assertion_references": [count["dimensions"]["identity"]],
+                "local_assertion_references": [count["dimensions"]["position"]],
             }
         ):
             raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
@@ -5008,14 +4951,14 @@ def _validated_recorded_byte_position_pair_measurement(
                 )
             validated_results.append(
                 _RecordedBytePairFinding(
-                    assertion_identity=assertion["dimensions"]["identity"],
+                    assertion_position=assertion["dimensions"]["position"],
                     recorded_occurrence_identity=event.identity,
                     exact_pair=tuple(
                         assertion["assertion_subject"]["content"]
                     ),
                     result=assertion["result"],
                     _content_coordinates=content_coordinates,
-                    _local_support_assertion_identities=tuple(
+                    _local_support_assertion_positions=tuple(
                         assertion["input_support"][
                             "local_assertion_references"
                         ]
@@ -5028,12 +4971,12 @@ def _validated_recorded_byte_position_pair_measurement(
         support_references.extend(
             {
                 "recorded_occurrence_identity": event.identity,
-                "assertion_identity": local_identity,
+                "assertion_position": local_position,
             }
-            for local_identity in support["local_assertion_references"]
+            for local_position in support["local_assertion_references"]
         )
         validated_results.append(RecordedBytePairAssertion(
-            assertion_identity=assertion["dimensions"]["identity"],
+            assertion_position=assertion["dimensions"]["position"],
             recorded_occurrence_identity=event.identity,
             content=tuple(assertion["assertion_subject"]["content"]),
             result=assertion["result"],

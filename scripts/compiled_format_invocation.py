@@ -48,7 +48,7 @@ class ExactMaterialCoordinates(Protocol):
 @dataclass(frozen=True, slots=True)
 class ExactMaterialReference:
     recorded_occurrence_identity: str
-    assertion_identity: str
+    assertion_address: str | int
     locality_identity: str
     exact_material: bytes
     locality_movement_event_identity: str | None = None
@@ -57,8 +57,13 @@ class ExactMaterialReference:
         if (
             type(self.recorded_occurrence_identity) is not str
             or not self.recorded_occurrence_identity
-            or type(self.assertion_identity) is not str
-            or not self.assertion_identity
+            or not (
+                (type(self.assertion_address) is str and self.assertion_address)
+                or (
+                    type(self.assertion_address) is int
+                    and self.assertion_address >= 0
+                )
+            )
             or type(self.locality_identity) is not str
             or not self.locality_identity
             or type(self.exact_material) is not bytes
@@ -348,7 +353,7 @@ def exact_byte_material_references(
     return tuple(
         ExactMaterialReference(
             recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-            assertion_identity=assertion.assertion_identity,
+            assertion_address=assertion.assertion_position,
             locality_identity=event.locality_identity,
             exact_material=bytes((assertion.content,)),
         )
@@ -402,7 +407,7 @@ def moved_exact_byte_material_references(
         found.append(
             ExactMaterialReference(
                 recorded_occurrence_identity=moved.recorded_occurrence_identity,
-                assertion_identity=moved.assertion_identity,
+                assertion_address=moved.assertion_position,
                 locality_identity=destination_locality,
                 exact_material=bytes((moved.content,)),
                 locality_movement_event_identity=(
@@ -427,7 +432,7 @@ def exact_byte_pair_material_references(
     return tuple(
         ExactMaterialReference(
             recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-            assertion_identity=assertion.assertion_identity,
+            assertion_address=assertion.assertion_position,
             locality_identity=event.locality_identity,
             exact_material=bytes(assertion.content),
         )

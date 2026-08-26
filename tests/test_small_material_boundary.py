@@ -167,7 +167,7 @@ def test_removal_result_admission_reads_exact_comparison_matrix_once(monkeypatch
     sources = tuple(
         ExactMaterialReference(
             recorded_occurrence_identity=f"removal-reading-source-{position}",
-            assertion_identity=f"removal-reading-assertion-{position}",
+            assertion_address=f"removal-reading-assertion-{position}",
             locality_identity="removal-reading-locality",
             exact_material=b"x",
         )

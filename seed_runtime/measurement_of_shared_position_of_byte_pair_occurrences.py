@@ -26,7 +26,9 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDED_RESPONSIBILITY_ASSIGNMENT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     ReferenceToRecordedRecurrentBytePairOccurrencePosition,
+    _references_from_recorded_recurrent_pair_position_result,
     _references_to_addressed_recorded_recurrent_pair_position_results,
+    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     references_to_recorded_recurrent_byte_pair_occurrence_positions,
 )
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
@@ -206,7 +208,7 @@ def _reference_material(
 ) -> dict[str, Any]:
     material = {
         "recorded_occurrence_identity": reference.recorded_occurrence_identity,
-        "assertion_identity": reference.assertion_identity,
+        "assertion_reference": reference.assertion_reference,
         "source_material_acquisition_occurrence_identity": (
             reference.source_material_acquisition_occurrence_identity
         ),
@@ -230,13 +232,13 @@ def _reference_material(
                 "recorded_occurrence_identity": (
                     reference.pair_measurement_occurrence_identity
                 ),
-                "assertion_identity": reference.recurrence_assertion_identity,
+                "assertion_position": reference.recurrence_assertion_position,
             },
             {
                 "recorded_occurrence_identity": (
                     reference.pair_measurement_occurrence_identity
                 ),
-                "assertion_identity": reference.count_assertion_identity,
+                "assertion_position": reference.count_assertion_position,
             },
         ]
     elif (
@@ -287,19 +289,15 @@ def _resolve_reference(
     ledger: EventLedger,
     *,
     result_occurrence_identity: str,
-    assertion_identity: str,
+    assertion_address: str | int,
 ) -> RecordedPairPositionReference:
-    assertion_identity = _identity(
-        assertion_identity,
-        "shared-position Measurement requires one exact Assertion identity",
-    )
     return _resolve_references(
         ledger,
         result_occurrence_identity=_identity(
             result_occurrence_identity,
             "shared-position Measurement requires one exact result occurrence",
         ),
-        assertion_identities=(assertion_identity,),
+        assertion_addresses=(assertion_address,),
     )[0]
 
 
@@ -307,7 +305,7 @@ def _resolve_references(
     ledger: EventLedger,
     *,
     result_occurrence_identity: str,
-    assertion_identities: tuple[str, ...],
+    assertion_addresses: tuple[str | int, ...],
 ) -> tuple[RecordedPairPositionReference, ...]:
     result_occurrence_identity = _identity(
         result_occurrence_identity,
@@ -319,50 +317,57 @@ def _resolve_references(
             "shared-position Measurement requires one exact result occurrence"
         )
     if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        if any(type(address) is not str or not address for address in assertion_addresses):
+            raise SharedPairPositionError(
+                "shared-position Measurement requires exact Assertion addresses"
+            )
         try:
             return references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
                 ledger,
                 result_occurrence_identity,
-                assertion_identities,
+                assertion_addresses,
             )
         except (TypeError, ValueError) as error:
             raise SharedPairPositionError(
                 "shared-position Measurement requires carried position Assertions"
             ) from error
-    references = _references(
-        ledger,
-        result_occurrence_identity=result_occurrence_identity,
+    if (
+        result.kind
+        == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    ):
+        try:
+            return _references_from_recorded_recurrent_pair_position_result(
+                result,
+                get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+                    ledger, result.identity
+                ),
+                assertion_positions=assertion_addresses,
+            )
+        except (TypeError, ValueError) as error:
+            raise SharedPairPositionError(
+                "shared-position Measurement requires carried position Assertions"
+            ) from error
+    raise SharedPairPositionError(
+        "shared-position Measurement requires one exact pair-position result"
     )
-    by_identity = {reference.assertion_identity: reference for reference in references}
-    if any(identity not in by_identity for identity in assertion_identities):
-        raise SharedPairPositionError(
-            "shared-position Measurement requires carried position Assertions"
-        )
-    return tuple(by_identity[identity] for identity in assertion_identities)
 
 
 def _inputs(
     ledger: EventLedger,
     *,
     first_result_occurrence_identity: str,
-    first_assertion_identity: str,
+    first_assertion_address: str | int,
     second_result_occurrence_identity: str,
-    second_assertion_identity: str,
+    second_assertion_address: str | int,
     prior_standing: dict[str, Any] | None = None,
 ) -> SharedPairPositionInputs:
     if first_result_occurrence_identity == second_result_occurrence_identity:
         first, second = _resolve_references(
             ledger,
             result_occurrence_identity=second_result_occurrence_identity,
-            assertion_identities=(
-                _identity(
-                    first_assertion_identity,
-                    "shared-position Measurement requires one exact Assertion identity",
-                ),
-                _identity(
-                    second_assertion_identity,
-                    "shared-position Measurement requires one exact Assertion identity",
-                ),
+            assertion_addresses=(
+                first_assertion_address,
+                second_assertion_address,
             ),
         )
     else:
@@ -384,26 +389,20 @@ def _inputs(
             first, second = (
                 _references_to_addressed_recorded_recurrent_pair_position_results(
                     ledger,
-                    result_and_assertion_identities=(
+                    result_and_assertion_positions=(
                         (
                             _identity(
                                 first_result_occurrence_identity,
                                 "shared-position Measurement requires one exact result occurrence",
                             ),
-                            _identity(
-                                first_assertion_identity,
-                                "shared-position Measurement requires one exact Assertion identity",
-                            ),
+                            first_assertion_address,
                         ),
                         (
                             _identity(
                                 second_result_occurrence_identity,
                                 "shared-position Measurement requires one exact result occurrence",
                             ),
-                            _identity(
-                                second_assertion_identity,
-                                "shared-position Measurement requires one exact Assertion identity",
-                            ),
+                            second_assertion_address,
                         ),
                     ),
                     prior_standing=prior_standing,
@@ -413,12 +412,12 @@ def _inputs(
         first = _resolve_reference(
             ledger,
             result_occurrence_identity=first_result_occurrence_identity,
-            assertion_identity=first_assertion_identity,
+            assertion_address=first_assertion_address,
         )
         second = _resolve_reference(
             ledger,
             result_occurrence_identity=second_result_occurrence_identity,
-            assertion_identity=second_assertion_identity,
+            assertion_address=second_assertion_address,
         )
     return _validated_inputs(first, second)
 
@@ -466,6 +465,34 @@ def _direct_coordinates_from_assignment_material(
     )
 
 
+def _assertion_address_from_assignment_material(
+    material: dict[str, Any],
+) -> str | int:
+    reference = material.get("assertion_reference")
+    if (
+        type(reference) is not dict
+        or reference.get("recorded_occurrence_identity")
+        != material.get("recorded_occurrence_identity")
+    ):
+        raise SharedPairPositionError(
+            "shared-position assignment carries no exact Assertion address"
+        )
+    if set(reference) == {"recorded_occurrence_identity", "assertion_identity"}:
+        return _identity(
+            reference["assertion_identity"],
+            "shared-position assignment carries no exact Assertion address",
+        )
+    if (
+        set(reference) == {"recorded_occurrence_identity", "assertion_position"}
+        and type(reference["assertion_position"]) is int
+        and reference["assertion_position"] >= 0
+    ):
+        return reference["assertion_position"]
+    raise SharedPairPositionError(
+        "shared-position assignment carries no exact Assertion address"
+    )
+
+
 def _inputs_from_assignment_material(
     ledger: EventLedger,
     *,
@@ -490,8 +517,9 @@ def _inputs_from_assignment_material(
             _direct_coordinates_from_assignment_material(material)
             for material in materials
         )
-        assertion_identities = tuple(
-            material.get("assertion_identity") for material in materials
+        assertion_addresses = tuple(
+            _assertion_address_from_assignment_material(material)
+            for material in materials
         )
         try:
             if result_identities[0] == result_identities[1]:
@@ -499,7 +527,7 @@ def _inputs_from_assignment_material(
                     references_to_addressed_recorded_position_coordinates_of_byte_pair_occurrences(
                         ledger,
                         result_identities[0],
-                        assertion_identities,
+                        assertion_addresses,
                         exact_coordinates=coordinates,
                     )
                 )
@@ -513,7 +541,7 @@ def _inputs_from_assignment_material(
                     )[0]
                     for result_identity, assertion_identity, coordinate in zip(
                         result_identities,
-                        assertion_identities,
+                        assertion_addresses,
                         coordinates,
                         strict=True,
                     )
@@ -526,9 +554,9 @@ def _inputs_from_assignment_material(
     return _inputs(
         ledger,
         first_result_occurrence_identity=result_identities[0],
-        first_assertion_identity=first.get("assertion_identity"),
+        first_assertion_address=_assertion_address_from_assignment_material(first),
         second_result_occurrence_identity=result_identities[1],
-        second_assertion_identity=second.get("assertion_identity"),
+        second_assertion_address=_assertion_address_from_assignment_material(second),
         prior_standing=prior_standing,
     )
 
@@ -893,9 +921,9 @@ def record_shared_position_responsibility_assignment(
     ledger: EventLedger,
     *,
     first_result_occurrence_identity: str,
-    first_assertion_identity: str,
+    first_assertion_address: str | int,
     second_result_occurrence_identity: str,
-    second_assertion_identity: str,
+    second_assertion_address: str | int,
     locality_standing: dict[str, Any],
 ) -> Event:
     """Assign from recurrent yielded position Assertions only."""
@@ -912,9 +940,9 @@ def record_shared_position_responsibility_assignment(
     inputs = _inputs(
         ledger,
         first_result_occurrence_identity=first_result_occurrence_identity,
-        first_assertion_identity=first_assertion_identity,
+        first_assertion_address=first_assertion_address,
         second_result_occurrence_identity=second_result_occurrence_identity,
-        second_assertion_identity=second_assertion_identity,
+        second_assertion_address=second_assertion_address,
         prior_standing=locality_standing,
     )
     required = tuple(

@@ -299,7 +299,7 @@ def _findings_from_carried_measurement(
                 content=tuple(content),
                 result=result,
                 _content_coordinates=content_coordinates,
-                _local_support_assertion_identities=tuple(local_support),
+                _local_support_assertion_positions=tuple(local_support),
             )
         )
     return tuple(findings)

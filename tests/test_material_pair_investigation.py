@@ -44,8 +44,8 @@ def _pair(
 ):
     return ExactReferenceToRecurrentMaterialPair(
         recorded_occurrence_identity=f"{identity}-measurement",
-        recurrence_assertion_identity=f"{identity}-recurrence-assertion",
-        count_assertion_identity=f"{identity}-count-assertion",
+        recurrence_assertion_position=2,
+        count_assertion_position=1,
         locality_identity=locality,
         source_occurrence_identities=sources,
         completeness_boundary_identity=f"{identity}-boundary",

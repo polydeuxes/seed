@@ -200,21 +200,11 @@ def _path_input(
         or assertion.get("assertion_subject", {}).get(
             "first_position_assertion_reference"
         )
-        != {
-            "recorded_occurrence_identity": first.get(
-                "recorded_occurrence_identity"
-            ),
-            "assertion_identity": first.get("assertion_identity"),
-        }
+        != first.get("assertion_reference")
         or assertion.get("assertion_subject", {}).get(
             "second_position_assertion_reference"
         )
-        != {
-            "recorded_occurrence_identity": second.get(
-                "recorded_occurrence_identity"
-            ),
-            "assertion_identity": second.get("assertion_identity"),
-        }
+        != second.get("assertion_reference")
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
     pairs = (first.get("exact_pair"), second.get("exact_pair"))

@@ -1684,14 +1684,14 @@ def test_three_byte_results_keep_their_measured_material_references(
     source_references = {
         (
             reference.recorded_occurrence_identity,
-            reference.assertion_identity,
+            reference.assertion_address,
         )
         for reference in measured_book_pairs[6]
     }
     added_references = {
         (
             reference.recorded_occurrence_identity,
-            reference.assertion_identity,
+            reference.assertion_address,
         )
         for reference in measured_book_pairs[7]
     }
@@ -1719,12 +1719,12 @@ def test_three_byte_results_keep_their_measured_material_references(
     assert all(
         (
             occurrence.source_reference.recorded_occurrence_identity,
-            occurrence.source_reference.assertion_identity,
+            occurrence.source_reference.assertion_address,
         )
         in source_references
         and (
             occurrence.added_reference.recorded_occurrence_identity,
-            occurrence.added_reference.assertion_identity,
+            occurrence.added_reference.assertion_address,
         )
         in added_references
         for occurrence in occurrences
@@ -1733,10 +1733,10 @@ def test_three_byte_results_keep_their_measured_material_references(
         {
             (
                 occurrence.source_reference.recorded_occurrence_identity,
-                occurrence.source_reference.assertion_identity,
+                occurrence.source_reference.assertion_address,
                 occurrence.position,
                 occurrence.added_reference.recorded_occurrence_identity,
-                occurrence.added_reference.assertion_identity,
+                occurrence.added_reference.assertion_address,
             )
             for occurrence in occurrences
         }

@@ -127,7 +127,7 @@ def _record_path(ledger, pair_measurement, source):
         ledger, pair_measurement.identity
     )
     recurrence = {
-        assertion.content: assertion.assertion_identity
+        assertion.content: assertion.assertion_position
         for assertion in assertions or ()
         if assertion.result == "recurrence"
         and assertion.content in {(97, 98), (98, 99)}
@@ -135,7 +135,7 @@ def _record_path(ledger, pair_measurement, source):
     findings = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair_measurement.identity,
-        recurrence_assertion_identities=(recurrence[(97, 98)], recurrence[(98, 99)]),
+        recurrence_assertion_positions=(recurrence[(97, 98)], recurrence[(98, 99)]),
         source_material_acquisition_occurrence_identity=source.identity,
         occurrence_count_boundary=16,
         through=ledger.append_boundary(),
@@ -173,9 +173,9 @@ def _record_path(ledger, pair_measurement, source):
     assignment = record_shared_position_responsibility_assignment(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
         locality_standing=_standing(ledger),
     )
     applicability_act = record_shared_position_applicability_act_occurrence(

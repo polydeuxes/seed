@@ -184,7 +184,7 @@ def _build_fixture(
         ledger, pair_result.identity
     )
     recurrence_by_pair = {
-        assertion.content: assertion.assertion_identity
+        assertion.content: assertion.assertion_position
         for assertion in pair_assertions or ()
         if assertion.result == "recurrence"
         and assertion.content in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
@@ -202,7 +202,7 @@ def _build_fixture(
     findings = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair_result.identity,
-        recurrence_assertion_identities=(
+        recurrence_assertion_positions=(
             recurrence_by_pair[(ord("a"), ord("b"))],
             recurrence_by_pair[(ord("b"), ord("c"))],
         ),
@@ -268,9 +268,9 @@ def _assignment(ledger, locality, first, second):
     return record_shared_position_responsibility_assignment(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
         locality_standing=_standing(ledger, locality),
     )
 
@@ -565,9 +565,9 @@ def test_two_recurrent_results_share_one_exact_current_standing_read(monkeypatch
     inputs = shared_position_module._inputs(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
     )
     second_assignment = _recurrent_result_coordinates(
         ledger, second
@@ -599,9 +599,9 @@ def test_shared_assignment_threads_explicit_prior_without_replay_or_ambient_over
     assignment = record_shared_position_responsibility_assignment(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
         locality_standing=prior_standing,
     )
 
@@ -643,9 +643,9 @@ def test_shared_assignment_refuses_inexact_explicit_prior_standing(changed_prior
     assignment = record_shared_position_responsibility_assignment(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
         locality_standing=exact_prior,
     )
     forged = deepcopy(exact_prior)
@@ -683,9 +683,9 @@ def test_shared_assignment_explicit_prior_revalidates_later_input_mutation():
     assignment = record_shared_position_responsibility_assignment(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
         locality_standing=exact_prior,
     )
     changed_result = _recurrent_result_coordinates(ledger, second)["result"]
@@ -736,9 +736,9 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_stand
     )
     identities = {
         "first_result_occurrence_identity": first.recorded_occurrence_identity,
-        "first_assertion_identity": first.assertion_identity,
+        "first_assertion_address": first.assertion_address,
         "second_result_occurrence_identity": second.recorded_occurrence_identity,
-        "second_assertion_identity": second.assertion_identity,
+        "second_assertion_address": second.assertion_address,
     }
     with pytest.raises((SharedPairPositionError, ValueError)):
         shared_position_module._inputs(ledger, **identities)
@@ -775,9 +775,9 @@ def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_a
     inputs = shared_position_module._inputs(
         ledger,
         first_result_occurrence_identity=first.recorded_occurrence_identity,
-        first_assertion_identity=first.assertion_identity,
+        first_assertion_address=first.assertion_address,
         second_result_occurrence_identity=second.recorded_occurrence_identity,
-        second_assertion_identity=second.assertion_identity,
+        second_assertion_address=second.assertion_address,
     )
 
     assert inputs.first == first
@@ -785,15 +785,17 @@ def test_recurrent_result_batch_keeps_its_historical_boundary_across_unrelated_a
     assert appended is True
 
 
-def test_recurrent_result_batch_refuses_assertion_and_locality_substitution():
+def test_recurrent_result_batch_requires_an_addressed_position_and_one_locality():
     ledger, _locality, _source, first, second = _fixture()
+    first_result = ledger.get(first.recorded_occurrence_identity)
+    first_unaddressed_position = len(first_result.material["assertions"])
     with pytest.raises((SharedPairPositionError, ValueError)):
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_identity=second.assertion_identity,
+            first_assertion_address=first_unaddressed_position,
             second_result_occurrence_identity=second.recorded_occurrence_identity,
-            second_assertion_identity=second.assertion_identity,
+            second_assertion_address=second.assertion_address,
         )
 
     _ledger, _other_locality, _other_source, _other_first, other_second = (
@@ -803,11 +805,11 @@ def test_recurrent_result_batch_refuses_assertion_and_locality_substitution():
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_identity=first.assertion_identity,
+            first_assertion_address=first.assertion_address,
             second_result_occurrence_identity=(
                 other_second.recorded_occurrence_identity
             ),
-            second_assertion_identity=other_second.assertion_identity,
+            second_assertion_address=other_second.assertion_address,
         )
 
 
@@ -822,9 +824,9 @@ def test_recurrent_result_batch_refuses_a_crossed_declared_standing_boundary():
         shared_position_module._inputs(
             ledger,
             first_result_occurrence_identity=first.recorded_occurrence_identity,
-            first_assertion_identity=first.assertion_identity,
+            first_assertion_address=first.assertion_address,
             second_result_occurrence_identity=second.recorded_occurrence_identity,
-            second_assertion_identity=second.assertion_identity,
+            second_assertion_address=second.assertion_address,
         )
 
 
@@ -921,9 +923,9 @@ def test_generic_assignment_refuses_raw_direct_result_inputs_atomically():
         record_shared_position_responsibility_assignment(
             ledger,
             first_result_occurrence_identity=direct_result.identity,
-            first_assertion_identity=first.assertion_identity,
+            first_assertion_address=first.assertion_address,
             second_result_occurrence_identity=direct_result.identity,
-            second_assertion_identity=second.assertion_identity,
+            second_assertion_address=second.assertion_address,
             locality_standing=_standing(ledger, locality),
         )
     assert len(ledger.list()) == before
@@ -955,7 +957,7 @@ def test_d2_result_without_exactly_two_references_cannot_assign_shared_position(
     assert len(ledger.list()) == before
 
 
-def test_d2_repeated_material_keeps_two_source_ordered_assertion_identities():
+def test_d2_repeated_material_keeps_two_source_ordered_assertion_addresses():
     ledger = EventLedger()
     locality = "repeated-d2-pair-position"
     _source, _direct_result, determination_result = _direct_d2(
@@ -974,7 +976,7 @@ def test_d2_repeated_material_keeps_two_source_ordered_assertion_identities():
     first = assignment.material["first_position_assertion"]
     second = assignment.material["second_position_assertion"]
     assert first["exact_pair"] == second["exact_pair"] == [ord("a"), ord("a")]
-    assert first["assertion_identity"] != second["assertion_identity"]
+    assert first["assertion_reference"] != second["assertion_reference"]
     assert (first["first_position"], second["first_position"]) == (0, 1)
 
 
@@ -1209,11 +1211,11 @@ def test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions()
             first_result_occurrence_identity=(
                 first.pair_measurement_occurrence_identity
             ),
-            first_assertion_identity=first.recurrence_assertion_identity,
+            first_assertion_address=first.recurrence_assertion_position,
             second_result_occurrence_identity=(
                 second.recorded_occurrence_identity
             ),
-            second_assertion_identity=second.assertion_identity,
+            second_assertion_address=second.assertion_address,
             locality_standing=_standing(ledger, locality),
         )
 
@@ -1288,9 +1290,9 @@ def test_each_shared_position_occurrence_read_requires_exact_input_coordinates(
     monkeypatch.setattr(shared_position_module, "_inputs", counted)
     expected_call = (
         first.recorded_occurrence_identity,
-        first.assertion_identity,
+        first.assertion_address,
         second.recorded_occurrence_identity,
-        second.assertion_identity,
+        second.assertion_address,
         standing,
     )
     independently_read_call = (*expected_call[:-1], None)
@@ -1676,7 +1678,7 @@ FIDELITY_DISTINCTIONS = {
         test_exact_yielded_pair_relations_compose_at_one_shared_position,
         test_direct_position_coordinate_assertions_compose_without_recurrence_support,
         test_d2_result_without_exactly_two_references_cannot_assign_shared_position,
-        test_d2_repeated_material_keeps_two_source_ordered_assertion_identities,
+        test_d2_repeated_material_keeps_two_source_ordered_assertion_addresses,
         test_aggregate_pair_findings_cannot_impersonate_occurrence_bound_positions,
         test_shared_position_result_survives_sqlite_restart,
         test_d2_derived_shared_position_provenance_survives_sqlite_restart,

@@ -12,7 +12,6 @@ carries neither a caller-supplied sign nor a grammatical meaning.
 
 from __future__ import annotations
 
-import hashlib
 from typing import Any, NamedTuple
 
 from seed_runtime.byte_measurement import (
@@ -139,18 +138,18 @@ class ReferenceToRecordedRecurrentBytePair(NamedTuple):
     """Exact address of one recurrence Assertion and its count support."""
 
     recorded_occurrence_identity: str
-    recurrence_assertion_identity: str
-    count_assertion_identity: str
+    recurrence_assertion_position: int
+    count_assertion_position: int
     locality_identity: str
     source_occurrence_identities: tuple[str, ...]
     completeness_boundary_identity: str
     exact_material: bytes
 
     @property
-    def assertion_reference(self) -> dict[str, str]:
+    def assertion_reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.recurrence_assertion_identity,
+            "assertion_position": self.recurrence_assertion_position,
         }
 
 
@@ -170,10 +169,10 @@ class ReferenceToRecordedRecurrentBytePairOccurrencePosition(NamedTuple):
     """Immutable address of one exact yielded pair-position Assertion."""
 
     recorded_occurrence_identity: str
-    assertion_identity: str
+    assertion_position: int
     pair_measurement_occurrence_identity: str
-    recurrence_assertion_identity: str
-    count_assertion_identity: str
+    recurrence_assertion_position: int
+    count_assertion_position: int
     source_material_acquisition_occurrence_identity: str
     locality_identity: str
     completeness_boundary_identity: str
@@ -182,10 +181,14 @@ class ReferenceToRecordedRecurrentBytePairOccurrencePosition(NamedTuple):
     second_position: int
 
     @property
-    def assertion_reference(self) -> dict[str, str]:
+    def assertion_address(self) -> int:
+        return self.assertion_position
+
+    @property
+    def assertion_reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
 def _validate_pair_reference(reference: ReferenceToRecordedRecurrentBytePair) -> None:
@@ -193,13 +196,18 @@ def _validate_pair_reference(reference: ReferenceToRecordedRecurrentBytePair) ->
         raise TypeError("recurrent pair reference requires one exact reference")
     strings = (
         reference.recorded_occurrence_identity,
-        reference.recurrence_assertion_identity,
-        reference.count_assertion_identity,
         reference.locality_identity,
         reference.completeness_boundary_identity,
     )
     if any(type(value) is not str or not value for value in strings):
         raise ValueError("recurrent pair reference requires exact identities")
+    if (
+        type(reference.recurrence_assertion_position) is not int
+        or reference.recurrence_assertion_position < 0
+        or type(reference.count_assertion_position) is not int
+        or reference.count_assertion_position < 0
+    ):
+        raise ValueError("recurrent pair reference requires exact Assertion positions")
     if (
         type(reference.source_occurrence_identities) is not tuple
         or not reference.source_occurrence_identities
@@ -255,14 +263,14 @@ def reference_to_recorded_recurrent_byte_pair(
     ledger: EventLedger,
     *,
     measurement_occurrence_identity: str,
-    recurrence_assertion_identity: str,
+    recurrence_assertion_position: int,
 ) -> ReferenceToRecordedRecurrentBytePair:
     """Resolve one recurrence Assertion through its exact Measurement Yield."""
 
     return _references_to_recorded_recurrent_byte_pairs(
         ledger,
         measurement_occurrence_identity=measurement_occurrence_identity,
-        recurrence_assertion_identities=(recurrence_assertion_identity,),
+        recurrence_assertion_positions=(recurrence_assertion_position,),
     )[0]
 
 
@@ -270,7 +278,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     ledger: EventLedger,
     *,
     measurement_occurrence_identity: str,
-    recurrence_assertion_identities: tuple[str, ...],
+    recurrence_assertion_positions: tuple[int, ...],
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedRecurrentBytePair, ...]:
     """Resolve every exact subject from one independently validated result read."""
@@ -280,16 +288,16 @@ def _references_to_recorded_recurrent_byte_pairs(
     if (
         type(measurement_occurrence_identity) is not str
         or not measurement_occurrence_identity
-        or type(recurrence_assertion_identities) is not tuple
-        or not recurrence_assertion_identities
+        or type(recurrence_assertion_positions) is not tuple
+        or not recurrence_assertion_positions
         or any(
-            type(identity) is not str or not identity
-            for identity in recurrence_assertion_identities
+            type(position) is not int or position < 0
+            for position in recurrence_assertion_positions
         )
     ):
-        raise ValueError("recurrent pair reference requires exact occurrence identities")
-    if len(set(recurrence_assertion_identities)) != len(
-        recurrence_assertion_identities
+        raise ValueError("recurrent pair reference requires exact Assertion positions")
+    if len(set(recurrence_assertion_positions)) != len(
+        recurrence_assertion_positions
     ):
         raise ValueError("recurrent pair Assertion entered one result twice")
     event = ledger.get(measurement_occurrence_identity)
@@ -314,8 +322,8 @@ def _references_to_recorded_recurrent_byte_pairs(
         )
     )
     findings = reading.results if reading is not None else None
-    findings_by_identity = {
-        finding.assertion_identity: finding for finding in findings or ()
+    findings_by_position = {
+        finding.assertion_position: finding for finding in findings or ()
     }
     assignment = reading.assignment.material if reading is not None else None
     sources = (
@@ -344,8 +352,8 @@ def _references_to_recorded_recurrent_byte_pairs(
         reference["material_acquisition_occurrence_identity"] for reference in sources
     )
     found = []
-    for recurrence_assertion_identity in recurrence_assertion_identities:
-        recurrence = findings_by_identity.get(recurrence_assertion_identity)
+    for recurrence_assertion_position in recurrence_assertion_positions:
+        recurrence = findings_by_position.get(recurrence_assertion_position)
         if (
             recurrence is None
             or recurrence.result != "recurrence"
@@ -354,16 +362,16 @@ def _references_to_recorded_recurrent_byte_pairs(
             raise ValueError(
                 "the addressed pair Assertion does not establish recurrence"
             )
-        support = recurrence._local_support_assertion_identities
+        support = recurrence._local_support_assertion_positions
         if (
             len(support) != 1
-            or type(support[0]) is not str
-            or not support[0]
+            or type(support[0]) is not int
+            or support[0] < 0
         ):
             raise ValueError(
                 "the recurrent pair carries no exact count Assertion support"
             )
-        count = findings_by_identity.get(support[0])
+        count = findings_by_position.get(support[0])
         if (
             count is None
             or count.result != "count"
@@ -374,8 +382,8 @@ def _references_to_recorded_recurrent_byte_pairs(
             )
         reference = ReferenceToRecordedRecurrentBytePair(
             recorded_occurrence_identity=event.identity,
-            recurrence_assertion_identity=recurrence.assertion_identity,
-            count_assertion_identity=count.assertion_identity,
+            recurrence_assertion_position=recurrence.assertion_position,
+            count_assertion_position=count.assertion_position,
             locality_identity=event.locality_identity,
             source_occurrence_identities=source_occurrence_identities,
             completeness_boundary_identity=boundary["identity"],
@@ -505,7 +513,7 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     ledger: EventLedger,
     *,
     pair_measurement_occurrence_identity: str,
-    recurrence_assertion_identity: str,
+    recurrence_assertion_position: int,
     source_material_acquisition_occurrence_identity: str,
     occurrence_count_boundary: int,
     through: EventLedgerBoundary | None = None,
@@ -517,7 +525,7 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
     pair_reference = reference_to_recorded_recurrent_byte_pair(
         ledger,
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
-        recurrence_assertion_identity=recurrence_assertion_identity,
+        recurrence_assertion_position=recurrence_assertion_position,
     )
     return _measure_through(
         ledger,
@@ -532,7 +540,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     ledger: EventLedger,
     *,
     pair_measurement_occurrence_identity: str,
-    recurrence_assertion_identities: tuple[str, ...],
+    recurrence_assertion_positions: tuple[int, ...],
     source_material_acquisition_occurrence_identity: str,
     occurrence_count_boundary: int,
     through: EventLedgerBoundary,
@@ -548,7 +556,7 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     references = _references_to_recorded_recurrent_byte_pairs(
         ledger,
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
-        recurrence_assertion_identities=recurrence_assertion_identities,
+        recurrence_assertion_positions=recurrence_assertion_positions,
     )
     source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
@@ -762,8 +770,12 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         any(type(identity) is not str or not identity for identity in identities.values())
         or len(set(identities.values())) != len(identities)
         or type(pair_reference) is not dict
-        or set(pair_reference) != {"recorded_occurrence_identity", "assertion_identity"}
-        or any(type(value) is not str or not value for value in pair_reference.values())
+        or set(pair_reference)
+        != {"recorded_occurrence_identity", "assertion_position"}
+        or type(pair_reference["recorded_occurrence_identity"]) is not str
+        or not pair_reference["recorded_occurrence_identity"]
+        or type(pair_reference["assertion_position"]) is not int
+        or pair_reference["assertion_position"] < 0
         or type(material.get("source_material_acquisition_occurrence_identity")) is not str
         or not material["source_material_acquisition_occurrence_identity"]
         or type(material.get("completeness_boundary_identity")) is not str
@@ -804,7 +816,7 @@ def _read_responsibility_assignment_for_measurement_of_recurrent_byte_pair_occur
         measurement_occurrence_identity=pair_reference[
             "recorded_occurrence_identity"
         ],
-        recurrence_assertion_identities=(pair_reference["assertion_identity"],),
+        recurrence_assertion_positions=(pair_reference["assertion_position"],),
         prior_standing=pair_validation_standing,
     )[0]
     finding = _measure_through(
@@ -998,8 +1010,8 @@ def _validate_exact_finding_of_measurement(
         measurement_occurrence_identity=(
             finding.pair_reference.recorded_occurrence_identity
         ),
-        recurrence_assertion_identity=(
-            finding.pair_reference.recurrence_assertion_identity
+        recurrence_assertion_position=(
+            finding.pair_reference.recurrence_assertion_position
         ),
     )
     exact = _measure_through(
@@ -1088,28 +1100,6 @@ def _finding_of_measurement_from_act_occurrence(
     return assignment, finding
 
 
-def _identity_of_position_assertion(
-    *,
-    finding: FindingOfRecurrentBytePairOccurrencePositions,
-    first_position: int,
-    second_position: int,
-) -> str:
-    digest = hashlib.sha256()
-    for coordinate in (
-        finding.pair_reference.recorded_occurrence_identity,
-        finding.pair_reference.recurrence_assertion_identity,
-        finding.source_material_acquisition_occurrence_identity,
-        finding.source_locality_identity,
-        finding.completeness_boundary.identity,
-        str(first_position),
-        str(second_position),
-    ):
-        encoded = coordinate.encode("utf-8")
-        digest.update(len(encoded).to_bytes(8, "big"))
-        digest.update(encoded)
-    return "pair-occurrence-measurement:" + digest.hexdigest()
-
-
 def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccurrencePositions) -> list[dict[str, Any]]:
     scope = {"source_localities": [finding.source_locality_identity]}
     subject = {
@@ -1120,7 +1110,9 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
         "measurement_rule": RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     }
     assertions = []
-    for first_position, second_position in finding.occurrences:
+    for assertion_position, (first_position, second_position) in enumerate(
+        finding.occurrences
+    ):
         content = {
             "first_position": first_position,
             "second_position": second_position,
@@ -1131,11 +1123,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
         assertions.append(
             {
                 "dimensions": {
-                    "identity": _identity_of_position_assertion(
-                        finding=finding,
-                        first_position=first_position,
-                        second_position=second_position,
-                    ),
+                    "position": assertion_position,
                     "content": content,
                     "source_provenance": (
                         "the exact Yield-carried pair Assertion and later material acquisition result"
@@ -1405,30 +1393,29 @@ def _references_from_recorded_recurrent_pair_position_result(
     event: Event,
     finding: FindingOfRecurrentBytePairOccurrencePositions,
     *,
-    assertion_identities: tuple[str, ...] | None = None,
+    assertion_positions: tuple[int, ...] | None = None,
 ) -> tuple[ReferenceToRecordedRecurrentBytePairOccurrencePosition, ...]:
     assertions = event.material["assertions"]
     if len(assertions) != len(finding.occurrences):
         raise ValueError("pair-position result carries a different Assertion population")
     references = []
-    for assertion, (first_position, second_position) in zip(
-        assertions, finding.occurrences
+    for assertion_position, (assertion, (first_position, second_position)) in enumerate(
+        zip(assertions, finding.occurrences)
     ):
-        assertion_identity = assertion.get("dimensions", {}).get("identity")
-        if type(assertion_identity) is not str or not assertion_identity:
-            raise ValueError("pair-position result carries no exact Assertion identity")
+        if assertion.get("dimensions", {}).get("position") != assertion_position:
+            raise ValueError("pair-position result carries no exact Assertion position")
         references.append(
             ReferenceToRecordedRecurrentBytePairOccurrencePosition(
                 recorded_occurrence_identity=event.identity,
-                assertion_identity=assertion_identity,
+                assertion_position=assertion_position,
                 pair_measurement_occurrence_identity=(
                     finding.pair_reference.recorded_occurrence_identity
                 ),
-                recurrence_assertion_identity=(
-                    finding.pair_reference.recurrence_assertion_identity
+                recurrence_assertion_position=(
+                    finding.pair_reference.recurrence_assertion_position
                 ),
-                count_assertion_identity=(
-                    finding.pair_reference.count_assertion_identity
+                count_assertion_position=(
+                    finding.pair_reference.count_assertion_position
                 ),
                 source_material_acquisition_occurrence_identity=(
                     finding.source_material_acquisition_occurrence_identity
@@ -1442,18 +1429,18 @@ def _references_from_recorded_recurrent_pair_position_result(
                 second_position=second_position,
             )
         )
-    if assertion_identities is None:
+    if assertion_positions is None:
         return tuple(references)
     if (
-        type(assertion_identities) is not tuple
-        or any(type(identity) is not str or not identity for identity in assertion_identities)
-        or len(set(assertion_identities)) != len(assertion_identities)
+        type(assertion_positions) is not tuple
+        or any(type(position) is not int or position < 0 for position in assertion_positions)
+        or len(set(assertion_positions)) != len(assertion_positions)
     ):
-        raise ValueError("pair-position references require exact Assertion identities")
-    by_identity = {reference.assertion_identity: reference for reference in references}
-    if any(identity not in by_identity for identity in assertion_identities):
+        raise ValueError("pair-position references require exact Assertion positions")
+    by_position = {reference.assertion_position: reference for reference in references}
+    if any(position not in by_position for position in assertion_positions):
         raise ValueError("pair-position result carries no addressed Assertion")
-    return tuple(by_identity[identity] for identity in assertion_identities)
+    return tuple(by_position[position] for position in assertion_positions)
 
 
 def _recurrent_pair_position_result_lifecycle_boundary(
@@ -1529,8 +1516,8 @@ def _recurrent_pair_position_result_lifecycle_boundary(
 def _references_to_addressed_recorded_recurrent_pair_position_results(
     ledger: EventLedger,
     *,
-    result_and_assertion_identities: tuple[
-        tuple[str, str], tuple[str, str]
+    result_and_assertion_positions: tuple[
+        tuple[str, int], tuple[str, int]
     ],
     prior_standing: dict[str, Any] | None = None,
 ) -> tuple[
@@ -1542,23 +1529,26 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
     if not isinstance(ledger, EventLedger):
         raise TypeError("pair-position references require one EventLedger")
     if (
-        type(result_and_assertion_identities) is not tuple
-        or len(result_and_assertion_identities) != 2
+        type(result_and_assertion_positions) is not tuple
+        or len(result_and_assertion_positions) != 2
         or any(
             type(address) is not tuple
             or len(address) != 2
-            or any(type(identity) is not str or not identity for identity in address)
-            for address in result_and_assertion_identities
+            or type(address[0]) is not str
+            or not address[0]
+            or type(address[1]) is not int
+            or address[1] < 0
+            for address in result_and_assertion_positions
         )
-        or result_and_assertion_identities[0][0]
-        == result_and_assertion_identities[1][0]
+        or result_and_assertion_positions[0][0]
+        == result_and_assertion_positions[1][0]
     ):
         raise ValueError("two distinct pair-position results must be addressed")
     lifecycle_boundaries = tuple(
         _recurrent_pair_position_result_lifecycle_boundary(
             ledger, result_identity
         )
-        for result_identity, _assertion_identity in result_and_assertion_identities
+        for result_identity, _assertion_position in result_and_assertion_positions
     )
     localities = tuple(locality for _boundary, locality in lifecycle_boundaries)
     if localities[0] != localities[1]:
@@ -1594,7 +1584,7 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
     elif type(prior_standing) is not dict:
         raise ValueError("addressed pair-position results require exact prior Standing")
     addressed = []
-    for result_identity, assertion_identity in result_and_assertion_identities:
+    for result_identity, assertion_position in result_and_assertion_positions:
         event, finding = (
             _recorded_result_of_recurrent_pair_position_measurement_reading(
                 ledger,
@@ -1606,7 +1596,7 @@ def _references_to_addressed_recorded_recurrent_pair_position_results(
             _references_from_recorded_recurrent_pair_position_result(
                 event,
                 finding,
-                assertion_identities=(assertion_identity,),
+                assertion_positions=(assertion_position,),
             )[0]
         )
     return addressed[0], addressed[1]
