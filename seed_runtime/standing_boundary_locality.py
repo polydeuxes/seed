@@ -15,8 +15,8 @@ from seed_runtime.yield_relation import (
 )
 
 
-RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND = (
-    "operator.recorded_standing_boundary_locality_responsibility_assignment_recorded"
+RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
+    "operator.recorded_standing_boundary_locality_subject_to_act_binding_recorded"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT = (
     "operator.recorded_standing_boundary_locality_act_occurrence_recorded"
@@ -32,7 +32,7 @@ RECORDED_STANDING_BOUNDARY_LOCALITY_ACT = (
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
 EVENT_KIND_RESPONSIBILITIES = {
-    RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: (
+    RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.C"
     ),
     RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT: "02.Acts.A",
@@ -109,7 +109,7 @@ def _resolve_one_carried_anchor(
     return deepcopy(relation["standing_boundary_reference"])
 
 
-def _assignment_material(
+def _binding_material(
     *,
     exact_act_identity: str,
     act_occurrence_identity: str,
@@ -138,15 +138,15 @@ def _assignment_material(
     }
 
 
-def _assignment_reference(assignment: Event) -> dict[str, Any]:
+def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
-        "recorded_occurrence_identity": assignment.identity,
-        "book_clause_identity": assignment.material["book_clause_identity"],
-        "exact_act_identity": assignment.material["exact_act_identity"],
+        "recorded_occurrence_identity": binding.identity,
+        "book_clause_identity": binding.material["book_clause_identity"],
+        "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(
-            assignment.material["standing_boundary_reference"]
+            binding.material["standing_boundary_reference"]
         ),
-        "result_boundary_identity": assignment.material[
+        "result_boundary_identity": binding.material[
             "result_boundary_identity"
         ],
     }
@@ -162,8 +162,8 @@ def _participation(
     }
 
 
-def _act_material(assignment: Event) -> dict[str, Any]:
-    material = assignment.material
+def _act_material(binding: Event) -> dict[str, Any]:
+    material = binding.material
     return {
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -171,11 +171,11 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             "locality_relation_occurrence_identity"
         ],
         "act": RECORDED_STANDING_BOUNDARY_LOCALITY_ACT,
-        "subject_to_act_binding_reference": _assignment_reference(assignment),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "standing_boundary_reference": deepcopy(
             material["standing_boundary_reference"]
         ),
-        "destination_locality_identity": assignment.locality_identity,
+        "destination_locality_identity": binding.locality_identity,
         "scope": deepcopy(material["scope"]),
         "result_identity": material["result_identity"],
         "participation": _participation(
@@ -248,12 +248,12 @@ def _recorded_result_material(
     }
 
 
-def record_recorded_standing_boundary_locality_responsibility_assignment(
+def record_recorded_standing_boundary_locality_subject_to_act_binding(
     ledger: EventLedger,
     *,
     source_locality_standing: dict[str, Any],
 ) -> Event:
-    """Assign one direct relation from exactly one carried recorded result."""
+    """Bind one direct Locality relation from one carried recorded result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recorded Standing boundary Locality requires one EventLedger")
@@ -280,8 +280,8 @@ def record_recorded_standing_boundary_locality_responsibility_assignment(
         ),
     }
     return ledger.append(
-        RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
-        _assignment_material(
+        RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+        _binding_material(
             standing_boundary_reference=anchor,
             destination_locality_identity=destination,
             **identities,
@@ -290,21 +290,21 @@ def record_recorded_standing_boundary_locality_responsibility_assignment(
     )
 
 
-def get_recorded_standing_boundary_locality_responsibility_assignment(
+def get_recorded_standing_boundary_locality_subject_to_act_binding(
     ledger: EventLedger, event_identity: str
 ) -> Event:
-    _require_identity(event_identity, "recorded boundary relation requires assignment")
+    _require_identity(event_identity, "recorded boundary relation requires binding")
     event = ledger.get(event_identity)
     if (
         event is None
         or event.kind
-        != RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        != RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         or type(event.locality_identity) is not str
         or event.exact_material is not None
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation assignment is absent or corrupted"
+            "recorded boundary relation binding is absent or corrupted"
         )
     material = event.material
     anchor = material.get("standing_boundary_reference")
@@ -320,12 +320,12 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
         or len(set(identities)) != len(identities)
     ):
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation assignment identities are not exact"
+            "recorded boundary relation binding identities are not exact"
         )
     expected_anchor = _anchor_reference(
         ledger, anchor.get("recorded_occurrence_identity")
     )
-    expected = _assignment_material(
+    expected = _binding_material(
         exact_act_identity=identities[0],
         act_occurrence_identity=identities[1],
         locality_relation_occurrence_identity=identities[2],
@@ -335,39 +335,39 @@ def get_recorded_standing_boundary_locality_responsibility_assignment(
     )
     if material != expected:
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation assignment is not exact"
+            "recorded boundary relation binding is not exact"
         )
     return event
 
 
 def record_recorded_standing_boundary_locality_act_occurrence(
     ledger: EventLedger,
-    *, responsibility_assignment_event_identity: str,
-    responsibility_assignment_standing: dict[str, Any],
+    *, subject_to_act_binding_event_identity: str,
+    current_coordinates: dict[str, Any],
 ) -> Event:
-    assignment = get_recorded_standing_boundary_locality_responsibility_assignment(
-        ledger, responsibility_assignment_event_identity
+    binding = get_recorded_standing_boundary_locality_subject_to_act_binding(
+        ledger, subject_to_act_binding_event_identity
     )
-    if type(responsibility_assignment_standing) is not dict:
+    if type(current_coordinates) is not dict:
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act requires assignment Standing"
+            "recorded boundary relation Act requires current coordinates"
         )
-    carried = responsibility_assignment_standing.get(
+    carried = current_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
     if (
-        responsibility_assignment_standing.get("locality_identity")
-        != assignment.locality_identity
+        current_coordinates.get("locality_identity")
+        != binding.locality_identity
         or type(carried) is not dict
-        or carried.get(assignment.identity, object()) is not None
+        or carried.get(binding.identity, object()) is not None
     ):
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act requires its carried assignment"
+            "recorded boundary relation Act requires its carried binding"
         )
     return ledger.append(
         RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
-        _act_material(assignment),
-        locality_identity=assignment.locality_identity,
+        _act_material(binding),
+        locality_identity=binding.locality_identity,
     )
 
 
@@ -388,27 +388,27 @@ def get_recorded_standing_boundary_locality_act_occurrence(
     reference = event.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act carries no assignment"
+            "recorded boundary relation Act carries no binding"
         )
-    assignment = get_recorded_standing_boundary_locality_responsibility_assignment(
+    binding = get_recorded_standing_boundary_locality_subject_to_act_binding(
         ledger, reference.get("recorded_occurrence_identity")
     )
     if (
-        assignment.locality_identity != event.locality_identity
-        or reference != _assignment_reference(assignment)
-        or event.material != _act_material(assignment)
+        binding.locality_identity != event.locality_identity
+        or reference != _binding_reference(binding)
+        or event.material != _act_material(binding)
     ):
         raise RecordedStandingBoundaryLocalityError(
             "recorded boundary relation Act occurrence is not exact"
         )
     try:
         ledger.occurrences_in_append_order(
-            (assignment.identity, event.identity),
+            (binding.identity, event.identity),
             locality_identity=event.locality_identity,
         )
     except ValueError as error:
         raise RecordedStandingBoundaryLocalityError(
-            "recorded boundary relation Act requires its prior assignment"
+            "recorded boundary relation Act requires its prior binding"
         ) from error
     return event
 

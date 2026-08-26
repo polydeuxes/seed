@@ -25,10 +25,10 @@ from seed_runtime.operator_locality_standing import (
 from seed_runtime.standing_boundary_locality import (
     RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
     RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
-    RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     RecordedStandingBoundaryLocalityError,
     get_recorded_standing_boundary_locality,
-    record_recorded_standing_boundary_locality_responsibility_assignment,
+    record_recorded_standing_boundary_locality_subject_to_act_binding,
     record_recorded_standing_boundary_locality_act_occurrence,
     record_recorded_standing_boundary_locality_result,
 )
@@ -75,20 +75,20 @@ def _standing_with_recorded_boundary_reference(ledger, *, locality="source"):
     )
 
 
-def _assignment(ledger, standing):
-    return record_recorded_standing_boundary_locality_responsibility_assignment(
-        ledger, source_locality_standing=standing
+def _binding(ledger, current_coordinates):
+    return record_recorded_standing_boundary_locality_subject_to_act_binding(
+        ledger, source_locality_standing=current_coordinates
     )
 
 
-def _act(ledger, assignment):
-    standing = read_operator_locality_standing(
-        ledger, locality_identity=assignment.locality_identity
+def _act(ledger, binding):
+    current_coordinates = read_operator_locality_standing(
+        ledger, locality_identity=binding.locality_identity
     )
     return record_recorded_standing_boundary_locality_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=standing,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=current_coordinates,
     )
 
 
@@ -106,15 +106,15 @@ def test_checkout_request_refuses_payload(exact):
 def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     ledger = EventLedger()
     anchor, source_standing = _standing_with_recorded_boundary_reference(ledger)
-    assignment = _assignment(ledger, source_standing)
-    destination = assignment.locality_identity
-    after_assignment = read_operator_locality_standing(
+    binding = _binding(ledger, source_standing)
+    destination = binding.locality_identity
+    after_binding = read_operator_locality_standing(
         ledger, locality_identity=destination
     )
     act = record_recorded_standing_boundary_locality_act_occurrence(
         ledger,
-        responsibility_assignment_event_identity=assignment.identity,
-        responsibility_assignment_standing=after_assignment,
+        subject_to_act_binding_event_identity=binding.identity,
+        current_coordinates=after_binding,
     )
     before_result = read_operator_locality_standing(
         ledger, locality_identity=destination
@@ -124,8 +124,8 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     )
     recorded = get_recorded_standing_boundary_locality(ledger, result.identity)
 
-    assert assignment.kind == (
-        RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    assert binding.kind == (
+        RECORDED_STANDING_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
     assert act.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
@@ -143,11 +143,11 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     }
     assert len(
         {
-            assignment.identity,
-            assignment.material["exact_act_identity"],
-            assignment.material["act_occurrence_identity"],
-            assignment.material["locality_relation_occurrence_identity"],
-            assignment.material["result_identity"],
+            binding.identity,
+            binding.material["exact_act_identity"],
+            binding.material["act_occurrence_identity"],
+            binding.material["locality_relation_occurrence_identity"],
+            binding.material["result_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
@@ -186,7 +186,7 @@ def test_relation_descendants_retain_one_immutable_anchor():
     first = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, source_standing)
+            ledger, _binding(ledger, source_standing)
         ).identity,
     )
     first_standing = read_operator_locality_standing(
@@ -195,7 +195,7 @@ def test_relation_descendants_retain_one_immutable_anchor():
     second = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, first_standing)
+            ledger, _binding(ledger, first_standing)
         ).identity,
     )
     relations = [first, second]
@@ -221,7 +221,7 @@ def test_no_anchor_and_two_anchors_both_refuse_selection():
     with pytest.raises(
         RecordedStandingBoundaryLocalityError, match="exactly one carried reference"
     ):
-        _assignment(ledger, empty)
+        _binding(ledger, empty)
 
     run_persistent_operator_console(
         ledger=ledger,
@@ -234,7 +234,7 @@ def test_no_anchor_and_two_anchors_both_refuse_selection():
     with pytest.raises(
         RecordedStandingBoundaryLocalityError, match="exactly one carried reference"
     ):
-        _assignment(ledger, ambiguous)
+        _binding(ledger, ambiguous)
 
 
 def test_different_locality_or_corrupted_anchor_refuses_before_destination_write():
@@ -244,19 +244,19 @@ def test_different_locality_or_corrupted_anchor_refuses_before_destination_write
     different_locality["locality_identity"] = "elsewhere"
     before = tuple(ledger.list())
     with pytest.raises(RecordedStandingBoundaryLocalityError, match="different"):
-        _assignment(ledger, different_locality)
+        _binding(ledger, different_locality)
     assert tuple(ledger.list()) == before
 
     ledger.corrupted.add(anchor.identity)
     with pytest.raises(ValueError, match="corrupted"):
-        _assignment(ledger, standing)
+        _binding(ledger, standing)
     assert tuple(ledger.list()) == before
 
 
 def test_one_relation_act_cannot_yield_twice():
     ledger = EventLedger()
     _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
-    act = _act(ledger, _assignment(ledger, standing))
+    act = _act(ledger, _binding(ledger, standing))
     record_recorded_standing_boundary_locality_result(
         ledger, act_occurrence_event_identity=act.identity
     )
@@ -284,7 +284,7 @@ def test_one_relation_act_cannot_yield_twice():
 def test_changed_relation_result_coordinates_are_refused(coordinate):
     ledger = EventLedger()
     _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
-    act = _act(ledger, _assignment(ledger, standing))
+    act = _act(ledger, _binding(ledger, standing))
     result = record_recorded_standing_boundary_locality_result(
         ledger, act_occurrence_event_identity=act.identity
     )
@@ -300,7 +300,7 @@ def test_anchor_and_relation_survive_restart_without_copying_source_history(tmp_
     first = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing)
+            ledger, _binding(ledger, standing)
         ).identity,
     )
     ledger.close()
@@ -312,7 +312,7 @@ def test_anchor_and_relation_survive_restart_without_copying_source_history(tmp_
     second = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, first_standing)
+            ledger, _binding(ledger, first_standing)
         ).identity,
     )
     assert second.locality_identity != first.locality_identity
@@ -337,7 +337,7 @@ def test_durable_native_values_do_not_import_operator_or_memory_shorthand():
     result = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing)
+            ledger, _binding(ledger, standing)
         ).identity,
     )
     durable = repr(
@@ -372,7 +372,7 @@ def test_prior_relation_carrier_must_remain_an_identity_dictionary():
     result = record_recorded_standing_boundary_locality_result(
         ledger,
         act_occurrence_event_identity=_act(
-            ledger, _assignment(ledger, standing)
+            ledger, _binding(ledger, standing)
         ).identity,
     )
     prior = read_operator_locality_standing(

@@ -56,7 +56,7 @@ from seed_runtime.operator_invocation_locality import (
     record_operator_invocation_locality_result,
 )
 from seed_runtime.standing_boundary_locality import (
-    record_recorded_standing_boundary_locality_responsibility_assignment,
+    record_recorded_standing_boundary_locality_subject_to_act_binding,
     record_recorded_standing_boundary_locality_act_occurrence,
     record_recorded_standing_boundary_locality_result,
 )
@@ -719,13 +719,13 @@ def run_persistent_operator_console(
                 )
                 continue
             if isinstance(request, OperatorCheckoutRequest):
-                assignment = (
-                    record_recorded_standing_boundary_locality_responsibility_assignment(
+                binding = (
+                    record_recorded_standing_boundary_locality_subject_to_act_binding(
                         ledger,
                         source_locality_standing=locality_standing,
                     )
                 )
-                locality_identity = assignment.locality_identity
+                locality_identity = binding.locality_identity
                 pair_premise = None
                 locality_standing = read_operator_locality_standing(
                     ledger, locality_identity=locality_identity
@@ -733,8 +733,8 @@ def run_persistent_operator_console(
                 act_occurrence = (
                     record_recorded_standing_boundary_locality_act_occurrence(
                         ledger,
-                        responsibility_assignment_event_identity=assignment.identity,
-                        responsibility_assignment_standing=locality_standing,
+                        subject_to_act_binding_event_identity=binding.identity,
+                        current_coordinates=locality_standing,
                     )
                 )
                 locality_standing = _advance_over(
