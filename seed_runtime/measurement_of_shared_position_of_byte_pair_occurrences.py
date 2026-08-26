@@ -1604,22 +1604,6 @@ def _measurement_act_material(
             "result_identity": applicability.material["result_identity"],
         },
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "participation": [
-            {
-                "role": "first relation of ordered path",
-                "subject": _reference_material(inputs.first),
-                "act_occurrence_identity": binding.material[
-                    "measurement_act_occurrence_identity"
-                ],
-            },
-            {
-                "role": "second relation of ordered path",
-                "subject": _reference_material(inputs.second),
-                "act_occurrence_identity": binding.material[
-                    "measurement_act_occurrence_identity"
-                ],
-            },
-        ],
         "unknown": binding.material["unknown"],
     }
 
