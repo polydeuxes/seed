@@ -62,7 +62,7 @@ Yield relation
     seed_runtime.yield_relation::_record_yield_relation
 
 Bounded current-coordinate read
-    seed_runtime.operator_locality_standing::read_operator_locality_standing
+    seed_runtime.operator_current_coordinates::read_operator_current_coordinates
 
 Assertion addressability and locality movement
     seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
