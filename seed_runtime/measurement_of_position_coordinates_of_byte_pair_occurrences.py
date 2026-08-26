@@ -79,16 +79,9 @@ def _require_carried_position_measurement_source_unchanged() -> None:
 
 
 EXACT_ACT = "Measurement of position coordinates of byte-pair occurrences"
-RESPONSIBILITY = (
-    "Measurement of the position coordinates of each exact byte-pair occurrence "
-    "within one exact material result"
-)
 MEASUREMENT_RULE = (
     "each exact byte-pair occurrence with its first position and second position "
     "in source occurrence order within one exact material result"
-)
-ASSERTION_RESPONSIBILITY = (
-    "preserve this measured Assertion's carried Standing coordinates"
 )
 
 EVENT_KIND_RESPONSIBILITIES = {
@@ -1333,10 +1326,7 @@ def _assertion(
             "position": first_position,
             "content": content,
             "source_provenance": "one exact material-result occurrence and source boundary",
-            "responsibility": ASSERTION_RESPONSIBILITY,
         },
-        "subject_kind": "assertion",
-        "responsible_boundary": "this recorded assertion",
         "result": "position",
         "assertion_subject": subject,
         "assertion_scope": scope,
@@ -1375,7 +1365,6 @@ def _assertion_result_coordinates(
                     "exact source-byte position-coordinate reference"
                 ),
             },
-            "responsibility": ASSERTION_RESPONSIBILITY,
         },
         "unknown": [
             "Participation or content of each exact byte pair: Unknown"

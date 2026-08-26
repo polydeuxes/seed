@@ -1062,7 +1062,7 @@ def _assert_position_assertion_movement_requires_its_exact_source(
     ) == result_occurrences
 
 
-def test_position_assertion_movement_requires_its_exact_source_after_responsibility_assignment():
+def test_position_assertion_movement_requires_its_exact_source_after_subject_to_act_binding():
     _assert_position_assertion_movement_requires_its_exact_source(
         ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
         0,
