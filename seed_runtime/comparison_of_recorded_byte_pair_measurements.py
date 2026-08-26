@@ -702,18 +702,13 @@ def _require_measurement_standing(
 
 def _assignment_reference(
     assignment: Event, *, result_boundary_identity: str
-) -> dict[str, str]:
+) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": assignment.identity,
-        "assignment_identity": assignment.material["assignment_identity"],
-        "assignment_subject_identity": assignment.material[
-            "assignment_subject_identity"
-        ],
         "book_clause_identity": assignment.material["book_clause_identity"],
+        "exact_act_identity": assignment.material["exact_act_identity"],
+        "subject_reference": deepcopy(assignment.material["subject_reference"]),
         "result_boundary_identity": result_boundary_identity,
-        "comparison_result_identity": assignment.material[
-            "comparison_result_identity"
-        ],
     }
 
 
@@ -721,8 +716,6 @@ def _assignment_material(
     *,
     inputs: dict[str, Any],
     standing_boundary_identity: str,
-    assignment_identity: str,
-    assignment_subject_identity: str,
     applicability_act_identity: str,
     applicability_act_occurrence_identity: str,
     applicability_result_identity: str,
@@ -735,8 +728,15 @@ def _assignment_material(
     later_participation_relation_identity: str,
 ) -> dict[str, Any]:
     return {
-        "assignment_identity": assignment_identity,
-        "assignment_subject_identity": assignment_subject_identity,
+        "subject_reference": {
+            "earlier_measurement_reference": _measurement_reference(
+                inputs["earlier_event"]
+            ),
+            "later_measurement_reference": _measurement_reference(
+                inputs["later_event"]
+            ),
+        },
+        "exact_act_identity": comparison_act_identity,
         "applicability_act_identity": applicability_act_identity,
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
         "applicability_result_identity": applicability_result_identity,
@@ -832,10 +832,6 @@ def _record_comparison_responsibility_assignment(
     standing_boundary_identity: str,
 ) -> Event:
     identities = {
-        "assignment_identity": new_identity("recorded_pair_comparison_assignment"),
-        "assignment_subject_identity": new_identity(
-            "recorded_pair_comparison_assignment_subject"
-        ),
         "applicability_act_identity": new_identity(
             "recorded_pair_comparison_applicability_act"
         ),
@@ -874,8 +870,6 @@ def _record_comparison_responsibility_assignment(
         _assignment_material(
             inputs=inputs,
             standing_boundary_identity=standing_boundary_identity,
-            assignment_identity=identities["assignment_identity"],
-            assignment_subject_identity=identities["assignment_subject_identity"],
             applicability_act_identity=identities["applicability_act_identity"],
             applicability_act_occurrence_identity=identities[
                 "applicability_act_occurrence_identity"
@@ -936,8 +930,6 @@ def _assignment_reading(
         later_result_event_identity=later_reference.get("recorded_occurrence_identity"),
     )
     identity_keys = (
-        "assignment_identity",
-        "assignment_subject_identity",
         "applicability_act_identity",
         "applicability_act_occurrence_identity",
         "applicability_result_identity",
