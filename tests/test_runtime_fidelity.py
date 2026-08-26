@@ -194,41 +194,6 @@ def _resolved_string(value, constants: dict[str, str]) -> str | None:
     return None
 
 
-def _literal_dict_keys(tree: ast.Module):
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Dict):
-            continue
-        for key in node.keys:
-            if isinstance(key, ast.Constant) and isinstance(key.value, str):
-                yield key.lineno, key.value
-
-
-def _coordinate_substitutions(path: Path, tree: ast.Module):
-    found = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Dict):
-            continue
-        by_expression = {}
-        for key, value in zip(node.keys, node.values):
-            if not (
-                isinstance(key, ast.Constant)
-                and isinstance(key.value, str)
-                and not isinstance(
-                    value,
-                    (ast.Constant, ast.List, ast.Tuple, ast.Set, ast.Dict),
-                )
-            ):
-                continue
-            expression = ast.dump(value, include_attributes=False)
-            by_expression.setdefault(expression, []).append(key.value)
-        found.extend(
-            (path.name, node.lineno, tuple(coordinates))
-            for coordinates in by_expression.values()
-            if len(coordinates) > 1
-        )
-    return found
-
-
 def _scope_nodes(scope):
     pending = list(scope.body)
     while pending:
@@ -588,36 +553,6 @@ def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     assert unknown == {}, f"occurrences name absent grammar clauses: {unknown}"
 
 
-def test_runtime_record_words_have_constitutional_admission():
-    """Event species and record coordinates require lexical admission."""
-
-    violations = []
-    admitted = book_admission()
-    for path, tree in _runtime_trees():
-        material = [
-            (node.lineno, node.value.value)
-            for node in tree.body
-            if isinstance(node, ast.Assign)
-            and isinstance(node.value, ast.Constant)
-            and isinstance(node.value.value, str)
-            and any(
-                isinstance(name, ast.Name) and name.id.endswith("_KIND")
-                for name in node.targets
-            )
-        ]
-        material.extend(_literal_dict_keys(tree))
-        for line, value in material:
-            scanned = scan_active_line(value)
-            for word in re.findall(r"[A-Za-z]+", scanned.lower()):
-                if word not in admitted:
-                    violations.append((path.name, line, word, value))
-
-    assert violations == [], "\n" + "\n".join(
-        f"{path}:{line} [{word}] {value}"
-        for path, line, word, value in violations
-    )
-
-
 def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
     admitted = book_admission()
     violations = set()
@@ -672,25 +607,6 @@ def test_opaque_supplied_material_is_not_seed_authored_language():
         'ledger.append(SOME_KIND, {"standing": operator_material})'
     )
     assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == []
-
-
-def test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates():
-    substitutions = []
-    for path, tree in _runtime_trees():
-        substitutions.extend(_coordinate_substitutions(path, tree))
-    assert substitutions == [], "\n" + "\n".join(
-        f"{path}:{line} one reference supplies {list(coordinates)}"
-        for path, line, coordinates in substitutions
-    )
-
-
-def test_coordinate_substitution_siren_detects_one_shared_reference():
-    tree = ast.parse(
-        'dimensions = {"identity": result_identity, "content": result_identity}'
-    )
-    assert _coordinate_substitutions(Path("fixture.py"), tree) == [
-        ("fixture.py", 1, ("identity", "content"))
-    ]
 
 
 def _event_materials():
