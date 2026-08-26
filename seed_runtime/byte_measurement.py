@@ -2085,9 +2085,6 @@ def _byte_measurement_binding_material(
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "source_localities": list(source_localities),
-        "source_occurrence_references": [
-            dict(reference) for reference in source_material
-        ],
         "completeness_boundary_identity": completeness_boundary_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "unknown": [],

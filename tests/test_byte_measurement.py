@@ -2006,14 +2006,15 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
         "result_boundary_identity",
         "book_clause_identity",
         "source_localities",
-        "source_occurrence_references",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
         "unknown",
     }
-    assert binding["source_occurrence_references"] == source_set["dimensions"][
-        "content"
-    ]["source_material"]
+    assert binding["subject_reference"] == {
+        "source_occurrence_references": source_set["dimensions"]["content"][
+            "source_material"
+        ]
+    }
     assert binding["completeness_boundary_identity"] == source.material[
         "completeness_boundary"
     ]["identity"]

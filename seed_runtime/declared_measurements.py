@@ -233,7 +233,12 @@ def _byte_binding_source_sets(
     for binding in ledger.iter_locality_kind(
         locality_identity, BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     ):
-        references = binding.material.get("source_occurrence_references")
+        subject = binding.material.get("subject_reference")
+        references = (
+            subject.get("source_occurrence_references")
+            if type(subject) is dict
+            else None
+        )
         if (
             ledger.integrity_of(binding.identity) == CORRUPTED
             or type(references) is not list
