@@ -587,10 +587,17 @@ def run_persistent_operator_console(
                 )
                 supplied_occurrence_references.append(supplied_occurrence.identity)
                 supplied_occurrence_count += 1
+                recorded_occurrences = ledger.locality_occurrence_interval(
+                    locality_identity=invocation_locality_identity,
+                    after_occurrence_identity=witness_current_coordinates[
+                        "through_event_occurrence_identity"
+                    ],
+                    through_occurrence_identity=supplied_occurrence.identity,
+                )
                 witness_current_coordinates = _advance_over(
                     ledger,
                     witness_current_coordinates,
-                    (supplied_occurrence.identity,),
+                    tuple(event.identity for event in recorded_occurrences),
                     locality_identity=invocation_locality_identity,
                 )
                 supplied_material_reference = _material_measurement_reference(
