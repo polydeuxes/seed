@@ -33,7 +33,7 @@ def _command(locality_identity: str, boundary_identity: str) -> AddressedOperato
     return AddressedOperatorCommand(
         command_identity="fixture-command",
         locality_identity=locality_identity,
-        addressed_at_standing_boundary_event_identity=boundary_identity,
+        addressed_through_event_occurrence_identity=boundary_identity,
         frame=OperatorCommandFrame(
             exact_bytes=b"/checkpoint\n",
             name=b"checkpoint",
@@ -172,7 +172,7 @@ def test_checkpoint_operator_shorthand_refuses_payload(exact):
     command = AddressedOperatorCommand(
         command_identity="command",
         locality_identity="source",
-        addressed_at_standing_boundary_event_identity="boundary",
+        addressed_through_event_occurrence_identity="boundary",
         frame=OperatorCommandFrame(
             exact_bytes=exact,
             name=b"checkpoint",

@@ -91,7 +91,7 @@ def test_slash_frame_invokes_the_exact_registered_implementation_function():
     assert addressed_command.frame.exact_bytes == b"/inspect \xff\x00\n"
     assert addressed_command.locality_identity == "root-locality"
     addressed_boundary = ledger.get(
-        addressed_command.addressed_at_standing_boundary_event_identity
+        addressed_command.addressed_through_event_occurrence_identity
     )
     assert addressed_boundary.locality_identity == "root-locality"
     assert _bounded_material_bytes(ledger) == [b"/inspect \xff\x00\n"]
@@ -106,7 +106,7 @@ def test_an_ordinary_command_does_not_divide_locality():
     addressed_command = seen[0]
 
     assert {event.locality_identity for event in ledger.list()} == {"root-locality"}
-    boundary_identity = addressed_command.addressed_at_standing_boundary_event_identity
+    boundary_identity = addressed_command.addressed_through_event_occurrence_identity
     assert ledger.get(boundary_identity).kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
     assert ledger.get(boundary_identity).locality_identity == "root-locality"
 

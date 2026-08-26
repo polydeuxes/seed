@@ -78,7 +78,7 @@ def _source_reference(
         raise OperatorCheckpointError("checkpoint requires exact Locality Standing")
     locality_identity = addressed_command.locality_identity
     boundary_identity = (
-        addressed_command.addressed_at_standing_boundary_event_identity
+        addressed_command.addressed_through_event_occurrence_identity
     )
     _require_identity(locality_identity, "checkpoint requires one exact Locality")
     _require_identity(

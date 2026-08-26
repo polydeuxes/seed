@@ -26,7 +26,7 @@ class OperatorCommandFrame:
 class AddressedOperatorCommand:
     command_identity: str
     locality_identity: str
-    addressed_at_standing_boundary_event_identity: str
+    addressed_through_event_occurrence_identity: str
     frame: OperatorCommandFrame
 
 
@@ -72,7 +72,7 @@ def parse_slash_command(material: OperatorBoundaryMaterial) -> OperatorCommandFr
 def run_operator_command(
     *,
     locality_identity: str,
-    addressed_at_standing_boundary_event_identity: str,
+    addressed_through_event_occurrence_identity: str,
     material: OperatorBoundaryMaterial,
     handlers: Mapping[bytes, OperatorCommandHandler],
 ) -> OperatorCommandRun:
@@ -89,8 +89,8 @@ def run_operator_command(
     addressed_command = AddressedOperatorCommand(
         command_identity=command_identity,
         locality_identity=locality_identity,
-        addressed_at_standing_boundary_event_identity=(
-            addressed_at_standing_boundary_event_identity
+        addressed_through_event_occurrence_identity=(
+            addressed_through_event_occurrence_identity
         ),
         frame=frame,
     )

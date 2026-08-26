@@ -626,7 +626,7 @@ def run_persistent_operator_console(
         if is_slash_command(boundary_material):
             command_run = run_operator_command(
                 locality_identity=locality_identity,
-                addressed_at_standing_boundary_event_identity=(
+                addressed_through_event_occurrence_identity=(
                     source_material.identity
                 ),
                 material=boundary_material,
@@ -639,7 +639,7 @@ def run_persistent_operator_console(
                         ledger,
                         source_locality_identity=locality_identity,
                         source_through_event_occurrence_identity=(
-                            command_run.addressed.addressed_at_standing_boundary_event_identity
+                            command_run.addressed.addressed_through_event_occurrence_identity
                         ),
                     )
                 )

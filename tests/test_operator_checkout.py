@@ -39,7 +39,7 @@ def _command(exact_bytes=b"/checkout\n", arguments=b""):
     return AddressedOperatorCommand(
         command_identity="command",
         locality_identity="source",
-        addressed_at_standing_boundary_event_identity="standing-boundary",
+        addressed_through_event_occurrence_identity="standing-boundary",
         frame=OperatorCommandFrame(
             exact_bytes=exact_bytes,
             name=b"checkout",
