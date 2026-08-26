@@ -180,7 +180,7 @@ def _binding_material(
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": ["Participation: Unknown"],
+        "unknown": [],
     }
 
 
@@ -204,25 +204,10 @@ def _position_assertions(
                 "result": "position",
                 "assertion_subject": subject,
                 "conflicts": "Unknown",
-                "unknown": ["Participation: Unknown"],
+                "unknown": [],
             }
         )
     return assertions
-
-
-def _occurrence_position_participation(
-    finding: OccurrencePositionFinding,
-    *,
-    act_occurrence_identity: str,
-) -> list[dict[str, str]]:
-    return [
-        {
-            "subject_reference": identity,
-            "role": "exact occurrence",
-            "act_occurrence_identity": act_occurrence_identity,
-        }
-        for identity, _position in finding.occurrences
-    ]
 
 
 def _exact_occurrence_position_finding(
@@ -258,7 +243,6 @@ def _occurrence_position_act_occurrence_material(
     finding: OccurrencePositionFinding,
     *,
     binding: Event,
-    participation: list[dict[str, str]],
 ) -> dict[str, Any]:
     return {
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -266,7 +250,6 @@ def _occurrence_position_act_occurrence_material(
         "act": OCCURRENCE_POSITION_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
         "source_locality_identity": finding.source_locality_identity,
-        "participation": participation,
     }
 
 
@@ -604,16 +587,11 @@ def _record_occurrence_position_measurement_act_occurrence(
             raise ValueError(
                 "the occurrence position binding already carries an Act"
             )
-    participation = _occurrence_position_participation(
-        finding,
-        act_occurrence_identity=binding.material["act_occurrence_identity"],
-    )
     return ledger.append(
         OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
         _occurrence_position_act_occurrence_material(
             finding,
             binding=binding,
-            participation=participation,
         ),
         locality_identity=binding.locality_identity,
     )
@@ -717,18 +695,11 @@ def _record_occurrence_position_measurement_act_occurrence_from_current_coordina
             raise ValueError(
                 "the occurrence position binding already carries an Act"
             )
-    participation = _occurrence_position_participation(
-        finding,
-        act_occurrence_identity=binding.material[
-            "act_occurrence_identity"
-        ],
-    )
     return ledger.append(
         OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
         _occurrence_position_act_occurrence_material(
             finding,
             binding=binding,
-            participation=participation,
         ),
         locality_identity=binding.locality_identity,
     )
@@ -769,10 +740,6 @@ def _read_occurrence_position_measurement_act_occurrence(
         raise ValueError(
             "occurrence position result requires its exact intact Act occurrence"
         ) from error
-    participation = _occurrence_position_participation(
-        finding,
-        act_occurrence_identity=binding.material["act_occurrence_identity"],
-    )
     if (
         binding.locality_identity != act_occurrence.locality_identity
         or reference != _binding_reference(binding)
@@ -780,7 +747,6 @@ def _read_occurrence_position_measurement_act_occurrence(
         != _occurrence_position_act_occurrence_material(
             finding,
             binding=binding,
-            participation=participation,
         )
     ):
         raise ValueError(
@@ -922,12 +888,6 @@ def _record_occurrence_position_measurement_result_from_carried_act_occurrence(
         binding=binding,
         finding=finding,
     )
-    participation = _occurrence_position_participation(
-        finding,
-        act_occurrence_identity=binding.material[
-            "act_occurrence_identity"
-        ],
-    )
     if (
         type(act_occurrence) is not Event
         or act_occurrence.kind != OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
@@ -939,7 +899,6 @@ def _record_occurrence_position_measurement_result_from_carried_act_occurrence(
         != _occurrence_position_act_occurrence_material(
             finding,
             binding=binding,
-            participation=participation,
         )
         or ledger.append_boundary_through_occurrence(
             act_occurrence.identity

@@ -359,24 +359,13 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         source_locality_identity="a",
         through=boundary,
     )
-    participation = position_measurement._occurrence_position_participation
     position_assertions = position_measurement._position_assertions
-    participation_calls = []
     assertion_calls = []
-
-    def counted_participation(*args, **kwargs):
-        participation_calls.append(None)
-        return participation(*args, **kwargs)
 
     def counted_position_assertions(*args, **kwargs):
         assertion_calls.append(None)
         return position_assertions(*args, **kwargs)
 
-    monkeypatch.setattr(
-        position_measurement,
-        "_occurrence_position_participation",
-        counted_participation,
-    )
     monkeypatch.setattr(
         position_measurement,
         "_position_assertions",
@@ -394,10 +383,10 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         recorded.identity,
     ) == finding
 
-    assert len(participation_calls) == 3
     assert len(assertion_calls) == 2
-    assert act_occurrence.material["participation"]
-    assert "participation" not in recorded.material
+    assert act_occurrence.material["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
     assert yielded.material["result"]["assertions"] == recorded.material[
         "assertions"
     ]
@@ -437,10 +426,9 @@ def test_act_occurrence_is_observed_before_yield_without_reconstructing_finding(
     ]
     assert "result_identity" not in act_occurrence.material
     assert "occurrences" not in act_occurrence.material
-    assert all(
-        "position" not in item
-        for item in act_occurrence.material["participation"]
-    )
+    assert act_occurrence.material["subject_to_act_binding_reference"][
+        "recorded_occurrence_identity"
+    ] == binding.identity
     observed = ledger.append(
         "test.act_occurrence_observed",
         {"act_occurrence_event_identity": act_occurrence.identity},
