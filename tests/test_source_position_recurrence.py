@@ -262,7 +262,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
     ) == (0, 3)
 
     # This explicit call from one result to the later Measurement is the
-    # remaining hand-written continuation. It supplies the complete recurrence
+    # remaining hand-written call. It supplies the complete recurrence
     # result; the later Measurement chooses no finding, source position, or
     # value from it.
     coordinate_measurements = record_corresponding_coordinate_material_measurements(
@@ -499,7 +499,7 @@ def test_source_position_recording_reuses_validated_direct_coordinates(
     assert calls == 2
 
 
-def test_unrelated_acquired_material_does_not_change_exact_coordinates():
+def test_unrelated_supplied_material_does_not_change_exact_coordinates():
     readings = []
     for locality, exact, start in (
         ("source-position-isolated", b"aba", 0),
@@ -649,7 +649,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
 
 def test_exact_reusable_material_result_is_not_a_source_assertion():
     ledger = EventLedger()
-    measurements, _coordinate_measurements, material_measurements, _standing = (
+    measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
             ledger,
             locality="candidate exact-material refusal",
@@ -668,7 +668,7 @@ def test_exact_reusable_material_result_is_not_a_source_assertion():
 
 def test_varying_coordinate_material_yields_no_common_exact_material():
     ledger = EventLedger()
-    source_position_measurements, _coordinate_measurements, material_measurements, _standing = (
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
             ledger,
             locality="recurrent-result-material-control",
@@ -692,7 +692,7 @@ def test_varying_coordinate_material_yields_no_common_exact_material():
 
 def test_recurrent_result_material_refuses_changed_support_material_order_owner_and_yield():
     ledger = EventLedger()
-    source_position_measurements, _coordinate_measurements, material_measurements, _standing = (
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
             ledger,
             locality="recurrent-result-material-integrity",
@@ -839,7 +839,7 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
 
 def test_source_coordinate_not_in_support_does_not_choose_material():
     ledger = EventLedger()
-    source_position_measurements, _coordinate_measurements, material_measurements, _standing = (
+    source_position_measurements, _coordinate_measurements, material_measurements, _current_coordinates = (
         _record_material_measurements(
             ledger,
             locality="recurrent-result-material-coordinate-not-in-support",

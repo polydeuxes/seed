@@ -1059,7 +1059,7 @@ def get_recorded_source_position_compare(
 
 def _complete_pairs(length: int) -> tuple[tuple[int, int], ...]:
     # Established comparisons remain the exact prefix when the source-position count grows.
-    # Only comparisons introduced by the new final source position are appended.
+    # Only comparisons introduced by the exact final source position are appended.
     return tuple(
         (first, second)
         for second in range(1, length)
