@@ -39,9 +39,9 @@ _EMPTY_PREFIX_IDENTITY = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
 class EventLedgerBoundary:
     """The exact identity of one append prefix.
 
-    Callers may retain and return the value, but only an EventLedger reads
-    it. The same ordered prefix yields the same boundary; a boundary does not
-    carry an append position.
+    Callers may carry and return the value, but only an EventLedger reads the
+    value. The same ordered prefix yields the same boundary; a boundary does
+    not carry an append position.
     """
 
     identity: str

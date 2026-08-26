@@ -25,9 +25,8 @@ testimony. Neither silently substitutes for the other.
 - `rosetta/` — translation and vocabulary retirement records.
 - `seed_runtime/` — live Python runtime.
 - `tests/` — executable checks.
-- `archive/reports/` — historical reports retained as records, not current
-  grammar.
-- `dormant/` — retired implementation and data retained for inspection.
+- `archive/reports/` — historical reports; not current grammar.
+- `dormant/` — retired witness code and data available for inspection.
 - `scripts/` — repository maintenance commands.
 
 ## Run checks
