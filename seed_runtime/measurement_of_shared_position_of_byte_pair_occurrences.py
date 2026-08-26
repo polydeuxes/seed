@@ -317,7 +317,7 @@ def _resolve_references(
             "shared-position Measurement requires one exact result occurrence"
         )
     if result.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
-        if any(type(address) is not str or not address for address in assertion_addresses):
+        if any(type(address) is not int or address < 0 for address in assertion_addresses):
             raise SharedPairPositionError(
                 "shared-position Measurement requires exact Assertion addresses"
             )

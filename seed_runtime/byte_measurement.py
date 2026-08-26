@@ -254,15 +254,20 @@ class RecordedAssertionCarriedByLocalityMovement:
     """One exact Assertion carried by a Locality movement result."""
 
     recorded_occurrence_identity: str
-    assertion_identity: str
+    assertion_address: str | int
     locality_movement_event_identity: str
     _source_assertion_coordinates: dict[str, Any]
 
     @property
-    def source_assertion_reference(self) -> dict[str, str]:
+    def source_assertion_reference(self) -> dict[str, Any]:
+        coordinate = (
+            "assertion_position"
+            if type(self.assertion_address) is int
+            else "assertion_identity"
+        )
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            coordinate: self.assertion_address,
         }
 
     @property
@@ -273,14 +278,14 @@ class RecordedAssertionCarriedByLocalityMovement:
 @dataclass(frozen=True)
 class _RecordedPositionAssertionForLocalityMovement:
     recorded_occurrence_identity: str
-    assertion_identity: str
+    assertion_position: int
     _source_assertion_coordinates: dict[str, Any]
 
     @property
-    def assertion_reference(self) -> dict[str, str]:
+    def assertion_reference(self) -> dict[str, Any]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
+            "assertion_position": self.assertion_position,
         }
 
     @property
@@ -732,27 +737,27 @@ def _source_assertion_from_reference(
 
     from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-        _recorded_position_assertion_coordinates_for_locality_movement,
+        _recorded_position_assertion_at_position_for_locality_movement,
     )
 
     if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
         if set(reference) != {
             "recorded_occurrence_identity",
-            "assertion_identity",
-        }:
+            "assertion_position",
+        } or type(reference["assertion_position"]) is not int:
             raise ByteMeasurementError("Assertion movement carries no exact source")
         try:
-            coordinates = _recorded_position_assertion_coordinates_for_locality_movement(
+            coordinates = _recorded_position_assertion_at_position_for_locality_movement(
                 ledger,
                 result_event_identity=source_event.identity,
-                assertion_identity=reference["assertion_identity"],
+                assertion_position=reference["assertion_position"],
             )
         except ValueError:
             pass
         else:
             return _RecordedPositionAssertionForLocalityMovement(
                 recorded_occurrence_identity=source_event.identity,
-                assertion_identity=reference["assertion_identity"],
+                assertion_position=reference["assertion_position"],
                 _source_assertion_coordinates=deepcopy(coordinates),
             ), source_event
 
@@ -1763,7 +1768,11 @@ def _assertion_carried_by_locality_movement_result(
         )
     return RecordedAssertionCarriedByLocalityMovement(
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        assertion_identity=source.assertion_identity,
+        assertion_address=(
+            source.assertion_position
+            if type(source) is _RecordedPositionAssertionForLocalityMovement
+            else source.assertion_identity
+        ),
         locality_movement_event_identity=movement.identity,
         _source_assertion_coordinates=_source_assertion_coordinates(source),
     )
@@ -2196,7 +2205,7 @@ def _require_exact_byte_measurement_through_occurrence(
     recording_locality_identity: str,
     through_event_occurrence_identity: str,
 ) -> tuple[str, tuple[dict[str, str], ...]]:
-    """Validate one earlier boundary carrying the exact source population."""
+    """Validate one earlier boundary carrying the exact source occurrences."""
 
     if (
         type(through_event_occurrence_identity) is not str

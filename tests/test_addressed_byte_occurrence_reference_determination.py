@@ -236,7 +236,7 @@ def test_repeated_byte_occurrences_remain_distinct_by_position_assertion():
     recorded = _record(ledger, exact=b"aaa", position=1)
     references = recorded["result"].material["ordered_assertion_references"]
     assert len(references) == 2
-    assert references[0]["assertion_identity"] != references[1]["assertion_identity"]
+    assert tuple(reference["assertion_position"] for reference in references) == (0, 1)
 
 
 def test_assignment_refuses_stale_forged_and_cross_result_coordinates_atomically():
