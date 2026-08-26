@@ -570,7 +570,6 @@ class SQLiteEventLedger(EventLedger):
         "recorded_pair_comparison_later_input_relation",
         "recorded_pair_comparison_earlier_participation",
         "recorded_pair_comparison_later_participation",
-        "assertion_locality_movement",
         "occurrence_position_measurement_act",
         "occurrence_position_measurement_assignment",
         "occurrence_position_measurement_assignment_subject",

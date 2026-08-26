@@ -668,10 +668,13 @@ def test_a_reserved_suffix_of_zero_is_not_reserved():
 def test_an_overlapping_prefix_reserves_the_longer_match():
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(
-        identity="evt_1", kind="k", material={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
+        identity="evt_1",
+        kind="k",
+        material={"a": "candidate_act_occurrence_7", "b": "candidate_act_4"},
     )
     assert ledger._reservable_identity_numbers(event) == {
-        "assertion_locality_movement": 4,
+        "candidate_act_occurrence": 7,
+        "candidate_act": 4,
     }
 
 
