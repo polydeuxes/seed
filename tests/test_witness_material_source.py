@@ -354,7 +354,11 @@ def test_witness_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 
     assert occurred.material["provenance_occurrence_references"] == []
-    assert tuple(occurred.material["dimensions"]) == ("identity",)
+    assert occurred.material["result_identity"] == (
+        occurred.material["subject_to_act_binding_reference"][
+            "result_boundary_identity"
+        ]
+    )
     assert "invocation" not in str(occurred.material)
 
 
@@ -453,7 +457,7 @@ def test_witness_material_identity_is_reserved_across_reopen(tmp_path):
                 exact_bytes=f"material {index}".encode(),
                 source_boundary="source boundary",
             )
-            identities.append(material.material["dimensions"]["identity"])
+            identities.append(material.material["result_identity"])
         finally:
             ledger.close()
 

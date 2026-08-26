@@ -219,12 +219,7 @@ def record_witness_material_source(
         },
         locality_identity=locality_identity,
     )
-    material: dict[str, object] = {
-        **result,
-        "dimensions": {
-            "identity": result_identity,
-        },
-    }
+    material: dict[str, object] = {**result}
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=locality_identity,
@@ -370,9 +365,6 @@ def _read_witness_material_source_result(
     }
     expected_material = {
         **result,
-        "dimensions": {
-            "identity": result_identity,
-        },
         "act_occurrence_event_identity": act_occurrence.identity,
         "yield_relation_identity": yield_identity,
     }
