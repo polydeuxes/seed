@@ -156,9 +156,6 @@ BYTE_PAIR_RESULT_BOUNDARY = (
     "bounded source material"
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
-BYTE_PAIR_UNKNOWN = (
-    "Participation: Unknown",
-)
 class ByteMeasurementError(ValueError):
     """The exact byte Measurement could not be performed as declared."""
 
@@ -1946,7 +1943,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_subject": subject,
             "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
-            "unknown": ["Participation: Unknown"],
+            "unknown": [],
         }
 
     for item in measured.counts:
@@ -3054,7 +3051,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "referenced_assertions": referenced_assertions,
             "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
-            "unknown": list(BYTE_PAIR_UNKNOWN),
+            "unknown": [],
         }
 
     for item in measured.counts:
@@ -4817,7 +4814,7 @@ def _validated_recorded_byte_position_pair_measurement(
                     "content",
                 }
             or dimensions.get("position") != assertion_position
-            or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
+            or assertion.get("unknown") != []
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
         content = dimensions.get("content")

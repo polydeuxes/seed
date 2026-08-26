@@ -1134,7 +1134,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "conflicts",
         "unknown",
     }
-    assert count.material["unknown"]
+    assert count.material["unknown"] == []
     assert count.material["conflicts"] == "Unknown"
     assert count.referenced_assertions == (
         {
