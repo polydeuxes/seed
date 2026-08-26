@@ -495,7 +495,6 @@ def _pair_input_applicability_from_exact_source(
                 source.locality_movement_event_identity
             ),
         }
-    material = source.material
     content = {
         "input_assertion_reference": source.reference,
         "input_movement_event_identity": source.locality_movement_event_identity,
@@ -512,15 +511,13 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     applicability = "applicable"
-    source_provenance = material["dimensions"]["source_provenance"]
-    input_unknown = material["unknown"]
+    input_unknown = source.material["unknown"]
     identity = binding.material["applicability_result_identity"]
     return {
         "dimensions": {
             "identity": identity,
             "content": content,
             "applicability": applicability,
-            "source_provenance": source_provenance,
         },
         "result": "input_applicability",
         "input_assertion_reference": source.reference,
@@ -1923,9 +1920,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "position": 0,
                 "content": source_content,
-                "source_provenance": (
-                    "complete declared material result within one boundary"
-                ),
             },
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
@@ -1939,7 +1933,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
         result: str,
         item: MeasuredByteCount,
         content: dict[str, Any],
-        provenance: str,
         referenced_assertion_positions: list[int],
     ):
         subject = {"content": item.content}
@@ -1948,7 +1941,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "position": position,
                 "content": content,
-                "source_provenance": provenance,
             },
             "result": result,
             "assertion_subject": subject,
@@ -1967,7 +1959,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             result="count",
             item=item,
             content=count_content,
-            provenance="the exact source-material Assertion carried here",
             referenced_assertion_positions=[0],
         )
         results.append(count)
@@ -1977,7 +1968,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                     result="recurrence",
                     item=item,
                     content={"recurrence_established": True},
-                    provenance="the exact count Assertion carried here",
                     referenced_assertion_positions=[count["dimensions"]["position"]],
                 )
             )
@@ -3049,7 +3039,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
         result: str,
         item: MeasuredBytePairCount,
         content: dict[str, Any],
-        provenance: str,
         referenced_assertion_positions: list[int],
         referenced_assertions: list[dict[str, Any]],
     ) -> dict[str, Any]:
@@ -3059,7 +3048,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "dimensions": {
                 "position": position,
                 "content": content,
-                "source_provenance": provenance,
             },
             "result": result,
             "assertion_subject": subject,
@@ -3078,7 +3066,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "occurrences_carrying": item.occurrences_carrying,
                 "count": item.count,
             },
-            provenance="the exact source-material Assertion referenced here",
             referenced_assertion_positions=[],
             referenced_assertions=[measured.source_assertion_reference],
         )
@@ -3089,7 +3076,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                     result="recurrence",
                     item=item,
                     content={"recurrence_established": True},
-                    provenance="the exact count Assertion carried here",
                     referenced_assertion_positions=[count["dimensions"]["position"]],
                     referenced_assertions=[],
                 )
@@ -3688,7 +3674,6 @@ def _pair_applicability_result_material(
             "identity": applicability_assertion["dimensions"]["identity"],
             "content": "exact source-Assertion to addressed-Act Applicability",
             "applicability": applicability_assertion["dimensions"]["applicability"],
-            "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
         },
         "exact_act": "input Applicability",
         "subject_to_act_binding_reference": (
@@ -4830,7 +4815,6 @@ def _validated_recorded_byte_position_pair_measurement(
                 != {
                     "position",
                     "content",
-                    "source_provenance",
                 }
             or dimensions.get("position") != assertion_position
             or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
@@ -4868,8 +4852,6 @@ def _validated_recorded_byte_position_pair_measurement(
             or count_content["occurrences_carrying"] > count_content["count"]
             or count["referenced_assertions"] != [source_reference]
             or count["referenced_assertion_positions"] != []
-            or count["dimensions"]["source_provenance"]
-            != "the exact source-material Assertion referenced here"
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair count")
         recurrence = group.get("recurrence")
@@ -4877,8 +4859,6 @@ def _validated_recorded_byte_position_pair_measurement(
             raise ByteMeasurementError(f"{event_identity} carries the wrong recurrence boundary")
         if recurrence is not None and (
             recurrence["dimensions"]["content"] != {"recurrence_established": True}
-            or recurrence["dimensions"]["source_provenance"]
-            != "the exact count Assertion carried here"
             or recurrence["referenced_assertions"] != []
             or recurrence["referenced_assertion_positions"]
             != [count["dimensions"]["position"]]
