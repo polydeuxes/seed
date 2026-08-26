@@ -78,7 +78,6 @@ BYTE_RESULT_COORDINATES = frozenset(
         "addressed_act_identity",
         "act_occurrence_identity",
         "subject_to_act_binding_reference",
-        "measurement_rule",
         "source_localities",
         "completeness_boundary",
         "assertions",
@@ -93,6 +92,7 @@ BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES - {
     "subject_to_act_binding_reference",
 } | {
+    "measurement_rule",
     "addressed_act_identity",
     "act_occurrence_identity",
     "source_assertion_reference",
@@ -149,10 +149,6 @@ EVENT_KIND_BOOK_CLAUSES = {
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_KIND: "03.Movement.A",
 }
-BYTE_MEASUREMENT_RULE = (
-    "each exact byte in exact recorded material result with the same exact byte "
-    "material"
-)
 BYTE_PAIR_MEASUREMENT_RULE = (
     "each exact byte-pair occurrence in source order within one exact recorded material "
     "result with the same exact pair material and source order"
@@ -1969,10 +1965,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
         provenance: str,
         local_support_references: list[int],
     ):
-        subject = {
-            "content": item.content,
-            "measurement_rule": BYTE_MEASUREMENT_RULE,
-        }
+        subject = {"content": item.content}
         position = len(results)
         return {
             "dimensions": {
@@ -2104,7 +2097,6 @@ def _byte_measurement_binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_localities": list(source_localities),
         "source_occurrence_references": [
             dict(reference) for reference in source_material
@@ -2798,7 +2790,6 @@ def _record_byte_measurement_result_from_exact_inputs(
         "subject_to_act_binding_reference": (
             _byte_measurement_binding_reference(binding)
         ),
-        "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
@@ -3018,8 +3009,7 @@ def _assertions_of_recorded_byte_measurement(
     boundary_value = material.get("completeness_boundary")
     localities_value = material.get("source_localities")
     if (
-        material.get("measurement_rule") != BYTE_MEASUREMENT_RULE
-        or not isinstance(boundary_value, dict)
+        not isinstance(boundary_value, dict)
         or set(boundary_value) != {"identity"}
         or not isinstance(boundary_value["identity"], str)
         or not isinstance(localities_value, list)

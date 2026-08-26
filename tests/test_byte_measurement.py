@@ -15,7 +15,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND,
     BYTE_RESULT_COORDINATES,
-    BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_MEASUREMENT_RULE,
     ByteMeasurementError,
     _measure_byte_counts_through,
@@ -1067,17 +1066,6 @@ def test_recurrence_exists_only_above_one():
     assert results == ["count", "recurrence"]
 
 
-def test_the_rule_is_mechanics_not_an_unchecked_callable():
-    event = _record_byte_measurement(
-        _ledger(b"the cat\n"),
-        source_localities=("source",),
-        recording_locality_identity="measurement",
-    )
-    assert event.material["measurement_rule"] == BYTE_MEASUREMENT_RULE
-    assert event.kind == BYTE_MEASUREMENT_RECORDED_KIND
-    assert "zebra" not in str(event.material)
-
-
 def test_source_assertion_subject_is_the_exact_material_results():
     event = _record_byte_measurement(
         _ledger(b"the cat\n"),
@@ -1119,11 +1107,10 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "result_identity",
         "dimensions",
         "exact_act",
-        "addressed_act_identity",
-        "act_occurrence_identity",
-        "subject_to_act_binding_reference",
-        "measurement_rule",
-        "source_localities",
+            "addressed_act_identity",
+            "act_occurrence_identity",
+            "subject_to_act_binding_reference",
+            "source_localities",
         "completeness_boundary",
         "assertions",
     ]
@@ -2749,7 +2736,7 @@ FIDELITY_DISTINCTIONS = {
         test_opaque_bytes_supply_the_measured_subjects_without_whitespace,
         test_the_complete_declared_localities_supply_the_inputs,
         test_recurrence_exists_only_above_one,
-        test_the_rule_is_mechanics_not_an_unchecked_callable,
+        test_source_assertion_subject_is_the_exact_material_results,
         test_recorded_results_replay_the_complete_bounded_source_read,
         test_a_self_consistent_truncated_source_assertion_is_refused,
         test_recording_occurrence_is_validated_exactly,
