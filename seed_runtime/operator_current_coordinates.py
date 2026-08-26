@@ -2897,6 +2897,7 @@ def _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordi
 
 
 def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
+    ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
     *,
@@ -2917,6 +2918,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
     measurements = current_coordinates.get("measurement_occurrences")
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     material_results = current_coordinates.get("material_result_occurrences")
+    exact_results = current_coordinates.get("exact_result_occurrences")
     binding = event.material.get("subject_to_act_binding_reference")
     source_identity = event.material.get("source_material_result_occurrence_identity")
     event_count = current_coordinates.get("event_count")
@@ -2924,6 +2926,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         type(measurements) is not dict
         or type(bindings) is not dict
         or type(material_results) is not list
+        or type(exact_results) is not dict
         or type(binding) is not dict
         or binding.get("recorded_occurrence_identity") not in bindings
         or event.material.get("act_occurrence_event_identity")
@@ -2937,6 +2940,7 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         is not str
         or type(event.material.get("assertions")) is not dict
         or event.identity in measurements
+        or event.identity in exact_results
         or type(event_count) is not int
         or event_count < 0
     ):
@@ -2947,6 +2951,9 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         error_message="position-coordinate Measurement coordinates are not exact",
     )
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
+    exact_results[event.identity] = _subject_to_act_binding_of_exact_result(
+        ledger, event
+    )
     for key, added in coordinate_additions.items():
         for value in added:
             _record_distinct(current_coordinates[key], value)

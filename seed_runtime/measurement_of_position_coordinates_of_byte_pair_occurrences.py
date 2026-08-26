@@ -581,13 +581,13 @@ def _binding_material(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
     through_event_occurrence_identity: str,
-    measurement_act_identity: str,
+    exact_act_identity: str,
     act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
     input_relation = _input_relation(
         finding,
-        measurement_act_identity=measurement_act_identity,
+        measurement_act_identity=exact_act_identity,
         act_occurrence_identity=act_occurrence_identity,
     )
     return {
@@ -596,8 +596,7 @@ def _binding_material(
                 finding.source_material_result_occurrence_identity
             )
         },
-        "exact_act_identity": measurement_act_identity,
-        "measurement_act_identity": measurement_act_identity,
+        "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
@@ -803,7 +802,7 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
         )
     global_recording_boundary = ledger.append_boundary()
     identities = {
-        "measurement_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
         "act_occurrence_identity": ledger.mint_identity(
@@ -882,7 +881,7 @@ def _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_fro
             "unbound subject through the supplied occurrence"
         )
     identities = {
-        "measurement_act_identity": ledger.mint_identity(
+        "exact_act_identity": ledger.mint_identity(
             "byte_pair_occurrence_position_measurement_act"
         ),
         "act_occurrence_identity": ledger.mint_identity(
@@ -944,7 +943,7 @@ def _read_binding(
     identities = {
         key: material.get(key)
         for key in (
-            "measurement_act_identity",
+            "exact_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
@@ -1039,7 +1038,7 @@ def _require_carried_byte_pair_occurrence_position_subject_to_act_binding(
     identity_coordinates = {
         coordinate: material.get(coordinate)
         for coordinate in (
-            "measurement_act_identity",
+            "exact_act_identity",
             "act_occurrence_identity",
             "measurement_result_identity",
         )
@@ -1089,7 +1088,7 @@ def _act_material(
     binding: Event,
 ) -> dict[str, Any]:
     return {
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
@@ -1379,7 +1378,7 @@ def _result_material(
 ) -> dict[str, Any]:
     return {
         "result_identity": binding.material["measurement_result_identity"],
-        "addressed_act_identity": binding.material["measurement_act_identity"],
+        "addressed_act_identity": binding.material["exact_act_identity"],
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "exact_act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),

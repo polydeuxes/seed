@@ -990,6 +990,7 @@ def test_same_call_result_carry_equals_full_standing_replay():
     )
 
     carried = _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
+        ledger,
         before_result,
         result,
         prior_through_event_occurrence_identity=act.identity,
@@ -1023,6 +1024,7 @@ def test_refused_same_call_result_does_not_change_prior_standing():
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
         _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
+            ledger,
             prior,
             malformed,
             prior_through_event_occurrence_identity=act.identity,

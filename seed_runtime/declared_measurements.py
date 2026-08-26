@@ -187,6 +187,7 @@ def _complete_direct_measurement(
     )
     current_coordinates = (
         _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
+            ledger,
             current_coordinates,
             result,
             prior_through_event_occurrence_identity=act.identity,
