@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, NamedTuple
@@ -1686,19 +1684,9 @@ def _path_assertion(
             inputs.first.completeness_boundary_identity
         ),
     }
-    exact = json.dumps(
-        {
-            "result": "ordered_relation_path",
-            "subject": subject,
-            "scope": scope,
-            "content": content,
-        },
-        separators=(",", ":"),
-    ).encode("utf-8")
-    identity = "shared-pair-position:" + hashlib.sha256(exact).hexdigest()
     return {
         "dimensions": {
-            "identity": identity,
+            "position": 0,
             "content": content,
             "source_provenance": "exact recorded pair position Assertions",
             "responsibility": SHARED_POSITION_ASSERTION_RESPONSIBILITY,

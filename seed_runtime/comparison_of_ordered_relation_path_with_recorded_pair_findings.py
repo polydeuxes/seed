@@ -216,6 +216,9 @@ def _path_input(
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings requires exact pair subjects")
     content = assertion.get("dimensions", {}).get("content")
+    assertion_position = assertion.get("dimensions", {}).get("position")
+    if assertion_position != 0:
+        raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
     source = (
         content.get("source_material_result_occurrence_identity")
         if type(content) is dict
@@ -227,7 +230,7 @@ def _path_input(
         "assertion": deepcopy(assertion),
         "assertion_reference": {
             "recorded_occurrence_identity": event.identity,
-            "assertion_identity": assertion["dimensions"]["identity"],
+            "assertion_position": assertion_position,
         },
         "pair_subjects": tuple(tuple(pair) for pair in pairs),
         "source_occurrence_identity": _identity(
@@ -1695,9 +1698,9 @@ class RecordedDistinctionPin(NamedTuple):
     locality_identity: str
     standing_boundary_identity: str
     comparison_result_occurrence_identity: str
-    ordered_relation_path_assertion_reference: dict[str, str]
+    ordered_relation_path_assertion_reference: dict[str, Any]
     path_role: str
-    path_position_assertion_reference: dict[str, str]
+    path_position_assertion_reference: dict[str, Any]
     pair_subject: bytes
     recorded_finding_reference: dict[str, Any]
 
