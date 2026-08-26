@@ -30,7 +30,6 @@ from seed_runtime.yield_relation import (
     _record_yield_relation,
     read_requirements_of_yield_relation,
 )
-from seed_runtime.identities import new_identity
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     source_position_coordinate_references_of_recorded_position_measurement,
 )
@@ -580,9 +579,11 @@ def _record_yielded_result(
     if latest_locality_event is None:
         raise ValueError("source-position work requires an exact Locality boundary")
     through_event_occurrence_identity = latest_locality_event.identity
-    act_identity = new_identity(identity_prefix + "_act")
-    act_occurrence_identity = new_identity(identity_prefix + "_act_occurrence")
-    result_identity = new_identity(identity_prefix + "_result")
+    act_identity = ledger.mint_identity(identity_prefix + "_act")
+    act_occurrence_identity = ledger.mint_identity(
+        identity_prefix + "_act_occurrence"
+    )
+    result_identity = ledger.mint_identity(identity_prefix + "_result")
     subject = act_payload.get("subject")
     if type(subject) is not dict:
         raise ValueError("source-position subject-to-Act binding requires one exact subject")

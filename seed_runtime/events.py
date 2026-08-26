@@ -547,24 +547,6 @@ class SQLiteEventLedger(EventLedger):
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
         "operator_material", "checkpoint_locality", "locality",
-        "source_position_compare_applicability_act",
-        "source_position_compare_applicability_act_occurrence",
-        "source_position_compare_applicability_result",
-        "source_position_compare_act",
-        "source_position_compare_act_occurrence",
-        "source_position_compare_result",
-        "source_position_measurement_act",
-        "source_position_measurement_act_occurrence",
-        "source_position_measurement_result",
-        "source_position_recurrence_measurement_act",
-        "source_position_recurrence_measurement_act_occurrence",
-        "source_position_recurrence_measurement_result",
-        "recurrence_corresponding_source_position_material_measurement_act",
-        "recurrence_corresponding_source_position_material_measurement_act_occurrence",
-        "recurrence_corresponding_source_position_material_measurement_result",
-        "recurrent_result_exact_material_measurement_act",
-        "recurrent_result_exact_material_measurement_act_occurrence",
-        "recurrent_result_exact_material_measurement_result",
     })
 
     def __init__(self, database_path: str) -> None:
