@@ -8,7 +8,7 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_current_coordinates import (
-    _carry_operator_material_source_occurrence_into_current_coordinates,
+    _advance_current_coordinates_with_operator_material_source_occurrence,
     _subject_to_act_binding_of_exact_result,
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
@@ -175,7 +175,7 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
         current_coordinates=current,
         source_boundary="operator boundary",
     )
-    current = _carry_operator_material_source_occurrence_into_current_coordinates(
+    current = _advance_current_coordinates_with_operator_material_source_occurrence(
         ledger,
         current,
         binding,
@@ -186,7 +186,7 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=current,
     )
-    current = _carry_operator_material_source_occurrence_into_current_coordinates(
+    current = _advance_current_coordinates_with_operator_material_source_occurrence(
         ledger,
         current,
         act_occurrence,
@@ -202,7 +202,7 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
             known_loss=(),
         ),
     )
-    carried = _carry_operator_material_source_occurrence_into_current_coordinates(
+    carried = _advance_current_coordinates_with_operator_material_source_occurrence(
         ledger,
         current,
         result,

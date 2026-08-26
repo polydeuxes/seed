@@ -2499,14 +2499,14 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
     return current_coordinates
 
 
-def _carry_operator_material_source_occurrence_into_current_coordinates(
+def _advance_current_coordinates_with_operator_material_source_occurrence(
     ledger: EventLedger,
     current_coordinates: dict[str, Any],
     event,
     *,
     prior_through_event_occurrence_identity: str,
 ) -> dict[str, Any]:
-    """Carry one source occurrence produced by this console call."""
+    """Advance current coordinates with one source occurrence from this console call."""
 
     if (
         type(current_coordinates) is not dict
