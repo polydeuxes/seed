@@ -78,7 +78,11 @@ _IDENTITY_COORDINATES = (
     "compare_result_identity",
 )
 _APPLICABILITY_IDENTITY_COORDINATES = _IDENTITY_COORDINATES[:3]
-_COMPARE_IDENTITY_COORDINATES = _IDENTITY_COORDINATES[3:]
+_COMPARE_IDENTITY_COORDINATES = (
+    "exact_act_identity",
+    "compare_act_occurrence_identity",
+    "compare_result_identity",
+)
 
 _PATH_POSITION_PAIRS = ((0, 1), (0, 2), (1, 2))
 
@@ -251,8 +255,7 @@ def _compare_binding_material(
             "first_source_position_coordinate": deepcopy(inputs["first"]),
             "second_source_position_coordinate": deepcopy(inputs["second"]),
         },
-        "exact_act_identity": identities["compare_act_identity"],
-        "compare_act_identity": identities["compare_act_identity"],
+        "exact_act_identity": identities["exact_act_identity"],
         "compare_act_occurrence_identity": identities[
             "compare_act_occurrence_identity"
         ],
@@ -284,16 +287,21 @@ def _applicability_binding_material(
     boundary: str,
     identities: dict[str, str],
 ) -> dict[str, Any]:
+    compare_act_identity = compare_binding.material["exact_act_identity"]
+    compare_act_occurrence_identity = compare_binding.material[
+        "compare_act_occurrence_identity"
+    ]
+    compare_result_identity = compare_binding.material["compare_result_identity"]
     return {
         "subject_reference": {
             "first_input": {
                 "subject": deepcopy(inputs["first"]),
-                "addressed_act_identity": identities["compare_act_identity"],
+                "addressed_act_identity": compare_act_identity,
                 "role": f"path position {inputs['first_path_position']}",
             },
             "second_input": {
                 "subject": deepcopy(inputs["second"]),
-                "addressed_act_identity": identities["compare_act_identity"],
+                "addressed_act_identity": compare_act_identity,
                 "role": f"path position {inputs['second_path_position']}",
             },
         },
@@ -306,15 +314,11 @@ def _applicability_binding_material(
             "applicability_result_identity"
         ],
         "result_boundary_identity": identities["applicability_result_identity"],
-        "addressed_act_identity": identities["compare_act_identity"],
-        "addressed_act_occurrence_identity": identities[
-            "compare_act_occurrence_identity"
-        ],
-        "compare_act_identity": identities["compare_act_identity"],
-        "compare_act_occurrence_identity": identities[
-            "compare_act_occurrence_identity"
-        ],
-        "compare_result_identity": identities["compare_result_identity"],
+        "addressed_act_identity": compare_act_identity,
+        "addressed_act_occurrence_identity": compare_act_occurrence_identity,
+        "compare_act_identity": compare_act_identity,
+        "compare_act_occurrence_identity": compare_act_occurrence_identity,
+        "compare_result_identity": compare_result_identity,
         "compare_subject_to_act_binding_reference": _binding_reference(
             compare_binding
         ),
@@ -331,10 +335,8 @@ def _applicability_binding_material(
                 "first_subject": deepcopy(inputs["first"]),
                 "relation": "applicability",
                 "second_subject": {
-                    "act_identity": identities["compare_act_identity"],
-                    "act_occurrence_identity": identities[
-                        "compare_act_occurrence_identity"
-                    ],
+                    "act_identity": compare_act_identity,
+                    "act_occurrence_identity": compare_act_occurrence_identity,
                     "role": f"path position {inputs['first_path_position']}",
                 },
             },
@@ -342,17 +344,15 @@ def _applicability_binding_material(
                 "first_subject": deepcopy(inputs["second"]),
                 "relation": "applicability",
                 "second_subject": {
-                    "act_identity": identities["compare_act_identity"],
-                    "act_occurrence_identity": identities[
-                        "compare_act_occurrence_identity"
-                    ],
+                    "act_identity": compare_act_identity,
+                    "act_occurrence_identity": compare_act_occurrence_identity,
                     "role": f"path position {inputs['second_path_position']}",
                 },
             },
         ],
         "scope": {
             "locality_identity": inputs["locality_identity"],
-            "addressed_act_identity": identities["compare_act_identity"],
+            "addressed_act_identity": compare_act_identity,
         },
         "unknown": [],
         "conflicts": [],
@@ -508,12 +508,6 @@ def _read_applicability_binding(
     identities = {
         name: material.get(name) for name in _APPLICABILITY_IDENTITY_COORDINATES
     }
-    identities.update(
-        {
-            name: compare_binding.material[name]
-            for name in _COMPARE_IDENTITY_COORDINATES
-        }
-    )
     if (
         any(type(value) is not str or not value for value in identities.values())
         or len(set(identities.values())) != len(identities)
@@ -770,7 +764,7 @@ def _compare_act_material(
     material = compare_binding.material
     subject = _compare_binding_subject(material)
     return {
-        "act_identity": material["compare_act_identity"],
+        "act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["compare_act_occurrence_identity"],
         "compare_result_identity": material["compare_result_identity"],
         "act": COMPARE_ACT,
@@ -789,7 +783,7 @@ def _compare_act_material(
                 ),
                 "relation": "participation",
                 "second_subject": {
-                    "act_identity": material["compare_act_identity"],
+                    "act_identity": material["exact_act_identity"],
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
@@ -802,7 +796,7 @@ def _compare_act_material(
                 ),
                 "relation": "participation",
                 "second_subject": {
-                    "act_identity": material["compare_act_identity"],
+                    "act_identity": material["exact_act_identity"],
                     "act_occurrence_identity": material[
                         "compare_act_occurrence_identity"
                     ],
@@ -1076,10 +1070,7 @@ def _record_ordered_path_source_position_material_comparison(
         locality_identity=locality_identity,
     )
     carry(compare_binding)
-    identities = {
-        **compare_identities,
-        **_mint_applicability_identities(ledger),
-    }
+    identities = _mint_applicability_identities(ledger)
     applicability_binding = ledger.append(
         APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
         _applicability_binding_material(
