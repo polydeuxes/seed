@@ -1085,9 +1085,9 @@ def advance_operator_current_coordinates(
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
-    # do not grow on the five live kinds today, but acquisition would make them
-    # grow, and the prior-transfer rule has to hold for every accumulator that
-    # can.
+    # do not grow on the five live forms today, but later material results may
+    # grow them. The prior-transfer rule has to hold for every accumulator that
+    # can grow.
     known_loss: list[str] = []
     unknown: list[str] = []
     conflicts: list[str] = []
@@ -1096,7 +1096,7 @@ def advance_operator_current_coordinates(
 
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
-        # Standing that already input the earlier occurrences.  Not copied:
+        # prior coordinates that already input the earlier occurrences. Not copied:
         # see the shared-accumulator note above.
         material_result_occurrences = prior["material_result_occurrences"]
         measurement_occurrences = prior["measurement_occurrences"]
@@ -1257,7 +1257,7 @@ def advance_operator_current_coordinates(
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
-            raise ValueError(f"unsupported operator-acquisition_result event: {event.kind}")
+            raise ValueError(f"unsupported current-coordinate occurrence: {event.kind}")
         prior_through_event_occurrence_identity = through_event_occurrence_identity
         pair_lifecycle_event = event.kind in _BYTE_PAIR_MEASUREMENT_LIFECYCLE_KINDS
         if not pair_lifecycle_event:
@@ -2061,18 +2061,18 @@ def advance_operator_current_coordinates(
         )
         if not all(locality_requirements.values()):
             raise ValueError(
-                "material acquisition carries no exact material Locality relation"
+                "material result carries no exact material Locality relation"
             )
         material_locality_relation_occurrences[source_result.identity] = {
             "locality_relation": deepcopy(
                 source_result.material["locality_relation"]
             ),
         }
-        material_acquisition_reference = source_result.material["dimensions"][
+        material_result_reference = source_result.material["dimensions"][
             "identity"
         ]
         occurrence = {
-            "subject_reference": material_acquisition_reference,
+            "subject_reference": material_result_reference,
             "result_occurrence_identity": source_result.identity,
             "source_role": source_result.material["source_role"],
         }
