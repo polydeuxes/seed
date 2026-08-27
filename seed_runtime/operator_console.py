@@ -14,6 +14,12 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     _record_recorded_pair_measurement_comparison_from_carried_measurements,
 )
+from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+    record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates,
+    record_ordered_path_pair_finding_compare_applicability_from_current_coordinates,
+    record_ordered_path_pair_finding_compare_bindings_from_current_coordinates,
+    record_ordered_path_pair_finding_compare_results_from_current_coordinates,
+)
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_material_boundary import (
@@ -403,6 +409,37 @@ def _record_pair_measurement_comparison(
         )
     )
     return current_coordinates, result
+
+
+def _record_ordered_path_pair_finding_compare(
+    ledger,
+    current_coordinates,
+    *,
+    locality_identity,
+):
+    """Record each exact ordered-path Compare in current coordinates."""
+
+    bindings = record_ordered_path_pair_finding_compare_bindings_from_current_coordinates(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=current_coordinates,
+    )
+    applicability = record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=bindings.current_coordinates,
+    )
+    acts = record_applicable_ordered_path_pair_finding_compare_act_occurrence_from_current_coordinates(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=applicability.current_coordinates,
+    )
+    results = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=acts.current_coordinates,
+    )
+    return results.current_coordinates
 
 
 def run_persistent_operator_console(
@@ -796,5 +833,10 @@ def run_persistent_operator_console(
                             later_pair_measurement=later_pair,
                             locality_identity=locality_identity,
                         )
+                    )
+                    current_coordinates = _record_ordered_path_pair_finding_compare(
+                        ledger,
+                        current_coordinates,
+                        locality_identity=locality_identity,
                     )
                 pair_premise = later_pair
