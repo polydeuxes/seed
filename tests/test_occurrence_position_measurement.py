@@ -639,7 +639,6 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
             "dimensions",
             "result",
             "assertion_subject",
-            "conflicts",
         }
         and item["result"] == "position"
         for item in assertions

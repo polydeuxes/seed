@@ -202,7 +202,6 @@ def _position_assertions(
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "conflicts": "Unknown",
             }
         )
     return assertions
