@@ -1639,7 +1639,6 @@ def advance_operator_current_coordinates(
         occurrence = {
             "subject_reference": material_result_reference,
             "result_occurrence_identity": source_result.identity,
-            "source_role": source_result.material["source_role"],
         }
         material_result_occurrences.append(occurrence)
 
@@ -2585,7 +2584,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             {
                 "subject_reference": event.material["result_identity"],
                 "result_occurrence_identity": event.identity,
-                "source_role": event.material["source_role"],
             }
         )
     for key, added in coordinate_additions.items():
