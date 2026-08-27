@@ -191,15 +191,6 @@ def record_witness_material_source(
         subject_to_act_binding
     )
     recorded_result_event_identity = ledger.allocate_event_identity()
-    locality_relation = {
-        "first_subject": {
-            "recorded_occurrence_identity": recorded_result_event_identity,
-            "coordinate": "exact_material",
-        },
-        "relation": "locality",
-        "second_subject": "this Seed",
-        "relation_occurrence_identity": recorded_result_event_identity,
-    }
     result: dict[str, object] = {
         "result_identity": result_identity,
         "exact_act_identity": source_act_identity,
@@ -209,7 +200,6 @@ def record_witness_material_source(
         "source_occurrence_references": list(
             source_occurrence_references
         ),
-        "locality_relation": locality_relation,
     }
     result.update(
         {
@@ -279,7 +269,6 @@ def _read_witness_material_source_result(
     source_boundary = material.get("source_boundary")
     binding_reference = material.get("subject_to_act_binding_reference")
     yield_identity = material.get("yield_relation_identity")
-    locality_relation = material.get("locality_relation")
     boundary_outcomes = {
         name: material[name]
         for name in (
@@ -335,16 +324,6 @@ def _read_witness_material_source_result(
         or act_occurrence.locality_identity != event.locality_identity
         or act_occurrence.exact_material is not None
         or ledger.integrity_of(act_occurrence.identity) == CORRUPTED
-        or locality_relation
-        != {
-            "first_subject": {
-                "recorded_occurrence_identity": event.identity,
-                "coordinate": "exact_material",
-            },
-            "relation": "locality",
-            "second_subject": "this Seed",
-            "relation_occurrence_identity": event.identity,
-        }
     ):
         raise MaterialSourceError(
             "Witness material result is absent or corrupted"
@@ -366,7 +345,6 @@ def _read_witness_material_source_result(
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "source_occurrence_references": source_references,
-        "locality_relation": locality_relation,
     }
     result.update(boundary_outcomes)
     if read_occurrences:
@@ -429,44 +407,36 @@ def _read_witness_material_source_result(
     return event
 
 
-def read_witness_material_source_locality_relation_requirements(
+def read_witness_material_source_locality_requirements(
     ledger: EventLedger,
     *,
     recorded_result_event_identity: str,
 ) -> dict[str, bool]:
-    """Read the material-to-this-Seed Locality relation from its source."""
+    """Read one exact Witness material result at its exact Locality."""
 
     event = ledger.get(recorded_result_event_identity)
     if event is None or event.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         return {
-            "exact_relation": False,
-            "relation_occurrence": False,
+            "exact_locality": False,
+            "result_occurrence": False,
             "intact_source_occurrence": False,
         }
     try:
         _read_witness_material_source_result(ledger, event)
     except (TypeError, ValueError):
         return {
-            "exact_relation": False,
-            "relation_occurrence": False,
+            "exact_locality": False,
+            "result_occurrence": False,
             "intact_source_occurrence": False,
         }
-    relation = event.material.get("locality_relation")
     return {
-        "exact_relation": bool(
-            type(relation) is dict
-            and relation.get("first_subject")
-            == {
-                "recorded_occurrence_identity": event.identity,
-                "coordinate": "exact_material",
-            }
-            and relation.get("relation") == "locality"
-            and relation.get("second_subject") == "this Seed"
-            and type(event.exact_material) is bytes
+        "exact_locality": bool(
+            type(event.locality_identity) is str
+            and bool(event.locality_identity)
         ),
-        "relation_occurrence": bool(
-            type(relation) is dict
-            and relation.get("relation_occurrence_identity") == event.identity
+        "result_occurrence": bool(
+            event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
+            and type(event.exact_material) is bytes
         ),
         "intact_source_occurrence": ledger.integrity_of(event.identity) != CORRUPTED,
     }

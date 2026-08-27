@@ -247,24 +247,11 @@ def read_material_locality_relation_requirements(
             ledger,
             recorded_result_event_identity=recorded_result_event_identity,
         )
-    relation = result.material.get("locality_relation")
-    exact_material_subject = {
-        "recorded_occurrence_identity": result.identity,
-        "coordinate": "exact_material",
-    }
-    return {
-        "exact_relation": bool(
-            type(relation) is dict
-            and relation.get("first_subject") == exact_material_subject
-            and relation.get("relation") == "locality"
-            and relation.get("second_subject") == "this Seed"
-            and type(result.exact_material) is bytes
-        ),
-        "relation_occurrence": bool(
-            type(relation) is dict
-            and relation.get("relation_occurrence_identity") == result.identity
-        ),
-        "intact_source_occurrence": (
-            ledger.integrity_of(result.identity) != CORRUPTED
-        ),
-    }
+    from seed_runtime.witness_material_source import (
+        read_witness_material_source_locality_requirements,
+    )
+
+    return read_witness_material_source_locality_requirements(
+        ledger,
+        recorded_result_event_identity=recorded_result_event_identity,
+    )
