@@ -708,15 +708,12 @@ def _require_measurement_current_coordinates(
     return boundary_identity
 
 
-def _binding_reference(
-    binding: Event, *, result_boundary_identity: str
-) -> dict[str, Any]:
+def _binding_reference(binding: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -740,7 +737,6 @@ def _binding_material(
         "exact_act_identity": exact_act_identity,
         "comparison_act_occurrence_identity": comparison_act_occurrence_identity,
         "comparison_result_identity": comparison_result_identity,
-        "result_boundary_identity": comparison_result_identity,
         "book_clause_identity": RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE,
         "earlier_measurement_reference": _measurement_reference(
             inputs["earlier_event"]
@@ -794,7 +790,6 @@ def _applicability_binding_material(
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
         "applicability_result_identity": applicability_result_identity,
         "addressed_act_identity": addressed_act_identity,
-        "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
         "earlier_measurement_reference": earlier_subject,
         "later_measurement_reference": later_subject,
@@ -1117,10 +1112,7 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         ],
         "result_identity": material["applicability_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=material["applicability_result_identity"],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
     }
 
 
@@ -1373,10 +1365,7 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
         "act_occurrence_identity": material["comparison_act_occurrence_identity"],
         "result_identity": material["comparison_result_identity"],
         "act": RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=material["comparison_result_identity"],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "applicability_result_event_identity": applicability.identity,
     }
 
@@ -1414,12 +1403,7 @@ def record_recorded_pair_measurement_comparison_act_occurrence(
         or applicability_binding.material["addressed_act_identity"]
         != binding.material["exact_act_identity"]
         or applicability_material["subject_to_act_binding_reference"]
-        != _binding_reference(
-            applicability_binding,
-            result_boundary_identity=applicability_binding.material[
-                "applicability_result_identity"
-            ],
-        )
+        != _binding_reference(applicability_binding)
     ):
         raise RecordedPairMeasurementComparisonError(
             "Compare Applicability names another binding"
