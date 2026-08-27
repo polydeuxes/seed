@@ -386,10 +386,8 @@ def test_exact_byte_binding_enters_current_coordinates_and_owns_distinct_lifecyc
         "book_clause_identity": assignment.material["book_clause_identity"],
         "exact_act_identity": assignment.material["exact_act_identity"],
         "subject_reference": assignment.material["subject_reference"],
-        "result_boundary_identity": assignment.material[
-            "result_boundary_identity"
-        ],
     }
+    assert "result_boundary_identity" not in assignment.material
 
 
 def test_stale_and_substituted_coordinates_cannot_carry_exact_byte_act():
@@ -1970,7 +1968,7 @@ def test_pair_applicability_reads_exact_input_coordinates():
     assert applicable["addressed_act_occurrence_identity"] is None
 
 
-def test_byte_measurement_binding_carries_its_exact_source_occurrences():
+def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     binding = get_byte_measurement_subject_to_act_binding(
@@ -1990,7 +1988,6 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
         "exact_act_identity",
         "act_occurrence_identity",
         "measurement_result_identity",
-        "result_boundary_identity",
         "book_clause_identity",
         "source_localities",
         "completeness_boundary_identity",

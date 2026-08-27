@@ -428,8 +428,11 @@ _REQUIRED_DIRECT_BINDING_COORDINATES = frozenset(
         "book_clause_identity",
         "exact_act_identity",
         "subject_reference",
-        "result_boundary_identity",
     }
+)
+
+_DIRECT_BINDING_COORDINATES_WITH_RESULT_BOUNDARY = (
+    _REQUIRED_DIRECT_BINDING_COORDINATES | {"result_boundary_identity"}
 )
 
 
@@ -512,7 +515,11 @@ def _subject_to_act_binding_of_exact_result(
         )
     direct_shape = (
         type(reference) is dict
-        and set(reference) == _REQUIRED_DIRECT_BINDING_COORDINATES
+        and frozenset(reference)
+        in {
+            _REQUIRED_DIRECT_BINDING_COORDINATES,
+            _DIRECT_BINDING_COORDINATES_WITH_RESULT_BOUNDARY,
+        }
         and all(
             type(reference.get(coordinate)) is str
             and reference[coordinate]
@@ -537,7 +544,6 @@ def _subject_to_act_binding_of_exact_result(
         )
     for coordinate in _REQUIRED_DIRECT_BINDING_COORDINATES - {
         "recorded_occurrence_identity",
-        "result_boundary_identity",
     }:
         if binding_event.material.get(coordinate) != reference[coordinate]:
             raise ValueError(
@@ -554,12 +560,14 @@ def _subject_to_act_binding_of_exact_result(
         and type(value) is str
         and value
     }
-    if reference["result_boundary_identity"] not in declared_result_boundaries:
+    result_identity = event.material.get("result_identity")
+    if result_identity not in declared_result_boundaries:
         raise ValueError(
             "recorded subject-to-Act binding disagrees with its occurrence"
         )
-    if reference["result_boundary_identity"] != event.material.get(
-        "result_identity"
+    if (
+        "result_boundary_identity" in reference
+        and reference["result_boundary_identity"] != result_identity
     ):
         raise ValueError(
             "recorded subject-to-Act binding names another result boundary"
