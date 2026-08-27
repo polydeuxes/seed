@@ -170,12 +170,6 @@ def _result_material(act: Event) -> dict[str, Any]:
             material["through_occurrence_boundary_reference"]
         ),
         "destination_locality_identity": act.locality_identity,
-        "locality_relation": {
-            "first_subject": deepcopy(
-                material["through_occurrence_boundary_reference"]
-            ),
-            "second_subject": act.locality_identity,
-        },
     }
 
 
@@ -198,7 +192,6 @@ def _recorded_result_material(
         "destination_locality_identity": result_material[
             "destination_locality_identity"
         ],
-        "locality_relation": deepcopy(result_material["locality_relation"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
     }

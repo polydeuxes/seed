@@ -143,10 +143,8 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "recorded_occurrence_identity": reference_result.identity,
         "result_identity": reference_result.material["result_identity"],
     }
-    assert recorded["locality_relation"] == {
-        "first_subject": recorded["through_occurrence_boundary_reference"],
-        "second_subject": destination,
-    }
+    assert recorded["destination_locality_identity"] == destination
+    assert "locality_relation" not in recorded
     assert len(
         {
             binding.identity,
@@ -280,7 +278,6 @@ def test_one_relation_act_cannot_yield_twice():
     (
         "through_occurrence_boundary_reference",
         "destination_locality_identity",
-        "locality_relation",
         "subject_to_act_binding_reference",
         "yield_relation_identity",
     ),
