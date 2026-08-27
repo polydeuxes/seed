@@ -54,9 +54,16 @@ class InterveningActEventLedger(EventLedger):
 
 
 def _advance(ledger, current_coordinates, *events):
+    interval = ledger.locality_occurrence_interval(
+        locality_identity=current_coordinates["locality_identity"],
+        after_occurrence_identity=current_coordinates[
+            "through_event_occurrence_identity"
+        ],
+        through_occurrence_identity=events[-1].identity,
+    )
     return advance_operator_current_coordinates(
         ledger,
-        (event.identity for event in events),
+        (event.identity for event in interval),
         locality_identity=current_coordinates["locality_identity"],
         prior=current_coordinates,
     )
@@ -223,7 +230,6 @@ def test_interior_address_carries_every_and_only_ordered_assertion_reference():
         "addressed_source_byte_position_coordinate_reference",
         "completeness_boundary",
         "ordered_assertion_references",
-        "unknown",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     }
@@ -353,7 +359,7 @@ def test_each_recorded_occurrence_refuses_its_corruption(
     ledger = EventLedger()
     recorded = _record(ledger)
     event = recorded[occurrence_coordinate]
-    event.material["unknown"] = ["changed coordinate"]
+    event.material["result_boundary_identity"] = "changed coordinate"
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
         reader(ledger, event.identity)
 
@@ -580,7 +586,9 @@ def test_carried_lifecycle_requires_intact_source_material_and_preserves_supplie
     source_material = deepcopy(direct_result.material)
 
     def replace_source_material_after_reading():
-        direct_result.material["unknown"] = ["later material after determination_binding"]
+        direct_result.material["result_identity"] = (
+            "later material after determination binding"
+        )
 
     ledger.act_during_kind_read = replace_source_material_after_reading
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
@@ -655,7 +663,7 @@ def test_act_requires_intact_retained_binding_during_duplicate_iterator():
     current_coordinates = _advance(ledger, current_coordinates, determination_binding)
     prior = deepcopy(current_coordinates)
     ledger.act_during_kind_read = lambda: determination_binding.material.__setitem__(
-        "unknown", ["changed coordinate"]
+        "result_boundary_identity", "changed coordinate"
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):
@@ -732,7 +740,7 @@ def test_determination_act_requires_intact_applicability_during_iterator():
     recorded = _through_applicability(ledger, b"abcdef", 3)
     prior = deepcopy(recorded["current_coordinates"])
     ledger.act_during_kind_read = lambda: recorded["applicability"].material.__setitem__(
-        "unknown", ["changed coordinate"]
+        "result_identity", "changed coordinate"
     )
 
     with pytest.raises(AddressedByteOccurrenceReferenceDeterminationError):

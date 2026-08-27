@@ -69,7 +69,6 @@ APPLICABILITY_BOUNDARY = (
     "addressed_byte_occurrence_reference_determination_applicability"
 )
 DETERMINATION_BOUNDARY = "addressed_byte_occurrence_reference_determination"
-UNKNOWN = []
 
 EVENT_KIND_BOOK_CLAUSES = {
     DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D.2",
@@ -345,7 +344,6 @@ def _determination_binding_material(
             coordinate_reference
         ),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": list(UNKNOWN),
     }
 
 
@@ -388,7 +386,6 @@ def _applicability_binding_material(
             coordinate_reference
         ),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": list(UNKNOWN),
     }
 
 
@@ -693,7 +690,6 @@ def _applicability_act_material(
             ]
         ),
         "addressed_act_identity": binding.material["addressed_act_identity"],
-        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -958,7 +954,6 @@ def _applicability_result_material(
             determination_binding=determination_binding,
             source_result=source_result,
         ),
-        "unknown": list(applicability_binding.material["unknown"]),
     }
 
 
@@ -1097,7 +1092,6 @@ def _recorded_applicability_result_material(
             material["addressed_source_byte_position_coordinate_reference"]
         ),
         "applicability_finding": deepcopy(material["applicability_finding"]),
-        "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,
     }
@@ -1411,7 +1405,6 @@ def _determination_act_material(
             ]
         ),
         "result_identity": binding.material["determination_result_identity"],
-        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -1633,7 +1626,6 @@ def _determination_result_material(
         "ordered_assertion_references": [
             reference.assertion_reference for reference in references
         ],
-        "unknown": list(binding.material["unknown"]),
     }
 
 
@@ -1663,7 +1655,6 @@ def _recorded_determination_result_material(
         "ordered_assertion_references": deepcopy(
             material["ordered_assertion_references"]
         ),
-        "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act.identity,
         "yield_relation_identity": yield_relation.identity,
     }
