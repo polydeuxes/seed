@@ -192,6 +192,18 @@ from seed_runtime.measurement_of_compare_distinctions import (
     _read_act as _read_compare_distinction_measurement_act,
     get_recorded_compare_distinction_measurement,
 )
+from seed_runtime.comparison_of_compare_distinction_measurements import (
+    COMPARE_BINDING_KIND as COMPARE_DISTINCTION_RESULTS_BINDING_KIND,
+    APPLICABILITY_BINDING_KIND as COMPARE_DISTINCTION_RESULTS_APPLICABILITY_BINDING_KIND,
+    APPLICABILITY_ACT_OCCURRENCE_KIND as COMPARE_DISTINCTION_RESULTS_APPLICABILITY_ACT_KIND,
+    APPLICABILITY_RESULT_KIND as COMPARE_DISTINCTION_RESULTS_APPLICABILITY_RESULT_KIND,
+    COMPARE_ACT_OCCURRENCE_KIND as COMPARE_DISTINCTION_RESULTS_COMPARE_ACT_KIND,
+    COMPARE_RESULT_KIND as COMPARE_DISTINCTION_RESULTS_COMPARE_RESULT_KIND,
+    _read_compare_binding as _read_compare_distinction_results_binding,
+    _read_applicability_binding as _read_compare_distinction_results_applicability_binding,
+    _read_applicability_act as _read_compare_distinction_results_applicability_act,
+    _read_applicability_result as _read_compare_distinction_results_applicability_result,
+)
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_BINDING_EVENT,
@@ -327,6 +339,14 @@ _COMPARE_DISTINCTION_MEASUREMENT_KINDS = {
     COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
 }
+_COMPARE_DISTINCTION_RESULTS_KINDS = {
+    COMPARE_DISTINCTION_RESULTS_BINDING_KIND,
+    COMPARE_DISTINCTION_RESULTS_APPLICABILITY_BINDING_KIND,
+    COMPARE_DISTINCTION_RESULTS_APPLICABILITY_ACT_KIND,
+    COMPARE_DISTINCTION_RESULTS_APPLICABILITY_RESULT_KIND,
+    COMPARE_DISTINCTION_RESULTS_COMPARE_ACT_KIND,
+    COMPARE_DISTINCTION_RESULTS_COMPARE_RESULT_KIND,
+}
 _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS = {
     ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
     ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_BINDING_EVENT,
@@ -372,6 +392,7 @@ _SUPPORTED_KINDS = {
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     *_COMPARE_DISTINCTION_MEASUREMENT_KINDS,
+    *_COMPARE_DISTINCTION_RESULTS_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
 }
@@ -954,6 +975,7 @@ def advance_operator_current_coordinates(
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
             or event.kind in _COMPARE_DISTINCTION_MEASUREMENT_KINDS
+            or event.kind in _COMPARE_DISTINCTION_RESULTS_KINDS
             or event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS
             or event.kind in _SOURCE_POSITION_RECURRENCE_KINDS
         ):
@@ -1448,6 +1470,37 @@ def advance_operator_current_coordinates(
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_BINDING_KIND:
+            _read_compare_distinction_results_binding(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_APPLICABILITY_BINDING_KIND:
+            _read_compare_distinction_results_applicability_binding(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_APPLICABILITY_ACT_KIND:
+            _read_compare_distinction_results_applicability_act(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_APPLICABILITY_RESULT_KIND:
+            _read_compare_distinction_results_applicability_result(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            applicability_result_occurrences[event.identity] = None
             continue
         if event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS:
             validate_ordered_path_source_position_material_comparison_event(
