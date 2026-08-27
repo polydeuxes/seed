@@ -1742,7 +1742,6 @@ def _path_assertion(
         },
         "result": "ordered_relation_path",
         "assertion_subject": subject,
-        "conflicts": "Unknown",
     }
 
 

@@ -434,7 +434,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         "dimensions",
         "result",
         "assertion_subject",
-        "conflicts",
     }
     assert assertion["result"] == "ordered_relation_path"
     content = assertion["dimensions"]["content"]
