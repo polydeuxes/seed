@@ -1126,22 +1126,6 @@ def _require_binding_current_coordinates(
         )
 
 
-def _applicability_of_input_to_compare(binding: Event) -> list[dict[str, Any]]:
-    material = binding.material
-    return [
-        {
-            "input_reference": deepcopy(material["earlier_measurement_reference"]),
-            "addressed_act_identity": material["addressed_act_identity"],
-            "applicability": "applicable",
-        },
-        {
-            "input_reference": deepcopy(material["later_measurement_reference"]),
-            "addressed_act_identity": material["addressed_act_identity"],
-            "applicability": "applicable",
-        },
-    ]
-
-
 def _applicability_act_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
@@ -1154,9 +1138,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         "subject_to_act_binding_reference": _binding_reference(
             binding,
             result_boundary_identity=material["applicability_result_identity"],
-        ),
-        "applicability_of_input_to_compare": (
-            _applicability_of_input_to_compare(binding)
         ),
     }
 
@@ -1252,9 +1233,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
         "subject_to_act_binding_reference": deepcopy(
             act.material["subject_to_act_binding_reference"]
         ),
-        "applicability_of_input_to_compare": deepcopy(
-            act.material["applicability_of_input_to_compare"]
-        ),
         "applicability": "applicable",
     }
 
@@ -1269,9 +1247,6 @@ def _recorded_applicability_result_material(
         "exact_act": material["exact_act"],
         "subject_to_act_binding_reference": deepcopy(
             material["subject_to_act_binding_reference"]
-        ),
-        "applicability_of_input_to_compare": deepcopy(
-            material["applicability_of_input_to_compare"]
         ),
         "applicability": material["applicability"],
         "act_occurrence_event_identity": act_identity,
@@ -1421,9 +1396,6 @@ def _comparison_act_material(binding: Event, applicability: Event) -> dict[str, 
             result_boundary_identity=material["comparison_result_identity"],
         ),
         "applicability_result_event_identity": applicability.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            applicability.material["applicability_of_input_to_compare"]
-        ),
     }
 
 
@@ -1630,9 +1602,6 @@ def _comparison_result_material(
         "applicability_result_event_identity": act.material[
             "applicability_result_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            act.material["applicability_of_input_to_compare"]
-        ),
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
@@ -1653,9 +1622,6 @@ def _recorded_comparison_result_material(
         "applicability_result_event_identity": material[
             "applicability_result_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            material["applicability_of_input_to_compare"]
-        ),
         "findings": deepcopy(material["findings"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
