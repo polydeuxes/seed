@@ -160,12 +160,12 @@ earlier/later input role prose             subtracted
 exact structural positions                preserved
 operator/Witness source distinction        established
 independent source_role coordinate         not established
-source_role-dependent runtime branches     still live
+source_role-dependent runtime branches     removed
 ```
 
-## Next falsifiable frontier
+## Runtime subtraction result
 
-Proceed one source consumer at a time:
+The source consumers now follow the exact result occurrence:
 
 ```text
 exact source result occurrence identity
@@ -173,12 +173,13 @@ exact source result occurrence identity
 → discriminate operator or Witness source occurrence kind
 ```
 
-First remove copied `source_role` from current-coordinate projections and
-downstream reads where the exact source result occurrence is already present.
-Then remove `source_role` from operator and Witness binding, Act, and result
-material only after every consumer follows the exact source occurrence.
+The current-coordinate projection and downstream Measurement reads no longer
+copy `source_role`. Recorded-pair Compare, operator invocation Locality, and
+supplied Witness-material validation discriminate the exact admitted source
+occurrence kinds directly. Operator and Witness bindings, Acts, and results no
+longer record `source_role`.
 
-Preserve the distinct operator and Witness source Acts, bindings, occurrences,
+The distinct operator and Witness source Acts, bindings, occurrences,
 boundaries, Localities, exact material, loss, Unknown, and source-occurrence
-references. Do not merge the two source roads and do not introduce Role,
-Position, source classification, or another bucket.
+references remain. No Role, Position, source classification, or replacement
+bucket was introduced.

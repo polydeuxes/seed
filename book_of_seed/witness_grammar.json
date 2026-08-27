@@ -66,7 +66,6 @@
       "Yield": "02.Acts.A.Yield",
       "result": "exact_material_result",
       "carried_coordinates": [
-        "source_role",
         "source_boundary",
         "source_occurrence_references",
         "Locality",

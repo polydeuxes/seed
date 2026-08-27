@@ -126,7 +126,6 @@ requires
 result
 results
 returns
-role
 roles
 same
 second

@@ -2,8 +2,8 @@
 
 ### 01.Source.A — Source preservation
 
-One exact Act occurrence preserves the supplied material, source role,
-source occurrence, exact source occurrence references, Locality, known loss, conflicts, and
+One exact Act occurrence preserves the supplied material, source occurrence,
+exact source occurrence references, Locality, known loss, conflicts, and
 Unknown carried at its boundary.
 
 ### 01.Source.C — Fidelity
@@ -48,7 +48,7 @@ One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
 Yield relation carries the Act occurrence as
 first subject and one exact material result as second subject. The result
-preserves its source role, source boundary, source occurrence references, Locality,
+preserves its source boundary, source occurrence references, Locality,
 known loss, and Unknown.
 
 ### 01.Source.I — Separate source coordinates
