@@ -234,7 +234,6 @@ def test_one_recording_act_cannot_yield_twice():
         "exact_act_identity",
         "act_occurrence_identity",
         "result_identity",
-        "unknown",
     ),
 )
 def test_changed_binding_coordinates_are_refused(coordinate):
