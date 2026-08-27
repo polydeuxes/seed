@@ -73,7 +73,7 @@ def _resolve_one_carried_reference(
     )
     if type(direct_references) is not dict or type(relations) is not dict:
         raise RecordedBoundaryLocalityError(
-            "recorded boundary Locality requires exact carried identities"
+            "recorded boundary Locality requires exact current-coordinate identities"
         )
     carried_occurrences = [
         *(identity for identity, value in direct_references.items() if value is None),
@@ -85,13 +85,13 @@ def _resolve_one_carried_reference(
         )
     if len(carried_occurrences) != 1:
         raise RecordedBoundaryLocalityError(
-            "recorded boundary Locality requires exactly one carried reference"
+            "recorded boundary Locality requires exactly one current boundary reference"
         )
     event_identity = carried_occurrences[0]
     event = ledger.get(event_identity)
     if event is None or event.locality_identity != source_locality:
         raise RecordedBoundaryLocalityError(
-            "recorded boundary Locality names a different carried occurrence"
+            "recorded boundary Locality names a different current occurrence"
         )
     if event_identity in direct_references:
         return _through_occurrence_reference(ledger, event_identity)
@@ -190,7 +190,7 @@ def record_recorded_boundary_locality_subject_to_act_binding(
     *,
     source_current_coordinates: dict[str, Any],
 ) -> Event:
-    """Bind one direct Locality relation from one carried recorded result."""
+    """Bind one direct Locality relation from one recorded result."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("recorded boundary Locality requires one EventLedger")
@@ -284,17 +284,17 @@ def record_recorded_boundary_locality_act_occurrence(
         raise RecordedBoundaryLocalityError(
             "recorded boundary relation Act requires current coordinates"
         )
-    carried = current_coordinates.get(
+    bindings = current_coordinates.get(
         "subject_to_act_binding_occurrences"
     )
     if (
         current_coordinates.get("locality_identity")
         != binding.locality_identity
-        or type(carried) is not dict
-        or carried.get(binding.identity, object()) is not None
+        or type(bindings) is not dict
+        or bindings.get(binding.identity, object()) is not None
     ):
         raise RecordedBoundaryLocalityError(
-            "recorded boundary relation Act requires its carried binding"
+            "recorded boundary relation Act requires its exact current binding"
         )
     return ledger.append(
         RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT,
@@ -320,7 +320,7 @@ def get_recorded_boundary_locality_act_occurrence(
     reference = event.material.get("subject_to_act_binding_reference")
     if type(reference) is not dict:
         raise RecordedBoundaryLocalityError(
-            "recorded boundary relation Act carries no binding"
+            "recorded boundary relation Act occurrence requires one binding reference"
         )
     binding = get_recorded_boundary_locality_subject_to_act_binding(
         ledger, reference.get("recorded_occurrence_identity")

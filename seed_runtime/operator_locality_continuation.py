@@ -1,8 +1,8 @@
-"""Carry one exact source through-occurrence boundary to another Locality.
+"""One exact source through-occurrence boundary at another Locality.
 
 This boundary establishes one direct Locality relation and bounded
 availability only.  It does not copy the source Locality's occurrences or
-current coordinates, make any carried subject applicable to another Act,
+current coordinates, make any addressed subject applicable to another Act,
 establish priority, or follow another continuation transitively.
 """
 
@@ -226,7 +226,7 @@ def record_locality_continuation_act_occurrence(
     subject_to_act_binding_event_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record one Act from one exact carried subject-to-Act binding."""
+    """Record one Act from one exact current subject-to-Act binding."""
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("Locality continuation requires one EventLedger")
@@ -247,7 +247,7 @@ def record_locality_continuation_act_occurrence(
         or binding_occurrences[binding.identity] is not None
     ):
         raise LocalityContinuationError(
-            "Locality continuation Act requires its exact carried binding"
+            "Locality continuation Act requires its exact current binding"
         )
     current_boundary = current_coordinates.get(
         "through_event_occurrence_identity"
@@ -315,7 +315,7 @@ def _validated_act_occurrence(
     source_reference = material.get("source_coordinate_reference")
     if type(source_reference) is not dict:
         raise LocalityContinuationError(
-            "Locality continuation Act occurrence carries no exact source boundary"
+            "Locality continuation Act occurrence requires one exact source boundary"
         )
     expected_reference = _source_coordinate_reference(
         ledger,
@@ -326,14 +326,14 @@ def _validated_act_occurrence(
     )
     if source_reference != expected_reference:
         raise LocalityContinuationError(
-            "Locality continuation Act occurrence carries another source boundary"
+            "Locality continuation Act occurrence names another source boundary"
         )
     continuation_act_identity = material.get("continuation_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
     binding_reference = material.get("subject_to_act_binding_reference")
     if type(binding_reference) is not dict:
         raise LocalityContinuationError(
-            "Locality continuation Act occurrence carries no exact subject-to-Act binding"
+            "Locality continuation Act occurrence requires one exact binding reference"
         )
     binding = get_locality_continuation_subject_to_act_binding(
         ledger, binding_reference.get("recorded_occurrence_identity")
@@ -514,7 +514,7 @@ def get_locality_continuation_subject_to_act_binding(
     source_reference = material.get("subject_reference")
     if type(source_reference) is not dict:
         raise LocalityContinuationError(
-            "the binding carries no exact source boundary"
+            "the binding requires one exact source boundary"
         )
     expected_reference = _source_coordinate_reference(
         ledger,

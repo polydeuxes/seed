@@ -245,7 +245,7 @@ def test_act_refuses_a_binding_absent_from_current_coordinates():
     )
 
     with pytest.raises(
-        LocalityContinuationError, match="exact carried binding"
+        LocalityContinuationError, match="exact current binding"
     ):
         record_locality_continuation_act_occurrence(
             ledger,

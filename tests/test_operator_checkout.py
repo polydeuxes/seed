@@ -210,7 +210,8 @@ def test_zero_and_two_carried_references_both_refuse_selection():
     ledger = EventLedger()
     empty = read_operator_current_coordinates(ledger, locality_identity="source")
     with pytest.raises(
-        RecordedBoundaryLocalityError, match="exactly one carried reference"
+        RecordedBoundaryLocalityError,
+        match="exactly one current boundary reference",
     ):
         _binding(ledger, empty)
 
@@ -223,7 +224,8 @@ def test_zero_and_two_carried_references_both_refuse_selection():
         ledger, locality_identity="source"
     )
     with pytest.raises(
-        RecordedBoundaryLocalityError, match="exactly one carried reference"
+        RecordedBoundaryLocalityError,
+        match="exactly one current boundary reference",
     ):
         _binding(ledger, ambiguous)
 
