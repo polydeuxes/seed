@@ -458,7 +458,10 @@ def _read_compare_binding(
 
 
 def _read_applicability_binding(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -476,6 +479,7 @@ def _read_applicability_binding(
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
+        current_coordinates=current_coordinates,
     )
     identities = {
         name: material.get(name) for name in _APPLICABILITY_IDENTITY_COORDINATES
@@ -504,6 +508,8 @@ def _read_applicability_binding(
 def _read_applicability_act(
     ledger: EventLedger,
     event_identity: Any,
+    *,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -518,6 +524,7 @@ def _read_applicability_act(
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
+        current_coordinates=current_coordinates,
     )
     if (
         event.locality_identity != binding.locality_identity
@@ -693,6 +700,7 @@ def _read_applicability_result(
     event_identity: Any,
     *,
     act_reading: tuple[Event, Event, Event, dict[str, Any]] | None = None,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     if act_reading is None:
@@ -701,6 +709,7 @@ def _read_applicability_result(
             candidate.material.get("act_occurrence_event_identity")
             if candidate is not None
             else None,
+            current_coordinates=current_coordinates,
         )
     act, binding, compare_binding, inputs = act_reading
     event = _read_yielded(
@@ -739,7 +748,10 @@ def _compare_act_material(
 
 
 def _read_compare_act(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -753,6 +765,7 @@ def _read_compare_act(
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
+        current_coordinates=current_coordinates,
     )
     (
         applicability,
@@ -763,6 +776,7 @@ def _read_compare_act(
     ) = _read_applicability_result(
         ledger,
         event.material.get("applicability_result_event_identity"),
+        current_coordinates=current_coordinates,
     )
     if (
         applicability_compare_binding.identity != compare_binding.identity
@@ -824,7 +838,10 @@ def _compare_result_material(
 
 
 def _read_compare_result(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act, compare_binding, applicability, inputs = _read_compare_act(
@@ -832,6 +849,7 @@ def _read_compare_result(
         candidate.material.get("act_occurrence_event_identity")
         if candidate is not None
         else None,
+        current_coordinates=current_coordinates,
     )
     event = _read_yielded(
         ledger,
@@ -853,23 +871,38 @@ def get_recorded_ordered_path_source_position_material_comparison(
 
 
 def validate_ordered_path_source_position_material_comparison_event(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    current_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     event = ledger.get(event_identity)
     if event is None:
         raise ValueError("source position Compare occurrence is not exact")
     if event.kind == COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT:
-        return _read_compare_binding(ledger, event.identity)[0]
+        return _read_compare_binding(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     if event.kind == APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT:
-        return _read_applicability_binding(ledger, event.identity)[0]
+        return _read_applicability_binding(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     if event.kind == APPLICABILITY_ACT_KIND:
-        return _read_applicability_act(ledger, event.identity)[0]
+        return _read_applicability_act(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     if event.kind == APPLICABILITY_RESULT_KIND:
-        return _read_applicability_result(ledger, event.identity)[0]
+        return _read_applicability_result(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     if event.kind == COMPARE_ACT_KIND:
-        return _read_compare_act(ledger, event.identity)[0]
+        return _read_compare_act(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     if event.kind == COMPARE_RESULT_KIND:
-        return _read_compare_result(ledger, event.identity)[0]
+        return _read_compare_result(
+            ledger, event.identity, current_coordinates=current_coordinates
+        )[0]
     raise ValueError("source position Compare occurrence is not exact")
 
 

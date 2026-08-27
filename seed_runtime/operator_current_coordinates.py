@@ -1467,7 +1467,9 @@ def advance_operator_current_coordinates(
             continue
         if event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS:
             validate_ordered_path_source_position_material_comparison_event(
-                ledger, event.identity
+                ledger,
+                event.identity,
+                current_coordinates=pair_prior_coordinates,
             )
             if event.kind in {
                 ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
