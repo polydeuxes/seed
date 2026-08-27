@@ -108,7 +108,7 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     assert complete["sql"] == {"SELECT 1": 1, "SELECT 2": 1, "SELECT 3": 1}
 
 
-def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
+def test_one_pytest_occurrence_keeps_its_exact_book_coordinate():
     def exact_function():
         pass
 
@@ -116,7 +116,7 @@ def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
         nodeid="tests/exact.py::test_one_occurrence",
         stash={},
         module=SimpleNamespace(
-            FIDELITY_DISTINCTIONS={
+            WITNESSED_BOOK_COORDINATES={
                 ("book_coordinates", "01.Source.C"): (exact_function,)
             }
         ),
@@ -139,7 +139,7 @@ def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
     occurrence = result["pytest"][0]
     assert occurrence["occurrence_position"] == 0
     assert occurrence["pytest_identity"] == item.nodeid
-    assert occurrence["fidelity_distinction_reference"] == [
+    assert occurrence["book_coordinate_reference"] == [
         "book_coordinates",
         "01.Source.C",
     ]
@@ -176,7 +176,7 @@ def test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction():
     assert all(unit < 128 for unit in measured._json_material(observation))
 
 
-def test_pytest_distinction_refuses_duplicate_or_invalid_references():
+def test_book_coordinate_reference_refuses_duplicate_or_invalid_references():
     def first():
         pass
 
@@ -186,36 +186,36 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
     grammar = measured._witness_grammar()
     ordinary = SimpleNamespace()
     exact = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): (first,)
         }
     )
     repeated = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): (first,),
             ("book_coordinates", "02.Acts.A"): (first, second),
         }
     )
     missing = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "missing"): (first,)
         }
     )
     scalar = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={"01.Source.C": (first,)},
+        WITNESSED_BOOK_COORDINATES={"01.Source.C": (first,)},
     )
-    list_distinctions = SimpleNamespace(
-        FIDELITY_DISTINCTIONS=[
+    coordinate_list = SimpleNamespace(
+        WITNESSED_BOOK_COORDINATES=[
             (("book_coordinates", "01.Source.C"), (first,))
         ]
     )
     functions_list = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): [first]
         }
     )
-    nonfunction_distinction = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+    nonfunction_coordinate = SimpleNamespace(
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): ("first",)
         }
     )
@@ -223,12 +223,12 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         WITNESS_MATERIAL_TESTS=(second,)
     )
     unreferenced = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): (first,)
         }
     )
     crossed = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
+        WITNESSED_BOOK_COORDINATES={
             ("book_coordinates", "01.Source.C"): (first,)
         },
         WITNESS_MATERIAL_TESTS=(first,),
@@ -244,30 +244,30 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         measured._NO_PYTEST_UPTAKE
     )
     assert measured._pytest_uptake(exact, first, grammar) == {
-        "fidelity_distinction_reference": [
+        "book_coordinate_reference": [
             "book_coordinates",
             "01.Source.C",
         ]
     }
-    with pytest.raises(ValueError, match="entered Fidelity distinctions twice"):
+    with pytest.raises(ValueError, match="entered Book coordinates twice"):
         measured._pytest_uptake(repeated, first, grammar)
     with pytest.raises(ValueError, match="absent from current book coordinates"):
         measured._pytest_uptake(missing, first, grammar)
-    with pytest.raises(TypeError, match="exact Fidelity distinction reference"):
+    with pytest.raises(TypeError, match="exact Book coordinate reference"):
         measured._pytest_uptake(scalar, first, grammar)
-    with pytest.raises(TypeError, match="exact Fidelity distinctions"):
-        measured._pytest_uptake(list_distinctions, first, grammar)
-    with pytest.raises(TypeError, match="exact Fidelity distinctions"):
+    with pytest.raises(TypeError, match="exact witnessed Book coordinates"):
+        measured._pytest_uptake(coordinate_list, first, grammar)
+    with pytest.raises(TypeError, match="exact witnessed Book coordinates"):
         measured._pytest_uptake(functions_list, first, grammar)
-    with pytest.raises(TypeError, match="exact Fidelity distinction functions"):
-        measured._pytest_uptake(nonfunction_distinction, first, grammar)
+    with pytest.raises(TypeError, match="exact Book coordinate test functions"):
+        measured._pytest_uptake(nonfunction_coordinate, first, grammar)
     assert measured._pytest_uptake(
         explicit_witness_material, second, grammar
     ) is measured._WITNESS_MATERIAL_UPTAKE
     assert measured._pytest_uptake(unreferenced, second, grammar) is (
         measured._NO_PYTEST_UPTAKE
     )
-    with pytest.raises(ValueError, match="crossed Fidelity and Witness Material"):
+    with pytest.raises(ValueError, match="entered a Book coordinate and Witness Material"):
         measured._pytest_uptake(crossed, first, grammar)
     with pytest.raises(ValueError, match="Witness Material tests twice"):
         measured._pytest_uptake(repeated_witness_material, second, grammar)
@@ -275,14 +275,14 @@ def test_pytest_distinction_refuses_duplicate_or_invalid_references():
         measured._pytest_uptake(malformed_witness_material, second, grammar)
 
 
-def test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence():
+def test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence():
     def item(reference):
         function = (
-            test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence
+            test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence
         )
         return SimpleNamespace(
             module=SimpleNamespace(
-                FIDELITY_DISTINCTIONS={reference: (function,)},
+                WITNESSED_BOOK_COORDINATES={reference: (function,)},
             ),
             function=function,
             stash={},
@@ -307,7 +307,7 @@ def test_pytest_uptake_function_must_be_collected():
         ),
         module=SimpleNamespace(
             __name__="tests.test_compiled_witness_measurement",
-            FIDELITY_DISTINCTIONS={
+            WITNESSED_BOOK_COORDINATES={
                 ("book_coordinates", "01.Source.C"): (another_function,)
             },
         ),
@@ -335,7 +335,7 @@ def test_ordinary_pytest_test_has_no_seed_uptake():
 
     measured.begin()
     try:
-        fidelity_occurrence_count = len(measured._pytest_occurrences)
+        book_coordinate_occurrence_count = len(measured._pytest_occurrences)
         material_occurrence_count = len(measured._witness_material_occurrences)
         protocol = measured.pytest_runtest_protocol(item, None)
         next(protocol)
@@ -345,18 +345,18 @@ def test_ordinary_pytest_test_has_no_seed_uptake():
     finally:
         measured.finish()
 
-    assert len(measured._pytest_occurrences) == fidelity_occurrence_count
+    assert len(measured._pytest_occurrences) == book_coordinate_occurrence_count
     assert len(measured._witness_material_occurrences) == material_occurrence_count
 
 
-def test_witness_material_occurrence_has_no_fidelity_uptake():
-    function = test_witness_material_occurrence_has_no_fidelity_uptake
-    fidelity_function = (
-        test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence
+def test_witness_material_occurrence_has_no_book_coordinate():
+    function = test_witness_material_occurrence_has_no_book_coordinate
+    book_coordinate_function = (
+        test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence
     )
     module = SimpleNamespace(
-        FIDELITY_DISTINCTIONS={
-            ("book_coordinates", "01.Source.C"): (fidelity_function,),
+        WITNESSED_BOOK_COORDINATES={
+            ("book_coordinates", "01.Source.C"): (book_coordinate_function,),
         },
         WITNESS_MATERIAL_TESTS=(function,),
     )
@@ -366,20 +366,20 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
         function=function,
         stash={},
     )
-    fidelity_item = SimpleNamespace(
-        nodeid="tests/material.py::test_one_fidelity_occurrence",
+    book_coordinate_item = SimpleNamespace(
+        nodeid="tests/material.py::test_one_book_coordinate_occurrence",
         module=module,
-        function=fidelity_function,
+        function=book_coordinate_function,
         stash={},
     )
-    measured.pytest_collection_modifyitems(None, None, [item, fidelity_item])
+    measured.pytest_collection_modifyitems(None, None, [item, book_coordinate_item])
     assert item.stash[measured._PYTEST_UPTAKE] is (
         measured._WITNESS_MATERIAL_UPTAKE
     )
 
     measured.begin()
     try:
-        fidelity_occurrence_count = len(measured._pytest_occurrences)
+        book_coordinate_occurrence_count = len(measured._pytest_occurrences)
         material_occurrence_count = len(measured._witness_material_occurrences)
         protocol = measured.pytest_runtest_protocol(item, None)
         next(protocol)
@@ -389,14 +389,14 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
     finally:
         result = measured.finish()
 
-    assert len(measured._pytest_occurrences) == fidelity_occurrence_count
+    assert len(measured._pytest_occurrences) == book_coordinate_occurrence_count
     assert len(measured._witness_material_occurrences) == (
         material_occurrence_count + 1
     )
     occurrence = result["witness_material"][-1]
     assert occurrence["pytest_identity"] == item.nodeid
     assert not {
-        "fidelity_distinction_reference",
+        "book_coordinate_reference",
         "test_subject",
         "witness_for",
         "distinct_from",
@@ -412,7 +412,7 @@ def test_witness_material_occurrence_has_no_fidelity_uptake():
     output_occurrence = observation["witness_material"][-1]
     assert output_occurrence["pytest_identity"] == item.nodeid
     assert not {
-        "fidelity_distinction_reference",
+        "book_coordinate_reference",
         "test_subject",
         "witness_for",
         "distinct_from",
@@ -526,44 +526,44 @@ def test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts()
     assert result["sql_statement_invocations"] == (0, 0, 0, 0, 0)
 
 
-def test_fidelity_distinctions_resolve_current_book_coordinates():
+def test_witnessed_book_coordinates_resolve_current_book_coordinates():
     grammar = measured._witness_grammar()
-    assert measured._fidelity_distinction_coordinates(
+    assert measured._book_coordinate_reference(
         grammar,
         ("book_coordinates", "01.Source.C", "subjects", 2),
     ) == {
-        "fidelity_distinction_reference": [
+        "book_coordinate_reference": [
             "book_coordinates",
             "01.Source.C",
             "subjects",
             2,
         ],
     }
-    for reference, functions in FIDELITY_DISTINCTIONS.items():
-        assert measured._fidelity_distinction_coordinates(grammar, reference) == {
-            "fidelity_distinction_reference": list(reference)
+    for reference, functions in WITNESSED_BOOK_COORDINATES.items():
+        assert measured._book_coordinate_reference(grammar, reference) == {
+            "book_coordinate_reference": list(reference)
         }
         assert all(callable(function) for function in functions)
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.C"): (
         test_compiled_code_supplies_exact_identities,
         test_observed_measurement_preserves_observation_order_without_sorting,
         test_python_invocation_occurrence_is_measured,
         test_uninvoked_compiled_identity_remains_unobserved,
         test_one_measurement_does_not_replace_an_active_measurement,
-        test_one_pytest_occurrence_keeps_its_exact_fidelity_distinction,
-        test_pytest_distinction_refuses_duplicate_or_invalid_references,
-        test_pytest_distinction_collection_refuses_a_stale_reference_before_occurrence,
+        test_one_pytest_occurrence_keeps_its_exact_book_coordinate,
+        test_book_coordinate_reference_refuses_duplicate_or_invalid_references,
+        test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence,
         test_pytest_uptake_function_must_be_collected,
         test_ordinary_pytest_test_has_no_seed_uptake,
-        test_witness_material_occurrence_has_no_fidelity_uptake,
+        test_witness_material_occurrence_has_no_book_coordinate,
         test_stable_catalog_is_separate_from_sparse_observation,
         test_reference_pair_measurement_contains_each_preserved_function,
         test_sql_occurrence_preserves_exact_statement_material,
         test_existing_sql_trace_receiver_receives_the_exact_statement,
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
-        test_fidelity_distinctions_resolve_current_book_coordinates,
+        test_witnessed_book_coordinates_resolve_current_book_coordinates,
     )
 }

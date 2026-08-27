@@ -3952,7 +3952,7 @@ def test_bounded_invocation_requires_input_boundary_acceptance():
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_measured_book_pairs_reach_one_compiled_material_function,
         test_compiled_material_function_exposes_one_byte_return_code_boundaries,

@@ -476,7 +476,7 @@ def test_pair_and_compare_carriers_require_exact_types(exact_pair):
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_recurrence_not_adjacency_alone_warrants_one_pair_subject,
         test_source_order_does_not_select_which_pair_identities_exist,

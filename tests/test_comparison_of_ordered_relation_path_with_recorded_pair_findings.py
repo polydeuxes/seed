@@ -1210,7 +1210,7 @@ def test_advanced_current_coordinates_equal_replay_for_comparison_of_ordered_rel
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_another_source_occurrence_is_inapplicable_and_cannot_participate,
     ),

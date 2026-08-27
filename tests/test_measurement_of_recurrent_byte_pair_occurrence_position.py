@@ -849,7 +849,7 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,

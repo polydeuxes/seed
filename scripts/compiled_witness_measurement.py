@@ -596,7 +596,7 @@ def _witness_grammar() -> dict[str, object]:
     )
 
 
-def _fidelity_distinction_coordinates(
+def _book_coordinate_reference(
     grammar: dict[str, object], reference: object
 ) -> dict[str, object]:
     if (
@@ -605,7 +605,7 @@ def _fidelity_distinction_coordinates(
         or reference[0] != "book_coordinates"
         or any(type(part) not in (str, int) for part in reference)
     ):
-        raise TypeError("exact Fidelity distinction reference is required")
+        raise TypeError("exact Book coordinate reference is required")
     coordinate: object = grammar
     try:
         for part in reference:
@@ -619,12 +619,12 @@ def _fidelity_distinction_coordinates(
                 coordinate = coordinate[part]
     except (IndexError, KeyError, TypeError) as error:
         raise ValueError(
-            "Fidelity distinction is absent from current book coordinates: "
+            "Book coordinate is absent from current book coordinates: "
             f"{reference!r}"
         ) from error
 
     coordinates: dict[str, object] = {
-        "fidelity_distinction_reference": list(reference)
+        "book_coordinate_reference": list(reference)
     }
     return coordinates
 
@@ -633,7 +633,7 @@ def _pytest_uptakes(
     module: object,
     grammar: dict[str, object],
 ) -> dict[object, dict[str, object] | object]:
-    distinctions = getattr(module, "FIDELITY_DISTINCTIONS", None)
+    witnessed_coordinates = getattr(module, "WITNESSED_BOOK_COORDINATES", None)
     witness_material_tests = getattr(module, "WITNESS_MATERIAL_TESTS", ())
     if type(witness_material_tests) is not tuple:
         raise TypeError("exact Witness Material test functions are required")
@@ -645,28 +645,28 @@ def _pytest_uptakes(
         function: _WITNESS_MATERIAL_UPTAKE
         for function in witness_material_tests
     }
-    if distinctions is None:
+    if witnessed_coordinates is None:
         return uptakes
-    if type(distinctions) is not dict or not distinctions:
-        raise TypeError("exact Fidelity distinctions are required")
+    if type(witnessed_coordinates) is not dict or not witnessed_coordinates:
+        raise TypeError("exact witnessed Book coordinates are required")
     entered_functions: set[object] = set()
-    for distinction_reference, functions in distinctions.items():
-        if type(distinction_reference) is not tuple:
-            raise TypeError("exact Fidelity distinction reference is required")
+    for book_coordinate_reference, functions in witnessed_coordinates.items():
+        if type(book_coordinate_reference) is not tuple:
+            raise TypeError("exact Book coordinate reference is required")
         if type(functions) is not tuple:
-            raise TypeError("exact Fidelity distinctions are required")
+            raise TypeError("exact witnessed Book coordinates are required")
         for function in functions:
             if not callable(function):
-                raise TypeError("exact Fidelity distinction functions are required")
+                raise TypeError("exact Book coordinate test functions are required")
             if function in entered_functions:
-                raise ValueError("test function entered Fidelity distinctions twice")
+                raise ValueError("test function entered Book coordinates twice")
             entered_functions.add(function)
-            uptakes[function] = _fidelity_distinction_coordinates(
-                grammar, distinction_reference
+            uptakes[function] = _book_coordinate_reference(
+                grammar, book_coordinate_reference
             )
     if entered_functions & set(witness_material_tests):
         raise ValueError(
-            "test function crossed Fidelity and Witness Material uptake"
+            "test function entered a Book coordinate and Witness Material"
         )
     return uptakes
 
@@ -723,7 +723,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
     if uptake is _NO_PYTEST_UPTAKE:
         yield
         return
-    distinction_coordinates = None if uptake is _WITNESS_MATERIAL_UPTAKE else uptake
+    book_coordinate = None if uptake is _WITNESS_MATERIAL_UPTAKE else uptake
     occurrences = (
         _witness_material_occurrences
         if uptake is _WITNESS_MATERIAL_UPTAKE
@@ -745,7 +745,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
-            **({} if distinction_coordinates is None else distinction_coordinates),
+            **({} if book_coordinate is None else book_coordinate),
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

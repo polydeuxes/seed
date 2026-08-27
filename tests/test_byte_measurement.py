@@ -2707,7 +2707,7 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_two_stages_traverse_byte_counts_once,
         test_each_exact_material_acquisition_is_counted_once_without_losing_zero_occurrence_material,

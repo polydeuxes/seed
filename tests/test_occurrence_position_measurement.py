@@ -836,7 +836,7 @@ def test_reopened_public_result_refuses_a_second_yield(tmp_path):
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_a_later_occurrence_does_not_revise_the_bounded_positions,
         test_supplied_reversal_cannot_replace_the_ledger_measurement,

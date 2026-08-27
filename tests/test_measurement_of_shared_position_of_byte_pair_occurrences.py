@@ -1459,7 +1459,7 @@ def test_current_coordinates_match_replay_for_the_complete_elevator():
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_positions_that_do_not_meet_are_inapplicable_and_cannot_participate,
     ),

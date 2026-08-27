@@ -1114,7 +1114,7 @@ def test_result_carries_only_its_declared_measurement_coordinates():
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_each_input_pair_has_first_and_second_exact_position_coordinates,
         test_same_pair_material_at_distinct_positions_remains_distinct_occurrences,

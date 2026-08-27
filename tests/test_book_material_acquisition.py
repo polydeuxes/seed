@@ -902,7 +902,7 @@ def test_book_admission_recomputes_from_its_exact_invocation_results(
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.C", "subjects", 2): (
         test_book_material_witness_has_one_admitted_subject,
     )

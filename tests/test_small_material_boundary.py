@@ -919,7 +919,7 @@ def test_removal_result_admission_refuses_corrupted_raw_coordinates(
 
 
 
-FIDELITY_DISTINCTIONS = {
+WITNESSED_BOOK_COORDINATES = {
     ("book_coordinates", "01.Source.D", "result"): (
         test_small_boundary_refuses_a_lookalike_material_reference,
     ),
