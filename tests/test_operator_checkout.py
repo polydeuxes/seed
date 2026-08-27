@@ -134,7 +134,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "result_boundary_identity",
         "result_identity",
         "subject_reference",
-        "unknown",
     )
     assert act.kind == RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT
     assert result.kind == RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
@@ -286,7 +285,6 @@ def test_one_relation_act_cannot_yield_twice():
         "destination_locality_identity",
         "locality_relation",
         "subject_to_act_binding_reference",
-        "unknown",
         "yield_relation_identity",
     ),
 )

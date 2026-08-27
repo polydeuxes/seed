@@ -126,9 +126,6 @@ def _binding_material(
         "result_identity": result_identity,
         "result_boundary_identity": result_identity,
         "subject_reference": deepcopy(through_occurrence_boundary_reference),
-        "unknown": [
-            "Applicability of the recorded boundary to another Act: Unknown"
-        ],
     }
 
 
@@ -190,9 +187,6 @@ def _result_material(act: Event) -> dict[str, Any]:
                 "locality_relation_occurrence_identity"
             ],
         },
-        "unknown": [
-            "Applicability of the recorded boundary to another Act: Unknown"
-        ],
     }
 
 
@@ -219,7 +213,6 @@ def _recorded_result_material(
             "destination_locality_identity"
         ],
         "locality_relation": deepcopy(result_material["locality_relation"]),
-        "unknown": list(result_material["unknown"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
     }
