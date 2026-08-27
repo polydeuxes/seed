@@ -147,7 +147,6 @@ def _path_input(
     if path_position_pair not in _PATH_POSITION_PAIRS:
         raise ValueError("source position Compare requires a path-ordered pair")
     first_path_position, second_path_position = path_position_pair
-    first, middle, final = positions
     for coordinate in positions:
         material = coordinate.get("exact_material")
         if (
@@ -169,17 +168,14 @@ def _path_input(
             raise ValueError(
                 "source position Compare requires exact position coordinates"
             )
-    if (
-        first["source_material_result_occurrence_identity"]
-        != middle["source_material_result_occurrence_identity"]
-        or middle["source_material_result_occurrence_identity"]
-        != final["source_material_result_occurrence_identity"]
-        or first["completeness_boundary_identity"]
-        != middle["completeness_boundary_identity"]
-        or middle["completeness_boundary_identity"]
-        != final["completeness_boundary_identity"]
-        or (first["position"], middle["position"], final["position"])
-        != (first["position"], first["position"] + 1, first["position"] + 2)
+    if any(
+        coordinate["source_material_result_occurrence_identity"]
+        != positions[0]["source_material_result_occurrence_identity"]
+        or coordinate["completeness_boundary_identity"]
+        != positions[0]["completeness_boundary_identity"]
+        for coordinate in positions[1:]
+    ) or tuple(coordinate["position"] for coordinate in positions) != tuple(
+        range(positions[0]["position"], positions[0]["position"] + 3)
     ):
         raise ValueError("source position Compare requires exact ordered positions")
     assertions = current_coordinates.get("measurement_occurrences")
@@ -203,10 +199,10 @@ def _path_input(
         "second_path_position": second_path_position,
         "first": deepcopy(positions[first_path_position]),
         "second": deepcopy(positions[second_path_position]),
-        "source_occurrence_identity": first[
+        "source_occurrence_identity": positions[0][
             "source_material_result_occurrence_identity"
         ],
-        "completeness_boundary_identity": first[
+        "completeness_boundary_identity": positions[0][
             "completeness_boundary_identity"
         ],
         "locality_identity": event.locality_identity,
