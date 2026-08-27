@@ -2514,7 +2514,9 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
     ):
         applicability_binding, _inputs, comparison_binding_reading = (
             _recorded_pair_comparison_applicability_binding_reading(
-                ledger, event.identity
+                ledger,
+                event.identity,
+                prior_coordinates=current_coordinates,
             )
         )
         comparison_binding = comparison_binding_reading[0]

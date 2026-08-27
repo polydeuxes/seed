@@ -138,7 +138,7 @@ def _witness_compare_input_testimony(monkeypatch):
     monkeypatch.setattr(
         comparison_module,
         "_source_occurrence_references",
-        lambda _ledger, event: (
+        lambda _ledger, event, *, prior_coordinates=None: (
             earlier_source.identity,
             added.identity,
         )
@@ -728,7 +728,7 @@ def test_first_exact_material_records_pair_counts(
     ) is has_recurrence
 
 
-def test_later_material_compares_with_the_prior_pair_result():
+def test_compare_requires_prior_and_later_pair_results():
     ledger = EventLedger()
 
     run_persistent_operator_console(
@@ -772,3 +772,47 @@ def test_later_material_compares_with_the_prior_pair_result():
         ]
         == pair_results[1].identity
     )
+
+
+def test_pair_compare_uses_supplied_coordinates_with_ordered_paths(monkeypatch):
+    ledger = EventLedger()
+
+    def historical_pair_coordinates_are_not_read(*_args, **_coordinates):
+        raise AssertionError(
+            "pair Compare must use the exact current coordinates already supplied"
+        )
+
+    monkeypatch.setattr(
+        byte_measurement_module,
+        "_prior_coordinates_for_pair_subject_to_act_binding",
+        historical_pair_coordinates_are_not_read,
+    )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\n"),
+    )
+
+    pair_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+    )
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+    assert len(pair_results) == 2
+    assert len(compare_results) == 1
+    binding_reference = compare_results[0].material[
+        "subject_to_act_binding_reference"
+    ]
+    binding = ledger.get(binding_reference["recorded_occurrence_identity"])
+    assert binding is not None
+    assert binding.material["earlier_measurement_reference"][
+        "recorded_occurrence_identity"
+    ] == pair_results[0].identity
+    assert binding.material["later_measurement_reference"][
+        "recorded_occurrence_identity"
+    ] == pair_results[1].identity

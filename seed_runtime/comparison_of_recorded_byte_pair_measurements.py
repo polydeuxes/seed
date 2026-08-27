@@ -8,8 +8,8 @@ from typing import Any
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _RecordedBytePairFinding,
+    _read_pair_measurement_subject_to_act_binding,
     _validated_recorded_byte_position_pair_measurement,
-    get_byte_position_pair_measurement_subject_to_act_binding,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -315,15 +315,19 @@ def _findings_from_carried_measurement(
 
 
 def _source_occurrence_references(
-    ledger: EventLedger, event: Event
+    ledger: EventLedger,
+    event: Event,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
     reference = event.material.get("subject_to_act_binding_reference")
-    binding_event = get_byte_position_pair_measurement_subject_to_act_binding(
+    binding_event = _read_pair_measurement_subject_to_act_binding(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
-    )
+        prior_coordinates=prior_coordinates,
+    )[0]
     binding = binding_event.material
     return _source_occurrence_references_from_binding(binding)
 
@@ -527,7 +531,9 @@ def _comparison_inputs_from_carried_measurements(
             "comparison requires first and second carried pair Measurements"
         )
     earlier, earlier_findings, earlier_binding = _measurement_and_findings(
-        ledger, earlier.identity
+        ledger,
+        earlier.identity,
+        prior_coordinates=current_coordinates,
     )
     carried = current_coordinates.get("measurement_occurrences")
     if (
@@ -557,7 +563,11 @@ def _comparison_inputs_from_carried_measurements(
     earlier_sources = _source_occurrence_references_from_binding(
         earlier_binding.material
     )
-    later_sources = _source_occurrence_references(ledger, later)
+    later_sources = _source_occurrence_references(
+        ledger,
+        later,
+        prior_coordinates=current_coordinates,
+    )
     if (
         len(later_sources) != len(earlier_sources) + 1
         or later_sources[:-1] != earlier_sources
