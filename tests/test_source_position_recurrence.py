@@ -622,7 +622,6 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
     ]
     assert tuple(sorted(event.material["coordinates"])) == (
         "completeness_boundary_reference",
-        "conflicts",
         "coordinate_material_findings",
         "exact_material",
         "locality",

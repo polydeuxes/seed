@@ -318,7 +318,6 @@ def _preserved_binding_material(material):
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": material["exact_act"],
         "subject_reference": deepcopy(material["subject"]),
-        "conflicts": deepcopy(material["conflicts"]),
     }
 
 
@@ -488,7 +487,6 @@ def _record_subject_to_act_binding(
             "act_occurrence_identity": act_occurrence_identity,
             "exact_act": exact_act,
             "subject": subject,
-            "conflicts": [],
         },
         locality_identity,
     )
@@ -699,7 +697,6 @@ def _require_binding(
         != _coordinates(act.material).get("subject")
         or binding.material.get("through_event_occurrence_identity")
         != _coordinates(act.material).get("through_event_occurrence_identity")
-        or type(binding.material.get("conflicts")) is not list
     ):
         raise ValueError("source-position Act carries no exact subject-to-Act binding")
     occurrences = ledger.occurrences_in_append_order(
@@ -741,7 +738,6 @@ def _require_recorded_binding(
         or type(material.get("exact_act")) is not str
         or not material["exact_act"]
         or type(material.get("subject_reference")) is not dict
-        or type(material.get("conflicts")) is not list
     ):
         raise ValueError("source-position subject-to-Act binding is not exact")
     boundary = ledger.get(material["through_event_occurrence_identity"])
@@ -1900,7 +1896,6 @@ def _recurrent_result_material_payload(
             "completeness_boundary_reference"
         ],
         "locality": {"locality_identity": recurrence_event.locality_identity},
-        "conflicts": [],
     }
 
 
