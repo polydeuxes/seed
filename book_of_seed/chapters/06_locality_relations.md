@@ -13,9 +13,9 @@ Before one preservation Act occurrence, one exact addressed occurrence, its
 prior through-occurrence boundary, that exact Act, and destination Locality
 are exact together.
 
-One exact Yield relation carries the Act occurrence as first subject and one
-result as second subject. The result
-preserves the prior boundary reference and its destination Locality relation.
+The recorded result occurrence is the exact Locality relation occurrence. Its
+exact coordinates are the prior boundary reference, destination Locality, and
+Act occurrence.
 
 ### 06.Locality.C — Recorded boundary relation
 
@@ -24,7 +24,7 @@ boundary reference, the exact Act to establish a direct Locality relation from
 the recorded result, and the destination Locality are exact together.
 The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the recorded
-reference, destination Locality, Act occurrence, and Yield.
+reference, destination Locality, and Act occurrence.
 
 ### 06.Locality.D — Operator destination Locality
 
@@ -34,7 +34,7 @@ operator Locality are exact together.
 
 The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the operator
-occurrence, source Locality, destination Locality, Act occurrence, and Yield.
+occurrence, source Locality, destination Locality, and Act occurrence.
 
 Material later supplied at the destination Locality preserves exact source
 occurrence references to the operator occurrence and relation result.
