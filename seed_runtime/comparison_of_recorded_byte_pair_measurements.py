@@ -1851,8 +1851,18 @@ def _recorded_pair_measurement_comparison_reading(
 
 
 def get_recorded_pair_measurement_comparison(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if prior_coordinates is None:
+        return _recorded_pair_measurement_comparison_reading(
+            ledger,
+            event_identity,
+        )[0]
     return _recorded_pair_measurement_comparison_reading(
-        ledger, event_identity
+        ledger,
+        event_identity,
+        prior_coordinates=prior_coordinates,
     )[0]

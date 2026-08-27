@@ -640,6 +640,7 @@ def _producing_pair_measurement_subject(
     comparison = get_recorded_pair_measurement_comparison(
         ledger,
         comparison_identity,
+        prior_coordinates=current_coordinates,
     )
     binding_reference = comparison.get("subject_to_act_binding_reference")
     pair_subject = (
