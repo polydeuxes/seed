@@ -51,7 +51,7 @@ RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND = (
 
 RECORDED_PAIR_MEASUREMENT_COMPARISON_BOOK_CLAUSE = "04.Compare.A"
 RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT = (
-    "Compare earlier and later exact carried byte-position-pair Measurement results"
+    "Compare earlier and later exact byte-position-pair Measurement results"
 )
 RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_ACT = (
     "Applicability of earlier and later recorded Measurement results to one Compare"

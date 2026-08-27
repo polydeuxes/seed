@@ -39,10 +39,6 @@ bounded
 by
 byte
 c
-carried
-carries
-carry
-carrying
 compare
 complete
 completeness

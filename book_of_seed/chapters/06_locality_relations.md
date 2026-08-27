@@ -7,11 +7,14 @@ relation occurrence and exact Act.
 
 Each Locality relation requires a separate relation occurrence.
 
-### 06.Locality.B — Through-occurrence boundary at a destination Locality
+### 06.Locality.B — Through-occurrence boundary in a destination Locality
 
 Before one preservation Act occurrence, one exact addressed occurrence, its
 prior through-occurrence boundary, that exact Act, and destination Locality
 are exact together.
+
+The prior through-occurrence boundary is one exact earlier boundary in the
+same Locality occurrence order.
 
 The recorded result occurrence is the exact Locality relation occurrence. Its
 exact coordinates are the prior boundary reference, destination Locality, and

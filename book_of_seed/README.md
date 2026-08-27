@@ -2,7 +2,8 @@
 
 ## Current coordinates
 
-This Seed first carries no current coordinates.
+Before one exact coordinate is established for this Seed, no current
+coordinates are established for this Seed.
 
 For one exact subject, its exact current coordinates through one exact
 occurrence boundary are its exact established coordinates in one Locality
@@ -28,7 +29,8 @@ Act occurrence, Yield, result, and current coordinates are separately exact.
 
 ## Act and occurrence
 
-An exact Act occurrence carries its exact Act, subjects, and Locality.
+The exact coordinates of an Act occurrence are its exact Act,
+subject-to-Act binding, and Locality.
 
 Yield is an exact relation from one Act occurrence to its result. Locality is
 an exact relation with its exact subjects.
@@ -39,7 +41,7 @@ Act occurrence ── Yield ──> result
 
 Yield requires exact subjects, relation occurrence, and Locality.
 
-The result carries the exact coordinates established by its Act occurrence.
+The result preserves the exact coordinates established by its Act occurrence.
 
 ## References
 

@@ -55,14 +55,14 @@ BOOK_CLAUSE = "01.Source.D.2"
 APPLICABILITY_ACT = "addressed byte occurrence reference Applicability"
 DETERMINATION_ACT = (
     "declared Measurement of exact pair-occurrence position Assertion "
-    "references carrying one addressed source-byte position-coordinate reference"
+    "references with one addressed source-byte position-coordinate reference"
 )
 APPLICABILITY_YIELD_RESULT_KIND = (
     "addressed byte occurrence reference determination Applicability result"
 )
 DETERMINATION_YIELD_RESULT_KIND = (
     "result of declared Measurement of exact pair-occurrence position "
-    "Assertion references carrying one addressed source-byte position-coordinate "
+    "Assertion references with one addressed source-byte position-coordinate "
     "reference"
 )
 APPLICABILITY_BOUNDARY = (

@@ -1,4 +1,4 @@
-"""This Book material carries exact source occurrence references."""
+"""This Book material preserves exact source occurrence references."""
 
 from __future__ import annotations
 

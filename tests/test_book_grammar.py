@@ -63,23 +63,26 @@ def test_witness_grammar_has_no_retired_scaffolding():
         "represents",
         "bears",
         "carried_by",
+        "carried_coordinates",
     }
     assert {word for word in retired if word in material} == set()
 
 
-def test_machine_grammar_carries_current_coordinates_without_retired_objects():
+def test_machine_grammar_addresses_current_coordinates_without_retired_objects():
     grammar = _grammar()
 
     assert set(grammar) == {"book_coordinates"}
     assert grammar["book_coordinates"]["01.Current.G"] == {
         "subject": "this_Seed",
+        "before": "one_exact_coordinate_is_established_for_this_Seed",
         "current_coordinates": [],
     }
 
-def test_empty_current_coordinates_are_only_the_first_current_coordinates():
+def test_no_current_coordinates_precede_the_first_established_coordinate():
     active_book = _active_book()
     assert active_book.count(
-        "This Seed first carries no current coordinates."
+        "Before one exact coordinate is established for this Seed, no current\n"
+        "coordinates are established for this Seed."
     ) == 2
     assert "S0" not in active_book
 
@@ -101,7 +104,7 @@ def test_applicability_remains_separate_from_the_governed_act():
         assert compare["requires"] == ["Applicability_result"]
         assert compare["Yield"] == "02.Acts.A.Yield"
 
-def test_compare_clause_carries_its_exact_subjects_and_act():
+def test_compare_clause_addresses_its_exact_subjects_and_act():
     compare = _grammar()["book_coordinates"]["04.Compare"]
 
     assert compare["subject"] == "exact_Compare_subjects"
@@ -111,7 +114,7 @@ def test_compare_clause_carries_its_exact_subjects_and_act():
     ).read_text(encoding="utf-8")
 
 
-def test_addressed_position_coordinates_carry_the_bounded_subjects():
+def test_addressed_position_coordinates_preserve_the_bounded_subjects():
     measurement = _grammar()["book_coordinates"]["01.Source.D.2"]
     chapter = (
         CHAPTERS / "07_measurement.md"
@@ -124,6 +127,49 @@ def test_addressed_position_coordinates_carry_the_bounded_subjects():
         "exhaustive_bounded_source_byte_position_references"
     )
     assert "The bounded subjects are exhaustive." in chapter
+
+
+def test_positional_coordinates_name_their_exact_basis():
+    coordinates = _grammar()["book_coordinates"]
+
+    assert coordinates["01.Current.A.1"]["requires"][-1] == (
+        "result_occurrence_is_boundary_or_before_boundary_in_same_"
+        "Locality_occurrence_order"
+    )
+    assert coordinates["01.Current.D.2"]["occurrence_order"] == (
+        "recorded_result_occurrence_after_exact_boundary_in_same_"
+        "Locality_occurrence_order"
+    )
+    assert coordinates["04.Compare.A"]["requires_order"] == [
+        "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
+        "later_ordered_source_occurrence_references_are_earlier_ordered_source_"
+        "occurrence_references_and_one_added_exact_occurrence",
+    ]
+    assert coordinates["06.Locality.B"]["prior_through_boundary"] == (
+        "exact_earlier_boundary_in_same_Locality_occurrence_order"
+    )
+
+
+def test_source_and_destination_coordinates_establish_no_occurrence_order():
+    movement = _grammar()["book_coordinates"]["03.Movement.A"]
+    chapter = (CHAPTERS / "10_movement.md").read_text(encoding="utf-8")
+
+    assert movement["coordinates"] == [
+        "exact_subject",
+        "source_coordinates",
+        "destination_coordinates",
+        "Locality",
+    ]
+    assert (
+        "Source and destination coordinates\n"
+        "establish no earlier or later occurrence order."
+    ) in chapter
+
+
+def test_machine_grammar_has_no_generic_result_boundary():
+    material = GRAMMAR.read_text(encoding="utf-8")
+
+    assert "result_boundary" not in material
 
 
 def test_subject_to_act_binding_is_direct_clause_coordinates():
@@ -245,7 +291,9 @@ def test_source_references_are_exact_and_distinct():
 def test_assertion_coordinates_address_exact_source_occurrences_directly():
     assert _grammar()["book_coordinates"]["01.Current.D.1"] == {
         "subject": "Assertion",
-        "carried_coordinates": [
+        "coordinates": [
+            "recorded_result_occurrence",
+            "result_position",
             "source_occurrence_references",
             "Locality",
         ],
@@ -255,12 +303,12 @@ def test_assertion_coordinates_address_exact_source_occurrences_directly():
 def test_sources_and_emission_preserve_exact_boundaries_without_loss_staging():
     coordinates = _grammar()["book_coordinates"]
 
-    assert coordinates["01.Source.H"]["carried_coordinates"] == [
+    assert coordinates["01.Source.H"]["coordinates"] == [
         "source_boundary",
         "source_occurrence_references",
         "Locality",
     ]
-    assert coordinates["07.Emission.A"]["carried_coordinates"] == [
+    assert coordinates["07.Emission.A"]["coordinates"] == [
         "exact_destination_boundary_within_the_destination_Locality",
         "Locality",
     ]

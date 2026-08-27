@@ -5,8 +5,8 @@
 Each exact subject of one exact Act is bound to that Act in its exact
 Locality.
 
-An Act occurrence is one occurrence of that exact Act. It carries the exact
-subject-to-Act binding and its carried coordinates.
+An Act occurrence is one occurrence of that exact Act. Its exact coordinates
+are the subject-to-Act binding and the exact coordinates of that binding.
 
 Yield is the exact relation from one Act occurrence to its exact result:
 

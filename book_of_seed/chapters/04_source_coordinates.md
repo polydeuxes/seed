@@ -4,13 +4,12 @@
 
 One exact Act occurrence preserves the supplied material, source occurrence,
 exact source occurrence references, Locality, and the coordinates established
-at its boundary.
+within its boundary.
 
-### 01.Source.F — Material carrying a relation Assertion
+### 01.Source.F — Material with a relation Assertion
 
-Supplied material carrying an Assertion carries one exact relation as its
-relation. The Assertion carries exact source occurrence references and
-Locality.
+For supplied material with an Assertion, one exact relation is its relation.
+The Assertion preserves exact source occurrence references and Locality.
 
 ### 01.Source.G — Operator source boundary
 
@@ -18,7 +17,7 @@ Before one operator-boundary Act occurrence, the exact operator boundary,
 exact Act to preserve supplied material, boundary coordinates, and Locality
 are exact together.
 
-The exact material result is one occurrence at that exact Locality.
+The exact material result is one occurrence in that exact Locality.
 
 Supplied material is required for one material result. Another operator boundary
 occurrence requires another exact subject and exact Act coordinates before its
@@ -28,10 +27,10 @@ Act occurrence.
 
 One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
-Yield relation carries the Act occurrence as
-first subject and one exact material result as second subject. The result
+Yield relation is from the Act occurrence as
+first subject to one exact material result as second subject. The result
 preserves its source boundary, source occurrence references, Locality, and the
-exact coordinates established at that boundary.
+exact coordinates established within that boundary.
 
 ### 01.Source.I — Separate source coordinates
 

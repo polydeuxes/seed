@@ -2,6 +2,7 @@
   "book_coordinates": {
     "01.Current.G": {
       "subject": "this_Seed",
+      "before": "one_exact_coordinate_is_established_for_this_Seed",
       "current_coordinates": []
     },
     "01.Source.A": {
@@ -32,7 +33,7 @@
       "requires_current_coordinates": "exact_byte_pair_position_Measurement_result"
     },
     "01.Source.F": {
-      "subject": "material_carrying_relation_Assertion",
+      "subject": "material_with_relation_Assertion",
       "exact_Act": "preserve_relation_Assertion",
       "result": "exact_relation_Assertion"
     },
@@ -48,7 +49,7 @@
       "exact_Act": "preserve_supplied_material",
       "Yield": "02.Acts.A.Yield",
       "result": "exact_material_result",
-      "carried_coordinates": [
+      "coordinates": [
         "source_boundary",
         "source_occurrence_references",
         "Locality"
@@ -56,7 +57,7 @@
     },
     "01.Source.I": {
       "subject": "operator_supplied_and_Witness_supplied_material",
-      "carried_coordinates": [
+      "coordinates": [
         "separate_source_to_Act_coordinates",
         "separate_occurrence"
       ]
@@ -73,9 +74,9 @@
         "Yield",
         "exact_result",
         "same_Locality",
-        "through_boundary_at_or_after_result_occurrence"
+        "result_occurrence_is_boundary_or_before_boundary_in_same_Locality_occurrence_order"
       ],
-      "carried_coordinates": [
+      "coordinates": [
         "exact_result"
       ]
     },
@@ -88,7 +89,9 @@
     },
     "01.Current.D.1": {
       "subject": "Assertion",
-      "carried_coordinates": [
+      "coordinates": [
+        "recorded_result_occurrence",
+        "result_position",
         "source_occurrence_references",
         "Locality"
       ]
@@ -96,11 +99,12 @@
     "01.Current.D.2": {
       "subject": "later_Assertion",
       "requires_current_coordinates": "exact_subject_through_exact_occurrence_boundary",
+      "occurrence_order": "recorded_result_occurrence_after_exact_boundary_in_same_Locality_occurrence_order",
       "subject_to_Act_binding": "one_exact_Act"
     },
     "01.Current.E": {
       "subject": "relation_Assertion",
-      "carried_coordinates": [
+      "coordinates": [
         "first_subject",
         "exact_relation_content",
         "second_subject"
@@ -137,7 +141,7 @@
     "03.Movement.A": {
       "subject": "exact_movement",
       "exact_Act": "movement",
-      "carried_coordinates": [
+      "coordinates": [
         "exact_subject",
         "source_coordinates",
         "destination_coordinates",
@@ -162,6 +166,10 @@
         "earlier_byte_pair_position_Measurement_result",
         "later_byte_pair_position_Measurement_result"
       ],
+      "requires_order": [
+        "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
+        "later_ordered_source_occurrence_references_are_earlier_ordered_source_occurrence_references_and_one_added_exact_occurrence"
+      ],
       "Yield": "02.Acts.A.Yield",
       "result": "recorded_pair_finding_Compare_result",
       "requires": [
@@ -183,13 +191,13 @@
     },
     "05.Recording.A": {
       "subject": "exact_Assertion",
-      "carried_coordinates": [
+      "coordinates": [
         "source_coordinates"
       ]
     },
     "05.Recording.C": {
       "subject": "exact_Measurement_result",
-      "carried_coordinates": [
+      "coordinates": [
         "source_coordinates"
       ]
     },
@@ -199,7 +207,7 @@
       "requires_current_coordinates": "exact_addressed_occurrence",
       "Yield": "02.Acts.A.Yield",
       "result": "one_reference",
-      "carried_coordinates": [
+      "coordinates": [
         "addressed_occurrence",
         "through_occurrence_boundary_reference",
         "Act_occurrence",
@@ -210,7 +218,7 @@
       "subject": "exact_record",
       "exact_Act": "recording",
       "Yield": "02.Acts.A.Yield",
-      "carried_coordinates": [
+      "coordinates": [
         "material",
         "source_coordinates",
         "Locality"
@@ -231,10 +239,11 @@
       "result": "Locality_relation"
     },
     "06.Locality.B": {
-      "subject": "through_occurrence_boundary_at_destination_Locality",
-      "exact_Act": "preserve_through_occurrence_boundary_at_destination_Locality",
+      "subject": "through_occurrence_boundary_in_destination_Locality",
+      "prior_through_boundary": "exact_earlier_boundary_in_same_Locality_occurrence_order",
+      "exact_Act": "preserve_through_occurrence_boundary_in_destination_Locality",
       "Locality": "06.Locality.A.Locality",
-      "result": "through_occurrence_boundary_at_destination_Locality"
+      "result": "through_occurrence_boundary_in_destination_Locality"
     },
     "06.Locality.C": {
       "subject": "recorded_through_occurrence_boundary_reference",
@@ -251,7 +260,7 @@
     "07.Emission.A": {
       "subject": "exact_source_material_result",
       "exact_Act": "emission",
-      "carried_coordinates": [
+      "coordinates": [
         "exact_destination_boundary_within_the_destination_Locality",
         "Locality"
       ]
@@ -260,7 +269,7 @@
       "subject": "exact_material_boundary_write",
       "Yield": "02.Acts.A.Yield",
       "result": "exact_destination_boundary_result",
-      "carried_coordinates": [
+      "coordinates": [
         "accepted_material",
         "reported_count"
       ],

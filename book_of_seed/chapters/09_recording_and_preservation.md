@@ -2,10 +2,10 @@
 
 ### 05.Recording.E — Recording Yield
 
-One exact Yield relation carries a recording Act occurrence as first subject
-and one exact record as second subject. The result preserves the material,
+One exact Yield relation is from a recording Act occurrence as first subject
+to one exact record as second subject. The result preserves the material,
 source coordinates and Locality established
-at that recording boundary.
+within that recording boundary.
 
 ### 05.Recording.A — Recorded Assertion
 
@@ -23,8 +23,8 @@ Before one recording Act occurrence, one exact addressed occurrence, its exact
 through-occurrence boundary, that Act, and the same Locality are exact
 together.
 
-One exact Yield relation carries the recording Act occurrence as first subject
-and one result as second subject. The result preserves the addressed
+One exact Yield relation is from the recording Act occurrence as first subject
+to one result as second subject. The result preserves the addressed
 occurrence, through-occurrence boundary reference, Act occurrence, Locality,
 and Yield.
 
