@@ -19,10 +19,14 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.material_source import read_exact_material_result
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
 from seed_runtime.operator_invocation_locality import (
     OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
     get_recorded_operator_invocation_locality,
 )
+from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 
 
 RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND = (
@@ -83,7 +87,6 @@ def _operator_source_for_material_result(
     """Read direct O1 or an earlier result carrying an O1 source reference."""
 
     from seed_runtime.operator_material_source import (
-        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
         get_recorded_operator_material_source,
     )
 
@@ -423,14 +426,13 @@ def _comparison_inputs(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one added occurrence with exact source coordinates"
         )
-    source_role = added.material.get("source_role")
     operator_material_source_result_event_identity = None
     operator_material_source_current_coordinate_reference = None
-    if source_role == "this Witness":
+    if added.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         raise RecordedPairMeasurementComparisonError(
             "Witness source references establish no comparison input relation"
         )
-    elif source_role == "this operator":
+    elif added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         source_event, source_material = _operator_source_for_material_result(
             ledger, added
         )
@@ -464,7 +466,9 @@ def _comparison_inputs(
         )
     invocation_relation = invocation_relations[0] if invocation_relations else None
     operator_locality_identity = (
-        earlier.locality_identity if source_role == "this operator" else None
+        earlier.locality_identity
+        if added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        else None
     )
     if invocation_relation is not None:
         relation = get_recorded_operator_invocation_locality(
@@ -589,10 +593,9 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one added occurrence with exact source coordinates"
         )
-    source_role = added.material.get("source_role")
     operator_source_identity = None
     source_coordinate_reference = None
-    if source_role == "this operator":
+    if added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         source_event, source_material = _operator_source_for_material_result(
             ledger, added
         )
@@ -617,7 +620,7 @@ def _comparison_inputs_from_carried_measurements(
         operator_source_identity = source_event.identity
         input_relation = "operator material source occurrence after prior coordinates"
         operator_locality_identity = earlier.locality_identity
-    elif source_role == "this Witness":
+    elif added.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         raise RecordedPairMeasurementComparisonError(
             "Witness source references establish no comparison input relation"
         )
