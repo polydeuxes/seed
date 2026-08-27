@@ -10,6 +10,9 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    get_recorded_pair_measurement_comparison,
+)
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.yield_relation import (
@@ -43,6 +46,13 @@ EVENT_KIND_BOOK_CLAUSES = {
 @dataclass(frozen=True)
 class CompareDistinctionMeasurementSubject:
     comparison_result_occurrence_identity: str
+
+
+@dataclass(frozen=True)
+class CompareDistinctionMeasurementSubjects:
+    earlier_result_occurrence_identity: str
+    later_result_occurrence_identity: str
+    shared_measurement_reference: dict[str, Any]
 
 
 def _identity(value: Any, message: str) -> str:
@@ -591,3 +601,119 @@ def get_recorded_compare_distinction_measurement(
         locality_identity=result.locality_identity,
     )
     return deepcopy(result.material)
+
+
+def _producing_pair_measurement_subject(
+    ledger: EventLedger,
+    *,
+    measurement_result_occurrence_identity: str,
+    current_coordinates: dict[str, Any],
+) -> dict[str, Any]:
+    measurements = current_coordinates.get("measurement_occurrences")
+    if (
+        type(measurements) is not dict
+        or measurement_result_occurrence_identity not in measurements
+    ):
+        raise ValueError("Measurement subjects require exact current coordinates")
+    measurement = get_recorded_compare_distinction_measurement(
+        ledger,
+        measurement_result_occurrence_identity,
+        prior_coordinates=current_coordinates,
+    )
+    source = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger,
+        measurement["source_result_occurrence_identity"],
+        prior_coordinates=current_coordinates,
+    )
+    finding = source.get("finding")
+    source_subject = finding.get("subject") if type(finding) is dict else None
+    comparison_reference = (
+        source_subject.get("recorded_pair_comparison_result_reference")
+        if type(source_subject) is dict
+        else None
+    )
+    comparison_identity = (
+        comparison_reference.get("recorded_occurrence_identity")
+        if type(comparison_reference) is dict
+        else None
+    )
+    comparison = get_recorded_pair_measurement_comparison(
+        ledger,
+        comparison_identity,
+    )
+    binding_reference = comparison.get("subject_to_act_binding_reference")
+    pair_subject = (
+        binding_reference.get("subject_reference")
+        if type(binding_reference) is dict
+        else None
+    )
+    if (
+        type(pair_subject) is not dict
+        or set(pair_subject)
+        != {"earlier_measurement_reference", "later_measurement_reference"}
+        or not all(type(reference) is dict for reference in pair_subject.values())
+    ):
+        raise ValueError("Measurement subjects require exact producing coordinates")
+    return deepcopy(pair_subject)
+
+
+def compare_distinction_measurement_subjects_from_current_coordinates(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
+) -> tuple[CompareDistinctionMeasurementSubjects, ...]:
+    """Read measured Distinction subjects with one shared exact Measurement."""
+
+    if current_coordinates is None:
+        from seed_runtime.operator_current_coordinates import (
+            read_operator_current_coordinates,
+        )
+
+        current_coordinates = read_operator_current_coordinates(
+            ledger,
+            locality_identity=locality_identity,
+        )
+    measurements = current_coordinates.get("measurement_occurrences")
+    if (
+        current_coordinates.get("locality_identity") != locality_identity
+        or type(measurements) is not dict
+    ):
+        raise ValueError("Measurement subjects require exact current coordinates")
+    exact_measurements = tuple(
+        event
+        for occurrence_identity in measurements
+        if (
+            (event := ledger.get(occurrence_identity)) is not None
+            and event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+            and event.locality_identity == locality_identity
+            and ledger.integrity_of(event.identity) != CORRUPTED
+        )
+    )
+    producing_subjects = tuple(
+        (
+            measurement,
+            _producing_pair_measurement_subject(
+                ledger,
+                measurement_result_occurrence_identity=measurement.identity,
+                current_coordinates=current_coordinates,
+            ),
+        )
+        for measurement in exact_measurements
+    )
+    subjects = []
+    for earlier_position, (earlier, earlier_subject) in enumerate(
+        producing_subjects
+    ):
+        for later, later_subject in producing_subjects[earlier_position + 1 :]:
+            shared = earlier_subject["later_measurement_reference"]
+            if shared != later_subject["earlier_measurement_reference"]:
+                continue
+            subjects.append(
+                CompareDistinctionMeasurementSubjects(
+                    earlier.identity,
+                    later.identity,
+                    deepcopy(shared),
+                )
+            )
+    return tuple(subjects)

@@ -9,9 +9,13 @@ import pytest
 from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 )
+from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    get_recorded_pair_measurement_comparison,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+    compare_distinction_measurement_subjects_from_current_coordinates,
     get_recorded_compare_distinction_measurement,
     record_compare_distinction_measurement_act_occurrence,
     record_compare_distinction_measurement_result,
@@ -164,4 +168,58 @@ def test_later_source_boundary_makes_current_compare_result_measurable():
     assert len(measurements[0].material["findings"]) == sum(
         len(finding["comparison_finding_references"])
         for finding in compare_results[0].material["finding"]["relation_findings"]
+    )
+
+
+def test_successive_measurements_share_one_exact_pair_measurement():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\nae\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    subjects = compare_distinction_measurement_subjects_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    assert len(subjects) == 1
+    earlier = ledger.get(subjects[0].earlier_result_occurrence_identity)
+    later = ledger.get(subjects[0].later_result_occurrence_identity)
+    earlier_source = ledger.get(
+        earlier.material["source_result_occurrence_identity"]
+    )
+    later_source = ledger.get(later.material["source_result_occurrence_identity"])
+    earlier_pair_reference = earlier_source.material["finding"]["subject"][
+        "recorded_pair_comparison_result_reference"
+    ]
+    later_pair_reference = later_source.material["finding"]["subject"][
+        "recorded_pair_comparison_result_reference"
+    ]
+    earlier_pair = get_recorded_pair_measurement_comparison(
+        ledger,
+        earlier_pair_reference["recorded_occurrence_identity"],
+    )
+    later_pair = get_recorded_pair_measurement_comparison(
+        ledger,
+        later_pair_reference["recorded_occurrence_identity"],
+    )
+    earlier_pair_subject = earlier_pair["subject_to_act_binding_reference"][
+        "subject_reference"
+    ]
+    later_pair_subject = later_pair["subject_to_act_binding_reference"][
+        "subject_reference"
+    ]
+
+    assert subjects[0].shared_measurement_reference == (
+        earlier_pair_subject["later_measurement_reference"]
+    )
+    assert subjects[0].shared_measurement_reference == (
+        later_pair_subject["earlier_measurement_reference"]
     )
