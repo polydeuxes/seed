@@ -221,32 +221,49 @@ def record_compare_distinction_measurement_subject_to_act_binding(
     *,
     comparison_result_occurrence_identity: str,
     current_coordinates: dict[str, Any],
+    through_occurrence_coordinates: dict[str, Any] | None = None,
 ) -> Event:
     """Record one complete Compare-result subject before Measurement."""
 
     if not isinstance(ledger, EventLedger) or type(current_coordinates) is not dict:
         raise TypeError("Measurement requires an EventLedger and current coordinates")
-    current_coordinates, _distinctions = _source_coordinates(
+    source_coordinates, _distinctions = _source_coordinates(
         ledger,
         comparison_result_occurrence_identity=(
             comparison_result_occurrence_identity
         ),
-        current_coordinates=current_coordinates,
+        current_coordinates=(
+            current_coordinates
+            if through_occurrence_coordinates is None
+            else through_occurrence_coordinates
+        ),
     )
     locality_identity = _identity(
-        current_coordinates.get("locality_identity"),
+        source_coordinates.get("locality_identity"),
         "Measurement requires one exact Locality",
     )
     through_event_occurrence_identity = _identity(
-        current_coordinates.get("through_event_occurrence_identity"),
+        source_coordinates.get("through_event_occurrence_identity"),
         "Measurement requires one exact through-occurrence boundary",
     )
-    boundary = ledger.get(through_event_occurrence_identity)
+    current_boundary_identity = current_coordinates.get(
+        "through_event_occurrence_identity"
+    )
+    source_boundary = ledger.get(through_event_occurrence_identity)
+    current_boundary = (
+        ledger.get(current_boundary_identity)
+        if type(current_boundary_identity) is str
+        else None
+    )
     if (
-        boundary is None
-        or boundary.locality_identity != locality_identity
-        or ledger.integrity_of(boundary.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(boundary.identity)
+        current_coordinates.get("locality_identity") != locality_identity
+        or source_boundary is None
+        or source_boundary.locality_identity != locality_identity
+        or ledger.integrity_of(source_boundary.identity) == CORRUPTED
+        or current_boundary is None
+        or current_boundary.locality_identity != locality_identity
+        or ledger.integrity_of(current_boundary.identity) == CORRUPTED
+        or ledger.append_boundary_through_occurrence(current_boundary.identity)
         != ledger.append_boundary()
     ):
         raise ValueError("Measurement requires exact current coordinates")

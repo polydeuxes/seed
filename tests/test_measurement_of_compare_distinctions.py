@@ -11,6 +11,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.measurement_of_compare_distinctions import (
+    COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
     get_recorded_compare_distinction_measurement,
     record_compare_distinction_measurement_act_occurrence,
     record_compare_distinction_measurement_result,
@@ -132,3 +133,35 @@ def test_changed_measured_distinction_is_refused():
 
     with pytest.raises(ValueError, match="not exact"):
         get_recorded_compare_distinction_measurement(ledger, result.identity)
+
+
+def test_later_source_boundary_makes_current_compare_result_measurable():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\n"),
+    )
+
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+    measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+    )
+
+    assert len(compare_results) == 2
+    assert len(measurements) == 1
+    assert measurements[0].material["source_result_occurrence_identity"] == (
+        compare_results[0].identity
+    )
+    assert len(measurements[0].material["findings"]) == sum(
+        len(finding["comparison_finding_references"])
+        for finding in compare_results[0].material["finding"]["relation_findings"]
+    )

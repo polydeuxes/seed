@@ -29,6 +29,18 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
 )
+from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+)
+from seed_runtime.measurement_of_compare_distinctions import (
+    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+    CompareDistinctionMeasurementSubject,
+    _read_binding as _read_compare_distinction_measurement_binding,
+    record_compare_distinction_measurement_subject_to_act_binding,
+    record_compare_distinction_measurement_act_occurrence,
+    record_compare_distinction_measurement_result,
+)
 from seed_runtime.operator_current_coordinates import (
     _carry_byte_measurement_binding_into_current_coordinates,
     _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordinates,
@@ -56,7 +68,9 @@ class ExactByteOccurrenceMeasurementSubject:
 
 
 DeclaredMeasurementSubject = (
-    PositionCoordinateMeasurementSubject | ExactByteOccurrenceMeasurementSubject
+    PositionCoordinateMeasurementSubject
+    | ExactByteOccurrenceMeasurementSubject
+    | CompareDistinctionMeasurementSubject
 )
 
 
@@ -358,7 +372,103 @@ def _record_byte_measurement(
     )
 
 
+def _discover_compare_distinction_measurements(
+    ledger: EventLedger,
+    current_coordinates: dict[str, Any],
+    locality_identity: str,
+) -> tuple[CompareDistinctionMeasurementSubject, ...]:
+    comparisons = current_coordinates.get("comparison_result_occurrences")
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    if type(comparisons) is not dict or type(bindings) is not dict:
+        raise ValueError(
+            "Compare Distinction Measurement requires exact current coordinates"
+        )
+    measured = set()
+    for occurrence_identity in bindings:
+        binding = ledger.get(occurrence_identity)
+        if (
+            binding is None
+            or binding.kind
+            != COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND
+        ):
+            continue
+        exact_binding, _distinctions = _read_compare_distinction_measurement_binding(
+            ledger,
+            binding.identity,
+            prior_coordinates=current_coordinates,
+        )
+        measured.add(
+            exact_binding.material["subject_reference"][
+                "comparison_result_occurrence_identity"
+            ]
+        )
+    return tuple(
+        CompareDistinctionMeasurementSubject(occurrence_identity)
+        for occurrence_identity in comparisons
+        if occurrence_identity not in measured
+        and (
+            (source := ledger.get(occurrence_identity)) is not None
+            and source.kind
+            == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+            and source.locality_identity == locality_identity
+            and ledger.integrity_of(source.identity) != CORRUPTED
+        )
+    )
+
+
+def _record_compare_distinction_measurement(
+    ledger: EventLedger,
+    current_coordinates: dict[str, Any],
+    through_occurrence_coordinates: dict[str, Any],
+    locality_identity: str,
+    subject: DeclaredMeasurementSubject,
+) -> tuple[dict[str, Any], Event]:
+    if type(subject) is not CompareDistinctionMeasurementSubject:
+        raise ValueError("Compare Distinction Measurement requires its exact subject")
+    binding = record_compare_distinction_measurement_subject_to_act_binding(
+        ledger,
+        comparison_result_occurrence_identity=(
+            subject.comparison_result_occurrence_identity
+        ),
+        current_coordinates=current_coordinates,
+        through_occurrence_coordinates=through_occurrence_coordinates,
+    )
+    current_coordinates = _advance(
+        ledger,
+        current_coordinates,
+        (binding.identity,),
+        locality_identity=locality_identity,
+    )
+    act = record_compare_distinction_measurement_act_occurrence(
+        ledger,
+        binding_event_identity=binding.identity,
+        current_coordinates=current_coordinates,
+    )
+    current_coordinates = _advance(
+        ledger,
+        current_coordinates,
+        (act.identity,),
+        locality_identity=locality_identity,
+    )
+    result = record_compare_distinction_measurement_result(
+        ledger,
+        act_occurrence_event_identity=act.identity,
+    )
+    current_coordinates = _advance(
+        ledger,
+        current_coordinates,
+        (result.material["yield_relation_identity"], result.identity),
+        locality_identity=locality_identity,
+    )
+    return current_coordinates, result
+
+
 _DECLARED_MEASUREMENTS = (
+    (
+        COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+        _discover_compare_distinction_measurements,
+        _record_compare_distinction_measurement,
+    ),
     (
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
         _discover_direct_measurements,
