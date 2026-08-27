@@ -11,6 +11,7 @@ from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
     _producing_pair_measurement_subject,
     get_recorded_compare_distinction_measurement,
+    compare_distinction_measurement_subjects_from_current_coordinates,
 )
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -60,6 +61,12 @@ class _Inputs(NamedTuple):
     later_reading: dict[str, Any]
     earlier_producing_subject: dict[str, Any]
     later_producing_subject: dict[str, Any]
+
+
+class RecordedCompareDistinctionMeasurementResults(NamedTuple):
+    current_coordinates: dict[str, Any]
+    applicability_result_occurrences: tuple[Event, ...]
+    compare_result_occurrences: tuple[Event, ...]
 
 
 def _identity(value: Any, message: str) -> str:
@@ -918,3 +925,147 @@ def get_recorded_compare_result(
     ):
         raise ValueError("measured result Compare result is not exact")
     return deepcopy(result.material)
+
+
+def _unbound_subjects(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any],
+):
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    if type(bindings) is not dict:
+        raise ValueError("Compare requires exact current bindings")
+    bound = set()
+    for occurrence_identity in bindings:
+        event = ledger.get(occurrence_identity)
+        if event is None or event.kind != COMPARE_BINDING_KIND:
+            continue
+        binding, inputs = _read_compare_binding(
+            ledger,
+            event.identity,
+            prior_coordinates=current_coordinates,
+        )
+        bound.add((inputs.earlier.identity, inputs.later.identity))
+    return tuple(
+        subject
+        for subject in compare_distinction_measurement_subjects_from_current_coordinates(
+            ledger,
+            locality_identity=locality_identity,
+            current_coordinates=current_coordinates,
+        )
+        if (
+            subject.earlier_result_occurrence_identity,
+            subject.later_result_occurrence_identity,
+        )
+        not in bound
+    )
+
+
+def record_compare_distinction_measurement_results_from_current_coordinates(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    current_coordinates: dict[str, Any],
+) -> RecordedCompareDistinctionMeasurementResults:
+    """Record every newly exact complete-result Compare."""
+
+    from seed_runtime.operator_current_coordinates import (
+        advance_operator_current_coordinates,
+    )
+
+    applicability_results = []
+    compare_results = []
+    subjects = _unbound_subjects(
+        ledger,
+        locality_identity=locality_identity,
+        current_coordinates=current_coordinates,
+    )
+    for subject in subjects:
+        binding = record_compare_subject_to_act_binding(
+            ledger,
+            earlier_result_occurrence_identity=(
+                subject.earlier_result_occurrence_identity
+            ),
+            later_result_occurrence_identity=(
+                subject.later_result_occurrence_identity
+            ),
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (binding.identity,),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        applicability_binding = record_applicability_subject_to_act_binding(
+            ledger,
+            compare_binding_event_identity=binding.identity,
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (applicability_binding.identity,),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        applicability_act = record_applicability_act_occurrence(
+            ledger,
+            applicability_binding_event_identity=applicability_binding.identity,
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (applicability_act.identity,),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        applicability_result = record_applicability_result(
+            ledger,
+            act_occurrence_event_identity=applicability_act.identity,
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (
+                applicability_result.material["yield_relation_identity"],
+                applicability_result.identity,
+            ),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        applicability_results.append(applicability_result)
+        if applicability_result.material["applicability"] != "applicable":
+            continue
+        compare_act = record_compare_act_occurrence(
+            ledger,
+            compare_binding_event_identity=binding.identity,
+            applicability_result_event_identity=applicability_result.identity,
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (compare_act.identity,),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        compare_result = record_compare_result(
+            ledger,
+            act_occurrence_event_identity=compare_act.identity,
+            current_coordinates=current_coordinates,
+        )
+        current_coordinates = advance_operator_current_coordinates(
+            ledger,
+            (
+                compare_result.material["yield_relation_identity"],
+                compare_result.identity,
+            ),
+            locality_identity=locality_identity,
+            prior=current_coordinates,
+        )
+        compare_results.append(compare_result)
+    return RecordedCompareDistinctionMeasurementResults(
+        current_coordinates,
+        tuple(applicability_results),
+        tuple(compare_results),
+    )

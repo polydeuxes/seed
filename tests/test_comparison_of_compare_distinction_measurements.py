@@ -5,12 +5,13 @@ from __future__ import annotations
 import pytest
 
 from seed_runtime.comparison_of_compare_distinction_measurements import (
+    APPLICABILITY_RESULT_KIND,
+    COMPARE_RESULT_KIND,
     record_applicability_act_occurrence,
     record_applicability_result,
     record_applicability_subject_to_act_binding,
     record_compare_subject_to_act_binding,
     record_compare_act_occurrence,
-    record_compare_result,
     get_recorded_compare_result,
 )
 from seed_runtime.declared_measurements import (
@@ -106,15 +107,15 @@ def test_exact_middle_measurement_establishes_applicability():
     )
     assert len(measurements) == 3
 
-    applicable_binding, applicable, current_coordinates = _record_applicability(
-        ledger,
-        recorded.current_coordinates,
-        earlier_result_occurrence_identity=measurements[0].identity,
-        later_result_occurrence_identity=measurements[1].identity,
+    applicable = next(
+        event for event in ledger.list() if event.kind == APPLICABILITY_RESULT_KIND
+    )
+    compare_result = next(
+        event for event in ledger.list() if event.kind == COMPARE_RESULT_KIND
     )
     inapplicable_binding, inapplicable, current_coordinates = _record_applicability(
         ledger,
-        current_coordinates,
+        recorded.current_coordinates,
         earlier_result_occurrence_identity=measurements[0].identity,
         later_result_occurrence_identity=measurements[2].identity,
     )
@@ -128,32 +129,6 @@ def test_exact_middle_measurement_establishes_applicability():
         inapplicable.material["later_earlier_measurement_reference"]
     )
 
-    compare_act = record_compare_act_occurrence(
-        ledger,
-        compare_binding_event_identity=applicable_binding.identity,
-        applicability_result_event_identity=applicable.identity,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = advance_operator_current_coordinates(
-        ledger,
-        (compare_act.identity,),
-        locality_identity=LOCALITY,
-        prior=current_coordinates,
-    )
-    compare_result = record_compare_result(
-        ledger,
-        act_occurrence_event_identity=compare_act.identity,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = advance_operator_current_coordinates(
-        ledger,
-        (
-            compare_result.material["yield_relation_identity"],
-            compare_result.identity,
-        ),
-        locality_identity=LOCALITY,
-        prior=current_coordinates,
-    )
     reading = get_recorded_compare_result(
         ledger,
         compare_result.identity,

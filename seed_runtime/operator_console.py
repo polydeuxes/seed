@@ -19,6 +19,9 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     record_ordered_path_pair_finding_compare_bindings_from_current_coordinates,
     record_ordered_path_pair_finding_compare_results_from_current_coordinates,
 )
+from seed_runtime.comparison_of_compare_distinction_measurements import (
+    record_compare_distinction_measurement_results_from_current_coordinates,
+)
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_material_boundary import (
@@ -754,6 +757,14 @@ def run_persistent_operator_console(
                     locality_identity=locality_identity,
                 )
             )
+            measured_comparisons = (
+                record_compare_distinction_measurement_results_from_current_coordinates(
+                    ledger,
+                    locality_identity=locality_identity,
+                    current_coordinates=current_coordinates,
+                )
+            )
+            current_coordinates = measured_comparisons.current_coordinates
             if byte_measurement is None:
                 continue
             current_coordinates, later_pair = _record_pair_measurement(
