@@ -1119,13 +1119,11 @@ def _applicability_of_input_to_compare(binding: Event) -> list[dict[str, Any]]:
     material = binding.material
     return [
         {
-            "input_role": "earlier recorded pair Measurement result",
             "input_reference": deepcopy(material["earlier_measurement_reference"]),
             "addressed_act_identity": material["addressed_act_identity"],
             "applicability": "applicable",
         },
         {
-            "input_role": "later recorded pair Measurement result",
             "input_reference": deepcopy(material["later_measurement_reference"]),
             "addressed_act_identity": material["addressed_act_identity"],
             "applicability": "applicable",
