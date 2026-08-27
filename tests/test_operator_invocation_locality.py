@@ -250,7 +250,12 @@ def test_corrupted_binding_act_and_result_are_refused_independently():
         event = {"binding": binding, "act": act, "result": result}[
             coordinate
         ]
-        event.material["unknown"] = ["crossed"]
+        exact_coordinate = {
+            "binding": "destination_locality_identity",
+            "act": "act_occurrence_identity",
+            "result": "result_identity",
+        }[coordinate]
+        event.material[exact_coordinate] = "changed coordinate"
         reader, identity = {
             "binding": (
                 get_operator_invocation_locality_subject_to_act_binding,

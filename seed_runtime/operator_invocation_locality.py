@@ -378,7 +378,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "relation_occurrence_identity": material["relation_occurrence_identity"],
         "locality_relation": relation,
         "known_loss": [],
-        "conflicts": [],
     }
 
 
@@ -420,7 +419,6 @@ def _recorded_result_material(
         ],
         "locality_relation": deepcopy(result["locality_relation"]),
         "known_loss": list(result["known_loss"]),
-        "conflicts": list(result["conflicts"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": (
             yield_relation_identity
