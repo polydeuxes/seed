@@ -31,7 +31,7 @@ occurrence references, Locality, and exact established coordinates.
 ### 01.Current.D.2 — Later Assertions
 
 A later Assertion whose subject is current through one exact occurrence
-boundary is one exact Applicability subject for one exact Act.
+boundary is one exact subject in one subject-to-Act binding.
 
 ### 01.Current.E — Relation Assertion coordinates
 

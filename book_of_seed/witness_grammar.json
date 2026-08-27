@@ -96,7 +96,7 @@
     "01.Current.D.2": {
       "subject": "later_Assertion",
       "requires_current_coordinates": "exact_subject_through_exact_occurrence_boundary",
-      "Applicability_subject_for": "one_exact_Act"
+      "subject_to_Act_binding": "one_exact_Act"
     },
     "01.Current.E": {
       "subject": "relation_Assertion",
