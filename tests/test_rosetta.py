@@ -164,6 +164,19 @@ def test_rosetta_unknown_decompresses_to_open_world_absence():
     ) in rosetta
 
 
+def test_rosetta_conflict_decompresses_to_exact_results_and_findings():
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
+
+    assert "conflict" in _rosetta_admission()
+    assert (
+        "Conflict       ordinary shorthand for an exact conflicting "
+        "Applicability result or an exact Compare finding with its exact "
+        "subjects and contents; absence of agreement establishes no conflict "
+        "by identity, and the word establishes no additional collection or "
+        "object"
+    ) in rosetta
+
+
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 

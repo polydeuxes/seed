@@ -26,7 +26,7 @@ Each exact relation requires its exact subjects and exact relation occurrence.
 ### 01.Current.D.1 — Assertion coordinates
 
 An Assertion is exact content as one subject. It carries its source and exact
-source occurrence references, Locality, conflicts, and
+source occurrence references, Locality, and
 exact established coordinates.
 
 ### 01.Current.D.2 — Later Assertions
@@ -37,8 +37,7 @@ boundary is one exact Applicability subject for one exact Act.
 ### 01.Current.E — Relation Assertion coordinates
 
 One relation Assertion carries first subject, exact relation content, and
-second subject. It requires the exact relation occurrence, Locality,
-and conflicts.
+second subject. It requires the exact relation occurrence and Locality.
 
 ### 01.Current.E.1 — Applicability
 

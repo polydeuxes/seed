@@ -102,7 +102,7 @@ def test_compare_clause_carries_its_exact_subjects_and_act():
 
     assert compare["subject"] == "exact_Compare_subjects"
     assert compare["exact_Act"] == "Compare"
-    assert "its exact subjects, Locality" in (
+    assert "its exact subjects and Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")
 
@@ -251,7 +251,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "source",
             "source_occurrence_references",
             "Locality",
-            "conflicts",
             "loss",
         ],
     }

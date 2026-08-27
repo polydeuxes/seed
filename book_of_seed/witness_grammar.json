@@ -21,7 +21,6 @@
         "source",
         "source_occurrence_references",
         "Locality",
-        "conflicts",
         "loss"
       ]
     },
@@ -108,8 +107,7 @@
       "carried_coordinates": [
         "source",
         "source_occurrence_references",
-        "Locality",
-        "conflicts"
+        "Locality"
       ]
     },
     "01.Current.D.2": {
@@ -126,8 +124,7 @@
       ],
       "requires": [
         "exact_relation_occurrence",
-        "Locality",
-        "conflicts"
+        "Locality"
       ]
     },
     "01.Current.E.1": {
@@ -277,7 +274,6 @@
       "carried_coordinates": [
         "exact_destination_boundary_within_the_invocation_Locality",
         "Locality",
-        "conflicts",
         "known_loss"
       ]
     },

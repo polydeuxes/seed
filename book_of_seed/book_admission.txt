@@ -44,7 +44,6 @@ compare
 complete
 completeness
 conflicting
-conflicts
 content
 coordinate
 coordinates

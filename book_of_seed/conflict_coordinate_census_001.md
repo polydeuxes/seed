@@ -77,3 +77,18 @@ refusal.
 Only after the live roads survive may Book and Witness Grammar withdraw the
 generic `conflicts` coordinate. Do not introduce Conflict, Agreement,
 Consistency, or another replacement object.
+
+## Outcome
+
+The live subtractions completed across invocation Locality, ordered-path
+Compare, source-position Measurement, recurrent exact-material Measurement,
+and bounded current coordinates.
+
+The final runtime census contains no generic `conflicts` coordinate or
+collection. Recorded-pair Compare still produces exact
+`conflicting_findings`, and Applicability still admits `conflicting` as an
+exact result. No replacement collection or Conflict object was introduced.
+
+Book proper and Witness Grammar therefore withdraw the generic `conflicts`
+coordinate. Rosetta keeps `Conflict` as human shorthand for the exact results
+and findings that actually establish it.
