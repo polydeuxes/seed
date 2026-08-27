@@ -870,6 +870,39 @@ def test_every_current_compare_binding_records_one_separate_applicability_result
     )
 
 
+def test_holding_one_input_exact_does_not_determine_applicability():
+    ledger, bindings, _current_coordinates_read = _ledger_at_story_floor(1)
+    results = (
+        record_ordered_path_pair_finding_compare_applicability_from_current_coordinates(
+            ledger,
+            locality_identity=LOCALITY,
+        ).applicability_result_occurrences
+    )
+    subjects = tuple(binding.material["subject_reference"] for binding in bindings)
+
+    assert subjects[0]["path_result_reference"] == subjects[1][
+        "path_result_reference"
+    ]
+    assert subjects[0]["comparison_result_reference"] != subjects[1][
+        "comparison_result_reference"
+    ]
+    assert tuple(result.material["applicability"] for result in results[:2]) == (
+        "applicable",
+        "inapplicable",
+    )
+
+    assert subjects[0]["comparison_result_reference"] == subjects[2][
+        "comparison_result_reference"
+    ]
+    assert subjects[0]["path_result_reference"] != subjects[2][
+        "path_result_reference"
+    ]
+    assert (results[0].material["applicability"], results[2].material["applicability"]) == (
+        "applicable",
+        "inapplicable",
+    )
+
+
 def test_applicability_binding_refuses_a_substituted_compare_binding_reference():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     current_coordinates = _current_coordinates(ledger)
