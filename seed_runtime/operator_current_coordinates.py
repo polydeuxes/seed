@@ -389,7 +389,9 @@ def _exact_current_coordinate_additions(
         if (
             type(collected) is not list
             or type(added) is not list
+            or any(type(value) is not str for value in collected)
             or any(type(value) is not str for value in added)
+            or collected != sorted(set(collected))
         ):
             raise ValueError(error_message)
         additions[key] = added
@@ -2561,23 +2563,35 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
         event,
         error_message="operator material source coordinates are not exact",
     )
+    exact_result = None
+    locality_relation_coordinate = None
+    material_result_coordinate = None
+    if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
+        exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
+        locality_relation = event.material.get("locality_relation")
+        result_identity = event.material.get("result_identity")
+        if (
+            exact_result is None
+            or type(locality_relation) is not dict
+            or type(result_identity) is not str
+            or not result_identity
+        ):
+            raise ValueError("operator material source result is not exact")
+        locality_relation_coordinate = {
+            "locality_relation": deepcopy(locality_relation),
+        }
+        material_result_coordinate = {
+            "subject_reference": result_identity,
+            "result_occurrence_identity": event.identity,
+        }
     if event.kind == OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
         bindings[event.identity] = None
     elif event.kind == OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT:
         acts[event.identity] = None
     else:
-        exact_results[event.identity] = _subject_to_act_binding_of_exact_result(
-            ledger, event
-        )
-        locality_relations[event.identity] = {
-            "locality_relation": deepcopy(event.material["locality_relation"]),
-        }
-        material_result_occurrences.append(
-            {
-                "subject_reference": event.material["result_identity"],
-                "result_occurrence_identity": event.identity,
-            }
-        )
+        exact_results[event.identity] = exact_result
+        locality_relations[event.identity] = locality_relation_coordinate
+        material_result_occurrences.append(material_result_coordinate)
     for key, added in coordinate_additions.items():
         for value in added:
             _record_distinct(current_coordinates[key], value)
