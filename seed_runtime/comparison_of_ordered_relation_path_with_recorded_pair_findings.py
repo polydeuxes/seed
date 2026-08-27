@@ -1343,18 +1343,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
             binding,
             result_boundary_identity=material["applicability_result_identity"],
         ),
-        "applicability_of_input_to_compare": [
-            {
-                "subject_reference": deepcopy(material["path_assertion_reference"]),
-                "addressed_act_identity": material["addressed_act_identity"],
-            },
-            {
-                "subject_reference": deepcopy(
-                    material["comparison_result_reference"]
-                ),
-                "addressed_act_identity": material["addressed_act_identity"],
-            },
-        ],
     }
 
 
@@ -1474,9 +1462,6 @@ def _applicability_result_material(
             ],
         ),
         "act_occurrence_event_identity": act.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            act.material["applicability_of_input_to_compare"]
-        ),
         "applicability": applicability,
     }
 
@@ -1502,9 +1487,6 @@ def _recorded_applicability_result_material(
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            result["applicability_of_input_to_compare"]
-        ),
         "applicability": result["applicability"],
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1713,9 +1695,6 @@ def _compare_act_material(binding: Event, applicability: Event) -> dict[str, Any
             result_boundary_identity=material["compare_result_identity"],
         ),
         "applicability_result_event_identity": applicability.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            applicability.material["applicability_of_input_to_compare"]
-        ),
     }
 
 
@@ -1853,9 +1832,6 @@ def _compare_result_material(
             ],
         ),
         "applicability_result_event_identity": applicability.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            applicability.material["applicability_of_input_to_compare"]
-        ),
         "finding": _comparison_finding(inputs),
         "act_occurrence_event_identity": act.identity,
     }
@@ -1875,9 +1851,6 @@ def _recorded_compare_result_material(
         "applicability_result_event_identity": result[
             "applicability_result_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            result["applicability_of_input_to_compare"]
-        ),
         "finding": deepcopy(result["finding"]),
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
