@@ -33,11 +33,6 @@ _PYTEST_INVOCATION = (
     b"--",
 )
 _ROOT = Path(__file__).resolve().parents[1]
-_TRUNCATION_LOSS = (
-    "material beyond the supplied boundary is not available",
-)
-
-
 class OperatorHostProviderError(ValueError):
     pass
 
@@ -216,13 +211,6 @@ def _bounded_invocation(
                     occurrence.exact_bytes for occurrence in occurrences
                 ),
                 source_boundary=f"invocation {role}",
-                known_loss=(
-                    _TRUNCATION_LOSS
-                    if time_boundary_reached
-                    or (role == "output" and output_boundary_reached)
-                    or (role == "error" and error_boundary_reached)
-                    else ()
-                ),
                 read_occurrences=occurrences,
             )
         )
@@ -236,16 +224,10 @@ def _supply_completion(
     output_truncated: bool,
     error_truncated: bool,
 ) -> None:
-    invocation_loss = (
-        _TRUNCATION_LOSS
-        if timed_out or output_truncated or error_truncated
-        else ()
-    )
     supply(
         SuppliedWitnessMaterialOccurrence(
             exact_bytes=b"",
             source_boundary="invocation completion",
-            known_loss=invocation_loss,
             time_boundary_reached=timed_out,
             output_byte_count_boundary_reached=output_truncated,
             error_byte_count_boundary_reached=error_truncated,

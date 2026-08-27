@@ -125,7 +125,6 @@ def record_witness_material_source(
     locality_identity: str,
     exact_bytes: bytes,
     source_boundary: str,
-    known_loss: tuple[str, ...] = (),
     time_boundary_reached: bool | None = None,
     output_byte_count_boundary_reached: bool | None = None,
     error_byte_count_boundary_reached: bool | None = None,
@@ -144,8 +143,6 @@ def record_witness_material_source(
             raise WitnessMaterialSourceError(
                 f"Witness material source requires exact {name}"
             )
-    if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
-        raise WitnessMaterialSourceError("known loss must be an exact tuple of material")
     boundary_outcomes = {
         "time_boundary_reached": time_boundary_reached,
         "output_byte_count_boundary_reached": output_byte_count_boundary_reached,
@@ -209,7 +206,6 @@ def record_witness_material_source(
         "act_occurrence_identity": act_occurrence_identity,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
-        "known_loss": list(known_loss),
         "source_occurrence_references": list(
             source_occurrence_references
         ),
@@ -276,7 +272,6 @@ def _read_witness_material_source_result(
     material = event.material
     source_references = material.get("source_occurrence_references")
     read_occurrences = material.get("read_occurrences", [])
-    known_loss = material.get("known_loss")
     result_identity = material.get("result_identity")
     source_act_identity = material.get("exact_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
@@ -324,8 +319,6 @@ def _read_witness_material_source_result(
         or binding.exact_material is not None
         or ledger.integrity_of(binding.identity) == CORRUPTED
         or binding_reference != _subject_to_act_binding_reference(binding)
-        or type(known_loss) is not list
-        or any(type(item) is not str for item in known_loss)
         or any(type(value) is not bool for value in boundary_outcomes.values())
         or type(source_references) is not list
         or len(set(source_references)) != len(source_references)
@@ -372,7 +365,6 @@ def _read_witness_material_source_result(
         "act_occurrence_identity": act_occurrence_identity,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
-        "known_loss": known_loss,
         "source_occurrence_references": source_references,
         "locality_relation": locality_relation,
     }

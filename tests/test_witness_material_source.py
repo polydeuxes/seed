@@ -31,13 +31,7 @@ def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
         "source_boundary": "source boundary",
     }
     fields.update(differences)
-    return record_witness_material_source(
-        ledger,
-        known_loss=(
-            "material before the supplied Witness boundary is not available here",
-        ),
-        **fields,
-    )
+    return record_witness_material_source(ledger, **fields)
 
 
 def test_source_result_preserves_each_exact_byte_value_without_interpretation():

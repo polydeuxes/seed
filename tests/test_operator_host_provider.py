@@ -250,7 +250,6 @@ def test_cat_preserves_finite_material_across_multiple_pipe_reads(tmp_path):
         occurrence.invocation_position
         for occurrence in output.read_occurrences
     ))
-    assert all(occurrence.known_loss == () for occurrence in supplied)
 
 
 def test_host_output_is_bounded_without_returncode_material():
@@ -270,9 +269,7 @@ def test_host_output_is_bounded_without_returncode_material():
         f"invocation output read {position}"
         for position in range(len(output.read_occurrences))
     )
-    assert output.known_loss
     assert supplied[-1].exact_bytes == b""
-    assert supplied[-1].known_loss
     assert supplied[-1].time_boundary_reached is False
     assert supplied[-1].output_byte_count_boundary_reached is True
     assert supplied[-1].error_byte_count_boundary_reached is False
@@ -412,7 +409,9 @@ def test_pytest_provider_supplies_process_material_and_completion():
     )
     assert completion.source_boundary == "invocation completion"
     assert completion.exact_bytes == b""
-    assert completion.known_loss == ()
+    assert completion.time_boundary_reached is False
+    assert completion.output_byte_count_boundary_reached is False
+    assert completion.error_byte_count_boundary_reached is False
 
 
 @pytest.mark.parametrize(
@@ -454,9 +453,6 @@ def test_bounded_pytest_preserves_partial_results_and_known_completion_loss(
         b"partial error",
         b"",
     )
-    assert supplied[0].known_loss == ()
-    assert supplied[1].known_loss == ()
-    assert supplied[2].known_loss
     assert supplied[2].time_boundary_reached is timed_out
     assert supplied[2].output_byte_count_boundary_reached is output_truncated
     assert supplied[2].error_byte_count_boundary_reached is error_truncated
