@@ -132,7 +132,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
-        "locality_relation_occurrence_identity",
         "result_boundary_identity",
         "result_identity",
         "subject_reference",
@@ -147,22 +146,18 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
     assert recorded["locality_relation"] == {
         "first_subject": recorded["through_occurrence_boundary_reference"],
         "second_subject": destination,
-        "relation_occurrence_identity": recorded[
-            "locality_relation_occurrence_identity"
-        ],
     }
     assert len(
         {
             binding.identity,
             binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
-            binding.material["locality_relation_occurrence_identity"],
             binding.material["result_identity"],
             act.identity,
             result.identity,
             result.material["yield_relation_identity"],
         }
-    ) == 8
+    ) == 7
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
