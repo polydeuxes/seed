@@ -1,4 +1,4 @@
-"""Independent Book admission and the material it bounds."""
+"""Book words admitted after independently established distinctions."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def book_proper_words() -> dict[str, list[tuple[str, int]]]:
 
 
 def book_admission() -> set[str]:
-    """Read the independently curated words admitted to this Book."""
+    """Read words admitted to express established Book distinctions."""
 
     return {
         line.split("#", 1)[0].strip()

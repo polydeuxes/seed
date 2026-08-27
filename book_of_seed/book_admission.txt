@@ -1,6 +1,9 @@
 #
 # A word absent from this file is refused.
-# Book admission -- every word carried by active law.
+# One exact distinction is established before one word enters this file.
+# The word expresses that distinction; its admission establishes none.
+# Distinction Witness -> exact Book coordinate -> admitted word.
+# Book admission -- every word used by active law.
 # Rosetta admission into active law.
 # Rosetta admission: ../rosetta/rosetta_admission.txt
 # This file alone governs Book proper. The Rosetta reference imports no

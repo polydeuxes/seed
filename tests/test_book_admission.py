@@ -178,7 +178,7 @@ def test_composite_is_communication_in_rosetta_not_active_book_grammar():
     assert rosetta_composite == {"composite"}
 
 
-def test_book_proper_is_within_book_admission():
+def test_book_distinction_words_are_admitted():
     unadmitted = {
         word: places
         for word, places in book_proper_words().items()
@@ -195,15 +195,15 @@ def test_book_proper_is_within_book_admission():
     )
 
 
-def test_book_admission_carries_no_unused_words():
+def test_book_admission_contains_only_book_distinction_words():
     unused = sorted(book_admission() - set(book_proper_words()))
     assert not unused, (
-        "\nBook admission carries words absent from active Book material: "
+        "\nBook admission contains words absent from active Book material: "
         + ", ".join(unused)
     )
 
 
-def test_witness_grammar_words_in_book_admission():
+def test_witness_grammar_distinction_words_are_admitted():
     assert witness_grammar_words() <= book_admission()
     grammar = json.loads(
         (BOOK / "witness_grammar.json").read_text(encoding="utf-8")
