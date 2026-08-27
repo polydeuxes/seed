@@ -38,7 +38,7 @@ from seed_runtime.byte_measurement import (
     record_assertion_locality_movement_subject_to_act_binding,
     record_assertion_locality_movement_act_occurrence,
     record_assertion_locality_movement_result,
-    _recorded_byte_assertion_at_position,
+    _byte_result_position,
     move_recorded_byte_assertion_to_locality,
     move_recorded_byte_assertions_to_locality,
     record_byte_position_pair_count_layer,
@@ -186,7 +186,7 @@ def _recorded_byte_source(ledger, result, *, result_name="exact_source_material_
     recorded = next(
         item for item in result.material["assertions"] if item["result"] == result_name
     )
-    return _recorded_byte_assertion_at_position(
+    return _byte_result_position(
         ledger,
         result.identity,
         recorded["dimensions"]["position"],
@@ -201,7 +201,7 @@ def _movement_source(ledger):
 
 def _movement_carry_phase(ledger, phase):
     source_result, source = _movement_source(ledger)
-    source_event = ledger.get(source.recorded_occurrence_identity)
+    source_event = ledger.get(source["recorded_occurrence_identity"])
     source_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=source_result.locality_identity
     )
@@ -1957,11 +1957,16 @@ def test_pair_applicability_reads_exact_input_coordinates():
 
     assert applicable["dimensions"]["applicability"] == "applicable"
     assert applicable["input_coordinates"] == {
-        "recorded_measurement_result_occurrence_identity": source.recorded_occurrence_identity,
-            "assertion_position": source.assertion_position,
+        "recorded_measurement_result_occurrence_identity": source[
+            "recorded_occurrence_identity"
+        ],
+        "assertion_position": source["assertion_position"],
         "locality_movement_result_occurrence_identity": None,
     }
-    assert applicable["input_assertion_reference"] == source.reference
+    assert applicable["input_assertion_reference"] == {
+        "recorded_occurrence_identity": source["recorded_occurrence_identity"],
+        "assertion_position": source["assertion_position"],
+    }
     assert applicable["addressed_act_occurrence_identity"] is None
 
 
@@ -2336,7 +2341,7 @@ def test_movement_reader_refuses_crossed_yield_boundary_or_result_kind(
     moved = move_recorded_byte_assertion_to_locality(
         ledger, source=source, destination_locality="movement"
     )
-    movement = ledger.get(moved.locality_movement_event_identity)
+    movement = ledger.get(moved["locality_movement_event_identity"])
     yield_relation = ledger.get(
         movement.material["yield_relation_identity"]
     )
@@ -2406,7 +2411,7 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
     ledger = _ledger(b"ta\n")
     source_result = _byte_source(ledger)
     sources = tuple(
-        _recorded_byte_assertion_at_position(
+        _byte_result_position(
             ledger,
             source_result.identity,
             assertion["dimensions"]["position"],
@@ -2424,7 +2429,7 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
         ledger, locality_identity="movement-batch"
     )
     movements = tuple(
-        ledger.get(assertion.locality_movement_event_identity)
+        ledger.get(assertion["locality_movement_event_identity"])
         for assertion in moved
     )
     bindings = tuple(
@@ -2436,8 +2441,8 @@ def test_bounded_movement_batch_carries_each_binding_before_the_act():
         for movement in movements
     )
 
-    assert tuple(assertion.assertion_position for assertion in moved) == tuple(
-        assertion.assertion_position for assertion in sources
+    assert tuple(assertion["assertion_position"] for assertion in moved) == tuple(
+        assertion["assertion_position"] for assertion in sources
     )
     assert all(
         current_coordinates["subject_to_act_binding_occurrences"].get(
@@ -2498,9 +2503,9 @@ def test_movement_batch_carry_phases_refuse_substituted_lifecycle_inputs(phase):
             assertion
             for assertion in state["source_result"].material["assertions"]
             if assertion["dimensions"]["position"]
-            != state["source"].assertion_position
+            != state["source"]["assertion_position"]
         )["dimensions"]["position"]
-        source_at_another_position = _recorded_byte_assertion_at_position(
+        source_at_another_position = _byte_result_position(
             ledger,
             state["source_result"].identity,
             another_position,
@@ -2559,7 +2564,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
         recording_locality_identity="source-measurement",
     )
     sources = tuple(
-        _recorded_byte_assertion_at_position(
+        _byte_result_position(
             ledger,
             source_result.identity,
             assertion["dimensions"]["position"],
@@ -2586,7 +2591,7 @@ def test_movement_batch_does_not_reenter_public_readers_and_reopens_exactly(
         destination_locality="movement-batch",
     )
     movement_identities = tuple(
-        assertion.locality_movement_event_identity for assertion in moved
+        assertion["locality_movement_event_identity"] for assertion in moved
     )
     ledger.close()
     monkeypatch.undo()
