@@ -22,8 +22,9 @@ preserves the prior boundary reference and its destination Locality relation.
 Before one Locality Act occurrence, one exact recorded through-occurrence
 boundary reference, the exact Act to establish a direct Locality relation from
 the recorded result, and the destination Locality are exact together.
-The result preserves the recorded reference, destination Locality, relation
-occurrence, Act occurrence, and Yield.
+The recorded result occurrence is the exact Locality relation occurrence. The
+exact coordinates of the recorded result occurrence are the recorded
+reference, destination Locality, Act occurrence, and Yield.
 
 ### 06.Locality.D — Operator invocation Locality
 
@@ -31,8 +32,9 @@ Before one invocation-Locality Act occurrence, one exact operator material
 occurrence, exact Act, invocation Locality, and Locality relation from the
 operator Locality are exact together.
 
-The result preserves the operator occurrence, source Locality, invocation
-Locality, relation occurrence, Act occurrence, and Yield.
+The recorded result occurrence is the exact Locality relation occurrence. The
+exact coordinates of the recorded result occurrence are the operator
+occurrence, source Locality, invocation Locality, Act occurrence, and Yield.
 
 Material later supplied at the invocation Locality preserves exact source
 occurrence references to the operator occurrence and relation result.
