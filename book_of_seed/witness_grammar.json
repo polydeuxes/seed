@@ -19,8 +19,8 @@
       "carried_coordinates": [
         "exact_declared_distinction",
         "source",
-          "source_occurrence_references",
-          "Locality"
+        "source_occurrence_references",
+        "Locality"
       ]
     },
     "01.Source.D": {
