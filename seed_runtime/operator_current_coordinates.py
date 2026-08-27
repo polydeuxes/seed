@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-from bisect import bisect_left
 from copy import deepcopy
 from typing import Any, Iterable
 
@@ -362,40 +361,6 @@ _SUPPORTED_KINDS = {
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
 }
-
-
-def _record_distinct(collected: list[str], value: str) -> None:
-    """Keep one sorted, distinct sequence in place.
-
-    The returned coordinate is a sorted list of distinct strings, as it has
-    always been.  Adding a value already present does nothing, so an advance
-    that yields no new value costs nothing.
-    """
-
-    index = bisect_left(collected, value)
-    if index == len(collected) or collected[index] != value:
-        collected.insert(index, value)
-
-
-def _exact_current_coordinate_additions(
-    current_coordinates: dict[str, Any], event, *, error_message: str
-) -> dict[str, list[str]]:
-    """Validate every addition before changing the current coordinates."""
-
-    additions = {}
-    for key in ("known_loss",):
-        collected = current_coordinates.get(key)
-        added = event.material.get(key, [])
-        if (
-            type(collected) is not list
-            or type(added) is not list
-            or any(type(value) is not str for value in collected)
-            or any(type(value) is not str for value in added)
-            or collected != sorted(set(collected))
-        ):
-            raise ValueError(error_message)
-        additions[key] = added
-    return additions
 
 
 def _measurement_occurrence_coordinates(event) -> dict[str, str]:
@@ -856,13 +821,6 @@ def advance_operator_current_coordinates(
     ] = {}
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
-    # Kept sorted and distinct in place rather than as a set sorted on return.
-    # A set would have to be rebuilt from the prior list and re-sorted on every
-    # advance, which costs the accumulated size each time.  These coordinates
-    # do not grow on the five live forms today, but later material results may
-    # grow them. The prior-transfer rule has to hold for every accumulator that
-    # can grow.
-    known_loss: list[str] = []
     through_event_occurrence_identity: str | None = None
     event_count = 0
 
@@ -946,7 +904,6 @@ def advance_operator_current_coordinates(
             raise ValueError(
                 "prior coordinates require exact Compare result occurrences"
             )
-        known_loss = prior["known_loss"]
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
@@ -993,8 +950,6 @@ def advance_operator_current_coordinates(
         if not pair_lifecycle_event:
             event_count += 1
             through_event_occurrence_identity = event.identity
-            for value in event.material.get("known_loss", ()):
-                _record_distinct(known_loss, value)
             result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
@@ -1051,8 +1006,6 @@ def advance_operator_current_coordinates(
                 )
             event_count += 1
             through_event_occurrence_identity = event.identity
-            for value in event.material.get("known_loss", ()):
-                _record_distinct(known_loss, value)
             result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
@@ -1663,7 +1616,6 @@ def advance_operator_current_coordinates(
         ),
         "applicability_result_occurrences": applicability_result_occurrences,
         "comparison_result_occurrences": comparison_result_occurrences,
-        "known_loss": known_loss,
     }
 
 
@@ -1708,15 +1660,7 @@ def _carry_byte_measurement_binding_into_current_coordinates(
         or event_count < 0
     ):
         raise ValueError("byte Measurement binding coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="byte Measurement binding coordinates are not exact",
-    )
     bindings[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -1818,15 +1762,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
         != ledger.append_boundary()
     ):
         raise ValueError("Assertion movement binding coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="Assertion movement binding coordinates are not exact",
-    )
     bindings[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -1882,14 +1818,6 @@ def _carry_assertion_locality_movement_act_into_current_coordinates(
         != ledger.append_boundary()
     ):
         raise ValueError("Assertion movement Act coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="Assertion movement Act coordinates are not exact",
-    )
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2004,14 +1932,6 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
         binding=binding,
         source=source,
     )
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="Assertion movement result coordinates are not exact",
-    )
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     movements[event.identity] = _assertion_locality_movement_occurrence_coordinates(
         ledger, event
     )
@@ -2053,15 +1973,7 @@ def _carry_occurrence_position_measurement_binding_into_current_coordinates(
         or event_count < 0
     ):
         raise ValueError("occurrence position binding coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="occurrence position binding coordinates are not exact",
-    )
     bindings[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2142,15 +2054,7 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
         or event_count < 0
     ):
         raise ValueError("occurrence position Measurement coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="occurrence position Measurement coordinates are not exact",
-    )
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2196,18 +2100,10 @@ def _carry_validated_pair_measurement_lifecycle_occurrence_into_current_coordina
         or (destination is not None and event.identity in destination)
     ):
         raise ValueError("pair Measurement lifecycle coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="pair Measurement lifecycle coordinates are not exact",
-    )
     if destination is current_coordinates["measurement_occurrences"]:
         destination[event.identity] = _measurement_occurrence_coordinates(event)
     elif destination is not None:
         destination[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2404,15 +2300,7 @@ def _carry_byte_pair_occurrence_position_measurement_binding_into_current_coordi
         or event_count < 0
     ):
         raise ValueError("byte-pair position binding coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="byte-pair position binding coordinates are not exact",
-    )
     bindings[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2467,17 +2355,9 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         or event_count < 0
     ):
         raise ValueError("position-coordinate Measurement coordinates are not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="position-coordinate Measurement coordinates are not exact",
-    )
     exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
     exact_results[event.identity] = exact_result
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2549,11 +2429,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             or event.identity in locality_relations
         ):
             raise ValueError("operator material source result is not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="operator material source coordinates are not exact",
-    )
     exact_result = None
     locality_relation_coordinate = None
     material_result_coordinate = None
@@ -2583,9 +2458,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
         exact_results[event.identity] = exact_result
         locality_relations[event.identity] = locality_relation_coordinate
         material_result_occurrences.append(material_result_coordinate)
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates
@@ -2700,11 +2572,6 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
             or event.identity in comparisons
         ):
             raise ValueError("recorded pair comparison result is not exact")
-    coordinate_additions = _exact_current_coordinate_additions(
-        current_coordinates,
-        event,
-        error_message="recorded pair comparison coordinates are not exact",
-    )
     if event.kind in {
         RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
         RECORDED_PAIR_MEASUREMENT_COMPARISON_APPLICABILITY_SUBJECT_TO_ACT_BINDING_KIND,
@@ -2714,9 +2581,6 @@ def _carry_recorded_pair_comparison_occurrence_into_current_coordinates(
         applicability[event.identity] = None
     elif event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
         comparisons[event.identity] = None
-    for key, added in coordinate_additions.items():
-        for value in added:
-            _record_distinct(current_coordinates[key], value)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates

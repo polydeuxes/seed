@@ -218,41 +218,6 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
     )
 
 
-@pytest.mark.parametrize(
-    ("coordinate", "changed"),
-    (
-        ("known_loss", [1]),
-    ),
-)
-def test_source_binding_refuses_nonexact_prior_lists_without_changing_coordinates(
-    coordinate, changed
-):
-    ledger = EventLedger()
-    locality = "incremental-refusal"
-    current_coordinates = read_operator_current_coordinates(
-        ledger,
-        locality_identity=locality,
-    )
-    binding = record_operator_material_source_subject_to_act_binding(
-        ledger,
-        locality_identity=locality,
-        current_coordinates=current_coordinates,
-        source_boundary="operator boundary",
-    )
-    current_coordinates[coordinate] = changed
-    before = deepcopy(current_coordinates)
-
-    with pytest.raises(ValueError, match="coordinates are not exact"):
-        _advance_current_coordinates_with_operator_material_source_occurrence(
-            ledger,
-            current_coordinates,
-            binding,
-            prior_through_event_occurrence_identity=None,
-        )
-
-    assert current_coordinates == before
-
-
 def test_source_result_refusal_does_not_change_prior_current_coordinates():
     ledger = EventLedger()
     locality = "incremental-result-refusal"

@@ -961,11 +961,6 @@ def _record_ordered_path_source_position_material_comparison(
         current_coordinates=current_coordinates,
     )
     compare_identities = _mint_compare_identities(ledger)
-    from seed_runtime.operator_current_coordinates import (
-        _exact_current_coordinate_additions,
-        _record_distinct,
-    )
-
     def carry(*events: Event) -> None:
         prior = current_coordinates["through_event_occurrence_identity"]
         ordered = ledger.occurrences_in_append_order(
@@ -980,11 +975,6 @@ def _record_ordered_path_source_position_material_comparison(
         ):
             raise ValueError("source position Compare left its exact boundary")
         for carried in events:
-            additions = _exact_current_coordinate_additions(
-                current_coordinates,
-                carried,
-                error_message="source position Compare current coordinates are not exact",
-            )
             if carried.kind in {
                 COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
                 APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT,
@@ -1000,9 +990,6 @@ def _record_ordered_path_source_position_material_comparison(
                 current_coordinates["comparison_result_occurrences"][
                     carried.identity
                 ] = None
-            for key, values in additions.items():
-                for value in values:
-                    _record_distinct(current_coordinates[key], value)
             current_coordinates["through_event_occurrence_identity"] = carried.identity
             current_coordinates["event_count"] += 1
 

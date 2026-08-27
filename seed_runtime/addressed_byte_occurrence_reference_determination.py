@@ -1876,11 +1876,6 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
 ) -> tuple[dict[str, Any], Event]:
     """Record one D.2 lifecycle while carrying its exact stage readings."""
 
-    from seed_runtime.operator_current_coordinates import (
-        _exact_current_coordinate_additions,
-        _record_distinct,
-    )
-
     if not isinstance(ledger, EventLedger):
         raise TypeError("determination lifecycle requires one EventLedger")
     current = (
@@ -2024,11 +2019,6 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             raise AddressedByteOccurrenceReferenceDeterminationError(
                 "produced determination occurrence has false current coordinates"
             )
-        additions = _exact_current_coordinate_additions(
-            current,
-            event,
-            error_message="produced determination coordinates are not exact",
-        )
         if event.kind in {
             DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -2038,9 +2028,6 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
             applicability_results[event.identity] = None
         elif event.kind == DETERMINATION_RESULT_KIND:
             measurements[event.identity] = _determination_result_reference(event)
-        for key, values in additions.items():
-            for value in values:
-                _record_distinct(current[key], value)
         current["through_event_occurrence_identity"] = event.identity
         current["event_count"] = count + 1
 

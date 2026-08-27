@@ -26,12 +26,6 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     record_shared_position_subject_to_act_binding_from_addressed_byte_occurrence_reference_determination_result,
 )
-from seed_runtime.operator_current_coordinates import (
-    _exact_current_coordinate_additions,
-    _record_distinct,
-)
-
-
 class SourcePositionDeterminationPathAndComparison(NamedTuple):
     source_position_coordinate: dict[str, Any]
     determination_result: Event
@@ -61,14 +55,6 @@ def _advance(
             "source-position determination and comparison left its exact boundary"
         )
     for event in events:
-        additions = _exact_current_coordinate_additions(
-            current_coordinates,
-            event,
-            error_message=(
-                "source-position determination and comparison current coordinates "
-                "are not exact"
-            ),
-        )
         if event.kind in {
             SHARED_POSITION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             SHARED_POSITION_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -92,9 +78,6 @@ def _advance(
                     "yield_relation_identity"
                 ],
             }
-        for key, values in additions.items():
-            for value in values:
-                _record_distinct(current_coordinates[key], value)
         current_coordinates["through_event_occurrence_identity"] = event.identity
         current_coordinates["event_count"] += 1
     return current_coordinates
