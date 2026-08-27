@@ -1,4 +1,4 @@
-"""Book admission."""
+"""Book distinctions."""
 
 from __future__ import annotations
 
@@ -17,6 +17,10 @@ from scripts.book_admission import (
     witness_addresses,
     scan_active_line,
     witness_grammar_words,
+)
+from tests.test_runtime_witness_grammar import (
+    _authored_event_material_strings,
+    _runtime_trees,
 )
 
 ROSETTA_ADMISSION = ROOT / "rosetta" / "rosetta_admission.txt"
@@ -104,6 +108,34 @@ def test_book_and_rosetta_admission_material_are_distinct():
     assert {"implementation", "machine"} <= set(
         _admission_entries(ROSETTA_ADMISSION)
     )
+
+
+def test_lexical_admission_has_one_test_reader():
+    readers = set()
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        tree = ast.parse(
+            path.read_text(encoding="utf-8"),
+            filename=str(path),
+        )
+        reads_admission = any(
+            (
+                isinstance(node, ast.ImportFrom)
+                and node.module == "scripts.book_admission"
+                and any(
+                    name.name in {"BOOK_ADMISSION", "book_admission"}
+                    for name in node.names
+                )
+            )
+            or (
+                isinstance(node, ast.Constant)
+                and node.value == "book_admission.txt"
+            )
+            for node in ast.walk(tree)
+        )
+        if reads_admission:
+            readers.add(path.relative_to(ROOT).as_posix())
+
+    assert readers == {"tests/test_book_admission.py"}
 
 
 def test_rosetta_translates_warrant_to_exact_references():
@@ -204,9 +236,36 @@ def test_book_admission_contains_only_book_distinction_words():
     )
 
 
-def test_test_module_distinction_words_are_admitted():
-    admitted = book_admission() | set(_admission_entries(ROSETTA_ADMISSION))
+def _unadmitted_test_module_prose(
+    material: str,
+    *,
+    book_words: set[str],
+    explanation_words: set[str],
+) -> dict[str, list[str]]:
     absent: dict[str, list[str]] = {}
+    paragraphs = re.split(r"\n\s*\n", material.strip())
+    registers = (
+        ("distinction", paragraphs[0], book_words),
+        ("explanation", "\n".join(paragraphs[1:]), explanation_words),
+    )
+    for register, prose, admitted in registers:
+        words = {
+            word
+            for word in re.findall(
+                r"[A-Za-z]+",
+                scan_active_line(prose).lower(),
+            )
+        }
+        unadmitted = sorted(words - admitted)
+        if unadmitted:
+            absent[register] = unadmitted
+    return absent
+
+
+def test_test_module_distinction_words_are_admitted():
+    book_words = book_admission()
+    explanation_words = book_words | set(_admission_entries(ROSETTA_ADMISSION))
+    absent: dict[str, dict[str, list[str]]] = {}
     for path in sorted((ROOT / "tests").glob("test_*.py")):
         tree = ast.parse(
             path.read_text(encoding="utf-8"),
@@ -215,25 +274,95 @@ def test_test_module_distinction_words_are_admitted():
         material = ast.get_docstring(tree, clean=False)
         if material is None:
             continue
-        words = {
-            word
-            for word in re.findall(
-                r"[A-Za-z]+",
-                scan_active_line(material).lower(),
-            )
-        }
-        unadmitted = sorted(words - admitted)
+        unadmitted = _unadmitted_test_module_prose(
+            material,
+            book_words=book_words,
+            explanation_words=explanation_words,
+        )
         if unadmitted:
             absent[path.relative_to(ROOT).as_posix()] = unadmitted
 
     report = "\n".join(
-        f"  {path}: {', '.join(words)}"
-        for path, words in absent.items()
+        f"  {path} [{register}]: {', '.join(words)}"
+        for path, registers in absent.items()
+        for register, words in registers.items()
     )
     assert not absent, (
-        "\nTest material has words absent from Book and Rosetta admission:\n"
+        "\nTest distinction or explanation has words absent from its admission:\n"
         + report
     )
+
+
+def test_rosetta_word_enters_explanation_but_not_distinction():
+    book_words = book_admission()
+    explanation_words = book_words | set(_admission_entries(ROSETTA_ADMISSION))
+
+    assert _unadmitted_test_module_prose(
+        "Validation.\n\nExact coordinates.",
+        book_words=book_words,
+        explanation_words=explanation_words,
+    ) == {"distinction": ["validation"]}
+    assert _unadmitted_test_module_prose(
+        "Exact coordinates.\n\nValidation.",
+        book_words=book_words,
+        explanation_words=explanation_words,
+    ) == {}
+
+
+def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
+    admitted = book_admission()
+    violations = set()
+    for source, line, value in _authored_event_material_strings(path, tree):
+        for word in re.findall(r"[A-Za-z]+", scan_active_line(value).lower()):
+            if word not in admitted:
+                violations.add((source, line, word, value))
+    return sorted(violations)
+
+
+def test_seed_authored_event_material_values_have_lexical_admission():
+    violations = []
+    for path, tree in _runtime_trees():
+        violations.extend(_unadmitted_authored_event_material(path, tree))
+    assert violations == [], "\n" + "\n".join(
+        f"{path}:{line} [{word}] {value}"
+        for path, line, word, value in violations
+    )
+
+
+def test_authored_value_admission_refuses_an_unadmitted_word_without_naming_it():
+    tree = ast.parse(
+        'ledger.append(SOME_KIND, {"standing": "invented"})'
+    )
+    assert _unadmitted_authored_event_material(Path("external.py"), tree) == [
+        ("external.py", 1, "invented", "invented")
+    ]
+
+
+def test_authored_value_admission_reads_a_local_material_function():
+    tree = ast.parse(
+        'def material():\n    return {"standing": "invented"}\n'
+        'ledger.append(SOME_KIND, material())'
+    )
+    assert _unadmitted_authored_event_material(Path("external.py"), tree) == [
+        ("external.py", 2, "invented", "invented")
+    ]
+
+
+def test_authored_value_admission_reads_local_material_function_arguments():
+    tree = ast.parse(
+        'def material(*, standing):\n    return {"standing": standing}\n'
+        'ledger.append(SOME_KIND, {"dimensions": material(standing="invented")})'
+    )
+    assert _unadmitted_authored_event_material(Path("external.py"), tree) == [
+        ("external.py", 3, "invented", "invented")
+    ]
+
+
+def test_supplied_material_is_not_seed_authored_language():
+    tree = ast.parse(
+        'ledger.append(SOME_KIND, {"standing": operator_material})'
+    )
+    assert _unadmitted_authored_event_material(Path("external.py"), tree) == []
 
 
 def test_witness_grammar_distinction_words_are_admitted():

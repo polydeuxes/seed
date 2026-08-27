@@ -1,4 +1,4 @@
-"""Exact operator material and invocation boundaries."""
+"""Exact operator material and invocation boundary."""
 
 from __future__ import annotations
 

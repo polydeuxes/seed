@@ -1,4 +1,4 @@
-"""Carried references address source coordinates through exact occurrences."""
+"""Source references and exact current coordinates."""
 
 from __future__ import annotations
 

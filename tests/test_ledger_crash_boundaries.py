@@ -1,4 +1,4 @@
-"""Exact Ledger occurrence boundaries and exact failure results."""
+"""Exact occurrence boundary and failure results."""
 
 from __future__ import annotations
 

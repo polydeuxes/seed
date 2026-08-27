@@ -1,4 +1,4 @@
-"""Exact Ledger material identity and bounded refusal."""
+"""Exact material reference and bounded failure."""
 
 from __future__ import annotations
 

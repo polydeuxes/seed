@@ -1,4 +1,4 @@
-"""Exact material results from an empty Ledger."""
+"""Exact material results from no prior occurrences."""
 
 from __future__ import annotations
 

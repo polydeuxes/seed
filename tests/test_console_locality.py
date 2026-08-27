@@ -1,4 +1,4 @@
-"""Each operator Locality remains exact."""
+"""Each operator Locality is exact."""
 
 from __future__ import annotations
 

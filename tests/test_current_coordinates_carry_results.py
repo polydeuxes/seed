@@ -1,4 +1,4 @@
-"""01.Current.A.1 reads an exact result with its subject-to-Act binding."""
+"""Exact current coordinates through one occurrence boundary."""
 
 from __future__ import annotations
 

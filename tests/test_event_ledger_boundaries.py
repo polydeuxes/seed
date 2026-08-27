@@ -1,4 +1,4 @@
-"""Exact Ledger occurrence boundaries."""
+"""Exact occurrence boundary."""
 
 from __future__ import annotations
 

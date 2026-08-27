@@ -1,4 +1,4 @@
-"""One recorded relation with two exact occurrence subjects."""
+"""One recorded relation with first and second exact occurrence subjects."""
 
 from __future__ import annotations
 

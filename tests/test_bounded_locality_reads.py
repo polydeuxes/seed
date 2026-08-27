@@ -1,4 +1,4 @@
-"""Exact Locality reads."""
+"""Exact Locality reading."""
 
 from __future__ import annotations
 

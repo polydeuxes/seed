@@ -1,4 +1,4 @@
-"""Admission under every exact implementation-function pair."""
+"""Exact material under every exact pair."""
 
 from __future__ import annotations
 

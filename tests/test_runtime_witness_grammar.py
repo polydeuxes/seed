@@ -1,4 +1,4 @@
-"""Distinctions from live Seed and Witness Grammar."""
+"""Distinctions for this Seed and this Witness."""
 
 from __future__ import annotations
 
@@ -13,11 +13,6 @@ import re
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
-from scripts.book_admission import (
-    book_admission,
-    witness_grammar_words,
-    scan_active_line,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -547,62 +542,6 @@ def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     assert absent_clauses == {}, (
         f"occurrences name absent grammar clauses: {absent_clauses}"
     )
-
-
-def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
-    admitted = book_admission()
-    violations = set()
-    for source, line, value in _authored_event_material_strings(path, tree):
-        for word in re.findall(r"[A-Za-z]+", scan_active_line(value).lower()):
-            if word not in admitted:
-                violations.add((source, line, word, value))
-    return sorted(violations)
-
-
-def test_seed_authored_event_material_values_have_lexical_admission():
-    violations = []
-    for path, tree in _runtime_trees():
-        violations.extend(_unadmitted_authored_event_material(path, tree))
-    assert violations == [], "\n" + "\n".join(
-        f"{path}:{line} [{word}] {value}"
-        for path, line, word, value in violations
-    )
-
-
-def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it():
-    tree = ast.parse(
-        'ledger.append(SOME_KIND, {"standing": "invented"})'
-    )
-    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
-        ("fixture.py", 1, "invented", "invented")
-    ]
-
-
-def test_authored_value_admission_crosses_a_local_material_function():
-    tree = ast.parse(
-        'def material():\n    return {"standing": "invented"}\n'
-        'ledger.append(SOME_KIND, material())'
-    )
-    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
-        ("fixture.py", 2, "invented", "invented")
-    ]
-
-
-def test_authored_value_admission_binds_local_material_function_arguments():
-    tree = ast.parse(
-        'def material(*, standing):\n    return {"standing": standing}\n'
-        'ledger.append(SOME_KIND, {"dimensions": material(standing="invented")})'
-    )
-    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
-        ("fixture.py", 3, "invented", "invented")
-    ]
-
-
-def test_opaque_supplied_material_is_not_seed_authored_language():
-    tree = ast.parse(
-        'ledger.append(SOME_KIND, {"standing": operator_material})'
-    )
-    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == []
 
 
 def _event_materials():
