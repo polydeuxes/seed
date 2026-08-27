@@ -73,7 +73,6 @@ def test_current_result_carries_its_exact_subject_to_act_binding():
     assert set(carried) == REQUIRED_BINDING_COORDINATES
     assert carried["book_clause_identity"] == "01.Source.G"
     assert carried["subject_reference"] == {
-        "source_role": "this operator",
         "source_boundary": "operator boundary",
     }
 

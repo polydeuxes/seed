@@ -378,7 +378,6 @@ def test_operator_result_kind_without_source_g_physiology_is_not_source():
     claimed = ledger.append(
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
         {
-            "source_role": "this operator",
             "unknown": ["represented_relation", "source_relation"],
         },
         exact_material=b"claimed O1",
@@ -578,7 +577,6 @@ def test_result_refuses_a_changed_binding_result_boundary():
     "coordinate",
     (
         "result_identity",
-        "source_role",
         "exact_act_identity",
         "act_occurrence_identity",
         "exact_act",

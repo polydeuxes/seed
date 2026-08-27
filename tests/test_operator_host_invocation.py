@@ -18,7 +18,13 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     read_exact_material_result,
 )
-from seed_runtime.witness_material_source import record_witness_material_source
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
+from seed_runtime.witness_material_source import (
+    WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+    record_witness_material_source,
+)
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
@@ -399,11 +405,11 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         b"same",
         b"",
     ]
-    assert [event.material["source_role"] for event in acquisition_results] == [
-        "this operator",
-        "this Witness",
-        "this Witness",
-        "this Witness",
+    assert [event.kind for event in acquisition_results] == [
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     ]
     assert [event.material["source_boundary"] for event in acquisition_results[1:]] == [
         "provider:0",
@@ -815,7 +821,7 @@ def test_supplied_result_refuses_missing_different_or_corrupted_command():
                 supplied=_supplied()[0],
             )
 
-    command.material["source_role"] = "this Witness"
+    object.__setattr__(command, "kind", WITNESS_MATERIAL_SOURCE_RECORDED_KIND)
     with pytest.raises(ValueError, match="operator material occurrence"):
         record_supplied_witness_material_source(
             ledger,

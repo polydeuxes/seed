@@ -118,10 +118,7 @@ def _subject_to_act_binding_material(
     source_boundary: str,
     current_coordinate_reference: dict[str, str | None],
 ) -> dict[str, Any]:
-    subject_reference = {
-        "source_role": "this operator",
-        "source_boundary": source_boundary,
-    }
+    subject_reference = {"source_boundary": source_boundary}
     return {
         "book_clause_identity": OPERATOR_MATERIAL_SOURCE_BOOK_CLAUSE,
         "subject_reference": subject_reference,
@@ -151,7 +148,6 @@ def _subject_to_act_binding_reference(binding: Event) -> dict[str, Any]:
 def _act_occurrence_material(binding: Event) -> dict[str, Any]:
     material = binding.material
     return {
-        "source_role": material["subject_reference"]["source_role"],
         "source_boundary": material["subject_reference"]["source_boundary"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -183,7 +179,6 @@ def _result_material(
     }
     return {
         "result_identity": material["result_boundary_identity"],
-        "source_role": material["source_role"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_MATERIAL_SOURCE_ACT,
@@ -214,7 +209,6 @@ def _recorded_result_material(
 ) -> dict[str, Any]:
     recorded = {
         "result_identity": result_material["result_identity"],
-        "source_role": result_material["source_role"],
         "exact_act_identity": result_material["exact_act_identity"],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
         "exact_act": result_material["exact_act"],
@@ -357,7 +351,6 @@ def get_operator_material_source_subject_to_act_binding(
         type(current_reference) is not dict
         or current_reference.get("locality_identity") != binding.locality_identity
         or type(subject_reference) is not dict
-        or subject_reference.get("source_role") != "this operator"
         or type(subject_reference.get("source_boundary")) is not str
         or not subject_reference["source_boundary"]
         or any(type(identity) is not str or not identity for identity in identities)

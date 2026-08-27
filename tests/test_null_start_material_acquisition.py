@@ -11,6 +11,9 @@ from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
 )
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
 from seed_runtime.yield_relation import read_requirements_of_yield_relation
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
@@ -68,10 +71,13 @@ def test_one_acquisition_result_occurs_for_each_delivered_line(ledger):
     assert len(acquisition_results) == 2 + len(E3.split("\n"))
 
 
-def test_each_material_acquisition_carries_the_operator_role(ledger):
+def test_each_material_result_is_an_exact_operator_source_occurrence(ledger):
     acquisition_results = _acquisition_results(ledger)
 
-    assert all(event.material["source_role"] == "this operator" for event in acquisition_results)
+    assert all(
+        event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
+        for event in acquisition_results
+    )
 
 
 def test_each_material_acquisition_preserves_exact_bytes(ledger):
