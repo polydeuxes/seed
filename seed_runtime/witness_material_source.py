@@ -58,7 +58,6 @@ def _subject_to_act_binding_material(
     return {
         "book_clause_identity": "01.Source.H",
         "subject_reference": {
-            "source_role": "this Witness",
             "source_boundary": source_boundary,
         },
         "act": WITNESS_MATERIAL_SOURCE_ACT,
@@ -195,7 +194,6 @@ def record_witness_material_source(
         "result_identity": result_identity,
         "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "source_role": "this Witness",
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": list(known_loss),
@@ -265,7 +263,6 @@ def _read_witness_material_source_result(
     source_act_identity = material.get("exact_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
-    source_role = material.get("source_role")
     source_boundary = material.get("source_boundary")
     binding_reference = material.get("subject_to_act_binding_reference")
     yield_identity = material.get("yield_relation_identity")
@@ -291,7 +288,6 @@ def _read_witness_material_source_result(
         or not source_act_identity
         or type(act_occurrence_identity) is not str
         or not act_occurrence_identity
-        or source_role != "this Witness"
         or type(source_boundary) is not str
         or not source_boundary
         or binding is None
@@ -347,7 +343,6 @@ def _read_witness_material_source_result(
         "result_identity": result_identity,
         "exact_act_identity": source_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "source_role": source_role,
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": known_loss,

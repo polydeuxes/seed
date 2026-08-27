@@ -156,7 +156,6 @@ def test_witness_result_carries_its_recorded_binding():
     assert set(carried) == REQUIRED_BINDING_COORDINATES
     assert carried["book_clause_identity"] == "01.Source.H"
     assert carried["subject_reference"] == {
-        "source_role": "this Witness",
         "source_boundary": "fixture boundary",
     }
 

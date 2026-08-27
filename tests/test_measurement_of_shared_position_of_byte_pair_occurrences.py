@@ -696,7 +696,7 @@ def test_recurrent_result_batch_revalidates_every_carried_occurrence_after_coord
         current_coordinates = original(*args, **kwargs)
         if not changed_once:
             if changed_occurrence == "source":
-                changed.material["source_role"] = "changed after Standing"
+                changed.material["source_boundary"] = "changed after coordinate read"
             elif changed_occurrence == "pair":
                 changed.material["assertions"][0]["dimensions"][
                     "content"

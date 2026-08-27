@@ -175,7 +175,7 @@ def test_unrelated_locality_occurrence_does_not_enter_acquisition_read(
 
     unrelated = ledger.append(
         "unrelated.malformed",
-        {"claimed_source_role": "another source"},
+        {"claimed_coordinate": "unrelated material"},
         locality_identity="s1",
     )
 

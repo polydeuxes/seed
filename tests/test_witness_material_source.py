@@ -146,7 +146,7 @@ def test_witness_material_source_fixes_its_exact_source_subject():
     ledger = EventLedger()
     occurred = _preserve(ledger)
 
-    assert occurred.material["source_role"] == "this Witness"
+    assert occurred.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
     reference = occurred.material["subject_to_act_binding_reference"]
     binding = ledger.get(reference["recorded_occurrence_identity"])
     act_occurrence = ledger.get(
@@ -157,7 +157,6 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
     )
     assert binding.material["subject_reference"] == {
-        "source_role": "this Witness",
         "source_boundary": "source boundary",
     }
     assert tuple(sorted(binding.material)) == (
@@ -212,7 +211,6 @@ def test_witness_material_locality_relation_preserves_invocation_and_provenance(
 
     assert occurred.locality_identity == "invocation-locality"
     assert occurred.exact_material == b"hello"
-    assert occurred.material["source_role"] == "this Witness"
     assert occurred.material["source_boundary"] == "stdout"
     assert occurred.material["source_occurrence_references"] == [
         command.identity
