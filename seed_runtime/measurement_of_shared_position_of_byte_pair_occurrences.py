@@ -54,7 +54,7 @@ SHARED_POSITION_MEASUREMENT_RESULT_KIND = (
 )
 BOOK_CLAUSE = "01.Source.D"
 APPLICABILITY_ACT = (
-    "Applicability of exact pair occurrence position Assertions to one same-position "
+    "Applicability of exact pair occurrence coordinates to one same-position "
     "Measurement"
 )
 MEASUREMENT_ACT = "Measurement of one same position of exact byte pair occurrences"

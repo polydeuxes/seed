@@ -25,21 +25,21 @@ occurrence is that boundary or is before that boundary.
 
 Each exact relation requires its exact subjects and exact relation occurrence.
 
-### 01.Current.D.1 — Assertion coordinates
+### 01.Current.D.1 — Result-position coordinates
 
-An Assertion is exact content as one subject. Its exact coordinates are its
-recorded result occurrence, result position, exact source occurrence
-references, and Locality.
+Exact content in one recorded result position is one subject. Its exact
+coordinates are its recorded result occurrence, result position, exact source
+occurrence references, and Locality.
 
 The same content and result position in separate result occurrences require
 separate exact addressed coordinates.
 
-### 01.Current.D.2 — Later Assertions
+### 01.Current.D.2 — Later result position
 
-A later Assertion requires its recorded result occurrence after one exact
-occurrence boundary in the same Locality occurrence order. When its subject is
-current through that boundary, the Assertion is one exact subject in one
-subject-to-Act binding.
+Exact content in one recorded result occurrence is one subject. When that
+occurrence is after one exact occurrence boundary in the same Locality
+occurrence order and the subject is current through the boundary, the exact
+addressed result content is one exact subject in one subject-to-Act binding.
 
 ### 01.Current.E — Relation Assertion coordinates
 

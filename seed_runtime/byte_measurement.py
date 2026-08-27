@@ -2630,7 +2630,7 @@ def _record_byte_measurement_result_from_exact_inputs(
         "dimensions": {
                 "identity": "byte-count-measurement-occurrence",
                 "content": (
-                    "exact source material, byte count, and same-content Assertions"
+                    "exact source material, byte count, and same content"
                 ),
         },
         "exact_act": "declared exact-byte Measurement",
@@ -2798,10 +2798,8 @@ def _assertions_of_recorded_byte_measurement(
         or material["addressed_act_identity"] == material["act_occurrence_identity"]
         or material.get("dimensions")
         != {
-            "identity": "byte-count-measurement-occurrence",
-                "content": (
-                    "exact source material, byte count, and same-content Assertions"
-                ),
+                "identity": "byte-count-measurement-occurrence",
+                "content": "exact source material, byte count, and same content",
         }
     ):
         raise ByteMeasurementError(
@@ -4137,7 +4135,7 @@ def _pair_measurement_result_material(
         "result_identity": binding.material["measurement_result_identity"],
         "dimensions": {
             "identity": "byte-position-pair-count-measurement-occurrence",
-            "content": "byte-position-pair count and same-content Assertions",
+            "content": "byte-position-pair count and same content",
         },
         "exact_act": "declared byte-position-pair Measurement",
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -4629,9 +4627,7 @@ def _validated_recorded_byte_position_pair_measurement(
         )
     expected_dimensions = {
         "identity": "byte-position-pair-count-measurement-occurrence",
-        "content": (
-            "byte-position-pair count and same-content Assertions"
-        ),
+        "content": "byte-position-pair count and same content",
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION

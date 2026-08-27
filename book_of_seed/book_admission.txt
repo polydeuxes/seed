@@ -22,7 +22,6 @@ applicable
 are
 as
 assertion
-assertions
 at
 attempt
 b

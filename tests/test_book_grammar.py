@@ -288,9 +288,9 @@ def test_source_references_are_exact_and_distinct():
     }
 
 
-def test_assertion_coordinates_address_exact_source_occurrences_directly():
+def test_result_positions_address_exact_source_occurrences_directly():
     assert _grammar()["book_coordinates"]["01.Current.D.1"] == {
-        "subject": "Assertion",
+        "subject": "exact_addressed_result_content",
         "coordinates": [
             "recorded_result_occurrence",
             "result_position",
