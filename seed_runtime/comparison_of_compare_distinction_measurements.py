@@ -48,6 +48,8 @@ EVENT_KIND_BOOK_CLAUSES = {
     APPLICABILITY_BINDING_KIND: "01.Current.E.1",
     APPLICABILITY_ACT_OCCURRENCE_KIND: "02.Acts.A",
     APPLICABILITY_RESULT_KIND: "01.Current.E.1",
+    COMPARE_ACT_OCCURRENCE_KIND: "02.Acts.A",
+    COMPARE_RESULT_KIND: "04.Compare",
 }
 
 
@@ -640,3 +642,279 @@ def _read_applicability_result(
     ):
         raise ValueError("measured Distinction Applicability result is not exact")
     return deepcopy(result.material), result, binding, comparison_binding, inputs
+
+
+def _compare_act_material(
+    comparison_binding: Event,
+    applicability_result: Event,
+) -> dict[str, Any]:
+    return {
+        "compare_act_identity": comparison_binding.material["exact_act_identity"],
+        "act_occurrence_identity": comparison_binding.material[
+            "compare_act_occurrence_identity"
+        ],
+        "result_identity": comparison_binding.material["compare_result_identity"],
+        "act": COMPARE_ACT,
+        "subject_to_act_binding_reference": _binding_reference(
+            comparison_binding
+        ),
+        "applicability_result_event_identity": applicability_result.identity,
+        "shared_measurement_reference": deepcopy(
+            applicability_result.material["earlier_later_measurement_reference"]
+        ),
+    }
+
+
+def record_compare_act_occurrence(
+    ledger: EventLedger,
+    *,
+    compare_binding_event_identity: str,
+    applicability_result_event_identity: str,
+    current_coordinates: dict[str, Any],
+) -> Event:
+    """Record Compare only after exact positive Applicability."""
+
+    comparison_binding, _inputs_reading = _read_compare_binding(
+        ledger,
+        compare_binding_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    (
+        applicability_material,
+        applicability_result,
+        _applicability_binding,
+        addressed_binding,
+        _applicability_inputs,
+    ) = _read_applicability_result(
+        ledger,
+        applicability_result_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    bindings = current_coordinates.get("subject_to_act_binding_occurrences")
+    applicability_results = current_coordinates.get(
+        "applicability_result_occurrences"
+    )
+    if (
+        addressed_binding.identity != comparison_binding.identity
+        or applicability_material["applicability"] != "applicable"
+        or applicability_material["earlier_later_measurement_reference"]
+        != applicability_material["later_earlier_measurement_reference"]
+        or type(bindings) is not dict
+        or bindings.get(comparison_binding.identity, object()) is not None
+        or type(applicability_results) is not dict
+        or applicability_results.get(applicability_result.identity, object())
+        is not None
+    ):
+        raise ValueError("Compare requires exact positive Applicability")
+    return ledger.append(
+        COMPARE_ACT_OCCURRENCE_KIND,
+        _compare_act_material(comparison_binding, applicability_result),
+        locality_identity=comparison_binding.locality_identity,
+    )
+
+
+def _read_compare_act(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> tuple[Event, Event, Event, _Inputs]:
+    act = ledger.get(event_identity)
+    binding_reference = (
+        act.material.get("subject_to_act_binding_reference")
+        if act is not None
+        else None
+    )
+    if (
+        act is None
+        or act.kind != COMPARE_ACT_OCCURRENCE_KIND
+        or type(binding_reference) is not dict
+        or ledger.integrity_of(act.identity) == CORRUPTED
+    ):
+        raise ValueError("measured result Compare Act is not exact")
+    comparison_binding, inputs = _read_compare_binding(
+        ledger,
+        binding_reference.get("recorded_occurrence_identity"),
+        prior_coordinates=prior_coordinates,
+    )
+    (
+        applicability_material,
+        applicability_result,
+        _applicability_binding,
+        addressed_binding,
+        _applicability_inputs,
+    ) = _read_applicability_result(
+        ledger,
+        act.material.get("applicability_result_event_identity"),
+        prior_coordinates=prior_coordinates,
+    )
+    if (
+        addressed_binding.identity != comparison_binding.identity
+        or applicability_material["applicability"] != "applicable"
+        or binding_reference != _binding_reference(comparison_binding)
+        or act.locality_identity != comparison_binding.locality_identity
+        or act.material
+        != _compare_act_material(comparison_binding, applicability_result)
+    ):
+        raise ValueError("measured result Compare Act is not exact")
+    ledger.occurrences_in_append_order(
+        (applicability_result.identity, act.identity),
+        locality_identity=act.locality_identity,
+    )
+    return act, comparison_binding, applicability_result, inputs
+
+
+def _compare_result_material(
+    act: Event,
+    inputs: _Inputs,
+) -> dict[str, Any]:
+    earlier_findings = inputs.earlier_reading["findings"]
+    later_findings = inputs.later_reading["findings"]
+    return {
+        "result_identity": act.material["result_identity"],
+        "compare_act_identity": act.material["compare_act_identity"],
+        "act_occurrence_identity": act.material["act_occurrence_identity"],
+        "exact_act": COMPARE_ACT,
+        "subject_to_act_binding_reference": deepcopy(
+            act.material["subject_to_act_binding_reference"]
+        ),
+        "applicability_result_event_identity": act.material[
+            "applicability_result_event_identity"
+        ],
+        "shared_measurement_reference": deepcopy(
+            act.material["shared_measurement_reference"]
+        ),
+        "earlier_measurement_result_reference": _measurement_reference(
+            inputs.earlier
+        ),
+        "later_measurement_result_reference": _measurement_reference(inputs.later),
+        "completeness_boundary": {
+            "earlier": deepcopy(
+                inputs.earlier_reading["completeness_boundary"]
+            ),
+            "later": deepcopy(inputs.later_reading["completeness_boundary"]),
+        },
+        "finding": {
+            "earlier_findings": deepcopy(earlier_findings),
+            "later_findings": deepcopy(later_findings),
+            "same": earlier_findings == later_findings,
+        },
+        "source_locality_identity": inputs.earlier.locality_identity,
+    }
+
+
+def _recorded_compare_result_material(
+    act: Event,
+    inputs: _Inputs,
+    *,
+    yield_relation_identity: str,
+) -> dict[str, Any]:
+    result = _compare_result_material(act, inputs)
+    return {
+        "result_identity": result["result_identity"],
+        "compare_act_identity": result["compare_act_identity"],
+        "act_occurrence_identity": result["act_occurrence_identity"],
+        "exact_act": result["exact_act"],
+        "subject_to_act_binding_reference": deepcopy(
+            result["subject_to_act_binding_reference"]
+        ),
+        "applicability_result_event_identity": result[
+            "applicability_result_event_identity"
+        ],
+        "shared_measurement_reference": deepcopy(
+            result["shared_measurement_reference"]
+        ),
+        "earlier_measurement_result_reference": deepcopy(
+            result["earlier_measurement_result_reference"]
+        ),
+        "later_measurement_result_reference": deepcopy(
+            result["later_measurement_result_reference"]
+        ),
+        "completeness_boundary": deepcopy(result["completeness_boundary"]),
+        "finding": deepcopy(result["finding"]),
+        "source_locality_identity": result["source_locality_identity"],
+        "act_occurrence_event_identity": act.identity,
+        "yield_relation_identity": yield_relation_identity,
+    }
+
+
+def record_compare_result(
+    ledger: EventLedger,
+    *,
+    act_occurrence_event_identity: str,
+    current_coordinates: dict[str, Any] | None = None,
+) -> Event:
+    """Record one Yielded Compare result over both complete subjects."""
+
+    act, _binding, _applicability, inputs = _read_compare_act(
+        ledger,
+        act_occurrence_event_identity,
+        prior_coordinates=current_coordinates,
+    )
+    result = _compare_result_material(act, inputs)
+    yield_relation = _record_yield_relation(
+        ledger,
+        locality_identity=act.locality_identity,
+        exact_act=COMPARE_ACT,
+        act_occurrence_identity=act.material["act_occurrence_identity"],
+        act_occurrence_event_identity=act.identity,
+        result_kind=COMPARE_RESULT,
+        result_identity=result["result_identity"],
+        result_content=result,
+        occurrence_boundary="compare_distinction_results_compare",
+    )
+    return ledger.append(
+        COMPARE_RESULT_KIND,
+        _recorded_compare_result_material(
+            act,
+            inputs,
+            yield_relation_identity=yield_relation.identity,
+        ),
+        locality_identity=act.locality_identity,
+    )
+
+
+def get_recorded_compare_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Read one exact Compare result over complete Measurement results."""
+
+    result = ledger.get(event_identity)
+    if (
+        result is None
+        or result.kind != COMPARE_RESULT_KIND
+        or ledger.integrity_of(result.identity) == CORRUPTED
+    ):
+        raise ValueError("measured result Compare result is not exact")
+    act, _binding, _applicability, inputs = _read_compare_act(
+        ledger,
+        result.material.get("act_occurrence_event_identity"),
+        prior_coordinates=prior_coordinates,
+    )
+    expected = _recorded_compare_result_material(
+        act,
+        inputs,
+        yield_relation_identity=result.material.get("yield_relation_identity"),
+    )
+    yield_identity = result.material.get("yield_relation_identity")
+    yield_event = ledger.get(yield_identity) if type(yield_identity) is str else None
+    requirements = read_requirements_of_yield_relation(
+        ledger,
+        recorded_result_event_identity=result.identity,
+        yield_relation_event_identity=yield_identity,
+        act_occurrence_event_identity=act.identity,
+    )
+    if (
+        result.material != expected
+        or result.locality_identity != act.locality_identity
+        or yield_event is None
+        or yield_event.kind != RECORDED_YIELD_RELATION_EVENT
+        or yield_event.material.get("occurrence_boundary")
+        != "compare_distinction_results_compare"
+        or not all(requirements.values())
+    ):
+        raise ValueError("measured result Compare result is not exact")
+    return deepcopy(result.material)

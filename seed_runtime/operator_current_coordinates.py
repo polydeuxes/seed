@@ -203,6 +203,8 @@ from seed_runtime.comparison_of_compare_distinction_measurements import (
     _read_applicability_binding as _read_compare_distinction_results_applicability_binding,
     _read_applicability_act as _read_compare_distinction_results_applicability_act,
     _read_applicability_result as _read_compare_distinction_results_applicability_result,
+    _read_compare_act as _read_compare_distinction_results_compare_act,
+    get_recorded_compare_result as _read_compare_distinction_results_compare_result,
 )
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
@@ -1501,6 +1503,21 @@ def advance_operator_current_coordinates(
                 prior_coordinates=pair_prior_coordinates,
             )
             applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_COMPARE_ACT_KIND:
+            _read_compare_distinction_results_compare_act(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            continue
+        if event.kind == COMPARE_DISTINCTION_RESULTS_COMPARE_RESULT_KIND:
+            _read_compare_distinction_results_compare_result(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            comparison_result_occurrences[event.identity] = None
             continue
         if event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS:
             validate_ordered_path_source_position_material_comparison_event(
