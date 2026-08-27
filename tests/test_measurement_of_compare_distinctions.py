@@ -326,3 +326,59 @@ def test_measurement_reference_does_not_depend_on_projection_order():
     assert sorted(map(exact_references, observed)) == sorted(
         map(exact_references, expected)
     )
+
+
+def test_separate_occurrences_can_carry_equal_measured_content():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nab\nab\nab\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    references = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    def measured_content(reading):
+        return tuple(
+            (
+                finding["path_position_assertion_reference"][
+                    "assertion_position"
+                ],
+                finding["pair_subject"],
+                finding["recorded_finding_reference"]["finding_category"],
+                finding["recorded_finding_reference"]["subject"],
+            )
+            for finding in reading["findings"]
+        )
+
+    readings = tuple(
+        (
+            get_recorded_compare_distinction_measurement(
+                ledger,
+                reference.earlier_result_occurrence_identity,
+                prior_coordinates=current_coordinates,
+            ),
+            get_recorded_compare_distinction_measurement(
+                ledger,
+                reference.later_result_occurrence_identity,
+                prior_coordinates=current_coordinates,
+            ),
+        )
+        for reference in references
+    )
+
+    assert len(readings) == 2
+    assert measured_content(readings[0][0]) != measured_content(readings[0][1])
+    assert readings[1][0]["findings"] != readings[1][1]["findings"]
+    assert measured_content(readings[1][0]) == measured_content(readings[1][1])
+    assert (
+        readings[1][0]["source_result_occurrence_identity"]
+        != readings[1][1]["source_result_occurrence_identity"]
+    )
