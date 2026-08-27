@@ -1826,6 +1826,7 @@ def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
             source=source,
             applicability_act_occurrence=applicability_act,
             applicability_assertion=applicability,
+            current_coordinates=current_coordinates,
         )
     )
     current_coordinates = _carry_pair_applicability_result_into_current_coordinates(

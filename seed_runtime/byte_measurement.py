@@ -280,6 +280,7 @@ def _recorded_input_assertion_coordinates(
     source: dict[str, Any],
     *,
     measurement_locality_identity: str,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, str | None]]:
     """Resolve the exact occurrences carrying one proposed input."""
 
@@ -298,6 +299,7 @@ def _recorded_input_assertion_coordinates(
             ledger,
             source["recorded_occurrence_identity"],
             source["assertion_position"],
+            prior_coordinates=prior_coordinates,
         )
         if (
             source_event is None
@@ -305,7 +307,11 @@ def _recorded_input_assertion_coordinates(
         ):
             exact = None
     else:
-        exact = _validate_moved_byte_assertion(ledger, movement_identity)
+        exact = _validate_moved_byte_assertion(
+            ledger,
+            movement_identity,
+            prior_destination_coordinates=prior_coordinates,
+        )
         movement = ledger.get(movement_identity)
         if (
             movement is None
@@ -314,7 +320,11 @@ def _recorded_input_assertion_coordinates(
             exact = None
     assertion = None
     if exact is not None:
-        _event, assertion, _localities = _read_byte_result_position(ledger, exact)
+        _event, assertion, _localities = _read_byte_result_position(
+            ledger,
+            exact,
+            prior_coordinates=prior_coordinates,
+        )
     if (
         exact is None
         or assertion is None
@@ -343,6 +353,7 @@ def _pair_input_applicability(
     *,
     binding: Event,
     measurement_locality_identity: str,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Determine this source Assertion's use by this exact pair Measurement."""
 
@@ -350,6 +361,7 @@ def _pair_input_applicability(
         ledger,
         source,
         measurement_locality_identity=measurement_locality_identity,
+        prior_coordinates=prior_coordinates,
     )
     return _pair_input_applicability_from_exact_source(
         source,
@@ -531,6 +543,7 @@ def _prepare_pair_source(
     *,
     source_measurement_event_identity: str,
     measurement_locality_identity: str,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], tuple[str, ...], dict[str, Any]]:
     """Read one source before its act-local Applicability determination."""
 
@@ -542,7 +555,9 @@ def _prepare_pair_source(
             "byte-position-pair Measurement requires an exact Act Locality"
         )
     read = _assertions_of_recorded_byte_measurement(
-        ledger, source_measurement_event_identity
+        ledger,
+        source_measurement_event_identity,
+        prior_coordinates=prior_coordinates,
     )
     if read is None:
         raise ByteMeasurementError("byte-position-pair Measurement requires a source")
@@ -562,6 +577,7 @@ def _prepare_pair_source(
         ledger,
         source_measurement_event_identity,
         source["dimensions"]["position"],
+        prior_coordinates=prior_coordinates,
     )
     if source is None:
         raise ByteMeasurementError(
@@ -572,7 +588,11 @@ def _prepare_pair_source(
         source=source,
         destination_locality=measurement_locality_identity,
     )
-    _event, material, source_localities = _read_byte_result_position(ledger, source)
+    _event, material, source_localities = _read_byte_result_position(
+        ledger,
+        source,
+        prior_coordinates=prior_coordinates,
+    )
     content = material["dimensions"]["content"]
     return source, source_localities, content
 
@@ -3113,6 +3133,8 @@ def _require_exact_pair_subject_to_act_binding_event(
     ledger: EventLedger,
     binding: Event,
     source: dict[str, Any],
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> None:
     """Validate one recorded subject-to-Act binding against its exact source."""
 
@@ -3148,7 +3170,9 @@ def _require_exact_pair_subject_to_act_binding_event(
     identities = {key: material.get(key) for key in identity_keys}
     boundary = material.get("through_event_occurrence_identity")
     _source_event, source_material, source_localities = _read_byte_result_position(
-        ledger, source
+        ledger,
+        source,
+        prior_coordinates=prior_coordinates,
     )
     common = dict(
         source=source,
@@ -3431,7 +3455,12 @@ def _read_pair_subject_to_act_binding(
         ledger, source, prior_coordinates=prior_coordinates
     )
     content = source_material["dimensions"]["content"]
-    _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
+    _require_exact_pair_subject_to_act_binding_event(
+        ledger,
+        binding,
+        source,
+        prior_coordinates=prior_coordinates,
+    )
     if prior_coordinates is None:
         prior_coordinates = _prior_coordinates_for_pair_subject_to_act_binding(
             ledger, binding=binding, boundary=boundary
@@ -3534,8 +3563,14 @@ def _require_exact_pair_applicability_act_event(
     *,
     binding: Event,
     source: dict[str, Any],
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> None:
-    _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
+    _require_exact_pair_subject_to_act_binding_event(
+        ledger,
+        binding,
+        source,
+        prior_coordinates=prior_coordinates,
+    )
     if (
         type(event) is not Event
         or ledger.get(event.identity) != event
@@ -3554,7 +3589,12 @@ def _record_pair_input_applicability_act_from_carried_binding(
     source: dict[str, Any],
     current_coordinates: dict[str, Any],
 ) -> Event:
-    _require_exact_pair_subject_to_act_binding_event(ledger, binding, source)
+    _require_exact_pair_subject_to_act_binding_event(
+        ledger,
+        binding,
+        source,
+        prior_coordinates=current_coordinates,
+    )
     _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
         source=source,
@@ -3603,12 +3643,14 @@ def _require_exact_pair_applicability_result_event(
     binding: Event,
     source: dict[str, Any],
     applicability_act_occurrence: Event,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _require_exact_pair_applicability_act_event(
         ledger,
         applicability_act_occurrence,
         binding=binding,
         source=source,
+        prior_coordinates=prior_coordinates,
     )
     expected_applicability = _pair_input_applicability_from_exact_source(
         source,
@@ -3671,12 +3713,14 @@ def _record_pair_input_applicability_result_from_carried_act(
     source: dict[str, Any],
     applicability_act_occurrence: Event,
     applicability_assertion: dict[str, Any],
+    current_coordinates: dict[str, Any],
 ) -> Event:
     _require_exact_pair_applicability_act_event(
         ledger,
         applicability_act_occurrence,
         binding=binding,
         source=source,
+        prior_coordinates=current_coordinates,
     )
     expected_applicability = _pair_input_applicability_from_exact_source(
         source,
@@ -3827,8 +3871,11 @@ def _read_recorded_pair_input_applicability(
         binding=binding,
         source=source,
         applicability_act_occurrence=act_occurrence,
+        prior_coordinates=prior_coordinates,
     )
     return deepcopy(applicability)
+
+
 def get_recorded_pair_input_applicability(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any] | None:
@@ -3897,6 +3944,7 @@ def _require_exact_pair_measurement_act_event(
     source: dict[str, Any],
     applicability_event: Event,
     applicability_act_occurrence: Event,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> None:
     _require_exact_pair_applicability_result_event(
         ledger,
@@ -3904,6 +3952,7 @@ def _require_exact_pair_measurement_act_event(
         binding=applicability_binding,
         source=source,
         applicability_act_occurrence=applicability_act_occurrence,
+        prior_coordinates=prior_coordinates,
     )
     if (
         type(event) is not Event
@@ -3948,7 +3997,9 @@ def _record_pair_measurement_act_from_carried_applicability(
             prior_coordinates=current_coordinates,
         )
     )
-    if _byte_result_position_reference(applicability_source) != _byte_result_position_reference(source):
+    if _byte_result_position_reference(
+        applicability_source
+    ) != _byte_result_position_reference(source):
         raise ByteMeasurementError(
             "pair Measurement Act Applicability addresses another source"
         )
@@ -3958,6 +4009,7 @@ def _record_pair_measurement_act_from_carried_applicability(
         binding=applicability_binding,
         source=source,
         applicability_act_occurrence=applicability_act_occurrence,
+        prior_coordinates=current_coordinates,
     )
     _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
@@ -4043,6 +4095,7 @@ def _read_pair_measurement_act_occurrence(
             binding=applicability_binding,
             source=applicability_source,
             applicability_act_occurrence=applicability_act,
+            prior_coordinates=prior_coordinates,
         )
     if (
         reference != _pair_subject_to_act_binding_reference(binding)
@@ -4130,6 +4183,7 @@ def _record_pair_measurement_result_from_carried_act(
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
+        prior_coordinates=current_coordinates,
     )
     _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
@@ -4252,6 +4306,7 @@ def _require_exact_pair_measurement_result_event(
         source=source,
         applicability_event=applicability_event,
         applicability_act_occurrence=applicability_act_occurrence,
+        prior_coordinates=prior_coordinates,
     )
     _source_event, source_material, source_localities = _read_byte_result_position(
         ledger, source, prior_coordinates=prior_coordinates
@@ -4376,6 +4431,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         source,
         binding=applicability_binding,
         measurement_locality_identity=recording_locality_identity,
+        prior_coordinates=current_coordinates,
     )
     applicability_act = (
         _record_pair_input_applicability_act_from_carried_binding(
@@ -4399,6 +4455,7 @@ def _record_byte_position_pair_count_layer_from_carried_current_coordinates(
         source=source,
         applicability_act_occurrence=applicability_act,
         applicability_assertion=applicability,
+        current_coordinates=current_coordinates,
     )
     current_coordinates = _carry_pair_applicability_result_into_current_coordinates(
         ledger,
@@ -4464,6 +4521,7 @@ def _record_byte_position_pair_count_layer_from_current_coordinates(
         ledger,
         source_measurement_event_identity=source_measurement_event_identity,
         measurement_locality_identity=recording_locality_identity,
+        prior_coordinates=current_coordinates,
     )
     _require_carried_pair_measurement_at_current_append_boundary(
         ledger,
