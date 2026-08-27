@@ -1,4 +1,4 @@
-"""Exact material acquisition from an empty ledger."""
+"""Exact material results from an empty Ledger."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
+    read_material_locality_relation_requirements,
 )
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -61,54 +62,60 @@ def _record_material(ledger: EventLedger) -> None:
         )
 
 
-def _acquisition_results(ledger: EventLedger):
+def _material_results(ledger: EventLedger):
     return list(iter_exact_material_results(ledger, "s"))
 
 
-def test_one_acquisition_result_occurs_for_each_delivered_line(ledger):
-    acquisition_results = _acquisition_results(ledger)
+def test_one_material_result_occurs_for_each_delivered_line(ledger):
+    material_results = _material_results(ledger)
 
-    assert len(acquisition_results) == 2 + len(E3.split("\n"))
+    assert len(material_results) == 2 + len(E3.split("\n"))
 
 
 def test_each_material_result_is_an_exact_operator_source_occurrence(ledger):
-    acquisition_results = _acquisition_results(ledger)
+    material_results = _material_results(ledger)
 
     assert all(
         event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-        for event in acquisition_results
+        for event in material_results
     )
 
 
-def test_each_material_acquisition_preserves_exact_bytes(ledger):
-    exact = [exact_material_result_bytes(event) for event in _acquisition_results(ledger)]
+def test_each_material_result_preserves_exact_bytes(ledger):
+    exact = [exact_material_result_bytes(event) for event in _material_results(ledger)]
 
     assert exact[0] == (E1 + "\n").encode()
     assert exact[1] == (E2 + "\n").encode()
     assert (E3 + "\n").encode() not in exact
 
 
-def test_each_material_acquisition_binds_its_exact_act_and_yield_relation(ledger):
-    for acquisition_result in _acquisition_results(ledger):
+def test_each_material_result_binds_its_exact_act_and_yield_relation(ledger):
+    for material_result in _material_results(ledger):
         assert all(
             read_requirements_of_yield_relation(
                 ledger,
-                recorded_result_event_identity=acquisition_result.identity,
-                yield_relation_event_identity=acquisition_result.material["yield_relation_identity"],
-                act_occurrence_event_identity=acquisition_result.material[
+                recorded_result_event_identity=material_result.identity,
+                yield_relation_event_identity=material_result.material["yield_relation_identity"],
+                act_occurrence_event_identity=material_result.material[
                     "act_occurrence_event_identity"
                 ],
             ).values()
         )
 
 
-def test_material_acquisition_does_not_assert_a_source_relation(ledger):
-    for acquisition_result in _acquisition_results(ledger):
-        assert acquisition_result.material["unknown"] == ["source_relation"]
-        assert acquisition_result.material["source_occurrence_references"] == []
+def test_material_result_has_exact_locality_without_an_invented_source_relation(ledger):
+    for material_result in _material_results(ledger):
+        assert all(
+            read_material_locality_relation_requirements(
+                ledger,
+                recorded_result_event_identity=material_result.identity,
+            ).values()
+        )
+        assert "source_relation" not in material_result.material
+        assert material_result.material["source_occurrence_references"] == []
 
 
-def test_material_acquisition_occurrences_are_exactly_addressable(ledger):
+def test_material_result_occurrences_are_exactly_addressable(ledger):
     occurrences = exact_null_start_occurrences(ledger.list())
 
     assert "operator.material.source_recorded" in occurrences
@@ -116,10 +123,10 @@ def test_material_acquisition_occurrences_are_exactly_addressable(ledger):
     assert "yield_relation_identity" in occurrences
 
 
-def test_material_acquisition_exact_material_is_inspectable(ledger):
-    acquisition_results = _acquisition_results(ledger)
+def test_material_result_exact_material_is_inspectable(ledger):
+    material_results = _material_results(ledger)
 
-    assert all(type(event.exact_material) is bytes for event in acquisition_results)
+    assert all(type(event.exact_material) is bytes for event in material_results)
 
 
 
