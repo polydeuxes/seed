@@ -64,7 +64,6 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     expected = tuple(
         (
             relation_finding["path_position_assertion_reference"],
-            relation_finding["pair_subject"],
             reference,
         )
         for relation_finding in source_findings
@@ -73,7 +72,6 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     measured = tuple(
         (
             finding["path_position_assertion_reference"],
-            finding["pair_subject"],
             finding["recorded_finding_reference"],
         )
         for finding in reading["findings"]
@@ -99,7 +97,7 @@ def test_changed_measured_distinction_is_refused():
     ledger = EventLedger()
     _source, result, _current_coordinates = _record_measurement(ledger)
     changed = deepcopy(result.material["findings"][0])
-    changed["pair_subject"] = [0, 0]
+    changed["recorded_finding_reference"]["subject"]["content"] = [0, 0]
     result.material["findings"][0] = changed
 
     with pytest.raises(ValueError, match="not exact"):
@@ -351,7 +349,7 @@ def test_separate_occurrences_can_carry_equal_measured_content():
                 finding["path_position_assertion_reference"][
                     "assertion_position"
                 ],
-                finding["pair_subject"],
+                finding["recorded_finding_reference"]["subject"]["content"],
                 finding["recorded_finding_reference"]["finding_category"],
                 finding["recorded_finding_reference"]["subject"],
             )

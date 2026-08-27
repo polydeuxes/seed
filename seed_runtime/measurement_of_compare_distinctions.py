@@ -168,7 +168,6 @@ def _exact_distinctions(
                     "path_position_assertion_reference": deepcopy(
                         position_reference
                     ),
-                    "pair_subject": deepcopy(pair_subject),
                     "recorded_finding_reference": deepcopy(reference),
                 }
             )
