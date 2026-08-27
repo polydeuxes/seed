@@ -1901,9 +1901,6 @@ def _recurrent_result_material_payload(
         ],
         "locality": {"locality_identity": recurrence_event.locality_identity},
         "conflicts": [],
-        "unknown": [
-            "what the exact material means beyond this Measurement: Unknown"
-        ],
     }
 
 

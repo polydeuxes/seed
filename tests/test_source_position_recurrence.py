@@ -627,7 +627,6 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
         "exact_material",
         "locality",
         "subject",
-        "unknown",
     )
 
     act = ledger.get(event.material["act_occurrence_event_identity"])
