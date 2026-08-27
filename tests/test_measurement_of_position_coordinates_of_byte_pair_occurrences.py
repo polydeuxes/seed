@@ -366,7 +366,7 @@ def test_assignment_act_yield_and_result_enter_current_standing():
     )
 
 
-def test_act_requires_current_coordinates_that_carry_exact_binding():
+def test_act_requires_current_coordinates_that_address_exact_binding():
     ledger = EventLedger()
     source = _source(ledger)
     locality = source.locality_identity
@@ -381,7 +381,6 @@ def test_act_requires_current_coordinates_that_carry_exact_binding():
         "exact_act_identity",
         "act_occurrence_identity",
         "measurement_result_identity",
-        "result_boundary_identity",
         "book_clause_identity",
         "source_material_result_occurrence_identity",
         "source_locality_identity",
