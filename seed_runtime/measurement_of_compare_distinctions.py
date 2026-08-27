@@ -703,12 +703,32 @@ def compare_distinction_measurement_subjects_from_current_coordinates(
         for measurement in exact_measurements
     )
     subjects = []
-    for earlier_position, (earlier, earlier_subject) in enumerate(
-        producing_subjects
-    ):
-        for later, later_subject in producing_subjects[earlier_position + 1 :]:
-            shared = earlier_subject["later_measurement_reference"]
-            if shared != later_subject["earlier_measurement_reference"]:
+    results_by_later_measurement_occurrence: dict[
+        str, list[tuple[Event, dict[str, Any]]]
+    ] = {}
+    for later, later_subject in producing_subjects:
+        earlier_measurement_reference = later_subject[
+            "earlier_measurement_reference"
+        ]
+        earlier_measurement_occurrence_identity = earlier_measurement_reference.get(
+            "recorded_occurrence_identity"
+        )
+        later_measurement_reference = later_subject["later_measurement_reference"]
+        later_measurement_occurrence_identity = later_measurement_reference.get(
+            "recorded_occurrence_identity"
+        )
+        if (
+            type(earlier_measurement_occurrence_identity) is not str
+            or not earlier_measurement_occurrence_identity
+            or type(later_measurement_occurrence_identity) is not str
+            or not later_measurement_occurrence_identity
+        ):
+            raise ValueError("Measurement subjects require exact producing coordinates")
+        for earlier, shared in results_by_later_measurement_occurrence.get(
+            earlier_measurement_occurrence_identity,
+            (),
+        ):
+            if shared != earlier_measurement_reference:
                 continue
             subjects.append(
                 CompareDistinctionMeasurementSubjects(
@@ -717,4 +737,8 @@ def compare_distinction_measurement_subjects_from_current_coordinates(
                     deepcopy(shared),
                 )
             )
+        results_by_later_measurement_occurrence.setdefault(
+            later_measurement_occurrence_identity,
+            [],
+        ).append((later, deepcopy(later_measurement_reference)))
     return tuple(subjects)
