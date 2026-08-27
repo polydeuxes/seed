@@ -170,6 +170,9 @@ def test_calculator_provider_preserves_supplied_material_and_completion(
         SuppliedWitnessMaterialOccurrence(
             b"",
             "invocation completion",
+            time_boundary_reached=False,
+            output_byte_count_boundary_reached=False,
+            error_byte_count_boundary_reached=False,
         ),
     )
 
@@ -270,6 +273,9 @@ def test_host_output_is_bounded_without_returncode_material():
     assert output.known_loss
     assert supplied[-1].exact_bytes == b""
     assert supplied[-1].known_loss
+    assert supplied[-1].time_boundary_reached is False
+    assert supplied[-1].output_byte_count_boundary_reached is True
+    assert supplied[-1].error_byte_count_boundary_reached is False
 
 
 def test_bounded_invocation_uses_its_exact_material_byte_count_boundary():
@@ -451,6 +457,9 @@ def test_bounded_pytest_preserves_partial_results_and_known_completion_loss(
     assert supplied[0].known_loss == ()
     assert supplied[1].known_loss == ()
     assert supplied[2].known_loss
+    assert supplied[2].time_boundary_reached is timed_out
+    assert supplied[2].output_byte_count_boundary_reached is output_truncated
+    assert supplied[2].error_byte_count_boundary_reached is error_truncated
 
 
 def test_pytest_provider_death_is_not_replaced_by_supplied_results(monkeypatch):

@@ -246,6 +246,9 @@ def _supply_completion(
             exact_bytes=b"",
             source_boundary="invocation completion",
             known_loss=invocation_loss,
+            time_boundary_reached=timed_out,
+            output_byte_count_boundary_reached=output_truncated,
+            error_byte_count_boundary_reached=error_truncated,
         )
     )
 

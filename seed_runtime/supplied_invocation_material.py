@@ -40,6 +40,9 @@ class SuppliedWitnessMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
     known_loss: tuple[str, ...] = ()
+    time_boundary_reached: bool | None = None
+    output_byte_count_boundary_reached: bool | None = None
+    error_byte_count_boundary_reached: bool | None = None
     source_occurrence_positions: tuple[int, ...] = ()
     read_occurrences: tuple[SuppliedWitnessReadOccurrence, ...] = ()
 
@@ -52,6 +55,15 @@ class SuppliedWitnessMaterialOccurrence:
             type(item) is not str for item in self.known_loss
         ):
             raise TypeError("exact known loss required")
+        if any(
+            value is not None and type(value) is not bool
+            for value in (
+                self.time_boundary_reached,
+                self.output_byte_count_boundary_reached,
+                self.error_byte_count_boundary_reached,
+            )
+        ):
+            raise TypeError("exact invocation boundary outcomes required")
         if (
             type(self.source_occurrence_positions) is not tuple
             or len(set(self.source_occurrence_positions))
@@ -207,6 +219,13 @@ def record_supplied_witness_material_source(
         exact_bytes=supplied.exact_bytes,
         source_boundary=supplied.source_boundary,
         known_loss=supplied.known_loss,
+        time_boundary_reached=supplied.time_boundary_reached,
+        output_byte_count_boundary_reached=(
+            supplied.output_byte_count_boundary_reached
+        ),
+        error_byte_count_boundary_reached=(
+            supplied.error_byte_count_boundary_reached
+        ),
         source_occurrence_references=(
             command_occurrence.identity,
             operator_invocation_locality_result_event_identity,

@@ -126,6 +126,9 @@ def record_witness_material_source(
     exact_bytes: bytes,
     source_boundary: str,
     known_loss: tuple[str, ...] = (),
+    time_boundary_reached: bool | None = None,
+    output_byte_count_boundary_reached: bool | None = None,
+    error_byte_count_boundary_reached: bool | None = None,
     source_occurrence_references: tuple[str, ...] = (),
     read_occurrences: tuple[dict[str, object], ...] = (),
 ) -> Event:
@@ -143,6 +146,18 @@ def record_witness_material_source(
             )
     if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
         raise WitnessMaterialSourceError("known loss must be an exact tuple of material")
+    boundary_outcomes = {
+        "time_boundary_reached": time_boundary_reached,
+        "output_byte_count_boundary_reached": output_byte_count_boundary_reached,
+        "error_byte_count_boundary_reached": error_byte_count_boundary_reached,
+    }
+    if any(
+        value is not None and type(value) is not bool
+        for value in boundary_outcomes.values()
+    ):
+        raise WitnessMaterialSourceError(
+            "invocation boundary outcomes must be exact booleans"
+        )
     if (
         type(source_occurrence_references) is not tuple
         or len(set(source_occurrence_references))
@@ -200,6 +215,13 @@ def record_witness_material_source(
         ),
         "locality_relation": locality_relation,
     }
+    result.update(
+        {
+            name: value
+            for name, value in boundary_outcomes.items()
+            if value is not None
+        }
+    )
     if read_occurrences:
         result["read_occurrences"] = [
             dict(occurrence) for occurrence in read_occurrences
@@ -263,6 +285,15 @@ def _read_witness_material_source_result(
     binding_reference = material.get("subject_to_act_binding_reference")
     yield_identity = material.get("yield_relation_identity")
     locality_relation = material.get("locality_relation")
+    boundary_outcomes = {
+        name: material[name]
+        for name in (
+            "time_boundary_reached",
+            "output_byte_count_boundary_reached",
+            "error_byte_count_boundary_reached",
+        )
+        if name in material
+    }
     act_occurrence = (
         ledger.get(act_occurrence_event_identity)
         if type(act_occurrence_event_identity) is str
@@ -295,6 +326,7 @@ def _read_witness_material_source_result(
         or binding_reference != _subject_to_act_binding_reference(binding)
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
+        or any(type(value) is not bool for value in boundary_outcomes.values())
         or type(source_references) is not list
         or len(set(source_references)) != len(source_references)
         or any(
@@ -344,6 +376,7 @@ def _read_witness_material_source_result(
         "source_occurrence_references": source_references,
         "locality_relation": locality_relation,
     }
+    result.update(boundary_outcomes)
     if read_occurrences:
         result["read_occurrences"] = read_occurrences
     expected_act_occurrence = {

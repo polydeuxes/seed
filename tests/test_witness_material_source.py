@@ -60,6 +60,22 @@ def test_source_result_preserves_each_exact_byte_value_without_interpretation():
     }
 
 
+def test_source_result_preserves_exact_external_invocation_boundary_outcomes():
+    ledger = EventLedger()
+    occurred = _preserve(
+        ledger,
+        b"partial output",
+        time_boundary_reached=True,
+        output_byte_count_boundary_reached=False,
+        error_byte_count_boundary_reached=True,
+    )
+
+    assert read_exact_material_result(ledger, occurred.identity) == occurred
+    assert occurred.material["time_boundary_reached"] is True
+    assert occurred.material["output_byte_count_boundary_reached"] is False
+    assert occurred.material["error_byte_count_boundary_reached"] is True
+
+
 def test_material_source_preserves_only_exact_intact_source_occurrence_references():
     class CorruptedReferenceLedger(EventLedger):
         corrupted = None
