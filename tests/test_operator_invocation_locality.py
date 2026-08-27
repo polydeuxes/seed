@@ -77,7 +77,6 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
         "exact_act",
         "operator_invocation_locality_act_identity",
         "act_occurrence_identity",
-        "relation_occurrence_identity",
         "result_boundary_identity",
         "operator_material_occurrence_reference",
         "operator_material_result_identity",
@@ -97,9 +96,6 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     assert recorded["locality_relation"] == {
         "first_subject": "operator",
         "second_subject": result.locality_identity,
-        "relation_occurrence_identity": recorded[
-            "relation_occurrence_identity"
-        ],
     }
     assert operator_invocation_locality_occurrence_references(
         ledger, result.identity
@@ -156,7 +152,7 @@ def test_witness_material_occurs_only_in_the_related_locality():
     }
 
 
-def test_each_operator_occurrence_establishes_distinct_relation_identities():
+def test_each_operator_occurrence_establishes_a_distinct_relation_result():
     ledger = EventLedger()
     first = _relation(ledger, _command(ledger))[2]
     second = _relation(ledger, _command(ledger))[2]
@@ -169,7 +165,6 @@ def test_each_operator_occurrence_establishes_distinct_relation_identities():
         "result_identity",
         "operator_invocation_locality_act_identity",
         "act_occurrence_identity",
-        "relation_occurrence_identity",
         "destination_locality_identity",
     )
     assert all(
