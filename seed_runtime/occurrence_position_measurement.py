@@ -180,7 +180,6 @@ def _binding_material(
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
 
 
@@ -204,7 +203,6 @@ def _position_assertions(
                 "result": "position",
                 "assertion_subject": subject,
                 "conflicts": "Unknown",
-                "unknown": [],
             }
         )
     return assertions

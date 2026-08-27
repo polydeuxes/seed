@@ -256,7 +256,6 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
         "source_locality_identity",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
-        "unknown",
     }
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
@@ -641,7 +640,6 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
             "result",
             "assertion_subject",
             "conflicts",
-            "unknown",
         }
         and item["result"] == "position"
         for item in assertions
