@@ -313,24 +313,6 @@ def _applicability_binding_material(
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
         "through_event_occurrence_identity": boundary,
-        "applicability_of_input_to_compare": [
-            {
-                "first_subject": deepcopy(inputs["first"]),
-                "relation": "applicability",
-                "second_subject": {
-                    "act_identity": compare_act_identity,
-                    "act_occurrence_identity": compare_act_occurrence_identity,
-                },
-            },
-            {
-                "first_subject": deepcopy(inputs["second"]),
-                "relation": "applicability",
-                "second_subject": {
-                    "act_identity": compare_act_identity,
-                    "act_occurrence_identity": compare_act_occurrence_identity,
-                },
-            },
-        ],
     }
 
 
@@ -369,9 +351,6 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
             material["second_source_position_coordinate"]
         ),
         "through_event_occurrence_identity": binding.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            material["applicability_of_input_to_compare"]
-        ),
     }
 
 
@@ -562,9 +541,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             material["second_source_position_coordinate"]
         ),
         "act_occurrence_event_identity": act.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            act.material["applicability_of_input_to_compare"]
-        ),
         "applicability": "applicable",
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -609,9 +585,6 @@ def _recorded_applicability_result_material(
         "act_occurrence_event_identity": material[
             "act_occurrence_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            material["applicability_of_input_to_compare"]
-        ),
         "applicability": material["applicability"],
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -636,9 +609,6 @@ def _recorded_compare_result_material(
         "applicability_result_event_identity": material[
             "applicability_result_event_identity"
         ],
-        "applicability_of_input_to_compare": deepcopy(
-            material["applicability_of_input_to_compare"]
-        ),
         "finding": deepcopy(material["finding"]),
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(material["path_position_pair"]),
@@ -730,9 +700,6 @@ def _compare_act_material(
         "path_result_reference": deepcopy(material["path_result_reference"]),
         "path_position_pair": list(subject["path_position_pair"]),
         "through_event_occurrence_identity": applicability.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            applicability.material["applicability_of_input_to_compare"]
-        ),
     }
 
 
@@ -814,9 +781,6 @@ def _compare_result_material(
             material["subject_to_act_binding_reference"]
         ),
         "applicability_result_event_identity": applicability.identity,
-        "applicability_of_input_to_compare": deepcopy(
-            applicability.material["applicability_of_input_to_compare"]
-        ),
         "finding": _finding(inputs),
         "path_result_reference": deepcopy(inputs["reference"]),
         "path_position_pair": list(inputs["path_position_pair"]),
