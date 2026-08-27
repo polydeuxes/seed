@@ -34,6 +34,7 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "shared_pair_position_measurement",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
+        "compare_distinction_measurement",
         "comparison_of_ordered_path_source_position_material_applicability",
         "comparison_of_ordered_path_source_position_material_compare",
         "source_position_compare_applicability",

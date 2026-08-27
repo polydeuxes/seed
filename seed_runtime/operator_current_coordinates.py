@@ -184,6 +184,14 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     _read_compare_act as _ordered_relation_path_compare_act_reading,
     get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
 )
+from seed_runtime.measurement_of_compare_distinctions import (
+    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
+    COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+    _read_binding as _read_compare_distinction_measurement_binding,
+    _read_act as _read_compare_distinction_measurement_act,
+    get_recorded_compare_distinction_measurement,
+)
 from seed_runtime.comparison_of_ordered_path_source_position_material import (
     COMPARE_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
     APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_EVENT as ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_BINDING_EVENT,
@@ -314,6 +322,11 @@ _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT,
     COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
 }
+_COMPARE_DISTINCTION_MEASUREMENT_KINDS = {
+    COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND,
+    COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND,
+    COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+}
 _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS = {
     ORDERED_PATH_SOURCE_POSITION_COMPARE_BINDING_EVENT,
     ORDERED_PATH_SOURCE_POSITION_COMPARE_APPLICABILITY_BINDING_EVENT,
@@ -358,6 +371,7 @@ _SUPPORTED_KINDS = {
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
     *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
+    *_COMPARE_DISTINCTION_MEASUREMENT_KINDS,
     *_ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS,
     *_SOURCE_POSITION_RECURRENCE_KINDS,
 }
@@ -939,6 +953,7 @@ def advance_operator_current_coordinates(
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
             or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
+            or event.kind in _COMPARE_DISTINCTION_MEASUREMENT_KINDS
             or event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS
             or event.kind in _SOURCE_POSITION_RECURRENCE_KINDS
         ):
@@ -972,6 +987,7 @@ def advance_operator_current_coordinates(
             "applicability_result_occurrences": (
                 applicability_result_occurrences
             ),
+            "comparison_result_occurrences": comparison_result_occurrences,
         }
         if pair_lifecycle_event:
             if event.kind == BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND:
@@ -1407,6 +1423,31 @@ def advance_operator_current_coordinates(
                 prior_coordinates=pair_prior_coordinates,
             )
             comparison_result_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND:
+            _read_compare_distinction_measurement_binding(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            subject_to_act_binding_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_ACT_OCCURRENCE_KIND:
+            _read_compare_distinction_measurement_act(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            continue
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND:
+            get_recorded_compare_distinction_measurement(
+                ledger,
+                event.identity,
+                prior_coordinates=pair_prior_coordinates,
+            )
+            measurement_occurrences[event.identity] = (
+                _measurement_occurrence_coordinates(event)
+            )
             continue
         if event.kind in _ORDERED_PATH_SOURCE_POSITION_MATERIAL_COMPARISON_KINDS:
             validate_ordered_path_source_position_material_comparison_event(
