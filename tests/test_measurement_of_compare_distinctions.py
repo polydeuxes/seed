@@ -285,3 +285,44 @@ def test_exact_measurement_references_are_reconstructed_after_restart(tmp_path):
     )
 
     assert after == before
+
+
+def test_measurement_reference_does_not_depend_on_projection_order():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\nabcd\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    expected = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    reordered_coordinates = deepcopy(current_coordinates)
+    reordered_coordinates["measurement_occurrences"] = dict(
+        reversed(tuple(current_coordinates["measurement_occurrences"].items()))
+    )
+
+    observed = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=reordered_coordinates,
+    )
+
+    def exact_references(reference):
+        return (
+            reference.earlier_result_occurrence_identity,
+            reference.later_result_occurrence_identity,
+            reference.exact_measurement_reference[
+                "recorded_occurrence_identity"
+            ],
+        )
+
+    assert sorted(map(exact_references, observed)) == sorted(
+        map(exact_references, expected)
+    )

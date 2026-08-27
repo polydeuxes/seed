@@ -725,18 +725,20 @@ def compare_distinction_measurement_references_from_current_coordinates(
         )
         for measurement in exact_measurements
     )
-    references = []
+    results_by_earlier_measurement_occurrence: dict[
+        str, list[tuple[Event, dict[str, Any]]]
+    ] = {}
     results_by_later_measurement_occurrence: dict[
         str, list[tuple[Event, dict[str, Any]]]
     ] = {}
-    for later, later_subject in producing_subjects:
-        earlier_measurement_reference = later_subject[
+    for result, subject in producing_subjects:
+        earlier_measurement_reference = subject[
             "earlier_measurement_reference"
         ]
         earlier_measurement_occurrence_identity = earlier_measurement_reference.get(
             "recorded_occurrence_identity"
         )
-        later_measurement_reference = later_subject["later_measurement_reference"]
+        later_measurement_reference = subject["later_measurement_reference"]
         later_measurement_occurrence_identity = later_measurement_reference.get(
             "recorded_occurrence_identity"
         )
@@ -747,21 +749,33 @@ def compare_distinction_measurement_references_from_current_coordinates(
             or not later_measurement_occurrence_identity
         ):
             raise ValueError("Measurement subjects require exact producing coordinates")
-        for earlier, shared in results_by_later_measurement_occurrence.get(
+        results_by_earlier_measurement_occurrence.setdefault(
             earlier_measurement_occurrence_identity,
-            (),
-        ):
-            if shared != earlier_measurement_reference:
-                continue
-            references.append(
-                CompareDistinctionMeasurementReferences(
-                    earlier.identity,
-                    later.identity,
-                    deepcopy(shared),
-                )
-            )
+            [],
+        ).append((result, deepcopy(earlier_measurement_reference)))
         results_by_later_measurement_occurrence.setdefault(
             later_measurement_occurrence_identity,
             [],
-        ).append((later, deepcopy(later_measurement_reference)))
+        ).append((result, deepcopy(later_measurement_reference)))
+    references = []
+    for (
+        measurement_occurrence_identity,
+        earlier_results,
+    ) in results_by_later_measurement_occurrence.items():
+        for earlier, later_measurement_reference in earlier_results:
+            for later, earlier_measurement_reference in (
+                results_by_earlier_measurement_occurrence.get(
+                    measurement_occurrence_identity,
+                    (),
+                )
+            ):
+                if later_measurement_reference != earlier_measurement_reference:
+                    continue
+                references.append(
+                    CompareDistinctionMeasurementReferences(
+                        earlier.identity,
+                        later.identity,
+                        deepcopy(later_measurement_reference),
+                    )
+                )
     return tuple(references)
