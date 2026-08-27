@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from io import BytesIO
+from types import SimpleNamespace
 
 import pytest
 
@@ -272,13 +273,12 @@ def test_console_empty_input_records_one_unfinished_boundary_occurrence():
 def test_console_records_one_fresh_occurrence_per_read_including_final_empty_read(
     monkeypatch,
 ):
-    class _AlreadyMeasured(set):
-        def __contains__(self, _item):
-            return True
-
     monkeypatch.setattr(
-        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
-        lambda _ledger: _AlreadyMeasured(),
+        "seed_runtime.operator_console._record_declared_measurements_from_carried_current_coordinates",
+        lambda _ledger, current_coordinates, *, locality_identity: SimpleNamespace(
+            current_coordinates=current_coordinates,
+            result_occurrences=(),
+        ),
     )
     ledger = EventLedger()
     run_persistent_operator_console(

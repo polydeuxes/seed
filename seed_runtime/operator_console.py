@@ -8,7 +8,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_position_pair_count_layer_from_current_coordinates,
-    assertions_of_recorded_byte_measurement,
     get_byte_position_pair_measurement_subject_to_act_binding,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
@@ -178,11 +177,13 @@ def _record_occurrence_position_after_declared_measurements(
         for event in recorded.result_occurrences
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
     )
-    if len(byte_measurements) != 1:
+    if len(byte_measurements) > 1:
         raise ValueError(
             "one exact-byte Measurement is required through this occurrence boundary"
         )
     current_coordinates = recorded.current_coordinates
+    if not byte_measurements:
+        return current_coordinates, None
     direct_measurements = tuple(
         event
         for event in recorded.result_occurrences
@@ -264,53 +265,6 @@ def _record_pair_measurements_after_declared_measurements(
         )
         pair_measurements.append(pair_measurement)
     return current_coordinates, tuple(pair_measurements)
-
-
-def _recorded_byte_measurement_material_references(ledger):
-    """Read exact-material storage references already measured by this Seed."""
-
-    references = set()
-    for event in ledger.list():
-        if event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
-            continue
-        assertions = assertions_of_recorded_byte_measurement(ledger, event.identity)
-        source = next(
-            (
-                assertion
-                for assertion in assertions or ()
-                if assertion.result == "exact_source_material_set"
-            ),
-            None,
-        )
-        if source is None:
-            raise ValueError("recorded byte Measurement carries no exact source")
-        source_material = source.material["dimensions"]["content"].get(
-            "source_material"
-        )
-        if type(source_material) is not list:
-            raise ValueError("recorded byte Measurement source is malformed")
-        for occurrence_reference in source_material:
-            occurrence_identity = (
-                occurrence_reference.get("material_result_occurrence_identity")
-                if type(occurrence_reference) is dict
-                else None
-            )
-            reference = (
-                ledger._exact_material_reference(occurrence_identity)
-                if type(occurrence_identity) is str
-                else None
-            )
-            if reference is None:
-                raise ValueError("recorded byte Measurement source has no exact material")
-            references.add(reference)
-    return references
-
-
-def _material_measurement_reference(ledger, material_result):
-    reference = ledger._exact_material_reference(material_result.identity)
-    if reference is None:
-        raise ValueError("material result has no exact material")
-    return reference
 
 
 def _latest_carried_pair_premise(
@@ -460,9 +414,6 @@ def run_persistent_operator_console(
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity=locality_identity
     )
-    measured_material_references = _recorded_byte_measurement_material_references(
-        ledger
-    )
     current_coordinates, pair_premise = _latest_carried_pair_premise(
         ledger,
         current_coordinates,
@@ -537,18 +488,13 @@ def run_persistent_operator_console(
         ):
             with ledger.batched():
                 command_occurrence_reference = source_material.identity
-                command_material_reference = _material_measurement_reference(
-                    ledger, source_material
-                )
-                if command_material_reference not in measured_material_references:
-                    current_coordinates, _byte_measurement = (
-                        _record_measurements_from_current_coordinates(
-                            ledger,
-                            current_coordinates,
-                            locality_identity=locality_identity,
-                        )
+                current_coordinates, _byte_measurement = (
+                    _record_measurements_from_current_coordinates(
+                        ledger,
+                        current_coordinates,
+                        locality_identity=locality_identity,
                     )
-                    measured_material_references.add(command_material_reference)
+                )
                 command_material = source_material.exact_material
                 relation_binding = (
                     record_operator_invocation_locality_subject_to_act_binding(
@@ -637,25 +583,20 @@ def run_persistent_operator_console(
                     tuple(event.identity for event in recorded_occurrences),
                     locality_identity=invocation_locality_identity,
                 )
-                supplied_material_reference = _material_measurement_reference(
-                    ledger, supplied_occurrence
+                recorded_witness_measurements = (
+                    _record_declared_measurements_from_carried_current_coordinates(
+                        ledger,
+                        witness_current_coordinates,
+                        locality_identity=invocation_locality_identity,
+                    )
                 )
-                if supplied_material_reference not in measured_material_references:
-                    recorded_witness_measurements = (
-                        _record_declared_measurements_from_carried_current_coordinates(
-                            ledger,
-                            witness_current_coordinates,
-                            locality_identity=invocation_locality_identity,
-                        )
+                witness_current_coordinates, _witness_pair_measurements = (
+                    _record_pair_measurements_after_declared_measurements(
+                        ledger,
+                        recorded_witness_measurements,
+                        locality_identity=invocation_locality_identity,
                     )
-                    witness_current_coordinates, _witness_pair_measurements = (
-                        _record_pair_measurements_after_declared_measurements(
-                            ledger,
-                            recorded_witness_measurements,
-                            locality_identity=invocation_locality_identity,
-                        )
-                    )
-                    measured_material_references.add(supplied_material_reference)
+                )
                 provider_boundary = ledger.append_boundary()
 
             provider_result = operator_invocation_provider(
@@ -806,37 +747,34 @@ def run_persistent_operator_console(
             if request is not None or command_run.addressed.frame.name in handlers:
                 continue
         with ledger.batched():
-            source_material_reference = _material_measurement_reference(
-                ledger, source_material
-            )
-            if source_material_reference not in measured_material_references:
-                current_coordinates, byte_measurement = (
-                    _record_measurements_from_current_coordinates(
-                        ledger,
-                        current_coordinates,
-                        locality_identity=locality_identity,
-                    )
-                )
-                measured_material_references.add(source_material_reference)
-                current_coordinates, later_pair = _record_pair_measurement(
+            current_coordinates, byte_measurement = (
+                _record_measurements_from_current_coordinates(
                     ledger,
                     current_coordinates,
-                    byte_measurement_event_identity=byte_measurement.identity,
                     locality_identity=locality_identity,
                 )
-                if pair_premise is not None:
-                    current_coordinates, comparison = (
-                        _record_pair_measurement_comparison(
-                            ledger,
-                            current_coordinates,
-                            earlier_pair_measurement=pair_premise,
-                            later_pair_measurement=later_pair,
-                            locality_identity=locality_identity,
-                        )
-                    )
-                    current_coordinates = _record_ordered_path_pair_finding_compare(
+            )
+            if byte_measurement is None:
+                continue
+            current_coordinates, later_pair = _record_pair_measurement(
+                ledger,
+                current_coordinates,
+                byte_measurement_event_identity=byte_measurement.identity,
+                locality_identity=locality_identity,
+            )
+            if pair_premise is not None:
+                current_coordinates, comparison = (
+                    _record_pair_measurement_comparison(
                         ledger,
                         current_coordinates,
+                        earlier_pair_measurement=pair_premise,
+                        later_pair_measurement=later_pair,
                         locality_identity=locality_identity,
                     )
-                pair_premise = later_pair
+                )
+                current_coordinates = _record_ordered_path_pair_finding_compare(
+                    ledger,
+                    current_coordinates,
+                    locality_identity=locality_identity,
+                )
+            pair_premise = later_pair

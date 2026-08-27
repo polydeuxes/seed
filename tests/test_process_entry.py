@@ -6,6 +6,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -38,13 +39,12 @@ def _event_kinds(database: Path) -> list[str]:
 
 
 def _skip_unrelated_measurement_work(monkeypatch):
-    class _AlreadyMeasured(set):
-        def __contains__(self, _item):
-            return True
-
     monkeypatch.setattr(
-        "seed_runtime.operator_console._recorded_byte_measurement_material_references",
-        lambda _ledger: _AlreadyMeasured(),
+        "seed_runtime.operator_console._record_declared_measurements_from_carried_current_coordinates",
+        lambda _ledger, current_coordinates, *, locality_identity: SimpleNamespace(
+            current_coordinates=current_coordinates,
+            result_occurrences=(),
+        ),
     )
 
 

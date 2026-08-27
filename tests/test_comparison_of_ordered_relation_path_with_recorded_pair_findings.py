@@ -9,6 +9,8 @@ import pytest
 import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as recorded_pair_comparison_module
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     _record_byte_measurement_act_occurrence_from_current_coordinates,
     _record_byte_measurement_result_from_current_coordinates,
     _record_byte_measurement_subject_to_act_binding_from_current_coordinates,
@@ -170,6 +172,41 @@ def test_each_later_pair_result_has_one_prior_pair_result_for_compare():
         len(result.material["finding"]["relation_findings"])
         for result in compare_results
     ) == (2, 2)
+
+
+def test_compare_requires_equal_material_from_separate_source_occurrences():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nab\n"),
+    )
+
+    byte_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+    )
+    pair_measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+    )
+    pair_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+
+    assert len(byte_measurements) == len(pair_measurements) == 2
+    assert len(pair_results) == 1
+    assert [
+        finding["subject"]["content"]
+        for finding in pair_results[0].material["findings"][
+            "conflicting_findings"
+        ]
+    ] == [[97, 98], [98, 10]]
 
 
 def _current_coordinates(ledger):
