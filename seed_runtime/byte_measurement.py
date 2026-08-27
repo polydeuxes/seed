@@ -886,7 +886,6 @@ def _movement_binding_material(
         "determination": (
             "the exact Assertion at another Locality"
         ),
-        "unknown": [],
     }
 
 

@@ -2009,7 +2009,6 @@ def test_locality_movement_binding_carries_the_exact_source():
         "source_through_event_occurrence_identity",
         "destination_through_event_occurrence_identity",
         "determination",
-        "unknown",
     }
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
