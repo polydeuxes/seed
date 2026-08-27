@@ -43,7 +43,7 @@ second subject. It requires the exact relation occurrence and Locality.
 
 Applicability carries one exact subject-to-Act position. Its exact occurrence
 carries the subject, Act, Locality, and
-one of `applicable`, `inapplicable`, or `conflicting`.
+one of `applicable` or `inapplicable`.
 
 ## References
 

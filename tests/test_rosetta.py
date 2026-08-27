@@ -169,11 +169,11 @@ def test_rosetta_conflict_decompresses_to_exact_results_and_findings():
 
     assert "conflict" in _rosetta_admission()
     assert (
-        "Conflict       ordinary shorthand for an exact conflicting "
-        "Applicability result or an exact Compare finding with its exact "
-        "subjects and contents; absence of agreement establishes no conflict "
-        "by identity, and the word establishes no additional collection or "
-        "object"
+        "Conflict       ordinary shorthand for an exact Compare finding whose "
+        "exact subject carries different earlier and later contents; current "
+        "Seed establishes no conflicting Applicability result, absence of "
+        "agreement establishes no conflict by identity, and the word "
+        "establishes no additional collection or object"
     ) in rosetta
 
 

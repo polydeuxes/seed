@@ -91,6 +91,9 @@ def test_applicability_remains_separate_from_the_governed_act():
         "exact_Act": "Applicability",
         "result": "Applicability_result",
     }
+    assert "one of `applicable` or `inapplicable`." in (
+        CHAPTERS / "01_current_coordinates.md"
+    ).read_text(encoding="utf-8")
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
