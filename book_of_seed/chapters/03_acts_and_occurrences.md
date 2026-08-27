@@ -15,7 +15,7 @@ Act occurrence --Yield--> result
 ```
 
 The Yield relation requires its first subject, second subject, relation
-occurrence, Locality, and Unknown.
+occurrence, and Locality.
 
 A result preserves coordinates established by its Act occurrence.
 

@@ -3,7 +3,7 @@
 ### 04.Compare — Exact subjects
 
 Before one Compare Act occurrence, its exact subjects, Locality,
-conflicts, and Unknown are exact. Each subject requires its exact
+and conflicts are exact. Each subject requires its exact
 Applicability result.
 One exact Yield relation carries the Compare Act occurrence as first subject
 and one result as second subject. The result preserves distinctions established
@@ -17,7 +17,7 @@ together. Each input requires its exact Applicability result.
 
 The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references and the added occurrence,
-Locality, conflicts, and Unknown.
+Locality, and conflicts.
 
 ### 04.Compare.B — Ordered relation path and pair findings
 
@@ -28,8 +28,7 @@ Act and Locality are exact together.
 Each input requires its exact Applicability result.
 
 The result preserves each source reference, ordered path-position Assertion
-references, pair subjects, complete finding references, Locality, conflicts,
-and Unknown.
+references, pair subjects, complete finding references, Locality, and conflicts.
 
 ## References
 

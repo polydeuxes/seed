@@ -4,7 +4,7 @@
 
 One exact source material result and one exact destination boundary within its
 invocation Locality are bound to one exact emission Act with its Locality,
-conflicts, known loss, and Unknown.
+conflicts, and known loss.
 
 ### 07.Emission.C — Exact-material boundary write
 

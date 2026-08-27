@@ -253,7 +253,6 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "Locality",
             "conflicts",
             "loss",
-            "Unknown",
         ],
     }
 

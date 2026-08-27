@@ -16,7 +16,7 @@ exact material --Locality--> this Seed
 One exact Yield relation carries the Measurement Act occurrence as first
 subject and one result as second subject. The result preserves its exact
 subjects, source occurrences, completeness boundary, findings,
-Locality, conflicts, and Unknown.
+Locality, and conflicts.
 
 Each exact Measurement subject-to-Act position carries one exact
 through-occurrence boundary.

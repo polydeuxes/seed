@@ -545,12 +545,14 @@ def test_each_recorded_occurrence_reference_names_a_witness_grammar_clause():
     clauses = set(
         grammar.get("book_coordinates", grammar.get("clause_coordinates", {}))
     )
-    unknown = {
+    absent_clauses = {
         kind: values
         for kind, values in accounted.items()
         if any(clause not in clauses for _path, clause in values)
     }
-    assert unknown == {}, f"occurrences name absent grammar clauses: {unknown}"
+    assert absent_clauses == {}, (
+        f"occurrences name absent grammar clauses: {absent_clauses}"
+    )
 
 
 def _unadmitted_authored_event_material(path: Path, tree: ast.Module):

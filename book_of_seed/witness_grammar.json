@@ -22,8 +22,7 @@
         "source_occurrence_references",
         "Locality",
         "conflicts",
-        "loss",
-        "Unknown"
+        "loss"
       ]
     },
     "01.Source.D": {
@@ -69,8 +68,7 @@
         "source_boundary",
         "source_occurrence_references",
         "Locality",
-        "known_loss",
-        "Unknown"
+        "known_loss"
       ]
     },
     "01.Source.I": {
@@ -111,8 +109,7 @@
         "source",
         "source_occurrence_references",
         "Locality",
-        "conflicts",
-        "Unknown"
+        "conflicts"
       ]
     },
     "01.Current.D.2": {
@@ -130,8 +127,7 @@
       "requires": [
         "exact_relation_occurrence",
         "Locality",
-        "conflicts",
-        "Unknown"
+        "conflicts"
       ]
     },
     "01.Current.E.1": {
@@ -153,8 +149,7 @@
         "second_subject": "exact_result",
         "requires": [
           "relation_occurrence",
-          "Locality",
-          "Unknown"
+          "Locality"
         ]
       },
       "result": "exact_result"
@@ -166,8 +161,7 @@
         "exact_subject",
         "source_coordinates",
         "destination_coordinates",
-        "Locality",
-        "Unknown"
+        "Locality"
       ],
       "Yield": "02.Acts.A.Yield",
       "result": "exact_movement_result"
@@ -229,8 +223,7 @@
         "addressed_occurrence",
         "through_occurrence_boundary_reference",
         "Act_occurrence",
-        "Locality",
-        "Unknown"
+        "Locality"
       ]
     },
     "05.Recording.E": {
@@ -240,8 +233,7 @@
       "carried_coordinates": [
         "material",
         "source_coordinates",
-        "Locality",
-        "Unknown"
+        "Locality"
       ]
     },
     "06.Locality.A": {
@@ -253,8 +245,7 @@
         "second_subject": "exact_subject",
         "requires": [
           "relation_occurrence",
-          "exact_Act",
-          "Unknown"
+          "exact_Act"
         ]
       },
       "result": "Locality_relation"
@@ -287,8 +278,7 @@
         "exact_destination_boundary_within_the_invocation_Locality",
         "Locality",
         "conflicts",
-        "known_loss",
-        "Unknown"
+        "known_loss"
       ]
     },
     "07.Emission.C": {

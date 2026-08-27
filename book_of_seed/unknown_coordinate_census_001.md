@@ -135,3 +135,25 @@ nonempty source and position prose separately; do not delete them by analogy.
 Only after those live roads survive should Book and Witness Grammar withdraw
 Unknown. Do not introduce an Ignorance object, three-valued state, negative
 fact, or replacement collection.
+
+## Outcome
+
+The live subtractions completed across current-coordinate projection, source
+boundaries, Locality boundaries, subject-to-Act bindings, Applicability,
+Measurement, Compare, Assertions, results, and finding categories.
+
+The final runtime census contains no `Unknown` coordinate or value. Exact
+`applicable`, `inapplicable`, conflict, loss, and positive findings remain.
+No replacement coordinate or collection was introduced.
+
+Book proper and Witness Grammar therefore withdraw `Unknown`. Rosetta keeps
+the human shorthand:
+
+```text
+no exact positive or negative result established through boundary B
+!=
+an exact Unknown coordinate established through boundary B
+```
+
+Absence remains distinct from false because bounded current coordinates claim
+only the coordinates established through their exact boundary.

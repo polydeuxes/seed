@@ -152,6 +152,18 @@ def test_rosetta_role_decompresses_to_exact_structural_positions():
     ) in rosetta
 
 
+def test_rosetta_unknown_decompresses_to_open_world_absence():
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
+
+    assert "unknown" in _rosetta_admission()
+    assert (
+        "Unknown        ordinary shorthand for no exact positive or negative "
+        "result established through one exact boundary; absence is not false, "
+        "and the word establishes no additional coordinate, identity, object, "
+        "occurrence, or result"
+    ) in rosetta
+
+
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 

@@ -91,6 +91,7 @@ Standing       exact subject + Locality + exact through-occurrence boundary + bo
 Responsibility exact subject + exact Act + Locality + required relations, all exact before occurrence; no duty, ownership, inevitability, or additional object
 Assignment     runtime witness word for recorded pre-Act coordinates; generated assignment identities add no established distinction on the audited byte-pair road
 Role / roles   ordinary shorthand for exact subject position coordinates; the words establish no additional coordinate, identity, object, or occurrence
+Unknown        ordinary shorthand for no exact positive or negative result established through one exact boundary; absence is not false, and the word establishes no additional coordinate, identity, object, occurrence, or result
 Responsible boundary runtime scalar equality thread only; no exact boundary physiology established
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or currentness
 Composite      one communicative address for multiple exact coordinates; each coordinate still requires its own exact physiology
