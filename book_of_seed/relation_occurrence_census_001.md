@@ -54,11 +54,21 @@ every one of those distinctions.
 
 ## Embedded relation material
 
-Older Measurement and Compare roads carry `input_relation` or
+Older Measurement and Compare roads carried `input_relation` or
 `input_relations` dictionaries inside bindings, Acts, and results. The census
-found no separately recorded occurrence for those dictionaries. Their exact
-subjects and structural positions may survive independently, but each road
-requires its own subtraction test before any conclusion.
+found no separately recorded occurrence for those dictionaries.
+
+Three separate subtraction tests removed:
+
+- prose describing the exact operator source order already enforced by one
+  recorded-pair Compare binding;
+- a position-Measurement dictionary that copied its exact material-result
+  subject, Act coordinates, and Locality;
+- two shared-position Applicability dictionaries that copied the exact binding
+  subjects and addressed Act.
+
+The exact subjects, structural positions, Acts, Localities, and refusals remain
+directly carried. No live `input_relation` or `input_relations` material remains.
 
 ## Current finding
 
