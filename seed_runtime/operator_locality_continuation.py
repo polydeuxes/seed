@@ -125,7 +125,6 @@ def _act_occurrence_material(
     *,
     continuation_act_identity: str,
     act_occurrence_identity: str,
-    locality_relation_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
@@ -133,9 +132,6 @@ def _act_occurrence_material(
     return {
         "continuation_act_identity": continuation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "locality_relation_occurrence_identity": (
-            locality_relation_occurrence_identity
-        ),
         "act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
@@ -150,7 +146,6 @@ def _result_material(
     result_identity: str,
     continuation_act_identity: str,
     act_occurrence_identity: str,
-    locality_relation_occurrence_identity: str,
     subject_to_act_binding_reference: dict[str, Any],
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
@@ -159,9 +154,6 @@ def _result_material(
         "result_identity": result_identity,
         "continuation_act_identity": continuation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "locality_relation_occurrence_identity": (
-            locality_relation_occurrence_identity
-        ),
         "exact_act": LOCALITY_CONTINUATION_ACT,
         "subject_to_act_binding_reference": dict(
             subject_to_act_binding_reference
@@ -171,7 +163,6 @@ def _result_material(
         "locality_relation": {
             "first_subject": deepcopy(source_coordinate_reference),
             "second_subject": destination_locality_identity,
-            "relation_occurrence_identity": locality_relation_occurrence_identity,
         },
     }
 
@@ -190,9 +181,6 @@ def _recorded_result_material(
             "continuation_act_identity"
         ],
         "act_occurrence_identity": result_material["act_occurrence_identity"],
-        "locality_relation_occurrence_identity": result_material[
-            "locality_relation_occurrence_identity"
-        ],
         "exact_act": result_material["exact_act"],
         "subject_to_act_binding_reference": result_material[
             "subject_to_act_binding_reference"
@@ -308,17 +296,11 @@ def record_locality_continuation_act_occurrence(
     act_occurrence_identity = ledger.mint_identity(
         "locality_continuation_act_occurrence"
     )
-    locality_relation_occurrence_identity = ledger.mint_identity(
-        "locality_continuation_relation_occurrence"
-    )
     return ledger.append(
         LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT,
         _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
             act_occurrence_identity=act_occurrence_identity,
-            locality_relation_occurrence_identity=(
-                locality_relation_occurrence_identity
-            ),
             subject_to_act_binding_reference=_binding_reference(binding),
             source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
@@ -365,9 +347,6 @@ def _validated_act_occurrence(
         )
     continuation_act_identity = material.get("continuation_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
-    locality_relation_occurrence_identity = material.get(
-        "locality_relation_occurrence_identity"
-    )
     binding_reference = material.get("subject_to_act_binding_reference")
     if type(binding_reference) is not dict:
         raise LocalityContinuationError(
@@ -382,20 +361,15 @@ def _validated_act_occurrence(
         or type(act_occurrence_identity) is not str
         or not act_occurrence_identity
         or continuation_act_identity == act_occurrence_identity
-        or type(locality_relation_occurrence_identity) is not str
-        or not locality_relation_occurrence_identity
-        or locality_relation_occurrence_identity
-        in {continuation_act_identity, act_occurrence_identity}
         or len(
             {
                 binding.identity,
                 binding.material["result_boundary_identity"],
                 continuation_act_identity,
                 act_occurrence_identity,
-                locality_relation_occurrence_identity,
             }
         )
-        != 5
+        != 4
         or binding_reference != _binding_reference(binding)
         or binding.locality_identity != act_occurrence.locality_identity
         or binding.material["subject_reference"] != expected_reference
@@ -405,9 +379,6 @@ def _validated_act_occurrence(
         != _act_occurrence_material(
             continuation_act_identity=continuation_act_identity,
             act_occurrence_identity=act_occurrence_identity,
-            locality_relation_occurrence_identity=(
-                locality_relation_occurrence_identity
-            ),
             subject_to_act_binding_reference=binding_reference,
             source_coordinate_reference=expected_reference,
             destination_locality_identity=act_occurrence.locality_identity,
@@ -468,9 +439,6 @@ def record_locality_continuation_result(
         result_identity=result_identity,
         continuation_act_identity=material["continuation_act_identity"],
         act_occurrence_identity=act_occurrence_identity,
-        locality_relation_occurrence_identity=material[
-            "locality_relation_occurrence_identity"
-        ],
         subject_to_act_binding_reference=material[
             "subject_to_act_binding_reference"
         ],
@@ -530,9 +498,6 @@ def get_recorded_locality_continuation(
             "continuation_act_identity"
         ],
         act_occurrence_identity=act_occurrence.material["act_occurrence_identity"],
-        locality_relation_occurrence_identity=act_occurrence.material[
-            "locality_relation_occurrence_identity"
-        ],
         subject_to_act_binding_reference=act_occurrence.material[
             "subject_to_act_binding_reference"
         ],

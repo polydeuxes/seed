@@ -125,9 +125,8 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
             binding.material["result_boundary_identity"],
             act_occurrence.material["continuation_act_identity"],
             act_occurrence.material["act_occurrence_identity"],
-            act_occurrence.material["locality_relation_occurrence_identity"],
         }
-    ) == 5
+    ) == 4
     assert after_act["event_count"] == 2
     assert after_act["locality_continuation_relation_occurrences"] == {}
     assert after_act["subject_to_act_binding_occurrences"] == {
@@ -155,14 +154,6 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert recorded["locality_relation"] == {
         "first_subject": source_reference,
         "second_subject": destination,
-        "relation_occurrence_identity": recorded[
-            "locality_relation_occurrence_identity"
-        ],
-    }
-    assert recorded["locality_relation_occurrence_identity"] not in {
-        recorded["continuation_act_identity"],
-        recorded["act_occurrence_identity"],
-        recorded["result_identity"],
     }
     assert recorded["result_identity"] == binding.material[
         "result_boundary_identity"
@@ -171,7 +162,6 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         recorded["result_identity"],
         recorded["continuation_act_identity"],
         recorded["act_occurrence_identity"],
-        recorded["locality_relation_occurrence_identity"],
         binding.identity,
         binding.material["exact_act_identity"],
     }
@@ -229,7 +219,6 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
         first_binding.material["exact_act_identity"],
         first_binding.material["result_boundary_identity"],
         first_act.material["act_occurrence_identity"],
-        first_act.material["locality_relation_occurrence_identity"],
     }
     ledger.close()
 
@@ -249,10 +238,9 @@ def test_reopened_ledger_does_not_reissue_locality_continuation_identities(tmp_p
         second_binding.material["exact_act_identity"],
         second_binding.material["result_boundary_identity"],
         second_act.material["act_occurrence_identity"],
-        second_act.material["locality_relation_occurrence_identity"],
     }
 
-    assert len(first_identities) == len(second_identities) == 5
+    assert len(first_identities) == len(second_identities) == 4
     assert first_identities.isdisjoint(second_identities)
     assert get_recorded_locality_continuation(
         ledger, first_result.identity
@@ -409,7 +397,6 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
         "destination_locality_identity",
         "locality_relation",
         "act_occurrence_identity",
-        "locality_relation_occurrence_identity",
         "subject_to_act_binding_reference",
         "result_identity",
         "yield_relation_identity",
@@ -446,9 +433,6 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
     assert first.locality_identity != second.locality_identity
     assert first.material["act_occurrence_identity"] != second.material[
         "act_occurrence_identity"
-    ]
-    assert first.material["locality_relation_occurrence_identity"] != second.material[
-        "locality_relation_occurrence_identity"
     ]
     assert first.material["result_identity"] != second.material["result_identity"]
     assert first.material["yield_relation_identity"] != second.material[
