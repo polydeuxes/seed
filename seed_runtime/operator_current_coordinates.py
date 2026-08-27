@@ -2479,10 +2479,9 @@ def _carry_byte_pair_occurrence_position_measurement_result_into_current_coordin
         event,
         error_message="position-coordinate Measurement coordinates are not exact",
     )
+    exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
-    exact_results[event.identity] = _subject_to_act_binding_of_exact_result(
-        ledger, event
-    )
+    exact_results[event.identity] = exact_result
     for key, added in coordinate_additions.items():
         for value in added:
             _record_distinct(current_coordinates[key], value)

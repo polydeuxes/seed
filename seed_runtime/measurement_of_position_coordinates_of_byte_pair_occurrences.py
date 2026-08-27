@@ -87,7 +87,6 @@ class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
     source_boundary: str
     exact_material: bytes
     known_loss: tuple[str, ...]
-    unknown: tuple[str, ...]
     source_occurrence_references: tuple[str, ...]
 
 
@@ -395,9 +394,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
                 exact_material=exact_material_result_bytes(source),
                 known_loss=_exact_string_list(
                     material.get("known_loss"), coordinate="known_loss"
-                ),
-                unknown=_exact_string_list(
-                    material.get("unknown"), coordinate="unknown"
                 ),
                 source_occurrence_references=_exact_string_list(
                     material.get("source_occurrence_references"),

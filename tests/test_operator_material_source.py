@@ -115,7 +115,6 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         "exact_act_identity",
         "result_boundary_identity",
         "subject_reference",
-        "unknown",
     )
     assert binding.identity in after_binding[
         "subject_to_act_binding_occurrences"
@@ -537,7 +536,6 @@ def test_act_refuses_binding_absent_from_current_coordinates():
         "exact_act_identity",
         "act_occurrence_identity",
         "current_coordinate_reference",
-        "unknown",
     ),
 )
 def test_changed_binding_coordinates_are_refused(coordinate):
@@ -586,7 +584,6 @@ def test_result_refuses_a_changed_binding_result_boundary():
         "locality_relation",
         "locality_relation_occurrence_identity",
         "known_loss",
-        "unknown",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     ),

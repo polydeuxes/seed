@@ -7,10 +7,7 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_source import (
-    MATERIAL_RESULT_UNKNOWN,
-    _append_exact_material_result_occurrence,
-)
+from seed_runtime.material_source import _append_exact_material_result_occurrence
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -129,7 +126,6 @@ def _subject_to_act_binding_material(
         "current_coordinate_reference": deepcopy(
             current_coordinate_reference
         ),
-        "unknown": ["operator boundary material: Unknown"],
     }
 
 
@@ -197,7 +193,6 @@ def _result_material(
         },
         "locality_relation_occurrence_identity": recorded_result_event_identity,
         "known_loss": list(boundary_material.known_loss),
-        "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
 
@@ -224,7 +219,6 @@ def _recorded_result_material(
             "locality_relation_occurrence_identity"
         ],
         "known_loss": result_material["known_loss"],
-        "unknown": result_material["unknown"],
         "source_occurrence_references": [],
     }
     if act_occurrence_event_identity is not None:

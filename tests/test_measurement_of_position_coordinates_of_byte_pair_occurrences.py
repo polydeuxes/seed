@@ -179,7 +179,6 @@ def test_exact_unbound_material_results_are_read_through_frozen_b():
     assert first_source.source_boundary == "exact supplied material boundary"
     assert first_source.exact_material == b"ab"
     assert first_source.known_loss == ()
-    assert first_source.unknown == ("source_relation",)
     assert first_source.source_occurrence_references == ()
     assert "locality_relation" not in first_source._fields
 
@@ -997,18 +996,18 @@ def test_same_call_result_carry_equals_full_standing_replay():
     assert carried == _standing(ledger, locality)
 
 
-def test_refused_same_call_result_does_not_change_prior_standing():
+def test_refused_same_call_result_does_not_change_prior_current_coordinates():
     ledger = EventLedger()
     source = _source(ledger)
     locality = source.locality_identity
-    assignment = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
+    binding = record_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
         source_material_result_occurrence_identity=source.identity,
         current_coordinates=_standing(ledger, locality),
     )
     act = record_byte_pair_occurrence_position_measurement_act_occurrence(
         ledger,
-        binding_event_identity=assignment.identity,
+        binding_event_identity=binding.identity,
         binding_current_coordinates=_standing(ledger, locality),
     )
     prior = _standing(ledger, locality)
@@ -1018,9 +1017,9 @@ def test_refused_same_call_result_does_not_change_prior_standing():
         act_occurrence_event_identity=act.identity,
     )
     malformed = deepcopy(result)
-    malformed.material["unknown"] = "not one exact list"
+    malformed.material["result_identity"] = "different"
 
-    with pytest.raises(ValueError, match="coordinates are not exact"):
+    with pytest.raises(ValueError):
         _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates(
             ledger,
             prior,
