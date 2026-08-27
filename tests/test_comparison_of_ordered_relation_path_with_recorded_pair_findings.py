@@ -37,6 +37,7 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
     unbound_ordered_path_pair_finding_compare_subjects_in_current_coordinates,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
     record_recorded_pair_measurement_comparison_act_occurrence,
     record_recorded_pair_measurement_comparison_applicability_subject_to_act_binding,
@@ -114,6 +115,61 @@ def test_compare_requires_current_path_and_pair_results():
         compare_acts[0].identity
     )
     assert len(compare_results[0].material["finding"]["relation_findings"]) == 2
+
+
+def test_each_later_pair_result_has_one_prior_pair_result_for_compare():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\n"),
+    )
+
+    pair_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+    applicability_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND
+    )
+    compare_acts = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_OCCURRENCE_EVENT
+    )
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+
+    assert len(pair_results) == 2
+    assert tuple(
+        result.material["applicability"] for result in applicability_results
+    ) == (
+        "inapplicable",
+        "applicable",
+        "inapplicable",
+        "inapplicable",
+        "inapplicable",
+        "applicable",
+    )
+    assert len(compare_acts) == len(compare_results) == 2
+    assert tuple(
+        result.material["act_occurrence_event_identity"]
+        for result in compare_results
+    ) == tuple(act.identity for act in compare_acts)
+    assert tuple(
+        len(result.material["finding"]["relation_findings"])
+        for result in compare_results
+    ) == (2, 2)
 
 
 def _current_coordinates(ledger):

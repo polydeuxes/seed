@@ -880,16 +880,18 @@ def record_ordered_path_pair_finding_compare_results_from_current_coordinates(
             occurrence.identity,
             prior_coordinates=current_coordinates,
         )
-        act_identity = occurrence.material.get("act_occurrence_identity")
-        if type(act_identity) is not str or not act_identity:
+        act_event_identity = occurrence.material.get(
+            "act_occurrence_event_identity"
+        )
+        if type(act_event_identity) is not str or not act_event_identity:
             raise ValueError(
                 "ordered-path Compare result carries no exact Act occurrence"
             )
-        if act_identity in results_by_act:
+        if act_event_identity in results_by_act:
             raise ValueError(
                 "ordered-path Compare Act occurrence carries repeated results"
             )
-        results_by_act[act_identity] = occurrence
+        results_by_act[act_event_identity] = occurrence
 
     recorded: list[Event] = []
     for act in acts:
