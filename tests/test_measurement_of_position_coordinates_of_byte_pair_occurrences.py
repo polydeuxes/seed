@@ -387,7 +387,6 @@ def test_act_requires_current_coordinates_that_carry_exact_binding():
         "source_locality_identity",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
-        "input_relation",
     }
 
     with pytest.raises(ValueError, match="exact current coordinates"):
@@ -1102,7 +1101,6 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "act_occurrence_identity",
         "exact_act",
         "subject_to_act_binding_reference",
-        "input_relation",
         "source_localities",
         "source_material_result_occurrence_identity",
         "completeness_boundary",
@@ -1110,7 +1108,6 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "act_occurrence_event_identity",
         "yield_relation_identity",
     }
-    assert "standing" not in assignment.material["input_relation"]
     assert "standing" not in result.material["assertions"]["dimensions"]
 
 

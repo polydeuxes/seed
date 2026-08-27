@@ -501,31 +501,6 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
     }
 
 
-def _input_relation(
-    finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
-    *,
-    measurement_act_identity: str,
-    act_occurrence_identity: str,
-) -> dict[str, Any]:
-    return {
-        "first_subject": {
-            "recorded_occurrence_identity": (
-                finding.source_material_result_occurrence_identity
-            )
-        },
-        "relation": "input_to",
-        "second_subject": {
-            "exact_act": EXACT_ACT,
-            "measurement_act_identity": measurement_act_identity,
-            "act_occurrence_identity": act_occurrence_identity,
-        },
-        "through": (
-            "one intact exact operator material result with its exact "
-            "material-to-this-Seed Locality relation"
-        ),
-    }
-
-
 def _binding_material(
     finding: FindingOfPositionCoordinatesOfBytePairOccurrences,
     *,
@@ -534,11 +509,6 @@ def _binding_material(
     act_occurrence_identity: str,
     measurement_result_identity: str,
 ) -> dict[str, Any]:
-    input_relation = _input_relation(
-        finding,
-        measurement_act_identity=exact_act_identity,
-        act_occurrence_identity=act_occurrence_identity,
-    )
     return {
         "subject_reference": {
             "recorded_occurrence_identity": (
@@ -556,7 +526,6 @@ def _binding_material(
         "source_locality_identity": finding.source_locality_identity,
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "input_relation": input_relation,
     }
 
 
@@ -1026,7 +995,6 @@ def _act_material(
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
-        "input_relation": binding.material["input_relation"],
     }
 
 
@@ -1294,7 +1262,6 @@ def _result_material(
         "act_occurrence_identity": binding.material["act_occurrence_identity"],
         "exact_act": EXACT_ACT,
         "subject_to_act_binding_reference": _binding_reference(binding),
-        "input_relation": binding.material["input_relation"],
         "source_localities": [finding.source_locality_identity],
         "source_material_result_occurrence_identity": (
             finding.source_material_result_occurrence_identity
@@ -1371,7 +1338,6 @@ def _record_byte_pair_occurrence_position_measurement_result(
             "subject_to_act_binding_reference": result[
                 "subject_to_act_binding_reference"
             ],
-            "input_relation": result["input_relation"],
             "source_localities": result["source_localities"],
             "source_material_result_occurrence_identity": result[
                 "source_material_result_occurrence_identity"
