@@ -646,7 +646,10 @@ def test_result_local_position_addresses_finding_movement():
         destination_locality="finding-destination",
     )
 
-    assert moved.source_assertion_reference == {
+    assert {
+        "recorded_occurrence_identity": moved["recorded_occurrence_identity"],
+        "assertion_position": moved["assertion_position"],
+    } == {
         "recorded_occurrence_identity": result.identity,
         "assertion_position": 0,
     }

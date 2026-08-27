@@ -8,12 +8,7 @@ recurrence, represented relation, character, word, or meaning.
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Iterator, NamedTuple
-
-if TYPE_CHECKING:
-    from seed_runtime.byte_measurement import (
-        RecordedAssertionCarriedByLocalityMovement,
-    )
+from typing import Any, Iterator, NamedTuple
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -1787,7 +1782,7 @@ def move_recorded_position_assertion_to_locality(
     *,
     source_assertion_reference: dict[str, str],
     destination_locality: str,
-) -> RecordedAssertionCarriedByLocalityMovement:
+) -> dict[str, Any]:
     """Carry one exact recorded position Assertion through 03.Movement.A."""
 
     from seed_runtime.byte_measurement import (

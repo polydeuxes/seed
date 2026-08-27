@@ -3,12 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, NamedTuple
-
-if TYPE_CHECKING:
-    from seed_runtime.byte_measurement import (
-        RecordedAssertionCarriedByLocalityMovement,
-    )
+from typing import Any, NamedTuple
 
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
@@ -1954,7 +1949,7 @@ def move_recorded_path_comparison_finding_assertion_to_locality(
     *,
     comparison_result_occurrence_identity: str,
     destination_locality: str,
-) -> RecordedAssertionCarriedByLocalityMovement:
+) -> dict[str, Any]:
     """Carry one exact recorded path-comparison finding through 03.Movement.A."""
 
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(

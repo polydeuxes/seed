@@ -27,8 +27,6 @@ from seed_runtime.byte_measurement import (
     ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT,
     ASSERTION_LOCALITY_MOVEMENT_KIND,
     ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
-    RecordedAssertionCarriedByLocalityMovement,
-    _AssertionLocalityMovementSource,
     _assertion_carried_by_locality_movement_result,
     _movement_act_material,
     _movement_binding_material,
@@ -1688,7 +1686,7 @@ def _carry_assertion_locality_movement_binding_into_current_coordinates(
     current_coordinates: dict[str, Any],
     event,
     *,
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
     source_event,
     source_current_coordinates: dict[str, Any],
 ) -> dict[str, Any]:
@@ -1850,10 +1848,10 @@ def _carry_assertion_locality_movement_result_into_current_coordinates(
     *,
     act_occurrence,
     binding,
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
 ) -> tuple[
     dict[str, Any],
-    dict[str, Any] | RecordedAssertionCarriedByLocalityMovement,
+    dict[str, Any],
 ]:
     """Carry one exact movement result and its already-carried source."""
 

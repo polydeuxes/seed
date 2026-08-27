@@ -216,75 +216,6 @@ def _byte_result_position_movement_identity(source: dict[str, Any]) -> str | Non
 
 
 @dataclass(frozen=True)
-class RecordedAssertionCarriedByLocalityMovement:
-    """One exact Assertion carried by a Locality movement result."""
-
-    recorded_occurrence_identity: str
-    assertion_address: str | int
-    locality_movement_event_identity: str
-    _source_assertion_coordinates: dict[str, Any]
-
-    @property
-    def source_assertion_reference(self) -> dict[str, Any]:
-        coordinate = (
-            "assertion_position"
-            if type(self.assertion_address) is int
-            else "assertion_identity"
-        )
-        return {
-            "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            coordinate: self.assertion_address,
-        }
-
-    @property
-    def source_assertion_coordinates(self) -> dict[str, Any]:
-        return deepcopy(self._source_assertion_coordinates)
-
-
-@dataclass(frozen=True)
-class _RecordedPositionAssertionForLocalityMovement:
-    recorded_occurrence_identity: str
-    assertion_position: int
-    _source_assertion_coordinates: dict[str, Any]
-
-    @property
-    def assertion_reference(self) -> dict[str, Any]:
-        return {
-            "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_position": self.assertion_position,
-        }
-
-    @property
-    def source_assertion_coordinates(self) -> dict[str, Any]:
-        return deepcopy(self._source_assertion_coordinates)
-
-
-@dataclass(frozen=True)
-class _RecordedPathComparisonFindingAssertionForLocalityMovement:
-    recorded_occurrence_identity: str
-    assertion_position: int
-    _source_assertion_coordinates: dict[str, Any]
-
-    @property
-    def assertion_reference(self) -> dict[str, Any]:
-        return {
-            "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_position": self.assertion_position,
-        }
-
-    @property
-    def source_assertion_coordinates(self) -> dict[str, Any]:
-        return deepcopy(self._source_assertion_coordinates)
-
-
-_AssertionLocalityMovementSource = (
-    dict[str, Any]
-    | _RecordedPositionAssertionForLocalityMovement
-    | _RecordedPathComparisonFindingAssertionForLocalityMovement
-)
-
-
-@dataclass(frozen=True)
 class RecordedBytePairAssertion:
     assertion_position: int
     recorded_occurrence_identity: str
@@ -657,26 +588,54 @@ def _movement_binding_reference(binding: Event) -> dict[str, str]:
 
 
 def _source_assertion_reference(
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
 ) -> dict[str, Any]:
-    if type(source) is dict:
-        return _byte_result_position_reference(source)
-    return source.assertion_reference
+    return _byte_result_position_reference(source)
 
 
 def _source_assertion_coordinates(
     ledger: EventLedger,
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
 ) -> dict[str, Any]:
-    if type(source) is dict:
+    source_event = ledger.get(source["recorded_occurrence_identity"])
+    if source_event is None:
+        raise ByteMeasurementError("Assertion movement source cannot be read")
+    if source_event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
         _event, material, _localities = _read_byte_result_position(ledger, source)
         return material
-    return source.source_assertion_coordinates
+
+    from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
+        _recorded_position_assertion_at_position_for_locality_movement,
+    )
+
+    if source_event.kind == BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND:
+        return _recorded_position_assertion_at_position_for_locality_movement(
+            ledger,
+            result_event_identity=source_event.identity,
+            assertion_position=source["assertion_position"],
+        )
+
+    from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement,
+    )
+
+    if (
+        source_event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    ):
+        return _recorded_path_comparison_finding_assertion_coordinates_for_locality_movement(
+            ledger,
+            result_event_identity=source_event.identity,
+            assertion_position=source["assertion_position"],
+        )
+    raise ByteMeasurementError("Assertion movement source cannot be read")
 
 
 def _source_assertion_from_reference(
     ledger: EventLedger, reference: Any
-) -> tuple[_AssertionLocalityMovementSource, Event]:
+) -> tuple[dict[str, Any], Event]:
     if type(reference) is not dict or "recorded_occurrence_identity" not in reference:
         raise ByteMeasurementError("Assertion movement carries no exact source")
     source_event = ledger.get(reference["recorded_occurrence_identity"])
@@ -718,11 +677,10 @@ def _source_assertion_from_reference(
         except ValueError:
             pass
         else:
-            return _RecordedPositionAssertionForLocalityMovement(
-                recorded_occurrence_identity=source_event.identity,
-                assertion_position=reference["assertion_position"],
-                _source_assertion_coordinates=deepcopy(coordinates),
-            ), source_event
+            return {
+                **deepcopy(reference),
+                "locality_movement_event_identity": None,
+            }, source_event
 
     from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
@@ -747,11 +705,10 @@ def _source_assertion_from_reference(
         except ValueError:
             pass
         else:
-            return _RecordedPathComparisonFindingAssertionForLocalityMovement(
-                recorded_occurrence_identity=source_event.identity,
-                assertion_position=reference["assertion_position"],
-                _source_assertion_coordinates=deepcopy(coordinates),
-            ), source_event
+            return {
+                **deepcopy(reference),
+                "locality_movement_event_identity": None,
+            }, source_event
     raise ByteMeasurementError("Assertion movement source cannot be read")
 
 
@@ -849,7 +806,7 @@ def _require_current_movement_destination_coordinates(
 
 def _movement_binding_material(
     *,
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
     source_assertion_coordinates: dict[str, Any],
     source_event: Event,
     source_locality: str,
@@ -882,7 +839,7 @@ def _movement_binding_material(
 
 def _require_exact_movement_binding_and_source(
     ledger: EventLedger, binding: Event
-) -> tuple[_AssertionLocalityMovementSource, Event]:
+) -> tuple[dict[str, Any], Event]:
     if (
         type(binding) is not Event
         or binding.kind
@@ -997,7 +954,7 @@ def _read_assertion_locality_movement_subject_to_act_binding(
     binding_event_identity: str,
     *,
     prior_destination_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, _AssertionLocalityMovementSource, Event]:
+) -> tuple[Event, dict[str, Any], Event]:
     binding = ledger.get(binding_event_identity)
     if (
         binding is None
@@ -1221,7 +1178,7 @@ def _read_assertion_locality_movement_act_occurrence(
     act_occurrence_event_identity: str,
     *,
     prior_destination_coordinates: dict[str, Any] | None = None,
-) -> tuple[Event, Event, _AssertionLocalityMovementSource]:
+) -> tuple[Event, Event, dict[str, Any]]:
     act = ledger.get(act_occurrence_event_identity)
     if (
         act is None
@@ -1443,13 +1400,13 @@ def _move_assertion_reference_to_locality(
     *,
     source_assertion_reference: dict[str, str],
     destination_locality: str,
-) -> RecordedAssertionCarriedByLocalityMovement:
+) -> dict[str, Any]:
     """Carry one exact supported Assertion through one 03.Movement.A occurrence."""
 
     source, source_event = _source_assertion_from_reference(
         ledger, source_assertion_reference
     )
-    if type(source) is dict:
+    if source_event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
         raise ByteMeasurementError(
             "this movement road requires a position or path-comparison Assertion"
         )
@@ -1521,7 +1478,7 @@ def _move_assertion_reference_to_locality(
             source=source,
         )
     )
-    if type(carried) is not RecordedAssertionCarriedByLocalityMovement:
+    if type(carried) is not dict:
         raise ByteMeasurementError(
             "Assertion Locality movement carries no exact result"
         )
@@ -1531,7 +1488,7 @@ def _move_assertion_reference_to_locality(
 def _record_movement_binding_from_current_coordinates(
     ledger: EventLedger,
     *,
-    source: _AssertionLocalityMovementSource,
+    source: dict[str, Any],
     source_event: Event,
     source_coordinates: dict[str, Any],
     destination_locality: str,
@@ -1699,8 +1656,8 @@ def _assertion_carried_by_locality_movement_result(
     *,
     movement: Event,
     binding: Event,
-    source: _AssertionLocalityMovementSource,
-) -> dict[str, Any] | RecordedAssertionCarriedByLocalityMovement:
+    source: dict[str, Any],
+) -> dict[str, Any]:
     """Carry the source Assertion with one exact movement result."""
 
     if (
@@ -1714,17 +1671,10 @@ def _assertion_carried_by_locality_movement_result(
         raise ByteMeasurementError(
             "Assertion locality movement carries no exact source"
         )
-    if type(source) is dict:
-        return {
-            **_byte_result_position_reference(source),
-            "locality_movement_event_identity": movement.identity,
-        }
-    return RecordedAssertionCarriedByLocalityMovement(
-        recorded_occurrence_identity=source.recorded_occurrence_identity,
-        assertion_address=source.assertion_position,
-        locality_movement_event_identity=movement.identity,
-        _source_assertion_coordinates=_source_assertion_coordinates(ledger, source),
-    )
+    return {
+        **_byte_result_position_reference(source),
+        "locality_movement_event_identity": movement.identity,
+    }
 
 
 def _validate_moved_byte_assertion(
@@ -1732,7 +1682,7 @@ def _validate_moved_byte_assertion(
     movement_event_identity: str,
     *,
     prior_destination_coordinates: dict[str, Any] | None = None,
-) -> dict[str, Any] | RecordedAssertionCarriedByLocalityMovement | None:
+) -> dict[str, Any] | None:
     movement = ledger.get(movement_event_identity)
     if movement is None or movement.kind != ASSERTION_LOCALITY_MOVEMENT_KIND:
         return None
