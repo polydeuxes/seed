@@ -136,10 +136,10 @@ def test_positional_coordinates_name_their_exact_basis():
         "result_occurrence_is_boundary_or_before_boundary_in_same_"
         "Locality_occurrence_order"
     )
-    assert coordinates["01.Current.D.2"]["occurrence_order"] == (
-        "recorded_result_occurrence_after_exact_boundary_in_same_"
-        "Locality_occurrence_order"
+    assert coordinates["01.Current.D.2"]["requires_current_coordinates"] == (
+        "exact_subject_through_exact_occurrence_boundary"
     )
+    assert "occurrence_order" not in coordinates["01.Current.D.2"]
     assert coordinates["04.Compare.A"]["requires_order"] == [
         "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
         "later_ordered_source_occurrence_references_are_earlier_ordered_source_"

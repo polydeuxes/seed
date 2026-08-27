@@ -34,12 +34,10 @@ occurrence references, and Locality.
 The same content and result position in separate result occurrences require
 separate exact addressed coordinates.
 
-### 01.Current.D.2 — Later result position
+### 01.Current.D.2 — Current addressed result content
 
-Exact content in one recorded result occurrence is one subject. When that
-occurrence is after one exact occurrence boundary in the same Locality
-occurrence order and the subject is current through the boundary, the exact
-addressed result content is one exact subject in one subject-to-Act binding.
+Exact addressed result content that is current through one exact occurrence
+boundary is one exact subject in one subject-to-Act binding.
 
 ### 01.Current.E — Relation Assertion coordinates
 

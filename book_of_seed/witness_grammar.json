@@ -99,7 +99,6 @@
     "01.Current.D.2": {
       "subject": "exact_addressed_result_content",
       "requires_current_coordinates": "exact_subject_through_exact_occurrence_boundary",
-      "occurrence_order": "recorded_result_occurrence_after_exact_boundary_in_same_Locality_occurrence_order",
       "subject_to_Act_binding": "one_exact_Act"
     },
     "01.Current.E": {
