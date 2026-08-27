@@ -131,7 +131,6 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
-        "result_boundary_identity",
         "result_identity",
         "subject_reference",
     )
