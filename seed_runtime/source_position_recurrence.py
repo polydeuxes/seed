@@ -310,7 +310,7 @@ def _preserved_result_material(material):
 def _preserved_binding_material(material):
     return {
         "book_clause_identity": material["book_clause_identity"],
-        "result_boundary_identity": material["result_boundary_identity"],
+        "result_identity": material["result_identity"],
         "through_event_occurrence_identity": material[
             "through_event_occurrence_identity"
         ],
@@ -459,7 +459,6 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": binding.material["result_boundary_identity"],
     }
 
 
@@ -481,7 +480,7 @@ def _record_subject_to_act_binding(
         _ACT_SUBJECT_TO_ACT_BINDING_EVENTS[act_kind],
         {
             "book_clause_identity": book_reference,
-            "result_boundary_identity": result_identity,
+            "result_identity": result_identity,
             "through_event_occurrence_identity": through_event_occurrence_identity,
             "act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
@@ -574,7 +573,7 @@ def _record_yielded_result_from_binding(
     ]
     act_identity = binding.material["exact_act_identity"]
     act_occurrence_identity = binding.material["act_occurrence_identity"]
-    result_identity = binding.material["result_boundary_identity"]
+    result_identity = binding.material["result_identity"]
     binding_reference = _binding_reference(binding)
     act = _EVENT_APPENDERS[act_kind](
         ledger,
@@ -680,7 +679,6 @@ def _require_binding(
         "book_clause_identity",
         "exact_act_identity",
         "subject_reference",
-        "result_boundary_identity",
     }:
         raise ValueError("source-position Act carries no exact subject-to-Act binding")
     binding = ledger.get(reference.get("recorded_occurrence_identity"))
@@ -710,7 +708,7 @@ def _require_binding(
         raise ValueError("source-position subject-to-Act binding does not precede its Act")
     if (
         result is not None
-        and binding.material.get("result_boundary_identity")
+        and binding.material.get("result_identity")
         != result.material.get("result_identity")
     ):
         raise ValueError("source-position subject-to-Act binding owns no exact result")
@@ -727,8 +725,8 @@ def _require_recorded_binding(
         or type(material) is not dict
         or type(material.get("book_clause_identity")) is not str
         or not material["book_clause_identity"]
-        or type(material.get("result_boundary_identity")) is not str
-        or not material["result_boundary_identity"]
+        or type(material.get("result_identity")) is not str
+        or not material["result_identity"]
         or type(material.get("through_event_occurrence_identity")) is not str
         or not material["through_event_occurrence_identity"]
         or type(material.get("exact_act_identity")) is not str

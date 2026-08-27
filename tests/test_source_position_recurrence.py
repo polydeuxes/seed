@@ -225,7 +225,7 @@ def test_recurrence_exhausts_source_and_reuses_prior_compare_work():
                 "measurement_occurrences"
             ]
         assert binding.material["subject_reference"] == act.material["coordinates"]["subject"]
-        assert binding.material["result_boundary_identity"] == result.material[
+        assert binding.material["result_identity"] == result.material[
             "result_identity"
         ]
 
@@ -461,15 +461,15 @@ def test_changed_source_position_coordinate_is_refused():
             "recorded_occurrence_identity"
         ]
     )
-    exact_result_boundary = binding.material["result_boundary_identity"]
-    binding.material["result_boundary_identity"] = "changed-result-boundary"
+    exact_result_identity = binding.material["result_identity"]
+    binding.material["result_identity"] = "changed-result-identity"
     try:
         get_recorded_source_position_measurement(ledger, result.identity)
     except ValueError:
         pass
     else:
         raise AssertionError("changed subject-to-Act binding ownership was accepted")
-    binding.material["result_boundary_identity"] = exact_result_boundary
+    binding.material["result_identity"] = exact_result_identity
 
     yielded = ledger.get(result.material["yield_relation_identity"])
     exact_yield_occurrence = yielded.material["dimensions"][
@@ -640,7 +640,7 @@ def test_recurrent_results_yield_one_exact_reusable_material_without_selection()
         ownership
     )
     assert binding.material["subject_reference"] == reading["subject"]
-    assert binding.material["result_boundary_identity"] == reading[
+    assert binding.material["result_identity"] == reading[
         "result_identity"
     ]
 
@@ -751,15 +751,15 @@ def test_recurrent_result_material_refuses_changed_source_material_order_owner_a
             "recorded_occurrence_identity"
         ]
     )
-    result_boundary = binding.material["result_boundary_identity"]
-    binding.material["result_boundary_identity"] = "changed-result-boundary"
+    result_identity = binding.material["result_identity"]
+    binding.material["result_identity"] = "changed-result-identity"
     try:
         get_recorded_recurrent_result_material_measurement(ledger, event.identity)
     except ValueError:
         pass
     else:
         raise AssertionError("changed subject-to-Act binding ownership was accepted")
-    binding.material["result_boundary_identity"] = result_boundary
+    binding.material["result_identity"] = result_identity
 
     yielded = ledger.get(event.material["yield_relation_identity"])
     act_occurrence = yielded.material["dimensions"]["act_occurrence_identity"]
@@ -810,7 +810,7 @@ def test_sqlite_restart_recovers_recurrent_result_material_and_ownership(tmp_pat
             expected_ownership["recorded_occurrence_identity"]
         )
         assert binding.material["subject_reference"] == recorded["subject"]
-        assert binding.material["result_boundary_identity"] == (
+        assert binding.material["result_identity"] == (
             recorded["result_identity"]
         )
     finally:
