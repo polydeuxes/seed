@@ -659,7 +659,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     ] == [event.identity for event in supplied_acquisition_results]
 
 
-def test_repeated_exact_witness_material_does_not_repeat_measurement_work():
+def test_equal_witness_material_occurrences_receive_separate_measurements():
     ledger = EventLedger()
 
     def provider(_command, supply):
@@ -691,17 +691,22 @@ def test_repeated_exact_witness_material_does_not_repeat_measurement_work():
         )
         if _position == 0:
             first_counts = derived_counts()
-            first_acquisitions = _acquisition_results(ledger)
+            first_material_results = _acquisition_results(ledger)
 
     assert first_counts == {
         BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: 2,
         BYTE_MEASUREMENT_RECORDED_KIND: 2,
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND: 1,
     }
-    assert derived_counts() == first_counts
-    assert len(first_acquisitions) == 2
-    later_acquisitions = _acquisition_results(ledger)
-    assert len(later_acquisitions) == 4
+    assert derived_counts() == {
+        BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND: 4,
+        BYTE_MEASUREMENT_RECORDED_KIND: 4,
+        BYTE_PAIR_MEASUREMENT_RECORDED_KIND: 2,
+    }
+    assert len(first_material_results) == 2
+    later_material_results = _acquisition_results(ledger)
+    assert len(later_material_results) == 4
+    assert len({event.identity for event in later_material_results}) == 4
 
 
 def test_missing_supplied_result_is_refused_after_command_acquisition():
