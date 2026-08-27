@@ -34,7 +34,6 @@ from seed_runtime.recorded_boundary_locality import (
     record_recorded_boundary_locality_act_occurrence,
     record_recorded_boundary_locality_result,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 
 def _command(exact_bytes=b"/checkout\n", arguments=b""):
@@ -153,29 +152,18 @@ def test_three_stage_relation_uses_one_reference_and_one_destination_locality():
             binding.material["result_identity"],
             act.identity,
             result.identity,
-            result.material["yield_relation_identity"],
         }
-    ) == 7
-    assert read_requirements_of_yield_relation(
+    ) == 6
+    advanced = advance_operator_current_coordinates(
         ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
-    carried = advance_operator_current_coordinates(
-        ledger,
-        (result.material["yield_relation_identity"], result.identity),
+        (result.identity,),
         locality_identity=destination,
         prior=before_result,
     )
     replayed = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
-    assert carried == replayed
+    assert advanced == replayed
     assert replayed["recorded_boundary_locality_relations"] == {
         result.identity: None
     }
@@ -256,7 +244,7 @@ def test_different_locality_or_corrupted_reference_refuses_before_destination_wr
     assert tuple(ledger.list()) == before
 
 
-def test_one_relation_act_cannot_yield_twice():
+def test_one_relation_act_occurrence_cannot_address_two_results():
     ledger = EventLedger()
     _reference_result, current_coordinates = (
         _coordinates_with_through_occurrence_reference(ledger)
@@ -266,7 +254,8 @@ def test_one_relation_act_cannot_yield_twice():
         ledger, act_occurrence_event_identity=act.identity
     )
     with pytest.raises(
-        RecordedBoundaryLocalityError, match="already carries a Yield"
+        RecordedBoundaryLocalityError,
+        match="one recorded boundary Locality Act occurrence cannot address two results",
     ):
         record_recorded_boundary_locality_result(
             ledger, act_occurrence_event_identity=act.identity

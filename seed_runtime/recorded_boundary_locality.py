@@ -8,13 +8,6 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_checkpoint import get_recorded_through_occurrence_boundary_reference
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
-
-
 RECORDED_BOUNDARY_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.recorded_boundary_locality_subject_to_act_binding_recorded"
 )
@@ -23,9 +16,6 @@ RECORDED_BOUNDARY_LOCALITY_ACT_OCCURRENCE_EVENT = (
 )
 RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND = (
     "operator.recorded_boundary_locality_recorded"
-)
-RECORDED_BOUNDARY_LOCALITY_RESULT_KIND = (
-    "recorded boundary Locality relation result"
 )
 RECORDED_BOUNDARY_LOCALITY_ACT = (
     "Preserve one exact recorded boundary result at one destination Locality"
@@ -176,7 +166,6 @@ def _result_material(act: Event) -> dict[str, Any]:
 def _recorded_result_material(
     result_material: dict[str, Any],
     *, act_occurrence_event_identity: str,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
@@ -193,7 +182,6 @@ def _recorded_result_material(
             "destination_locality_identity"
         ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -364,31 +352,19 @@ def record_recorded_boundary_locality_result(
     act = get_recorded_boundary_locality_act_occurrence(
         ledger, act_occurrence_event_identity
     )
-    for yield_relation in ledger.iter_locality_kind(
-        act.locality_identity, RECORDED_YIELD_RELATION_EVENT
+    for result in ledger.iter_locality_kind(
+        act.locality_identity, RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND
     ):
-        if yield_relation.material.get("act_occurrence_event_identity") == act.identity:
+        if result.material.get("act_occurrence_event_identity") == act.identity:
             raise RecordedBoundaryLocalityError(
-                "recorded boundary relation Act already carries a Yield"
+                "one recorded boundary Locality Act occurrence cannot address two results"
             )
     result_material = _result_material(act)
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=RECORDED_BOUNDARY_LOCALITY_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=RECORDED_BOUNDARY_LOCALITY_RESULT_KIND,
-        result_identity=result_material["result_identity"],
-        result_content=result_material,
-        occurrence_boundary="recorded_boundary_locality_relation",
-    )
     return ledger.append(
         RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
             result_material,
             act_occurrence_event_identity=act.identity,
-            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=act.locality_identity,
     )
@@ -415,20 +391,18 @@ def get_recorded_boundary_locality(
     expected = _recorded_result_material(
         expected_result,
         act_occurrence_event_identity=act.identity,
-        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise RecordedBoundaryLocalityError(
             "recorded boundary relation result coordinates are not exact"
         )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material["yield_relation_identity"],
-        act_occurrence_event_identity=act.identity,
-    )
-    if not all(requirements.values()):
-        raise RecordedBoundaryLocalityError(
-            "recorded boundary relation result carries no exact Yield"
+    try:
+        ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
         )
+    except ValueError as error:
+        raise RecordedBoundaryLocalityError(
+            "recorded boundary Locality result requires its Act occurrence"
+        ) from error
     return deepcopy(event.material)

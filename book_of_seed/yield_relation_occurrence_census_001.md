@@ -114,5 +114,11 @@ Current-coordinate replay and durable reopen still address the result as the
 Locality relation occurrence. The deleted Yield event added only a copied
 future-result dictionary and another event identity on this road.
 
-This first result does not establish a global conclusion. Recorded-boundary
-Locality and Locality continuation remain independent controls.
+Recorded-boundary Locality then passed the independent subtraction. Its result
+still resolves the exact boundary reference, destination Locality, binding, Act
+occurrence, and result coordinates; requires Act-before-result order; refuses a
+second result for the Act occurrence; reopens durably; and reproduces exact
+current coordinates.
+
+This second result still does not establish a global conclusion. Locality
+continuation remains a third control before the active Book law changes.
