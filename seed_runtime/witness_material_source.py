@@ -405,38 +405,3 @@ def _read_witness_material_source_result(
             "Witness material result carries no intact Act and Yield"
         )
     return event
-
-
-def read_witness_material_source_locality_requirements(
-    ledger: EventLedger,
-    *,
-    recorded_result_event_identity: str,
-) -> dict[str, bool]:
-    """Read one exact Witness material result at its exact Locality."""
-
-    event = ledger.get(recorded_result_event_identity)
-    if event is None or event.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
-        return {
-            "exact_locality": False,
-            "result_occurrence": False,
-            "intact_source_occurrence": False,
-        }
-    try:
-        _read_witness_material_source_result(ledger, event)
-    except (TypeError, ValueError):
-        return {
-            "exact_locality": False,
-            "result_occurrence": False,
-            "intact_source_occurrence": False,
-        }
-    return {
-        "exact_locality": bool(
-            type(event.locality_identity) is str
-            and bool(event.locality_identity)
-        ),
-        "result_occurrence": bool(
-            event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND
-            and type(event.exact_material) is bytes
-        ),
-        "intact_source_occurrence": ledger.integrity_of(event.identity) != CORRUPTED,
-    }

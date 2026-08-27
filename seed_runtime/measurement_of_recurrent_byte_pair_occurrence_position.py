@@ -100,17 +100,6 @@ def _exact_measurement_occurrence_coordinates(
     }
 
 
-def _exact_material_result_availability_coordinates(
-    ledger: EventLedger, event_identity: str
-) -> dict[str, Any]:
-    event = read_exact_material_result(ledger, event_identity)
-    occurrence = {
-        "subject_reference": event.material["result_identity"],
-        "result_occurrence_identity": event.identity,
-    }
-    return occurrence
-
-
 class ReferenceToRecordedRecurrentBytePair(NamedTuple):
     """Exact address of one recurrence Assertion and its count Assertion."""
 
@@ -612,21 +601,12 @@ def _require_binding_coordinate_values(
         raise ValueError(
             "pair occurrence Measurement requires exact current coordinates"
         )
-    from seed_runtime.material_source import (
-        read_material_result_locality_requirements,
-    )
-
     measurements = current_coordinates.get("measurement_occurrences")
     material_results = current_coordinates.get("material_result_occurrences")
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     boundary = current_coordinates.get("through_event_occurrence_identity")
-    source_has_exact_locality = all(
-        read_material_result_locality_requirements(
-            ledger,
-            recorded_result_event_identity=(
-                finding.source_material_result_occurrence_identity
-            ),
-        ).values()
+    source_result = read_exact_material_result(
+        ledger, finding.source_material_result_occurrence_identity
     )
     if (
         current_coordinates.get("locality_identity")
@@ -642,7 +622,7 @@ def _require_binding_coordinate_values(
             == finding.source_material_result_occurrence_identity
             for occurrence in material_results
         )
-        or not source_has_exact_locality
+        or source_result.locality_identity != finding.source_locality_identity
         or (
             required_binding_identity is not None
             and (
@@ -898,20 +878,13 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
             ledger, pair_occurrence_identity
         )
     )
-    exact_material_result_occurrence = _exact_material_result_availability_coordinates(
+    source_result = read_exact_material_result(
         ledger, finding.source_material_result_occurrence_identity
     )
-    from seed_runtime.material_source import (
-        read_material_result_locality_requirements,
-    )
-    source_has_exact_locality = all(
-        read_material_result_locality_requirements(
-            ledger,
-            recorded_result_event_identity=(
-                finding.source_material_result_occurrence_identity
-            ),
-        ).values()
-    )
+    exact_material_result_occurrence = {
+        "subject_reference": source_result.material["result_identity"],
+        "result_occurrence_identity": source_result.identity,
+    }
     carried_material_result_occurrences = (
         [
             occurrence
@@ -928,7 +901,7 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
         or measurements.get(pair_occurrence_identity, object())
         != exact_measurement_occurrence
         or carried_material_result_occurrences != [exact_material_result_occurrence]
-        or not source_has_exact_locality
+        or source_result.locality_identity != finding.source_locality_identity
     ):
         raise ValueError(
             "pair occurrence binding has no exact prior coordinates"
@@ -954,7 +927,6 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
             == finding.source_material_result_occurrence_identity
             for occurrence in material_results
         )
-        or not source_has_exact_locality
     ):
         raise ValueError("pair occurrence binding has no exact prior coordinates")
     order = (

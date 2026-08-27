@@ -1954,24 +1954,11 @@ def _byte_measurement_source_material(
         )
     source_material = []
     seen_material = set()
-    from seed_runtime.material_source import (
-        read_material_result_locality_requirements,
-    )
-
     for locality in localities:
         for material_result in _exact_material_results(
             ledger, locality, through=boundary
         ):
             _material_result_bytes(ledger, material_result)
-            if not all(
-                read_material_result_locality_requirements(
-                    ledger,
-                    recorded_result_event_identity=material_result.identity,
-                ).values()
-            ):
-                # An exact material result without an exact Locality cannot be
-                # a subject of the declared Measurement.
-                continue
             if material_result.identity in seen_material:
                 raise ByteMeasurementError(
                     "one material result occurrence cannot enter a byte Measurement twice"

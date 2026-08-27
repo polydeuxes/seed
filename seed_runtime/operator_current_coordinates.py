@@ -10,7 +10,6 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import (
     read_exact_material_result,
-    read_material_result_locality_requirements,
 )
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.byte_measurement import (
@@ -1579,16 +1578,6 @@ def advance_operator_current_coordinates(
         source_result = read_exact_material_result(
             ledger, event.identity
         )
-        locality_requirements = (
-            read_material_result_locality_requirements(
-                ledger,
-                recorded_result_event_identity=source_result.identity,
-            )
-        )
-        if not all(locality_requirements.values()):
-            raise ValueError(
-                "material result has no exact Locality"
-            )
         material_result_reference = source_result.material["result_identity"]
         occurrence = {
             "subject_reference": material_result_reference,

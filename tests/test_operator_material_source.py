@@ -32,7 +32,6 @@ from seed_runtime.operator_material_source import (
     OperatorMaterialSourceError,
     get_operator_material_source_subject_to_act_binding,
     get_recorded_operator_material_source,
-    read_operator_material_source_locality_requirements,
     record_operator_material_source_subject_to_act_binding,
     record_operator_material_source_act_occurrence,
     record_operator_material_source_result,
@@ -130,14 +129,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert result.locality_identity == "source"
     assert "locality_relation" not in recorded
     assert recorded["result_identity"] != result.identity
-    assert read_operator_material_source_locality_requirements(
-        ledger,
-        recorded_result_event_identity=result.identity,
-    ) == {
-        "exact_locality": True,
-        "result_occurrence": True,
-        "intact_source_occurrence": True,
-    }
+    assert read_exact_material_result(ledger, result.identity) == result
     assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
@@ -595,14 +587,8 @@ def test_corrupted_material_result_is_not_an_intact_source_occurrence(monkeypatc
             CORRUPTED if identity == result.identity else integrity_of(identity)
         ),
     )
-    assert read_operator_material_source_locality_requirements(
-        ledger,
-        recorded_result_event_identity=result.identity,
-    ) == {
-        "exact_locality": True,
-        "result_occurrence": True,
-        "intact_source_occurrence": False,
-    }
+    with pytest.raises(MaterialSourceError, match="absent or corrupted"):
+        read_exact_material_result(ledger, result.identity)
 
 
 def test_result_without_source_physiology_is_not_an_intact_source_occurrence():
@@ -615,14 +601,8 @@ def test_result_without_source_physiology_is_not_an_intact_source_occurrence():
     )
     result.material["source_boundary"] = "fixture boundary"
 
-    assert read_operator_material_source_locality_requirements(
-        ledger,
-        recorded_result_event_identity=result.identity,
-    ) == {
-        "exact_locality": True,
-        "result_occurrence": True,
-        "intact_source_occurrence": False,
-    }
+    with pytest.raises(MaterialSourceError, match="no intact physiology"):
+        read_exact_material_result(ledger, result.identity)
 
 
 def test_prior_source_act_carrier_must_remain_an_identity_dictionary():

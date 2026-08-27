@@ -569,71 +569,6 @@ def _record_operator_material_source_result(
     )
 
 
-def read_operator_material_source_locality_requirements(
-    ledger: EventLedger,
-    *,
-    recorded_result_event_identity: str,
-) -> dict[str, bool]:
-    """Read one exact operator material result at its exact Locality."""
-
-    result = ledger.get(recorded_result_event_identity)
-    if result is None or result.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
-        return {
-            "exact_locality": False,
-            "result_occurrence": False,
-            "intact_source_occurrence": False,
-        }
-    existing_o1_physiology = False
-    try:
-        act_occurrence = get_operator_material_source_act_occurrence(
-            ledger,
-            result.material.get("act_occurrence_event_identity"),
-        )
-        yield_relation = ledger.get(
-            result.material.get("yield_relation_identity")
-        )
-        yield_dimensions = (
-            yield_relation.material.get("dimensions", {})
-            if yield_relation is not None
-            else {}
-        )
-        existing_o1_physiology = bool(
-            yield_relation is not None
-            and yield_relation.kind == RECORDED_YIELD_RELATION_EVENT
-            and yield_relation.locality_identity == result.locality_identity
-            and yield_relation.exact_material == result.exact_material
-            and yield_relation.material.get("act_occurrence_event_identity")
-            == act_occurrence.identity
-            and yield_relation.material.get("result_identity")
-            == result.material.get("result_identity")
-            and yield_dimensions.get("exact_act") == OPERATOR_MATERIAL_SOURCE_ACT
-            and yield_dimensions.get("act_occurrence_identity")
-            == result.material.get("act_occurrence_identity")
-            and act_occurrence.locality_identity == result.locality_identity
-            and type(result.material.get("source_boundary")) is str
-            and bool(result.material["source_boundary"])
-            and ledger.integrity_of(act_occurrence.identity) != CORRUPTED
-            and ledger.integrity_of(yield_relation.identity) != CORRUPTED
-        )
-    except (TypeError, ValueError):
-        existing_o1_physiology = False
-    return {
-        "exact_locality": bool(
-            type(result.locality_identity) is str
-            and bool(result.locality_identity)
-        ),
-        "result_occurrence": bool(
-            result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-            and type(result.exact_material) is bytes
-            and bool(result.exact_material)
-        ),
-        "intact_source_occurrence": bool(
-            existing_o1_physiology
-            and ledger.integrity_of(result.identity) != CORRUPTED
-        ),
-    }
-
-
 def _recorded_operator_material_source_reading(
     ledger: EventLedger, result_event_identity: str
 ) -> Event:
@@ -690,16 +625,6 @@ def _recorded_operator_material_source_reading(
     if not all(requirements.values()):
         raise OperatorMaterialSourceError(
             "operator material source carries no exact Yield relation"
-        )
-    locality_requirements = (
-        read_operator_material_source_locality_requirements(
-            ledger,
-            recorded_result_event_identity=result.identity,
-        )
-    )
-    if not all(locality_requirements.values()):
-        raise OperatorMaterialSourceError(
-            "operator material source has no exact result Locality"
         )
     return result
 

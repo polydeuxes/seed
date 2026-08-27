@@ -14,14 +14,12 @@ from seed_runtime.material_source import (
     _append_exact_material_result_occurrence,
     exact_material_result_bytes,
     read_exact_material_result,
-    read_material_result_locality_requirements,
 )
 from seed_runtime.witness_material_source import (
     WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
     WitnessMaterialSourceError,
     record_witness_material_source,
-    read_witness_material_source_locality_requirements,
 )
 from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT, read_requirements_of_yield_relation
 
@@ -219,18 +217,7 @@ def test_witness_material_result_preserves_source_occurrences_and_locality():
     assert occurred.material["source_occurrence_references"] == [
         command.identity
     ]
-    assert all(
-        read_witness_material_source_locality_requirements(
-            ledger,
-            recorded_result_event_identity=occurred.identity,
-        ).values()
-    )
-    assert all(
-        read_material_result_locality_requirements(
-            ledger,
-            recorded_result_event_identity=occurred.identity,
-        ).values()
-    )
+    assert read_exact_material_result(ledger, occurred.identity) == occurred
     assert not any(
         event.exact_material == b"hello"
         for event in ledger.list_locality("operator-locality")
@@ -247,14 +234,6 @@ def test_witness_material_result_refuses_a_mismatched_locality():
         locality_identity="another-locality",
     )
 
-    assert read_witness_material_source_locality_requirements(
-        ledger,
-        recorded_result_event_identity=forged.identity,
-    ) == {
-        "exact_locality": False,
-        "result_occurrence": False,
-        "intact_source_occurrence": False,
-    }
     with pytest.raises(MaterialSourceError, match="absent or corrupted"):
         read_exact_material_result(ledger, forged.identity)
 

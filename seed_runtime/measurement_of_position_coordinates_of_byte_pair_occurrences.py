@@ -150,18 +150,18 @@ def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
 def _has_exact_material_result_locality(
     ledger: EventLedger, source_identity: str
 ) -> bool:
-    """Whether the exact material result carries the Locality prerequisite."""
+    """Whether one exact material result occurs at one exact Locality."""
 
     from seed_runtime.material_source import (
-        read_material_result_locality_requirements,
+        MaterialSourceError,
+        read_exact_material_result,
     )
 
-    return all(
-        read_material_result_locality_requirements(
-            ledger,
-            recorded_result_event_identity=source_identity,
-        ).values()
-    )
+    try:
+        read_exact_material_result(ledger, source_identity)
+    except (MaterialSourceError, TypeError):
+        return False
+    return True
 
 
 def _material_result_identities_from_bounded_replay(

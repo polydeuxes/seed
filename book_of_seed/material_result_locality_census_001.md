@@ -51,11 +51,9 @@ The current-coordinate reader records the result in
 `material_result_occurrences`, then records the nested dictionary again in
 `material_locality_relation_occurrences` under the same event identity.
 
-Later Measurement roads either:
-
-- ask a Boolean reader to validate the fixed nested dictionary; or
-- reconstruct that same dictionary from the material-result event identity and
-  compare it with the projected copy.
+Later Measurement roads either asked a Boolean reader to validate the fixed
+nested dictionary or reconstructed that same dictionary from the
+material-result event identity and compared it with the projected copy.
 
 No inspected consumer addresses a separately occurring relation or permits the
 relation subjects, relation occurrence, or result Locality to vary
@@ -96,8 +94,15 @@ and its intact source Act and Yield.
 The current-coordinate `material_locality_relation_occurrences` bucket then
 contained only the identities already present in `material_result_occurrences`.
 It was removed. Declared Measurement now addresses the exact material result
-occurrences at the bounded read's exact Locality without a second membership
+occurrences at the bounded read's exact Locality without a second Locality
 test.
+
+The remaining Boolean Locality readers then proved to be another rendering of
+the exact result read. The operator reader was called by the exact reader
+itself; the Witness reader called the exact reader again. Both returned three
+booleans for the result occurrence, Locality, and intact source physiology
+that the exact read had already required. They were removed. Later roads now
+resolve the exact material result once and address its event Locality directly.
 
 The active Book no longer claims a separate material-to-this-Seed Locality
 relation. Locality relations with independently recorded result occurrences

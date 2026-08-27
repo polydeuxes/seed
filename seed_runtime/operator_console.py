@@ -276,7 +276,8 @@ def _latest_carried_pair_premise(
     """Address the latest exact pair Measurement already carried here."""
 
     from seed_runtime.material_source import (
-        read_material_result_locality_requirements,
+        MaterialSourceError,
+        read_exact_material_result,
     )
 
     for event_identity in reversed(
@@ -309,31 +310,28 @@ def _latest_carried_pair_premise(
             else None
         )
         if (
-            type(source_occurrence_references) is list
-            and source_occurrence_references
-            and all(
-                type(source_reference) is dict
-                and type(
-                    source_reference.get(
-                        "material_result_occurrence_identity"
-                    )
-                )
-                is str
-                for source_reference in source_occurrence_references
-            )
-            and all(
-                all(
-                    read_material_result_locality_requirements(
-                        ledger,
-                        recorded_result_event_identity=source_reference[
-                            "material_result_occurrence_identity"
-                        ],
-                    ).values()
-                )
-                for source_reference in source_occurrence_references
-            )
+            type(source_occurrence_references) is not list
+            or not source_occurrence_references
         ):
-            return current_coordinates, event
+            continue
+        if not all(
+            type(source_reference) is dict
+            and type(
+                source_reference.get("material_result_occurrence_identity")
+            )
+            is str
+            for source_reference in source_occurrence_references
+        ):
+            continue
+        try:
+            for source_reference in source_occurrence_references:
+                read_exact_material_result(
+                    ledger,
+                    source_reference["material_result_occurrence_identity"],
+                )
+        except (MaterialSourceError, TypeError):
+            continue
+        return current_coordinates, event
     return current_coordinates, None
 
 
