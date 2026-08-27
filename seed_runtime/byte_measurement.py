@@ -3017,9 +3017,6 @@ def _pair_subject_to_act_binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
 
 
@@ -3075,7 +3072,6 @@ def _pair_applicability_binding_material(
         ),
         "applicability_result_identity": applicability_result_identity,
         "addressed_act_identity": measurement_act_identity,
-        "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
     }
 
@@ -3103,7 +3099,6 @@ def _pair_measurement_binding_material(
         "exact_act_identity": exact_act_identity,
         "measurement_act_occurrence_identity": measurement_act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
-        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
     }
 
