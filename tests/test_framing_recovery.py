@@ -1,9 +1,4 @@
-"""What positional support measures, and what it does not select.
-
-A specimen is bytes. Reading from each offset under a candidate stride is
-exact, and so are the resulting value sets. Which stride, if any, frames the
-material is a further distinction these do not establish.
-"""
+"""Exact byte-position Measurement results establish no path."""
 
 from __future__ import annotations
 

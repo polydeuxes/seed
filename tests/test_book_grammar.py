@@ -1,4 +1,4 @@
-"""Exact active Book and Witness Grammar structure."""
+"""Exact active Book and Witness Grammar coordinates."""
 
 from __future__ import annotations
 

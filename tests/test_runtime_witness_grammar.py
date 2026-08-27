@@ -1,10 +1,4 @@
-"""Distinctions preserved from live Seed to Witness Grammar.
-
-These tests are deliberately bounded by what the runtime declares. They do
-not ask a hand-maintained list which witnesses should be inspected.
-Red means the witness contains constitutional material the witness
-grammar and its deterministic witnesses do not yet account for.
-"""
+"""Distinctions from live Seed and Witness Grammar."""
 
 from __future__ import annotations
 

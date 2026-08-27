@@ -1,12 +1,4 @@
-"""Mutation refused by default, and corruption made detectable.
-
-Neither is immutability. A `DROP TRIGGER` followed by a rewrite of both the row
-and its material identity defeats all of this, and these tests say so rather than letting
-the arrangement be read as tamper-proof storage.
-
-Nothing in active law requires append-only, so this establishes a storage
-property Seed chose, not one the Book demanded.
-"""
+"""Exact Ledger material identity and bounded refusal."""
 
 from __future__ import annotations
 

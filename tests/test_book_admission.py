@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from pathlib import Path
@@ -200,6 +201,38 @@ def test_book_admission_contains_only_book_distinction_words():
     assert not unused, (
         "\nBook admission contains words absent from active Book material: "
         + ", ".join(unused)
+    )
+
+
+def test_test_module_distinction_words_are_admitted():
+    admitted = book_admission() | set(_admission_entries(ROSETTA_ADMISSION))
+    absent: dict[str, list[str]] = {}
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        tree = ast.parse(
+            path.read_text(encoding="utf-8"),
+            filename=str(path),
+        )
+        material = ast.get_docstring(tree, clean=False)
+        if material is None:
+            continue
+        words = {
+            word
+            for word in re.findall(
+                r"[A-Za-z]+",
+                scan_active_line(material).lower(),
+            )
+        }
+        unadmitted = sorted(words - admitted)
+        if unadmitted:
+            absent[path.relative_to(ROOT).as_posix()] = unadmitted
+
+    report = "\n".join(
+        f"  {path}: {', '.join(words)}"
+        for path, words in absent.items()
+    )
+    assert not absent, (
+        "\nTest material has words absent from Book and Rosetta admission:\n"
+        + report
     )
 
 

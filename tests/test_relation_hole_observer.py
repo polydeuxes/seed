@@ -1,10 +1,4 @@
-"""Exact carriage of an occurrence pair by a recorded relation.
-
-The observer asks one question about two occurrences joined by a reference:
-does some recorded relation carry both of them as its first and second
-subjects?  Where the reference happens to sit is a separate reading and never
-answers that question.
-"""
+"""One recorded relation with two exact occurrence subjects."""
 
 from __future__ import annotations
 

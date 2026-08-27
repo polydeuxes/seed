@@ -1,4 +1,4 @@
-"""Finite material attributed by the test is measured only as bytes."""
+"""One exact bounded byte Measurement."""
 
 from copy import deepcopy
 

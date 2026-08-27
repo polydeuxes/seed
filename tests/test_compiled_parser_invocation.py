@@ -1,4 +1,4 @@
-"""Exact compiled parser invocation occurrences."""
+"""Exact invocation occurrences."""
 
 from __future__ import annotations
 

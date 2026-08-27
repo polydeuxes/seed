@@ -1,4 +1,4 @@
-"""The console distinguishes exact slash frames from raw operator data."""
+"""Exact operator material and invocation boundaries."""
 
 from __future__ import annotations
 

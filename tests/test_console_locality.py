@@ -1,4 +1,4 @@
-"""Each console locality remains exact."""
+"""Each operator Locality remains exact."""
 
 from __future__ import annotations
 

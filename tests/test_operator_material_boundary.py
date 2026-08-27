@@ -1,4 +1,4 @@
-"""The live operator boundary accepts only exact byte streams."""
+"""Exact operator material boundary."""
 
 from __future__ import annotations
 

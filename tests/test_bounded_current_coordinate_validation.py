@@ -1,11 +1,4 @@
-"""Validate only exact current coordinates read by one operation.
-
-The validation previously rebuilt every coordinate current in one Locality and
-required the supplied projection to equal that reconstruction. The operation
-reads only the source Measurement result, Locality, and exact through
-occurrence. Each remains independently checked while an unrelated coordinate
-requires no reconstruction.
-"""
+"""One reading of exact current coordinates through one occurrence boundary."""
 
 from __future__ import annotations
 

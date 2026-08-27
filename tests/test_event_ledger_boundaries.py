@@ -1,4 +1,4 @@
-"""Ledger-bound occurrences read exact append prefixes without position material."""
+"""Exact Ledger occurrence boundaries."""
 
 from __future__ import annotations
 

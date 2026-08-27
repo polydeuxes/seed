@@ -1,15 +1,4 @@
-"""What a durable ledger can and cannot lose without saying so.
-
-Losing the latest append boundary and corrupting lineage are different failures. A store that
-lost its last occurrences still returns every result the remaining ones
-support. A store whose chain no longer matches its occurrences returns
-nothing safely, and must say so rather than serve a shorter history as if it
-were the whole one.
-
-Every crash here is simulated by deleting rows with the refusal triggers
-dropped, which is what a lost write leaves behind: a store the triggers never
-saw.
-"""
+"""Exact Ledger occurrence boundaries and exact failure results."""
 
 from __future__ import annotations
 
