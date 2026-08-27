@@ -481,7 +481,6 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     applicability = "applicable"
-    input_unknown = source.material["unknown"]
     identity = binding.material["applicability_result_identity"]
     return {
         "dimensions": {
@@ -505,7 +504,6 @@ def _pair_input_applicability_from_exact_source(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "input_coordinates": input_coordinates,
-        "input_unknown": input_unknown,
     }
 
 
@@ -1892,7 +1890,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
             "conflicts": "Unknown",
-            "unknown": [],
         }
     ]
 
@@ -1914,7 +1911,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_subject": subject,
             "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
-            "unknown": [],
         }
 
     for item in measured.counts:
@@ -2031,7 +2027,6 @@ def _byte_measurement_binding_material(
         "source_localities": list(source_localities),
         "completeness_boundary_identity": completeness_boundary_identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
 
 

@@ -1071,9 +1071,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "assertion_subject",
         "referenced_assertion_positions",
         "conflicts",
-        "unknown",
     }
-    assert count.material["unknown"] == []
     assert count.material["conflicts"] == "Unknown"
     assert count.referenced_assertions == (
         {
@@ -1325,7 +1323,6 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["result_boundary"]
     assert applicability["addressed_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
-    assert applicability["input_unknown"] == []
     assert applicability["input_coordinates"] == {
         "recorded_measurement_result_occurrence_identity": source.identity,
         "assertion_position": original.assertion_position,
@@ -1951,7 +1948,6 @@ def test_byte_measurement_binding_carries_its_exact_source_occurrences():
         "source_localities",
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
-        "unknown",
     }
     assert binding["subject_reference"] == {
         "source_occurrence_references": source_set["dimensions"]["content"][
