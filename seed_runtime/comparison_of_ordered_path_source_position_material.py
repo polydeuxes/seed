@@ -233,7 +233,6 @@ def _binding_reference(event: Event) -> dict[str, Any]:
         "book_clause_identity": event.material["book_clause_identity"],
         "exact_act_identity": event.material["exact_act_identity"],
         "subject_reference": deepcopy(event.material["subject_reference"]),
-        "result_boundary_identity": event.material["result_boundary_identity"],
     }
 
 
@@ -259,7 +258,6 @@ def _compare_binding_material(
             "compare_act_occurrence_identity"
         ],
         "compare_result_identity": identities["compare_result_identity"],
-        "result_boundary_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "path_result_reference": deepcopy(inputs["reference"]),
         "through_event_occurrence_identity": boundary,
@@ -297,7 +295,6 @@ def _applicability_binding_material(
         "applicability_result_identity": identities[
             "applicability_result_identity"
         ],
-        "result_boundary_identity": identities["applicability_result_identity"],
         "addressed_act_identity": compare_act_identity,
         "addressed_act_occurrence_identity": compare_act_occurrence_identity,
         "compare_act_identity": compare_act_identity,
