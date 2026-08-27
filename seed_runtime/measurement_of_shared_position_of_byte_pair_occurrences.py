@@ -90,11 +90,11 @@ class SharedPairPositionInputs(NamedTuple):
 
     @property
     def first_relation_second_position_coordinate_reference(self) -> dict[str, Any]:
-        return _position_coordinate_reference(self.first, role="second")
+        return _position_coordinate_reference(self.first, position_name="second")
 
     @property
     def second_relation_first_position_coordinate_reference(self) -> dict[str, Any]:
-        return _position_coordinate_reference(self.second, role="first")
+        return _position_coordinate_reference(self.second, position_name="first")
 
     @property
     def carries_one_position_coordinate_reference(self) -> bool:
@@ -113,22 +113,22 @@ class SharedPairPositionInputs(NamedTuple):
 def _position_coordinate_reference(
     reference: RecordedPairPositionReference,
     *,
-    role: str,
+    position_name: str,
 ) -> dict[str, Any]:
     if type(reference) is ReferenceToRecordedPositionOfBytePairOccurrence:
-        if role == "first":
+        if position_name == "first":
             return reference.first_position_coordinate_reference
-        if role == "second":
+        if position_name == "second":
             return reference.second_position_coordinate_reference
-        raise SharedPairPositionError("one exact pair role is required")
-    if role == "first":
+        raise SharedPairPositionError("one exact pair position is required")
+    if position_name == "first":
         position = reference.first_position
         exact_material = reference.exact_pair[:1]
-    elif role == "second":
+    elif position_name == "second":
         position = reference.second_position
         exact_material = reference.exact_pair[1:]
     else:
-        raise SharedPairPositionError("one exact pair role is required")
+        raise SharedPairPositionError("one exact pair position is required")
     return {
         "source_material_result_occurrence_identity": (
             reference.source_material_result_occurrence_identity
@@ -165,10 +165,10 @@ def _reference_material(
         "first_position": reference.first_position,
         "second_position": reference.second_position,
         "first_position_coordinate_reference": _position_coordinate_reference(
-            reference, role="first"
+            reference, position_name="first"
         ),
         "second_position_coordinate_reference": _position_coordinate_reference(
-            reference, role="second"
+            reference, position_name="second"
         ),
     }
     if type(reference) not in {
@@ -1054,14 +1054,12 @@ def _applicability_act_material(
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relations": [
             {
-                "role": "first exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.first),
                 "addressed_act_identity": binding.material[
                     "addressed_act_identity"
                 ],
             },
             {
-                "role": "second exact pair-occurrence position Assertion",
                 "subject": _reference_material(inputs.second),
                 "addressed_act_identity": binding.material[
                     "addressed_act_identity"
@@ -1975,8 +1973,8 @@ def ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assert
 ) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
     """Read three exact source-position coordinates adjacent to one path Assertion.
 
-    The first returned position addresses the first input role; the second
-    returned position addresses the second input role. Returning the positions
+    The first returned position addresses the first input position; the second
+    returned position addresses the second input position. Returning the positions
     adjacent to the path establishes no position or material carried by the path.
     """
 

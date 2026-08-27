@@ -358,12 +358,16 @@ def _record_d2_shared_path(ledger, locality, determination_result):
     return binding, applicability_act, applicability, measurement_act, result
 
 
-def _position_coordinate_reference(reference, role):
+def _position_coordinate_reference(reference, position_name):
     position = (
-        reference.first_position if role == "first" else reference.second_position
+        reference.first_position
+        if position_name == "first"
+        else reference.second_position
     )
     exact_material = (
-        reference.exact_pair[:1] if role == "first" else reference.exact_pair[1:]
+        reference.exact_pair[:1]
+        if position_name == "first"
+        else reference.exact_pair[1:]
     )
     return {
         "source_material_result_occurrence_identity": (
