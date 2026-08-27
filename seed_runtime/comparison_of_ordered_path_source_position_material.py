@@ -290,12 +290,10 @@ def _applicability_binding_material(
             "first_input": {
                 "subject": deepcopy(inputs["first"]),
                 "addressed_act_identity": compare_act_identity,
-                "role": f"path position {inputs['first_path_position']}",
             },
             "second_input": {
                 "subject": deepcopy(inputs["second"]),
                 "addressed_act_identity": compare_act_identity,
-                "role": f"path position {inputs['second_path_position']}",
             },
         },
         "exact_act_identity": identities["exact_act_identity"],
@@ -328,7 +326,6 @@ def _applicability_binding_material(
                 "second_subject": {
                     "act_identity": compare_act_identity,
                     "act_occurrence_identity": compare_act_occurrence_identity,
-                    "role": f"path position {inputs['first_path_position']}",
                 },
             },
             {
@@ -337,7 +334,6 @@ def _applicability_binding_material(
                 "second_subject": {
                     "act_identity": compare_act_identity,
                     "act_occurrence_identity": compare_act_occurrence_identity,
-                    "role": f"path position {inputs['second_path_position']}",
                 },
             },
         ],
