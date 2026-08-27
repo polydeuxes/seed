@@ -191,25 +191,11 @@ def _material_result_identities_with_exact_locality_from_bounded_replay(
                 "bounded Locality replay contains a malformed material result"
             )
         source_identity = occurrence["result_occurrence_identity"]
-        locality_coordinates = locality_occurrences.get(source_identity)
-        if locality_coordinates is None:
+        if source_identity not in locality_occurrences:
             continue
-        exact_relation = {
-            "first_subject": {
-                "recorded_occurrence_identity": source_identity,
-                "coordinate": "exact_material",
-            },
-            "relation": "locality",
-            "second_subject": "this Seed",
-            "relation_occurrence_identity": source_identity,
-        }
-        if (
-            type(locality_coordinates) is not dict
-            or locality_coordinates.get("locality_relation") != exact_relation
-        ):
+        if locality_occurrences[source_identity] is not None:
             raise ValueError(
-                "bounded Locality replay contains malformed material-to-this-Seed "
-                "Locality coordinates"
+                "bounded Locality replay contains malformed material Locality coordinates"
             )
         identities.append(source_identity)
     return tuple(identities)

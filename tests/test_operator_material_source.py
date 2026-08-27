@@ -189,9 +189,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         act_occurrence.material["subject_to_act_binding_reference"]
     )
     assert replayed["material_locality_relation_occurrences"] == {
-        result.identity: {
-            "locality_relation": deepcopy(recorded["locality_relation"]),
-        }
+        result.identity: None
     }
 
 
@@ -335,11 +333,7 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
         ledger, locality_identity="source"
     )
     assert standing["material_locality_relation_occurrences"] == {
-        sources[0].identity: {
-            "locality_relation": deepcopy(
-                sources[0].material["locality_relation"]
-            ),
-        }
+        sources[0].identity: None
     }
     source_results = [
         event

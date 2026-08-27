@@ -550,9 +550,7 @@ def test_book_witness_material_locality_is_available_before_measurement(
         for occurrence in current_coordinates["material_result_occurrences"]
     ) == tuple(result.identity for result in material_results)
     assert current_coordinates["material_locality_relation_occurrences"] == {
-        result.identity: {
-            "locality_relation": result.material["locality_relation"]
-        }
+        result.identity: None
         for result in material_results
     }
     assert current_coordinates["measurement_occurrences"] == {}

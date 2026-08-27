@@ -830,9 +830,7 @@ def advance_operator_current_coordinates(
     operator_destination_locality_relations: dict[str, None] = {}
     subject_to_act_binding_occurrences: dict[str, None] = {}
     operator_material_source_act_occurrences: dict[str, None] = {}
-    material_locality_relation_occurrences: dict[
-        str, dict[str, Any]
-    ] = {}
+    material_locality_relation_occurrences: dict[str, None] = {}
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
     through_event_occurrence_identity: str | None = None
@@ -1209,12 +1207,8 @@ def advance_operator_current_coordinates(
             operator_material_source_act_occurrences[event.identity] = None
             continue
         if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
-            material = get_recorded_operator_material_source(
-                ledger, event.identity
-            )
-            material_locality_relation_occurrences[event.identity] = {
-                "locality_relation": deepcopy(material["locality_relation"]),
-            }
+            get_recorded_operator_material_source(ledger, event.identity)
+            material_locality_relation_occurrences[event.identity] = None
         if (
             event.kind
             == OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
@@ -1600,11 +1594,7 @@ def advance_operator_current_coordinates(
             raise ValueError(
                 "material result carries no exact material Locality relation"
             )
-        material_locality_relation_occurrences[source_result.identity] = {
-            "locality_relation": deepcopy(
-                source_result.material["locality_relation"]
-            ),
-        }
+        material_locality_relation_occurrences[source_result.identity] = None
         material_result_reference = source_result.material["result_identity"]
         occurrence = {
             "subject_reference": material_result_reference,
@@ -2472,9 +2462,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             or not result_identity
         ):
             raise ValueError("operator material source result is not exact")
-        locality_relation_coordinate = {
-            "locality_relation": deepcopy(locality_relation),
-        }
         material_result_coordinate = {
             "subject_reference": result_identity,
             "result_occurrence_identity": event.identity,
