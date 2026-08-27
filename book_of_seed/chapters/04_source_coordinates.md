@@ -3,15 +3,15 @@
 ### 01.Source.A — Source preservation
 
 One exact Act occurrence preserves the supplied material, source occurrence,
-exact source occurrence references, Locality, known loss, and
-the coordinates established at its boundary.
+exact source occurrence references, Locality, and the coordinates established
+at its boundary.
 
 ### 01.Source.C — Fidelity
 
 Fidelity is one declared Compare Act with this Seed exact occurrence and
 this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
-one exact declared distinction and preserves its source and occurrence references,
-Locality, and loss.
+one exact declared distinction and preserves its source and occurrence references
+and Locality.
 
 This Book material witness carries this Book as material and is one
 exact subject of that Compare Act occurrence.
@@ -47,8 +47,8 @@ One exact source boundary and one exact Act to preserve
 the supplied material are exact together before its occurrence. One exact
 Yield relation carries the Act occurrence as
 first subject and one exact material result as second subject. The result
-preserves its source boundary, source occurrence references, Locality,
-and known loss.
+preserves its source boundary, source occurrence references, Locality, and the
+exact coordinates established at that boundary.
 
 ### 01.Source.I — Separate source coordinates
 

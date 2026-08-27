@@ -254,9 +254,22 @@ def test_fidelity_preserves_the_book_material_witness_subject():
             "source",
             "source_occurrence_references",
             "Locality",
-            "loss",
         ],
     }
+
+
+def test_sources_and_emission_preserve_exact_boundaries_without_loss_staging():
+    coordinates = _grammar()["book_coordinates"]
+
+    assert coordinates["01.Source.H"]["carried_coordinates"] == [
+        "source_boundary",
+        "source_occurrence_references",
+        "Locality",
+    ]
+    assert coordinates["07.Emission.A"]["carried_coordinates"] == [
+        "exact_destination_boundary_within_the_invocation_Locality",
+        "Locality",
+    ]
 
 def test_machine_grammar_contains_no_host_boolean():
     def contains_boolean(value: object) -> bool:

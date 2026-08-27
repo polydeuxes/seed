@@ -106,3 +106,24 @@ only after its producers are resolved.
 For the external host Witness, preserve the three exact boundary outcomes. Do
 not replace them with a Loss object, generic collection, status label, or
 another prose discriminator.
+
+## Outcome
+
+The live subtractions completed across operator source material,
+Witness-supplied material, recurrent-position Measurement, invocation
+Locality, downstream position-coordinate reads, and bounded current
+coordinates.
+
+The external host Witness now crosses its ingest bridge with three direct
+boundary outcomes:
+
+```text
+time boundary reached
+output byte-count boundary reached
+error byte-count boundary reached
+```
+
+The generic `known_loss` prose and Locality-wide collection are gone. Book
+proper and Witness Grammar therefore withdraw loss as a carried coordinate.
+Rosetta keeps `Loss` as shorthand for exact discarded or unavailable material
+when an exact occurrence actually establishes that distinction.

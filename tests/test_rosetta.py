@@ -177,6 +177,19 @@ def test_rosetta_conflict_decompresses_to_exact_results_and_findings():
     ) in rosetta
 
 
+def test_rosetta_loss_decompresses_to_exact_boundary_outcomes():
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
+
+    assert "loss" in _rosetta_admission()
+    assert (
+        "Loss           ordinary shorthand for exact material present inside "
+        "one exact boundary and missing at one later exact boundary because of "
+        "an exact occurrence; material outside a source boundary and material "
+        "beyond a Measurement boundary establish no loss by identity, "
+        "and current Seed establishes no additional Loss object or collection"
+    ) in rosetta
+
+
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 

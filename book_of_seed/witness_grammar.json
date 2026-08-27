@@ -19,9 +19,8 @@
       "carried_coordinates": [
         "exact_declared_distinction",
         "source",
-        "source_occurrence_references",
-        "Locality",
-        "loss"
+          "source_occurrence_references",
+          "Locality"
       ]
     },
     "01.Source.D": {
@@ -66,8 +65,7 @@
       "carried_coordinates": [
         "source_boundary",
         "source_occurrence_references",
-        "Locality",
-        "known_loss"
+        "Locality"
       ]
     },
     "01.Source.I": {
@@ -273,8 +271,7 @@
       "exact_Act": "emission",
       "carried_coordinates": [
         "exact_destination_boundary_within_the_invocation_Locality",
-        "Locality",
-        "known_loss"
+        "Locality"
       ]
     },
     "07.Emission.C": {
