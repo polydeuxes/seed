@@ -383,7 +383,7 @@ def _exact_current_coordinate_additions(
     """Validate every addition before changing the current coordinates."""
 
     additions = {}
-    for key in ("known_loss", "unknown", "conflicts"):
+    for key in ("known_loss", "conflicts"):
         collected = current_coordinates.get(key)
         added = event.material.get(key, [])
         if (
@@ -832,10 +832,8 @@ def advance_operator_current_coordinates(
     replaced. The console carries one mapping forward.
 
     The result is fully recomputable from the Ledger and is not itself recorded:
-    it returns only current coordinates and Unknown the Locality's occurrences
-    already carry. An empty coordinate is absence of record, not a negative
-    finding and not Unknown. No Yield is established for relation Candidates
-    here.
+    it returns only current coordinates. An empty coordinate is absence of
+    record, not a negative finding. No Yield is established here.
     """
     events = ledger.occurrences_in_append_order(
         event_identities,
@@ -863,7 +861,6 @@ def advance_operator_current_coordinates(
     # grow them. The prior-transfer rule has to hold for every accumulator that
     # can grow.
     known_loss: list[str] = []
-    unknown: list[str] = []
     conflicts: list[str] = []
     through_event_occurrence_identity: str | None = None
     event_count = 0
@@ -949,7 +946,6 @@ def advance_operator_current_coordinates(
                 "prior coordinates require exact Compare result occurrences"
             )
         known_loss = prior["known_loss"]
-        unknown = prior["unknown"]
         conflicts = prior["conflicts"]
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
@@ -999,7 +995,6 @@ def advance_operator_current_coordinates(
             through_event_occurrence_identity = event.identity
             for key, collected in (
                 ("known_loss", known_loss),
-                ("unknown", unknown),
                 ("conflicts", conflicts),
             ):
                 for value in event.material.get(key, ()):
@@ -1062,7 +1057,6 @@ def advance_operator_current_coordinates(
             through_event_occurrence_identity = event.identity
             for key, collected in (
                 ("known_loss", known_loss),
-                ("unknown", unknown),
                 ("conflicts", conflicts),
             ):
                 for value in event.material.get(key, ()):
@@ -1676,7 +1670,6 @@ def advance_operator_current_coordinates(
         "applicability_result_occurrences": applicability_result_occurrences,
         "comparison_result_occurrences": comparison_result_occurrences,
         "known_loss": known_loss,
-        "unknown": unknown,
         "conflicts": conflicts,
     }
 

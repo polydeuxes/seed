@@ -653,17 +653,17 @@ def test_representation_is_deterministic_regardless_of_unrelated_ledger_events()
     assert _standing(ledger) == after
 
 
-def test_unknown_conflict_and_absence_remain_distinct():
+def test_conflict_and_absence_remain_distinct():
     ledger = EventLedger()
     _attempt(ledger, "material\n")
 
-    standing = _standing(ledger)
+    current_coordinates = _standing(ledger)
 
-    # Unknown are only what locality events positively carry.
-    assert standing["unknown"] == ["source_relation"]
-    # No locality event records a conflict or a relation standing; both stay
-    # empty rather than being promoted to Unknown or to a negative Assertion.
-    assert standing["conflicts"] == []
-    assert standing["locality_continuation_relation_occurrences"] == {}
-    next_attempt = _attempt(ledger, "next\n", locality_standing=standing)
+    # No Locality occurrence records a conflict or continuation relation; both
+    # remain absent rather than becoming a negative Assertion.
+    assert current_coordinates["conflicts"] == []
+    assert current_coordinates["locality_continuation_relation_occurrences"] == {}
+    next_attempt = _attempt(
+        ledger, "next\n", locality_standing=current_coordinates
+    )
     assert next_attempt["locality_standing"]["locality_continuation_relation_occurrences"] == {}
