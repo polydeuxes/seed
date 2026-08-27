@@ -1648,6 +1648,8 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
     ledger: EventLedger,
     result_event_identity: str,
     position_coordinate_reference: dict[str, Any],
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]:
     """Read pair Assertions carrying one exact addressed source coordinate."""
 
@@ -1656,7 +1658,9 @@ def references_to_recorded_byte_pair_occurrences_carrying_addressed_source_posit
     if type(result_event_identity) is not str or not result_event_identity:
         raise ValueError("addressed source position requires one result occurrence")
     event, finding, _assertion_result_coordinates_read = _read_result(
-        ledger, result_event_identity
+        ledger,
+        result_event_identity,
+        prior_coordinates=prior_coordinates,
     )
     position = _position_of_exact_source_position_coordinate_reference(
         finding, position_coordinate_reference
@@ -1772,12 +1776,17 @@ def references_to_recorded_position_coordinates_of_byte_pair_occurrences(
 
 
 def source_position_coordinate_references_of_recorded_position_measurement(
-    ledger: EventLedger, result_event_identity: str
+    ledger: EventLedger,
+    result_event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Yield the exact bounded source-position subjects from one result read."""
 
     _event, finding, _assertion_result_coordinates_read = _read_result(
-        ledger, result_event_identity
+        ledger,
+        result_event_identity,
+        prior_coordinates=prior_coordinates,
     )
     for position, value in enumerate(finding.exact_material):
         yield _source_position_coordinate_reference(

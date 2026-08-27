@@ -233,7 +233,9 @@ def _yield_source_position_determinations_paths_and_comparisons(
             "source-position determination and comparison requires one EventLedger"
         )
     for coordinate in source_position_coordinate_references_of_recorded_position_measurement(
-        ledger, direct_result_event_identity
+        ledger,
+        direct_result_event_identity,
+        prior_coordinates=current_coordinates,
     ):
         with ledger.batched():
             current_coordinates, determination = (

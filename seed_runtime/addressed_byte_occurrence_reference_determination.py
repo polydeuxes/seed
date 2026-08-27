@@ -155,12 +155,14 @@ def _references_carrying_addressed_coordinate(
     *,
     result_event_identity: str,
     coordinate_reference: dict[str, Any],
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]:
     try:
         return references_to_recorded_byte_pair_occurrences_carrying_addressed_source_position_coordinate(
             ledger,
             result_event_identity,
             coordinate_reference,
+            prior_coordinates=current_coordinates,
         )
     except (TypeError, ValueError) as error:
         raise AddressedByteOccurrenceReferenceDeterminationError(
@@ -173,11 +175,13 @@ def _source(
     *,
     result_event_identity: str,
     coordinate_reference: dict[str, Any],
+    current_coordinates: dict[str, Any] | None = None,
 ) -> tuple[Event, tuple[ReferenceToRecordedPositionOfBytePairOccurrence, ...]]:
     references = _references_carrying_addressed_coordinate(
         ledger,
         result_event_identity=result_event_identity,
         coordinate_reference=coordinate_reference,
+        current_coordinates=current_coordinates,
     )
     event = ledger.get(result_event_identity)
     if (
@@ -502,6 +506,7 @@ def _read_binding(
         ledger,
         result_event_identity=source_identity,
         coordinate_reference=coordinate_reference,
+        current_coordinates=prior_coordinates,
     )
     identity_coordinates = (
         _DETERMINATION_IDENTITY_COORDINATES
@@ -1894,6 +1899,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         coordinate_reference=(
             addressed_source_byte_position_coordinate_reference
         ),
+        current_coordinates=current,
     )
     _current_coordinates_carry_source(
         ledger,

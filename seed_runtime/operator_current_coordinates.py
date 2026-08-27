@@ -1540,19 +1540,7 @@ def advance_operator_current_coordinates(
             _read_addressed_byte_reference_determination_result(
                 ledger,
                 event.identity,
-                prior_coordinates={
-                    "locality_identity": locality_identity,
-                    "through_event_occurrence_identity": (
-                        prior_through_event_occurrence_identity
-                    ),
-                    "measurement_occurrences": measurement_occurrences,
-                    "subject_to_act_binding_occurrences": (
-                        subject_to_act_binding_occurrences
-                    ),
-                    "applicability_result_occurrences": (
-                        applicability_result_occurrences
-                    ),
-                },
+                prior_coordinates=addressed_byte_reference_prior_coordinates,
             )
             measurement_occurrences[event.identity] = (
                 _addressed_byte_reference_determination_coordinates(event)
