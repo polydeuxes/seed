@@ -55,10 +55,10 @@ from seed_runtime.operator_locality_continuation import (
     record_locality_continuation_act_occurrence,
     record_locality_continuation_result,
 )
-from seed_runtime.operator_invocation_locality import (
-    record_operator_invocation_locality_subject_to_act_binding,
-    record_operator_invocation_locality_act_occurrence,
-    record_operator_invocation_locality_result,
+from seed_runtime.operator_destination_locality import (
+    record_operator_destination_locality_subject_to_act_binding,
+    record_operator_destination_locality_act_occurrence,
+    record_operator_destination_locality_result,
 )
 from seed_runtime.recorded_boundary_locality import (
     record_recorded_boundary_locality_subject_to_act_binding,
@@ -497,7 +497,7 @@ def run_persistent_operator_console(
                 )
                 command_material = source_material.exact_material
                 relation_binding = (
-                    record_operator_invocation_locality_subject_to_act_binding(
+                    record_operator_destination_locality_subject_to_act_binding(
                         ledger,
                         operator_material_occurrence_reference=(
                             command_occurrence_reference
@@ -505,13 +505,13 @@ def run_persistent_operator_console(
                         current_coordinates=current_coordinates,
                     )
                 )
-                invocation_locality_identity = relation_binding.material[
+                destination_locality_identity = relation_binding.material[
                     "destination_locality_identity"
                 ]
                 witness_current_coordinates = read_operator_current_coordinates(
-                    ledger, locality_identity=invocation_locality_identity
+                    ledger, locality_identity=destination_locality_identity
                 )
-                relation_act = record_operator_invocation_locality_act_occurrence(
+                relation_act = record_operator_destination_locality_act_occurrence(
                     ledger,
                     subject_to_act_binding_event_identity=(
                         relation_binding.identity
@@ -522,9 +522,9 @@ def run_persistent_operator_console(
                     ledger,
                     witness_current_coordinates,
                     (relation_act.identity,),
-                    locality_identity=invocation_locality_identity,
+                    locality_identity=destination_locality_identity,
                 )
-                relation_result = record_operator_invocation_locality_result(
+                relation_result = record_operator_destination_locality_result(
                     ledger,
                     act_occurrence_event_identity=relation_act.identity,
                 )
@@ -537,7 +537,7 @@ def run_persistent_operator_console(
                         ],
                         relation_result.identity,
                     ),
-                    locality_identity=invocation_locality_identity,
+                    locality_identity=destination_locality_identity,
                 )
             supplied_boundaries: set[str] = set()
             supplied_occurrence_count = 0
@@ -559,7 +559,7 @@ def run_persistent_operator_console(
                 supplied_boundaries.add(supplied.source_boundary)
                 supplied_occurrence = record_supplied_witness_material_source(
                     ledger,
-                    operator_invocation_locality_result_event_identity=(
+                    operator_destination_locality_result_event_identity=(
                         relation_result.identity
                     ),
                     command_occurrence_reference=command_occurrence_reference,
@@ -571,7 +571,7 @@ def run_persistent_operator_console(
                 supplied_occurrence_references.append(supplied_occurrence.identity)
                 supplied_occurrence_count += 1
                 recorded_occurrences = ledger.locality_occurrence_interval(
-                    locality_identity=invocation_locality_identity,
+                    locality_identity=destination_locality_identity,
                     after_occurrence_identity=witness_current_coordinates[
                         "through_event_occurrence_identity"
                     ],
@@ -581,20 +581,20 @@ def run_persistent_operator_console(
                     ledger,
                     witness_current_coordinates,
                     tuple(event.identity for event in recorded_occurrences),
-                    locality_identity=invocation_locality_identity,
+                    locality_identity=destination_locality_identity,
                 )
                 recorded_witness_measurements = (
                     _record_declared_measurements_from_carried_current_coordinates(
                         ledger,
                         witness_current_coordinates,
-                        locality_identity=invocation_locality_identity,
+                        locality_identity=destination_locality_identity,
                     )
                 )
                 witness_current_coordinates, _witness_pair_measurements = (
                     _record_pair_measurements_after_declared_measurements(
                         ledger,
                         recorded_witness_measurements,
-                        locality_identity=invocation_locality_identity,
+                        locality_identity=destination_locality_identity,
                     )
                 )
                 provider_boundary = ledger.append_boundary()

@@ -37,11 +37,11 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import (
     read_operator_current_coordinates,
 )
-from seed_runtime.operator_invocation_locality import (
-    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-    record_operator_invocation_locality_subject_to_act_binding,
-    record_operator_invocation_locality_act_occurrence,
-    record_operator_invocation_locality_result,
+from seed_runtime.operator_destination_locality import (
+    OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
+    record_operator_destination_locality_subject_to_act_binding,
+    record_operator_destination_locality_act_occurrence,
+    record_operator_destination_locality_result,
 )
 from seed_runtime.supplied_invocation_material import (
     SuppliedWitnessMaterialOccurrence,
@@ -116,7 +116,7 @@ def test_measured_pairs_do_not_depend_on_supplied_read_partition():
         relation = next(
             event
             for event in ledger.list()
-            if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+            if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
         )
         events = ledger.list_locality(
             relation.material["destination_locality_identity"]
@@ -206,21 +206,21 @@ def _command(ledger, *, locality="locality", exact=b"!ls\n"):
 
 
 def _operator_invocation_relation(ledger, command):
-    binding = record_operator_invocation_locality_subject_to_act_binding(
+    binding = record_operator_destination_locality_subject_to_act_binding(
         ledger,
         operator_material_occurrence_reference=command.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=command.locality_identity
         ),
     )
-    act = record_operator_invocation_locality_act_occurrence(
+    act = record_operator_destination_locality_act_occurrence(
         ledger,
         subject_to_act_binding_event_identity=binding.identity,
         current_coordinates=read_operator_current_coordinates(
             ledger, locality_identity=binding.locality_identity
         ),
     )
-    return record_operator_invocation_locality_result(
+    return record_operator_destination_locality_result(
         ledger, act_occurrence_event_identity=act.identity
     )
 
@@ -231,7 +231,7 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
     relation = _operator_invocation_relation(ledger, command)
     source = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
             b"source", "provider:source"
@@ -239,7 +239,7 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
     )
     result = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
@@ -262,7 +262,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
     relation = _operator_invocation_relation(ledger, command)
     function = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
             b"opaque external function reference", "provider:function"
@@ -270,7 +270,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
     )
     source = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
             b"source", "provider:source"
@@ -279,7 +279,7 @@ def test_supplied_result_preserves_function_and_source_occurrence_references():
     )
     result = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(
             b"result",
@@ -306,7 +306,7 @@ def test_supplied_result_refuses_a_nonprior_occurrence_position():
     with pytest.raises(ValueError, match="exact prior supplied occurrence"):
         record_supplied_witness_material_source(
             ledger,
-            operator_invocation_locality_result_event_identity=relation.identity,
+            operator_destination_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=SuppliedWitnessMaterialOccurrence(
                 b"result",
@@ -324,13 +324,13 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
     relation = _operator_invocation_relation(ledger, command)
     first = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(b"first", "provider:first"),
     )
     second = record_supplied_witness_material_source(
         ledger,
-        operator_invocation_locality_result_event_identity=relation.identity,
+        operator_destination_locality_result_event_identity=relation.identity,
         command_occurrence_reference=command.identity,
         supplied=SuppliedWitnessMaterialOccurrence(b"second", "provider:second"),
         prior_supplied_occurrence_references=(first.identity,),
@@ -357,7 +357,7 @@ def test_supplied_result_refuses_crossed_reordered_or_unrelated_prior_references
         with pytest.raises(ValueError, match="exact prior supplied occurrence"):
             record_supplied_witness_material_source(
                 ledger,
-                operator_invocation_locality_result_event_identity=relation.identity,
+                operator_destination_locality_result_event_identity=relation.identity,
                 command_occurrence_reference=command.identity,
                 supplied=supplied,
                 prior_supplied_occurrence_references=references,
@@ -421,7 +421,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
     assert [
         event.material["source_occurrence_references"]
@@ -588,7 +588,7 @@ def test_provider_death_preserves_each_already_supplied_witness_occurrence():
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
     witness_events = ledger.list_locality(
         relation.material["destination_locality_identity"]
@@ -636,7 +636,7 @@ def test_provider_supply_preserves_every_occurrence_without_selecting_one():
     relation = next(
         event
         for event in ledger.list()
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
     preserved_provenance = [
         event.material["source_occurrence_references"]
@@ -732,7 +732,7 @@ def test_equal_empty_supplied_material_remains_three_exact_occurrences():
     events = tuple(
         record_supplied_witness_material_source(
             ledger,
-            operator_invocation_locality_result_event_identity=relation.identity,
+            operator_destination_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=supplied,
         )
@@ -754,7 +754,7 @@ def test_supplied_occurrence_requires_exact_types():
     with pytest.raises(TypeError, match="exact supplied material required"):
         record_supplied_witness_material_source(
             ledger,
-            operator_invocation_locality_result_event_identity=relation.identity,
+            operator_destination_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=OtherOccurrence(b"", "output"),
         )
@@ -767,7 +767,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     output, error, _end = tuple(
         record_supplied_witness_material_source(
             ledger,
-            operator_invocation_locality_result_event_identity=relation.identity,
+            operator_destination_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=supplied,
         )
@@ -819,7 +819,7 @@ def test_supplied_result_refuses_missing_different_or_corrupted_command():
         with pytest.raises(ValueError, match="exact operator occurrence required"):
             record_supplied_witness_material_source(
                 ledger,
-                operator_invocation_locality_result_event_identity=relation.identity,
+                operator_destination_locality_result_event_identity=relation.identity,
                 command_occurrence_reference=reference,
                 supplied=_supplied()[0],
             )
@@ -828,7 +828,7 @@ def test_supplied_result_refuses_missing_different_or_corrupted_command():
     with pytest.raises(ValueError, match="operator material occurrence"):
         record_supplied_witness_material_source(
             ledger,
-            operator_invocation_locality_result_event_identity=relation.identity,
+            operator_destination_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=_supplied()[0],
         )

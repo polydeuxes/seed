@@ -22,9 +22,9 @@ from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
-from seed_runtime.operator_invocation_locality import (
-    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-    get_recorded_operator_invocation_locality,
+from seed_runtime.operator_destination_locality import (
+    OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
+    get_recorded_operator_destination_locality,
 )
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 
@@ -456,30 +456,30 @@ def _comparison_inputs(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact operator occurrence"
         )
-    invocation_relations = tuple(
+    destination_relations = tuple(
         event
         for reference in source_references
         for event in (ledger.get(reference),)
-        if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        if event is not None and event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
-    if len(invocation_relations) > 1:
+    if len(destination_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
-            f"added occurrence carries {len(invocation_relations)} distinct operator "
-            "invocation Locality relations"
+            f"added occurrence carries {len(destination_relations)} distinct operator "
+            "destination Locality relations"
         )
-    invocation_relation = invocation_relations[0] if invocation_relations else None
+    destination_relation = destination_relations[0] if destination_relations else None
     operator_locality_identity = (
         earlier.locality_identity
         if added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
         else None
     )
-    if invocation_relation is not None:
-        relation = get_recorded_operator_invocation_locality(
-            ledger, invocation_relation.identity
+    if destination_relation is not None:
+        relation = get_recorded_operator_destination_locality(
+            ledger, destination_relation.identity
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:
             raise RecordedPairMeasurementComparisonError(
-            "added occurrence carries an invocation relation to another Locality"
+            "added occurrence has a destination Locality relation to another Locality"
             )
         operator_locality_identity = relation["operator_locality_identity"]
     return {
@@ -499,8 +499,8 @@ def _comparison_inputs(
         "operator_material_source_current_coordinate_reference": (
             operator_material_source_current_coordinate_reference
         ),
-        "operator_invocation_locality_relation_event_identity": (
-            invocation_relation.identity if invocation_relation is not None else None
+        "operator_destination_locality_relation_event_identity": (
+            destination_relation.identity if destination_relation is not None else None
         ),
         "operator_locality_identity": operator_locality_identity,
     }
@@ -635,25 +635,25 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact operator occurrence"
         )
-    invocation_relations = tuple(
+    destination_relations = tuple(
         event
         for reference in source_references
         for event in (ledger.get(reference),)
-        if event is not None and event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND
+        if event is not None and event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     )
-    if len(invocation_relations) > 1:
+    if len(destination_relations) > 1:
         raise RecordedPairMeasurementComparisonError(
-            f"added occurrence carries {len(invocation_relations)} distinct operator "
-            "invocation Locality relations"
+            f"added occurrence carries {len(destination_relations)} distinct operator "
+            "destination Locality relations"
         )
-    invocation_relation = invocation_relations[0] if invocation_relations else None
-    if invocation_relation is not None:
-        relation = get_recorded_operator_invocation_locality(
-            ledger, invocation_relation.identity
+    destination_relation = destination_relations[0] if destination_relations else None
+    if destination_relation is not None:
+        relation = get_recorded_operator_destination_locality(
+            ledger, destination_relation.identity
         )
         if relation["destination_locality_identity"] != earlier.locality_identity:
             raise RecordedPairMeasurementComparisonError(
-                "added occurrence carries an invocation relation to another Locality"
+                "added occurrence has a destination Locality relation to another Locality"
             )
         operator_locality_identity = relation["operator_locality_identity"]
     return {
@@ -671,8 +671,8 @@ def _comparison_inputs_from_carried_measurements(
         "operator_material_source_current_coordinate_reference": deepcopy(
             source_coordinate_reference
         ),
-        "operator_invocation_locality_relation_event_identity": (
-            invocation_relation.identity if invocation_relation is not None else None
+        "operator_destination_locality_relation_event_identity": (
+            destination_relation.identity if destination_relation is not None else None
         ),
         "operator_locality_identity": operator_locality_identity,
     }
@@ -765,8 +765,8 @@ def _binding_material(
         "added_occurrence_source_references": list(
             inputs["added_source_references"]
         ),
-        "operator_invocation_locality_relation_event_identity": inputs[
-            "operator_invocation_locality_relation_event_identity"
+        "operator_destination_locality_relation_event_identity": inputs[
+            "operator_destination_locality_relation_event_identity"
         ],
         "operator_material_source_result_event_identity": inputs[
             "operator_material_source_result_event_identity"

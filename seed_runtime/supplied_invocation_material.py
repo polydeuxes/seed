@@ -12,8 +12,8 @@ from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
-from seed_runtime.operator_invocation_locality import (
-    get_recorded_operator_invocation_locality,
+from seed_runtime.operator_destination_locality import (
+    get_recorded_operator_destination_locality,
 )
 
 
@@ -131,7 +131,7 @@ def _read_occurrence_coordinates(
 def record_supplied_witness_material_source(
     ledger: EventLedger,
     *,
-    operator_invocation_locality_result_event_identity: str,
+    operator_destination_locality_result_event_identity: str,
     command_occurrence_reference: str,
     supplied: SuppliedWitnessMaterialOccurrence,
     prior_supplied_occurrence_references: tuple[str, ...] = (),
@@ -154,8 +154,8 @@ def record_supplied_witness_material_source(
         )
     ):
         raise ValueError("exact prior supplied occurrence references required")
-    relation = get_recorded_operator_invocation_locality(
-        ledger, operator_invocation_locality_result_event_identity
+    relation = get_recorded_operator_destination_locality(
+        ledger, operator_destination_locality_result_event_identity
     )
     command_occurrence = (
         ledger.get(command_occurrence_reference)
@@ -188,7 +188,7 @@ def record_supplied_witness_material_source(
         or occurrence.material.get("source_occurrence_references")[:2]
         != [
             command_occurrence.identity,
-            operator_invocation_locality_result_event_identity,
+            operator_destination_locality_result_event_identity,
         ]
         or ledger.integrity_of(occurrence.identity) == CORRUPTED
         for occurrence in prior_occurrences
@@ -222,7 +222,7 @@ def record_supplied_witness_material_source(
         ),
         source_occurrence_references=(
             command_occurrence.identity,
-            operator_invocation_locality_result_event_identity,
+            operator_destination_locality_result_event_identity,
             *(
                 prior_supplied_occurrence_references[position]
                 for position in supplied.source_occurrence_positions

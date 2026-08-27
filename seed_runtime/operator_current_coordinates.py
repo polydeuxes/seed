@@ -147,13 +147,13 @@ from seed_runtime.operator_material_source import (
     get_operator_material_source_subject_to_act_binding,
     get_recorded_operator_material_source,
 )
-from seed_runtime.operator_invocation_locality import (
-    OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
-    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
-    get_operator_invocation_locality_subject_to_act_binding,
-    get_operator_invocation_locality_act_occurrence,
-    get_recorded_operator_invocation_locality,
+from seed_runtime.operator_destination_locality import (
+    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
+    OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
+    get_operator_destination_locality_subject_to_act_binding,
+    get_operator_destination_locality_act_occurrence,
+    get_recorded_operator_destination_locality,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
@@ -285,10 +285,10 @@ _OPERATOR_MATERIAL_SOURCE_KINDS = {
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 }
-_OPERATOR_INVOCATION_LOCALITY_KINDS = {
-    OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-    OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT,
-    OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,
+_OPERATOR_DESTINATION_LOCALITY_KINDS = {
+    OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
+    OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT,
+    OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
 }
 _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_SUBJECT_TO_ACT_BINDING_KIND,
@@ -366,7 +366,7 @@ _SUPPORTED_KINDS = {
     *_THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_SOURCE_KINDS,
-    *_OPERATOR_INVOCATION_LOCALITY_KINDS,
+    *_OPERATOR_DESTINATION_LOCALITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
     *_ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS,
@@ -827,7 +827,7 @@ def advance_operator_current_coordinates(
     locality_continuation_relation_occurrences: dict[str, None] = {}
     recorded_through_occurrence_boundary_references: dict[str, None] = {}
     recorded_boundary_locality_relations: dict[str, None] = {}
-    operator_invocation_locality_relations: dict[str, None] = {}
+    operator_destination_locality_relations: dict[str, None] = {}
     subject_to_act_binding_occurrences: dict[str, None] = {}
     operator_material_source_act_occurrences: dict[str, None] = {}
     material_locality_relation_occurrences: dict[
@@ -878,12 +878,12 @@ def advance_operator_current_coordinates(
             raise ValueError(
                 "prior coordinates require exact recorded boundary Locality relations"
             )
-        operator_invocation_locality_relations = prior[
-            "operator_invocation_locality_relations"
+        operator_destination_locality_relations = prior[
+            "operator_destination_locality_relations"
         ]
-        if type(operator_invocation_locality_relations) is not dict:
+        if type(operator_destination_locality_relations) is not dict:
             raise ValueError(
-                "prior coordinates require exact operator invocation Locality relations"
+                "prior coordinates require exact operator destination Locality relations"
             )
         subject_to_act_binding_occurrences = prior[
             "subject_to_act_binding_occurrences"
@@ -948,7 +948,7 @@ def advance_operator_current_coordinates(
             or event.kind in _THROUGH_OCCURRENCE_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_SOURCE_KINDS
-            or event.kind in _OPERATOR_INVOCATION_LOCALITY_KINDS
+            or event.kind in _OPERATOR_DESTINATION_LOCALITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
             or event.kind in _ADDRESSED_BYTE_REFERENCE_DETERMINATION_KINDS
@@ -1217,19 +1217,19 @@ def advance_operator_current_coordinates(
             }
         if (
             event.kind
-            == OPERATOR_INVOCATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
+            == OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
         ):
-            get_operator_invocation_locality_subject_to_act_binding(
+            get_operator_destination_locality_subject_to_act_binding(
                 ledger, event.identity
             )
             subject_to_act_binding_occurrences[event.identity] = None
             continue
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT:
-            get_operator_invocation_locality_act_occurrence(ledger, event.identity)
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_ACT_OCCURRENCE_EVENT:
+            get_operator_destination_locality_act_occurrence(ledger, event.identity)
             continue
-        if event.kind == OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND:
-            get_recorded_operator_invocation_locality(ledger, event.identity)
-            operator_invocation_locality_relations[event.identity] = None
+        if event.kind == OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND:
+            get_recorded_operator_destination_locality(ledger, event.identity)
+            operator_destination_locality_relations[event.identity] = None
             continue
         addressed_byte_reference_prior_coordinates = {
             "locality_identity": locality_identity,
@@ -1631,8 +1631,8 @@ def advance_operator_current_coordinates(
         "recorded_boundary_locality_relations": (
             recorded_boundary_locality_relations
         ),
-        "operator_invocation_locality_relations": (
-            operator_invocation_locality_relations
+        "operator_destination_locality_relations": (
+            operator_destination_locality_relations
         ),
         "subject_to_act_binding_occurrences": (
             subject_to_act_binding_occurrences
