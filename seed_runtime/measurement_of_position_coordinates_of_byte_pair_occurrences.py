@@ -1258,7 +1258,6 @@ def _assertion(
         },
         "result": "position",
         "assertion_subject": subject,
-        "conflicts": "Unknown",
     }
 
 
