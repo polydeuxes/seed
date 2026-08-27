@@ -3020,7 +3020,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "referenced_assertions": referenced_assertions,
             "referenced_assertion_positions": referenced_assertion_positions,
             "conflicts": "Unknown",
-            "unknown": [],
         }
 
     for item in measured.counts:
@@ -3115,7 +3114,6 @@ def _pair_applicability_binding_material(
         "addressed_act_identity": measurement_act_identity,
         "result_boundary_identity": applicability_result_identity,
         "book_clause_identity": "01.Current.E.1",
-        "unknown": [],
     }
 
 
@@ -3144,7 +3142,6 @@ def _pair_measurement_binding_material(
         "measurement_result_identity": measurement_result_identity,
         "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
-        "unknown": [],
     }
 
 
@@ -4734,7 +4731,6 @@ def _validated_recorded_byte_position_pair_measurement(
         "referenced_assertions",
         "referenced_assertion_positions",
         "conflicts",
-        "unknown",
     }
     for assertion_position, assertion in enumerate(assertions):
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
@@ -4765,7 +4761,6 @@ def _validated_recorded_byte_position_pair_measurement(
                     "content",
                 }
             or dimensions.get("position") != assertion_position
-            or assertion.get("unknown") != []
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
         content = dimensions.get("content")
