@@ -10,8 +10,8 @@ at its boundary.
 
 Fidelity is one declared Compare Act with this Seed exact occurrence and
 this witness grammar as subjects. Each Fidelity Compare Act occurrence carries
-one exact declared distinction and preserves its source and occurrence references
-and Locality.
+one exact declared distinction and preserves its exact source occurrence
+references and Locality.
 
 This Book material witness carries this Book as material and is one
 exact subject of that Compare Act occurrence.
@@ -19,7 +19,8 @@ exact subject of that Compare Act occurrence.
 ### 01.Source.F — Material carrying a relation Assertion
 
 Supplied material carrying an Assertion carries one exact relation as its
-relation. The Assertion carries its source coordinates.
+relation. The Assertion carries exact source occurrence references and
+Locality.
 
 ### 01.Source.G — Operator source boundary
 

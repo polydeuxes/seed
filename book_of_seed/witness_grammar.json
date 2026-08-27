@@ -18,7 +18,6 @@
       ],
       "carried_coordinates": [
         "exact_declared_distinction",
-        "source",
         "source_occurrence_references",
         "Locality"
       ]
@@ -103,7 +102,6 @@
     "01.Current.D.1": {
       "subject": "Assertion",
       "carried_coordinates": [
-        "source",
         "source_occurrence_references",
         "Locality"
       ]

@@ -251,7 +251,16 @@ def test_fidelity_preserves_the_book_material_witness_subject():
         ],
         "carried_coordinates": [
             "exact_declared_distinction",
-            "source",
+            "source_occurrence_references",
+            "Locality",
+        ],
+    }
+
+
+def test_assertion_coordinates_address_exact_source_occurrences_directly():
+    assert _grammar()["book_coordinates"]["01.Current.D.1"] == {
+        "subject": "Assertion",
+        "carried_coordinates": [
             "source_occurrence_references",
             "Locality",
         ],

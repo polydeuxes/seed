@@ -100,3 +100,13 @@ every refusal.
 
 Do not introduce a Source object, separate source relation, or replacement
 wrapper.
+
+## Outcome
+
+Fidelity and Assertion coordinates now address exact source occurrence
+references directly. Their Localities, source boundaries, source Acts,
+producing results, ordering, integrity refusals, and source-to-result direction
+remain unchanged.
+
+The separate `source` coordinate is gone. Source-boundary physiology remains
+constitutional and receives no replacement object or relation.
