@@ -176,7 +176,6 @@ def test_exact_unbound_material_results_are_read_through_frozen_b():
     assert first_source.yield_relation_identity == first.material[
         "yield_relation_identity"
     ]
-    assert first_source.source_role == "this operator"
     assert first_source.source_boundary == "exact supplied material boundary"
     assert first_source.exact_material == b"ab"
     assert first_source.known_loss == ()

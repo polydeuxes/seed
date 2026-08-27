@@ -111,7 +111,6 @@ def _exact_material_result_availability_coordinates(
     occurrence = {
         "subject_reference": event.material["result_identity"],
         "result_occurrence_identity": event.identity,
-        "source_role": event.material["source_role"],
     }
     return occurrence
 
