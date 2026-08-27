@@ -11,7 +11,6 @@ from seed_runtime.yield_relation import (
     read_requirements_of_yield_relation,
 )
 from seed_runtime.material_source import (
-    MATERIAL_RESULT_UNKNOWN,
     MaterialSourceError,
     _append_exact_material_result_occurrence,
 )
@@ -64,7 +63,6 @@ def _subject_to_act_binding_material(
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "result_boundary_identity": result_identity,
-        "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
 
@@ -197,7 +195,6 @@ def record_witness_material_source(
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": list(known_loss),
-        "unknown": list(MATERIAL_RESULT_UNKNOWN),
         "source_occurrence_references": list(
             source_occurrence_references
         ),
@@ -258,7 +255,6 @@ def _read_witness_material_source_result(
     source_references = material.get("source_occurrence_references")
     read_occurrences = material.get("read_occurrences", [])
     known_loss = material.get("known_loss")
-    unknown = material.get("unknown")
     result_identity = material.get("result_identity")
     source_act_identity = material.get("exact_act_identity")
     act_occurrence_identity = material.get("act_occurrence_identity")
@@ -299,7 +295,6 @@ def _read_witness_material_source_result(
         or binding_reference != _subject_to_act_binding_reference(binding)
         or type(known_loss) is not list
         or any(type(item) is not str for item in known_loss)
-        or unknown != list(MATERIAL_RESULT_UNKNOWN)
         or type(source_references) is not list
         or len(set(source_references)) != len(source_references)
         or any(
@@ -346,7 +341,6 @@ def _read_witness_material_source_result(
         "source_boundary": source_boundary,
         "subject_to_act_binding_reference": binding_reference,
         "known_loss": known_loss,
-        "unknown": unknown,
         "source_occurrence_references": source_references,
         "locality_relation": locality_relation,
     }

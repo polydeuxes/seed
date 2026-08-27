@@ -9,9 +9,6 @@ from seed_runtime.yield_relation import (
 )
 
 
-MATERIAL_RESULT_UNKNOWN = ("source_relation",)
-
-
 class MaterialSourceError(ValueError):
     """One exact yielded material result is not intact."""
 

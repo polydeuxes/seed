@@ -166,7 +166,6 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "exact_act_identity",
         "result_boundary_identity",
         "subject_reference",
-        "unknown",
     )
     assert reference["result_boundary_identity"] == occurred.material[
         "result_identity"
