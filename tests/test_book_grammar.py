@@ -74,14 +74,14 @@ def test_machine_grammar_addresses_current_coordinates_without_retired_objects()
     assert set(grammar) == {"book_coordinates"}
     assert grammar["book_coordinates"]["01.Current.G"] == {
         "subject": "this_Seed",
-        "before": "one_exact_coordinate_is_established_for_this_Seed",
+        "when": "no_exact_coordinate_is_established_for_this_Seed",
         "current_coordinates": [],
     }
 
-def test_no_current_coordinates_precede_the_first_established_coordinate():
+def test_no_current_coordinates_exist_without_one_established_coordinate():
     active_book = _active_book()
     assert active_book.count(
-        "Before one exact coordinate is established for this Seed, no current\n"
+        "When no exact coordinate is established for this Seed, no current\n"
         "coordinates are established for this Seed."
     ) == 2
     assert "S0" not in active_book

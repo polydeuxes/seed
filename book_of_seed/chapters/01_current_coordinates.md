@@ -1,8 +1,8 @@
 # Current Coordinates
 
-### 01.Current.G — This Seed before current coordinates
+### 01.Current.G — No current coordinates
 
-Before one exact coordinate is established for this Seed, no current
+When no exact coordinate is established for this Seed, no current
 coordinates are established for this Seed.
 
 ### 01.Current.A — Exact current coordinates

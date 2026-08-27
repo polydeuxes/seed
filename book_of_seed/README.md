@@ -2,7 +2,7 @@
 
 ## Current coordinates
 
-Before one exact coordinate is established for this Seed, no current
+When no exact coordinate is established for this Seed, no current
 coordinates are established for this Seed.
 
 For one exact subject, its exact current coordinates through one exact

@@ -2,7 +2,7 @@
   "book_coordinates": {
     "01.Current.G": {
       "subject": "this_Seed",
-      "before": "one_exact_coordinate_is_established_for_this_Seed",
+      "when": "no_exact_coordinate_is_established_for_this_Seed",
       "current_coordinates": []
     },
     "01.Source.A": {
