@@ -17,15 +17,9 @@ from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
     compare_distinction_measurement_subjects_from_current_coordinates,
     get_recorded_compare_distinction_measurement,
-    record_compare_distinction_measurement_act_occurrence,
-    record_compare_distinction_measurement_result,
-    record_compare_distinction_measurement_subject_to_act_binding,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_current_coordinates import (
-    advance_operator_current_coordinates,
-    read_operator_current_coordinates,
-)
+from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
 from tests.binary_input import binary_input
 
 
@@ -48,37 +42,10 @@ def _record_measurement(ledger: EventLedger):
         ledger,
         locality_identity=LOCALITY,
     )
-    binding = record_compare_distinction_measurement_subject_to_act_binding(
-        ledger,
-        comparison_result_occurrence_identity=source.identity,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = advance_operator_current_coordinates(
-        ledger,
-        (binding.identity,),
-        locality_identity=LOCALITY,
-        prior=current_coordinates,
-    )
-    act = record_compare_distinction_measurement_act_occurrence(
-        ledger,
-        binding_event_identity=binding.identity,
-        current_coordinates=current_coordinates,
-    )
-    current_coordinates = advance_operator_current_coordinates(
-        ledger,
-        (act.identity,),
-        locality_identity=LOCALITY,
-        prior=current_coordinates,
-    )
-    result = record_compare_distinction_measurement_result(
-        ledger,
-        act_occurrence_event_identity=act.identity,
-    )
-    current_coordinates = advance_operator_current_coordinates(
-        ledger,
-        (result.material["yield_relation_identity"], result.identity),
-        locality_identity=LOCALITY,
-        prior=current_coordinates,
+    result = next(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
     )
     return source, result, current_coordinates
 
@@ -139,13 +106,13 @@ def test_changed_measured_distinction_is_refused():
         get_recorded_compare_distinction_measurement(ledger, result.identity)
 
 
-def test_later_source_boundary_makes_current_compare_result_measurable():
+def test_material_slice_measures_its_current_compare_result_before_eof():
     ledger = EventLedger()
 
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity=LOCALITY,
-        input_stream=binary_input(b"ab\nac\nad\n"),
+        input_stream=binary_input(b"ab\nac\n"),
     )
 
     compare_results = tuple(
@@ -160,7 +127,7 @@ def test_later_source_boundary_makes_current_compare_result_measurable():
         if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
     )
 
-    assert len(compare_results) == 2
+    assert len(compare_results) == 1
     assert len(measurements) == 1
     assert measurements[0].material["source_result_occurrence_identity"] == (
         compare_results[0].identity
@@ -177,7 +144,7 @@ def test_successive_measurements_share_one_exact_pair_measurement():
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity=LOCALITY,
-        input_stream=binary_input(b"ab\nac\nad\nae\n"),
+        input_stream=binary_input(b"ab\nac\nad\n"),
     )
     current_coordinates = read_operator_current_coordinates(
         ledger,

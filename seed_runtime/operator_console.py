@@ -777,4 +777,11 @@ def run_persistent_operator_console(
                     current_coordinates,
                     locality_identity=locality_identity,
                 )
+                current_coordinates = (
+                    _record_declared_measurements_from_carried_current_coordinates(
+                        ledger,
+                        current_coordinates,
+                        locality_identity=locality_identity,
+                    ).current_coordinates
+                )
             pair_premise = later_pair
