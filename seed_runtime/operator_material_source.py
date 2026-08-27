@@ -192,7 +192,6 @@ def _result_material(
             "relation_occurrence_identity": recorded_result_event_identity,
         },
         "locality_relation_occurrence_identity": recorded_result_event_identity,
-        "known_loss": list(boundary_material.known_loss),
     }
 
 
@@ -218,7 +217,6 @@ def _recorded_result_material(
         "locality_relation_occurrence_identity": result_material[
             "locality_relation_occurrence_identity"
         ],
-        "known_loss": result_material["known_loss"],
         "source_occurrence_references": [],
     }
     if act_occurrence_event_identity is not None:
@@ -701,7 +699,6 @@ def _recorded_operator_material_source_reading(
         exact_bytes=result.exact_material,
         eof=False,
         material_boundary=result.material.get("source_boundary"),
-        known_loss=tuple(result.material.get("known_loss", ())),
     )
     act_result_material = _result_material(
         act_occurrence,

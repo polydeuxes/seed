@@ -197,7 +197,6 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
             exact_bytes=b"incremental",
             eof=False,
             material_boundary="operator boundary",
-            known_loss=(),
         ),
     )
     carried = _advance_current_coordinates_with_operator_material_source_occurrence(
@@ -291,7 +290,6 @@ def test_source_result_refusal_does_not_change_prior_current_coordinates():
             exact_bytes=b"incremental",
             eof=False,
             material_boundary="operator boundary",
-            known_loss=(),
         ),
     )
     malformed = deepcopy(result)

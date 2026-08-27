@@ -180,7 +180,6 @@ def test_exact_unbound_material_results_are_read_through_frozen_b():
     ]
     assert first_source.source_boundary == "exact supplied material boundary"
     assert first_source.exact_material == b"ab"
-    assert first_source.known_loss == ()
     assert first_source.source_occurrence_references == ()
     assert "locality_relation" not in first_source._fields
 

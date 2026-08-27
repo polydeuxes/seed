@@ -48,7 +48,6 @@ def record_operator_material_occurrence(
             exact_bytes=exact,
             eof=exact == b"",
             material_boundary=source_boundary,
-            known_loss=(),
         ),
     )
 
@@ -102,7 +101,6 @@ def record_operator_material_occurrence_from_current_coordinates(
             exact_bytes=exact,
             eof=exact == b"",
             material_boundary=source_boundary,
-            known_loss=(),
         ),
     )
     current_coordinates = (

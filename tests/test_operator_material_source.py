@@ -74,7 +74,6 @@ def _boundary(exact=b"\x00\xffraw\n"):
         exact_bytes=exact,
         eof=exact == b"",
         material_boundary="fixture exact byte boundary",
-        known_loss=("material before this fixture boundary is not available",),
     )
 
 
@@ -232,7 +231,6 @@ def test_result_refuses_material_from_another_source_boundary():
                 exact_bytes=b"material",
                 eof=False,
                 material_boundary="another source boundary",
-                known_loss=(),
             ),
         )
 
@@ -583,7 +581,6 @@ def test_result_refuses_a_changed_binding_result_boundary():
         "source_boundary",
         "locality_relation",
         "locality_relation_occurrence_identity",
-        "known_loss",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     ),
