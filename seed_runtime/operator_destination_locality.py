@@ -99,7 +99,7 @@ def _binding_material(
             operator_destination_locality_act_identity
         ),
         "act_occurrence_identity": act_occurrence_identity,
-        "result_boundary_identity": result_identity,
+        "result_identity": result_identity,
         "operator_material_occurrence_reference": command.identity,
         "operator_material_result_identity": command.material["result_identity"],
         "operator_locality_identity": command.locality_identity,
@@ -198,7 +198,7 @@ def get_operator_destination_locality_subject_to_act_binding(
     identity_coordinates = (
         "operator_destination_locality_act_identity",
         "act_occurrence_identity",
-        "result_boundary_identity",
+        "result_identity",
         "destination_locality_identity",
     )
     identities = tuple(material.get(key) for key in identity_coordinates)
@@ -254,7 +254,7 @@ def _act_material(binding: Event) -> dict[str, Any]:
             "operator_destination_locality_act_identity"
         ],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "result_boundary_identity": material["result_boundary_identity"],
+        "result_identity": material["result_identity"],
         "act": OPERATOR_DESTINATION_LOCALITY_ACT,
         "subject_to_act_binding_event_identity": binding.identity,
         "operator_material_occurrence_reference": material[
@@ -338,7 +338,7 @@ def get_operator_destination_locality_act_occurrence(
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
     return {
-        "result_identity": material["result_boundary_identity"],
+        "result_identity": material["result_identity"],
         "operator_destination_locality_act_identity": material[
             "operator_destination_locality_act_identity"
         ],
