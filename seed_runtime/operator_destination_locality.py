@@ -343,10 +343,6 @@ def get_operator_destination_locality_act_occurrence(
 
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
-    relation = {
-        "first_subject": material["operator_locality_identity"],
-        "second_subject": material["destination_locality_identity"],
-    }
     return {
         "result_identity": material["result_boundary_identity"],
         "operator_destination_locality_act_identity": material[
@@ -364,7 +360,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "destination_locality_identity": material[
             "destination_locality_identity"
         ],
-        "locality_relation": relation,
     }
 
 
@@ -401,7 +396,6 @@ def _recorded_result_material(
         "destination_locality_identity": result[
             "destination_locality_identity"
         ],
-        "locality_relation": deepcopy(result["locality_relation"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": (
             yield_relation_identity

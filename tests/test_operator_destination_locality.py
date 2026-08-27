@@ -93,10 +93,9 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
     assert act.locality_identity == binding.locality_identity
     assert act.locality_identity != "operator"
     assert recorded["operator_material_occurrence_reference"] == command.identity
-    assert recorded["locality_relation"] == {
-        "first_subject": "operator",
-        "second_subject": result.locality_identity,
-    }
+    assert recorded["operator_locality_identity"] == "operator"
+    assert recorded["destination_locality_identity"] == result.locality_identity
+    assert "locality_relation" not in recorded
     assert operator_destination_locality_occurrence_references(
         ledger, result.identity
     ) == (
