@@ -1184,7 +1184,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 },
                 "result": "position",
                 "assertion_subject": subject,
-                "conflicts": "Unknown",
             }
         )
     return assertions
