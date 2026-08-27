@@ -1070,9 +1070,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "result",
         "assertion_subject",
         "referenced_assertion_positions",
-        "conflicts",
     }
-    assert count.material["conflicts"] == "Unknown"
     assert count.referenced_assertions == (
         {
             "recorded_occurrence_identity": event.identity,

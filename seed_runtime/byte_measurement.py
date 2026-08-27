@@ -1889,7 +1889,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
-            "conflicts": "Unknown",
         }
     ]
 
@@ -1910,7 +1909,6 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "result": result,
             "assertion_subject": subject,
             "referenced_assertion_positions": referenced_assertion_positions,
-            "conflicts": "Unknown",
         }
 
     for item in measured.counts:
@@ -3019,7 +3017,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "assertion_subject": subject,
             "referenced_assertions": referenced_assertions,
             "referenced_assertion_positions": referenced_assertion_positions,
-            "conflicts": "Unknown",
         }
 
     for item in measured.counts:
@@ -4730,7 +4727,6 @@ def _validated_recorded_byte_position_pair_measurement(
         "assertion_subject",
         "referenced_assertions",
         "referenced_assertion_positions",
-        "conflicts",
     }
     for assertion_position, assertion in enumerate(assertions):
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
@@ -4753,7 +4749,6 @@ def _validated_recorded_byte_position_pair_measurement(
                 "content": exact_pair,
             }
             or result not in {"count", "recurrence"}
-            or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
                 != {
