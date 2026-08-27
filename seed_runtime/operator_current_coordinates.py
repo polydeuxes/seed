@@ -2453,11 +2453,9 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
     material_result_coordinate = None
     if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
-        locality_relation = event.material.get("locality_relation")
         result_identity = event.material.get("result_identity")
         if (
             exact_result is None
-            or type(locality_relation) is not dict
             or type(result_identity) is not str
             or not result_identity
         ):

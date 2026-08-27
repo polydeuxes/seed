@@ -237,6 +237,16 @@ def read_material_locality_relation_requirements(
     result = read_exact_material_result(
         ledger, recorded_result_event_identity
     )
+    from seed_runtime.operator_material_source import (
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        read_operator_material_source_locality_requirements,
+    )
+
+    if result.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
+        return read_operator_material_source_locality_requirements(
+            ledger,
+            recorded_result_event_identity=recorded_result_event_identity,
+        )
     relation = result.material.get("locality_relation")
     exact_material_subject = {
         "recorded_occurrence_identity": result.identity,

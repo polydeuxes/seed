@@ -27,13 +27,12 @@ from seed_runtime.operator_current_coordinates import (
 )
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_ACT_OCCURRENCE_EVENT,
-    OPERATOR_MATERIAL_SOURCE_LOCALITY_RELATION_OCCURRENCE_KIND,
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
     OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     OperatorMaterialSourceError,
     get_operator_material_source_subject_to_act_binding,
     get_recorded_operator_material_source,
-    read_operator_material_source_locality_relation_requirements,
+    read_operator_material_source_locality_requirements,
     record_operator_material_source_subject_to_act_binding,
     record_operator_material_source_act_occurrence,
     record_operator_material_source_result,
@@ -128,26 +127,16 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         "locality_identity": "source",
         "through_event_occurrence_identity": standing_boundary,
     }
-    assert OPERATOR_MATERIAL_SOURCE_LOCALITY_RELATION_OCCURRENCE_KIND == (
-        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
-    )
-    assert recorded["locality_relation"] == {
-        "first_subject": {
-            "recorded_occurrence_identity": result.identity,
-            "coordinate": "exact_material",
-        },
-        "relation": "locality",
-        "second_subject": "this Seed",
-        "relation_occurrence_identity": result.identity,
-    }
+    assert result.locality_identity == "source"
+    assert "locality_relation" not in recorded
     assert recorded["result_identity"] != result.identity
-    assert read_operator_material_source_locality_relation_requirements(
+    assert read_operator_material_source_locality_requirements(
         ledger,
         recorded_result_event_identity=result.identity,
     ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
+        "exact_locality": True,
+        "result_occurrence": True,
+        "intact_source_occurrence": True,
     }
     assert read_requirements_of_yield_relation(
         ledger,
@@ -429,12 +418,8 @@ def test_equal_raw_results_keep_distinct_occurrences_and_boundaries():
 
     assert results[0].exact_material == results[1].exact_material
     assert results[0].identity != results[1].identity
-    assert results[0].material["locality_relation"]["first_subject"] != results[
-        1
-    ].material["locality_relation"]["first_subject"]
-    assert results[0].material["locality_relation"][
-        "relation_occurrence_identity"
-    ] != results[1].material["locality_relation"]["relation_occurrence_identity"]
+    assert all("locality_relation" not in result.material for result in results)
+    assert results[0].locality_identity == results[1].locality_identity == "source"
     assert results[0].material["result_identity"] != results[1].material[
         "result_identity"
     ]
@@ -574,7 +559,6 @@ def test_result_refuses_a_changed_binding_result_boundary():
         "subject_to_act_binding_reference",
         "current_coordinate_reference",
         "source_boundary",
-        "locality_relation",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     ),
@@ -594,55 +578,7 @@ def test_changed_result_coordinates_are_refused(coordinate):
         get_recorded_operator_material_source(ledger, result.identity)
 
 
-@pytest.mark.parametrize(
-    ("coordinate", "changed", "expected_requirements"),
-    (
-        (
-            "first_subject",
-            {
-                "recorded_occurrence_identity": "another occurrence",
-                "coordinate": "exact_material",
-            },
-            {
-                "exact_relation": False,
-                "occurrence_witness": True,
-                "intact_occurrence": True,
-            },
-        ),
-        (
-            "relation",
-            "another relation",
-            {
-                "exact_relation": False,
-                "occurrence_witness": True,
-                "intact_occurrence": True,
-            },
-        ),
-        (
-            "second_subject",
-            "another bounded subject",
-            {
-                "exact_relation": False,
-                "occurrence_witness": True,
-                "intact_occurrence": True,
-            },
-        ),
-        (
-            "relation_occurrence_identity",
-            "another occurrence",
-                {
-                    "exact_relation": True,
-                    "occurrence_witness": False,
-                    "intact_occurrence": False,
-                },
-        ),
-    ),
-)
-def test_locality_relation_refuses_each_changed_coordinate(
-    coordinate,
-    changed,
-    expected_requirements,
-):
+def test_corrupted_material_result_is_not_an_intact_source_occurrence(monkeypatch):
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     act = _act(ledger, _binding(ledger, standing))
@@ -651,41 +587,6 @@ def test_locality_relation_refuses_each_changed_coordinate(
         act_occurrence_event_identity=act.identity,
         boundary_material=_boundary(),
     )
-    ledger.get(result.identity).material["locality_relation"][coordinate] = changed
-
-    requirements = read_operator_material_source_locality_relation_requirements(
-        ledger,
-        recorded_result_event_identity=result.identity,
-    )
-
-    assert requirements == expected_requirements
-    with pytest.raises(OperatorMaterialSourceError):
-        get_recorded_operator_material_source(ledger, result.identity)
-
-
-def test_locality_relation_refuses_a_different_or_corrupted_relation_occurrence(
-    monkeypatch,
-):
-    ledger = EventLedger()
-    standing, standing_boundary = _context(ledger)
-    act = _act(ledger, _binding(ledger, standing))
-    result = record_operator_material_source_result(
-        ledger,
-        act_occurrence_event_identity=act.identity,
-        boundary_material=_boundary(),
-    )
-    result.material["locality_relation"]["relation_occurrence_identity"] = act.identity
-
-    assert read_operator_material_source_locality_relation_requirements(
-        ledger,
-        recorded_result_event_identity=result.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": False,
-        "intact_occurrence": False,
-    }
-
-    result.material["locality_relation"]["relation_occurrence_identity"] = result.identity
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -694,17 +595,17 @@ def test_locality_relation_refuses_a_different_or_corrupted_relation_occurrence(
             CORRUPTED if identity == result.identity else integrity_of(identity)
         ),
     )
-    assert read_operator_material_source_locality_relation_requirements(
+    assert read_operator_material_source_locality_requirements(
         ledger,
         recorded_result_event_identity=result.identity,
     ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": False,
+        "exact_locality": True,
+        "result_occurrence": True,
+        "intact_source_occurrence": False,
     }
 
 
-def test_a_self_reference_without_o1_physiology_is_not_a_locality_relation():
+def test_result_without_source_physiology_is_not_an_intact_source_occurrence():
     ledger = EventLedger()
     result = ledger.append(
         OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -712,28 +613,15 @@ def test_a_self_reference_without_o1_physiology_is_not_a_locality_relation():
         exact_material=b"material\n",
         locality_identity="source",
     )
-    result.material.update(
-        {
-            "source_boundary": "fixture boundary",
-            "locality_relation": {
-                "first_subject": {
-                    "recorded_occurrence_identity": result.identity,
-                    "coordinate": "exact_material",
-                },
-                "relation": "locality",
-                "second_subject": "this Seed",
-                "relation_occurrence_identity": result.identity,
-            },
-        }
-    )
+    result.material["source_boundary"] = "fixture boundary"
 
-    assert read_operator_material_source_locality_relation_requirements(
+    assert read_operator_material_source_locality_requirements(
         ledger,
         recorded_result_event_identity=result.identity,
     ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": False,
+        "exact_locality": True,
+        "result_occurrence": True,
+        "intact_source_occurrence": False,
     }
 
 
