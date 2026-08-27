@@ -190,6 +190,18 @@ def test_rosetta_loss_decompresses_to_exact_boundary_outcomes():
     ) in rosetta
 
 
+def test_rosetta_fidelity_decompresses_to_exact_witness_coordinates():
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
+
+    assert "fidelity" in _rosetta_admission()
+    assert (
+        "Fidelity       ordinary shorthand for one exact external "
+        "Book-coordinate reference or one runtime-to-Witness-Grammar "
+        "comparison; no additional Compare binding, Applicability, Act "
+        "occurrence, Yield, result, identity, or object"
+    ) in rosetta
+
+
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 

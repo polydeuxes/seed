@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import json
 from pathlib import Path
-import re
 import sys
 
 import pytest
@@ -89,34 +87,6 @@ from compiled_format_invocation import (  # noqa: E402
 )
 from compiled_material_invocation import material_acquisition_result_reference  # noqa: E402
 from material_admission import compare_admission_result_pairs  # noqa: E402
-from scripts.book_admission import (  # noqa: E402
-    book_admission,
-    scan_active_line,
-)
-
-
-THIS_BOOK_MATERIAL_WITNESS = "this_book_material_witness"
-
-
-def test_book_material_witness_has_one_admitted_subject():
-    grammar = json.loads(
-        (ROOT / "book_of_seed" / "witness_grammar.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    subject_words = set(
-        re.findall(
-            r"[A-Za-z]+",
-            scan_active_line(THIS_BOOK_MATERIAL_WITNESS).lower(),
-        )
-    )
-
-    fidelity = grammar["book_coordinates"]["01.Source.C"]
-
-    assert fidelity["subjects"].count(THIS_BOOK_MATERIAL_WITNESS) == 1
-    assert subject_words <= book_admission()
-
-
 @pytest.fixture(scope="module")
 def acquired_book_material():
     ledger = EventLedger()
@@ -898,12 +868,3 @@ def test_book_admission_recomputes_from_its_exact_invocation_results(
                 *admission.invocation_result_references[1:],
             ),
         )
-
-
-
-
-WITNESSED_BOOK_COORDINATES = {
-    ("book_coordinates", "01.Source.C", "subjects", 2): (
-        test_book_material_witness_has_one_admitted_subject,
-    )
-}

@@ -241,22 +241,6 @@ def test_source_references_are_exact_and_distinct():
     }
 
 
-def test_fidelity_preserves_the_book_material_witness_subject():
-    assert _grammar()["book_coordinates"]["01.Source.C"] == {
-        "exact_Act": "Compare",
-        "subjects": [
-            "this_Seed_exact_occurrence",
-            "this_Grammar",
-            "this_book_material_witness",
-        ],
-        "carried_coordinates": [
-            "exact_declared_distinction",
-            "source_occurrence_references",
-            "Locality",
-        ],
-    }
-
-
 def test_assertion_coordinates_address_exact_source_occurrences_directly():
     assert _grammar()["book_coordinates"]["01.Current.D.1"] == {
         "subject": "Assertion",

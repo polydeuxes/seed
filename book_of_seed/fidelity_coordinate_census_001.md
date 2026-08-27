@@ -59,11 +59,11 @@ the Fidelity clause contains `this_book_material_witness`. That testimony is
 circular: the clause supplies the subject and the test then cites the clause as
 its Fidelity distinction.
 
-## Reverse grammar sirens
+## Direct runtime-to-grammar checks
 
 `tests/test_runtime_fidelity.py` reads active runtime syntax and compares its
 declared event ownership and material coordinates with Witness Grammar. Those
-sirens are real tests of runtime-to-grammar coherence.
+are real tests of runtime-to-grammar coherence.
 
 They record no Fidelity occurrence. `Fidelity` is the test module's orientation
 over direct runtime and grammar coordinates.
@@ -82,7 +82,7 @@ word supplies neither.
 
 ```text
 exact Book-coordinate reference on a pytest occurrence   established externally
-runtime-to-Witness-Grammar coherence sirens               established
+runtime-to-Witness-Grammar coherence checks                established
 Fidelity Compare binding / occurrence / Yield / result    not established
 independent Fidelity distinction coordinate               not established
 ```
@@ -95,7 +95,19 @@ separation from Witness-material tests.
 
 Then withdraw the uninstantiated Fidelity Compare clause and its circular
 Book-material-subject test. Keep the actual Book material source occurrences,
-runtime-to-grammar sirens, and every exact Book-coordinate reference.
+runtime-to-grammar checks, and every exact Book-coordinate reference.
 
 Do not introduce Faithfulness, Conformance, Compliance, Quality, or another
 replacement object.
+
+## Outcome
+
+The external compiled Witness now names its exact Book-coordinate references
+directly. Its path resolution, pytest occurrence boundaries, duplicate refusal,
+and separation from Witness-material tests remain intact.
+
+The uninstantiated `01.Source.C` Compare clause and its circular
+Book-material-subject test are gone. Actual Book material source occurrences,
+runtime-to-Witness-Grammar comparisons, and direct Book-coordinate references
+remain. Rosetta keeps `Fidelity` as ordinary shorthand for those exact
+comparisons and references.

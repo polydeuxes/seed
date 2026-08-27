@@ -9,19 +9,6 @@
       "exact_Act": "preserve_exact_source_coordinates",
       "result": "exact_source_coordinates"
     },
-    "01.Source.C": {
-      "exact_Act": "Compare",
-      "subjects": [
-        "this_Seed_exact_occurrence",
-        "this_Grammar",
-        "this_book_material_witness"
-      ],
-      "carried_coordinates": [
-        "exact_declared_distinction",
-        "source_occurrence_references",
-        "Locality"
-      ]
-    },
     "01.Source.D": {
       "subject": "declared_Measurement",
       "exact_Act": "Measurement",

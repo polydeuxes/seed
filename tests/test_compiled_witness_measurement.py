@@ -117,7 +117,7 @@ def test_one_pytest_occurrence_keeps_its_exact_book_coordinate():
         stash={},
         module=SimpleNamespace(
             WITNESSED_BOOK_COORDINATES={
-                ("book_coordinates", "01.Source.C"): (exact_function,)
+                ("book_coordinates", "01.Source.D"): (exact_function,)
             }
         ),
         function=exact_function,
@@ -141,7 +141,7 @@ def test_one_pytest_occurrence_keeps_its_exact_book_coordinate():
     assert occurrence["pytest_identity"] == item.nodeid
     assert occurrence["book_coordinate_reference"] == [
         "book_coordinates",
-        "01.Source.C",
+        "01.Source.D",
     ]
     assert "test_subject" not in occurrence
     assert "witness_for" not in occurrence
@@ -187,12 +187,12 @@ def test_book_coordinate_reference_refuses_duplicate_or_invalid_references():
     ordinary = SimpleNamespace()
     exact = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): (first,)
+            ("book_coordinates", "01.Source.D"): (first,)
         }
     )
     repeated = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): (first,),
+            ("book_coordinates", "01.Source.D"): (first,),
             ("book_coordinates", "02.Acts.A"): (first, second),
         }
     )
@@ -202,21 +202,21 @@ def test_book_coordinate_reference_refuses_duplicate_or_invalid_references():
         }
     )
     scalar = SimpleNamespace(
-        WITNESSED_BOOK_COORDINATES={"01.Source.C": (first,)},
+        WITNESSED_BOOK_COORDINATES={"01.Source.D": (first,)},
     )
     coordinate_list = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES=[
-            (("book_coordinates", "01.Source.C"), (first,))
+            (("book_coordinates", "01.Source.D"), (first,))
         ]
     )
     functions_list = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): [first]
+            ("book_coordinates", "01.Source.D"): [first]
         }
     )
     nonfunction_coordinate = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): ("first",)
+            ("book_coordinates", "01.Source.D"): ("first",)
         }
     )
     explicit_witness_material = SimpleNamespace(
@@ -224,12 +224,12 @@ def test_book_coordinate_reference_refuses_duplicate_or_invalid_references():
     )
     unreferenced = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): (first,)
+            ("book_coordinates", "01.Source.D"): (first,)
         }
     )
     crossed = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): (first,)
+            ("book_coordinates", "01.Source.D"): (first,)
         },
         WITNESS_MATERIAL_TESTS=(first,),
     )
@@ -246,7 +246,7 @@ def test_book_coordinate_reference_refuses_duplicate_or_invalid_references():
     assert measured._pytest_uptake(exact, first, grammar) == {
         "book_coordinate_reference": [
             "book_coordinates",
-            "01.Source.C",
+            "01.Source.D",
         ]
     }
     with pytest.raises(ValueError, match="entered Book coordinates twice"):
@@ -288,7 +288,7 @@ def test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence(
             stash={},
         )
 
-    valid = item(("book_coordinates", "01.Source.C"))
+    valid = item(("book_coordinates", "01.Source.D"))
     invalid = item(("book_coordinates", "missing"))
 
     with pytest.raises(ValueError, match="absent from current book coordinates"):
@@ -308,7 +308,7 @@ def test_pytest_uptake_function_must_be_collected():
         module=SimpleNamespace(
             __name__="tests.test_compiled_witness_measurement",
             WITNESSED_BOOK_COORDINATES={
-                ("book_coordinates", "01.Source.C"): (another_function,)
+                ("book_coordinates", "01.Source.D"): (another_function,)
             },
         ),
         function=function,
@@ -356,7 +356,7 @@ def test_witness_material_occurrence_has_no_book_coordinate():
     )
     module = SimpleNamespace(
         WITNESSED_BOOK_COORDINATES={
-            ("book_coordinates", "01.Source.C"): (book_coordinate_function,),
+            ("book_coordinates", "01.Source.D"): (book_coordinate_function,),
         },
         WITNESS_MATERIAL_TESTS=(function,),
     )
@@ -530,40 +530,11 @@ def test_witnessed_book_coordinates_resolve_current_book_coordinates():
     grammar = measured._witness_grammar()
     assert measured._book_coordinate_reference(
         grammar,
-        ("book_coordinates", "01.Source.C", "subjects", 2),
+        ("book_coordinates", "01.Source.D", "result"),
     ) == {
         "book_coordinate_reference": [
             "book_coordinates",
-            "01.Source.C",
-            "subjects",
-            2,
+            "01.Source.D",
+            "result",
         ],
     }
-    for reference, functions in WITNESSED_BOOK_COORDINATES.items():
-        assert measured._book_coordinate_reference(grammar, reference) == {
-            "book_coordinate_reference": list(reference)
-        }
-        assert all(callable(function) for function in functions)
-
-
-WITNESSED_BOOK_COORDINATES = {
-    ("book_coordinates", "01.Source.C"): (
-        test_compiled_code_supplies_exact_identities,
-        test_observed_measurement_preserves_observation_order_without_sorting,
-        test_python_invocation_occurrence_is_measured,
-        test_uninvoked_compiled_identity_remains_unobserved,
-        test_one_measurement_does_not_replace_an_active_measurement,
-        test_one_pytest_occurrence_keeps_its_exact_book_coordinate,
-        test_book_coordinate_reference_refuses_duplicate_or_invalid_references,
-        test_book_coordinate_reference_refuses_a_stale_coordinate_before_occurrence,
-        test_pytest_uptake_function_must_be_collected,
-        test_ordinary_pytest_test_has_no_seed_uptake,
-        test_witness_material_occurrence_has_no_book_coordinate,
-        test_stable_catalog_is_separate_from_sparse_observation,
-        test_reference_pair_measurement_contains_each_preserved_function,
-        test_sql_occurrence_preserves_exact_statement_material,
-        test_existing_sql_trace_receiver_receives_the_exact_statement,
-        test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
-        test_witnessed_book_coordinates_resolve_current_book_coordinates,
-    )
-}

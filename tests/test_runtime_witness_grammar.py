@@ -1,4 +1,4 @@
-"""Reverse Fidelity sirens from the live witness back to witness grammar.
+"""Direct checks from live Seed to Witness Grammar.
 
 These tests are deliberately bounded by what the runtime declares. They do
 not ask a hand-maintained list which witnesses should be inspected.
@@ -714,7 +714,7 @@ def _unread_event_materials():
                     yield path.name, call.lineno, value
 
 
-def test_every_declared_event_occurrence_carries_its_material_to_the_sirens():
+def test_every_declared_event_occurrence_material_is_read():
     assert list(_unread_event_materials()) == []
 
 
