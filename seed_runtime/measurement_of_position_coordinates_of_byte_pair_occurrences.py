@@ -561,7 +561,6 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "through_event_occurrence_identity": through_event_occurrence_identity,
         "input_relation": input_relation,
-        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
@@ -1260,7 +1259,6 @@ def _assertion(
         "result": "position",
         "assertion_subject": subject,
         "conflicts": "Unknown",
-        "unknown": ["content of this byte pair: Unknown"],
     }
 
 
@@ -1288,7 +1286,6 @@ def _assertion_result_coordinates(
                 ),
             },
         },
-        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
@@ -1311,7 +1308,6 @@ def _result_material(
             "identity": finding.completeness_boundary.identity
         },
         "assertions": _assertion_result_coordinates(finding),
-        "unknown": ["content of each exact byte pair: Unknown"],
     }
 
 
@@ -1387,7 +1383,6 @@ def _record_byte_pair_occurrence_position_measurement_result(
             ],
             "completeness_boundary": result["completeness_boundary"],
             "assertions": result["assertions"],
-            "unknown": result["unknown"],
             "act_occurrence_event_identity": act.identity,
             "yield_relation_identity": yield_relation.identity,
         },

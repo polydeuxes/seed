@@ -68,7 +68,9 @@ class MovementSourceChangeLedger(EventLedger):
         ):
             self.changed = True
             source = self.get(self.source_event_identity)
-            source.material["unknown"] = ["changed after movement occurrence"]
+            source.material["result_identity"] = (
+                "changed after movement occurrence"
+            )
         return event
 from seed_runtime.operator_current_coordinates import (
     _carry_byte_pair_occurrence_position_measurement_result_into_current_coordinates,
@@ -385,7 +387,6 @@ def test_act_requires_current_coordinates_that_carry_exact_binding():
         "completeness_boundary_identity",
         "through_event_occurrence_identity",
         "input_relation",
-        "unknown",
     }
 
     with pytest.raises(ValueError, match="exact current coordinates"):
@@ -534,7 +535,6 @@ def test_one_bounded_position_assertion_result_coordinates_equals_each_addressed
             "result",
             "assertion_subject",
             "conflicts",
-            "unknown",
         }
         for assertion in assertions
     )
@@ -578,7 +578,9 @@ def test_bounded_position_assertion_result_coordinates_refuses_changed_result():
             result_event_identity=result.identity,
         )
     )
-    result.material["unknown"] = ["changed before the bounded Assertion read"]
+    result.material["result_identity"] = (
+        "changed before the bounded Assertion read"
+    )
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
         _recorded_position_assertions_for_locality_movement(
@@ -1105,7 +1107,6 @@ def test_result_carries_only_its_declared_measurement_coordinates():
         "source_material_result_occurrence_identity",
         "completeness_boundary",
         "assertions",
-        "unknown",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     }
