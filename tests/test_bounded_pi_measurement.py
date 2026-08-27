@@ -85,7 +85,10 @@ def test_one_bounded_decimal_material_does_not_gain_its_human_attribution():
     byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
 
-    assert any(assertion.content == 46 for assertion in byte_assertions)
+    assert any(
+        assertion["assertion_subject"].get("content") == 46
+        for assertion in byte_assertions
+    )
     assert pair_counts[b"3."] == 1
     assert pair_counts[b".1"] == 1
     assert pair_counts[b"59"] == 1
@@ -106,7 +109,13 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
 
     short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
     long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
-    assert short_source.reference != long_source.reference
+    assert (
+        short_bytes.identity,
+        short_source["dimensions"]["position"],
+    ) != (
+        long_bytes.identity,
+        long_source["dimensions"]["position"],
+    )
     assert short_bytes.material == short_material
     assert _pair_counts(short_pairs) == short_pair_counts
     assert _pair_counts(long_pairs)[b"26"] == 1

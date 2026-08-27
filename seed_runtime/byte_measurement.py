@@ -378,16 +378,10 @@ def _recorded_input_assertion_coordinates(
         )
     if source.locality_movement_event_identity is None:
         source_event = ledger.get(source.recorded_occurrence_identity)
-        readings = assertions_of_recorded_byte_measurement(
-            ledger, source.recorded_occurrence_identity
-        )
-        exact = next(
-            (
-                reading
-                for reading in readings or ()
-                if reading.assertion_position == source.assertion_position
-            ),
-            None,
+        exact = _recorded_byte_assertion_at_position(
+            ledger,
+            source.recorded_occurrence_identity,
+            source.assertion_position,
         )
         if (
             source_event is None
@@ -627,18 +621,31 @@ def _prepare_pair_source(
         raise ByteMeasurementError(
             "byte-position-pair Measurement requires an exact Act Locality"
         )
-    read = assertions_of_recorded_byte_measurement(
+    read = _assertions_of_recorded_byte_measurement(
         ledger, source_measurement_event_identity
     )
     if read is None:
         raise ByteMeasurementError("byte-position-pair Measurement requires a source")
     source = next(
-        (item for item in read if item.result == "exact_source_material_set"),
+        (
+            item
+            for item in read
+            if item["result"] == "exact_source_material_set"
+        ),
         None,
     )
     if source is None:
         raise ByteMeasurementError(
             "byte-position-pair Measurement requires an exact source-material-set Assertion"
+        )
+    source = _recorded_byte_assertion_at_position(
+        ledger,
+        source_measurement_event_identity,
+        source["dimensions"]["position"],
+    )
+    if source is None:
+        raise ByteMeasurementError(
+            "byte-position-pair Measurement requires exact source coordinates"
         )
     source = _move_byte_assertion_to_locality(
         ledger,
@@ -692,16 +699,10 @@ def _source_assertion_from_reference(
             or reference["assertion_position"] < 0
         ):
             raise ByteMeasurementError("Assertion movement carries no exact source")
-        source_results = assertions_of_recorded_byte_measurement(
-            ledger, source_event.identity
-        )
-        source = next(
-            (
-                item
-                for item in source_results or ()
-                if item.assertion_position == reference["assertion_position"]
-            ),
-            None,
+        source = _recorded_byte_assertion_at_position(
+            ledger,
+            source_event.identity,
+            reference["assertion_position"],
         )
         if source is not None:
             return source, source_event
@@ -1612,11 +1613,12 @@ def move_recorded_byte_assertions_to_locality(
     if source_event.locality_identity == destination_locality:
         return sources
     exact_sources = {
-        source.assertion_position: source
-        for source in assertions_of_recorded_byte_measurement(
-            ledger, source_event_identity
+        source.assertion_position: _recorded_byte_assertion_at_position(
+            ledger,
+            source_event_identity,
+            source.assertion_position,
         )
-        or ()
+        for source in sources
     }
     if any(exact_sources.get(source.assertion_position) != source for source in sources):
         raise ByteMeasurementError(
@@ -2814,7 +2816,7 @@ def _assertions_of_recorded_byte_measurement(
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[RecordedByteAssertion, ...] | None:
+) -> tuple[dict[str, Any], ...] | None:
     event = ledger.get(event_identity)
     if event is None:
         return None
@@ -2941,29 +2943,7 @@ def _assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not carry the results of its complete bounded source read"
         )
-    read = []
-    for assertion in expected:
-        referenced_positions = assertion.get(
-            "referenced_assertion_positions", []
-        )
-        read.append(
-            RecordedByteAssertion(
-                assertion_position=assertion["dimensions"]["position"],
-                recorded_occurrence_identity=event.identity,
-                source_localities=tuple(localities_value),
-                content=assertion["assertion_subject"].get("content"),
-                result=assertion["result"],
-                _material=deepcopy(assertion),
-                _referenced_assertions=tuple(
-                    {
-                        "recorded_occurrence_identity": event.identity,
-                        "assertion_position": local_position,
-                    }
-                    for local_position in referenced_positions
-                ),
-            )
-        )
-    return tuple(read)
+    return tuple(deepcopy(assertion) for assertion in expected)
 
 
 def assertions_of_recorded_byte_measurement(
@@ -2971,13 +2951,60 @@ def assertions_of_recorded_byte_measurement(
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
-) -> tuple[RecordedByteAssertion, ...] | None:
+) -> tuple[dict[str, Any], ...] | None:
     """Read the exact byte results after replaying their bounded source read."""
 
     return _assertions_of_recorded_byte_measurement(
         ledger,
         event_identity,
         prior_coordinates=prior_coordinates,
+    )
+
+
+def _recorded_byte_assertion_at_position(
+    ledger: EventLedger,
+    event_identity: str,
+    assertion_position: int,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
+) -> RecordedByteAssertion | None:
+    """Resolve the temporary pair-input reader at one exact result position."""
+
+    assertions = _assertions_of_recorded_byte_measurement(
+        ledger,
+        event_identity,
+        prior_coordinates=prior_coordinates,
+    )
+    if assertions is None:
+        return None
+    assertion = next(
+        (
+            item
+            for item in assertions
+            if item["dimensions"]["position"] == assertion_position
+        ),
+        None,
+    )
+    event = ledger.get(event_identity)
+    if assertion is None or event is None:
+        return None
+    localities = event.material["source_localities"]
+    return RecordedByteAssertion(
+        assertion_position=assertion_position,
+        recorded_occurrence_identity=event.identity,
+        source_localities=tuple(localities),
+        content=assertion["assertion_subject"].get("content"),
+        result=assertion["result"],
+        _material=deepcopy(assertion),
+        _referenced_assertions=tuple(
+            {
+                "recorded_occurrence_identity": event.identity,
+                "assertion_position": local_position,
+            }
+            for local_position in assertion.get(
+                "referenced_assertion_positions", []
+            )
+        ),
     )
 
 
@@ -3426,22 +3453,16 @@ def _read_pair_subject_to_act_binding(
             prior_coordinates = _prior_coordinates_for_pair_subject_to_act_binding(
                 ledger, binding=binding, boundary=boundary
             )
-        readings = _assertions_of_recorded_byte_measurement(
-            ledger,
-            reference.get("recorded_occurrence_identity")
+        source = (
+            _recorded_byte_assertion_at_position(
+                ledger,
+                reference.get("recorded_occurrence_identity"),
+                reference.get("assertion_position"),
+                prior_coordinates=prior_coordinates,
+            )
             if type(reference) is dict
-            else None,
-            prior_coordinates=prior_coordinates,
+            else None
         )
-        source = next(
-            (
-                reading
-                for reading in readings or ()
-                if reading.assertion_position
-                == reference.get("assertion_position")
-            ),
-            None,
-        ) if type(reference) is dict else None
     elif type(movement_identity) is str and movement_identity:
         source = _validate_moved_byte_assertion(ledger, movement_identity)
     else:
