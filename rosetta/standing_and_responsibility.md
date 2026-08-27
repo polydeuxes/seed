@@ -31,15 +31,15 @@ runtime payloads copy a scalar through pre-Act, Act, Yield, and result records,
 but that scalar does not address an exact boundary occurrence or relation. It
 remains runtime cleanup material until such a distinction is established.
 
-Exact Act role and relations recur across live Witness roads:
+Act role is human shorthand for an exact subject position:
 
 ```text
-exact subject + role + exact Act occurrence
+exact subject + exact position within one exact Act occurrence
 exact Act occurrence ── Yield → exact result
 exact subject ── Locality → exact subject
 ```
 
-The exact Act role coordinates have no additional Participation relation
+The exact subject and Act coordinates have no additional Participation relation
 or occurrence. Yield and Locality remain exact relations with exact relation
 occurrences. These are not every relation about which Seed may carry an
 Assertion.
@@ -90,6 +90,7 @@ Book           this constitutional language + ordered clause coordinates + this 
 Standing       exact subject + Locality + exact through-occurrence boundary + bounded current-coordinate read; no additional identity, occurrence, relation, Act, or result
 Responsibility exact subject + exact Act + Locality + required relations, all exact before occurrence; no duty, ownership, inevitability, or additional object
 Assignment     runtime witness word for recorded pre-Act coordinates; generated assignment identities add no established distinction on the audited byte-pair road
+Role / roles   ordinary shorthand for exact subject position coordinates; the words establish no additional coordinate, identity, object, or occurrence
 Responsible boundary runtime scalar equality thread only; no exact boundary physiology established
 Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or currentness
 Composite      one communicative address for multiple exact coordinates; each coordinate still requires its own exact physiology

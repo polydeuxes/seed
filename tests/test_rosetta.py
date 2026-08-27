@@ -141,6 +141,17 @@ def test_rosetta_participant_decompresses_to_act_occurrence_coordinates():
     ) in rosetta
 
 
+def test_rosetta_role_decompresses_to_exact_structural_positions():
+    rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
+
+    assert {"role", "roles"} <= _rosetta_admission()
+    assert (
+        "Role / roles   ordinary shorthand for exact subject position "
+        "coordinates; the words establish no additional coordinate, identity, "
+        "object, or occurrence"
+    ) in rosetta
+
+
 def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
     rosetta = ROSETTA_STANDING_RESPONSIBILITY.read_text(encoding="utf-8")
 

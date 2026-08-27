@@ -406,7 +406,6 @@ recorded
 recording
 records
 recover
-recur
 recurring
 reference
 references
@@ -446,8 +445,8 @@ retired
 retiring
 returned
 road
-roads
 role
+roles
 rosetta
 rule
 runtime

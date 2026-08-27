@@ -1347,14 +1347,12 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         "applicability_of_input_to_compare": [
             {
                 "subject_reference": deepcopy(material["path_assertion_reference"]),
-                "role": "ordered relation path input",
                 "addressed_act_identity": material["addressed_act_identity"],
             },
             {
                 "subject_reference": deepcopy(
                     material["comparison_result_reference"]
                 ),
-                "role": "recorded pair Compare input",
                 "addressed_act_identity": material["addressed_act_identity"],
             },
         ],
@@ -1807,9 +1805,8 @@ def get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_occu
 
 
 def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
-    roles = []
-    for role, pair, path_reference, findings in zip(
-        ("first_path_relation", "second_path_relation"),
+    relation_findings = []
+    for pair, path_reference, findings in zip(
         inputs["path"]["pair_subjects"],
         (
             inputs["path"]["assertion"]["assertion_subject"][
@@ -1821,9 +1818,8 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
         ),
         inputs["path_relation_findings"],
     ):
-        roles.append(
+        relation_findings.append(
             {
-                "role": role,
                 "path_position_assertion_reference": deepcopy(path_reference),
                 "pair_subject": list(pair),
                 "comparison_finding_references": deepcopy(list(findings)),
@@ -1839,7 +1835,7 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
     }
     return {
         "subject": subject,
-        "relation_findings": roles,
+        "relation_findings": relation_findings,
         "unknown": [],
     }
 
@@ -2021,7 +2017,6 @@ class RecordedDistinctionPin(NamedTuple):
     through_event_occurrence_identity: str
     comparison_result_occurrence_identity: str
     ordered_relation_path_assertion_reference: dict[str, Any]
-    path_role: str
     path_position_assertion_reference: dict[str, Any]
     pair_subject: bytes
     recorded_finding_reference: dict[str, Any]
@@ -2092,7 +2087,9 @@ def recorded_distinction_pins_from_current_coordinates(
             if type(subject) is dict
             else None
         )
-        roles = finding.get("relation_findings") if type(finding) is dict else None
+        relation_findings = (
+            finding.get("relation_findings") if type(finding) is dict else None
+        )
         comparison_reference = (
             subject.get("recorded_pair_comparison_result_reference")
             if type(subject) is dict
@@ -2103,26 +2100,27 @@ def recorded_distinction_pins_from_current_coordinates(
             or type(comparison_reference) is not dict
             or type(comparison_reference.get("recorded_occurrence_identity"))
             is not str
-            or type(roles) is not list
+            or type(relation_findings) is not list
         ):
             raise ValueError("recorded distinction pin source result is not exact")
-        for role in roles:
-            role_identity = role.get("role") if type(role) is dict else None
+        for relation_finding in relation_findings:
             position_reference = (
-                role.get("path_position_assertion_reference")
-                if type(role) is dict
+                relation_finding.get("path_position_assertion_reference")
+                if type(relation_finding) is dict
                 else None
             )
-            pair_subject = role.get("pair_subject") if type(role) is dict else None
+            pair_subject = (
+                relation_finding.get("pair_subject")
+                if type(relation_finding) is dict
+                else None
+            )
             references = (
-                role.get("comparison_finding_references")
-                if type(role) is dict
+                relation_finding.get("comparison_finding_references")
+                if type(relation_finding) is dict
                 else None
             )
             if (
-                role_identity
-                not in {"first_path_relation", "second_path_relation"}
-                or type(position_reference) is not dict
+                type(position_reference) is not dict
                 or type(pair_subject) is not list
                 or len(pair_subject) != 2
                 or not all(
@@ -2165,7 +2163,6 @@ def recorded_distinction_pins_from_current_coordinates(
                         boundary,
                         occurrence_identity,
                         deepcopy(path_reference),
-                        role_identity,
                         deepcopy(position_reference),
                         bytes(pair_subject),
                         deepcopy(reference),

@@ -27,8 +27,9 @@ Act and Locality are exact together.
 
 Each input requires its exact Applicability result.
 
-The result preserves each source reference, ordered path roles, pair subjects,
-complete finding references, Locality, conflicts, and Unknown.
+The result preserves each source reference, ordered path-position Assertion
+references, pair subjects, complete finding references, Locality, conflicts,
+and Unknown.
 
 ## References
 
