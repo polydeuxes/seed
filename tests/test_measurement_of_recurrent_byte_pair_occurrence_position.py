@@ -175,7 +175,7 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
     )
 
 
-def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identities():
+def test_current_coordinates_address_exact_binding_and_distinct_lifecycle_identities():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,
@@ -197,7 +197,6 @@ def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identiti
         "subject_reference",
         "act_occurrence_identity",
         "measurement_result_identity",
-        "result_boundary_identity",
         "book_clause_identity",
         "pair_assertion_reference",
         "source_material_result_occurrence_identity",
@@ -235,16 +234,13 @@ def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identiti
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
     assert result.material["subject_to_act_binding_reference"] == act.material[
         "subject_to_act_binding_reference"
     ]
 
 
-def test_stale_coordinates_cannot_carry_the_measurement_act():
+def test_stale_coordinates_cannot_address_the_measurement_act():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     stale = read_operator_current_coordinates(
         ledger, locality_identity=locality
@@ -263,7 +259,7 @@ def test_stale_coordinates_cannot_carry_the_measurement_act():
         )
 
 
-def test_substituted_coordinates_without_the_exact_binding_cannot_carry_the_act():
+def test_changed_coordinates_without_the_exact_binding_cannot_address_the_act():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
     binding = record_recurrent_byte_pair_occurrence_position_measurement_subject_to_act_binding(
         ledger,

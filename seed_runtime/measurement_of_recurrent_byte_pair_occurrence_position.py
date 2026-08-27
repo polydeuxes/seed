@@ -552,9 +552,6 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
 
 
@@ -577,7 +574,6 @@ def _binding_material(
         "subject_reference": subject_reference,
         "act_occurrence_identity": act_occurrence_identity,
         "measurement_result_identity": measurement_result_identity,
-        "result_boundary_identity": measurement_result_identity,
         "book_clause_identity": "01.Source.D",
         "pair_assertion_reference": finding.pair_reference.assertion_reference,
         "source_material_result_occurrence_identity": (
@@ -1105,7 +1101,6 @@ def _finding_of_measurement_from_act_occurrence(
             "book_clause_identity",
             "exact_act_identity",
             "subject_reference",
-            "result_boundary_identity",
         }
     ):
         raise ValueError("pair occurrence Act occurrence carries malformed coordinates")
