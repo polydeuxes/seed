@@ -12,8 +12,6 @@ from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
 from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
     read_requirements_of_yield_relation,
 )
 
@@ -29,10 +27,6 @@ OPERATOR_DESTINATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
 OPERATOR_DESTINATION_LOCALITY_ACT = (
     "Establish one direct operator destination Locality relation"
 )
-OPERATOR_DESTINATION_LOCALITY_RESULT_KIND = (
-    "operator destination Locality relation result"
-)
-
 EVENT_KIND_BOOK_CLAUSES = {
     OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: (
         "06.Locality.D"
@@ -363,13 +357,13 @@ def _result_material(act: Event) -> dict[str, Any]:
     }
 
 
-def _refuse_second_yield(ledger: EventLedger, act: Event) -> None:
-    for yield_relation in ledger.iter_locality_kind(
-        act.locality_identity, RECORDED_YIELD_RELATION_EVENT
+def _refuse_second_result(ledger: EventLedger, act: Event) -> None:
+    for result in ledger.iter_locality_kind(
+        act.locality_identity, OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND
     ):
-        if yield_relation.material.get("act_occurrence_event_identity") == act.identity:
+        if result.material.get("act_occurrence_event_identity") == act.identity:
             raise OperatorDestinationLocalityError(
-                "destination Locality Act already has a Yield"
+                "one destination Locality Act occurrence cannot address two results"
             )
 
 
@@ -377,7 +371,6 @@ def _recorded_result_material(
     result: dict[str, Any],
     *,
     act_occurrence_event_identity: str,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -397,9 +390,6 @@ def _recorded_result_material(
             "destination_locality_identity"
         ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
-        "yield_relation_identity": (
-            yield_relation_identity
-        ),
     }
 
 
@@ -409,25 +399,13 @@ def record_operator_destination_locality_result(
     act = get_operator_destination_locality_act_occurrence(
         ledger, act_occurrence_event_identity
     )
-    _refuse_second_yield(ledger, act)
+    _refuse_second_result(ledger, act)
     result = _result_material(act)
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=OPERATOR_DESTINATION_LOCALITY_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=OPERATOR_DESTINATION_LOCALITY_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="operator_destination_locality_relation",
-    )
     return ledger.append(
         OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
         _recorded_result_material(
             result,
             act_occurrence_event_identity=act.identity,
-            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=act.locality_identity,
     )
@@ -455,36 +433,31 @@ def get_recorded_operator_destination_locality(
     exact_result_material = _recorded_result_material(
         result,
         act_occurrence_event_identity=act.identity,
-        yield_relation_identity=event.material.get(
-            "yield_relation_identity"
-        ),
     )
     if (
         event.locality_identity != act.locality_identity
         or event.material != exact_result_material
     ):
         raise OperatorDestinationLocalityError("destination Locality result is not exact")
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material[
-            "yield_relation_identity"
-        ],
-        act_occurrence_event_identity=act.identity,
-    )
-    if not all(requirements.values()):
-        raise OperatorDestinationLocalityError("destination Locality result has no exact Yield")
+    try:
+        ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except ValueError as error:
+        raise OperatorDestinationLocalityError(
+            "destination Locality result requires its Act occurrence"
+        ) from error
     return deepcopy(event.material)
 
 
 def operator_destination_locality_occurrence_references(
     ledger: EventLedger, event_identity: str
-) -> tuple[str, str, str]:
+) -> tuple[str, str]:
     event = ledger.get(event_identity)
     result = get_recorded_operator_destination_locality(ledger, event_identity)
     identities = (
         result["act_occurrence_event_identity"],
-        result["yield_relation_identity"],
         event.identity,
     )
     ledger.occurrences_in_append_order(

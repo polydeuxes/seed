@@ -93,3 +93,26 @@ result occurrence establishes every exact endpoint and refusal without the
 interposed event, the separate Yield occurrence fails this road.
 
 No global withdrawal is proposed by this census.
+
+## First result
+
+The operator destination Locality road passed the subtraction. Its exact order
+is now:
+
+```text
+subject-to-Act binding
+Act occurrence
+recorded Locality result occurrence
+```
+
+The result directly addresses the Act occurrence. Its reader reconstructs the
+exact result from that Act, requires both occurrences in append order at the
+exact Locality, and refuses changed endpoints, changed result coordinates,
+corruption, substitution, and another result for the Act.
+
+Current-coordinate replay and durable reopen still address the result as the
+Locality relation occurrence. The deleted Yield event added only a copied
+future-result dictionary and another event identity on this road.
+
+This first result does not establish a global conclusion. Recorded-boundary
+Locality and Locality continuation remain independent controls.

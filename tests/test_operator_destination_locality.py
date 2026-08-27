@@ -100,7 +100,6 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
         ledger, result.identity
     ) == (
         act.identity,
-        result.material["yield_relation_identity"],
         result.identity,
     )
 
@@ -233,7 +232,10 @@ def test_one_destination_locality_act_cannot_yield_twice():
     record_operator_destination_locality_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    with pytest.raises(OperatorDestinationLocalityError, match="already has a Yield"):
+    with pytest.raises(
+        OperatorDestinationLocalityError,
+        match="one destination Locality Act occurrence cannot address two results",
+    ):
         record_operator_destination_locality_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -303,7 +305,6 @@ def test_advanced_destination_coordinates_equal_full_replay():
         (
             binding.identity,
             act.identity,
-            relation.material["yield_relation_identity"],
             relation.identity,
         ),
         locality_identity=locality,

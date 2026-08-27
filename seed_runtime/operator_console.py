@@ -529,12 +529,7 @@ def run_persistent_operator_console(
                 witness_current_coordinates = _advance_over(
                     ledger,
                     witness_current_coordinates,
-                    (
-                        relation_result.material[
-                            "yield_relation_identity"
-                        ],
-                        relation_result.identity,
-                    ),
+                    (relation_result.identity,),
                     locality_identity=destination_locality_identity,
                 )
             supplied_boundaries: set[str] = set()
