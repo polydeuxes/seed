@@ -1,4 +1,4 @@
-"""One exact invocation occurrence is recorded for this Seed."""
+"""One exact occurrence is recorded for this Seed."""
 
 from __future__ import annotations
 

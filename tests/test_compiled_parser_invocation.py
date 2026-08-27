@@ -1,4 +1,4 @@
-"""Exact invocation occurrences."""
+"""Exact occurrences."""
 
 from __future__ import annotations
 

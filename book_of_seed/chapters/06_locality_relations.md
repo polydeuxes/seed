@@ -26,17 +26,17 @@ The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the recorded
 reference, destination Locality, Act occurrence, and Yield.
 
-### 06.Locality.D — Operator invocation Locality
+### 06.Locality.D — Operator destination Locality
 
-Before one invocation-Locality Act occurrence, one exact operator material
-occurrence, exact Act, invocation Locality, and Locality relation from the
+Before one Locality Act occurrence, one exact operator material occurrence,
+exact Act, destination Locality, and Locality relation from the
 operator Locality are exact together.
 
 The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the operator
-occurrence, source Locality, invocation Locality, Act occurrence, and Yield.
+occurrence, source Locality, destination Locality, Act occurrence, and Yield.
 
-Material later supplied at the invocation Locality preserves exact source
+Material later supplied at the destination Locality preserves exact source
 occurrence references to the operator occurrence and relation result.
 
 ## References

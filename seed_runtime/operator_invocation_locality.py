@@ -27,10 +27,10 @@ OPERATOR_INVOCATION_LOCALITY_ACT_OCCURRENCE_EVENT = (
 OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND = "operator.invocation_locality_recorded"
 OPERATOR_INVOCATION_LOCALITY_BOOK_CLAUSE = "06.Locality.D"
 OPERATOR_INVOCATION_LOCALITY_ACT = (
-    "Establish one direct operator invocation Locality relation"
+    "Establish one direct operator destination Locality relation"
 )
 OPERATOR_INVOCATION_LOCALITY_RESULT_KIND = (
-    "operator invocation Locality relation result"
+    "operator destination Locality relation result"
 )
 
 EVENT_KIND_BOOK_CLAUSES = {
@@ -426,7 +426,7 @@ def record_operator_invocation_locality_result(
         result_kind=OPERATOR_INVOCATION_LOCALITY_RESULT_KIND,
         result_identity=result["result_identity"],
         result_content=result,
-        occurrence_boundary="operator_invocation_locality_relation",
+        occurrence_boundary="operator_destination_locality_relation",
     )
     return ledger.append(
         OPERATOR_INVOCATION_LOCALITY_RECORDED_KIND,

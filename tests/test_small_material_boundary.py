@@ -1,4 +1,4 @@
-"""Material Acts are bounded by exact invocation occurrences."""
+"""Material Acts are bounded by exact occurrences."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Exact invocation occurrences are recorded for this Witness."""
+"""Exact occurrences are recorded for this Witness."""
 
 from __future__ import annotations
 

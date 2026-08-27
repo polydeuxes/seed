@@ -1,4 +1,4 @@
-"""Operator invocation establishes one direct Locality relation."""
+"""Operator material establishes one direct Locality relation."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Exact invocation results are separate."""
+"""Exact results are separate."""
 
 from __future__ import annotations
 

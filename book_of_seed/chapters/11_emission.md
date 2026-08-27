@@ -3,7 +3,7 @@
 ### 07.Emission.A — Emission subject-to-Act binding
 
 One exact source material result and one exact destination boundary within its
-invocation Locality are bound to one exact emission Act with its Locality.
+Locality are bound to one exact emission Act with its Locality.
 
 ### 07.Emission.C — Exact-material boundary write
 
@@ -19,9 +19,9 @@ result, and its reported count is one coordinate of that failure. An accepted
 write and a later failure are separate occurrences. Effects beyond the
 addressed boundary require a separate exact Act occurrence.
 
-### 07.Emission.D — Material supplied at the invocation Locality
+### 07.Emission.D — Material supplied at the destination Locality
 
-Material supplied by the addressed boundary at that exact invocation Locality
+Material supplied by the addressed boundary at that exact destination Locality
 requires its own exact subject and source-boundary Act coordinates before its
 Act occurrence.
 

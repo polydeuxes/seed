@@ -245,17 +245,17 @@
       "result": "recorded_boundary_Locality_relation"
     },
     "06.Locality.D": {
-      "subject": "operator_invocation_Locality",
-      "exact_Act": "establish_operator_invocation_Locality",
+      "subject": "operator_destination_Locality",
+      "exact_Act": "establish_operator_destination_Locality",
       "Yield": "02.Acts.A.Yield",
       "Locality": "06.Locality.A.Locality",
-      "result": "operator_invocation_Locality"
+      "result": "operator_destination_Locality"
     },
     "07.Emission.A": {
       "subject": "exact_source_material_result",
       "exact_Act": "emission",
       "carried_coordinates": [
-        "exact_destination_boundary_within_the_invocation_Locality",
+        "exact_destination_boundary_within_the_destination_Locality",
         "Locality"
       ]
     },

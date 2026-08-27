@@ -1,4 +1,4 @@
-"""Exact invocation results are supplied for this Witness."""
+"""Exact results are supplied for this Witness."""
 
 from __future__ import annotations
 
