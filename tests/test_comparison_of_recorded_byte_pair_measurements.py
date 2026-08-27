@@ -264,9 +264,6 @@ def test_operator_source_carries_the_prior_pair_measurement_into_compare():
     )
 
     assert binding.material["added_occurrence_reference"] == added.identity
-    assert binding.material["input_relation"] == (
-        "operator material source occurrence after prior coordinates"
-    )
     assert binding.material[
         "operator_material_source_result_event_identity"
     ] == source_event.identity
@@ -294,7 +291,7 @@ def test_carried_measurements_record_one_complete_comparison():
     assert result.identity in current_coordinates["comparison_result_occurrences"]
 
 
-def test_witness_source_references_do_not_establish_a_compare_input_relation(monkeypatch):
+def test_witness_source_references_do_not_establish_a_recorded_pair_compare_input(monkeypatch):
     ledger, earlier_source, added, earlier, later, current_coordinates = (
         _witness_compare_input_testimony(monkeypatch)
     )
@@ -305,7 +302,7 @@ def test_witness_source_references_do_not_establish_a_compare_input_relation(mon
 
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="Witness source references establish no comparison input relation",
+        match="Witness source references establish no recorded-pair Compare input",
     ):
         record_recorded_pair_measurement_comparison_subject_to_act_binding(
             ledger,
@@ -418,7 +415,7 @@ def test_witness_source_references_do_not_supply_the_carried_compare_rung(monkey
     ]
     with pytest.raises(
         RecordedPairMeasurementComparisonError,
-        match="Witness source references establish no comparison input relation",
+        match="Witness source references establish no recorded-pair Compare input",
     ):
         _record_recorded_pair_measurement_comparison_from_carried_measurements(
             ledger,

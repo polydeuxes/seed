@@ -434,7 +434,7 @@ def _comparison_inputs(
     operator_material_source_current_coordinate_reference = None
     if added.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         raise RecordedPairMeasurementComparisonError(
-            "Witness source references establish no comparison input relation"
+            "Witness source references establish no recorded-pair Compare input"
         )
     elif added.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         source_event, source_material = _operator_source_for_material_result(
@@ -452,7 +452,6 @@ def _comparison_inputs(
         operator_material_source_current_coordinate_reference = deepcopy(
             source_coordinate_reference
         )
-        input_relation = "operator material source occurrence after prior coordinates"
     else:
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact operator occurrence"
@@ -494,7 +493,6 @@ def _comparison_inputs(
         "added_reference": added_reference,
         "prior_source_references": cited_prior,
         "added_source_references": tuple(source_references),
-        "input_relation": input_relation,
         "operator_material_source_result_event_identity": (
             operator_material_source_result_event_identity
         ),
@@ -628,11 +626,10 @@ def _comparison_inputs_from_carried_measurements(
             )
         )
         operator_source_identity = source_event.identity
-        input_relation = "operator material source occurrence after prior coordinates"
         operator_locality_identity = earlier.locality_identity
     elif added.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
         raise RecordedPairMeasurementComparisonError(
-            "Witness source references establish no comparison input relation"
+            "Witness source references establish no recorded-pair Compare input"
         )
     else:
         raise RecordedPairMeasurementComparisonError(
@@ -670,7 +667,6 @@ def _comparison_inputs_from_carried_measurements(
         "added_reference": added_reference,
         "prior_source_references": cited_prior,
         "added_source_references": tuple(source_references),
-        "input_relation": input_relation,
         "operator_material_source_result_event_identity": operator_source_identity,
         "operator_material_source_current_coordinate_reference": deepcopy(
             source_coordinate_reference
@@ -772,7 +768,6 @@ def _binding_material(
         "operator_invocation_locality_relation_event_identity": inputs[
             "operator_invocation_locality_relation_event_identity"
         ],
-        "input_relation": inputs["input_relation"],
         "operator_material_source_result_event_identity": inputs[
             "operator_material_source_result_event_identity"
         ],
