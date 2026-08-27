@@ -82,7 +82,6 @@ def test_operator_occurrence_establishes_one_fresh_direct_locality_relation():
         "operator_locality_identity",
         "operator_through_event_occurrence_identity",
         "destination_locality_identity",
-        "unknown",
     }
     assert binding.locality_identity == recorded[
         "destination_locality_identity"

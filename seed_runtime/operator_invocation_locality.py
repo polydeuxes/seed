@@ -115,7 +115,6 @@ def _binding_material(
             through_event_occurrence_identity
         ),
         "destination_locality_identity": destination_locality_identity,
-        "unknown": [],
     }
 
 
@@ -380,7 +379,6 @@ def _result_material(act: Event) -> dict[str, Any]:
         "locality_relation": relation,
         "known_loss": [],
         "conflicts": [],
-        "unknown": [],
     }
 
 
@@ -423,7 +421,6 @@ def _recorded_result_material(
         "locality_relation": deepcopy(result["locality_relation"]),
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),
-        "unknown": list(result["unknown"]),
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": (
             yield_relation_identity
