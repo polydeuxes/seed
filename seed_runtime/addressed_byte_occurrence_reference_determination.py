@@ -122,15 +122,12 @@ def _determination_result_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _binding_reference(
-    event: Event, *, result_boundary_identity: str
-) -> dict[str, Any]:
+def _binding_reference(event: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": event.identity,
         "book_clause_identity": event.material["book_clause_identity"],
         "exact_act_identity": event.material["exact_act_identity"],
         "subject_reference": deepcopy(event.material["subject_reference"]),
-        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -339,7 +336,6 @@ def _determination_binding_material(
         "determination_result_identity": identities[
             "determination_result_identity"
         ],
-        "result_boundary_identity": identities["determination_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "direct_pair_position_result_reference": deepcopy(
             subject_reference["direct_pair_position_result_reference"]
@@ -381,7 +377,6 @@ def _applicability_binding_material(
             "applicability_result_identity"
         ],
         "addressed_act_identity": determination_act_identity,
-        "result_boundary_identity": identities["applicability_result_identity"],
         "book_clause_identity": "01.Current.E.1",
         "direct_pair_position_result_reference": deepcopy(
             subject["direct_pair_position_result_reference"]
@@ -680,12 +675,7 @@ def _applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "applicability_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "direct_pair_position_result_reference": _direct_result_reference(
             source_result
         ),
@@ -840,12 +830,7 @@ def _read_applicability_act(
         prior_coordinates=prior_coordinates,
     )
     if (
-        reference != _binding_reference(
-            applicability_binding,
-            result_boundary_identity=applicability_binding.material[
-                "applicability_result_identity"
-            ],
-        )
+        reference != _binding_reference(applicability_binding)
         or event.locality_identity != applicability_binding.locality_identity
         or event.material
         != _applicability_act_material(
@@ -909,12 +894,7 @@ def _applicability_finding(
         "completeness_boundary_identity": coordinate[
             "completeness_boundary_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(
-            applicability_binding,
-            result_boundary_identity=applicability_binding.material[
-                "applicability_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(applicability_binding),
     }
 
 
@@ -940,12 +920,7 @@ def _applicability_result_material(
         "addressed_act_occurrence_identity": determination_binding.material[
             "determination_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(
-            applicability_binding,
-            result_boundary_identity=applicability_binding.material[
-                "applicability_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(applicability_binding),
         "direct_pair_position_result_reference": _direct_result_reference(
             source_result
         ),
@@ -1392,12 +1367,7 @@ def _determination_act_material(
             "determination_act_occurrence_identity"
         ],
         "act": DETERMINATION_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "determination_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "applicability_result_reference": _applicability_result_reference(
             applicability_result
         ),
@@ -1604,12 +1574,7 @@ def _determination_result_material(
         "determination_act_occurrence_identity": binding.material[
             "determination_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "determination_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "applicability_result_reference": _applicability_result_reference(
             applicability
         ),
