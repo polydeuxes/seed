@@ -151,10 +151,8 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         "source_locality_identity": "source",
         "source_through_event_occurrence_identity": source.identity,
     }
-    assert recorded["locality_relation"] == {
-        "first_subject": source_reference,
-        "second_subject": destination,
-    }
+    assert recorded["destination_locality_identity"] == destination
+    assert "locality_relation" not in recorded
     assert recorded["result_identity"] == binding.material[
         "result_boundary_identity"
     ]
@@ -395,7 +393,6 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
     (
         "source_coordinate_reference",
         "destination_locality_identity",
-        "locality_relation",
         "act_occurrence_identity",
         "subject_to_act_binding_reference",
         "result_identity",
