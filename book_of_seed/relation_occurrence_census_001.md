@@ -46,15 +46,21 @@ Several Locality roads historically minted a relation-occurrence identity and
 copied it through binding, Act, and result material without recording an event
 at that identity.
 
-The invocation-Locality, continuation-Locality, and recorded-boundary Locality
-roads were tested separately. Each exact result event already carries the two
+The destination-Locality, continuation-Locality, and recorded-boundary Locality
+roads were tested separately. Each exact result event already records the two
 Locality subjects and is the occurrence used by current coordinates, reopen,
 ordering, and downstream references. Removing each unrecorded string preserved
 every one of those distinctions.
 
+The same three roads then removed their nested `locality_relation`
+dictionaries independently. Each dictionary copied the two direct result
+coordinates and had no separately recorded occurrence. The result occurrence,
+direct subjects, current coordinates, reopen behavior, and mutation refusals
+remain without a replacement wrapper.
+
 ## Embedded relation material
 
-Older Measurement and Compare roads carried `input_relation` or
+Older Measurement and Compare roads recorded `input_relation` or
 `input_relations` dictionaries inside bindings, Acts, and results. The census
 found no separately recorded occurrence for those dictionaries.
 
@@ -68,7 +74,7 @@ Three separate subtraction tests removed:
   subjects and addressed Act.
 
 The exact subjects, structural positions, Acts, Localities, and refusals remain
-directly carried. No live `input_relation` or `input_relations` material remains.
+directly recorded. No live `input_relation` or `input_relations` material remains.
 
 ## Current finding
 
