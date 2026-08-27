@@ -111,7 +111,7 @@
       ]
     },
     "01.Current.E.1": {
-      "subject": "subject_to_Act_position",
+      "subject": "subject_to_Act_binding",
       "Applicability": {
         "exact_Act": "Applicability",
         "result": "Applicability_result"

@@ -40,8 +40,9 @@ second subject. It requires the exact relation occurrence and Locality.
 
 ### 01.Current.E.1 — Applicability
 
-Applicability carries one exact subject-to-Act position. Its exact occurrence
-carries the subject, Act, Locality, and
+One exact subject-to-Act binding is addressed by one Applicability Act. Its
+exact occurrence carries that binding, the exact Act addressed by that binding,
+Locality, and
 one of `applicable` or `inapplicable`.
 
 ## References

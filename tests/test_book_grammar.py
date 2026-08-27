@@ -87,6 +87,7 @@ def test_empty_current_coordinates_are_only_the_first_current_coordinates():
 def test_applicability_remains_separate_from_the_governed_act():
     grammar = _grammar()
     boundary = grammar["book_coordinates"]["01.Current.E.1"]
+    assert boundary["subject"] == "subject_to_Act_binding"
     assert boundary["Applicability"] == {
         "exact_Act": "Applicability",
         "result": "Applicability_result",
