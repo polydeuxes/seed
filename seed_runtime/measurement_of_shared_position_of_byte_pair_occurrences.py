@@ -566,7 +566,6 @@ def _binding_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
     if determination_result_reference is not None:
         material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
@@ -609,7 +608,6 @@ def _applicability_binding_material(
         "first_position_assertion": first_subject,
         "second_position_assertion": second_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
     if determination_result_reference is not None:
         material[D2_RESULT_REFERENCE_COORDINATE] = deepcopy(
@@ -1066,7 +1064,6 @@ def _applicability_act_material(
                 ],
             },
         ],
-        "unknown": binding.material["unknown"],
     }
 
 
@@ -1340,7 +1337,6 @@ def _applicability_result_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "applicability": applicability,
-        "unknown": binding.material["unknown"],
     }
 
 
@@ -1456,7 +1452,6 @@ def _recorded_applicability_result_material(
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "applicability": result["applicability"],
-        "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
 
@@ -1571,7 +1566,6 @@ def _measurement_act_material(
             "result_identity": applicability.material["result_identity"],
         },
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": binding.material["unknown"],
     }
 
 
@@ -1749,7 +1743,6 @@ def _path_assertion(
         "result": "ordered_relation_path",
         "assertion_subject": subject,
         "conflicts": "Unknown",
-        "unknown": [],
     }
 
 
@@ -1793,7 +1786,6 @@ def _measurement_result_material(
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
         "assertions": [assertion],
-        "unknown": binding.material["unknown"],
     }
 
 
@@ -1869,7 +1861,6 @@ def _recorded_measurement_result_material(
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
         "assertions": deepcopy(result["assertions"]),
-        "unknown": list(result["unknown"]),
         "yield_relation_identity": yield_relation_identity,
     }
 
