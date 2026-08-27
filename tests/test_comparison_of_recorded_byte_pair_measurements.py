@@ -356,7 +356,6 @@ def test_produced_measurements_enter_one_compare():
         "recorded_occurrence_identity"
     ] == later.identity
     assert binding.material["added_occurrence_reference"] == added.identity
-    assert binding.material["prior_source_occurrence_references"] == []
     assert applicability.material["applicability"] == "applicable"
     assert recorded["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"

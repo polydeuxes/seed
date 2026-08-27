@@ -416,11 +416,6 @@ def _comparison_inputs(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact material result"
         ) from error
-    cited_prior = tuple(
-        reference
-        for reference in earlier_sources
-        if type(source_references) is list and reference in source_references
-    )
     if (
         added is None
         or added.locality_identity != earlier.locality_identity
@@ -491,7 +486,6 @@ def _comparison_inputs(
         "earlier_source": earlier_sources,
         "later_source": later_sources,
         "added_reference": added_reference,
-        "prior_source_references": cited_prior,
         "added_source_references": tuple(source_references),
         "operator_material_source_result_event_identity": (
             operator_material_source_result_event_identity
@@ -587,11 +581,6 @@ def _comparison_inputs_from_carried_measurements(
         raise RecordedPairMeasurementComparisonError(
             "later Measurement requires one exact material result"
         ) from error
-    cited_prior = tuple(
-        reference
-        for reference in earlier_sources
-        if type(source_references) is list and reference in source_references
-    )
     if (
         added is None
         or added.locality_identity != earlier.locality_identity
@@ -665,7 +654,6 @@ def _comparison_inputs_from_carried_measurements(
         "earlier_source": earlier_sources,
         "later_source": later_sources,
         "added_reference": added_reference,
-        "prior_source_references": cited_prior,
         "added_source_references": tuple(source_references),
         "operator_material_source_result_event_identity": operator_source_identity,
         "operator_material_source_current_coordinate_reference": deepcopy(
@@ -761,7 +749,6 @@ def _binding_material(
         "earlier_source_occurrence_references": list(inputs["earlier_source"]),
         "later_source_occurrence_references": list(inputs["later_source"]),
         "added_occurrence_reference": inputs["added_reference"],
-        "prior_source_occurrence_references": list(inputs["prior_source_references"]),
         "added_occurrence_source_references": list(
             inputs["added_source_references"]
         ),
