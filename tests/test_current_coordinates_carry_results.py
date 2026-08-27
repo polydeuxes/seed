@@ -223,7 +223,6 @@ def test_incremental_carry_and_complete_replay_read_the_same_binding():
     ("coordinate", "changed"),
     (
         ("known_loss", [1]),
-        ("conflicts", ["later", "earlier"]),
     ),
 )
 def test_source_binding_refuses_nonexact_prior_lists_without_changing_coordinates(

@@ -383,7 +383,7 @@ def _exact_current_coordinate_additions(
     """Validate every addition before changing the current coordinates."""
 
     additions = {}
-    for key in ("known_loss", "conflicts"):
+    for key in ("known_loss",):
         collected = current_coordinates.get(key)
         added = event.material.get(key, [])
         if (
@@ -863,7 +863,6 @@ def advance_operator_current_coordinates(
     # grow them. The prior-transfer rule has to hold for every accumulator that
     # can grow.
     known_loss: list[str] = []
-    conflicts: list[str] = []
     through_event_occurrence_identity: str | None = None
     event_count = 0
 
@@ -948,7 +947,6 @@ def advance_operator_current_coordinates(
                 "prior coordinates require exact Compare result occurrences"
             )
         known_loss = prior["known_loss"]
-        conflicts = prior["conflicts"]
         through_event_occurrence_identity = prior["through_event_occurrence_identity"]
         event_count = prior["event_count"]
 
@@ -995,12 +993,8 @@ def advance_operator_current_coordinates(
         if not pair_lifecycle_event:
             event_count += 1
             through_event_occurrence_identity = event.identity
-            for key, collected in (
-                ("known_loss", known_loss),
-                ("conflicts", conflicts),
-            ):
-                for value in event.material.get(key, ()):
-                    _record_distinct(collected, value)
+            for value in event.material.get("known_loss", ()):
+                _record_distinct(known_loss, value)
             result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
@@ -1057,12 +1051,8 @@ def advance_operator_current_coordinates(
                 )
             event_count += 1
             through_event_occurrence_identity = event.identity
-            for key, collected in (
-                ("known_loss", known_loss),
-                ("conflicts", conflicts),
-            ):
-                for value in event.material.get(key, ()):
-                    _record_distinct(collected, value)
+            for value in event.material.get("known_loss", ()):
+                _record_distinct(known_loss, value)
             result_coordinate = _result_subject_to_act_binding_coordinate(ledger, event)
             if result_coordinate is not _NO_RESULT_COORDINATE:
                 exact_result_occurrences[event.identity] = result_coordinate
@@ -1674,7 +1664,6 @@ def advance_operator_current_coordinates(
         "applicability_result_occurrences": applicability_result_occurrences,
         "comparison_result_occurrences": comparison_result_occurrences,
         "known_loss": known_loss,
-        "conflicts": conflicts,
     }
 
 
