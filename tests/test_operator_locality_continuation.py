@@ -106,7 +106,6 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
         "exact_act_identity",
         "result_boundary_identity",
         "subject_reference",
-        "unknown",
     )
     assert binding_reference == {
         "recorded_occurrence_identity": binding.identity,

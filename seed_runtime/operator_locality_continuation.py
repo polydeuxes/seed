@@ -106,9 +106,6 @@ def _binding_material(
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_coordinate_reference),
         "result_boundary_identity": result_boundary_identity,
-        "unknown": [
-            "Applicability of every carried subject to another Act: Unknown"
-        ],
     }
 
 
@@ -176,9 +173,6 @@ def _result_material(
             "second_subject": destination_locality_identity,
             "relation_occurrence_identity": locality_relation_occurrence_identity,
         },
-        "unknown": [
-            "Applicability of every carried subject to another Act: Unknown"
-        ],
     }
 
 
@@ -210,7 +204,6 @@ def _recorded_result_material(
             "destination_locality_identity"
         ],
         "locality_relation": result_material["locality_relation"],
-        "unknown": result_material["unknown"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
         "yield_relation_identity": yield_relation_identity,
     }
