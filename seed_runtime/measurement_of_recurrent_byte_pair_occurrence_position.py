@@ -602,7 +602,6 @@ def _binding_material(
         "completeness_boundary_identity": finding.completeness_boundary.identity,
         "occurrence_count_boundary": finding.occurrence_count_boundary,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
 
 
@@ -1186,7 +1185,6 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                 "result": "position",
                 "assertion_subject": subject,
                 "conflicts": "Unknown",
-                "unknown": [],
             }
         )
     return assertions

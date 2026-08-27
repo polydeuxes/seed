@@ -167,7 +167,6 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
             "result",
             "assertion_subject",
             "conflicts",
-            "unknown",
         }
         and set(assertion["dimensions"]["content"])
         == {"first_position", "second_position", "completeness_boundary"}
@@ -205,7 +204,6 @@ def test_current_coordinates_carry_exact_binding_and_distinct_lifecycle_identiti
         "completeness_boundary_identity",
         "occurrence_count_boundary",
         "through_event_occurrence_identity",
-        "unknown",
     }
     assert current_coordinates["subject_to_act_binding_occurrences"][
         binding.identity
