@@ -2,7 +2,7 @@
 
 ### 04.Compare — Exact subjects
 
-Before one Compare Act occurrence, its exact subjects and Locality are exact.
+One Compare subject-to-Act binding requires its exact subjects and Locality.
 Each exact subject is one exact input.
 The exact subject-to-Act binding requires its exact Applicability result.
 One exact Yield relation is from the Compare Act occurrence as first subject

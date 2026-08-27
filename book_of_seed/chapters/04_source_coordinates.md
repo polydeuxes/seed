@@ -13,21 +13,18 @@ The Assertion preserves exact source occurrence references and Locality.
 
 ### 01.Source.G — Operator source boundary
 
-Before one operator-boundary Act occurrence, the exact operator boundary,
-exact Act to preserve supplied material, boundary coordinates, and Locality
-are exact together.
+The exact operator boundary, exact Act to preserve supplied material, boundary
+coordinates, and Locality are exact together.
 
 The exact material result is one occurrence in that exact Locality.
 
-Supplied material is required for one material result. Another operator boundary
-occurrence requires another exact subject and exact Act coordinates before its
-Act occurrence.
+Supplied material is required for one material result. Another operator
+boundary occurrence requires another exact subject-to-Act binding.
 
 ### 01.Source.H — Supplied material source boundary
 
-One exact source boundary and one exact Act to preserve
-the supplied material are exact together before its occurrence. One exact
-Yield relation is from the Act occurrence as
+One exact source boundary and one exact Act to preserve the supplied material
+are exact together. One exact Yield relation is from the Act occurrence as
 first subject to one exact material result as second subject. The result
 preserves its source boundary, source occurrence references, Locality, and the
 exact coordinates established within that boundary.

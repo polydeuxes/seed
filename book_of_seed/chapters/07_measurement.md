@@ -2,8 +2,8 @@
 
 ### 01.Source.D — Declared Measurement
 
-Before one declared Measurement Act occurrence, its exact subject and every
-required coordinate are exact and current through one exact occurrence
+The exact subject and every required coordinate of one declared Measurement
+subject-to-Act binding are exact and current through one exact occurrence
 boundary.
 
 Measurement of supplied material requires the exact material result, its Yield,
@@ -25,9 +25,9 @@ completeness boundary.
 ### 01.Source.D.2 — Addressed byte occurrence reference
 
 Each exact source-byte position reference in the supplied-material Yield
-result and one exact declared Measurement Act are exact together before the
-Act occurrence. The exact byte-pair position Measurement result is current
-through the exact occurrence boundary.
+result and one exact declared Measurement Act are exact together. The exact
+byte-pair position Measurement result is current through the exact occurrence
+boundary.
 The bounded subjects are exhaustive.
 
 One exact Yield relation is from the Act occurrence as first subject to one

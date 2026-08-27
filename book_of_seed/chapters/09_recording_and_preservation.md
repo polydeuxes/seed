@@ -19,9 +19,8 @@ source coordinates.
 
 ### 05.Recording.D — Through-occurrence boundary reference
 
-Before one recording Act occurrence, one exact addressed occurrence, its exact
-through-occurrence boundary, that Act, and the same Locality are exact
-together.
+One exact addressed occurrence, its exact through-occurrence boundary, one
+recording Act, and the same Locality are exact together.
 
 One exact Yield relation is from the recording Act occurrence as first subject
 to one result as second subject. The result preserves the addressed
