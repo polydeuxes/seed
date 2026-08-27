@@ -581,9 +581,6 @@ def _movement_binding_reference(binding: Event) -> dict[str, str]:
     return {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
 
 
@@ -821,7 +818,6 @@ def _movement_binding_material(
         "movement_act_identity": movement_act_identity,
         "movement_act_occurrence_identity": movement_act_occurrence_identity,
         "movement_result_identity": movement_result_identity,
-        "result_boundary_identity": movement_result_identity,
         "book_clause_identity": "03.Movement.A",
         "source_assertion_reference": _source_assertion_reference(source),
         "source_assertion_coordinates": deepcopy(source_assertion_coordinates),

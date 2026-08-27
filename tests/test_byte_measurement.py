@@ -2003,7 +2003,7 @@ def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
     ]["identity"]
 
 
-def test_locality_movement_binding_carries_the_exact_source():
+def test_locality_movement_binding_addresses_the_exact_source():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2040,7 +2040,6 @@ def test_locality_movement_binding_carries_the_exact_source():
         "movement_act_identity",
         "movement_act_occurrence_identity",
         "movement_result_identity",
-        "result_boundary_identity",
         "book_clause_identity",
         "source_assertion_reference",
         "source_assertion_coordinates",
@@ -2053,9 +2052,6 @@ def test_locality_movement_binding_carries_the_exact_source():
     assert reference == {
         "recorded_occurrence_identity": binding.identity,
         "book_clause_identity": binding.material["book_clause_identity"],
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
     assert binding.material["source_assertion_reference"] == (
         movement.material["source_assertion_reference"]
@@ -2065,7 +2061,7 @@ def test_locality_movement_binding_carries_the_exact_source():
     assert current_coordinates["subject_to_act_binding_occurrences"][binding.identity] is None
 
 
-def test_movement_binding_carries_distinct_lifecycle_identities_and_enters_destination_coordinates():
+def test_movement_binding_has_distinct_lifecycle_identities_and_enters_destination_coordinates():
     ledger = _ledger(b"ta\n")
     source_result, source = _movement_source(ledger)
     binding = record_assertion_locality_movement_subject_to_act_binding(
