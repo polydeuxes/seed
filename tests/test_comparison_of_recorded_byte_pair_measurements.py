@@ -17,6 +17,7 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
+    RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     RecordedPairMeasurementComparisonError,
     get_recorded_pair_measurement_comparison,
     record_recorded_pair_measurement_comparison_subject_to_act_binding,
@@ -723,3 +724,49 @@ def test_first_exact_material_records_pair_counts(
     assert any(
         assertion.result == "recurrence" for assertion in pair_assertions
     ) is has_recurrence
+
+
+def test_later_material_compares_with_the_prior_pair_result():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"\na\n"),
+    )
+
+    pair_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+    )
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+
+    assert len(pair_results) == 2
+    assert len(compare_results) == 1
+    reading = get_recorded_pair_measurement_comparison(
+        ledger,
+        compare_results[0].identity,
+    )
+    binding = ledger.get(
+        reading["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ]
+    )
+    assert binding is not None
+    assert (
+        binding.material["earlier_measurement_reference"][
+            "recorded_occurrence_identity"
+        ]
+        == pair_results[0].identity
+    )
+    assert (
+        binding.material["later_measurement_reference"][
+            "recorded_occurrence_identity"
+        ]
+        == pair_results[1].identity
+    )

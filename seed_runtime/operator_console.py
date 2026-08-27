@@ -797,4 +797,4 @@ def run_persistent_operator_console(
                             locality_identity=locality_identity,
                         )
                     )
-                    pair_premise = later_pair
+                pair_premise = later_pair
