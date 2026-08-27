@@ -1098,6 +1098,44 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert type(represented.material["dimensions"]["content"]) is dict
 
 
+def test_equal_assertion_content_at_distinct_results_has_distinct_addresses():
+    ledger = _ledger(b"a\n")
+    first_result = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    second_result = _record_byte_measurement(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+
+    first = assertions_of_recorded_byte_measurement(
+        ledger, first_result.identity
+    )
+    second = assertions_of_recorded_byte_measurement(
+        ledger, second_result.identity
+    )
+
+    assert first is not None and second is not None
+    first_count = next(
+        assertion
+        for assertion in first
+        if assertion.result == "count" and assertion.content == 97
+    )
+    second_count = next(
+        assertion
+        for assertion in second
+        if assertion.result == "count" and assertion.content == 97
+    )
+    assert first_count.material == second_count.material
+    assert first_count.assertion_position == second_count.assertion_position
+    assert first_count.reference != second_count.reference
+    assert first_count.recorded_occurrence_identity == first_result.identity
+    assert second_count.recorded_occurrence_identity == second_result.identity
+
+
 def test_a_self_consistent_truncated_source_assertion_is_refused():
     ledger = _ledger(b"a\nb\n")
     event = _record_byte_measurement(
