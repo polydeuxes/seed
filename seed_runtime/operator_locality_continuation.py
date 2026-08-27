@@ -85,7 +85,7 @@ def _source_coordinate_reference(
 def _binding_material(
     *,
     exact_act_identity: str,
-    result_boundary_identity: str,
+    result_identity: str,
     source_coordinate_reference: dict[str, str | None],
     destination_locality_identity: str,
 ) -> dict[str, Any]:
@@ -95,7 +95,7 @@ def _binding_material(
         ),
         "exact_act_identity": exact_act_identity,
         "subject_reference": deepcopy(source_coordinate_reference),
-        "result_boundary_identity": result_boundary_identity,
+        "result_identity": result_identity,
     }
 
 
@@ -105,9 +105,7 @@ def _binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
+        "result_identity": binding.material["result_identity"],
     }
 
 
@@ -205,14 +203,14 @@ def record_locality_continuation_subject_to_act_binding(
             "Locality continuation requires one fresh destination Locality"
         )
     exact_act_identity = ledger.mint_identity("locality_continuation_act")
-    result_boundary_identity = ledger.mint_identity(
-        "locality_continuation_result_boundary"
+    result_identity = ledger.mint_identity(
+        "locality_continuation_result"
     )
     return ledger.append(
         LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _binding_material(
             exact_act_identity=exact_act_identity,
-            result_boundary_identity=result_boundary_identity,
+            result_identity=result_identity,
             source_coordinate_reference=source_reference,
             destination_locality_identity=destination_locality_identity,
         ),
@@ -347,7 +345,7 @@ def _validated_act_occurrence(
         or len(
             {
                 binding.identity,
-                binding.material["result_boundary_identity"],
+                binding.material["result_identity"],
                 continuation_act_identity,
                 act_occurrence_identity,
             }
@@ -400,7 +398,7 @@ def record_locality_continuation_result(
             )
 
     result_identity = material["subject_to_act_binding_reference"][
-        "result_boundary_identity"
+        "result_identity"
     ]
     result_material = _result_material(
         result_identity=result_identity,
@@ -448,7 +446,7 @@ def get_recorded_locality_continuation(
     )
     result_identity = act_occurrence.material[
         "subject_to_act_binding_reference"
-    ]["result_boundary_identity"]
+    ]["result_identity"]
     expected = _result_material(
         result_identity=result_identity,
         continuation_act_identity=act_occurrence.material[
@@ -524,18 +522,18 @@ def get_locality_continuation_subject_to_act_binding(
         ),
     )
     exact_act_identity = material.get("exact_act_identity")
-    result_boundary_identity = material.get("result_boundary_identity")
+    result_identity = material.get("result_identity")
     if (
         type(exact_act_identity) is not str
         or not exact_act_identity
-        or type(result_boundary_identity) is not str
-        or not result_boundary_identity
-        or exact_act_identity == result_boundary_identity
+        or type(result_identity) is not str
+        or not result_identity
+        or exact_act_identity == result_identity
         or source_reference != expected_reference
         or material
         != _binding_material(
             exact_act_identity=exact_act_identity,
-            result_boundary_identity=result_boundary_identity,
+            result_identity=result_identity,
             source_coordinate_reference=expected_reference,
             destination_locality_identity=binding.locality_identity,
         )

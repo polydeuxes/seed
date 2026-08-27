@@ -435,6 +435,10 @@ _DIRECT_BINDING_COORDINATES_WITH_RESULT_BOUNDARY = (
     _REQUIRED_DIRECT_BINDING_COORDINATES | {"result_boundary_identity"}
 )
 
+_DIRECT_BINDING_COORDINATES_WITH_RESULT = (
+    _REQUIRED_DIRECT_BINDING_COORDINATES | {"result_identity"}
+)
+
 
 _NO_RESULT_COORDINATE = object()
 
@@ -519,6 +523,7 @@ def _subject_to_act_binding_of_exact_result(
         in {
             _REQUIRED_DIRECT_BINDING_COORDINATES,
             _DIRECT_BINDING_COORDINATES_WITH_RESULT_BOUNDARY,
+            _DIRECT_BINDING_COORDINATES_WITH_RESULT,
         }
         and all(
             type(reference.get(coordinate)) is str
@@ -571,6 +576,13 @@ def _subject_to_act_binding_of_exact_result(
     ):
         raise ValueError(
             "recorded subject-to-Act binding names another result boundary"
+        )
+    if (
+        "result_identity" in reference
+        and reference["result_identity"] != result_identity
+    ):
+        raise ValueError(
+            "recorded subject-to-Act binding names another result"
         )
     return deepcopy(reference)
 
