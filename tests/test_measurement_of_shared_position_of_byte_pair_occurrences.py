@@ -419,9 +419,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
-        "result_boundary_identity": binding.material[
-            "measurement_result_identity"
-        ],
     }
     assert binding.identity in _current_coordinates(ledger, locality)[
         "subject_to_act_binding_occurrences"

@@ -530,15 +530,12 @@ def _require_current_coordinates(
     return boundary
 
 
-def _binding_reference(
-    event: Event, *, result_boundary_identity: str
-) -> dict[str, Any]:
+def _binding_reference(event: Event) -> dict[str, Any]:
     return {
         "recorded_occurrence_identity": event.identity,
         "book_clause_identity": event.material["book_clause_identity"],
         "exact_act_identity": event.material["exact_act_identity"],
         "subject_reference": deepcopy(event.material["subject_reference"]),
-        "result_boundary_identity": result_boundary_identity,
     }
 
 
@@ -561,7 +558,6 @@ def _binding_material(
         "measurement_result_identity": identities[
             "measurement_result_identity"
         ],
-        "result_boundary_identity": identities["measurement_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
@@ -603,7 +599,6 @@ def _applicability_binding_material(
             "applicability_result_identity"
         ],
         "addressed_act_identity": measurement_act_identity,
-        "result_boundary_identity": identities["applicability_result_identity"],
         "book_clause_identity": "01.Current.E.1",
         "first_position_assertion": first_subject,
         "second_position_assertion": second_subject,
@@ -1043,12 +1038,7 @@ def _applicability_act_material(
             "applicability_act_occurrence_identity"
         ],
         "act": APPLICABILITY_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "applicability_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "through_event_occurrence_identity": through_event_occurrence_identity,
     }
 
@@ -1313,12 +1303,7 @@ def _applicability_result_material(
         "applicability_act_occurrence_identity": binding.material[
             "applicability_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "applicability_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "act_occurrence_event_identity": act.identity,
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
@@ -1541,12 +1526,7 @@ def _measurement_act_material(
             "measurement_act_occurrence_identity"
         ],
         "act": MEASUREMENT_ACT,
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "measurement_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "applicability_result_reference": {
             "recorded_occurrence_identity": applicability.identity,
             "result_identity": applicability.material["result_identity"],
@@ -1753,12 +1733,7 @@ def _measurement_result_material(
         "act_occurrence_identity": binding.material[
             "measurement_act_occurrence_identity"
         ],
-        "subject_to_act_binding_reference": _binding_reference(
-            binding,
-            result_boundary_identity=binding.material[
-                "measurement_result_identity"
-            ],
-        ),
+        "subject_to_act_binding_reference": _binding_reference(binding),
         "act_occurrence_event_identity": act.identity,
         "applicability_result_reference": {
             "recorded_occurrence_identity": applicability.identity,
