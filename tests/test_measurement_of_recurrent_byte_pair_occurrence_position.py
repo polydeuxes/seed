@@ -684,12 +684,11 @@ def test_act_occurrence_has_exact_inputs_but_no_result_finding():
     assert not {
         "assertions",
         "available_occurrence_count",
-        "known_loss",
         "result_identity",
     } & set(act.material)
 
 
-def test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss():
+def test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts():
     ledger, locality, pair, recurrence, source, _finding = _fixture()
     finding = measure_positions_of_recurrent_byte_pair_occurrences(
         ledger,
@@ -703,9 +702,7 @@ def test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss():
     assert finding.occurrences == ((1, 0), (1, 6))
     assert finding.available_occurrence_count == 4
     assert result.material["occurrence_count_boundary"] == 2
-    assert result.material["known_loss"] == [
-        "pair occurrences beyond the exact occurrence count boundary are not carried"
-    ]
+    assert len(result.material["assertions"]) == 2
 
 
 def test_current_coordinates_carry_one_exact_pair_occurrence_measurement_reference():
@@ -861,7 +858,7 @@ FIDELITY_DISTINCTIONS = {
         test_public_binding_read_reconstructs_prior_coordinates,
         test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_subjects_keep_each_yield_relation_distinct,
-        test_occurrence_count_boundary_is_explicit_and_preserves_exact_known_loss,
+        test_occurrence_count_boundary_preserves_exact_available_and_recorded_counts,
         test_same_bytes_cannot_substitute_another_material_result_occurrence,
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
         test_unrelated_later_material_does_not_move_the_measured_boundary,

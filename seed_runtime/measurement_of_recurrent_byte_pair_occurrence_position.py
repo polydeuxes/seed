@@ -48,9 +48,6 @@ RESULT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT_KIND = (
 ACT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
     "declared Measurement of byte-pair occurrence position"
 )
-SCOPE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = (
-    "exact Yield-carried pair Assertion and exact later material result only"
-)
 MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY = (
     "measurement_of_recurrent_byte_pair_occurrence_position"
 )
@@ -68,7 +65,6 @@ RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = froz
         "source_material_result_occurrence_identity",
         "occurrence_count_boundary",
         "available_occurrence_count",
-        "known_loss",
         "assertions",
     }
 )
@@ -1194,11 +1190,6 @@ def _material_of_result_of_measurement(
     *,
     binding: Event,
 ) -> dict[str, Any]:
-    known_loss = (
-        ["pair occurrences beyond the exact occurrence count boundary are not carried"]
-        if finding.available_occurrence_count > len(finding.occurrences)
-        else []
-    )
     return {
         "result_identity": binding.material["measurement_result_identity"],
         "dimensions": {
@@ -1221,7 +1212,6 @@ def _material_of_result_of_measurement(
         ),
         "occurrence_count_boundary": finding.occurrence_count_boundary,
         "available_occurrence_count": finding.available_occurrence_count,
-        "known_loss": known_loss,
         "assertions": _position_assertions_of_measurement(finding),
     }
 
@@ -1309,7 +1299,6 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             "available_occurrence_count": result[
                 "available_occurrence_count"
             ],
-            "known_loss": result["known_loss"],
             "assertions": result["assertions"],
             "act_occurrence_event_identity": act_occurrence.identity,
             "yield_relation_identity": yield_relation.identity,

@@ -668,7 +668,7 @@ def test_shared_binding_explicit_prior_revalidates_later_input_mutation():
         current_coordinates=exact_prior,
     )
     changed_result = _recurrent_result_coordinates(ledger, second)["result"]
-    changed_result.material["known_loss"] = not changed_result.material["known_loss"]
+    changed_result.material["available_occurrence_count"] += 1
 
     with pytest.raises((SharedPairPositionError, ValueError)):
         shared_position_module._read_binding(
