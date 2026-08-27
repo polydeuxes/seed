@@ -1,3 +1,5 @@
+"""Exact ordered source occurrences are supplied for this Witness."""
+
 from __future__ import annotations
 
 from dataclasses import replace

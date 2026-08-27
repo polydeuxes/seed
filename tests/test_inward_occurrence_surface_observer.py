@@ -1,3 +1,5 @@
+"""Coordinate material establishes exact occurrence distinctions."""
+
 from pathlib import Path
 from hashlib import sha256
 import json

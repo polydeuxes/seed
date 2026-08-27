@@ -1,3 +1,5 @@
+"""This Witness preserves exact supplied material and boundary results."""
+
 from __future__ import annotations
 
 import sqlite3

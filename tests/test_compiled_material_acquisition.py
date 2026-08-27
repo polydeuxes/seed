@@ -1,3 +1,5 @@
+"""Supplied material is bounded by exact byte count."""
+
 from __future__ import annotations
 
 from pathlib import Path

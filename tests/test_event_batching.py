@@ -1,3 +1,5 @@
+"""Recording preserves exact occurrence order."""
+
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 

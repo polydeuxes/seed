@@ -1,3 +1,5 @@
+"""Bounded material preserves each exact relation."""
+
 from __future__ import annotations
 
 import sys

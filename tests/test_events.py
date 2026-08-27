@@ -1,3 +1,5 @@
+"""Recorded occurrences are exact and ordered."""
+
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger

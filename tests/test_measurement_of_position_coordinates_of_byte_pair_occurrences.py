@@ -1,3 +1,5 @@
+"""Pair occurrences Yield exact position coordinates."""
+
 from copy import deepcopy
 
 import pytest

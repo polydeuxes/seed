@@ -1,3 +1,5 @@
+"""Current coordinates are exact through one occurrence boundary."""
+
 from copy import deepcopy
 from tests.binary_input import binary_input
 

@@ -1,3 +1,5 @@
+"""Compare requires an exact ordered reference pair."""
+
 import sqlite3
 
 import pytest

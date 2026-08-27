@@ -1,3 +1,5 @@
+"""Pair occurrences Yield exact position findings."""
+
 from __future__ import annotations
 
 from copy import deepcopy

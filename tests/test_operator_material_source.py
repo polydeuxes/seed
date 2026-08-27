@@ -1,3 +1,5 @@
+"""Operator material is bounded by one exact source boundary."""
+
 from __future__ import annotations
 
 from copy import deepcopy

@@ -1,3 +1,5 @@
+"""Measurement is bounded by exact material."""
+
 from __future__ import annotations
 
 import sys

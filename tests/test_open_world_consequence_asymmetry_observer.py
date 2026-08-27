@@ -1,3 +1,5 @@
+"""One exact subject boundary preserves separate results."""
+
 from pathlib import Path
 import sys
 

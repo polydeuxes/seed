@@ -1,3 +1,5 @@
+"""Compare requires exact ordered path findings."""
+
 from __future__ import annotations
 
 from copy import deepcopy

@@ -1,3 +1,5 @@
+"""Byte Measurement occurrences Yield exact results."""
+
 from tests.binary_input import binary_input
 from collections import Counter as ExactCounter
 from copy import deepcopy

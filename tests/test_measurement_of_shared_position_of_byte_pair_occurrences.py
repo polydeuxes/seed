@@ -1,3 +1,5 @@
+"""Pair Assertions establish one exact position."""
+
 from __future__ import annotations
 
 from copy import deepcopy

@@ -1,3 +1,5 @@
+"""Exact source material establishes separate findings."""
+
 from scripts.observe_cross_surface_structure import SOURCE_GROUPS
 from scripts.observe_source_recurrence_division_boundary import observe_sources
 

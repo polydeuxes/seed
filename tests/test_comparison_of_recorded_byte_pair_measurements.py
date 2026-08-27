@@ -1,3 +1,5 @@
+"""Compare requires earlier and later pair results."""
+
 from copy import deepcopy
 
 import pytest

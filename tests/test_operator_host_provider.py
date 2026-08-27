@@ -1,3 +1,5 @@
+"""Bounded invocation results are recorded for this Witness."""
+
 from __future__ import annotations
 
 import os

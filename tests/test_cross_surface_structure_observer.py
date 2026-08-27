@@ -1,3 +1,5 @@
+"""An exact source relation establishes one ordered result."""
+
 from __future__ import annotations
 
 import json

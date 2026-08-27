@@ -1,3 +1,5 @@
+"""Measurement establishes exact position for each Locality occurrence."""
+
 from copy import deepcopy
 
 import pytest

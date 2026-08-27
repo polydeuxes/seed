@@ -1,3 +1,5 @@
+"""Exact source material establishes position distinctions."""
+
 from pathlib import Path
 import json
 import sys

@@ -1,3 +1,5 @@
+"""One exact invocation occurrence is recorded for this Seed."""
+
 from __future__ import annotations
 
 from io import BytesIO, StringIO

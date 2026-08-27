@@ -1,3 +1,5 @@
+"""An exact material position establishes pair subjects."""
+
 from __future__ import annotations
 
 from dataclasses import replace

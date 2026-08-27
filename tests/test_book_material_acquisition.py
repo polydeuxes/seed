@@ -1,3 +1,5 @@
+"""This Book material carries exact source occurrence references."""
+
 from __future__ import annotations
 
 from dataclasses import replace

@@ -1,3 +1,5 @@
+"""Material occurrences have separate exact references."""
+
 from __future__ import annotations
 
 from collections import Counter

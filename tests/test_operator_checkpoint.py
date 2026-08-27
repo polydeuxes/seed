@@ -1,3 +1,5 @@
+"""Operator recording preserves one exact through occurrence boundary."""
+
 from __future__ import annotations
 
 from copy import deepcopy

@@ -1,3 +1,5 @@
+"""Exact material establishes a separate relation."""
+
 from __future__ import annotations
 
 import sys

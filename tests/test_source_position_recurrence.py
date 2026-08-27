@@ -1,3 +1,5 @@
+"""Source position establishes exact later results."""
+
 from __future__ import annotations
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger

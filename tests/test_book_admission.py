@@ -266,6 +266,7 @@ def test_test_module_distinction_words_are_admitted():
     book_words = book_admission()
     explanation_words = book_words | set(_admission_entries(ROSETTA_ADMISSION))
     absent: dict[str, dict[str, list[str]]] = {}
+    missing: list[str] = []
     for path in sorted((ROOT / "tests").glob("test_*.py")):
         tree = ast.parse(
             path.read_text(encoding="utf-8"),
@@ -273,6 +274,7 @@ def test_test_module_distinction_words_are_admitted():
         )
         material = ast.get_docstring(tree, clean=False)
         if material is None:
+            missing.append(path.relative_to(ROOT).as_posix())
             continue
         unadmitted = _unadmitted_test_module_prose(
             material,
@@ -287,8 +289,10 @@ def test_test_module_distinction_words_are_admitted():
         for path, registers in absent.items()
         for register, words in registers.items()
     )
-    assert not absent, (
-        "\nTest distinction or explanation has words absent from its admission:\n"
+    assert not missing and not absent, (
+        "\nTest modules without a Distinction:\n  "
+        + "\n  ".join(missing)
+        + "\nTest distinction or explanation has words absent from its admission:\n"
         + report
     )
 

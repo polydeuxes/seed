@@ -1,3 +1,5 @@
+"""Supplied Book material preserves exact occurrence order."""
+
 from __future__ import annotations
 
 from dataclasses import replace

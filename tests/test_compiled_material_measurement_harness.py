@@ -1,3 +1,5 @@
+"""Exact invocation results are separate."""
+
 from __future__ import annotations
 
 from pathlib import Path

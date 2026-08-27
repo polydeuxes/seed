@@ -1,3 +1,5 @@
+"""Operator movement establishes one destination Locality."""
+
 from __future__ import annotations
 
 from io import BytesIO

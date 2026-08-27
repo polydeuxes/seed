@@ -1,3 +1,5 @@
+"""Exact material establishes later results."""
+
 from __future__ import annotations
 
 import sys

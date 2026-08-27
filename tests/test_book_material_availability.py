@@ -1,3 +1,5 @@
+"""This Book material is addressed by each declared Measurement."""
+
 from __future__ import annotations
 
 from pathlib import Path

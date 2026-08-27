@@ -1,3 +1,5 @@
+"""Material Acts are bounded by exact invocation occurrences."""
+
 from __future__ import annotations
 
 from dataclasses import replace

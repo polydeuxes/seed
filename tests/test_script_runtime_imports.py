@@ -1,3 +1,5 @@
+"""Exact distinctions for this Seed."""
+
 from __future__ import annotations
 
 import ast

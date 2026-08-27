@@ -1,3 +1,5 @@
+"""Each addressed byte occurrence carries exact ordered Assertion references."""
+
 from copy import deepcopy
 
 import pytest
