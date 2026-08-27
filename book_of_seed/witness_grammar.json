@@ -260,7 +260,7 @@
       "subject": "exact_source_material_result",
       "exact_Act": "emission",
       "coordinates": [
-        "exact_destination_boundary_within_the_destination_Locality",
+        "exact_destination_boundary",
         "Locality"
       ]
     },
@@ -282,7 +282,7 @@
     "07.Emission.D": {
       "subject": "material_supplied_by_the_addressed_boundary",
       "requires": [
-        "exact_subject_and_source_boundary_Act_coordinates_before_occurrence",
+        "exact_subject_and_source_boundary_Act_coordinates",
         "exact_Act_occurrence"
       ]
     }

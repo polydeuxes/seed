@@ -309,7 +309,7 @@ def test_sources_and_emission_preserve_exact_boundaries_without_loss_staging():
         "Locality",
     ]
     assert coordinates["07.Emission.A"]["coordinates"] == [
-        "exact_destination_boundary_within_the_destination_Locality",
+        "exact_destination_boundary",
         "Locality",
     ]
 

@@ -39,7 +39,7 @@ The recorded result occurrence is the exact Locality relation occurrence. The
 exact coordinates of the recorded result occurrence are the operator
 occurrence, source Locality, destination Locality, and Act occurrence.
 
-Material later supplied at the destination Locality preserves exact source
+Material supplied in the destination Locality preserves exact source
 occurrence references to the operator occurrence and relation result.
 
 ## References

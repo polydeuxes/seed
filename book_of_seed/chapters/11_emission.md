@@ -2,8 +2,8 @@
 
 ### 07.Emission.A — Emission subject-to-Act binding
 
-One exact source material result and one exact destination boundary within its
-Locality are bound to one exact emission Act with its Locality.
+One exact source material result, one exact destination boundary, one
+Locality, and one exact emission Act are exact together.
 
 ### 07.Emission.C — Exact-material boundary write
 
@@ -15,15 +15,12 @@ destination boundary.
 
 The emission Act occurrence, its attempt, and its accepted write are one
 occurrence and one result. A failure is a separate Act occurrence with its own
-result, and its reported count is one coordinate of that failure. An accepted
-write and a later failure are separate occurrences. Effects beyond the
-addressed boundary require a separate exact Act occurrence.
+result, and its reported count is one coordinate of that failure.
 
-### 07.Emission.D — Material supplied at the destination Locality
+### 07.Emission.D — Material supplied in the destination Locality
 
-Material supplied by the addressed boundary at that exact destination Locality
-requires its own exact subject and source-boundary Act coordinates before its
-Act occurrence.
+Material supplied by the addressed boundary in that exact destination Locality
+requires its own exact subject and source-boundary Act coordinates.
 
 ## References
 

@@ -848,7 +848,7 @@ def _movement_binding_material(
             destination_through_event_occurrence_identity
         ),
         "determination": (
-            "the exact Assertion at another Locality"
+            "exact addressed result content in another Locality"
         ),
     }
 
