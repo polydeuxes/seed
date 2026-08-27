@@ -32,11 +32,6 @@
       "result": "addressed_byte_occurrence_reference_result",
       "requires_current_coordinates": "exact_byte_pair_position_Measurement_result"
     },
-    "01.Source.F": {
-      "subject": "material_with_relation_Assertion",
-      "exact_Act": "preserve_relation_Assertion",
-      "result": "exact_relation_Assertion"
-    },
     "01.Source.G": {
       "subject": "operator_material_boundary",
       "exact_Act": "preserve_supplied_operator_material",
@@ -100,18 +95,6 @@
       "subject": "exact_addressed_result_content",
       "requires_current_coordinates": "exact_subject_through_exact_occurrence_boundary",
       "subject_to_Act_binding": "one_exact_Act"
-    },
-    "01.Current.E": {
-      "subject": "relation_Assertion",
-      "coordinates": [
-        "first_subject",
-        "exact_relation_content",
-        "second_subject"
-      ],
-      "requires": [
-        "exact_relation_occurrence",
-        "Locality"
-      ]
     },
     "01.Current.E.1": {
       "subject": "subject_to_Act_binding",
@@ -186,12 +169,6 @@
       "result": "ordered_relation_path_Compare_result",
       "requires": [
         "Applicability_result"
-      ]
-    },
-    "05.Recording.A": {
-      "subject": "exact_Assertion",
-      "coordinates": [
-        "source_coordinates"
       ]
     },
     "05.Recording.C": {

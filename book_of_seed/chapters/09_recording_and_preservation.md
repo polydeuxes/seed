@@ -7,11 +7,6 @@ to one exact record as second subject. The result preserves the material,
 source coordinates and Locality established
 within that recording boundary.
 
-### 05.Recording.A — Recorded Assertion
-
-One recording occurrence preserves one exact Assertion and its source
-coordinates.
-
 ### 05.Recording.C — Recorded Measurement
 
 One preservation occurrence preserves one exact Measurement result and its

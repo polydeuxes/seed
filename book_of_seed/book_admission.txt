@@ -58,7 +58,6 @@ every
 exact
 exactly
 exhaustive
-f
 failure
 finding
 findings

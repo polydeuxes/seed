@@ -238,7 +238,6 @@ def test_only_clauses_naming_an_Act_project_one():
     }
     assert naming_no_Act == {
         "01.Source.I",
-        "05.Recording.A",
         "05.Recording.C",
         "07.Emission.C",
         "07.Emission.D",
@@ -248,7 +247,6 @@ def test_only_clauses_naming_an_Act_project_one():
         "01.Current.D",
         "01.Current.D.1",
         "01.Current.D.2",
-        "01.Current.E",
         "01.Current.E.1",
     }
 

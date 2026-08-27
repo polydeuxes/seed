@@ -39,11 +39,6 @@ separate exact addressed coordinates.
 Exact addressed result content that is current through one exact occurrence
 boundary is one exact subject in one subject-to-Act binding.
 
-### 01.Current.E — Relation Assertion coordinates
-
-The exact coordinates of one relation Assertion are first subject, exact
-relation content, second subject, exact relation occurrence, and Locality.
-
 ### 01.Current.E.1 — Applicability
 
 One exact subject-to-Act binding is addressed by one Applicability Act. The

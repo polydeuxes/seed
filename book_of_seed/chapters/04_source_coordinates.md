@@ -6,11 +6,6 @@ One exact Act occurrence preserves the supplied material, source occurrence,
 exact source occurrence references, Locality, and the coordinates established
 within its boundary.
 
-### 01.Source.F — Material with a relation Assertion
-
-For supplied material with an Assertion, one exact relation is its relation.
-The Assertion preserves exact source occurrence references and Locality.
-
 ### 01.Source.G — Operator source boundary
 
 The exact operator boundary, exact Act to preserve supplied material, boundary
