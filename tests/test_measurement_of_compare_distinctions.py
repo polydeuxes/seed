@@ -12,10 +12,10 @@ from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_finding
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
-    compare_distinction_measurement_subjects_from_current_coordinates,
+    compare_distinction_measurement_references_from_current_coordinates,
     get_recorded_compare_distinction_measurement,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -138,7 +138,35 @@ def test_material_slice_measures_its_current_compare_result_before_eof():
     )
 
 
-def test_successive_measurements_share_one_exact_pair_measurement():
+def test_material_slice_measures_every_current_compare_result():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\n"),
+    )
+
+    compare_results = tuple(
+        event
+        for event in ledger.list()
+        if event.kind
+        == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND
+    )
+    measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND
+    )
+
+    assert len(compare_results) == 3
+    assert tuple(
+        measurement.material["source_result_occurrence_identity"]
+        for measurement in measurements
+    ) == tuple(result.identity for result in compare_results)
+
+
+def test_exact_measurement_reference_addresses_the_two_results():
     ledger = EventLedger()
 
     run_persistent_operator_console(
@@ -150,15 +178,15 @@ def test_successive_measurements_share_one_exact_pair_measurement():
         ledger,
         locality_identity=LOCALITY,
     )
-    subjects = compare_distinction_measurement_subjects_from_current_coordinates(
+    references = compare_distinction_measurement_references_from_current_coordinates(
         ledger,
         locality_identity=LOCALITY,
         current_coordinates=current_coordinates,
     )
 
-    assert len(subjects) == 1
-    earlier = ledger.get(subjects[0].earlier_result_occurrence_identity)
-    later = ledger.get(subjects[0].later_result_occurrence_identity)
+    assert len(references) == 1
+    earlier = ledger.get(references[0].earlier_result_occurrence_identity)
+    later = ledger.get(references[0].later_result_occurrence_identity)
     earlier_source = ledger.get(
         earlier.material["source_result_occurrence_identity"]
     )
@@ -184,9 +212,76 @@ def test_successive_measurements_share_one_exact_pair_measurement():
         "subject_reference"
     ]
 
-    assert subjects[0].shared_measurement_reference == (
+    assert references[0].exact_measurement_reference == (
         earlier_pair_subject["later_measurement_reference"]
     )
-    assert subjects[0].shared_measurement_reference == (
+    assert references[0].exact_measurement_reference == (
         later_pair_subject["earlier_measurement_reference"]
     )
+
+
+def test_one_exact_measurement_reference_can_address_multiple_results_on_each_side():
+    ledger = EventLedger()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"a\nab\nabc\nabcd\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    references = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    result_occurrences_by_measurement: dict[str, tuple[set[str], set[str]]] = {}
+    for reference in references:
+        measurement_occurrence_identity = reference.exact_measurement_reference[
+            "recorded_occurrence_identity"
+        ]
+        earlier, later = result_occurrences_by_measurement.setdefault(
+            measurement_occurrence_identity,
+            (set(), set()),
+        )
+        earlier.add(reference.earlier_result_occurrence_identity)
+        later.add(reference.later_result_occurrence_identity)
+
+    assert sorted(
+        (len(earlier), len(later))
+        for earlier, later in result_occurrences_by_measurement.values()
+    ) == [(1, 2), (2, 3)]
+
+
+def test_exact_measurement_references_are_reconstructed_after_restart(tmp_path):
+    database = tmp_path / "compare-distinction-measurements.sqlite"
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"ab\nac\nad\n"),
+    )
+    current_coordinates = read_operator_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+    )
+    before = compare_distinction_measurement_references_from_current_coordinates(
+        ledger,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+    durable = SQLiteEventLedger(str(database))
+    durable.append_many(ledger.list())
+    durable.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    after = compare_distinction_measurement_references_from_current_coordinates(
+        reopened,
+        locality_identity=LOCALITY,
+        current_coordinates=current_coordinates,
+    )
+
+    assert after == before

@@ -49,10 +49,10 @@ class CompareDistinctionMeasurementSubject:
 
 
 @dataclass(frozen=True)
-class CompareDistinctionMeasurementSubjects:
+class CompareDistinctionMeasurementReferences:
     earlier_result_occurrence_identity: str
     later_result_occurrence_identity: str
-    shared_measurement_reference: dict[str, Any]
+    exact_measurement_reference: dict[str, Any]
 
 
 def _identity(value: Any, message: str) -> str:
@@ -357,14 +357,37 @@ def _read_binding(
         type(carried_bindings) is dict
         and carried_bindings.get(binding.identity, object()) is None
     )
+    prior_boundary_identity = prior_coordinates.get(
+        "through_event_occurrence_identity"
+    )
+    ordered_identities = tuple(
+        dict.fromkeys(
+            (
+                source_identity,
+                through_identity,
+                binding.identity,
+                prior_boundary_identity,
+            )
+            if binding_is_carried
+            else (
+                source_identity,
+                through_identity,
+                prior_boundary_identity,
+                binding.identity,
+            )
+        )
+    )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            ordered_identities,
+            locality_identity=binding.locality_identity,
+        )
+    except (TypeError, ValueError):
+        ordered = ()
     if (
         len(set(identities.values())) != 3
         or prior_coordinates.get("locality_identity") != binding.locality_identity
-        or (
-            prior_coordinates.get("through_event_occurrence_identity")
-            != through_identity
-            and not binding_is_carried
-        )
+        or tuple(event.identity for event in ordered) != ordered_identities
         or binding.material
         != _binding_material(
             comparison_result_occurrence_identity=source_identity,
@@ -658,13 +681,13 @@ def _producing_pair_measurement_subject(
     return deepcopy(pair_subject)
 
 
-def compare_distinction_measurement_subjects_from_current_coordinates(
+def compare_distinction_measurement_references_from_current_coordinates(
     ledger: EventLedger,
     *,
     locality_identity: str,
     current_coordinates: dict[str, Any] | None = None,
-) -> tuple[CompareDistinctionMeasurementSubjects, ...]:
-    """Read measured Distinction subjects with one shared exact Measurement."""
+) -> tuple[CompareDistinctionMeasurementReferences, ...]:
+    """Read earlier and later results with one exact Measurement reference."""
 
     if current_coordinates is None:
         from seed_runtime.operator_current_coordinates import (
@@ -702,7 +725,7 @@ def compare_distinction_measurement_subjects_from_current_coordinates(
         )
         for measurement in exact_measurements
     )
-    subjects = []
+    references = []
     results_by_later_measurement_occurrence: dict[
         str, list[tuple[Event, dict[str, Any]]]
     ] = {}
@@ -730,8 +753,8 @@ def compare_distinction_measurement_subjects_from_current_coordinates(
         ):
             if shared != earlier_measurement_reference:
                 continue
-            subjects.append(
-                CompareDistinctionMeasurementSubjects(
+            references.append(
+                CompareDistinctionMeasurementReferences(
                     earlier.identity,
                     later.identity,
                     deepcopy(shared),
@@ -741,4 +764,4 @@ def compare_distinction_measurement_subjects_from_current_coordinates(
             later_measurement_occurrence_identity,
             [],
         ).append((later, deepcopy(later_measurement_reference)))
-    return tuple(subjects)
+    return tuple(references)
