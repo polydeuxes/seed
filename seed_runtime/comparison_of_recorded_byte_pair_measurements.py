@@ -773,7 +773,6 @@ def _binding_material(
             "operator_locality_identity"
         ],
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
 
 
@@ -808,7 +807,6 @@ def _applicability_binding_material(
         "earlier_measurement_reference": earlier_subject,
         "later_measurement_reference": later_subject,
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "unknown": [],
     }
 
 
@@ -1248,7 +1246,6 @@ def _applicability_result_material(act: Event) -> dict[str, Any]:
             act.material["applicability_of_input_to_compare"]
         ),
         "applicability": "applicable",
-        "unknown": [],
     }
 
 
@@ -1267,7 +1264,6 @@ def _recorded_applicability_result_material(
             material["applicability_of_input_to_compare"]
         ),
         "applicability": material["applicability"],
-        "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
     }
@@ -1631,7 +1627,6 @@ def _comparison_result_material(
         "findings": _comparison_of_findings(
             inputs["earlier_findings"], inputs["later_findings"]
         ),
-        "unknown": [],
     }
 
 
@@ -1653,7 +1648,6 @@ def _recorded_comparison_result_material(
             material["applicability_of_input_to_compare"]
         ),
         "findings": deepcopy(material["findings"]),
-        "unknown": list(material["unknown"]),
         "act_occurrence_event_identity": act_identity,
         "yield_relation_identity": yield_relation_identity,
     }
