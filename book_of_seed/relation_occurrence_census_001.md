@@ -46,13 +46,11 @@ Several Locality roads historically minted a relation-occurrence identity and
 copied it through binding, Act, and result material without recording an event
 at that identity.
 
-The invocation-Locality road was the first subtraction test. Its exact result
-event already carries the two Locality subjects and is the occurrence used by
-current coordinates, reopen, ordering, and downstream source references.
-Removing the unrecorded string preserved every one of those distinctions.
-
-The continuation and recorded-boundary Locality roads still carry comparable
-unrecorded identity strings and remain unresolved by this census.
+The invocation-Locality, continuation-Locality, and recorded-boundary Locality
+roads were tested separately. Each exact result event already carries the two
+Locality subjects and is the occurrence used by current coordinates, reopen,
+ordering, and downstream references. Removing each unrecorded string preserved
+every one of those distinctions.
 
 ## Embedded relation material
 
