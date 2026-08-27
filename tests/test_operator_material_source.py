@@ -140,7 +140,6 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         "second_subject": "this Seed",
         "relation_occurrence_identity": result.identity,
     }
-    assert recorded["locality_relation_occurrence_identity"] == result.identity
     assert recorded["result_identity"] != result.identity
     assert read_operator_material_source_locality_relation_requirements(
         ledger,
@@ -582,7 +581,6 @@ def test_result_refuses_a_changed_binding_result_boundary():
         "current_coordinate_reference",
         "source_boundary",
         "locality_relation",
-        "locality_relation_occurrence_identity",
         "act_occurrence_event_identity",
         "yield_relation_identity",
     ),
@@ -638,11 +636,11 @@ def test_changed_result_coordinates_are_refused(coordinate):
         (
             "relation_occurrence_identity",
             "another occurrence",
-            {
-                "exact_relation": True,
-                "occurrence_witness": False,
-                "intact_occurrence": True,
-            },
+                {
+                    "exact_relation": True,
+                    "occurrence_witness": False,
+                    "intact_occurrence": False,
+                },
         ),
     ),
 )
@@ -682,18 +680,18 @@ def test_locality_relation_refuses_a_different_or_corrupted_relation_occurrence(
         act_occurrence_event_identity=act.identity,
         boundary_material=_boundary(),
     )
-    result.material["locality_relation_occurrence_identity"] = act.identity
+    result.material["locality_relation"]["relation_occurrence_identity"] = act.identity
 
     assert read_operator_material_source_locality_relation_requirements(
         ledger,
         recorded_result_event_identity=result.identity,
     ) == {
         "exact_relation": True,
-        "occurrence_witness": True,
+        "occurrence_witness": False,
         "intact_occurrence": False,
     }
 
-    result.material["locality_relation_occurrence_identity"] = result.identity
+    result.material["locality_relation"]["relation_occurrence_identity"] = result.identity
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -732,7 +730,6 @@ def test_a_self_reference_without_o1_physiology_is_not_a_locality_relation():
                 "second_subject": "this Seed",
                 "relation_occurrence_identity": result.identity,
             },
-            "locality_relation_occurrence_identity": result.identity,
         }
     )
 

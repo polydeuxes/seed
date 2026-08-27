@@ -191,7 +191,6 @@ def _result_material(
             "second_subject": "this Seed",
             "relation_occurrence_identity": recorded_result_event_identity,
         },
-        "locality_relation_occurrence_identity": recorded_result_event_identity,
     }
 
 
@@ -214,9 +213,6 @@ def _recorded_result_material(
         ],
         "source_boundary": result_material["source_boundary"],
         "locality_relation": result_material["locality_relation"],
-        "locality_relation_occurrence_identity": result_material[
-            "locality_relation_occurrence_identity"
-        ],
         "source_occurrence_references": [],
     }
     if act_occurrence_event_identity is not None:
@@ -606,14 +602,9 @@ def read_operator_material_source_locality_relation_requirements(
         "recorded_occurrence_identity": result.identity,
         "coordinate": "exact_material",
     }
-    yield_relation = ledger.get(result.material.get("locality_relation_occurrence_identity"))
     relation_is_result_occurrence = bool(
-        yield_relation is not None
-        and yield_relation.identity == result.identity
-        and yield_relation.kind == result.kind
-        and yield_relation.locality_identity == result.locality_identity
-        and yield_relation.material == result.material
-        and yield_relation.exact_material == result.exact_material
+        type(relation) is dict
+        and relation.get("relation_occurrence_identity") == result.identity
     )
     existing_o1_physiology = False
     try:
