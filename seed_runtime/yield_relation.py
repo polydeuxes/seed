@@ -26,10 +26,8 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "occurrence_position_measurement",
         "measurement_of_recurrent_byte_pair_occurrence_position",
         "operator_material_source",
-        "operator_destination_locality_relation",
         "recorded_pair_measurement_comparison_applicability",
         "recorded_pair_measurement_comparison",
-        "recorded_boundary_locality_relation",
         "shared_pair_position_applicability",
         "shared_pair_position_measurement",
         "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
@@ -44,7 +42,6 @@ OCCURRENCE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "recurrence_corresponding_source_position_material_measurement",
         "recurrent_result_exact_material_measurement",
         "through_occurrence_boundary_reference",
-        "locality_continuation",
     }
 )
 def read_requirements_of_yield_carried_by_result_occurrence(
