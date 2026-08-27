@@ -477,7 +477,6 @@ def test_yielded_path_meets_complete_findings_of_the_same_added_occurrence():
         "conflicting_findings",
         "findings_of_earlier_result",
         "findings_of_later_result",
-        "unknown_findings",
     }
     recorded_comparison = get_recorded_pair_measurement_comparison(
         ledger, comparison.identity

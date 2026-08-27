@@ -386,7 +386,6 @@ def test_produced_measurements_enter_one_compare():
         item["subject"] == {"result": "count", "content": [97, 99]}
         for item in findings["findings_of_later_result"]
     )
-    assert findings["unknown_findings"] == []
 
     current_coordinates = read_operator_current_coordinates(ledger, locality_identity=LOCALITY)
     assert result.identity in current_coordinates["comparison_result_occurrences"]

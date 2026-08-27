@@ -74,7 +74,6 @@ _FINDING_CATEGORIES = (
     "conflicting_findings",
     "findings_of_earlier_result",
     "findings_of_later_result",
-    "unknown_findings",
 )
 
 
@@ -2141,7 +2140,6 @@ def recorded_distinction_pins_from_current_coordinates(
                         "conflicting_findings",
                         "findings_of_earlier_result",
                         "findings_of_later_result",
-                        "unknown_findings",
                     }
                     or type(reference.get("finding_position")) is not int
                     or reference["finding_position"] < 0

@@ -1554,7 +1554,6 @@ def _comparison_of_findings(
         "conflicting_findings": [],
         "findings_of_earlier_result": [],
         "findings_of_later_result": [],
-        "unknown_findings": [],
     }
     for key, first in earlier_by_key.items():
         second = later_by_key.get(key)
