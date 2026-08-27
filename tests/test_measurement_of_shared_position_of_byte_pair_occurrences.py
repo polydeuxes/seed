@@ -392,10 +392,6 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert applicability_act.material["addressed_act_identity"] == (
         binding.material["exact_act_identity"]
     )
-    assert {
-        relation["addressed_act_identity"]
-        for relation in applicability_act.material["input_relations"]
-    } == {binding.material["exact_act_identity"]}
     applicability_reading = get_recorded_shared_position_applicability(
         ledger, applicability.identity
     )

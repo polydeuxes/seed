@@ -1050,20 +1050,6 @@ def _applicability_act_material(
             ],
         ),
         "through_event_occurrence_identity": through_event_occurrence_identity,
-        "input_relations": [
-            {
-                "subject": _reference_material(inputs.first),
-                "addressed_act_identity": binding.material[
-                    "addressed_act_identity"
-                ],
-            },
-            {
-                "subject": _reference_material(inputs.second),
-                "addressed_act_identity": binding.material[
-                    "addressed_act_identity"
-                ],
-            },
-        ],
     }
 
 
