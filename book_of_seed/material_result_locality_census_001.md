@@ -85,3 +85,30 @@ material Locality relation current-coordinate bucket
 ```
 
 No replacement relation or bucket is proposed.
+
+## Current finding
+
+The top-level copied occurrence identity was removed first. Operator and
+Witness material source roads then removed the nested relation independently.
+Each result now resolves its exact Locality from the durable event coordinate
+and its intact source Act and Yield.
+
+The current-coordinate `material_locality_relation_occurrences` bucket then
+contained only the identities already present in `material_result_occurrences`.
+It was removed. Declared Measurement now addresses the exact material result
+occurrences at the bounded read's exact Locality without a second membership
+test.
+
+The active Book no longer claims a separate material-to-this-Seed Locality
+relation. Locality relations with independently recorded result occurrences
+remain unchanged.
+
+```text
+exact material result occurrence
++ exact event Locality
+→ exact material result at that Locality
+
+no separate relation occurrence
+→ no relation wrapper
+→ no relation bucket
+```

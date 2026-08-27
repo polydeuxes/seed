@@ -227,12 +227,12 @@ def read_exact_material_result(
     )
 
 
-def read_material_locality_relation_requirements(
+def read_material_result_locality_requirements(
     ledger: EventLedger,
     *,
     recorded_result_event_identity: str,
 ) -> dict[str, bool]:
-    """Read one source-specific material-to-this-Seed Locality relation."""
+    """Read one source-specific material result at its exact Locality."""
 
     result = read_exact_material_result(
         ledger, recorded_result_event_identity

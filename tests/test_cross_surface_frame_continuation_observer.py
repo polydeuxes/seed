@@ -1,4 +1,4 @@
-"""Exact material establishes a separate relation."""
+"""A separate relation is established by exact material."""
 
 from __future__ import annotations
 

@@ -15,7 +15,7 @@
       "requires": [
         "exact_material_result",
         "Yield_relation",
-        "Locality_relation"
+        "Locality"
       ],
       "result": "declared_Measurement_result"
     },

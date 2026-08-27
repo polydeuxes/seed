@@ -14,7 +14,7 @@ from seed_runtime.material_source import (
     _append_exact_material_result_occurrence,
     exact_material_result_bytes,
     read_exact_material_result,
-    read_material_locality_relation_requirements,
+    read_material_result_locality_requirements,
 )
 from seed_runtime.witness_material_source import (
     WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
@@ -226,7 +226,7 @@ def test_witness_material_result_preserves_source_occurrences_and_locality():
         ).values()
     )
     assert all(
-        read_material_locality_relation_requirements(
+        read_material_result_locality_requirements(
             ledger,
             recorded_result_event_identity=occurred.identity,
         ).values()

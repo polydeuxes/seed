@@ -147,35 +147,30 @@ def _exact_string_list(value: Any, *, coordinate: str) -> tuple[str, ...]:
     return tuple(value)
 
 
-def _has_exact_material_locality_to_this_seed(
+def _has_exact_material_result_locality(
     ledger: EventLedger, source_identity: str
 ) -> bool:
     """Whether the exact material result carries the Locality prerequisite."""
 
     from seed_runtime.material_source import (
-        read_material_locality_relation_requirements,
+        read_material_result_locality_requirements,
     )
 
     return all(
-        read_material_locality_relation_requirements(
+        read_material_result_locality_requirements(
             ledger,
             recorded_result_event_identity=source_identity,
         ).values()
     )
 
 
-def _material_result_identities_with_exact_locality_from_bounded_replay(
+def _material_result_identities_from_bounded_replay(
     bounded_locality_replay: dict[str, Any],
 ) -> tuple[str, ...]:
-    """Resolve exact material results already validated into bounded replay."""
+    """Resolve exact material results from one bounded current-coordinate read."""
 
-    material_results = bounded_locality_replay.get(
-        "material_result_occurrences"
-    )
-    locality_occurrences = bounded_locality_replay.get(
-        "material_locality_relation_occurrences"
-    )
-    if type(material_results) is not list or type(locality_occurrences) is not dict:
+    material_results = bounded_locality_replay.get("material_result_occurrences")
+    if type(material_results) is not list:
         raise ValueError(
             "declared Measurement source resolution requires exact bounded "
             "Locality replay"
@@ -190,14 +185,7 @@ def _material_result_identities_with_exact_locality_from_bounded_replay(
             raise ValueError(
                 "bounded Locality replay contains a malformed material result"
             )
-        source_identity = occurrence["result_occurrence_identity"]
-        if source_identity not in locality_occurrences:
-            continue
-        if locality_occurrences[source_identity] is not None:
-            raise ValueError(
-                "bounded Locality replay contains malformed material Locality coordinates"
-            )
-        identities.append(source_identity)
+        identities.append(occurrence["result_occurrence_identity"])
     return tuple(identities)
 
 
@@ -301,12 +289,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
             ledger, bounded_locality_replay
         )
     )
-    exact_operator_locality_sources = set(
-        _material_result_identities_with_exact_locality_from_bounded_replay(
-            bounded_locality_replay
-        )
-    )
-
     sources: list[UnboundPositionCoordinateMeasurementMaterialResultReading] = []
     for occurrence in bounded_locality_replay["material_result_occurrences"]:
         if (
@@ -319,10 +301,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
             )
         source_identity = occurrence["result_occurrence_identity"]
         if source_identity in recorded_sources:
-            continue
-        if source_identity not in exact_operator_locality_sources:
-            # Availability through B is not the exact material-to-this-Seed
-            # Exact Locality relation required by 01.Source.D.
             continue
         source = ledger.get(source_identity)
         if source is None or source.locality_identity != locality_identity:
@@ -544,7 +522,7 @@ def _require_current_coordinates(
     }
     source_has_exact_locality = bool(
         source_material_result_occurrence_identity is None
-        or _has_exact_material_locality_to_this_seed(
+        or _has_exact_material_result_locality(
             ledger, source_material_result_occurrence_identity
         )
     )
@@ -631,7 +609,7 @@ def _require_exact_through_event_occurrence(
         boundary_event is None
         or boundary_event.locality_identity != locality_identity
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-        or not _has_exact_material_locality_to_this_seed(
+        or not _has_exact_material_result_locality(
             ledger, source_material_result_occurrence_identity
         )
     ):

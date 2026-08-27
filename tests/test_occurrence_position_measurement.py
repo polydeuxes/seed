@@ -1,4 +1,4 @@
-"""Measurement establishes exact position for each Locality occurrence."""
+"""Exact position for each Locality occurrence is established by Measurement."""
 
 from copy import deepcopy
 

@@ -154,8 +154,7 @@ def book_material_results():
 def measured_book_pairs(book_material_results):
     ledger, supplied_material, material_results = book_material_results
     pytest.skip(
-        "book Witness material stops before declared Measurement until its "
-        "material-to-this-Seed Locality relation exists"
+        "this compiled Witness stops before declared Measurement"
     )
     byte_measurement = _record_byte_measurement(
         ledger,
@@ -549,10 +548,7 @@ def test_book_witness_material_locality_is_available_before_measurement(
         occurrence["result_occurrence_identity"]
         for occurrence in current_coordinates["material_result_occurrences"]
     ) == tuple(result.identity for result in material_results)
-    assert current_coordinates["material_locality_relation_occurrences"] == {
-        result.identity: None
-        for result in material_results
-    }
+    assert "material_locality_relation_occurrences" not in current_coordinates
     assert current_coordinates["measurement_occurrences"] == {}
 
 

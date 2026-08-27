@@ -135,8 +135,7 @@ def acquired_book_material():
 def acquired_book_relations(acquired_book_material):
     ledger, _, acquisition_results, _, _, _, book_admission = acquired_book_material
     pytest.skip(
-        "book Witness material stops before declared Measurement until its "
-        "material-to-this-Seed Locality relation exists"
+        "this compiled Witness stops before declared Measurement"
     )
     byte_measurement = _record_byte_measurement(
         ledger,
@@ -228,8 +227,7 @@ def acquired_book_relations(acquired_book_material):
 def complete_book_admission_acts(acquired_book_material):
     ledger, _, _, _, _, book_invocation_rows, book_admission = acquired_book_material
     pytest.skip(
-        "book Witness material stops before declared Measurement until its "
-        "material-to-this-Seed Locality relation exists"
+        "this compiled Witness stops before declared Measurement"
     )
     byte_measurement = _record_byte_measurement(
         ledger,

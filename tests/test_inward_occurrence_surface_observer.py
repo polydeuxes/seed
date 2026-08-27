@@ -1,4 +1,4 @@
-"""Coordinate material establishes exact occurrence distinctions."""
+"""Exact occurrence distinctions are established by coordinate material."""
 
 from pathlib import Path
 from hashlib import sha256

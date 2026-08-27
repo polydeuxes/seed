@@ -18,15 +18,7 @@ Before one operator-boundary Act occurrence, the exact operator boundary,
 exact Act to preserve supplied material, boundary coordinates, and Locality
 are exact together.
 
-The same occurrence establishes this Locality relation under its exact
-Act coordinates:
-
-```
-exact material --Locality--> this Seed
-```
-
-The Locality relation is separate from the source-boundary Act occurrence,
-material, and result. It requires its exact relation occurrence and Locality.
+The exact material result is one occurrence at that exact Locality.
 
 Supplied material is required for one material result. Another operator boundary
 occurrence requires another exact subject and exact Act coordinates before its

@@ -613,7 +613,7 @@ def _require_binding_coordinate_values(
             "pair occurrence Measurement requires exact current coordinates"
         )
     from seed_runtime.material_source import (
-        read_material_locality_relation_requirements,
+        read_material_result_locality_requirements,
     )
 
     measurements = current_coordinates.get("measurement_occurrences")
@@ -621,7 +621,7 @@ def _require_binding_coordinate_values(
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     boundary = current_coordinates.get("through_event_occurrence_identity")
     source_has_exact_locality = all(
-        read_material_locality_relation_requirements(
+        read_material_result_locality_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_result_occurrence_identity
@@ -902,10 +902,10 @@ def _read_recurrent_byte_pair_occurrence_position_measurement_binding(
         ledger, finding.source_material_result_occurrence_identity
     )
     from seed_runtime.material_source import (
-        read_material_locality_relation_requirements,
+        read_material_result_locality_requirements,
     )
     source_has_exact_locality = all(
-        read_material_locality_relation_requirements(
+        read_material_result_locality_requirements(
             ledger,
             recorded_result_event_identity=(
                 finding.source_material_result_occurrence_identity

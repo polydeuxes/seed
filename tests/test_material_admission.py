@@ -1,4 +1,4 @@
-"""Exact material under every exact pair."""
+"""Exact material for every exact pair."""
 
 from __future__ import annotations
 

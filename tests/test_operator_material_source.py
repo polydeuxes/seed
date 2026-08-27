@@ -177,9 +177,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert replayed["exact_result_occurrences"][result.identity] == (
         act_occurrence.material["subject_to_act_binding_reference"]
     )
-    assert replayed["material_locality_relation_occurrences"] == {
-        result.identity: None
-    }
+    assert "material_locality_relation_occurrences" not in replayed
 
 
 def test_empty_boundary_leaves_binding_and_act_without_result_or_yield():
@@ -321,8 +319,10 @@ def test_ordinary_operator_material_is_the_exact_source_measurement_source():
     standing = read_operator_current_coordinates(
         ledger, locality_identity="source"
     )
-    assert standing["material_locality_relation_occurrences"] == {
-        sources[0].identity: None
+    assert "material_locality_relation_occurrences" not in standing
+    assert sources[0].identity in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in standing["material_result_occurrences"]
     }
     source_results = [
         event
@@ -643,7 +643,7 @@ def test_prior_source_act_carrier_must_remain_an_identity_dictionary():
         )
 
 
-def test_prior_source_locality_relations_must_remain_an_identity_dictionary():
+def test_prior_material_results_must_remain_an_occurrence_list():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     act = _act(ledger, _binding(ledger, standing))
@@ -653,13 +653,14 @@ def test_prior_source_locality_relations_must_remain_an_identity_dictionary():
         boundary_material=_boundary(),
     )
     prior = read_operator_current_coordinates(ledger, locality_identity="source")
-    assert result.identity in prior[
-        "material_locality_relation_occurrences"
-    ]
+    assert result.identity in {
+        occurrence["result_occurrence_identity"]
+        for occurrence in prior["material_result_occurrences"]
+    }
     broken = deepcopy(prior)
-    broken["material_locality_relation_occurrences"] = []
+    broken["material_result_occurrences"] = {}
 
-    with pytest.raises(ValueError, match="material Locality relation occurrences"):
+    with pytest.raises(ValueError, match="material result occurrences"):
         advance_operator_current_coordinates(
             ledger,
             (),

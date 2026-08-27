@@ -10,7 +10,7 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import (
     read_exact_material_result,
-    read_material_locality_relation_requirements,
+    read_material_result_locality_requirements,
 )
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND
 from seed_runtime.byte_measurement import (
@@ -830,7 +830,6 @@ def advance_operator_current_coordinates(
     operator_destination_locality_relations: dict[str, None] = {}
     subject_to_act_binding_occurrences: dict[str, None] = {}
     operator_material_source_act_occurrences: dict[str, None] = {}
-    material_locality_relation_occurrences: dict[str, None] = {}
     applicability_result_occurrences: dict[str, None] = {}
     comparison_result_occurrences: dict[str, None] = {}
     through_event_occurrence_identity: str | None = None
@@ -841,6 +840,10 @@ def advance_operator_current_coordinates(
         # prior coordinates that already input the earlier occurrences. Not copied:
         # see the shared-accumulator note above.
         material_result_occurrences = prior["material_result_occurrences"]
+        if type(material_result_occurrences) is not list:
+            raise ValueError(
+                "prior coordinates require exact material result occurrences"
+            )
         measurement_occurrences = prior["measurement_occurrences"]
         if type(measurement_occurrences) is not dict:
             raise ValueError(
@@ -896,13 +899,6 @@ def advance_operator_current_coordinates(
         if type(operator_material_source_act_occurrences) is not dict:
             raise ValueError(
                 "prior coordinates require exact operator material source Act occurrences"
-            )
-        material_locality_relation_occurrences = prior[
-            "material_locality_relation_occurrences"
-        ]
-        if type(material_locality_relation_occurrences) is not dict:
-            raise ValueError(
-                "prior coordinates require exact material Locality relation occurrences"
             )
         applicability_result_occurrences = prior[
             "applicability_result_occurrences"
@@ -1208,7 +1204,6 @@ def advance_operator_current_coordinates(
             continue
         if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
             get_recorded_operator_material_source(ledger, event.identity)
-            material_locality_relation_occurrences[event.identity] = None
         if (
             event.kind
             == OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
@@ -1585,16 +1580,15 @@ def advance_operator_current_coordinates(
             ledger, event.identity
         )
         locality_requirements = (
-            read_material_locality_relation_requirements(
+            read_material_result_locality_requirements(
                 ledger,
                 recorded_result_event_identity=source_result.identity,
             )
         )
         if not all(locality_requirements.values()):
             raise ValueError(
-                "material result carries no exact material Locality relation"
+                "material result has no exact Locality"
             )
-        material_locality_relation_occurrences[source_result.identity] = None
         material_result_reference = source_result.material["result_identity"]
         occurrence = {
             "subject_reference": material_result_reference,
@@ -1629,9 +1623,6 @@ def advance_operator_current_coordinates(
         ),
         "operator_material_source_act_occurrences": (
             operator_material_source_act_occurrences
-        ),
-        "material_locality_relation_occurrences": (
-            material_locality_relation_occurrences
         ),
         "applicability_result_occurrences": applicability_result_occurrences,
         "comparison_result_occurrences": comparison_result_occurrences,
@@ -2401,16 +2392,12 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
         raise ValueError("operator material source coordinates are not exact")
     bindings = current_coordinates.get("subject_to_act_binding_occurrences")
     acts = current_coordinates.get("operator_material_source_act_occurrences")
-    locality_relations = current_coordinates.get(
-        "material_locality_relation_occurrences"
-    )
     material_result_occurrences = current_coordinates.get("material_result_occurrences")
     exact_results = current_coordinates.get("exact_result_occurrences")
     event_count = current_coordinates.get("event_count")
     if (
         type(bindings) is not dict
         or type(acts) is not dict
-        or type(locality_relations) is not dict
         or type(material_result_occurrences) is not list
         or type(exact_results) is not dict
         or type(event_count) is not int
@@ -2445,11 +2432,9 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             is not str
             or type(event.exact_material) is not bytes
             or event.identity in exact_results
-            or event.identity in locality_relations
         ):
             raise ValueError("operator material source result is not exact")
     exact_result = None
-    locality_relation_coordinate = None
     material_result_coordinate = None
     if event.kind == OPERATOR_MATERIAL_SOURCE_RECORDED_KIND:
         exact_result = _subject_to_act_binding_of_exact_result(ledger, event)
@@ -2470,7 +2455,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
         acts[event.identity] = None
     else:
         exact_results[event.identity] = exact_result
-        locality_relations[event.identity] = locality_relation_coordinate
         material_result_occurrences.append(material_result_coordinate)
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1

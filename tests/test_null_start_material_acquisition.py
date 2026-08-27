@@ -10,7 +10,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.material_source import (
     exact_material_result_bytes,
     iter_exact_material_results,
-    read_material_locality_relation_requirements,
+    read_material_result_locality_requirements,
 )
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
@@ -106,7 +106,7 @@ def test_each_material_result_binds_its_exact_act_and_yield_relation(ledger):
 def test_material_result_has_exact_locality_without_an_invented_source_relation(ledger):
     for material_result in _material_results(ledger):
         assert all(
-            read_material_locality_relation_requirements(
+            read_material_result_locality_requirements(
                 ledger,
                 recorded_result_event_identity=material_result.identity,
             ).values()

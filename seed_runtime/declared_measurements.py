@@ -25,7 +25,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     _record_byte_pair_occurrence_position_measurement_act_occurrence_from_carried_binding,
     _record_byte_pair_occurrence_position_measurement_subject_to_act_binding_from_through_event_occurrence,
     _record_byte_pair_occurrence_position_measurement_result_from_carried_act_occurrence,
-    _material_result_identities_with_exact_locality_from_bounded_replay,
+    _material_result_identities_from_bounded_replay,
     _unbound_position_coordinate_measurement_material_results_from_bounded_locality_replay,
     measure_position_coordinates_of_byte_pair_occurrences,
 )
@@ -141,7 +141,7 @@ def _require_current_coordinate_boundary(
 def _material_result_identities(
     current_coordinates: dict[str, Any],
 ) -> tuple[str, ...]:
-    return _material_result_identities_with_exact_locality_from_bounded_replay(
+    return _material_result_identities_from_bounded_replay(
         current_coordinates
     )
 

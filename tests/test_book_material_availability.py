@@ -37,7 +37,7 @@ def test_book_material_locality_exposes_declared_measurements():
     current_coordinates = read_operator_current_coordinates(
         ledger, locality_identity="book-material"
     )
-    assert current_coordinates["material_locality_relation_occurrences"]
+    assert current_coordinates["material_result_occurrences"]
     assert current_coordinates["measurement_occurrences"] == {}
     recorded = record_declared_measurements_from_current_coordinates(
         ledger, locality_identity="book-material"

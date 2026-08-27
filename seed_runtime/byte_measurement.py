@@ -1955,7 +1955,7 @@ def _byte_measurement_source_material(
     source_material = []
     seen_material = set()
     from seed_runtime.material_source import (
-        read_material_locality_relation_requirements,
+        read_material_result_locality_requirements,
     )
 
     for locality in localities:
@@ -1964,13 +1964,13 @@ def _byte_measurement_source_material(
         ):
             _material_result_bytes(ledger, material_result)
             if not all(
-                read_material_locality_relation_requirements(
+                read_material_result_locality_requirements(
                     ledger,
                     recorded_result_event_identity=material_result.identity,
                 ).values()
             ):
-                # An exact material result does not supply the Locality relation
-                # required by 01.Source.D.
+                # An exact material result without an exact Locality cannot be
+                # a subject of the declared Measurement.
                 continue
             if material_result.identity in seen_material:
                 raise ByteMeasurementError(
@@ -1983,8 +1983,7 @@ def _byte_measurement_source_material(
     if not source_material:
         raise ByteMeasurementError(
             "declared source Localities contain no exact material result with "
-            "material-to-this-Seed Locality relation through the "
-            "Measurement boundary"
+            "an exact Locality through the Measurement boundary"
         )
     return tuple(source_material)
 

@@ -6,12 +6,8 @@ Before one declared Measurement Act occurrence, its exact subject and every
 required coordinate are exact and current through one exact occurrence
 boundary.
 
-Measurement of supplied material requires the exact material result,
-its Yield, and the exact Locality relation:
-
-```
-exact material --Locality--> this Seed
-```
+Measurement of supplied material requires the exact material result, its Yield,
+and its exact Locality.
 
 One exact Yield relation carries the Measurement Act occurrence as first
 subject and one result as second subject. The result preserves its exact

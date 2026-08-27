@@ -1,4 +1,4 @@
-"""Exact material establishes later results."""
+"""Later results are established by exact material."""
 
 from __future__ import annotations
 
