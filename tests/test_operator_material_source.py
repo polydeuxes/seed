@@ -113,15 +113,13 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
         "book_clause_identity",
         "current_coordinate_reference",
         "exact_act_identity",
-        "result_boundary_identity",
+        "result_identity",
         "subject_reference",
     )
     assert binding.identity in after_binding[
         "subject_to_act_binding_occurrences"
     ]
-    assert recorded["result_identity"] == binding.material[
-        "result_boundary_identity"
-    ]
+    assert recorded["result_identity"] == binding.material["result_identity"]
     assert recorded["current_coordinate_reference"] == {
         "locality_identity": "source",
         "through_event_occurrence_identity": standing_boundary,
@@ -145,7 +143,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
             binding.identity,
             binding.material["exact_act_identity"],
             binding.material["act_occurrence_identity"],
-            binding.material["result_boundary_identity"],
+            binding.material["result_identity"],
             act_occurrence.identity,
             result.identity,
             result.material["yield_relation_identity"],
@@ -514,7 +512,7 @@ def test_changed_binding_coordinates_are_refused(coordinate):
     binding = _binding(ledger, standing)
     changed = ledger.get(binding.identity)
     if coordinate in {"exact_act_identity", "act_occurrence_identity"}:
-        changed.material[coordinate] = changed.material["result_boundary_identity"]
+        changed.material[coordinate] = changed.material["result_identity"]
     else:
         changed.material[coordinate] = "different"
 
@@ -524,7 +522,7 @@ def test_changed_binding_coordinates_are_refused(coordinate):
         )
 
 
-def test_result_refuses_a_changed_binding_result_boundary():
+def test_result_refuses_a_changed_binding_result_identity():
     ledger = EventLedger()
     current_coordinates, _through_occurrence = _context(ledger)
     binding = _binding(ledger, current_coordinates)
@@ -535,7 +533,7 @@ def test_result_refuses_a_changed_binding_result_boundary():
         boundary_material=_boundary(),
     )
 
-    binding.material["result_boundary_identity"] = "different"
+    binding.material["result_identity"] = "different"
 
     with pytest.raises((OperatorMaterialSourceError, TypeError, ValueError)):
         get_recorded_operator_material_source(ledger, result.identity)
@@ -673,7 +671,7 @@ def test_binding_and_act_remain_addressable_after_restart_before_result(tmp_path
     ledger = SQLiteEventLedger(str(path))
     assert get_recorded_operator_material_source(ledger, result.identity)[
         "result_identity"
-    ] == binding.material["result_boundary_identity"]
+    ] == binding.material["result_identity"]
     ledger.close()
 
 

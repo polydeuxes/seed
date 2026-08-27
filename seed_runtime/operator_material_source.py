@@ -108,7 +108,7 @@ def _subject_to_act_binding_material(
     *,
     exact_act_identity: str,
     act_occurrence_identity: str,
-    result_boundary_identity: str,
+    result_identity: str,
     source_boundary: str,
     current_coordinate_reference: dict[str, str | None],
 ) -> dict[str, Any]:
@@ -119,7 +119,7 @@ def _subject_to_act_binding_material(
         "act": OPERATOR_MATERIAL_SOURCE_ACT,
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "result_boundary_identity": result_boundary_identity,
+        "result_identity": result_identity,
         "current_coordinate_reference": deepcopy(
             current_coordinate_reference
         ),
@@ -132,9 +132,6 @@ def _subject_to_act_binding_reference(binding: Event) -> dict[str, Any]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
 
 
@@ -151,7 +148,7 @@ def _act_occurrence_material(binding: Event) -> dict[str, Any]:
         "current_coordinate_reference": deepcopy(
             material["current_coordinate_reference"]
         ),
-        "result_boundary_identity": material["result_boundary_identity"],
+        "result_identity": material["result_identity"],
     }
 
 
@@ -167,7 +164,7 @@ def _result_material(
             "operator material source result crossed its exact source boundary"
         )
     return {
-        "result_identity": material["result_boundary_identity"],
+        "result_identity": material["result_identity"],
         "exact_act_identity": material["exact_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "exact_act": OPERATOR_MATERIAL_SOURCE_ACT,
@@ -275,15 +272,15 @@ def _record_operator_material_source_subject_to_act_binding(
     act_occurrence_identity = ledger.mint_identity(
         "operator_material_source_act_occurrence"
     )
-    result_boundary_identity = ledger.mint_identity(
-        "operator_material_source_result_boundary"
+    result_identity = ledger.mint_identity(
+        "operator_material_source_result"
     )
     return ledger.append(
         OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         _subject_to_act_binding_material(
             exact_act_identity=exact_act_identity,
             act_occurrence_identity=act_occurrence_identity,
-            result_boundary_identity=result_boundary_identity,
+            result_identity=result_identity,
             source_boundary=source_boundary,
             current_coordinate_reference=current_reference,
         ),
@@ -319,7 +316,7 @@ def get_operator_material_source_subject_to_act_binding(
     identities = (
         material.get("exact_act_identity"),
         material.get("act_occurrence_identity"),
-        material.get("result_boundary_identity"),
+        material.get("result_identity"),
     )
     if (
         type(current_reference) is not dict
@@ -347,7 +344,7 @@ def get_operator_material_source_subject_to_act_binding(
     exact_binding_material = _subject_to_act_binding_material(
         exact_act_identity=identities[0],
         act_occurrence_identity=identities[1],
-        result_boundary_identity=identities[2],
+        result_identity=identities[2],
         source_boundary=subject_reference["source_boundary"],
         current_coordinate_reference=exact_current_reference,
     )

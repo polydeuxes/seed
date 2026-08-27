@@ -167,12 +167,11 @@ def test_witness_material_source_fixes_its_exact_source_subject():
         "act_occurrence_identity",
         "book_clause_identity",
         "exact_act_identity",
-        "result_boundary_identity",
+        "result_identity",
         "subject_reference",
     )
-    assert reference["result_boundary_identity"] == occurred.material[
-        "result_identity"
-    ]
+    assert "result_identity" not in reference
+    assert binding.material["result_identity"] == occurred.material["result_identity"]
     assert act_occurrence.material[
         "subject_to_act_binding_reference"
     ] == reference
@@ -330,14 +329,15 @@ def test_equal_material_has_distinct_material_source_result_occurrences_results_
 
 
 def test_witness_material_requires_only_material_boundary_and_locality():
-    occurred = _preserve(EventLedger(), b"different\n")
+    ledger = EventLedger()
+    occurred = _preserve(ledger, b"different\n")
 
     assert occurred.material["source_occurrence_references"] == []
-    assert occurred.material["result_identity"] == (
-        occurred.material["subject_to_act_binding_reference"][
-            "result_boundary_identity"
-        ]
-    )
+    reference = occurred.material["subject_to_act_binding_reference"]
+    binding = ledger.get(reference["recorded_occurrence_identity"])
+    assert binding.material["result_identity"] == occurred.material[
+        "result_identity"
+    ]
     assert "invocation" not in str(occurred.material)
 
 

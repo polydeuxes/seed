@@ -41,9 +41,6 @@ def _subject_to_act_binding_reference(binding: Event) -> dict[str, object]:
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": deepcopy(binding.material["subject_reference"]),
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
 
 
@@ -62,7 +59,7 @@ def _subject_to_act_binding_material(
         "act": WITNESS_MATERIAL_SOURCE_ACT,
         "exact_act_identity": exact_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "result_boundary_identity": result_identity,
+        "result_identity": result_identity,
     }
 
 

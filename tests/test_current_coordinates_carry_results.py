@@ -31,7 +31,6 @@ REQUIRED_BINDING_COORDINATES = {
     "book_clause_identity",
     "exact_act_identity",
     "subject_reference",
-    "result_boundary_identity",
 }
 
 
@@ -258,7 +257,7 @@ def test_source_result_refusal_does_not_change_prior_current_coordinates():
         ),
     )
     malformed = deepcopy(result)
-    del malformed.material["locality_relation"]
+    del malformed.material["yield_relation_identity"]
     before = deepcopy(current_coordinates)
 
     with pytest.raises(ValueError, match="result is not exact"):
