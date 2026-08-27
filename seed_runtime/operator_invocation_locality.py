@@ -8,6 +8,9 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import read_exact_material_result
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
     _record_yield_relation,
@@ -55,7 +58,7 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
     )
     if (
         event is None
-        or event.material.get("source_role") != "this operator"
+        or event.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
         or type(event.exact_material) is not bytes
         or not event.exact_material.startswith(b"!")
         or ledger.integrity_of(event.identity) == CORRUPTED

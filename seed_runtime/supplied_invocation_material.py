@@ -8,6 +8,9 @@ from typing import Callable
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_source import read_exact_material_result
+from seed_runtime.operator_material_source import (
+    OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+)
 from seed_runtime.witness_material_source import WITNESS_MATERIAL_SOURCE_RECORDED_KIND, record_witness_material_source
 from seed_runtime.operator_invocation_locality import (
     get_recorded_operator_invocation_locality,
@@ -156,9 +159,9 @@ def record_supplied_witness_material_source(
         command_occurrence is None
         or command_occurrence.identity
         != relation["operator_material_occurrence_reference"]
+        or command_occurrence.kind != OPERATOR_MATERIAL_SOURCE_RECORDED_KIND
         or command_occurrence.locality_identity
         != relation["operator_locality_identity"]
-        or command_occurrence.material.get("source_role") != "this operator"
         or type(command_occurrence.exact_material) is not bytes
         or not command_occurrence.exact_material.startswith(b"!")
         or ledger.integrity_of(command_occurrence.identity) == CORRUPTED
@@ -175,7 +178,6 @@ def record_supplied_witness_material_source(
         occurrence is None
         or occurrence.kind != WITNESS_MATERIAL_SOURCE_RECORDED_KIND
         or occurrence.locality_identity != relation["destination_locality_identity"]
-        or occurrence.material.get("source_role") != "this Witness"
         or occurrence.material.get("source_occurrence_references")[:2]
         != [
             command_occurrence.identity,
