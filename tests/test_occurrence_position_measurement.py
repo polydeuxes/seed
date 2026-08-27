@@ -253,7 +253,6 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
         "exact_act_identity",
         "act_occurrence_identity",
         "measurement_result_identity",
-        "result_boundary_identity",
         "book_clause_identity",
         "source_locality_identity",
         "completeness_boundary_identity",
@@ -264,9 +263,6 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
         "book_clause_identity": binding.material["book_clause_identity"],
         "exact_act_identity": binding.material["exact_act_identity"],
         "subject_reference": binding.material["subject_reference"],
-        "result_boundary_identity": binding.material[
-            "result_boundary_identity"
-        ],
     }
     assert binding.identity in _current_coordinates(ledger)[
         "subject_to_act_binding_occurrences"
