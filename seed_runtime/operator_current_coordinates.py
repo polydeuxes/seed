@@ -452,18 +452,36 @@ def _result_subject_to_act_binding_coordinate(
 
     if ledger.integrity_of(event.identity) == CORRUPTED:
         return _NO_RESULT_COORDINATE
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material.get(
-            "yield_relation_identity"
-        ),
-        act_occurrence_event_identity=event.material.get(
-            "act_occurrence_event_identity"
-        ),
-    )
-    if not all(requirements.values()):
-        return _NO_RESULT_COORDINATE
+    if event.kind in {
+        LOCALITY_CONTINUATION_RECORDED_KIND,
+        RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
+        OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
+    }:
+        act_occurrence = ledger.get(
+            event.material.get("act_occurrence_event_identity")
+        )
+        if act_occurrence is None:
+            return _NO_RESULT_COORDINATE
+        try:
+            ledger.occurrences_in_append_order(
+                (act_occurrence.identity, event.identity),
+                locality_identity=event.locality_identity,
+            )
+        except ValueError:
+            return _NO_RESULT_COORDINATE
+    else:
+        requirements = read_requirements_of_yield_relation(
+            ledger,
+            recorded_result_event_identity=event.identity,
+            yield_relation_event_identity=event.material.get(
+                "yield_relation_identity"
+            ),
+            act_occurrence_event_identity=event.material.get(
+                "act_occurrence_event_identity"
+            ),
+        )
+        if not all(requirements.values()):
+            return _NO_RESULT_COORDINATE
     ownership = _subject_to_act_binding_of_exact_result(ledger, event)
     if ownership is not None:
         return ownership

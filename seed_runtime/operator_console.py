@@ -650,10 +650,7 @@ def run_persistent_operator_console(
                 current_coordinates = _advance_over(
                     ledger,
                     current_coordinates,
-                    (
-                        continuation.material["yield_relation_identity"],
-                        continuation.identity,
-                    ),
+                    (continuation.identity,),
                     locality_identity=locality_identity,
                 )
                 continue

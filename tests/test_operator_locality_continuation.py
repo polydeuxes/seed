@@ -24,7 +24,6 @@ from seed_runtime.operator_locality_continuation import (
     record_locality_continuation_act_occurrence,
     record_locality_continuation_result,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 
 def _source_boundary(
@@ -166,27 +165,16 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert recorded["subject_to_act_binding_reference"] == binding_reference
     assert "applicability" not in recorded
     assert "priority" not in recorded
-    assert read_requirements_of_yield_relation(
+    advanced = advance_operator_current_coordinates(
         ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act_occurrence.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
-
-    carried = advance_operator_current_coordinates(
-        ledger,
-        (result.material["yield_relation_identity"], result.identity),
+        (result.identity,),
         locality_identity=destination,
         prior=after_act,
     )
     replayed = read_operator_current_coordinates(
         ledger, locality_identity=destination
     )
-    assert carried == replayed
+    assert advanced == replayed
     assert replayed["locality_continuation_relation_occurrences"] == {result.identity: None}
     assert replayed["subject_to_act_binding_occurrences"] == {
         binding.identity: None
@@ -370,7 +358,7 @@ def test_continuation_carries_only_its_direct_source_coordinates():
     )["locality_continuation_relation_occurrences"] == {second_result.identity: None}
 
 
-def test_one_continuation_act_cannot_yield_or_record_twice():
+def test_one_continuation_act_occurrence_cannot_address_two_results():
     ledger = EventLedger()
     _source, boundary = _source_boundary(ledger)
     act_occurrence = _act(ledger, boundary)
@@ -380,7 +368,8 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
     )
 
     with pytest.raises(
-        LocalityContinuationError, match="already carries a Yield"
+        LocalityContinuationError,
+        match="one Locality continuation Act occurrence cannot address two results",
     ):
         record_locality_continuation_result(
             ledger,
@@ -396,7 +385,6 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
         "act_occurrence_identity",
         "subject_to_act_binding_reference",
         "result_identity",
-        "yield_relation_identity",
     ),
 )
 def test_changed_result_coordinates_are_refused(coordinate):
@@ -432,9 +420,6 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
         "act_occurrence_identity"
     ]
     assert first.material["result_identity"] != second.material["result_identity"]
-    assert first.material["yield_relation_identity"] != second.material[
-        "yield_relation_identity"
-    ]
 
 
 def test_incomplete_act_occurrence_is_not_carried_as_a_relation():

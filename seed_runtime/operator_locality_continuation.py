@@ -13,13 +13,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
-
-
 LOCALITY_CONTINUATION_ACT_OCCURRENCE_EVENT = (
     "operator.locality_continuation_act_occurrence_recorded"
 )
@@ -28,9 +21,6 @@ LOCALITY_CONTINUATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
 )
 LOCALITY_CONTINUATION_RECORDED_KIND = (
     "operator.locality_continuation_recorded"
-)
-LOCALITY_CONTINUATION_RESULT_KIND = (
-    "source-boundary Locality relation result"
 )
 LOCALITY_CONTINUATION_ACT = "source-boundary Locality relation"
 EVENT_KIND_BOOK_CLAUSES = {
@@ -167,7 +157,6 @@ def _recorded_result_material(
     result_material: dict[str, Any],
     *,
     act_occurrence_event_identity: str,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     """Record every result coordinate at one literal durable address."""
 
@@ -188,7 +177,6 @@ def _recorded_result_material(
             "destination_locality_identity"
         ],
         "act_occurrence_event_identity": act_occurrence_event_identity,
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -390,7 +378,7 @@ def record_locality_continuation_result(
     *,
     act_occurrence_event_identity: str,
 ) -> Event:
-    """Record the Yield and direct Locality relation for one recorded Act."""
+    """Record the direct Locality relation for one Act occurrence."""
 
     act_occurrence = _validated_act_occurrence(
         ledger, act_occurrence_event_identity
@@ -398,22 +386,6 @@ def record_locality_continuation_result(
     material = act_occurrence.material
     locality_identity = act_occurrence.locality_identity
     act_occurrence_identity = material["act_occurrence_identity"]
-    for prior_yield in ledger.iter_locality_kind(
-        locality_identity, RECORDED_YIELD_RELATION_EVENT
-    ):
-        dimensions = prior_yield.material.get("dimensions")
-        if (
-            prior_yield.material.get("act_occurrence_event_identity")
-            == act_occurrence.identity
-            or (
-                type(dimensions) is dict
-                and dimensions.get("act_occurrence_identity")
-                == act_occurrence_identity
-            )
-        ):
-            raise LocalityContinuationError(
-                "the Locality continuation Act already carries a Yield"
-            )
     for prior_result in ledger.iter_locality_kind(
         locality_identity, LOCALITY_CONTINUATION_RECORDED_KIND
     ):
@@ -424,7 +396,7 @@ def record_locality_continuation_result(
             == act_occurrence_identity
         ):
             raise LocalityContinuationError(
-                "the Locality continuation Act already carries a result"
+                "one Locality continuation Act occurrence cannot address two results"
             )
 
     result_identity = material["subject_to_act_binding_reference"][
@@ -440,23 +412,11 @@ def record_locality_continuation_result(
         source_coordinate_reference=material["source_coordinate_reference"],
         destination_locality_identity=locality_identity,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=locality_identity,
-        exact_act=LOCALITY_CONTINUATION_ACT,
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=LOCALITY_CONTINUATION_RESULT_KIND,
-        result_identity=result_identity,
-        result_content=result_material,
-        occurrence_boundary="locality_continuation",
-    )
     return ledger.append(
         LOCALITY_CONTINUATION_RECORDED_KIND,
         _recorded_result_material(
             result_material,
             act_occurrence_event_identity=act_occurrence.identity,
-            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=locality_identity,
     )
@@ -486,7 +446,9 @@ def get_recorded_locality_continuation(
     act_occurrence = _validated_act_occurrence(
         ledger, event.material.get("act_occurrence_event_identity")
     )
-    result_identity = event.material.get("result_identity")
+    result_identity = act_occurrence.material[
+        "subject_to_act_binding_reference"
+    ]["result_boundary_identity"]
     expected = _result_material(
         result_identity=result_identity,
         continuation_act_identity=act_occurrence.material[
@@ -504,7 +466,6 @@ def get_recorded_locality_continuation(
     expected_event_material = _recorded_result_material(
         expected,
         act_occurrence_event_identity=act_occurrence.identity,
-        yield_relation_identity=event.material.get("yield_relation_identity"),
     )
     if (
         type(result_identity) is not str
@@ -515,16 +476,15 @@ def get_recorded_locality_continuation(
         raise LocalityContinuationError(
             "the Locality continuation result coordinates are not exact"
         )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material["yield_relation_identity"],
-        act_occurrence_event_identity=act_occurrence.identity,
-    )
-    if not all(requirements.values()):
-        raise LocalityContinuationError(
-            "the Locality continuation carries no exact Yield relation"
+    try:
+        ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
         )
+    except ValueError as error:
+        raise LocalityContinuationError(
+            "the Locality continuation result requires its Act occurrence"
+        ) from error
     return deepcopy(event.material)
 
 

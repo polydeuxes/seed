@@ -120,5 +120,31 @@ occurrence, and result coordinates; requires Act-before-result order; refuses a
 second result for the Act occurrence; reopens durably; and reproduces exact
 current coordinates.
 
-This second result still does not establish a global conclusion. Locality
-continuation remains a third control before the active Book law changes.
+Locality continuation passed the third subtraction. Removing the copied Yield
+event initially exposed that its result reader accepted the result's own
+`result_identity`. The exact identity was already established independently by
+the Act's subject-to-Act binding reference. Reading it there restored direct
+mutation refusal without another occurrence.
+
+All three Locality roads now establish:
+
+```text
+binding
+Act occurrence
+recorded Locality result occurrence
+```
+
+The result occurrence is the Locality relation occurrence. Each reader derives
+the result from the Act and binding, requires Act-before-result order, and
+refuses another result for that Act occurrence. Current coordinates preserve
+the exact result-to-binding coordinate without a Yield event.
+
+## Current finding
+
+A separate Yield occurrence failed all three internal Locality controls. The
+removed event occurred before its result subject and added only a copied result
+dictionary plus another identity.
+
+This does not yet withdraw Yield from every Act. It establishes that the active
+Locality clauses must stop requiring a separate Yield event. Other Act roads
+remain under pressure independently.
