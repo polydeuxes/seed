@@ -1,4 +1,4 @@
-"""Direct checks from live Seed to Witness Grammar.
+"""Distinctions preserved from live Seed to Witness Grammar.
 
 These tests are deliberately bounded by what the runtime declares. They do
 not ask a hand-maintained list which witnesses should be inspected.
