@@ -11,9 +11,6 @@ from seed_runtime.material_source import read_exact_material_result
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
-from seed_runtime.yield_relation import (
-    read_requirements_of_yield_relation,
-)
 
 
 OPERATOR_DESTINATION_LOCALITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
@@ -66,20 +63,6 @@ def _command_event(ledger: EventLedger, event_identity: str) -> Event:
         raise OperatorDestinationLocalityError(
             "destination Locality requires one intact operator material occurrence"
         ) from error
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material.get(
-            "yield_relation_identity"
-        ),
-        act_occurrence_event_identity=event.material.get(
-            "act_occurrence_event_identity"
-        ),
-    )
-    if not all(requirements.values()):
-        raise OperatorDestinationLocalityError(
-            "operator command occurrence has no exact Yield"
-        )
     return event
 
 

@@ -15,7 +15,6 @@ from seed_runtime.material_source import (
 from seed_runtime.operator_material_source import (
     OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
@@ -89,18 +88,13 @@ def test_each_material_result_preserves_exact_bytes(ledger):
     assert (E3 + "\n").encode() not in exact
 
 
-def test_each_material_result_binds_its_exact_act_and_yield_relation(ledger):
+def test_each_material_result_binds_its_exact_act(ledger):
     for material_result in _material_results(ledger):
-        assert all(
-            read_requirements_of_yield_relation(
-                ledger,
-                recorded_result_event_identity=material_result.identity,
-                yield_relation_event_identity=material_result.material["yield_relation_identity"],
-                act_occurrence_event_identity=material_result.material[
-                    "act_occurrence_event_identity"
-                ],
-            ).values()
+        assert (
+            read_exact_material_result(ledger, material_result.identity)
+            == material_result
         )
+        assert "yield_relation_identity" not in material_result.material
 
 
 def test_material_result_has_exact_locality_without_an_invented_source_relation(ledger):
@@ -118,7 +112,7 @@ def test_material_result_occurrences_are_exactly_addressable(ledger):
 
     assert "operator.material.source_recorded" in occurrences
     assert "act_occurrence_identity" in occurrences
-    assert "yield_relation_identity" in occurrences
+    assert "yield_relation_identity" not in occurrences
 
 
 def test_material_result_exact_material_is_inspectable(ledger):

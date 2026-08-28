@@ -452,7 +452,10 @@ def _result_subject_to_act_binding_coordinate(
 
     if ledger.integrity_of(event.identity) == CORRUPTED:
         return _NO_RESULT_COORDINATE
-    if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+    if event.kind in {
+        WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+    }:
         from seed_runtime.material_source import read_exact_material_result
 
         try:
@@ -2487,8 +2490,6 @@ def _advance_current_coordinates_with_operator_material_source_occurrence(
             event.material.get("act_occurrence_event_identity")
             != prior_through_event_occurrence_identity
             or prior_through_event_occurrence_identity not in acts
-            or type(event.material.get("yield_relation_identity"))
-            is not str
             or type(event.exact_material) is not bytes
             or event.identity in exact_results
         ):

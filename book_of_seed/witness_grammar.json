@@ -34,7 +34,6 @@
     "01.Source.G": {
       "subject": "operator_material_boundary",
       "exact_Act": "preserve_supplied_operator_material",
-      "Yield": "02.Acts.A.Yield",
       "Locality": "06.Locality.A.Locality",
       "result": "exact_operator_material_result"
     },

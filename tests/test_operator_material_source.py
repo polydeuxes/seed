@@ -37,7 +37,7 @@ from seed_runtime.operator_material_source import (
     record_operator_material_source_result,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 from tests.operator_material_source_test_witness import (
     record_operator_material_occurrence,
 )
@@ -78,7 +78,7 @@ def _boundary(exact=b"\x00\xffraw\n"):
     )
 
 
-def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
+def test_one_read_records_distinct_binding_act_and_exact_raw_result():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     binding = _binding(ledger, standing)
@@ -126,18 +126,12 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     }
     assert result.locality_identity == "source"
     assert "locality_relation" not in recorded
+    assert "yield_relation_identity" not in recorded
+    assert not tuple(
+        ledger.iter_locality_kind("source", RECORDED_YIELD_RELATION_EVENT)
+    )
     assert recorded["result_identity"] != result.identity
     assert read_exact_material_result(ledger, result.identity) == result
-    assert read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act_occurrence.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
     assert len(
         {
             binding.identity,
@@ -146,13 +140,12 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
             binding.material["result_identity"],
             act_occurrence.identity,
             result.identity,
-            result.material["yield_relation_identity"],
         }
-    ) == 7
+    ) == 6
 
     carried = advance_operator_current_coordinates(
         ledger,
-        (result.material["yield_relation_identity"], result.identity),
+        (result.identity,),
         locality_identity="source",
         prior=before_result,
     )
@@ -170,7 +163,7 @@ def test_one_read_records_distinct_binding_act_yield_and_exact_raw_result():
     assert "material_locality_relation_occurrences" not in replayed
 
 
-def test_empty_boundary_leaves_binding_and_act_without_result_or_yield():
+def test_empty_boundary_leaves_binding_and_act_without_result():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     binding = _binding(ledger, standing)
@@ -418,7 +411,7 @@ def test_equal_raw_results_keep_distinct_occurrences_and_boundaries():
     ]
 
 
-def test_one_source_act_cannot_yield_twice():
+def test_one_source_act_cannot_record_two_results():
     ledger = EventLedger()
     standing, standing_boundary = _context(ledger)
     act = _act(ledger, _binding(ledger, standing))
@@ -428,7 +421,7 @@ def test_one_source_act_cannot_yield_twice():
         boundary_material=_boundary(b"first"),
     )
 
-    with pytest.raises(OperatorMaterialSourceError, match="already carries a Yield"):
+    with pytest.raises(OperatorMaterialSourceError, match="already has a result"):
         record_operator_material_source_result(
             ledger,
             act_occurrence_event_identity=act.identity,
@@ -550,7 +543,6 @@ def test_result_refuses_a_changed_binding_result_identity():
         "current_coordinate_reference",
         "source_boundary",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     ),
 )
 def test_changed_result_coordinates_are_refused(coordinate):

@@ -238,6 +238,30 @@ No independent Recording Yield distinction survived this subtraction.
 The Witness material source then passed the first source-road falsifier. Its
 prior lifecycle recorded a Yield event containing the complete future material
 result and the same exact bytes before appending the actual result occurrence.
+
+The operator material source passed the source-road falsifier independently.
+Its subject-to-Act binding already fixes the exact operator boundary, Act,
+result identity, through-occurrence coordinates, and Locality. Its Act
+occurrence fixes that binding. Its result fixes the exact bytes, source
+boundary, source occurrence references, and source-specific result
+coordinates.
+
+Removing the separate Yield event preserved binding-to-Act-to-result order,
+one result per Act occurrence, mutation and substitution refusal, exact
+current-coordinate advancement and replay, and durable reopen. The common
+material-result reader now dispatches both operator and Witness results through
+their source-specific physiology; exact material no longer has a generic Yield
+condition.
+
+Both tested material source roads now establish:
+
+```text
+source subject-to-Act binding
+source Act occurrence
+exact material result occurrence
+```
+
+No independent Source Yield distinction survived either subtraction.
 The source now records:
 
 ```text

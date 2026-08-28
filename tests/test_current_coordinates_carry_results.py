@@ -257,7 +257,7 @@ def test_source_result_refusal_does_not_change_prior_current_coordinates():
         ),
     )
     malformed = deepcopy(result)
-    del malformed.material["yield_relation_identity"]
+    malformed.material["act_occurrence_event_identity"] = "unestablished"
     before = deepcopy(current_coordinates)
 
     with pytest.raises(ValueError, match="result is not exact"):

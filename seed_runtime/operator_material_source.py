@@ -7,13 +7,7 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_source import _append_yielded_exact_material_result_occurrence
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 
 
 OPERATOR_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
@@ -156,7 +150,6 @@ def _result_material(
     act_occurrence: Event,
     *,
     boundary_material: OperatorBoundaryMaterial,
-    recorded_result_event_identity: str,
 ) -> dict[str, Any]:
     material = act_occurrence.material
     if boundary_material.material_boundary != material.get("source_boundary"):
@@ -181,8 +174,7 @@ def _result_material(
 def _recorded_result_material(
     result_material: dict[str, Any],
     *,
-    act_occurrence_event_identity: str | None = None,
-    yield_relation_identity: str | None = None,
+    act_occurrence_event_identity: str,
 ) -> dict[str, Any]:
     recorded = {
         "result_identity": result_material["result_identity"],
@@ -198,14 +190,7 @@ def _recorded_result_material(
         "source_boundary": result_material["source_boundary"],
         "source_occurrence_references": [],
     }
-    if act_occurrence_event_identity is not None:
-        recorded["act_occurrence_event_identity"] = (
-            act_occurrence_event_identity
-        )
-    if yield_relation_identity is not None:
-        recorded["yield_relation_identity"] = (
-            yield_relation_identity
-        )
+    recorded["act_occurrence_event_identity"] = act_occurrence_event_identity
     return recorded
 
 
@@ -484,7 +469,7 @@ def record_operator_material_source_result(
     act_occurrence_event_identity: str,
     boundary_material: OperatorBoundaryMaterial,
 ) -> Event:
-    """Record one exact nonempty boundary result and its Yield."""
+    """Record one exact nonempty boundary result."""
 
     act_occurrence = get_operator_material_source_act_occurrence(
         ledger, act_occurrence_event_identity
@@ -515,61 +500,44 @@ def _record_operator_material_source_result(
         raise OperatorMaterialSourceError(
             "operator material source result crossed its exact source boundary"
         )
-    act_occurrence_identity = act_occurrence.material["act_occurrence_identity"]
-    for prior_yield in ledger.iter_locality_kind(
-        act_occurrence.locality_identity, RECORDED_YIELD_RELATION_EVENT
-    ):
-        if (
-            prior_yield.material.get("act_occurrence_event_identity")
-            == act_occurrence.identity
-            or prior_yield.material.get("dimensions", {}).get(
-                "act_occurrence_identity"
-            )
-            == act_occurrence_identity
-        ):
-            raise OperatorMaterialSourceError(
-                "operator material source Act already carries a Yield"
-            )
+    prior_results = tuple(
+        result
+        for result in ledger.iter_locality_kind(
+            act_occurrence.locality_identity,
+            OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        )
+        if result.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
+    if prior_results:
+        raise OperatorMaterialSourceError(
+            "operator material source Act already has a result"
+        )
     recorded_result_event_identity = ledger.allocate_event_identity()
     result_material = _result_material(
         act_occurrence,
         boundary_material=boundary_material,
-        recorded_result_event_identity=recorded_result_event_identity,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act_occurrence.locality_identity,
-        exact_act="Preserve one exact operator material boundary result",
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=OPERATOR_MATERIAL_SOURCE_RESULT_KIND,
-        result_identity=result_material["result_identity"],
-        result_content=result_material,
-        occurrence_boundary="operator_material_source",
-        result_exact_material=boundary_material.exact_bytes,
-    )
-    return _append_yielded_exact_material_result_occurrence(
-        ledger,
-        result_event=Event(
-            identity=recorded_result_event_identity,
-            kind=OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
-            material=_recorded_result_material(
-                result_material,
-                act_occurrence_event_identity=act_occurrence.identity,
-                yield_relation_identity=(
-                    yield_relation.identity
+    return ledger.append_many(
+        (
+            Event(
+                identity=recorded_result_event_identity,
+                kind=OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+                material=_recorded_result_material(
+                    result_material,
+                    act_occurrence_event_identity=act_occurrence.identity,
                 ),
+                exact_material=boundary_material.exact_bytes,
+                locality_identity=act_occurrence.locality_identity,
             ),
-            exact_material=boundary_material.exact_bytes,
-            locality_identity=act_occurrence.locality_identity,
-        ),
-    )
+        )
+    )[0]
 
 
 def _recorded_operator_material_source_reading(
     ledger: EventLedger, result_event_identity: str
 ) -> Event:
-    """Read one exact boundary result through its exact Act and Yield."""
+    """Read one exact boundary result through its exact binding and Act."""
 
     _require_identity(
         result_event_identity,
@@ -599,12 +567,10 @@ def _recorded_operator_material_source_reading(
     act_result_material = _result_material(
         act_occurrence,
         boundary_material=boundary,
-        recorded_result_event_identity=result.identity,
     )
     exact_recorded_material = _recorded_result_material(
         act_result_material,
         act_occurrence_event_identity=act_occurrence.identity,
-        yield_relation_identity=result.material.get("yield_relation_identity"),
     )
     if (
         result.locality_identity != act_occurrence.locality_identity
@@ -613,15 +579,43 @@ def _recorded_operator_material_source_reading(
         raise OperatorMaterialSourceError(
             "operator material source result coordinates are not exact"
         )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act_occurrence.identity,
-    )
-    if not all(requirements.values()):
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (
+                act_occurrence.material["subject_to_act_binding_reference"][
+                    "recorded_occurrence_identity"
+                ],
+                act_occurrence.identity,
+                result.identity,
+            ),
+            locality_identity=result.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
         raise OperatorMaterialSourceError(
-            "operator material source carries no exact Yield relation"
+            "operator material source result carries no intact Act"
+        ) from error
+    if [occurrence.identity for occurrence in ordered] != [
+        act_occurrence.material["subject_to_act_binding_reference"][
+            "recorded_occurrence_identity"
+        ],
+        act_occurrence.identity,
+        result.identity,
+    ]:
+        raise OperatorMaterialSourceError(
+            "operator material source result carries no intact Act"
+        )
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            result.locality_identity,
+            OPERATOR_MATERIAL_SOURCE_RECORDED_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
+    if len(results) != 1 or results[0].identity != result.identity:
+        raise OperatorMaterialSourceError(
+            "operator material source Act has no single exact result"
         )
     return result
 
