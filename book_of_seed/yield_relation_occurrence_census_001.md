@@ -215,12 +215,33 @@ The material source that is the subject of this Measurement still retains its
 own independently untested Yield coordinates. Their presence does not establish
 Yield for this later Measurement Act.
 
+The exact through-occurrence boundary reference recording then passed the same
+falsifier. Its prior lifecycle was:
+
+```text
+recording subject-to-Act binding
+recording Act occurrence
+Yield event containing the future result coordinates
+recording result occurrence
+```
+
+The recording result already directly addresses its exact Act occurrence,
+binding, addressed occurrence, through-occurrence boundary, and Locality. After
+the separate Yield event and `yield_relation_identity` were removed, the reader
+still requires Act-before-result order, refuses another result for the same Act,
+survives durable restart between Act and result, and remains exact in current
+coordinates. The source material's own Yield event remains and does not become
+the recording Act's Yield.
+
+No independent Recording Yield distinction survived this subtraction.
+
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, and two declared Measurement roads. Each
-removed event occurred before its result subject and added only a copied result
-dictionary plus another identity.
+non-Locality Applicability road, two declared Measurement roads, and the exact
+through-occurrence boundary reference recording road. Each removed event
+occurred before its result subject and added only a copied result dictionary
+plus another identity.
 
 This does not withdraw Yield as a relation or from every Act road.
 Applicability and shared-position Measurement establish that an Act result

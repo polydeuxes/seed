@@ -171,7 +171,6 @@
       "subject": "exact_addressed_occurrence_and_its_exact_through_occurrence_boundary",
       "exact_Act": "recording",
       "current_coordinates": "exact_addressed_occurrence",
-      "Yield": "02.Acts.A.Yield",
       "result": "one_reference",
       "coordinates": [
         "addressed_occurrence",

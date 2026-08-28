@@ -688,10 +688,7 @@ def run_persistent_operator_console(
                 current_coordinates = _advance_over(
                     ledger,
                     current_coordinates,
-                    (
-                        checkpoint.material["yield_relation_identity"],
-                        checkpoint.identity,
-                    ),
+                    (checkpoint.identity,),
                     locality_identity=locality_identity,
                 )
                 continue

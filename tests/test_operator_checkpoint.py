@@ -28,7 +28,7 @@ from seed_runtime.operator_current_coordinates import (
     advance_operator_current_coordinates,
     read_operator_current_coordinates,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 def _command(locality_identity: str, boundary_identity: str) -> AddressedOperatorCommand:
@@ -116,22 +116,18 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
             binding.material["result_identity"],
             act.identity,
             result.identity,
-            result.material["yield_relation_identity"],
         }
-    ) == 7
-    assert read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=result.material["yield_relation_identity"],
-        act_occurrence_event_identity=act.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
+    ) == 6
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            "source", RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("act_occurrence_event_identity") == act.identity
+    )
     carried = advance_operator_current_coordinates(
         ledger,
-        (result.material["yield_relation_identity"], result.identity),
+        (result.identity,),
         locality_identity="source",
         prior=before_result,
     )
@@ -214,14 +210,14 @@ def test_act_requires_the_exact_carried_binding():
         )
 
 
-def test_one_recording_act_cannot_yield_twice():
+def test_one_recording_act_cannot_have_two_results():
     ledger = EventLedger()
     standing, _boundary, command = _context(ledger)
     act = _act(ledger, _binding(ledger, standing, command))
     record_through_occurrence_boundary_reference_result(
         ledger, act_occurrence_event_identity=act.identity
     )
-    with pytest.raises(OperatorCheckpointError, match="already carries a Yield"):
+    with pytest.raises(OperatorCheckpointError, match="already has a result"):
         record_through_occurrence_boundary_reference_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -299,7 +295,6 @@ def test_durable_values_do_not_import_operator_shorthand():
             if event.identity in {
                 result.identity,
                 result.material["act_occurrence_identity"],
-                result.material["yield_relation_identity"],
             }
             or "through_occurrence_boundary_reference" in event.kind
         ]

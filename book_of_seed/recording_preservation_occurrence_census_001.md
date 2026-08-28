@@ -23,13 +23,13 @@ exact addressed occurrence
 + exact Locality
 → subject-to-Act binding
 → recording Act occurrence
-→ Yield relation occurrence
 → result occurrence
 ```
 
 The result preserves the addressed occurrence, boundary reference, Act
-occurrence, Locality, and Yield. Readers traverse those exact events and refuse
-missing, changed, corrupted, foreign-Locality, or repeated coordinates.
+occurrence, and Locality. Readers traverse those exact events and refuse
+missing, changed, corrupted, foreign-Locality, or repeated coordinates. The
+Act and result remain in exact occurrence order, and one Act has one result.
 
 `05.Recording.D` therefore remains active.
 
@@ -53,10 +53,11 @@ No runtime event kind is mapped to `05.Recording.E`. No generic recording Act,
 generic record occurrence, or generic recording boundary is independently
 addressed by live physiology.
 
-The exact checkpoint recording road does have Yield, but its subject, binding,
-Act, result, and boundary are already stated by `05.Recording.D`. The broader
-`05.Recording.E` clause adds no independently occurring coordinate to that
-road and has no second live specimen.
+The exact checkpoint recording road's former separate Yield event copied its
+future result coordinates and failed independent subtraction. Its subject,
+binding, Act, result, and boundary remain stated by `05.Recording.D`. The
+broader `05.Recording.E` clause adds no independently occurring coordinate to
+that road and has no second live specimen.
 
 ## Result
 
@@ -67,7 +68,8 @@ road and has no second live specimen.
 ```
 
 `05.Recording.C` and `05.Recording.E` are withdrawn from active Book grammar.
-No Measurement, checkpoint, result, source coordinate, Locality, or exact Yield
-event is removed. Preservation remains ordinary language for exact coordinates
-that remain present; this census establishes no generic Preservation object or
-occurrence.
+No Measurement, checkpoint, result, source coordinate, or Locality is removed.
+The checkpoint recording Yield event was separately tested and found to add no
+independent distinction. Preservation remains ordinary language for exact
+coordinates that remain present; this census establishes no generic
+Preservation object or occurrence.
