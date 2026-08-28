@@ -35,9 +35,7 @@ def test_equal_material_has_one_physical_reference_and_distinct_occurrences(tmp_
     first = _acquire(ledger, first_material, 0)
     second = _acquire(ledger, second_material, 1)
     exact_occurrences = (
-        ledger.get(first.material["yield_relation_identity"]),
         ledger.get(first.identity),
-        ledger.get(second.material["yield_relation_identity"]),
         ledger.get(second.identity),
     )
     references = tuple(
@@ -45,8 +43,8 @@ def test_equal_material_has_one_physical_reference_and_distinct_occurrences(tmp_
         for occurrence in exact_occurrences
     )
 
-    assert len({occurrence.identity for occurrence in exact_occurrences}) == 4
-    assert Counter(references) == {references[0]: 4}
+    assert len({occurrence.identity for occurrence in exact_occurrences}) == 2
+    assert Counter(references) == {references[0]: 2}
     assert ledger._read_exact_material_reference(references[0]) == b"tatatata"
     assert all(occurrence.exact_material == b"tatatata" for occurrence in exact_occurrences)
     assert all(not hasattr(occurrence, "exact_material_identity") for occurrence in exact_occurrences)
@@ -61,7 +59,7 @@ def test_equal_material_has_one_physical_reference_and_distinct_occurrences(tmp_
         assert Counter(
             reopened._exact_material_reference(occurrence.identity)
             for occurrence in exact_occurrences
-        ) == {references[0]: 4}
+        ) == {references[0]: 2}
         assert reopened._read_exact_material_reference(references[0]) == b"tatatata"
     finally:
         reopened.close()

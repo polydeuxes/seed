@@ -32,7 +32,6 @@ def _source(identity: str, exact: bytes, *, locality: str = "pair-locality"):
         locality_identity=locality,
         act_occurrence_identity=f"{identity}-act",
         result_identity=f"{identity}-result",
-        yield_relation_identity=f"{identity}-yield",
         exact_material=exact,
     )
 

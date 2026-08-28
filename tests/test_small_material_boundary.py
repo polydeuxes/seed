@@ -66,7 +66,6 @@ def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatc
             locality_identity="one-reading-locality",
             act_occurrence_identity=f"one-reading-act-{position}",
             result_identity=f"one-reading-result-{position}",
-            yield_relation_identity=f"one-reading-yield-{position}",
             exact_material=bytes((position,)),
         )
         for position in range(8)

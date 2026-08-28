@@ -73,7 +73,6 @@ class UnboundPositionCoordinateMeasurementMaterialResultReading(NamedTuple):
     bounded_locality_replay_through_event_occurrence_identity: str
     bounded_locality_replay_append_boundary_identity: str
     act_occurrence_identity: str
-    yield_relation_identity: str
     source_boundary: str
     exact_material: bytes
     source_occurrence_references: tuple[str, ...]
@@ -293,16 +292,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
             raise ValueError(
                 "bounded Locality replay contains an absent material result"
             )
-        if not all(
-            type(source.material.get(key)) is str and source.material[key]
-            for key in (
-                "act_occurrence_identity",
-                "yield_relation_identity",
-            )
-        ):
-            # Preserved legacy material lacks the exact source Act/Yield
-            # coordinates required by this binding subject.
-            continue
         source = read_exact_material_result(ledger, source_identity)
         material = source.material
         exact_coordinates = {
@@ -310,7 +299,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
             for key in (
                 "result_identity",
                 "act_occurrence_identity",
-                "yield_relation_identity",
                 "source_boundary",
             )
         }
@@ -335,9 +323,6 @@ def _unbound_position_coordinate_measurement_material_results_from_bounded_local
                 ),
                 act_occurrence_identity=exact_coordinates[
                     "act_occurrence_identity"
-                ],
-                yield_relation_identity=exact_coordinates[
-                    "yield_relation_identity"
                 ],
                 source_boundary=exact_coordinates["source_boundary"],
                 exact_material=exact_material_result_bytes(source),

@@ -6,14 +6,7 @@ from copy import deepcopy
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
-from seed_runtime.material_source import (
-    MaterialSourceError,
-    _append_exact_material_result_occurrence,
-)
+from seed_runtime.material_source import MaterialSourceError
 
 
 WITNESS_MATERIAL_SOURCE_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
@@ -219,38 +212,20 @@ def record_witness_material_source(
         },
         locality_identity=locality_identity,
     )
-    material: dict[str, object] = {**result}
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=locality_identity,
-        exact_act=WITNESS_MATERIAL_SOURCE_ACT,
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind="exact material",
-        result_identity=result_identity,
-        result_content=result,
-        occurrence_boundary="witness_material_source",
-        coordinates_of_recorded_result={key: (key,) for key in result},
-        result_exact_material=exact_bytes,
-    )
-    return _append_exact_material_result_occurrence(
-        ledger,
-        result_event=Event(
-            identity=recorded_result_event_identity,
-            kind=WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
-            material={
-                **material,
-                "act_occurrence_event_identity": (
-                    act_occurrence.identity
-                ),
-                "yield_relation_identity": (
-                    yield_relation.identity
-                ),
-            },
-            exact_material=exact_bytes,
-            locality_identity=locality_identity,
-        ),
-    )
+    return ledger.append_many(
+        (
+            Event(
+                identity=recorded_result_event_identity,
+                kind=WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+                material={
+                    **result,
+                    "act_occurrence_event_identity": act_occurrence.identity,
+                },
+                exact_material=exact_bytes,
+                locality_identity=locality_identity,
+            ),
+        )
+    )[0]
 
 
 def _read_witness_material_source_result(
@@ -265,7 +240,6 @@ def _read_witness_material_source_result(
     act_occurrence_event_identity = material.get("act_occurrence_event_identity")
     source_boundary = material.get("source_boundary")
     binding_reference = material.get("subject_to_act_binding_reference")
-    yield_identity = material.get("yield_relation_identity")
     boundary_outcomes = {
         name: material[name]
         for name in (
@@ -355,7 +329,6 @@ def _read_witness_material_source_result(
     expected_material = {
         **result,
         "act_occurrence_event_identity": act_occurrence.identity,
-        "yield_relation_identity": yield_identity,
     }
     if (
         act_occurrence.material != expected_act_occurrence
@@ -377,28 +350,33 @@ def _read_witness_material_source_result(
             (
                 binding.identity,
                 act_occurrence.identity,
-                yield_identity,
                 event.identity,
             ),
             locality_identity=event.locality_identity,
         )
-        requirements = read_requirements_of_yield_relation(
-            ledger,
-            recorded_result_event_identity=event.identity,
-            yield_relation_event_identity=yield_identity,
-            act_occurrence_event_identity=act_occurrence.identity,
-        )
     except (TypeError, ValueError) as error:
         raise MaterialSourceError(
-            "Witness material result carries no intact Act and Yield"
+            "Witness material result carries no intact Act"
         ) from error
     if [occurrence.identity for occurrence in ordered] != [
         binding.identity,
         act_occurrence.identity,
-        yield_identity,
         event.identity,
-    ] or not all(requirements.values()):
+    ]:
         raise MaterialSourceError(
-            "Witness material result carries no intact Act and Yield"
+            "Witness material result carries no intact Act"
+        )
+    results = tuple(
+        result
+        for result in ledger.iter_locality_kind(
+            event.locality_identity,
+            WITNESS_MATERIAL_SOURCE_RECORDED_KIND,
+        )
+        if result.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
+    if len(results) != 1 or results[0].identity != event.identity:
+        raise MaterialSourceError(
+            "Witness material source Act has no single exact result"
         )
     return event

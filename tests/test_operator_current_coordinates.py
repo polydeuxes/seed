@@ -424,7 +424,7 @@ def test_current_coordinates_carry_only_exact_yielded_result_identities():
     )
 
 
-def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield():
+def test_locality_standing_refuses_raw_result_with_substituted_act():
     ledger = EventLedger()
     source = record_witness_material_source(
         ledger,
@@ -438,8 +438,8 @@ def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield(
         exact_bytes=b"other result",
         source_boundary="test boundary",
     )
-    source.material["yield_relation_identity"] = other.material[
-        "yield_relation_identity"
+    source.material["act_occurrence_event_identity"] = other.material[
+        "act_occurrence_event_identity"
     ]
 
     with pytest.raises(MaterialSourceError):
@@ -472,9 +472,9 @@ def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
 
 @pytest.mark.parametrize(
     "required_occurrence_coordinate",
-    ("act_occurrence_event_identity", "yield_relation_identity"),
+    ("act_occurrence_event_identity",),
 )
-def test_locality_standing_refuses_corrupted_raw_yield_relation(
+def test_locality_standing_refuses_corrupted_raw_source_act(
     monkeypatch, required_occurrence_coordinate
 ):
     ledger = EventLedger()

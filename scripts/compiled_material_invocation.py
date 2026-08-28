@@ -12,7 +12,6 @@ import time
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_source import read_exact_material_result
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
 
 from material_admission import (
     AdmissionOccurrence,
@@ -71,7 +70,6 @@ class MaterialAcquisitionResultReference:
     locality_identity: str
     act_occurrence_identity: str
     result_identity: str
-    yield_relation_identity: str
     exact_material: bytes
 
     def __post_init__(self) -> None:
@@ -80,7 +78,6 @@ class MaterialAcquisitionResultReference:
             self.locality_identity,
             self.act_occurrence_identity,
             self.result_identity,
-            self.yield_relation_identity,
         )
         if any(
             type(coordinate) is not str or not coordinate
@@ -861,22 +858,11 @@ def material_acquisition_result_reference(
             "material acquisition result reference requires one exact "
             "material-acquisition occurrence"
         ) from error
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=event.material.get("yield_relation_identity"),
-        act_occurrence_event_identity=event.material.get(
-            "act_occurrence_event_identity"
-        ),
-    )
-    if not all(requirements.values()):
-        raise ValueError("material acquisition result reference requires its exact Yield relation")
     return MaterialAcquisitionResultReference(
         recorded_occurrence_identity=event.identity,
         locality_identity=event.locality_identity,
         act_occurrence_identity=event.material["act_occurrence_identity"],
         result_identity=event.material["result_identity"],
-        yield_relation_identity=event.material["yield_relation_identity"],
         exact_material=event.exact_material,
     )
 

@@ -51,9 +51,6 @@ from seed_runtime.supplied_invocation_material import (
 from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences import (
     BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
 )
-from seed_runtime.yield_relation import read_requirements_of_yield_relation
-
-
 def _supplied(
     *, output=b"\x00\xffout", error=b"same", end=b""
 ) -> tuple[SuppliedWitnessMaterialOccurrence, ...]:
@@ -760,7 +757,7 @@ def test_supplied_occurrence_requires_exact_types():
         )
 
 
-def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
+def test_supplied_result_cannot_borrow_another_source_act():
     ledger = EventLedger()
     command = _command(ledger)
     relation = _operator_invocation_relation(ledger, command)
@@ -774,39 +771,13 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
         for supplied in _supplied()
     )
 
-    exact = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=output.identity,
-        yield_relation_event_identity=output.material["yield_relation_identity"],
-        act_occurrence_event_identity=output.material[
-            "act_occurrence_event_identity"
-        ],
-    )
-    substituted = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=output.identity,
-        yield_relation_event_identity=error.material["yield_relation_identity"],
-        act_occurrence_event_identity=output.material[
-            "act_occurrence_event_identity"
-        ],
-    )
-
-    assert all(exact.values())
-    assert not all(substituted.values())
-
-    another_command = _command(ledger, exact=b"!cat other\n")
-    output.material["source_occurrence_references"] = [
-        another_command.identity
+    assert read_exact_material_result(ledger, output.identity) == output
+    output.material["act_occurrence_event_identity"] = error.material[
+        "act_occurrence_event_identity"
     ]
-    different_command = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=output.identity,
-        yield_relation_event_identity=output.material["yield_relation_identity"],
-        act_occurrence_event_identity=output.material[
-            "act_occurrence_event_identity"
-        ],
-    )
-    assert not all(different_command.values())
+
+    with pytest.raises(ValueError, match="absent or corrupted"):
+        read_exact_material_result(ledger, output.identity)
 
 
 def test_supplied_result_refuses_missing_different_or_corrupted_command():

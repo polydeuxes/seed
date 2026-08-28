@@ -1,4 +1,4 @@
-"""Exact yielded material results across source-specific roads."""
+"""Exact material results across source-specific roads."""
 
 from __future__ import annotations
 
@@ -10,10 +10,10 @@ from seed_runtime.yield_relation import (
 
 
 class MaterialSourceError(ValueError):
-    """One exact yielded material result is not intact."""
+    """One exact material result is not intact."""
 
 
-def _append_exact_material_result_occurrence(
+def _append_yielded_exact_material_result_occurrence(
     ledger: EventLedger,
     *,
     result_event: Event,

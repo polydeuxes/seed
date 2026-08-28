@@ -21,10 +21,9 @@ in another exact subject-to-Act binding.
 ### 01.Source.H — Supplied material source boundary
 
 One exact source boundary is the exact subject bound to one exact Act to
-preserve the supplied material. One exact Yield relation is from the Act
-occurrence as first subject to one exact material result as second subject. The result
-preserves its source boundary, source occurrence references, Locality, and the
-exact coordinates established within that boundary.
+preserve the supplied material. The exact material result preserves its source
+boundary, source occurrence references, Locality, and the exact coordinates
+established within that boundary.
 
 ### 01.Source.I — Separate source coordinates
 

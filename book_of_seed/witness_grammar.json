@@ -41,7 +41,6 @@
     "01.Source.H": {
       "subject": "supplied_material",
       "exact_Act": "preserve_supplied_material",
-      "Yield": "02.Acts.A.Yield",
       "result": "exact_material_result",
       "coordinates": [
         "source_boundary",

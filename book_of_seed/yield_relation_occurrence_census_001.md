@@ -235,13 +235,38 @@ the recording Act's Yield.
 
 No independent Recording Yield distinction survived this subtraction.
 
+The Witness material source then passed the first source-road falsifier. Its
+prior lifecycle recorded a Yield event containing the complete future material
+result and the same exact bytes before appending the actual result occurrence.
+The source now records:
+
+```text
+source subject-to-Act binding
+source Act occurrence
+exact material result occurrence
+```
+
+The exact material result directly preserves the source boundary, source
+occurrence references, boundary outcomes, read occurrences, Locality, and exact
+bytes. Its reader still traverses the exact binding and Act, requires
+binding-before-Act-before-result order, refuses another result for the same Act,
+survives durable reopen, and refuses changed, added, corrupt, substituted, or
+foreign-Locality coordinates.
+
+The common material-result reader now dispatches to this exact Witness source
+physiology without imposing Yield on every material source. The operator source
+retains its independently untested Yield event and its Yield-specific append
+validation.
+
+No independent Witness source Yield distinction survived this subtraction.
+
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
 non-Locality Applicability road, two declared Measurement roads, and the exact
-through-occurrence boundary reference recording road. Each removed event
-occurred before its result subject and added only a copied result dictionary
-plus another identity.
+through-occurrence boundary reference recording road, and the Witness material
+source road. Each removed event occurred before its result subject and added
+only a copied result dictionary plus another identity.
 
 This does not withdraw Yield as a relation or from every Act road.
 Applicability and shared-position Measurement establish that an Act result

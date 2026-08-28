@@ -444,16 +444,22 @@ def _result_subject_to_act_binding_coordinate(
 ) -> dict[str, Any] | object:
     """Return one exact A.1 subject-to-Act binding, or its absence.
 
-    Whether a result carries exact bytes or structured coordinates does not
-    determine its subject-to-Act binding. Any intact result with an exact Yield
-    and an exact recorded binding carries that binding beside the result. A
-    yielded result without a recorded binding is not a positive A.1 coordinate.
-    An incomplete recorded reference is refused.
+    Whether a result contains exact bytes or structured coordinates does not
+    determine its subject-to-Act binding. One exact source-specific result read
+    or exact Yield physiology establishes the result before its recorded
+    binding is resolved. An incomplete recorded reference is refused.
     """
 
     if ledger.integrity_of(event.identity) == CORRUPTED:
         return _NO_RESULT_COORDINATE
-    if event.kind in {
+    if event.kind == WITNESS_MATERIAL_SOURCE_RECORDED_KIND:
+        from seed_runtime.material_source import read_exact_material_result
+
+        try:
+            read_exact_material_result(ledger, event.identity)
+        except (TypeError, ValueError):
+            return _NO_RESULT_COORDINATE
+    elif event.kind in {
         LOCALITY_CONTINUATION_RECORDED_KIND,
         RECORDED_BOUNDARY_LOCALITY_RECORDED_KIND,
         OPERATOR_DESTINATION_LOCALITY_RECORDED_KIND,
@@ -492,7 +498,7 @@ def _result_subject_to_act_binding_coordinate(
 def _subject_to_act_binding_of_exact_result(
     ledger: EventLedger, event
 ) -> dict[str, Any] | None:
-    """Read the exact subject-to-Act binding carried by one yielded result.
+    """Read the exact subject-to-Act binding of one exact result.
 
     The Act occurrence carries the binding, its subject, and the Book clause.
     This read composes none of those coordinates. ``None`` reports that no

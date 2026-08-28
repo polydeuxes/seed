@@ -7,7 +7,7 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.material_source import _append_exact_material_result_occurrence
+from seed_runtime.material_source import _append_yielded_exact_material_result_occurrence
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.yield_relation import (
     RECORDED_YIELD_RELATION_EVENT,
@@ -548,7 +548,7 @@ def _record_operator_material_source_result(
         occurrence_boundary="operator_material_source",
         result_exact_material=boundary_material.exact_bytes,
     )
-    return _append_exact_material_result_occurrence(
+    return _append_yielded_exact_material_result_occurrence(
         ledger,
         result_event=Event(
             identity=recorded_result_event_identity,
