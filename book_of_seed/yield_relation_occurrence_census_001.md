@@ -198,6 +198,15 @@ governance of Compare, durable reread, and mutation, substitution, corruption,
 and repeated-result refusal. This road is reached by the new exact material
 road.
 
+Addressed-byte Determination Applicability then passed independently. Its exact
+positive result still addresses the complete Determination binding and its
+Applicability Act occurrence. Removing the separate copied event preserved the
+direct pair-position result, addressed source-byte coordinate, Act-before-
+result order, one result for the Act, current-coordinate progression,
+positive-result governance of Determination, durable reread, and mutation,
+substitution, corruption, changed-coordinate, and repeated-result refusal. This
+road is reached by the new exact material road.
+
 ## Measurement control
 
 Shared-position Measurement passed the independent event subtraction. Its
@@ -407,7 +416,7 @@ possible relation.
 
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls, five
+A separate Yield occurrence failed all three internal Locality controls, six
 non-Locality Applicability roads, six declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the

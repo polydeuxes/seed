@@ -7,9 +7,7 @@ import pytest
 import seed_runtime.addressed_byte_occurrence_reference_determination as determination_module
 import seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences as direct_position_module
 from seed_runtime.addressed_byte_occurrence_reference_determination import (
-    APPLICABILITY_BOUNDARY,
     APPLICABILITY_RESULT_KIND,
-    APPLICABILITY_YIELD_RESULT_KIND,
     DETERMINATION_BOUNDARY,
     DETERMINATION_RESULT_KIND,
     DETERMINATION_YIELD_RESULT_KIND,
@@ -368,26 +366,30 @@ def test_each_recorded_occurrence_refuses_its_corruption(
         reader(ledger, event.identity)
 
 
-@pytest.mark.parametrize(
-    ("boundary", "result_kind"),
-    (
-        ("changed-boundary", APPLICABILITY_YIELD_RESULT_KIND),
-        (APPLICABILITY_BOUNDARY, "changed result kind"),
-    ),
-)
-def test_applicability_refuses_wrong_yield_kind_or_boundary(boundary, result_kind):
+def test_applicability_result_has_no_yield_and_refuses_repetition():
     ledger = EventLedger()
     recorded = _record(ledger)
-    yield_relation = ledger.get(
-        recorded["applicability"].material["yield_relation_identity"]
+    applicability = recorded["applicability"]
+
+    assert "yield_relation_identity" not in applicability.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            applicability.locality_identity,
+            determination_module.RECORDED_YIELD_RELATION_EVENT,
+        )
+        if event.material.get("occurrence_boundary")
+        == "addressed_byte_occurrence_reference_determination_applicability"
     )
-    yield_relation.material["occurrence_boundary"] = boundary
-    yield_relation.material["result_kind"] = result_kind
     with pytest.raises(
-        AddressedByteOccurrenceReferenceDeterminationError, match="exact Yield"
+        AddressedByteOccurrenceReferenceDeterminationError,
+        match="result is already recorded",
     ):
-        get_recorded_addressed_byte_occurrence_reference_determination_applicability(
-            ledger, recorded["applicability"].identity
+        record_addressed_byte_occurrence_reference_determination_applicability_result(
+            ledger,
+            applicability_act_occurrence_event_identity=recorded[
+                "applicability_act"
+            ].identity,
         )
 
 
@@ -414,13 +416,13 @@ def test_determination_refuses_wrong_yield_kind_or_boundary(boundary, result_kin
         )
 
 
-def test_one_act_cannot_append_a_second_yield_or_result():
+def test_one_act_refuses_a_second_yield_or_result():
     ledger = EventLedger()
     recorded = _record(ledger)
     before = len(ledger.list())
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="already carries",
+        match="already recorded",
     ):
         record_addressed_byte_occurrence_reference_determination_result(
             ledger,
@@ -719,7 +721,7 @@ def test_result_refuses_unrelated_append_during_duplicate_iterator_without_yield
 
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="current append boundary",
+        match="different append boundaries",
     ):
         record_addressed_byte_occurrence_reference_determination_applicability_result(
             ledger, applicability_act_occurrence_event_identity=act.identity
@@ -785,7 +787,7 @@ def test_determination_result_refuses_iterator_append_without_yield():
 
     with pytest.raises(
         AddressedByteOccurrenceReferenceDeterminationError,
-        match="current append boundary",
+        match="different append boundaries",
     ):
         record_addressed_byte_occurrence_reference_determination_result(
             ledger, determination_act_occurrence_event_identity=act.identity

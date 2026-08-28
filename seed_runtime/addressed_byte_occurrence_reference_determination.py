@@ -57,16 +57,10 @@ DETERMINATION_ACT = (
     "declared Measurement of exact pair-occurrence result-position "
     "references with one addressed source-byte position-coordinate reference"
 )
-APPLICABILITY_YIELD_RESULT_KIND = (
-    "addressed byte occurrence reference determination Applicability result"
-)
 DETERMINATION_YIELD_RESULT_KIND = (
     "result of declared Measurement of exact pair-occurrence result-position "
     "references with one addressed source-byte position-coordinate "
     "reference"
-)
-APPLICABILITY_BOUNDARY = (
-    "addressed_byte_occurrence_reference_determination_applicability"
 )
 DETERMINATION_BOUNDARY = "addressed_byte_occurrence_reference_determination"
 
@@ -137,9 +131,6 @@ def _applicability_result_reference(event: Event) -> dict[str, str]:
         ],
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
-        ],
-        "yield_relation_identity": event.material[
-            "yield_relation_identity"
         ],
     }
 
@@ -951,7 +942,7 @@ def _refuse_existing_result(
             == occurrence_identity
         ):
             raise AddressedByteOccurrenceReferenceDeterminationError(
-                "determination Act already carries a Yield"
+                "a Yield is already recorded for determination Act"
             )
     for event in ledger.iter_locality_kind(act.locality_identity, result_kind):
         if (
@@ -959,11 +950,11 @@ def _refuse_existing_result(
             or event.material.get(occurrence_coordinate) == occurrence_identity
         ):
             raise AddressedByteOccurrenceReferenceDeterminationError(
-                "determination Act already carries a result"
+                "a result is already recorded for determination Act"
             )
 
 
-def _prepare_result_yield(
+def _prepare_result(
     ledger: EventLedger,
     *,
     act: Event,
@@ -978,7 +969,7 @@ def _prepare_result_yield(
     )
     if ledger.append_boundary_through_occurrence(act.identity) != ledger.append_boundary():
         raise AddressedByteOccurrenceReferenceDeterminationError(
-            "determination result requires its exact Act at the current append boundary"
+            "determination result and exact Act have different append boundaries"
         )
 
 
@@ -993,32 +984,6 @@ def _require_yield_at_append_tip(ledger: EventLedger, yield_relation: Event) -> 
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination result requires exact Yield relation at the current append boundary"
         )
-
-
-def _record_applicability_yield_relation(
-    ledger: EventLedger,
-    *,
-    act: Event,
-    material: dict[str, Any],
-) -> Event:
-    return _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=APPLICABILITY_ACT,
-        act_occurrence_identity=act.material[
-            "applicability_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act.identity,
-        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
-        result_identity=material["result_identity"],
-        result_content=material,
-        occurrence_boundary=(
-            "addressed_byte_occurrence_reference_determination_applicability"
-        ),
-        yielding_act_occurrence_coordinate=(
-            "applicability_act_occurrence_identity"
-        ),
-    )
 
 
 def _record_determination_yield_relation(
@@ -1046,7 +1011,7 @@ def _record_determination_yield_relation(
 
 
 def _recorded_applicability_result_material(
-    material: dict[str, Any], *, act: Event, yield_relation: Event
+    material: dict[str, Any], *, act: Event
 ) -> dict[str, Any]:
     return {
         "result_identity": material["result_identity"],
@@ -1070,7 +1035,6 @@ def _recorded_applicability_result_material(
         ),
         "applicability_finding": deepcopy(material["applicability_finding"]),
         "act_occurrence_event_identity": act.identity,
-        "yield_relation_identity": yield_relation.identity,
     }
 
 
@@ -1098,7 +1062,7 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     applicability_binding_material = deepcopy(applicability_binding.material)
     determination_binding_material = deepcopy(determination_binding.material)
     source_material = deepcopy(source_result.material)
-    _prepare_result_yield(
+    _prepare_result(
         ledger,
         act=act,
         occurrence_coordinate="applicability_act_occurrence_identity",
@@ -1119,28 +1083,28 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
             act_read,
             APPLICABILITY_ACT_OCCURRENCE_EVENT,
             act_material,
-            "Applicability Yield requires an intact exact Act",
+            "Applicability result is not exact: Act is not intact",
         ),
         (
             applicability_binding,
             applicability_binding_read,
             APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             applicability_binding_material,
-            "Applicability Yield requires an intact exact Applicability binding",
+            "Applicability result is not exact: binding is not intact",
         ),
         (
             determination_binding,
             determination_binding_read,
             DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
             determination_binding_material,
-            "Applicability Yield requires an intact exact determination binding",
+            "Applicability result is not exact: determination binding is not intact",
         ),
         (
             source_result,
             source_read,
             BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
             source_material,
-            "Applicability Yield requires an intact exact source",
+            "Applicability result is not exact: source is not intact",
         ),
     ):
         _require_intact_recorded_occurrence(
@@ -1155,73 +1119,9 @@ def record_addressed_byte_occurrence_reference_determination_applicability_resul
     _require_stage_at_append_tip(
         ledger, event=act, message="Applicability Act left the current append boundary"
     )
-    yield_relation = _record_applicability_yield_relation(
-        ledger,
-        act=act,
-        material=material,
-    )
-    (
-        act_read,
-        applicability_binding_read,
-        determination_binding_read,
-        source_read,
-        _references_read,
-    ) = (
-        _read_applicability_act(ledger, act.identity)
-    )
-    if (
-        act_read,
-        applicability_binding_read,
-        determination_binding_read,
-        source_read,
-    ) != (
-        act,
-        applicability_binding,
-        determination_binding,
-        source_result,
-    ):
-        raise AddressedByteOccurrenceReferenceDeterminationError(
-            "Applicability result requires an intact exact stage"
-        )
-    for recorded, kind, material_read, message in (
-        (
-            act,
-            APPLICABILITY_ACT_OCCURRENCE_EVENT,
-            act_material,
-            "Applicability result requires an intact exact Act",
-        ),
-        (
-            applicability_binding,
-            APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            applicability_binding_material,
-            "Applicability result requires an intact exact Applicability binding",
-        ),
-        (
-            determination_binding,
-            DETERMINATION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
-            determination_binding_material,
-            "Applicability result requires an intact exact determination binding",
-        ),
-        (
-            source_result,
-            BYTE_PAIR_OCCURRENCE_POSITION_RESULT_KIND,
-            source_material,
-            "Applicability result requires an intact exact source",
-        ),
-    ):
-        _require_intact_recorded_occurrence(
-            ledger,
-            event=recorded,
-            kind=kind,
-            material=material_read,
-            message=message,
-        )
-    _require_yield_at_append_tip(ledger, yield_relation)
     return ledger.append(
         APPLICABILITY_RESULT_KIND,
-        _recorded_applicability_result_material(
-            material, act=act, yield_relation=yield_relation
-        ),
+        _recorded_applicability_result_material(material, act=act),
         locality_identity=act.locality_identity,
     )
 
@@ -1321,22 +1221,35 @@ def _read_applicability_result(
             source_result=source_result,
         ),
         "act_occurrence_event_identity": act.identity,
-        "yield_relation_identity": event.material.get(
-            "yield_relation_identity"
-        ),
     }
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise AddressedByteOccurrenceReferenceDeterminationError(
             "determination Applicability result coordinates are not exact"
         )
-    _require_yield(
-        ledger,
-        event=event,
-        act=act,
-        occurrence_coordinate="applicability_act_occurrence_identity",
-        occurrence_boundary=APPLICABILITY_BOUNDARY,
-        result_kind=APPLICABILITY_YIELD_RESULT_KIND,
+    results = tuple(
+        result
+        for result in ledger.iter_locality_kind(
+            act.locality_identity, APPLICABILITY_RESULT_KIND
+        )
+        if result.material.get("act_occurrence_event_identity") == act.identity
     )
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=act.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination Applicability result occurrence order is false"
+        ) from error
+    if (
+        tuple(item.identity for item in ordered) != (act.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise AddressedByteOccurrenceReferenceDeterminationError(
+            "determination Applicability result is not exact"
+        )
     return (
         event,
         act,
@@ -1648,7 +1561,7 @@ def record_addressed_byte_occurrence_reference_determination_result(
     applicability_material = deepcopy(applicability.material)
     binding_material = deepcopy(binding.material)
     source_material = deepcopy(source_result.material)
-    _prepare_result_yield(
+    _prepare_result(
         ledger,
         act=act,
         occurrence_coordinate="determination_act_occurrence_identity",
@@ -2114,38 +2027,22 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         determination_binding=determination_binding,
         source_result=source_result,
     )
-    _prepare_result_yield(
+    _prepare_result(
         ledger,
         act=applicability_act,
         occurrence_coordinate="applicability_act_occurrence_identity",
         result_event_kind=APPLICABILITY_RESULT_KIND,
     )
     require_prior_at_current_append_boundary(applicability_act)
-    applicability_yield_relation = _record_applicability_yield_relation(
-        ledger,
-        act=applicability_act,
-        material=applicability_material,
-    )
-    exact_stage_material.append(
-        (
-            applicability_yield_relation,
-            RECORDED_YIELD_RELATION_EVENT,
-            deepcopy(applicability_yield_relation.material),
-        )
-    )
-    require_intact()
-    _require_yield_at_append_tip(ledger, applicability_yield_relation)
     applicability_recorded = _recorded_applicability_result_material(
         applicability_material,
         act=applicability_act,
-        yield_relation=applicability_yield_relation,
     )
     applicability = ledger.append(
         APPLICABILITY_RESULT_KIND,
         _recorded_applicability_result_material(
             applicability_material,
             act=applicability_act,
-            yield_relation=applicability_yield_relation,
         ),
         locality_identity=locality_identity,
     )
@@ -2189,7 +2086,7 @@ def _record_addressed_byte_occurrence_reference_determination_lifecycle_from_car
         source_result=source_result,
         references=references,
     )
-    _prepare_result_yield(
+    _prepare_result(
         ledger,
         act=act,
         occurrence_coordinate="determination_act_occurrence_identity",
