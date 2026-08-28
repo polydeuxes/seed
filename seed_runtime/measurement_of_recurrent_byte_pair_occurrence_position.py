@@ -94,9 +94,6 @@ def _exact_measurement_occurrence_coordinates(
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": event.material[
-            "yield_relation_identity"
-        ],
     }
 
 

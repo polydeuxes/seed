@@ -167,9 +167,6 @@ def _measurement_reference(event: Event) -> dict[str, str]:
         "act_occurrence_event_identity": event.material[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": event.material[
-            "yield_relation_identity"
-        ],
     }
 
 

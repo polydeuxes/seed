@@ -299,8 +299,9 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
         set(standing["measurement_occurrences"][byte.identity])
         == exact_measurement_coordinates
     )
-    assert set(standing["measurement_occurrences"][pair.identity]) == (
-        exact_measurement_coordinates | {"yield_relation_identity"}
+    assert (
+        set(standing["measurement_occurrences"][pair.identity])
+        == exact_measurement_coordinates
     )
     assert (
         set(standing["measurement_occurrences"][positions.identity])
@@ -538,68 +539,6 @@ def test_locality_standing_refuses_a_corrupted_measurement(
     )
 
     with pytest.raises(error_type, match="corrupted"):
-        _standing(ledger)
-
-
-@pytest.mark.parametrize(
-    ("measurement_kind", "error_type"),
-    (
-        (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-    ),
-)
-def test_locality_standing_refuses_measurement_with_missing_yield(
-    measurement_kind, error_type
-):
-    ledger = _measurement_ledger()
-    measurement = _record_measurement(ledger, measurement_kind)
-    measurement.material["yield_relation_identity"] = None
-
-    with pytest.raises(error_type, match="Yield|yield"):
-        _standing(ledger)
-
-
-@pytest.mark.parametrize(
-    ("measurement_kind", "error_type"),
-    (
-        (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-    ),
-)
-def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
-    measurement_kind, error_type
-):
-    ledger = _measurement_ledger()
-    measurement = _record_measurement(ledger, measurement_kind)
-    other = _record_measurement(ledger, measurement_kind)
-    measurement.material["yield_relation_identity"] = other.material[
-        "yield_relation_identity"
-    ]
-
-    with pytest.raises(error_type, match="Yield|yield"):
-        _standing(ledger)
-
-
-@pytest.mark.parametrize(
-    ("measurement_kind", "error_type"),
-    (
-        (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-    ),
-)
-def test_locality_standing_refuses_corrupted_measurement_yield(
-    monkeypatch, measurement_kind, error_type
-):
-    ledger = _measurement_ledger()
-    measurement = _record_measurement(ledger, measurement_kind)
-    yield_identity = measurement.material["yield_relation_identity"]
-    integrity_of = ledger.integrity_of
-    monkeypatch.setattr(
-        ledger,
-        "integrity_of",
-        lambda identity: (
-            CORRUPTED if identity == yield_identity else integrity_of(identity)
-        ),
-    )
-
-    with pytest.raises(error_type, match="Yield|yield"):
         _standing(ledger)
 
 

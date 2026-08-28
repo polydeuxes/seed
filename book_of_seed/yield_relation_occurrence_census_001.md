@@ -253,6 +253,16 @@ for the Act. Current-coordinate replay and the same-call bounded progression
 address the exact result without a Yield identity. This road is also traversed
 by the new exact material road.
 
+Byte-position-pair Measurement then passed independently. The separate Yield
+event preceded the result and copied its complete future position population.
+Removing it preserved the exact Applicability gate, subject-to-Act binding,
+Measurement Act occurrence, bounded pair counts and recurrence positions,
+Act-before-result order, one result for the Act, same-call current-coordinate
+progression, durable replay, and exact nested result-position addressing. The
+readers still refuse changed content, position addresses, counts, recurrence,
+source coordinates, Applicability, Act coordinates, corruption, or another
+result for the Act. This road is reached by the new exact material road.
+
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
 
@@ -363,7 +373,7 @@ possible relation.
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, two
-non-Locality Applicability roads, four declared Measurement roads, the exact
+non-Locality Applicability roads, five declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
 result-position Movement road. Each removed event occurred before its result

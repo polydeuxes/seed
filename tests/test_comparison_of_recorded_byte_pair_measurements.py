@@ -613,12 +613,10 @@ def test_compare_reads_exact_findings_without_rebuilding_full_result_position_re
     assert recorded["findings"]["conflicting_findings"]
 
 
-def test_later_result_read_revalidates_changed_pair_measurement_yield_relation():
+def test_later_result_read_revalidates_changed_pair_measurement_result():
     ledger, _first_source, _added, earlier, _later, *_middle, result = _comparison()
     get_recorded_pair_measurement_comparison(ledger, result.identity)
-    yield_relation = ledger.get(earlier.material["yield_relation_identity"])
-    assert yield_relation is not None
-    yield_relation.material["result_identity"] = "changed-pair-result"
+    earlier.material["result_identity"] = "changed-pair-result"
 
     with pytest.raises(
         RecordedPairMeasurementComparisonError,

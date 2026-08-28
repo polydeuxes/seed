@@ -43,11 +43,8 @@ BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
 BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND = (
     "operator.measurement.byte_position_pair_measurement_subject_to_act_binding_recorded"
 )
-BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact byte-position-pair count Measurement results"
 BYTE_OCCURRENCE_PRESERVATION = "exact byte Measurement result"
-BYTE_PAIR_OCCURRENCE_PRESERVATION = (
-    "byte-position-pair Measurement results with Yield"
-)
+BYTE_PAIR_OCCURRENCE_PRESERVATION = "exact byte-position-pair Measurement result"
 BYTE_RESULT_COORDINATES = frozenset(
     {
         "result_identity",
@@ -3705,11 +3702,10 @@ def _record_pair_input_applicability_result_from_carried_act(
         raise ByteMeasurementError(
             "pair Applicability result requires its exact Act at the current append boundary"
         )
-    result_material = _pair_applicability_result_material(
-        binding, source, applicability_result
-    )
     recorded_material = {
-        **result_material,
+        **_pair_applicability_result_material(
+            binding, source, applicability_result
+        ),
         "act_occurrence_event_identity": applicability_act_occurrence.identity,
     }
     return ledger.append(
@@ -4178,40 +4174,12 @@ def _record_pair_measurement_result_from_carried_act(
         raise ByteMeasurementError(
             "pair Measurement result requires its exact Act at the current append boundary"
         )
-    result_material = _pair_measurement_result_material(
-        measured,
-        binding=binding,
-        applicability_event=applicability_event,
-    )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=binding.locality_identity,
-        exact_act="declared byte-position-pair Measurement",
-        act_occurrence_identity=binding.material[
-            "measurement_act_occurrence_identity"
-        ],
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
-        result_identity=binding.material["measurement_result_identity"],
-        result_content=result_material,
-        occurrence_boundary="byte_pair_measurement",
-    )
-    if (
-        ledger.get(yield_relation.identity) != yield_relation
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or ledger.append_boundary_through_occurrence(yield_relation.identity)
-        != ledger.append_boundary()
-    ):
-        raise ByteMeasurementError(
-            "pair Measurement result requires its exact Yield at the current append boundary"
-        )
     recorded_material = {
         **_pair_measurement_result_material(
             measured,
             binding=binding,
             applicability_event=applicability_event,
         ),
-        "yield_relation_identity": yield_relation.identity,
         "act_occurrence_event_identity": act_occurrence.identity,
         "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
     }
@@ -4265,30 +4233,33 @@ def _require_exact_pair_measurement_result_event(
             "measurement_act_occurrence_identity"
         ],
     )
-    yield_relation = ledger.get(event.material.get("yield_relation_identity"))
     expected = {
         **_pair_measurement_result_material(
             measured,
             binding=binding,
             applicability_event=applicability_event,
         ),
-        "yield_relation_identity": (
-            event.material.get("yield_relation_identity")
-        ),
         "act_occurrence_event_identity": act_occurrence.identity,
         "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
     }
     try:
-        requirements = read_requirements_of_yield_relation(
-            ledger,
-            recorded_result_event_identity=event.identity,
-            yield_relation_event_identity=(
-                event.material.get("yield_relation_identity")
-            ),
-            act_occurrence_event_identity=act_occurrence.identity,
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
         )
-    except (TypeError, ValueError):
-        requirements = {}
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            "pair Measurement result does not follow its Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
     if (
         type(event) is not Event
         or ledger.get(event.identity) != event
@@ -4296,17 +4267,13 @@ def _require_exact_pair_measurement_result_event(
         or event.locality_identity != binding.locality_identity
         or ledger.integrity_of(event.identity) == CORRUPTED
         or event.material != expected
-        or yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or yield_relation.locality_identity != event.locality_identity
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or yield_relation.material.get("result_kind") != BYTE_PAIR_MEASUREMENT_RESULT_KIND
-        or yield_relation.material.get("occurrence_boundary") != "byte_pair_measurement"
-        or not all(requirements.values())
-        or not _yield_immediately_precedes_result(ledger, yield_relation, event)
+        or tuple(item.identity for item in ordered)
+        != (act_occurrence.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
     ):
         raise ByteMeasurementError(
-            "pair Measurement result or Yield is not exact"
+            "pair Measurement result is not exact"
         )
 
 
@@ -4533,7 +4500,6 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError("a corrupted occurrence cannot return pair results")
     material = event.material
     exact_surface = BYTE_PAIR_RESULT_COORDINATES | {
-        "yield_relation_identity",
         "act_occurrence_identity",
         "act_occurrence_event_identity",
         "occurrence_preservation",
@@ -4585,28 +4551,6 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact pair Measurement result position"
         )
-    yield_relation_identity = material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if isinstance(yield_relation_identity, str) else None
-    if (
-        yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or yield_relation.material.get("result_kind")
-        != BYTE_PAIR_MEASUREMENT_RESULT_KIND
-        or yield_relation.material.get("occurrence_boundary") != "byte_pair_measurement"
-        or yield_relation.material.get("coordinates_of_carried_result")
-        != [
-            coordinate
-            for coordinate in material
-            if coordinate in BYTE_PAIR_RESULT_COORDINATES
-        ]
-        or yield_relation.material.get("dimensions", {}).get("act_occurrence_identity")
-        != material["act_occurrence_identity"]
-        or not _yield_immediately_precedes_result(ledger, yield_relation, event)
-    ):
-        raise ByteMeasurementError(
-            f"{event_identity} names no exact byte-position-pair Yield relation"
-        )
     carried_applicability = material.get("input_applicability")
     applicability_dimensions = (
         carried_applicability.get("dimensions")
@@ -4627,13 +4571,33 @@ def _validated_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} names no exact responsible pair Measurement Act occurrence"
         )
-    _require_exact_result_yield(
-        ledger,
-        event,
-        yield_relation,
-        act_occurrence,
-        result_name="byte-position-pair",
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ByteMeasurementError(
+            f"{event_identity} does not follow its pair Measurement Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
     )
+    if (
+        tuple(item.identity for item in ordered)
+        != (act_occurrence.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise ByteMeasurementError(
+            f"{event_identity} is not the single exact pair Measurement result"
+        )
     boundary_value = material.get("completeness_boundary")
     localities_value = material.get("source_localities")
     if (

@@ -17,7 +17,6 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_MEASUREMENT_ACT_OCCURRENCE_EVENT,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    BYTE_PAIR_MEASUREMENT_RESULT_KIND,
     BYTE_PAIR_APPLICABILITY_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_ACT_OCCURRENCE_EVENT,
@@ -1044,6 +1043,9 @@ def advance_operator_current_coordinates(
                 )
                 measurement_occurrences[event.identity] = (
                     _measurement_occurrence_coordinates(event)
+                )
+                exact_result_occurrences[event.identity] = (
+                    _subject_to_act_binding_of_exact_result(ledger, event)
                 )
             event_count += 1
             through_event_occurrence_identity = event.identity

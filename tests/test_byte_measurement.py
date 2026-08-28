@@ -137,29 +137,6 @@ class IntegrityCountingLedger(EventLedger):
         return super().integrity_of(event_identity)
 
 
-class YieldInterveningActLedger(EventLedger):
-    def __init__(self):
-        super().__init__()
-        self.intervening_boundary = None
-        self.intervening_act_recorded = False
-
-    def append(self, kind, material, **kwargs):
-        event = super().append(kind, material, **kwargs)
-        if (
-            not self.intervening_act_recorded
-            and self.intervening_boundary is not None
-            and kind == RECORDED_YIELD_RELATION_EVENT
-            and material.get("occurrence_boundary") == self.intervening_boundary
-        ):
-            self.intervening_act_recorded = True
-            super().append(
-                "test.unrelated_after_yield",
-                {"unknown": ["unrelated append after Yield"]},
-                locality_identity="unrelated",
-            )
-        return event
-
-
 def _ledger(exact_material: bytes):
     if type(exact_material) is not bytes:
         raise TypeError("byte Measurement fixture requires exact bytes")
@@ -1442,13 +1419,6 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         if result_position["dimensions"]["position"]
         != recurrence["dimensions"]["position"]
     ]
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: value
-        for name, value in event.material.items()
-        if name in BYTE_PAIR_RESULT_COORDINATES
-    }
-
     with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -1464,12 +1434,6 @@ def test_changed_pair_result_position_address_is_refused():
     event.material["result_positions"][0]["dimensions"]["identity"] = (
         "crossed-byte-pair-result_position-address"
     )
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -1496,12 +1460,6 @@ def test_pair_validation_requires_one_exact_ordered_content(content):
     )
     result_position = event.material["result_positions"][0]
     result_position["subject"]["content"] = content
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="unlawful pair result position"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -1537,12 +1495,6 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         recording_locality_identity="measurement",
     )
     event.material["input_applicability"]["result_boundary"] = "some other use"
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -1651,37 +1603,6 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     assert measurement_act.material["subject_to_act_binding_reference"] == (
         result.material["subject_to_act_binding_reference"]
     )
-
-
-def test_pair_measurement_refuses_an_append_between_yield_and_result():
-    ledger = YieldInterveningActLedger()
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="source",
-        input_stream=binary_input("ab"),
-    )
-    source = _byte_source(ledger)
-    recorded_before = sum(
-        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
-        for event in ledger.list()
-    )
-    ledger.intervening_boundary = "byte_pair_measurement"
-
-    with pytest.raises(
-        ByteMeasurementError,
-        match="Measurement result requires its exact Yield",
-    ):
-        record_byte_position_pair_count_layer(
-            ledger,
-            source_measurement_event_identity=source.identity,
-            recording_locality_identity="measurement",
-        )
-
-    assert ledger.intervening_act_recorded is True
-    assert sum(
-        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
-        for event in ledger.list()
-    ) == recorded_before
 
 
 def test_pair_call_local_lifecycle_refuses_changed_binding_and_repeated_acts():
@@ -1941,13 +1862,15 @@ def test_pair_applicability_reads_exact_input_coordinates():
     }
     assert applicable["addressed_act_occurrence_identity"] is None
     assert "yield_relation_identity" not in applicability_event.material
+    assert "yield_relation_identity" not in result.material
     assert not tuple(
         event
         for event in ledger.iter_locality_kind(
             applicability_event.locality_identity,
             RECORDED_YIELD_RELATION_EVENT,
         )
-        if event.material.get("occurrence_boundary") == "byte_pair_applicability"
+        if event.material.get("occurrence_boundary")
+        in {"byte_pair_applicability", "byte_pair_measurement"}
     )
 
 
@@ -2614,12 +2537,6 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         "occurrences_carrying": 2,
         "count": 1,
     }
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -2638,12 +2555,6 @@ def test_pair_validation_refuses_missing_count_content_without_leaking_shape_err
         if result_position["result"] == "count"
     )
     count["dimensions"]["content"].pop("occurrences_carrying")
-    yield_relation = ledger.get(event.material["yield_relation_identity"])
-    yield_relation.material["result"] = {
-        name: event.material[name]
-        for name in yield_relation.material["coordinates_of_carried_result"]
-    }
-
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
@@ -2697,7 +2608,7 @@ def test_pair_applicability_reader_revalidates_exact_input_coordinates(monkeypat
         )
 
 
-def test_pair_result_reader_refuses_changed_yield_result_identity():
+def test_pair_result_reader_refuses_changed_result_identity():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2708,11 +2619,10 @@ def test_pair_result_reader_refuses_changed_yield_result_identity():
     assert result_positions_of_recorded_byte_position_pair_measurement(
         ledger, pair.identity
     )
-    yield_relation = ledger.get(pair.material["yield_relation_identity"])
-    yield_relation.material["result_identity"] = "crossed-pair-result"
+    pair.material["result_identity"] = "crossed-pair-result"
 
     with pytest.raises(
-        ByteMeasurementError, match="byte-position-pair Yield relation"
+        ByteMeasurementError, match="exact pair Measurement binding"
     ):
         result_positions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
@@ -2748,7 +2658,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
         test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors,
         test_byte_result_reader_refuses_changed_result_identity,
-        test_pair_result_reader_refuses_changed_yield_result_identity,
+        test_pair_result_reader_refuses_changed_result_identity,
     ),
     ("book_coordinates", "01.Current.E.1", "Applicability", "result"): (
         test_pair_validation_refuses_unsupported_input_applicability,
