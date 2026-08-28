@@ -55,8 +55,8 @@ from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import
     get_recorded_shared_position_applicability,
     get_shared_position_measurement_act_occurrence,
     get_recorded_shared_position_measurement,
-    ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates,
-    ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion,
+    ordered_relation_path_and_input_position_coordinates,
+    ordered_source_position_coordinates_of_ordered_relation_path,
     record_shared_position_applicability_act_occurrence,
     record_shared_position_applicability_result,
     record_shared_position_measurement_act_occurrence,
@@ -423,28 +423,27 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     assert binding.identity in _current_coordinates(ledger, locality)[
         "subject_to_act_binding_occurrences"
     ]
-    assert len(reading["assertions"]) == 1
-    assertion = reading["assertions"][0]
-    assert set(assertion) == {
-        "dimensions",
-        "result",
-        "assertion_subject",
+    path = reading["ordered_relation_path"]
+    assert set(path) == {
+        "result_position",
+        "subject",
+        "content",
     }
-    assert assertion["result"] == "ordered_relation_path"
-    content = assertion["dimensions"]["content"]
+    assert path["result_position"] == 0
+    content = path["content"]
     assert content["shared_position_coordinate_reference"] == shared_reference
     assert content["source_material_result_occurrence_identity"] == source.identity
-    assert assertion["assertion_subject"][
-        "first_position_assertion_reference"
+    assert path["subject"][
+        "first_position_result_reference"
     ] == first.assertion_reference
-    assert assertion["assertion_subject"][
-        "second_position_assertion_reference"
+    assert path["subject"][
+        "second_position_result_reference"
     ] == second.assertion_reference
     assert result.exact_material is None
     assert result.identity in _current_coordinates(ledger, locality)["measurement_occurrences"]
 
 
-def test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material():
+def test_ordered_path_exposes_input_position_coordinates_without_pair_material():
     ledger, locality, _source, first, second = _fixture()
     _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
@@ -452,19 +451,19 @@ def test_ordered_path_exposes_input_position_assertion_coordinates_without_carry
     boundary_before_read = ledger.append_boundary()
 
     path, first_coordinates, second_coordinates = (
-        ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
+        ordered_relation_path_and_input_position_coordinates(
             ledger, result.identity
         )
     )
     reading = get_recorded_shared_position_measurement(ledger, result.identity)
 
-    assert path == reading["assertions"][0]
+    assert path == reading["ordered_relation_path"]
     assert first_coordinates == reading["first_position_assertion"]
     assert second_coordinates == reading["second_position_assertion"]
     assert first_coordinates["exact_pair"] == list(first.exact_pair)
     assert second_coordinates["exact_pair"] == list(second.exact_pair)
     assert "exact_pair" not in path
-    assert set(path["dimensions"]["content"]) == {
+    assert set(path["content"]) == {
         "shared_position_coordinate_reference",
         "source_material_result_occurrence_identity",
         "completeness_boundary_identity",
@@ -473,14 +472,14 @@ def test_ordered_path_exposes_input_position_assertion_coordinates_without_carry
 
     first_coordinates["exact_pair"][0] = 255
     assert (
-        ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
+        ordered_relation_path_and_input_position_coordinates(
             ledger, result.identity
         )[1]["exact_pair"]
         == list(first.exact_pair)
     )
 
 
-def test_ordered_source_positions_are_adjacent_to_the_path_assertion():
+def test_ordered_source_positions_belong_to_the_ordered_path():
     ledger, locality, _source, first, second = _fixture()
     _assignment_event, _applicability_act, _applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
@@ -488,7 +487,7 @@ def test_ordered_source_positions_are_adjacent_to_the_path_assertion():
     boundary_before_read = ledger.append_boundary()
 
     path, positions = (
-        ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
+        ordered_source_position_coordinates_of_ordered_relation_path(
             ledger, result.identity
         )
     )
@@ -509,7 +508,7 @@ def test_ordered_source_positions_are_adjacent_to_the_path_assertion():
         list(second.exact_pair[1:]),
     )
     assert "ordered_source_position_coordinates" not in path
-    assert set(path["dimensions"]["content"]) == {
+    assert set(path["content"]) == {
         "shared_position_coordinate_reference",
         "source_material_result_occurrence_identity",
         "completeness_boundary_identity",
@@ -864,7 +863,7 @@ def test_direct_position_coordinate_assertions_compose_without_recurrence_suppor
     assert set(result_reads) == {direct_result.identity}
     reading = get_recorded_shared_position_measurement(ledger, result.identity)
 
-    assert reading["assertions"][0]["dimensions"]["content"][
+    assert reading["ordered_relation_path"]["content"][
         "shared_position_coordinate_reference"
     ] == _position_coordinate_reference(first, "second")
     assert binding.material[
@@ -1120,8 +1119,8 @@ def test_later_direct_occurrence_read_requires_binding_carried_exact_coordinates
     )
 
     assert get_recorded_shared_position_measurement(ledger, result.identity)[
-        "assertions"
-    ][0]["dimensions"]["content"][
+        "ordered_relation_path"
+    ]["content"][
         "shared_position_coordinate_reference"
     ] == _position_coordinate_reference(first, "second")
 
@@ -1328,7 +1327,7 @@ def test_shared_position_result_survives_sqlite_restart(restarted_shared_path):
             reopened, result_identity
         )
 
-        assert reading["assertions"][0]["result"] == "ordered_relation_path"
+        assert reading["ordered_relation_path"]["result_position"] == 0
         assert get_shared_position_subject_to_act_binding(
             reopened, binding.identity
         ) == binding.material
@@ -1365,7 +1364,7 @@ def test_d2_derived_shared_position_provenance_survives_sqlite_restart(tmp_path)
     assert binding_reading[
         shared_position_module.D2_RESULT_REFERENCE_COORDINATE
     ]["recorded_occurrence_identity"] == determination_identity
-    assert result_reading["assertions"][0]["result"] == "ordered_relation_path"
+    assert result_reading["ordered_relation_path"]["result_position"] == 0
     assert result_identity in _current_coordinates(reopened, locality)[
         "measurement_occurrences"
     ]
@@ -1474,6 +1473,6 @@ WITNESSED_BOOK_COORDINATES = {
 
 
 WITNESS_MATERIAL_TESTS = (
-    test_ordered_path_exposes_input_position_assertion_coordinates_without_carrying_their_pair_material,
-    test_ordered_source_positions_are_adjacent_to_the_path_assertion,
+    test_ordered_path_exposes_input_position_coordinates_without_pair_material,
+    test_ordered_source_positions_belong_to_the_ordered_path,
 )

@@ -1681,14 +1681,12 @@ def get_shared_position_measurement_act_occurrence(
     return deepcopy(event.material)
 
 
-def _path_assertion(
-    *,
-    inputs: SharedPairPositionInputs,
-    applicability: Event,
+def _ordered_relation_path_result_position(
+    *, inputs: SharedPairPositionInputs
 ) -> dict[str, Any]:
     subject = {
-        "first_position_assertion_reference": inputs.first.assertion_reference,
-        "second_position_assertion_reference": inputs.second.assertion_reference,
+        "first_position_result_reference": inputs.first.assertion_reference,
+        "second_position_result_reference": inputs.second.assertion_reference,
     }
     content = {
         "shared_position_coordinate_reference": (
@@ -1702,12 +1700,9 @@ def _path_assertion(
         ),
     }
     return {
-        "dimensions": {
-            "position": 0,
-            "content": content,
-        },
-        "result": "ordered_relation_path",
-        "assertion_subject": subject,
+        "result_position": 0,
+        "subject": subject,
+        "content": content,
     }
 
 
@@ -1718,15 +1713,12 @@ def _measurement_result_material(
     applicability: Event,
     inputs: SharedPairPositionInputs,
 ) -> dict[str, Any]:
-    assertion = _path_assertion(
-        inputs=inputs,
-        applicability=applicability,
-    )
+    ordered_relation_path = _ordered_relation_path_result_position(inputs=inputs)
     return {
         "result_identity": binding.material["measurement_result_identity"],
         "dimensions": {
             "identity": binding.material["measurement_result_identity"],
-            "content": "one exact ordered relation-path Assertion",
+            "content": "one exact ordered relation path",
         },
         "exact_act": MEASUREMENT_ACT,
         "addressed_act_identity": binding.material["exact_act_identity"],
@@ -1745,7 +1737,7 @@ def _measurement_result_material(
         },
         "first_position_assertion": _reference_material(inputs.first),
         "second_position_assertion": _reference_material(inputs.second),
-        "assertions": [assertion],
+        "ordered_relation_path": ordered_relation_path,
     }
 
 
@@ -1820,7 +1812,7 @@ def _recorded_measurement_result_material(
         "completeness_boundary": deepcopy(result["completeness_boundary"]),
         "first_position_assertion": deepcopy(result["first_position_assertion"]),
         "second_position_assertion": deepcopy(result["second_position_assertion"]),
-        "assertions": deepcopy(result["assertions"]),
+        "ordered_relation_path": deepcopy(result["ordered_relation_path"]),
         "yield_relation_identity": yield_relation_identity,
     }
 
@@ -1884,53 +1876,46 @@ def get_recorded_shared_position_measurement(
     return deepcopy(carried)
 
 
-def ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
+def ordered_relation_path_and_input_position_coordinates(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Read one path Assertion adjacent to two exact input Assertion contents.
-
-    Each input Assertion content has exact pair and position coordinates.
-    Returning them adjacent to the path establishes no material carried by the path.
-    """
+    """Read one ordered relation path and its two exact input coordinates."""
 
     reading = get_recorded_shared_position_measurement(
         ledger, event_identity, prior_coordinates=prior_coordinates
     )
-    assertions = reading.get("assertions")
+    path = reading.get("ordered_relation_path")
     first = reading.get("first_position_assertion")
     second = reading.get("second_position_assertion")
     if (
-        type(assertions) is not list
-        or len(assertions) != 1
-        or type(assertions[0]) is not dict
-        or assertions[0].get("result") != "ordered_relation_path"
+        type(path) is not dict
+        or path.get("result_position") != 0
         or type(first) is not dict
         or type(second) is not dict
     ):
         raise SharedPairPositionError(
-            "shared-position result carries no exact path and input coordinates"
+            "shared-position result has no exact path and input coordinates"
         )
-    return deepcopy(assertions[0]), deepcopy(first), deepcopy(second)
+    return deepcopy(path), deepcopy(first), deepcopy(second)
 
 
-def ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
+def ordered_source_position_coordinates_of_ordered_relation_path(
     ledger: EventLedger,
     event_identity: str,
     *,
     prior_coordinates: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], tuple[dict[str, Any], ...]]:
-    """Read three exact source-position coordinates adjacent to one path Assertion.
+    """Read three exact source-position coordinates of one ordered relation path.
 
     The first returned position addresses the first input position; the second
-    returned position addresses the second input position. Returning the positions
-    adjacent to the path establishes no position or material carried by the path.
+    returned position addresses the second input position.
     """
 
     path, first, second = (
-        ordered_relation_path_assertion_adjacent_to_input_position_assertion_coordinates(
+        ordered_relation_path_and_input_position_coordinates(
             ledger, event_identity, prior_coordinates=prior_coordinates
         )
     )
@@ -1938,7 +1923,7 @@ def ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assert
     first_shared = first.get("second_position_coordinate_reference")
     second_shared = second.get("first_position_coordinate_reference")
     last_position = second.get("second_position_coordinate_reference")
-    path_shared = path.get("dimensions", {}).get("content", {}).get(
+    path_shared = path.get("content", {}).get(
         "shared_position_coordinate_reference"
     )
     if (

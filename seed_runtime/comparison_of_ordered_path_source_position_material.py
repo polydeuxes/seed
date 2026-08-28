@@ -14,7 +14,7 @@ from seed_runtime.yield_relation import (
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
-    ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion,
+    ordered_source_position_coordinates_of_ordered_relation_path,
 )
 
 
@@ -138,7 +138,7 @@ def _path_input(
         message="source position Compare requires an exact ordered path result",
     )
     path, positions = (
-        ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
+        ordered_source_position_coordinates_of_ordered_relation_path(
             ledger, event.identity, prior_coordinates=current_coordinates
         )
     )
@@ -178,20 +178,20 @@ def _path_input(
         range(positions[0]["position"], positions[0]["position"] + 3)
     ):
         raise ValueError("source position Compare requires exact ordered positions")
-    assertions = current_coordinates.get("measurement_occurrences")
+    measurements = current_coordinates.get("measurement_occurrences")
     if (
-        type(assertions) is not dict
-        or assertions.get(event.identity) != _result_reference(event)
-        or path.get("dimensions", {}).get("position") != 0
+        type(measurements) is not dict
+        or measurements.get(event.identity) != _result_reference(event)
+        or path.get("result_position") != 0
     ):
         raise ValueError("current coordinates carry no exact ordered path result")
     return {
         "event": event,
         "reference": _result_reference(event),
         "path": path,
-        "path_assertion_reference": {
+        "path_result_position_reference": {
             "recorded_occurrence_identity": event.identity,
-            "assertion_position": 0,
+            "result_position": 0,
         },
         "positions": tuple(deepcopy(position) for position in positions),
         "path_position_pair": path_position_pair,
@@ -246,8 +246,8 @@ def _compare_binding_material(
 ) -> dict[str, Any]:
     return {
         "subject_reference": {
-            "path_assertion_reference": deepcopy(
-                inputs["path_assertion_reference"]
+            "path_result_position_reference": deepcopy(
+                inputs["path_result_position_reference"]
             ),
             "path_position_pair": list(inputs["path_position_pair"]),
             "first_source_position_coordinate": deepcopy(inputs["first"]),
@@ -305,7 +305,9 @@ def _applicability_binding_material(
         ),
         "book_clause_identity": "01.Current.E.1",
         "path_result_reference": deepcopy(inputs["reference"]),
-        "path_assertion_reference": deepcopy(inputs["path_assertion_reference"]),
+        "path_result_position_reference": deepcopy(
+            inputs["path_result_position_reference"]
+        ),
         "path_position_pair": list(inputs["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(inputs["first"]),
         "second_source_position_coordinate": deepcopy(inputs["second"]),
@@ -339,7 +341,9 @@ def _applicability_act_material(binding: Event) -> dict[str, Any]:
         ],
         "compare_result_identity": material["compare_result_identity"],
         "path_result_reference": deepcopy(material["path_result_reference"]),
-        "path_assertion_reference": deepcopy(material["path_assertion_reference"]),
+        "path_result_position_reference": deepcopy(
+            material["path_result_position_reference"]
+        ),
         "path_position_pair": list(material["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(
             material["first_source_position_coordinate"]
@@ -750,8 +754,8 @@ def _finding(inputs: dict[str, Any]) -> dict[str, Any]:
         else "difference"
     )
     subject = {
-        "ordered_relation_path_assertion_reference": deepcopy(
-            inputs["path_assertion_reference"]
+        "ordered_relation_path_result_position_reference": deepcopy(
+            inputs["path_result_position_reference"]
         ),
         "path_position_pair": list(inputs["path_position_pair"]),
         "first_source_position_coordinate": deepcopy(first),

@@ -162,7 +162,7 @@
       "subject": "ordered_relation_path_and_pair_findings",
       "exact_Act": "Compare",
       "requires_current_coordinates": [
-        "ordered_relation_path_Assertion",
+        "ordered_relation_path_result_position",
         "recorded_pair_finding_Compare_result"
       ],
       "Yield": "02.Acts.A.Yield",

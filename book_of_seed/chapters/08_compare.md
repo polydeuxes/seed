@@ -25,13 +25,13 @@ and Locality.
 
 ### 04.Compare.B — Ordered relation path and pair findings
 
-When one exact ordered relation-path Assertion and one exact recorded
+When one exact ordered relation-path result position and one exact recorded
 pair-finding Compare result are current through one exact occurrence boundary,
 both subjects, one Compare Act and Locality are exact together.
 
 The exact subject-to-Act binding requires its exact Applicability result.
 
-The result preserves each source reference, ordered path-position Assertion
+The result preserves each source reference, ordered path-position result
 references, pair subjects, complete finding references, and Locality.
 
 ## References

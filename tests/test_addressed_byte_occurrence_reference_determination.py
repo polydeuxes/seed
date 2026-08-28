@@ -1,4 +1,4 @@
-"""Each addressed byte occurrence requires exact ordered Assertion references."""
+"""Each addressed byte occurrence requires exact ordered result-position references."""
 
 from copy import deepcopy
 

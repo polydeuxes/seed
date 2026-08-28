@@ -173,27 +173,24 @@ def _path_input(
         event.identity,
         prior_coordinates=prior_coordinates,
     )
-    assertions = material.get("assertions")
-    if type(assertions) is not list or len(assertions) != 1:
-        raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
-    assertion = assertions[0]
+    path = material.get("ordered_relation_path")
     first = material.get("first_position_assertion")
     second = material.get("second_position_assertion")
     if (
-        type(assertion) is not dict
-        or assertion.get("result") != "ordered_relation_path"
+        type(path) is not dict
+        or path.get("result_position") != 0
         or type(first) is not dict
         or type(second) is not dict
-        or assertion.get("assertion_subject", {}).get(
-            "first_position_assertion_reference"
+        or path.get("subject", {}).get(
+            "first_position_result_reference"
         )
         != first.get("assertion_reference")
-        or assertion.get("assertion_subject", {}).get(
-            "second_position_assertion_reference"
+        or path.get("subject", {}).get(
+            "second_position_result_reference"
         )
         != second.get("assertion_reference")
     ):
-        raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
+        raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact ordered path result position")
     pairs = (first.get("exact_pair"), second.get("exact_pair"))
     if any(
         type(pair) is not list
@@ -202,10 +199,8 @@ def _path_input(
         for pair in pairs
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings requires exact pair subjects")
-    content = assertion.get("dimensions", {}).get("content")
-    assertion_position = assertion.get("dimensions", {}).get("position")
-    if assertion_position != 0:
-        raise ValueError("comparison of ordered relation path with recorded pair findings requires one exact path Assertion")
+    content = path.get("content")
+    result_position = path.get("result_position")
     source = (
         content.get("source_material_result_occurrence_identity")
         if type(content) is dict
@@ -214,10 +209,10 @@ def _path_input(
     return {
         "event": event,
         "reference": _result_reference(event),
-        "assertion": deepcopy(assertion),
-        "assertion_reference": {
+        "result_content": deepcopy(path),
+        "result_position_reference": {
             "recorded_occurrence_identity": event.identity,
-            "assertion_position": assertion_position,
+            "result_position": result_position,
         },
         "pair_subjects": tuple(tuple(pair) for pair in pairs),
         "source_occurrence_identity": _identity(
@@ -995,8 +990,8 @@ def _binding_material(
         "compare_result_identity": identities["compare_result_identity"],
         "book_clause_identity": BOOK_CLAUSE,
         "path_result_reference": deepcopy(inputs["path"]["reference"]),
-        "path_assertion_reference": deepcopy(
-            inputs["path"]["assertion_reference"]
+        "path_result_position_reference": deepcopy(
+            inputs["path"]["result_position_reference"]
         ),
         "comparison_result_reference": deepcopy(
             inputs["comparison"]["reference"]
@@ -1024,7 +1019,7 @@ def _applicability_binding_material(
     return {
         "subject_reference": {
             "path_input": {
-                "subject": deepcopy(inputs["path"]["assertion_reference"]),
+                "subject": deepcopy(inputs["path"]["result_position_reference"]),
                 "addressed_act_identity": addressed_act_identity,
             },
             "comparison_input": {
@@ -1048,7 +1043,9 @@ def _applicability_binding_material(
         ),
         "book_clause_identity": "01.Current.E.1",
         "path_result_reference": deepcopy(inputs["path"]["reference"]),
-        "path_assertion_reference": deepcopy(inputs["path"]["assertion_reference"]),
+        "path_result_position_reference": deepcopy(
+            inputs["path"]["result_position_reference"]
+        ),
         "comparison_result_reference": deepcopy(inputs["comparison"]["reference"]),
         "through_event_occurrence_identity": boundary,
     }
@@ -1756,25 +1753,25 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
     for pair, path_reference, findings in zip(
         inputs["path"]["pair_subjects"],
         (
-            inputs["path"]["assertion"]["assertion_subject"][
-                "first_position_assertion_reference"
+            inputs["path"]["result_content"]["subject"][
+                "first_position_result_reference"
             ],
-            inputs["path"]["assertion"]["assertion_subject"][
-                "second_position_assertion_reference"
+            inputs["path"]["result_content"]["subject"][
+                "second_position_result_reference"
             ],
         ),
         inputs["path_relation_findings"],
     ):
         relation_findings.append(
             {
-                "path_position_assertion_reference": deepcopy(path_reference),
+                "path_position_result_reference": deepcopy(path_reference),
                 "pair_subject": list(pair),
                 "comparison_finding_references": deepcopy(list(findings)),
             }
         )
     subject = {
-        "ordered_relation_path_assertion_reference": deepcopy(
-            inputs["path"]["assertion_reference"]
+        "ordered_relation_path_result_position_reference": deepcopy(
+            inputs["path"]["result_position_reference"]
         ),
         "recorded_pair_comparison_result_reference": deepcopy(
             inputs["comparison"]["reference"]
@@ -1949,8 +1946,8 @@ class RecordedDistinctionPin(NamedTuple):
     locality_identity: str
     through_event_occurrence_identity: str
     comparison_result_occurrence_identity: str
-    ordered_relation_path_assertion_reference: dict[str, Any]
-    path_position_assertion_reference: dict[str, Any]
+    ordered_relation_path_result_position_reference: dict[str, Any]
+    path_position_result_reference: dict[str, Any]
     pair_subject: bytes
     recorded_finding_reference: dict[str, Any]
 
@@ -2016,7 +2013,7 @@ def recorded_distinction_pins_from_current_coordinates(
         finding = reading.get("finding")
         subject = finding.get("subject") if type(finding) is dict else None
         path_reference = (
-            subject.get("ordered_relation_path_assertion_reference")
+            subject.get("ordered_relation_path_result_position_reference")
             if type(subject) is dict
             else None
         )
@@ -2038,7 +2035,7 @@ def recorded_distinction_pins_from_current_coordinates(
             raise ValueError("recorded distinction pin source result is not exact")
         for relation_finding in relation_findings:
             position_reference = (
-                relation_finding.get("path_position_assertion_reference")
+                relation_finding.get("path_position_result_reference")
                 if type(relation_finding) is dict
                 else None
             )

@@ -96,7 +96,7 @@ def _exact_distinctions(
     finding = reading.get("finding")
     subject = finding.get("subject") if type(finding) is dict else None
     path_reference = (
-        subject.get("ordered_relation_path_assertion_reference")
+        subject.get("ordered_relation_path_result_position_reference")
         if type(subject) is dict
         else None
     )
@@ -119,7 +119,7 @@ def _exact_distinctions(
     distinctions = []
     for relation_finding in relation_findings:
         position_reference = (
-            relation_finding.get("path_position_assertion_reference")
+            relation_finding.get("path_position_result_reference")
             if type(relation_finding) is dict
             else None
         )
@@ -161,10 +161,10 @@ def _exact_distinctions(
                 raise ValueError("Measurement requires exact Compare Distinctions")
             distinctions.append(
                 {
-                    "ordered_relation_path_assertion_reference": deepcopy(
+                    "ordered_relation_path_result_position_reference": deepcopy(
                         path_reference
                     ),
-                    "path_position_assertion_reference": deepcopy(
+                    "path_position_result_reference": deepcopy(
                         position_reference
                     ),
                     "recorded_finding_reference": deepcopy(reference),

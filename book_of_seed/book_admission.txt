@@ -20,7 +20,6 @@ applicability
 applicable
 are
 as
-assertion
 attempt
 b
 becomes

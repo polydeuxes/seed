@@ -1736,7 +1736,7 @@ def _recorded_position_assertion_at_position_for_locality_movement(
         or assertion_position + 1 >= len(finding.exact_material)
     ):
         raise ValueError(
-            "position Assertion Locality movement requires exact source coordinates"
+            "result-position Locality movement requires exact source coordinates"
         )
     return _assertion(
         finding,

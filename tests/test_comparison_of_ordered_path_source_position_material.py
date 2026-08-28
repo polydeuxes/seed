@@ -20,7 +20,7 @@ from seed_runtime.measurement_of_position_coordinates_of_byte_pair_occurrences i
     record_byte_pair_occurrence_position_measurement_result,
 )
 from seed_runtime.measurement_of_shared_position_of_byte_pair_occurrences import (
-    ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion,
+    ordered_source_position_coordinates_of_ordered_relation_path,
 )
 from tests.test_measurement_of_shared_position_of_byte_pair_occurrences import (
     _direct_d2,
@@ -89,7 +89,7 @@ def test_every_path_ordered_pair_is_compared_without_a_chosen_pair():
         ledger, locality="ordered-path-pair-population", exact=b"2+2=5\n"
     )
     _assertion, positions = (
-        ordered_source_position_coordinates_adjacent_to_ordered_relation_path_assertion(
+        ordered_source_position_coordinates_of_ordered_relation_path(
             ledger, path.identity
         )
     )

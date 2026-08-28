@@ -111,7 +111,7 @@ ASSERTION_LOCALITY_MOVEMENT_SUBJECT_TO_ACT_BINDING_KIND = (
 ASSERTION_LOCALITY_MOVEMENT_ACT_OCCURRENCE_EVENT = (
     "operator.assertion.locality_movement_act_occurrence_recorded"
 )
-ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND = "Assertion Locality movement result"
+ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND = "result-position Locality movement result"
 EVENT_KIND_BOOK_CLAUSES = {
     BYTE_MEASUREMENT_SUBJECT_TO_ACT_BINDING_RECORDED_KIND: "01.Source.D",
     BYTE_MEASUREMENT_RECORDED_KIND: "01.Source.D",
@@ -1094,7 +1094,7 @@ def get_assertion_locality_movement_subject_to_act_binding(
 
 def _movement_act_material(binding: Event) -> dict[str, Any]:
     return {
-        "act": "Assertion Locality movement",
+        "act": "result-position Locality movement",
         "subject_to_act_binding_reference": _movement_binding_reference(
             binding
         ),
@@ -1285,7 +1285,7 @@ def _append_assertion_locality_movement_result(
     yield_relation = _record_yield_relation(
         ledger,
         locality_identity=binding.locality_identity,
-        exact_act="Assertion Locality movement",
+        exact_act="result-position Locality movement",
         act_occurrence_identity=binding.material[
             "movement_act_occurrence_identity"
         ],
@@ -1496,7 +1496,7 @@ def _move_assertion_reference_to_locality(
     )
     if type(carried) is not dict:
         raise ByteMeasurementError(
-            "Assertion Locality movement carries no exact result"
+            "result-position Locality movement has no exact result"
         )
     return carried
 
@@ -3616,7 +3616,7 @@ def _pair_applicability_result_material(
         "result_identity": binding.material["applicability_result_identity"],
         "dimensions": {
             "identity": applicability_assertion["dimensions"]["identity"],
-            "content": "exact source-Assertion to addressed-Act Applicability",
+            "content": "exact subject-to-Act binding Applicability",
             "applicability": applicability_assertion["dimensions"]["applicability"],
         },
         "exact_act": "input Applicability",

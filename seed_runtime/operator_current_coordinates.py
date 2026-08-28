@@ -394,11 +394,11 @@ def _assertion_locality_movement_occurrence_coordinates(
     binding_reference = event.material["subject_to_act_binding_reference"]
     binding = ledger.get(binding_reference["recorded_occurrence_identity"])
     if binding is None:
-        raise ValueError("Assertion Locality movement coordinates are not exact")
+        raise ValueError("result-position Locality movement coordinates are not exact")
     source_reference = binding.material["source_assertion_reference"]
     source_event = ledger.get(source_reference["recorded_occurrence_identity"])
     if source_event is None:
-        raise ValueError("Assertion Locality movement coordinates are not exact")
+        raise ValueError("result-position Locality movement coordinates are not exact")
     return {
         "recorded_occurrence_identity": event.identity,
         "result_identity": event.material["result_identity"],
@@ -876,7 +876,7 @@ def advance_operator_current_coordinates(
         ]
         if type(assertion_locality_movement_occurrences) is not dict:
             raise ValueError(
-                "prior coordinates require exact Assertion Locality movement occurrences"
+                "prior coordinates require exact result-position Locality movement occurrences"
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
         locality_continuation_relation_occurrences = prior[

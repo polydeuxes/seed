@@ -64,7 +64,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     source_findings = source.material["finding"]["relation_findings"]
     expected = tuple(
         (
-            relation_finding["path_position_assertion_reference"],
+            relation_finding["path_position_result_reference"],
             reference,
         )
         for relation_finding in source_findings
@@ -72,7 +72,7 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
     )
     measured = tuple(
         (
-            finding["path_position_assertion_reference"],
+            finding["path_position_result_reference"],
             finding["recorded_finding_reference"],
         )
         for finding in reading["findings"]
@@ -85,9 +85,9 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
         "distinction_count": len(expected),
     }
     assert all(
-        finding["ordered_relation_path_assertion_reference"]
+        finding["ordered_relation_path_result_position_reference"]
         == source.material["finding"]["subject"][
-            "ordered_relation_path_assertion_reference"
+            "ordered_relation_path_result_position_reference"
         ]
         for finding in reading["findings"]
     )
@@ -375,7 +375,7 @@ def test_separate_occurrences_can_carry_equal_measured_content():
     def measured_content(reading):
         return tuple(
             (
-                finding["path_position_assertion_reference"][
+                finding["path_position_result_reference"][
                     "assertion_position"
                 ],
                 finding["recorded_finding_reference"]["subject"]["content"],

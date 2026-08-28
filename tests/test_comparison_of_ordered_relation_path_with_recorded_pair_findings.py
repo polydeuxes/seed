@@ -1014,16 +1014,16 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
     )
     for result in results:
         path_reference = result.material["finding"]["subject"][
-            "ordered_relation_path_assertion_reference"
+            "ordered_relation_path_result_position_reference"
         ]
         path_result = ledger.get(path_reference["recorded_occurrence_identity"])
-        path_subject = path_result.material["assertions"][0]["assertion_subject"]
+        path_subject = path_result.material["ordered_relation_path"]["subject"]
         assert tuple(
-            finding["path_position_assertion_reference"]
+            finding["path_position_result_reference"]
             for finding in result.material["finding"]["relation_findings"]
         ) == (
-            path_subject["first_position_assertion_reference"],
-            path_subject["second_position_assertion_reference"],
+            path_subject["first_position_result_reference"],
+            path_subject["second_position_result_reference"],
         )
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         results[-1].identity
@@ -1048,12 +1048,12 @@ def test_current_coordinates_fans_one_comparison_into_exact_distinction_pins():
         pin.comparison_result_occurrence_identity == result.identity for pin in pins
     )
     assert all(pin.through_event_occurrence_identity == through_occurrence for pin in pins)
-    path_subject = path.material["assertions"][0]["assertion_subject"]
-    assert tuple(pin.path_position_assertion_reference for pin in pins) == (
-        path_subject["first_position_assertion_reference"],
-        path_subject["first_position_assertion_reference"],
-        path_subject["second_position_assertion_reference"],
-        path_subject["second_position_assertion_reference"],
+    path_subject = path.material["ordered_relation_path"]["subject"]
+    assert tuple(pin.path_position_result_reference for pin in pins) == (
+        path_subject["first_position_result_reference"],
+        path_subject["first_position_result_reference"],
+        path_subject["second_position_result_reference"],
+        path_subject["second_position_result_reference"],
     )
     assert tuple(pin.pair_subject for pin in pins) == (
         b"ab",
@@ -1090,7 +1090,7 @@ def test_every_current_compare_result_exposes_every_exact_finding_reference_bran
         result.identity for result in results for _ in range(4)
     )
     assert all(
-        set(pin.path_position_assertion_reference)
+        set(pin.path_position_result_reference)
         == {"recorded_occurrence_identity", "assertion_position"}
         for pin in pins
     )
@@ -1112,10 +1112,10 @@ def test_every_current_compare_result_exposes_every_exact_finding_reference_bran
         {
             (
                 pin.comparison_result_occurrence_identity,
-                pin.path_position_assertion_reference[
+                pin.path_position_result_reference[
                     "recorded_occurrence_identity"
                 ],
-                pin.path_position_assertion_reference["assertion_position"],
+                pin.path_position_result_reference["assertion_position"],
                 pin.recorded_finding_reference["finding_category"],
                 pin.recorded_finding_reference["finding_position"],
             )
