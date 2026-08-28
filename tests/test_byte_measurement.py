@@ -1653,14 +1653,7 @@ def test_pair_subject_to_act_bindings_are_distinct_and_share_the_addressed_act()
     )
 
 
-@pytest.mark.parametrize(
-    ("boundary", "message"),
-    (
-        ("byte_pair_applicability", "Applicability result requires its exact Yield"),
-        ("byte_pair_measurement", "Measurement result requires its exact Yield"),
-    ),
-)
-def test_pair_result_refuses_an_append_between_yield_and_result(boundary, message):
+def test_pair_measurement_refuses_an_append_between_yield_and_result():
     ledger = YieldInterveningActLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -1672,9 +1665,12 @@ def test_pair_result_refuses_an_append_between_yield_and_result(boundary, messag
         event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
         for event in ledger.list()
     )
-    ledger.intervening_boundary = boundary
+    ledger.intervening_boundary = "byte_pair_measurement"
 
-    with pytest.raises(ByteMeasurementError, match=message):
+    with pytest.raises(
+        ByteMeasurementError,
+        match="Measurement result requires its exact Yield",
+    ):
         record_byte_position_pair_count_layer(
             ledger,
             source_measurement_event_identity=source.identity,
@@ -1927,6 +1923,9 @@ def test_pair_applicability_reads_exact_input_coordinates():
     applicable = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, result.identity
     )
+    applicability_event = ledger.get(
+        result.material["input_applicability_event_identity"]
+    )
 
     assert applicable["dimensions"]["applicability"] == "applicable"
     assert applicable["input_coordinates"] == {
@@ -1941,6 +1940,15 @@ def test_pair_applicability_reads_exact_input_coordinates():
         "result_position": source["result_position"],
     }
     assert applicable["addressed_act_occurrence_identity"] is None
+    assert "yield_relation_identity" not in applicability_event.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            applicability_event.locality_identity,
+            RECORDED_YIELD_RELATION_EVENT,
+        )
+        if event.material.get("occurrence_boundary") == "byte_pair_applicability"
+    )
 
 
 def test_byte_measurement_binding_addresses_its_exact_source_occurrences():
@@ -2650,7 +2658,7 @@ def test_byte_result_reader_refuses_changed_result_identity():
         result_positions_of_recorded_byte_measurement(ledger, event.identity)
 
 
-def test_pair_applicability_reader_refuses_changed_yield_result_identity():
+def test_pair_applicability_reader_refuses_changed_result_identity():
     ledger = _ledger(b"ta\n")
     source = _byte_source(ledger)
     pair = record_byte_position_pair_count_layer(
@@ -2661,12 +2669,9 @@ def test_pair_applicability_reader_refuses_changed_yield_result_identity():
     applicability_identity = pair.material["input_applicability_event_identity"]
     applicability = ledger.get(applicability_identity)
     assert get_recorded_pair_input_applicability(ledger, applicability.identity)
-    yield_relation = ledger.get(
-        applicability.material["yield_relation_identity"]
-    )
-    yield_relation.material["result_identity"] = "crossed-applicability-result"
+    applicability.material["result_identity"] = "crossed-applicability-result"
 
-    with pytest.raises(ByteMeasurementError, match="Applicability result is not exact"):
+    with pytest.raises(ByteMeasurementError, match="exact pair Measurement binding"):
         get_recorded_pair_input_applicability(ledger, applicability.identity)
 
 
@@ -2749,7 +2754,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_addressed_act,
         test_pair_applicability_reads_exact_input_coordinates,
-        test_pair_applicability_reader_refuses_changed_yield_result_identity,
+        test_pair_applicability_reader_refuses_changed_result_identity,
         test_pair_applicability_reader_revalidates_exact_input_coordinates,
     ),
     ("book_coordinates", "01.Source.A", "subject"): (

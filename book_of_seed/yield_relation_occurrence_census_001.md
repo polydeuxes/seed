@@ -163,6 +163,15 @@ Applicability result occurrence
 The subsequent Measurement remains gated by the exact positive Applicability
 result. Its own separate Yield event remains under independent pressure.
 
+Byte-position-pair input Applicability then passed the same falsifier
+independently. Its result still establishes the exact `applicable` coordinate
+from the complete subject-to-Act binding and addresses the Applicability Act
+occurrence. Removing the prior copied event preserved exact input-position
+resolution, Act-before-result order, one result for the Act, current-coordinate
+progression, governed Measurement gating, and mutation, substitution,
+corruption, and changed-input refusal. This is another Yield producer reached
+by the new exact material road.
+
 ## Measurement control
 
 Shared-position Measurement passed the independent event subtraction. Its
@@ -353,8 +362,8 @@ possible relation.
 
 ## Current finding
 
-A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, four declared Measurement roads, the exact
+A separate Yield occurrence failed all three internal Locality controls, two
+non-Locality Applicability roads, four declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
 result-position Movement road. Each removed event occurred before its result
