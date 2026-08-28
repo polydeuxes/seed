@@ -881,7 +881,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_coordinates(
     locality_identity: str,
     current_coordinates: dict[str, Any] | None = None,
 ) -> RecordedOrderedPathPairFindingCompareResults:
-    """Record one Yield and result for each exact current Compare Act occurrence."""
+    """Record one result for each exact current Compare Act occurrence."""
 
     from seed_runtime.operator_current_coordinates import (
         read_operator_current_coordinates,
@@ -942,10 +942,7 @@ def record_ordered_path_pair_finding_compare_results_from_current_coordinates(
         current_coordinates = _advance_current_coordinates(
             ledger,
             current_coordinates,
-            (
-                result.material["yield_relation_identity"],
-                result.identity,
-            ),
+            (result.identity,),
             locality_identity=locality_identity,
         )
 
@@ -1846,7 +1843,7 @@ def _compare_result_material(
 
 
 def _recorded_compare_result_material(
-    result: dict[str, Any], *, yield_relation_identity: str
+    result: dict[str, Any]
 ) -> dict[str, Any]:
     return {
         "result_identity": result["result_identity"],
@@ -1863,7 +1860,6 @@ def _recorded_compare_result_material(
         "act_occurrence_event_identity": result[
             "act_occurrence_event_identity"
         ],
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -1879,31 +1875,22 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_resul
         prior_coordinates=current_coordinates,
     )
     result = _compare_result_material(act, binding, applicability, inputs)
-    _refuse_result(
-        ledger,
-        act,
-        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    prior_results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            act.locality_identity,
+            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=COMPARE_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=COMPARE_RESULT_KIND,
-        result_identity=result["result_identity"],
-        result_content={
-            key: value
-            for key, value in result.items()
-            if key != "act_occurrence_identity"
-        },
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
-    )
+    if prior_results:
+        raise ValueError(
+            "one comparison of ordered relation path with recorded pair findings Act cannot record two results"
+        )
     return ledger.append(
         COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        _recorded_compare_result_material(
-            result, yield_relation_identity=yield_relation.identity
-        ),
+        _recorded_compare_result_material(result),
         locality_identity=act.locality_identity,
     )
 
@@ -1925,15 +1912,43 @@ def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
         act_identity,
         prior_coordinates=prior_coordinates,
     )
-    event = _read_yielded(
+    event = _event(
         ledger,
         event_identity,
         kind=COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
-        act=act,
-        expected=_compare_result_material(act, binding, applicability, inputs),
-        occurrence_boundary="comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
-        result_name=COMPARE_RESULT_KIND,
+        message="comparison result is absent",
     )
+    if (
+        event.locality_identity != act.locality_identity
+        or event.material
+        != _recorded_compare_result_material(
+            _compare_result_material(act, binding, applicability, inputs)
+        )
+    ):
+        raise ValueError("comparison result coordinates are not exact")
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, event.identity),
+            locality_identity=event.locality_identity,
+        )
+    except ValueError as error:
+        raise ValueError("comparison result does not follow its Act") from error
+    if [occurrence.identity for occurrence in ordered] != [
+        act.identity,
+        event.identity,
+    ]:
+        raise ValueError("comparison result does not follow its Act")
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act.identity
+    )
+    if len(results) != 1 or results[0].identity != event.identity:
+        raise ValueError("comparison Act has no single exact result")
     return deepcopy(event.material)
 
 

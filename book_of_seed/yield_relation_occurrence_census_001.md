@@ -277,6 +277,18 @@ Act-before-result order, one result per Compare Act, current-coordinate replay,
 and mutation and substitution refusal. The generic Compare clause and
 `04.Compare.A` therefore establish no Yield. `04.Compare.B` retains its
 independently untested Yield coordinate.
+
+The ordered relation-path and recorded pair-finding Compare then passed the
+`04.Compare.B` falsifier. Its complete result still resolves the exact path
+result position, recorded pair-Compare result, Applicability result, finding
+branches, Act occurrence, binding, and Locality. Direct Act-before-result order
+and one-result-per-Act refusal replace no relation physiology; they expose that
+the removed event again copied the future result.
+
+`04.Compare.B` now establishes no Yield. Applicability on this road retains its
+separately recorded event under independent pressure. The source-position
+Compare implementation of generic `04.Compare` also remains under independent
+pressure.
 The source now records:
 
 ```text

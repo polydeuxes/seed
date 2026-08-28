@@ -159,7 +159,6 @@
         "ordered_relation_path_result_position",
         "recorded_pair_finding_Compare_result"
       ],
-      "Yield": "02.Acts.A.Yield",
       "result": "ordered_relation_path_Compare_result",
       "Applicability": "Applicability_result"
     },

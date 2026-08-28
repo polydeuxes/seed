@@ -112,9 +112,7 @@ def test_applicability_remains_separate_from_the_governed_act():
         assert compare["Applicability"] == "Applicability_result"
     assert "Yield" not in grammar["book_coordinates"]["04.Compare"]
     assert "Yield" not in grammar["book_coordinates"]["04.Compare.A"]
-    assert grammar["book_coordinates"]["04.Compare.B"]["Yield"] == (
-        "02.Acts.A.Yield"
-    )
+    assert "Yield" not in grammar["book_coordinates"]["04.Compare.B"]
 
 def test_compare_clause_addresses_its_exact_subjects_and_act():
     compare = _grammar()["book_coordinates"]["04.Compare"]

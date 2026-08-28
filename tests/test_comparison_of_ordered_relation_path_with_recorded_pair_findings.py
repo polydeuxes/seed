@@ -975,7 +975,7 @@ def test_only_applicable_current_compare_results_record_act_occurrence():
     assert recorded.current_coordinates["through_event_occurrence_identity"] == (
         acts[-1].identity
     )
-def test_every_current_compare_act_records_one_separate_yield_and_result():
+def test_every_current_compare_act_records_one_result():
     ledger, acts, _current_coordinates_read = _ledger_at_story_floor(3)
 
     recorded = record_ordered_path_pair_finding_compare_results_from_current_coordinates(
@@ -987,15 +987,8 @@ def test_every_current_compare_act_records_one_separate_yield_and_result():
     assert tuple(
             result.material["act_occurrence_event_identity"] for result in results
     ) == tuple(act.identity for act in acts)
-    assert len(
-        {
-            result.material["yield_relation_identity"]
-            for result in results
-        }
-    ) == len(results)
     assert all(
-        ledger.get(result.material["yield_relation_identity"])
-        is not None
+        "yield_relation_identity" not in result.material
         for result in results
     )
     assert all(
@@ -1207,12 +1200,12 @@ def test_availability_without_both_exact_current_coordinates_cannot_assign_compa
         )
 
 
-def test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice():
+def test_one_ordered_relation_path_pair_finding_compare_act_cannot_record_two_results():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _binding, _applicability, act, _result = _record_comparison(
         ledger, comparison, path
     )
-    with pytest.raises(ValueError, match="cannot Yield twice"):
+    with pytest.raises(ValueError, match="cannot record two results"):
         record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
             ledger, act_occurrence_event_identity=act.identity
         )
@@ -1271,16 +1264,15 @@ def test_higher_input_handoff_refuses_changed_comparison_binding():
         comparison_module._comparison_input(ledger, comparison.identity)
 
 
-def test_corrupted_higher_compare_yield_is_refused():
+def test_changed_higher_compare_result_is_refused_without_yield():
     ledger, _earlier_source, _added, comparison, path = _inputs()
     _binding, _applicability, _act, result = _record_comparison(
         ledger, comparison, path
     )
-    yield_relation = ledger.get(result.material["yield_relation_identity"])
-    assert yield_relation is not None
-    yield_relation.material["result_identity"] = "crossed-result"
+    assert "yield_relation_identity" not in result.material
+    result.material["result_identity"] = "crossed-result"
 
-    with pytest.raises(ValueError, match="exact Yield relation"):
+    with pytest.raises(ValueError, match="not exact"):
         get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
             ledger, result.identity
         )
