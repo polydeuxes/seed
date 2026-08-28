@@ -20,7 +20,8 @@ result, and its reported count is one coordinate of that failure.
 ### 07.Emission.D — Material supplied in the destination Locality
 
 Material supplied by the addressed boundary in that exact destination Locality
-requires its own exact subject and source-boundary Act coordinates.
+and its own exact subject and source-boundary Act coordinates are exact
+together.
 
 ## References
 

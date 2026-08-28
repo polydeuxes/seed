@@ -101,7 +101,7 @@ def test_applicability_remains_separate_from_the_governed_act():
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]
-        assert compare["requires"] == ["Applicability_result"]
+        assert compare["Applicability"] == "Applicability_result"
         assert compare["Yield"] == "02.Acts.A.Yield"
 
 def test_compare_clause_addresses_its_exact_subjects_and_act():
@@ -109,7 +109,7 @@ def test_compare_clause_addresses_its_exact_subjects_and_act():
 
     assert compare["subject"] == "exact_Compare_subjects"
     assert compare["exact_Act"] == "Compare"
-    assert "its exact subjects and Locality" in (
+    assert "its exact subjects, and Locality" in (
         CHAPTERS / "08_compare.md"
     ).read_text(encoding="utf-8")
 
@@ -120,7 +120,7 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
         CHAPTERS / "07_measurement.md"
     ).read_text(encoding="utf-8")
 
-    assert measurement["requires_current_coordinates"] == (
+    assert measurement["current_coordinates"] == (
         "exact_byte_pair_position_Measurement_result"
     )
     assert measurement["subjects"] == (
@@ -132,15 +132,15 @@ def test_addressed_position_coordinates_preserve_the_bounded_subjects():
 def test_positional_coordinates_name_their_exact_basis():
     coordinates = _grammar()["book_coordinates"]
 
-    assert coordinates["01.Current.A.1"]["requires"][-1] == (
+    assert coordinates["01.Current.A.1"]["occurrence_order"] == (
         "result_occurrence_is_boundary_or_before_boundary_in_same_"
         "Locality_occurrence_order"
     )
-    assert coordinates["01.Current.D.2"]["requires_current_coordinates"] == (
+    assert coordinates["01.Current.D.2"]["current_coordinates"] == (
         "exact_subject_through_exact_occurrence_boundary"
     )
     assert "occurrence_order" not in coordinates["01.Current.D.2"]
-    assert coordinates["04.Compare.A"]["requires_order"] == [
+    assert coordinates["04.Compare.A"]["occurrence_order"] == [
         "earlier_result_occurrence_before_later_result_occurrence_in_same_Locality",
         "later_ordered_source_occurrence_references_are_earlier_ordered_source_"
         "occurrence_references_and_one_added_exact_occurrence",
@@ -177,7 +177,7 @@ def test_subject_to_act_binding_is_direct_clause_coordinates():
 
     assert act["subject"] == "exact_subject"
     assert act["exact_Act"] == "exact_Act"
-    assert act["requires"] == ["Locality"]
+    assert act["Locality"] == "06.Locality.A.Locality"
     assert act["result"] == "exact_result"
     assert act["Yield"]["relation"] == "yield"
 
@@ -202,7 +202,7 @@ def test_exact_relations_are_direct():
         assert coordinates["first_subject"] == first
         assert coordinates["relation"] == relation
         assert coordinates["second_subject"] == second
-        assert "relation_occurrence" in coordinates["requires"]
+        assert coordinates["relation_occurrence"] == "relation_occurrence"
         clause, coordinate = address.rsplit(".", 1)
         assert grammar["book_coordinates"][clause][coordinate] == coordinates
 

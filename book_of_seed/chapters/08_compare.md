@@ -2,9 +2,11 @@
 
 ### 04.Compare — Exact subjects
 
-One Compare subject-to-Act binding requires its exact subjects and Locality.
+One Compare subject-to-Act binding, its exact subjects, and Locality are exact
+together.
 Each exact subject is one exact input.
-The exact subject-to-Act binding requires its exact Applicability result.
+That exact subject-to-Act binding and one exact Applicability result are exact
+together.
 One exact Yield relation is from the Compare Act occurrence as first subject
 to one result as second subject. The result preserves distinctions established
 by the exact Compare Act within its completeness boundary.
@@ -16,8 +18,8 @@ current through one exact occurrence boundary, both results and one Compare
 Act are exact together. Earlier and later are established by exact result
 occurrence order in the same Locality. The later ordered source occurrence
 references are the earlier ordered source occurrence references and one added
-exact occurrence. The exact subject-to-Act binding requires its exact
-Applicability result.
+exact occurrence. That exact subject-to-Act binding and one exact
+Applicability result are exact together.
 
 The result preserves each Measurement result reference, every exact finding,
 ordered source occurrence references and the added occurrence,
@@ -29,7 +31,8 @@ When one exact ordered relation-path result position and one exact recorded
 pair-finding Compare result are current through one exact occurrence boundary,
 both subjects, one Compare Act and Locality are exact together.
 
-The exact subject-to-Act binding requires its exact Applicability result.
+That exact subject-to-Act binding and one exact Applicability result are exact
+together.
 
 The result preserves each source reference, ordered path-position result
 references, pair subjects, complete finding references, and Locality.

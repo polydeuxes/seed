@@ -21,9 +21,10 @@ exact subject in that subject-to-Act binding. It is current through one exact
 occurrence boundary in the same Locality occurrence order. The result
 occurrence is that boundary or is before that boundary.
 
-### 01.Current.D — Each exact relation requires its own occurrence
+### 01.Current.D — Exact relation subjects and occurrence
 
-Each exact relation requires its exact subjects and exact relation occurrence.
+One exact relation, its exact subjects, and its exact relation occurrence are
+exact together.
 
 ### 01.Current.D.1 — Result-position coordinates
 
@@ -31,7 +32,7 @@ Exact content in one recorded result position is one subject. Its exact
 coordinates are its recorded result occurrence, result position, exact source
 occurrence references, and Locality.
 
-The same content and result position in separate result occurrences require
+The same content and result position in separate result occurrences have
 separate exact addressed coordinates.
 
 ### 01.Current.D.2 — Current addressed result content

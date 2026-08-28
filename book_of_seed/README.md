@@ -39,7 +39,8 @@ an exact relation with its exact subjects.
 Act occurrence ── Yield ──> result
 ```
 
-Yield requires exact subjects, relation occurrence, and Locality.
+Yield, its exact subjects, relation occurrence, and Locality are exact
+together.
 
 The result preserves the exact coordinates established by its Act occurrence.
 

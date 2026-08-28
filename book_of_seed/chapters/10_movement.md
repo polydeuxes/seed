@@ -2,8 +2,8 @@
 
 ### 03.Movement.A — Exact movement
 
-One movement subject-to-Act binding requires its exact subject, source
-coordinates, destination coordinates, exact Act, and Locality.
+One movement subject-to-Act binding, its exact subject, source coordinates,
+destination coordinates, exact Act, and Locality are exact together.
 
 One exact Yield relation is from the movement Act occurrence as first subject
 to one result as second subject. The result preserves the exact subject and one

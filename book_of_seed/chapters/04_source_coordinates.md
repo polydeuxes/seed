@@ -13,8 +13,9 @@ coordinates, and Locality are exact together.
 
 The exact material result is one occurrence in that exact Locality.
 
-Supplied material is required for one material result. Another operator
-boundary occurrence requires another exact subject-to-Act binding.
+One supplied material subject and one material result are exact together.
+Another operator boundary occurrence and another exact subject-to-Act binding
+are exact together.
 
 ### 01.Source.H — Supplied material source boundary
 

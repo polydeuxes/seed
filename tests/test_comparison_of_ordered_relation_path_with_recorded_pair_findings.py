@@ -1,4 +1,4 @@
-"""Compare requires exact ordered path findings."""
+"""Exact ordered path findings are Compare subjects."""
 
 from __future__ import annotations
 

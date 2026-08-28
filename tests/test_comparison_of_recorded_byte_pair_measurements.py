@@ -1,4 +1,4 @@
-"""Compare requires earlier and later pair results."""
+"""Earlier and later pair results are exact Compare subjects."""
 
 from copy import deepcopy
 

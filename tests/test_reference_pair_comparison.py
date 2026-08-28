@@ -1,4 +1,4 @@
-"""Compare requires an exact ordered reference pair."""
+"""An exact ordered reference pair is one Compare subject."""
 
 import sqlite3
 

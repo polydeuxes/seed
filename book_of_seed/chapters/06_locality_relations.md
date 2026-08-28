@@ -2,10 +2,8 @@
 
 ### 06.Locality.A — Exact Locality relation
 
-Locality is one exact relation with first and second exact subjects. It requires its
-relation occurrence and exact Act.
-
-Each Locality relation requires a separate relation occurrence.
+One Locality relation, its first and second exact subjects, its exact Act, and
+its separate relation occurrence are exact together.
 
 ### 06.Locality.B — Through-occurrence boundary in a destination Locality
 
