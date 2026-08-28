@@ -43,8 +43,11 @@ boundary is one exact subject in one subject-to-Act binding.
 ### 01.Current.E.1 — Applicability
 
 One exact subject-to-Act binding is addressed by one Applicability Act. The
-exact coordinates of its occurrence are that binding, the exact Act addressed
-by that binding, Locality, and one of `applicable` or `inapplicable`.
+exact coordinates of that Applicability Act occurrence are that binding, the
+exact Act addressed by that binding, and Locality.
+
+The exact coordinates of one Applicability result occurrence are that
+Applicability Act occurrence and one of `applicable` or `inapplicable`.
 
 ## References
 

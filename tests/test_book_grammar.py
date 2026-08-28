@@ -93,11 +93,19 @@ def test_applicability_remains_separate_from_the_governed_act():
     assert boundary["subject"] == "subject_to_Act_binding"
     assert boundary["Applicability"] == {
         "exact_Act": "Applicability",
-        "result": "Applicability_result",
+        "Act_occurrence": {
+            "subject": "subject_to_Act_binding",
+            "addressed_Act": "exact_Act",
+            "Locality": "06.Locality.A.Locality",
+        },
+        "result": {
+            "Act_occurrence": "Applicability_Act_occurrence",
+            "Applicability": ["applicable", "inapplicable"],
+        },
     }
-    assert "one of `applicable` or `inapplicable`." in (
-        CHAPTERS / "01_current_coordinates.md"
-    ).read_text(encoding="utf-8")
+    current = (CHAPTERS / "01_current_coordinates.md").read_text(encoding="utf-8")
+    assert "exact coordinates of that Applicability Act occurrence" in current
+    assert "exact coordinates of one Applicability result occurrence" in current
 
     for reference in ("04.Compare.A", "04.Compare.B"):
         compare = grammar["book_coordinates"][reference]

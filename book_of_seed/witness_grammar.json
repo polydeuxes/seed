@@ -96,7 +96,18 @@
       "subject": "subject_to_Act_binding",
       "Applicability": {
         "exact_Act": "Applicability",
-        "result": "Applicability_result"
+        "Act_occurrence": {
+          "subject": "subject_to_Act_binding",
+          "addressed_Act": "exact_Act",
+          "Locality": "06.Locality.A.Locality"
+        },
+        "result": {
+          "Act_occurrence": "Applicability_Act_occurrence",
+          "Applicability": [
+            "applicable",
+            "inapplicable"
+          ]
+        }
       }
     },
     "02.Acts.A": {
