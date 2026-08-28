@@ -1,6 +1,8 @@
 """Compare Measurement results establish exact Distinctions."""
 
 from scripts.exact_material_distinctions_reading import (
+    exact_bounded_material_distinctions_reading,
+    exact_bounded_material_result_content_reading,
     exact_material_distinctions_reading,
     exact_material_result_content_reading,
 )
@@ -68,3 +70,34 @@ def test_result_content_uses_source_positions_without_cross_reading_identities()
         (0,),
         (0, 1),
     )
+
+
+def test_exact_material_boundaries_do_not_add_delimiter_content():
+    materials = (b"ab", b"cd")
+
+    reading = exact_bounded_material_distinctions_reading(
+        materials,
+        locality_identity="test-exact-bounded-material-reading",
+    )
+
+    assert tuple(
+        result["exact_material"]
+        for _identity, result in reading["material_results"]
+    ) == materials
+
+
+def test_equal_complete_content_remains_exact_under_different_boundaries():
+    first = (b"abcd",)
+    second = (b"ab", b"cd")
+
+    reading = exact_bounded_material_result_content_reading(first, second)
+
+    assert b"".join(
+        result["exact_material"]
+        for _identity, result in reading["first_exact_reading"]["material_results"]
+    ) == b"".join(
+        result["exact_material"]
+        for _identity, result in reading["second_exact_reading"]["material_results"]
+    )
+    assert len(reading["first_exact_reading"]["material_results"]) == 1
+    assert len(reading["second_exact_reading"]["material_results"]) == 2

@@ -55,6 +55,14 @@ MATERIALS_WITH_H = (
 MATERIALS_WITH_X = MATERIALS_WITH_H[:-1] + (b"F+D=X\n",)
 
 
+class _ExactMaterialBoundaries:
+    def __init__(self, materials: tuple[bytes, ...]) -> None:
+        self._materials = iter(materials)
+
+    def readline(self) -> bytes:
+        return next(self._materials, b"")
+
+
 def _exact_materials(materials: tuple[bytes, ...]) -> tuple[bytes, ...]:
     if (
         type(materials) is not tuple
@@ -70,6 +78,18 @@ def _exact_materials(materials: tuple[bytes, ...]) -> tuple[bytes, ...]:
         raise ValueError(
             "each material must be one nonempty exact line boundary"
         )
+    return materials
+
+
+def _exact_bounded_materials(
+    materials: tuple[bytes, ...],
+) -> tuple[bytes, ...]:
+    if (
+        type(materials) is not tuple
+        or not materials
+        or any(type(material) is not bytes or not material for material in materials)
+    ):
+        raise ValueError("each material must have one nonempty exact boundary")
     return materials
 
 
@@ -90,13 +110,22 @@ def _exact_material_distinctions_reading(
     materials: tuple[bytes, ...],
     *,
     locality_identity: str,
+    exact_boundaries: bool = False,
 ) -> tuple[EventLedger, dict[str, tuple[tuple[str, Any], ...]]]:
-    exact_materials = _exact_materials(materials)
+    exact_materials = (
+        _exact_bounded_materials(materials)
+        if exact_boundaries
+        else _exact_materials(materials)
+    )
     ledger = EventLedger()
     current_coordinates = run_persistent_operator_console(
         ledger=ledger,
         locality_identity=locality_identity,
-        input_stream=BytesIO(b"".join(exact_materials)),
+        input_stream=(
+            _ExactMaterialBoundaries(exact_materials)
+            if exact_boundaries
+            else BytesIO(b"".join(exact_materials))
+        ),
     )
     through = ledger.append_boundary()
 
@@ -212,6 +241,21 @@ def exact_material_distinctions_reading(
     _ledger, reading = _exact_material_distinctions_reading(
         materials,
         locality_identity=locality_identity,
+    )
+    return reading
+
+
+def exact_bounded_material_distinctions_reading(
+    materials: tuple[bytes, ...],
+    *,
+    locality_identity: str = LOCALITY,
+) -> dict[str, tuple[tuple[str, Any], ...]]:
+    """Read exact result surfaces from explicitly bounded material."""
+
+    _ledger, reading = _exact_material_distinctions_reading(
+        materials,
+        locality_identity=locality_identity,
+        exact_boundaries=True,
     )
     return reading
 
@@ -458,19 +502,21 @@ def _same_result_content(
     return result
 
 
-def exact_material_result_content_reading(
+def _exact_material_result_content_reading(
     first_materials: tuple[bytes, ...],
     second_materials: tuple[bytes, ...],
+    *,
+    exact_boundaries: bool,
 ) -> dict[str, Any]:
-    """Keep exact readings while comparing only source-relative result content."""
-
     first_ledger, first_reading = _exact_material_distinctions_reading(
         first_materials,
         locality_identity="first-exact-material-Distinctions-reading",
+        exact_boundaries=exact_boundaries,
     )
     second_ledger, second_reading = _exact_material_distinctions_reading(
         second_materials,
         locality_identity="second-exact-material-Distinctions-reading",
+        exact_boundaries=exact_boundaries,
     )
     first_coordinates = _result_coordinates(first_ledger, first_reading)
     second_coordinates = _result_coordinates(second_ledger, second_reading)
@@ -487,6 +533,32 @@ def exact_material_result_content_reading(
         "second_exact_reading": second_reading,
         "result_content": _same_result_content(first_content, second_content),
     }
+
+
+def exact_material_result_content_reading(
+    first_materials: tuple[bytes, ...],
+    second_materials: tuple[bytes, ...],
+) -> dict[str, Any]:
+    """Keep exact readings while comparing only source-relative result content."""
+
+    return _exact_material_result_content_reading(
+        first_materials,
+        second_materials,
+        exact_boundaries=False,
+    )
+
+
+def exact_bounded_material_result_content_reading(
+    first_materials: tuple[bytes, ...],
+    second_materials: tuple[bytes, ...],
+) -> dict[str, Any]:
+    """Compare source-relative content under explicit material boundaries."""
+
+    return _exact_material_result_content_reading(
+        first_materials,
+        second_materials,
+        exact_boundaries=True,
+    )
 
 
 if __name__ == "__main__":
