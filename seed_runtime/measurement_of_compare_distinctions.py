@@ -16,11 +16,6 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 
 
 COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND = (
@@ -35,7 +30,6 @@ COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND = (
 
 BOOK_CLAUSE = "01.Source.D"
 MEASUREMENT_ACT = "Measurement of exact Compare Distinctions"
-MEASUREMENT_RESULT = "Measurement result of exact Compare Distinctions"
 
 EVENT_KIND_BOOK_CLAUSES = {
     COMPARE_DISTINCTION_MEASUREMENT_SUBJECT_TO_ACT_BINDING_KIND: "01.Source.D",
@@ -512,7 +506,6 @@ def _recorded_result_material(
     distinctions: tuple[dict[str, Any], ...],
     *,
     act_occurrence_event_identity: str,
-    yield_relation_identity: str,
 ) -> dict[str, Any]:
     result = _result_material(binding, distinctions)
     return {
@@ -530,7 +523,6 @@ def _recorded_result_material(
         "findings": deepcopy(result["findings"]),
         "source_locality_identity": result["source_locality_identity"],
         "act_occurrence_event_identity": act_occurrence_event_identity,
-        "yield_relation_identity": yield_relation_identity,
     }
 
 
@@ -539,7 +531,7 @@ def record_compare_distinction_measurement_result(
     *,
     act_occurrence_event_identity: str,
 ) -> Event:
-    """Record the Yield and complete Measurement result."""
+    """Record the complete Measurement result."""
 
     act, binding, distinctions = _read_act(
         ledger,
@@ -552,26 +544,13 @@ def record_compare_distinction_measurement_result(
             COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
         )
     ):
-        raise ValueError("Measurement Act already carries a result")
-    result = _result_material(binding, distinctions)
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act.locality_identity,
-        exact_act=MEASUREMENT_ACT,
-        act_occurrence_identity=act.material["act_occurrence_identity"],
-        act_occurrence_event_identity=act.identity,
-        result_kind=MEASUREMENT_RESULT,
-        result_identity=result["result_identity"],
-        result_content=result,
-        occurrence_boundary="compare_distinction_measurement",
-    )
+        raise ValueError("Measurement Act already has a result")
     return ledger.append(
         COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
         _recorded_result_material(
             binding,
             distinctions,
             act_occurrence_event_identity=act.identity,
-            yield_relation_identity=yield_relation.identity,
         ),
         locality_identity=act.locality_identity,
     )
@@ -601,31 +580,33 @@ def get_recorded_compare_distinction_measurement(
         binding,
         distinctions,
         act_occurrence_event_identity=act.identity,
-        yield_relation_identity=result.material.get("yield_relation_identity"),
     )
-    yield_identity = result.material.get("yield_relation_identity")
-    yield_event = ledger.get(yield_identity) if type(yield_identity) is str else None
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=result.identity,
-        yield_relation_event_identity=yield_identity,
-        act_occurrence_event_identity=act.identity,
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act.identity, result.identity),
+            locality_identity=result.locality_identity,
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "Compare Distinction Measurement result does not follow its Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            result.locality_identity,
+            COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity") == act.identity
     )
     if (
         result.locality_identity != act.locality_identity
         or result.material != expected
-        or yield_event is None
-        or yield_event.kind != RECORDED_YIELD_RELATION_EVENT
-        or yield_event.material.get("occurrence_boundary")
-        != "compare_distinction_measurement"
-        or yield_event.material.get("result_kind") != MEASUREMENT_RESULT
-        or not all(requirements.values())
+        or tuple(item.identity for item in ordered)
+        != (act.identity, result.identity)
+        or len(results) != 1
+        or results[0].identity != result.identity
     ):
         raise ValueError("Compare Distinction Measurement result is not exact")
-    ledger.occurrences_in_append_order(
-        (act.identity, yield_event.identity, result.identity),
-        locality_identity=result.locality_identity,
-    )
     return deepcopy(result.material)
 
 

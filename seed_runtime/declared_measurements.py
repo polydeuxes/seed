@@ -454,7 +454,7 @@ def _record_compare_distinction_measurement(
     current_coordinates = _advance(
         ledger,
         current_coordinates,
-        (result.material["yield_relation_identity"], result.identity),
+        (result.identity,),
         locality_identity=locality_identity,
     )
     return current_coordinates, result

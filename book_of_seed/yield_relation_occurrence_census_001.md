@@ -271,6 +271,15 @@ readers still refuse changed content, position addresses, counts, recurrence,
 source coordinates, Applicability, Act coordinates, corruption, or another
 result for the Act. This road is reached by the new exact material road.
 
+Compare-Distinction Measurement then passed independently. Its separate Yield
+event preceded the result and copied the complete future Measurement result.
+Removing it preserved the exact subject-to-Act binding, Measurement Act
+occurrence, complete Distinction findings, completeness boundary, source
+Compare result, Locality, Act-before-result order, one result for the Act,
+current-coordinate progression, and durable reread. The reader still refuses
+changed findings, sources, boundaries, Act coordinates, corruption, or another
+result for the Act. This road is reached by the new exact material road.
+
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
 
@@ -381,7 +390,7 @@ possible relation.
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, three
-non-Locality Applicability roads, five declared Measurement roads, the exact
+non-Locality Applicability roads, six declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
 result-position Movement road. Each removed event occurred before its result

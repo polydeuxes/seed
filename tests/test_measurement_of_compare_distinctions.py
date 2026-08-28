@@ -18,9 +18,11 @@ from seed_runtime.measurement_of_compare_distinctions import (
     COMPARE_DISTINCTION_MEASUREMENT_RESULT_KIND,
     compare_distinction_measurement_references_from_current_coordinates,
     get_recorded_compare_distinction_measurement,
+    record_compare_distinction_measurement_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 from tests.binary_input import binary_input
 
 
@@ -92,6 +94,22 @@ def test_measurement_records_every_distinction_of_one_current_compare_result():
         for finding in reading["findings"]
     )
     assert result.identity in current_coordinates["measurement_occurrences"]
+    assert "yield_relation_identity" not in result.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            LOCALITY, RECORDED_YIELD_RELATION_EVENT
+        )
+        if event.material.get("occurrence_boundary")
+        == "compare_distinction_measurement"
+    )
+    with pytest.raises(ValueError, match="already has a result"):
+        record_compare_distinction_measurement_result(
+            ledger,
+            act_occurrence_event_identity=result.material[
+                "act_occurrence_event_identity"
+            ],
+        )
 
 
 def test_changed_measured_distinction_is_refused():
