@@ -20,10 +20,7 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_current_coordinates import read_operator_current_coordinates
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    read_requirements_of_yield_relation,
-)
+from seed_runtime.yield_relation import RECORDED_YIELD_RELATION_EVENT
 
 
 class IntegrityLedger(EventLedger):
@@ -210,40 +207,38 @@ def test_corrupted_source_cannot_enter_act_occurrence_after_measurement():
         )
 
 
-def test_recorded_position_measurement_has_exact_act_and_yield_relation():
+def test_recorded_position_measurement_has_exact_act_and_result():
     ledger, _occurrences, _boundary, finding, recorded = recorded_road()
     act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
-    yield_relation = ledger.get(recorded.material["yield_relation_identity"])
 
     assert recorded.kind == OCCURRENCE_POSITION_RECORDED_KIND
     assert act_occurrence.kind == OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT
     assert act_occurrence.material["act_occurrence_identity"] == recorded.material[
         "act_occurrence_identity"
     ]
-    assert read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=recorded.identity,
-        yield_relation_event_identity=yield_relation.identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-    ) == {
-        "exact_relation": True,
-        "occurrence_witness": True,
-        "intact_occurrence": True,
-    }
+    assert "yield_relation_identity" not in recorded.material
+    assert not tuple(
+        event
+        for event in ledger.iter_locality_kind(
+            recorded.locality_identity,
+            RECORDED_YIELD_RELATION_EVENT,
+        )
+        if event.material.get("occurrence_boundary")
+        == "occurrence_position_measurement"
+    )
     assert get_recorded_occurrence_position_measurement(
         ledger,
         recorded.identity,
     ) == finding
 
 
-def test_binding_act_yield_and_result_keep_distinct_exact_identities():
+def test_binding_act_and_result_keep_distinct_exact_identities():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     reference = recorded.material["subject_to_act_binding_reference"]
     binding = get_occurrence_position_measurement_subject_to_act_binding(
         ledger, reference["recorded_occurrence_identity"]
     )
     act_occurrence = ledger.get(recorded.material["act_occurrence_event_identity"])
-    yielded = ledger.get(recorded.material["yield_relation_identity"])
 
     assert binding.kind == (
         OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND
@@ -274,10 +269,9 @@ def test_binding_act_yield_and_result_keep_distinct_exact_identities():
             binding.material["measurement_result_identity"],
             binding.identity,
             act_occurrence.identity,
-            yielded.identity,
             recorded.identity,
         }
-    ) == 7
+    ) == 6
 
 
 def test_act_requires_current_coordinates_carrying_the_binding():
@@ -374,7 +368,6 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         ledger,
         act_occurrence_event_identity=act_occurrence.identity,
     )
-    yielded = ledger.get(recorded.material["yield_relation_identity"])
     assert get_recorded_occurrence_position_measurement(
         ledger,
         recorded.identity,
@@ -384,15 +377,10 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
     assert act_occurrence.material["subject_to_act_binding_reference"][
         "recorded_occurrence_identity"
     ] == binding.identity
-    assert yielded.material["result"]["result_positions"] == recorded.material[
-        "result_positions"
-    ]
-    assert yielded.material["result"]["result_positions"] is not recorded.material[
-        "result_positions"
-    ]
+    assert len(recorded.material["result_positions"]) == len(finding.occurrences)
 
 
-def test_act_occurrence_is_observed_before_yield_without_reconstructing_finding(
+def test_act_occurrence_is_observed_before_result_without_reconstructing_finding(
     monkeypatch,
 ):
     ledger, _occurrences, boundary = occurrence_road()
@@ -442,7 +430,6 @@ def test_act_occurrence_is_observed_before_yield_without_reconstructing_finding(
         OCCURRENCE_POSITION_SUBJECT_TO_ACT_BINDING_RECORDED_KIND,
         OCCURRENCE_POSITION_ACT_OCCURRENCE_EVENT,
         observed.kind,
-        RECORDED_YIELD_RELATION_EVENT,
         OCCURRENCE_POSITION_RECORDED_KIND,
     ]
     assert recorded.material["act_occurrence_event_identity"] == (
@@ -529,7 +516,7 @@ def test_result_refuses_wrong_kind_and_corrupted_act_occurrence():
         )
 
 
-def test_one_measurement_act_cannot_yield_two_results():
+def test_one_measurement_act_cannot_record_two_results():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger,
@@ -543,7 +530,7 @@ def test_one_measurement_act_cannot_yield_two_results():
     )
     before = ledger.append_boundary()
 
-    with pytest.raises(ValueError, match="already carries a Yield"):
+    with pytest.raises(ValueError, match="already has a result"):
         record_occurrence_position_measurement_result(
             ledger,
             act_occurrence_event_identity=act_occurrence.identity,
@@ -563,7 +550,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
 
     def history_scan_is_not_available(*_args, **_kwargs):
         raise AssertionError(
-            "same-call result scanned prior Yield or result occurrences"
+            "same-call result scanned prior result occurrences"
         )
 
     monkeypatch.setattr(ledger, "iter_locality_kind", history_scan_is_not_available)
@@ -588,7 +575,7 @@ def test_carried_result_skips_history_scan_only_at_its_exact_act_tip(monkeypatch
         )
 
 
-def test_changed_position_is_refused_by_the_unchanged_yield_relation():
+def test_changed_position_is_refused_by_the_unchanged_result_coordinates():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     recorded.material["result_positions"][0]["dimensions"]["content"]["position"] = 1
 
@@ -596,13 +583,12 @@ def test_changed_position_is_refused_by_the_unchanged_yield_relation():
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-def test_result_carries_one_ordered_result_position_per_exact_position():
+def test_result_has_one_ordered_result_position_per_exact_position():
     ledger, occurrences, boundary, _finding, recorded = recorded_road()
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "act_occurrence_identity",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }
     assert recorded.material["source_localities"] == ["a"]
     assert recorded.material["completeness_boundary"] == {
@@ -626,9 +612,6 @@ def test_result_carries_one_ordered_result_position_per_exact_position():
         "act_occurrence_event_identity": recorded.material["act_occurrence_event_identity"],
         "act_occurrence_identity": recorded.material[
             "act_occurrence_identity"
-        ],
-        "yield_relation_identity": recorded.material[
-            "yield_relation_identity"
         ],
     }
     assert all(
@@ -680,11 +663,10 @@ def test_wrong_result_boundary_coordinates_are_refused(coordinate, value):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-def test_corrupted_input_act_or_yield_relation_is_refused():
+def test_corrupted_input_or_act_occurrence_is_refused():
     for coordinate in (
         "input",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     ):
         ledger, occurrences, _boundary, _finding, recorded = recorded_road()
         corrupted_identity = (
@@ -806,7 +788,7 @@ def test_binding_act_and_result_remain_exact_across_separate_restarts(tmp_path):
         ledger.close()
 
 
-def test_reopened_public_result_refuses_a_second_yield(tmp_path):
+def test_reopened_public_result_refuses_a_second_result(tmp_path):
     path = tmp_path / "occurrence-position-duplicate.sqlite"
     ledger = SQLiteEventLedger(path)
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
@@ -822,7 +804,7 @@ def test_reopened_public_result_refuses_a_second_yield(tmp_path):
     reopened = SQLiteEventLedger(path)
     try:
         before = reopened.append_boundary()
-        with pytest.raises(ValueError, match="already carries a Yield"):
+        with pytest.raises(ValueError, match="already has a result"):
             record_occurrence_position_measurement_result(
                 reopened,
                 act_occurrence_event_identity=act_identity,
@@ -840,7 +822,7 @@ WITNESSED_BOOK_COORDINATES = {
         test_supplied_reversal_cannot_replace_the_ledger_measurement,
         test_subclass_finding_cannot_replace_the_exact_measurement_type,
         test_recording_and_reading_do_not_reconstruct_complete_result_material,
-        test_changed_position_is_refused_by_the_unchanged_yield_relation,
+        test_changed_position_is_refused_by_the_unchanged_result_coordinates,
         test_missing_reordered_duplicated_or_substituted_result_positions_are_refused,
         test_wrong_result_boundary_coordinates_are_refused,
         test_wrong_boundary_is_refused_without_reconstructing_positions,

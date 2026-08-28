@@ -289,7 +289,7 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
         pair.identity,
         positions.identity,
     ]
-    base_coordinates = {
+    exact_measurement_coordinates = {
         "recorded_occurrence_identity",
         "result_identity",
         "act_occurrence_identity",
@@ -297,13 +297,14 @@ def test_current_coordinates_carry_exact_measurement_identities_in_append_order(
     }
     assert (
         set(standing["measurement_occurrences"][byte.identity])
-        == base_coordinates
+        == exact_measurement_coordinates
     )
     assert set(standing["measurement_occurrences"][pair.identity]) == (
-        base_coordinates | {"yield_relation_identity"}
+        exact_measurement_coordinates | {"yield_relation_identity"}
     )
-    assert set(standing["measurement_occurrences"][positions.identity]) == (
-        base_coordinates | {"yield_relation_identity"}
+    assert (
+        set(standing["measurement_occurrences"][positions.identity])
+        == exact_measurement_coordinates
     )
     assert "result_positions" not in str(standing["measurement_occurrences"])
     assert "occurrences" not in {
@@ -544,7 +545,6 @@ def test_locality_standing_refuses_a_corrupted_measurement(
     ("measurement_kind", "error_type"),
     (
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),
 )
 def test_locality_standing_refuses_measurement_with_missing_yield(
@@ -562,7 +562,6 @@ def test_locality_standing_refuses_measurement_with_missing_yield(
     ("measurement_kind", "error_type"),
     (
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),
 )
 def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
@@ -583,7 +582,6 @@ def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
     ("measurement_kind", "error_type"),
     (
         (BYTE_PAIR_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
-        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
     ),
 )
 def test_locality_standing_refuses_corrupted_measurement_yield(

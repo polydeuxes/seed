@@ -233,6 +233,17 @@ progression and durable reopen address the result without a Yield identity.
 This is the first remaining Yield producer reached by the new exact material
 road to pass independent subtraction.
 
+Occurrence-position Measurement then passed the same falsifier independently.
+Its separate Yield event again preceded and copied the complete future result.
+Removing that event preserved the exact subject-to-Act binding, Measurement Act
+occurrence, bounded position population, exact result occurrence, Act-before-
+result order, and one result for the Act. The reader still reconstructs every
+position through the completeness boundary and refuses changed positions,
+source occurrences, boundaries, Act coordinates, corruption, or another result
+for the Act. Current-coordinate replay and the same-call bounded progression
+address the exact result without a Yield identity. This road is also traversed
+by the new exact material road.
+
 The exact through-occurrence boundary reference recording then passed the same
 falsifier. Its prior lifecycle was:
 
@@ -343,7 +354,7 @@ possible relation.
 ## Current finding
 
 A separate Yield occurrence failed all three internal Locality controls, one
-non-Locality Applicability road, three declared Measurement roads, the exact
+non-Locality Applicability road, four declared Measurement roads, the exact
 through-occurrence boundary reference Recording road, both internal material
 source roads, all four live internal Compare result families, and the
 result-position Movement road. Each removed event occurred before its result

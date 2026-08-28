@@ -1559,6 +1559,9 @@ def advance_operator_current_coordinates(
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
+            exact_result_occurrences[event.identity] = (
+                _subject_to_act_binding_of_exact_result(ledger, event)
+            )
             continue
         if event.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND:
             _read_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
@@ -2038,6 +2041,11 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
         if type(current_coordinates) is dict
         else None
     )
+    exact_results = (
+        current_coordinates.get("exact_result_occurrences")
+        if type(current_coordinates) is dict
+        else None
+    )
     result_positions = _position_results(finding)
     result_material = _occurrence_position_result_material(
         finding,
@@ -2047,21 +2055,7 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     expected = {
         **result_material,
         "act_occurrence_event_identity": act_occurrence.identity,
-        "yield_relation_identity": event.material.get(
-            "yield_relation_identity"
-        ),
     }
-    yield_relation_identity = event.material.get("yield_relation_identity")
-    yield_relation = ledger.get(yield_relation_identity) if type(yield_relation_identity) is str else None
-    try:
-        requirements = read_requirements_of_yield_relation(
-            ledger,
-            recorded_result_event_identity=event.identity,
-            yield_relation_event_identity=yield_relation_identity,
-            act_occurrence_event_identity=act_occurrence.identity,
-        )
-    except (TypeError, ValueError):
-        requirements = {}
     if (
         event.kind != OCCURRENCE_POSITION_RECORDED_KIND
         or event.locality_identity != binding.locality_identity
@@ -2073,13 +2067,8 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
         or event.identity in measurements
         or type(bindings) is not dict
         or binding.identity not in bindings
-        or yield_relation is None
-        or yield_relation.kind != RECORDED_YIELD_RELATION_EVENT
-        or yield_relation.material.get("occurrence_boundary")
-        != "occurrence_position_measurement"
-        or yield_relation.material.get("result_kind") != OCCURRENCE_POSITION_RESULT_KIND
-        or ledger.integrity_of(yield_relation.identity) == CORRUPTED
-        or not all(requirements.values())
+        or type(exact_results) is not dict
+        or event.identity in exact_results
         or ledger.integrity_of(event.identity) == CORRUPTED
         or ledger.append_boundary_through_occurrence(event.identity)
         != ledger.append_boundary()
@@ -2088,6 +2077,9 @@ def _carry_occurrence_position_measurement_result_into_current_coordinates(
     ):
         raise ValueError("occurrence position Measurement coordinates are not exact")
     measurements[event.identity] = _measurement_occurrence_coordinates(event)
+    exact_results[event.identity] = _subject_to_act_binding_of_exact_result(
+        ledger, event
+    )
     current_coordinates["through_event_occurrence_identity"] = event.identity
     current_coordinates["event_count"] = event_count + 1
     return current_coordinates

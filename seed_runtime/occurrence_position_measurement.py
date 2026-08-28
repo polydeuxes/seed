@@ -5,11 +5,6 @@ from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
-from seed_runtime.yield_relation import (
-    RECORDED_YIELD_RELATION_EVENT,
-    _record_yield_relation,
-    read_requirements_of_yield_relation,
-)
 
 OCCURRENCE_POSITION_RECORDED_KIND = (
     "operator.measurement.locality_occurrence_position_recorded"
@@ -596,7 +591,7 @@ def record_occurrence_position_measurement_act_occurrence(
     binding_event_identity: str,
     current_coordinates: dict[str, Any],
 ) -> Event:
-    """Record the Act occurrence before its Yield and result."""
+    """Record the Act occurrence before its result."""
 
     return _record_occurrence_position_measurement_act_occurrence(
         ledger,
@@ -763,35 +758,18 @@ def _refuse_existing_occurrence_position_measurement_result(
     act_occurrence: Event,
     act_occurrence_identity: str,
 ) -> None:
-    for prior_yield in ledger.iter_locality_kind(
-        act_occurrence.locality_identity,
-        RECORDED_YIELD_RELATION_EVENT,
-    ):
-        dimensions = prior_yield.material.get("dimensions")
-        if (
-            prior_yield.material.get("act_occurrence_identity")
-            == act_occurrence.identity
-            or (
-                type(dimensions) is dict
-                and dimensions.get("act_occurrence_identity")
-                == act_occurrence_identity
-            )
-        ):
-            raise ValueError(
-                "the occurrence position Measurement Act already carries a Yield"
-            )
     for prior_result in ledger.iter_locality_kind(
         act_occurrence.locality_identity,
         OCCURRENCE_POSITION_RECORDED_KIND,
     ):
         if (
-            prior_result.material.get("act_occurrence_identity")
+            prior_result.material.get("act_occurrence_event_identity")
             == act_occurrence.identity
             or prior_result.material.get("act_occurrence_identity")
             == act_occurrence_identity
         ):
             raise ValueError(
-                "the occurrence position Measurement Act already carries a result"
+                "the occurrence position Measurement Act already has a result"
             )
 
 
@@ -810,17 +788,6 @@ def _record_occurrence_position_measurement_result(
         binding=binding,
         result_positions=result_positions,
     )
-    yield_relation = _record_yield_relation(
-        ledger,
-        locality_identity=act_occurrence.locality_identity,
-        exact_act=OCCURRENCE_POSITION_ACT,
-        act_occurrence_identity=act_occurrence_identity,
-        act_occurrence_event_identity=act_occurrence.identity,
-        result_kind=OCCURRENCE_POSITION_RESULT_KIND,
-        result_identity=result_material["result_identity"],
-        result_content=result_material,
-        occurrence_boundary="occurrence_position_measurement",
-    )
     recorded_material = {
         "result_identity": result_material["result_identity"],
         "addressed_act_identity": result_material["addressed_act_identity"],
@@ -833,7 +800,6 @@ def _record_occurrence_position_measurement_result(
         "completeness_boundary": result_material["completeness_boundary"],
         "result_positions": result_material["result_positions"],
         "act_occurrence_event_identity": act_occurrence.identity,
-        "yield_relation_identity": yield_relation.identity,
     }
     return ledger.append(
         OCCURRENCE_POSITION_RECORDED_KIND,
@@ -847,7 +813,7 @@ def record_occurrence_position_measurement_result(
     *,
     act_occurrence_event_identity: str,
 ) -> Event:
-    """Record the Yield and result of one exact recorded Measurement Act."""
+    """Record the result of one exact recorded Measurement Act."""
 
     act_occurrence, binding, finding = (
         _read_occurrence_position_measurement_act_occurrence(
@@ -928,7 +894,6 @@ def get_recorded_occurrence_position_measurement(
     if set(material) != OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "act_occurrence_identity",
         "act_occurrence_event_identity",
-        "yield_relation_identity",
     }:
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
@@ -974,9 +939,6 @@ def get_recorded_occurrence_position_measurement(
             "the occurrence position Measurement carries malformed result positions"
         )
 
-    yield_relation_identity = material.get(
-        "yield_relation_identity"
-    )
     try:
         act_occurrence, binding, bound_finding = (
                 _read_occurrence_position_measurement_act_occurrence(
@@ -1001,30 +963,39 @@ def get_recorded_occurrence_position_measurement(
         binding=binding,
         result_positions=result_positions,
     )
-    requirements = read_requirements_of_yield_relation(
-        ledger,
-        recorded_result_event_identity=event.identity,
-        yield_relation_event_identity=(
-            yield_relation_identity
-            if isinstance(yield_relation_identity, str)
-            else None
-        ),
-        act_occurrence_event_identity=act_occurrence.identity,
-    )
-    if not all(requirements.values()):
-        raise ValueError(
-            "the occurrence position Measurement carries no exact Yield relation"
+    try:
+        ordered = ledger.occurrences_in_append_order(
+            (act_occurrence.identity, event.identity),
+            locality_identity=event.locality_identity,
         )
-    carried = {
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "the occurrence position Measurement result does not follow its Act"
+        ) from error
+    results = tuple(
+        candidate
+        for candidate in ledger.iter_locality_kind(
+            event.locality_identity,
+            OCCURRENCE_POSITION_RECORDED_KIND,
+        )
+        if candidate.material.get("act_occurrence_event_identity")
+        == act_occurrence.identity
+    )
+    if (
+        tuple(item.identity for item in ordered)
+        != (act_occurrence.identity, event.identity)
+        or len(results) != 1
+        or results[0].identity != event.identity
+    ):
+        raise ValueError(
+            "the occurrence position Measurement result is not exact for its Act"
+        )
+    recorded_result_material = {
         key: value
         for key, value in material.items()
-            if key
-                not in {
-                    "act_occurrence_event_identity",
-                    "yield_relation_identity",
-                }
+        if key != "act_occurrence_event_identity"
     }
-    if carried != result_material:
+    if recorded_result_material != result_material:
         raise ValueError(
             "the occurrence position Measurement result differs from its coordinates"
         )
