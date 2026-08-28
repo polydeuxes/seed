@@ -1334,9 +1334,16 @@ def _applicability_reading(
 
 
 def get_recorded_pair_measurement_comparison_applicability(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return _applicability_reading(ledger, event_identity)[0]
+    return _applicability_reading(
+        ledger,
+        event_identity,
+        prior_coordinates=prior_coordinates,
+    )[0]
 
 
 def _require_applicability_current_coordinates(

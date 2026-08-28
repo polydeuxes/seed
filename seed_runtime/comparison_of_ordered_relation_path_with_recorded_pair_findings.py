@@ -1613,9 +1613,18 @@ def _read_applicability_result(
 
 
 def get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    prior_coordinates: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return deepcopy(_read_applicability_result(ledger, event_identity)[0].material)
+    return deepcopy(
+        _read_applicability_result(
+            ledger,
+            event_identity,
+            prior_coordinates=prior_coordinates,
+        )[0].material
+    )
 
 
 def _require_compare_current_coordinates(
